@@ -32,6 +32,40 @@ class FontOutlineService
     /** @var array<string, TrueTypeFont> */
     private array $loaded = [];
 
+    /**
+     * Real glyph-advance text width in mm — same hmtx table buildTextPaths()
+     * uses, without building any SVG. Used by
+     * App\Services\LegacyPlates\LegacyPlateNameFitService to decide whether
+     * a candidate engraving name fits its field box (brief §10: "usar
+     * métricas reales existentes si disponibles").
+     */
+    public function measureWidthMm(string $text, float $fontSizeMm, bool $bold = false): float
+    {
+        if (trim($text) === '' || ! $this->isAvailable()) {
+            return 0.0;
+        }
+
+        $font = $this->font($bold);
+        $unitsPerEm = (float) $font->getData('head', 'unitsPerEm');
+
+        if ($unitsPerEm <= 0) {
+            return 0.0;
+        }
+
+        $cmap = $font->getUnicodeCharMap();
+        $hmtx = $font->getData('hmtx');
+        $fallbackAdvance = end($hmtx)[0] ?? ($unitsPerEm / 2);
+
+        $cursor = 0.0;
+
+        foreach ($font->utf8toUnicode($text) as $codepoint) {
+            $gid = $cmap[$codepoint] ?? null;
+            $cursor += $gid !== null ? ($hmtx[$gid][0] ?? $fallbackAdvance) : $fallbackAdvance;
+        }
+
+        return $cursor * ($fontSizeMm / $unitsPerEm);
+    }
+
     public function isAvailable(): bool
     {
         return class_exists(Font::class) && file_exists($this->fontPath(false));

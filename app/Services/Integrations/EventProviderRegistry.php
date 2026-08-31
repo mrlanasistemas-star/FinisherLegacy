@@ -3,6 +3,7 @@
 namespace App\Services\Integrations;
 
 use App\Contracts\Integrations\EventProviderAdapter;
+use App\Services\Integrations\Providers\GenericRestEventProvider;
 use App\Services\Integrations\Providers\MockEventProviderAdapter;
 use InvalidArgumentException;
 
@@ -19,6 +20,7 @@ class EventProviderRegistry
      */
     private const ADAPTERS = [
         'mock' => MockEventProviderAdapter::class,
+        'generic_rest' => GenericRestEventProvider::class,
     ];
 
     /**

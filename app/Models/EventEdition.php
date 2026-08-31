@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable([
     'event_id', 'name', 'year', 'event_date', 'city', 'state', 'country', 'timezone',
     'registration_open_at', 'registration_close_at', 'operation_mode', 'status', 'results_status',
-    'production_export_format', 'default_dpi',
+    'production_export_format', 'default_dpi', 'data_source_type', 'data_source_provider_connection_id',
 ])]
 class EventEdition extends Model
 {
@@ -125,6 +125,30 @@ class EventEdition extends Model
     public function productionCheck(): HasOne
     {
         return $this->hasOne(EventProductionCheck::class);
+    }
+
+    /**
+     * Override of the Organizer's default OrganizerDataSource — null means
+     * "inherit from Organizer" (brief §18). Resolved centrally by
+     * App\Actions\Integrations\ResolveEventDataSource, never read directly.
+     *
+     * @return BelongsTo<ProviderConnection, $this>
+     */
+    public function dataSourceProviderConnection(): BelongsTo
+    {
+        return $this->belongsTo(ProviderConnection::class, 'data_source_provider_connection_id');
+    }
+
+    /** @return HasMany<LegacyPlateEntitlement, $this> */
+    public function legacyPlateEntitlements(): HasMany
+    {
+        return $this->hasMany(LegacyPlateEntitlement::class);
+    }
+
+    /** @return HasMany<Order, $this> */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 
     /**

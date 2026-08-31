@@ -171,6 +171,41 @@ return [
             'platetemplates.manage' => 'Gestionar moldes',
         ],
     ],
+    'legacyplates' => [
+        'label' => 'Legacy Plates',
+        'icon' => 'Award',
+        'permissions' => [
+            'legacyplates.manage' => 'Gestionar Legacy Plates',
+            'legacyplates.produce' => 'Producir Legacy Plates',
+        ],
+    ],
+    'store' => [
+        'label' => 'Tienda',
+        'icon' => 'ShoppingBag',
+        'permissions' => [
+            'store.view' => 'Ver tienda',
+            'products.manage' => 'Gestionar productos y variantes',
+            'inventory.manage' => 'Gestionar inventario',
+            'orders.view' => 'Ver pedidos',
+            'orders.manage' => 'Gestionar pedidos',
+            'payments.view' => 'Ver pagos',
+            'payments.record_manual' => 'Registrar pagos manuales (terminal/efectivo)',
+        ],
+    ],
+    'eventdata' => [
+        'label' => 'Fuentes de datos',
+        'icon' => 'Database',
+        'permissions' => [
+            'eventdata.manage' => 'Gestionar fuentes de datos de eventos',
+        ],
+    ],
+    'media' => [
+        'label' => 'Media de atletas',
+        'icon' => 'Image',
+        'permissions' => [
+            'media.manage' => 'Gestionar media de atletas',
+        ],
+    ],
     'access' => [
         'label' => 'Accesos especiales',
         'icon' => 'KeyRound',

@@ -18,6 +18,10 @@ el código", no el "por qué se decidió así".
 | `docs/api/client-integration-guide.md` | Cómo un cliente externo futuro (Desktop, Mobile) se conecta |
 | `docs/api/openapi.yaml` | Especificación OpenAPI de Fase 1, generada a mano a partir de las rutas reales |
 | `docs/desktop/technology-decision.md` | Comparación .NET/Tauri/Electron para un futuro Desktop — documentación únicamente, sin código |
+| `docs/architecture/legacy-plate-v2.md` | Legacy Plate pre-manufacturada + grabado dinámico, name fitting, entitlement de producción |
+| `docs/architecture/commerce.md` | Catálogo, inventario, precio por ventana, carrito/checkout/orders, pagos online/manuales |
+| `docs/architecture/athlete-assets.md` | AthleteOwnedProduct/AssetCode (Digital Closet), Athlete history, media de evento |
+| `docs/architecture/event-data-source.md` | Organizer ↔ ProviderConnection ↔ Event, `GenericRestEventProvider` |
 
 ## Tres clientes, un backend (Slice 6)
 

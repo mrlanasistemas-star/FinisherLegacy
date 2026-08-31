@@ -82,6 +82,30 @@ class Athlete extends Model
         return $this->hasMany(AthleteExternalIdentity::class);
     }
 
+    /** @return HasMany<LegacyPlateEntitlement, $this> */
+    public function legacyPlateEntitlements(): HasMany
+    {
+        return $this->hasMany(LegacyPlateEntitlement::class);
+    }
+
+    /** @return HasMany<AthleteOwnedProduct, $this> */
+    public function ownedProducts(): HasMany
+    {
+        return $this->hasMany(AthleteOwnedProduct::class);
+    }
+
+    /** @return HasMany<Order, $this> */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /** @return HasMany<AthleteEventMedia, $this> */
+    public function eventMedia(): HasMany
+    {
+        return $this->hasMany(AthleteEventMedia::class);
+    }
+
     public function isMerged(): bool
     {
         return $this->identity_status === AthleteIdentityStatus::Merged;

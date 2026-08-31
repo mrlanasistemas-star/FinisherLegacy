@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PlateGenerationMode;
+use App\Enums\PlateLayoutType;
 use App\Enums\PlateStatus;
 use Database\Factories\PlateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,9 +17,9 @@ use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable([
     'user_id', 'athlete_id', 'medal_id', 'event_edition_id', 'event_participant_id', 'plate_template_id',
-    'plate_template_version_id', 'legacy_code_id', 'serial_number', 'generation_mode', 'athlete_name',
-    'bib_number', 'event_name', 'race_name', 'official_time', 'pace', 'event_date', 'dynamic_fields',
-    'status', 'linked_at', 'produced_at', 'delivered_at',
+    'plate_template_version_id', 'legacy_plate_model_id', 'legacy_code_id', 'serial_number', 'generation_mode',
+    'athlete_name', 'engraving_display_name', 'bib_number', 'event_name', 'race_name', 'official_time', 'pace',
+    'event_date', 'dynamic_fields', 'layout_type', 'layout_version', 'status', 'linked_at', 'produced_at', 'delivered_at',
 ])]
 class Plate extends Model
 {
@@ -30,6 +31,7 @@ class Plate extends Model
         return [
             'generation_mode' => PlateGenerationMode::class,
             'status' => PlateStatus::class,
+            'layout_type' => PlateLayoutType::class,
             'event_date' => 'date',
             'dynamic_fields' => 'array',
             'linked_at' => 'datetime',
@@ -84,6 +86,18 @@ class Plate extends Model
     public function plateTemplateVersion(): BelongsTo
     {
         return $this->belongsTo(PlateTemplateVersion::class);
+    }
+
+    /**
+     * Null for every Plate rendered by the historical PlateTemplate
+     * pipeline (`layout_type = legacy_template`) — only set for Legacy
+     * Plate v2's pre-manufactured + dynamic-engraving-only pipeline.
+     *
+     * @return BelongsTo<LegacyPlateModel, $this>
+     */
+    public function legacyPlateModel(): BelongsTo
+    {
+        return $this->belongsTo(LegacyPlateModel::class);
     }
 
     /** @return BelongsTo<LegacyCode, $this> */

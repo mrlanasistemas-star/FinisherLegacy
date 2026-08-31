@@ -6,13 +6,23 @@ use App\Http\Controllers\Api\V1\Devices\PairingController;
 use App\Http\Controllers\Api\V1\Devices\ProductionJobController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\EventOpsController;
+use App\Http\Controllers\Api\V1\GearController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\Integrations\SyncController as ApiIntegrationsSyncController;
 use App\Http\Controllers\Api\V1\LegacyCodeController;
+use App\Http\Controllers\Api\V1\LegacyPlateModelController;
+use App\Http\Controllers\Api\V1\Me\EventMediaController as MeEventMediaController;
+use App\Http\Controllers\Api\V1\Me\EventsController as MeEventsController;
 use App\Http\Controllers\Api\V1\MedalController;
 use App\Http\Controllers\Api\V1\PreregistrationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PublicAthleteController;
+use App\Http\Controllers\Api\V1\Store\CartController;
+use App\Http\Controllers\Api\V1\Store\CheckoutController;
+use App\Http\Controllers\Api\V1\Store\OrderController;
+use App\Http\Controllers\Api\V1\Store\PaymentController;
+use App\Http\Controllers\Api\V1\Store\ProductController;
+use App\Http\Controllers\Api\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,6 +61,56 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('legacy-codes/{code}/claim', [LegacyCodeController::class, 'claim'])
             ->middleware('throttle:api-claim')
             ->name('legacy-codes.claim');
+
+        /*
+        |------------------------------------------------------------------
+        | Store — cart/checkout/orders/payments (brief §109-§114). Login
+        | required for the whole store: products link to the Athlete, and
+        | requiring auth simplifies ownership for Phase 1 (brief §198).
+        |------------------------------------------------------------------
+        */
+        Route::prefix('cart')->name('cart.')->group(function () {
+            Route::get('/', [CartController::class, 'show'])->name('show');
+            Route::post('items', [CartController::class, 'addItem'])->name('items.store');
+            Route::patch('items/{item}', [CartController::class, 'updateItem'])->name('items.update');
+            Route::delete('items/{item}', [CartController::class, 'removeItem'])->name('items.destroy');
+        });
+
+        Route::post('checkout', [CheckoutController::class, 'store'])
+            ->middleware('api.idempotent')
+            ->name('checkout.store');
+
+        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order:uuid}', [OrderController::class, 'show'])->name('orders.show');
+        Route::post('orders/{order:uuid}/payments/online', [PaymentController::class, 'online'])
+            ->middleware('api.idempotent')
+            ->name('orders.payments.online');
+
+        // Staff-only, gated by `payments.record_manual` inside the Form
+        // Request (brief §114: "usar v1 route coherente sin inventar otra API").
+        Route::post('admin/orders/{order:uuid}/payments/manual', [PaymentController::class, 'manual'])
+            ->middleware('api.idempotent')
+            ->name('admin.orders.payments.manual');
+
+        /*
+        |------------------------------------------------------------------
+        | My Gear / My Events / Event Media (brief §115-§117).
+        |------------------------------------------------------------------
+        */
+        Route::get('me/gear', [GearController::class, 'meIndex'])->name('me.gear.index');
+        Route::post('gear/{code}/claim', [GearController::class, 'claim'])
+            ->middleware('api.idempotent')
+            ->name('gear.claim');
+
+        Route::get('me/events', [MeEventsController::class, 'index'])->name('me.events.index');
+
+        Route::prefix('me/events/{participant}/media')->name('me.events.media.')->group(function () {
+            Route::get('/', [MeEventMediaController::class, 'index'])->name('index');
+            Route::post('/', [MeEventMediaController::class, 'store'])->name('store');
+            Route::post('reorder', [MeEventMediaController::class, 'reorder'])->name('reorder');
+        });
+        Route::patch('me/media/{media:uuid}', [MeEventMediaController::class, 'updateVisibility'])->name('me.media.update');
+        Route::delete('me/media/{media:uuid}', [MeEventMediaController::class, 'destroy'])->name('me.media.destroy');
 
         /*
         |------------------------------------------------------------------
@@ -105,6 +165,15 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('legacy-codes/{code}', [LegacyCodeController::class, 'show'])
         ->middleware('throttle:api-legacy-lookup')
         ->name('legacy-codes.show');
+
+    // Public store catalog (brief §109/§119) and the public, no-PII gear
+    // lookup (brief §88/§107) — no auth, no secrets.
+    Route::get('store/products', [ProductController::class, 'index'])->name('store.products.index');
+    Route::get('store/products/{product:slug}', [ProductController::class, 'show'])->name('store.products.show');
+    Route::get('gear/{code}', [GearController::class, 'publicShow'])
+        ->middleware('throttle:api-legacy-lookup')
+        ->name('gear.show');
+    Route::get('legacy-plate-models', [LegacyPlateModelController::class, 'index'])->name('legacy-plate-models.index');
 
     /*
     |----------------------------------------------------------------------
@@ -192,3 +261,14 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Payment webhooks — deliberately NOT under /api/v1 or auth:sanctum (brief
+| §113): the provider calls this directly, authenticated only by its own
+| signature, verified inside StripePaymentGateway::handleWebhook(). Routes
+| already outside the `web` middleware group's CSRF/session handling
+| (this file, not routes/web.php).
+|--------------------------------------------------------------------------
+*/
+Route::post('webhooks/stripe', StripeWebhookController::class)->name('api.webhooks.stripe');
