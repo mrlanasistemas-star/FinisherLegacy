@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Api\V1\Me;
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Controller;
+use App\Models\AthleteEventMedia;
+use App\Models\AthleteOwnedProduct;
 use App\Models\EventParticipant;
+use App\Models\Order;
 use App\Models\Plate;
 use App\Queries\Athletes\GetAthleteHistory;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +48,28 @@ class EventsController extends Controller
             'medals' => $data['medals']->map(fn ($medal) => [
                 'id' => $medal->id,
                 'event' => $medal->event?->name,
+            ])->values(),
+            'media' => $data['media']->map(fn (AthleteEventMedia $media) => [
+                'uuid' => $media->uuid,
+                'type' => $media->type->value,
+                'url' => $media->url(),
+                'is_public' => $media->is_public,
+                'event' => $media->eventParticipant?->eventEdition?->event?->name,
+            ])->values(),
+            'owned_products' => $data['owned_products']->map(fn (AthleteOwnedProduct $owned) => [
+                'uuid' => $owned->uuid,
+                'product' => $owned->product->name,
+                'variant' => $owned->productVariant?->name,
+                'status' => $owned->status->value,
+                'acquired_at' => $owned->acquired_at->toIso8601String(),
+            ])->values(),
+            'orders' => $data['orders']->map(fn (Order $order) => [
+                'uuid' => $order->uuid,
+                'order_number' => $order->order_number,
+                'status' => $order->status->value,
+                'payment_status' => $order->payment_status->value,
+                'total_minor' => $order->total_minor,
+                'currency' => $order->currency,
             ])->values(),
         ]);
     }

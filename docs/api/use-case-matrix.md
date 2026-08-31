@@ -36,7 +36,11 @@ Qué transporte expone qué caso de uso, y qué Action/Query/Service comparten
 | Mi equipo (Digital Closet) / claim de gear | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\GearController` |
 | Mis eventos (historial) | - (pendiente) | ✓ | - | `App\Queries\Athletes\GetAthleteHistory` (misma Query que el admin) |
 | Media de evento (subir/borrar/reordenar) | - (pendiente) | ✓ | - | `App\Actions\Media\*` |
-| Resolver fuente de datos de un evento | ✓ (admin, existente) | - (pendiente) | - | `App\Actions\Integrations\ResolveEventDataSource` |
+| Resolver fuente de datos de un evento | ✓ (admin, existente) | ✓ | - | `App\Actions\Integrations\ResolveEventDataSource` |
+| Crear evento manual | - (pendiente) | ✓ | - | `App\Actions\CreateEvent` |
+| Ver/establecer fuente de datos de un Organizer | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\Admin\OrganizerDataSourceController` |
+| Probar ProviderConnection | ✓ (admin) | ✓ | - | `App\Actions\Integrations\TestProviderConnection` |
+| Resolver incidencia (con resolution_type) | ✓ (admin, flujo viejo sin resolution_type) | ✓ | - | `App\Actions\ResolveIncident` |
 
 ## Por qué algunas cosas nunca son API
 

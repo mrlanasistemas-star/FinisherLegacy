@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\IncidentController as AdminIncidentController;
+use App\Http\Controllers\Api\V1\Admin\OrganizerDataSourceController;
+use App\Http\Controllers\Api\V1\Admin\ProviderConnectionController as AdminProviderConnectionController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Devices\DeviceController;
 use App\Http\Controllers\Api\V1\Devices\PairingController;
@@ -61,6 +64,35 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('legacy-codes/{code}/claim', [LegacyCodeController::class, 'claim'])
             ->middleware('throttle:api-claim')
             ->name('legacy-codes.claim');
+
+        // Manual event creation (brief §19-§21/§121/§182) — staff-only,
+        // gated by `events.manage` inside CreateEventRequest::authorize().
+        Route::post('events', [EventController::class, 'store'])
+            ->middleware('api.idempotent')
+            ->name('events.store');
+
+        /*
+        |------------------------------------------------------------------
+        | Admin — Organizer data source, provider test, incident resolution
+        | (brief §16-§17/§122/§136-§138). Permission-gated inside each Form
+        | Request, same pattern as the rest of this file.
+        |------------------------------------------------------------------
+        */
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::get('organizers/{organizer}/data-source', [OrganizerDataSourceController::class, 'show'])
+                ->middleware('can:eventdata.manage')
+                ->name('organizers.data-source.show');
+            Route::put('organizers/{organizer}/data-source', [OrganizerDataSourceController::class, 'update'])
+                ->name('organizers.data-source.update');
+
+            Route::post('provider-connections/{providerConnection}/test', [AdminProviderConnectionController::class, 'test'])
+                ->middleware('can:integrations.sync')
+                ->name('provider-connections.test');
+
+            Route::post('incidents/{incident}/resolve', [AdminIncidentController::class, 'resolve'])
+                ->middleware('api.idempotent')
+                ->name('incidents.resolve');
+        });
 
         /*
         |------------------------------------------------------------------

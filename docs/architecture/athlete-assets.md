@@ -43,10 +43,14 @@ del estado físico de producción (`ProductionJobStatus`).
 
 ## Athlete history
 
-`App\Queries\Athletes\GetAthleteHistory` (ya existente, sin cambios de
-forma) sigue siendo la única Query que arma "1 Athlete, N eventos" —
-`participations`, `plates`, `medals`. `GET /api/v1/me/events` la reutiliza
-literalmente (brief §116/§173: nunca un segundo read model).
+`App\Queries\Athletes\GetAthleteHistory` sigue siendo la única Query que
+arma "1 Athlete, N eventos" — extendida (no reemplazada) para incluir
+`media`, `owned_products` y `orders` junto a `participations`/`plates`/
+`medals` (brief §35/§39/§104: una historia que calla fotos/video/
+productos físicos no es realmente "todo lo que el Athlete ha hecho").
+`GET /api/v1/me/events` la reutiliza literalmente (brief §116/§173: nunca
+un segundo read model), igual que la pantalla admin de detalle de
+Athlete — ambas ganan las tres claves nuevas automáticamente.
 
 ## Event Media
 

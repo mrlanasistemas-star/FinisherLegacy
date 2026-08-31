@@ -80,11 +80,22 @@ Nunca se registran/loggean credenciales; `testConnection()` solo persiste
 éxito/fallo + timestamp (`ProviderConnectionTestResult`), igual que el
 Mock provider ya existente.
 
+## Creación manual de evento
+
+`App\Actions\CreateEvent` — crea `Event` + `EventEdition` + `EventRace[]`
+en una transacción, Organizer opcional, ninguna fuente de datos
+obligatoria (brief §19-§21/§62-§63/§127/§182). Expuesto vía
+`POST /api/v1/events` (staff, `events.manage`) — la misma Action que
+usará un futuro formulario Web, nunca una segunda implementación.
+
+## Admin API
+
+`GET|PUT /api/v1/admin/organizers/{organizer}/data-source`
+(`eventdata.manage`) y `POST /api/v1/admin/provider-connections/{id}/test`
+(`integrations.sync`, reutiliza `TestProviderConnection`) — ver
+`docs/api/v1.md`.
+
 ## Deuda conocida
 
-- Sin endpoint API `POST /api/v1/events` para creación manual todavía
-  (`CreateEvent` Action no implementada en este pase — ver reporte final,
-  sección "Known backend debt"). Event/EventEdition/EventRace siguen
-  creándose vía los flujos Web/Admin existentes.
 - Sin UI para configurar `OrganizerDataSource`/probar `GenericRestEventProvider`
-  desde el admin todavía — backend completo, front pendiente.
+  desde el admin todavía — backend + API completos, front pendiente.

@@ -38,4 +38,5 @@ enum ApiErrorCode: string
     case AssetAlreadyClaimed = 'ASSET_ALREADY_CLAIMED';
     case EventDataSourceNotConfigured = 'EVENT_DATA_SOURCE_NOT_CONFIGURED';
     case ProviderConnectionFailed = 'PROVIDER_CONNECTION_FAILED';
+    case InvalidWebhookSignature = 'INVALID_WEBHOOK_SIGNATURE';
 }

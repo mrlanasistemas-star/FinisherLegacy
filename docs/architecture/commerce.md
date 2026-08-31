@@ -112,13 +112,24 @@ Payment.status     pending | authorized | paid | failed | refunded | partially_r
   parciales), requiere permiso `payments.record_manual`, siempre registra
   `created_by`.
 - **Online (Stripe)**: `App\Services\Commerce\Payments\StripePaymentGateway`
-  es **un stub deliberado** — el SDK `stripe/stripe-php` no está instalado
-  y no existen credenciales reales (brief §67/§71: "no inventar
-  credenciales"). Cada método lanza `PaymentGatewayNotConfiguredException`
-  (501) en vez de simular un pago exitoso. El contrato,
-  `config('finisher.payments.stripe')` y `PaymentGatewayRegistry` ya
-  existen — falta únicamente instalar el SDK y escribir la implementación
-  real cuando haya llaves.
+  usa el SDK oficial `stripe/stripe-php` de verdad —
+  `createPayment()` crea un `PaymentIntent` real (`amount`/`currency`
+  siempre de `Order`, nunca del cliente), `handleWebhook()` verifica la
+  firma con `Stripe\Webhook::constructEvent()` (real, sin atajos) y mapea
+  `payment_intent.succeeded`/`payment_intent.payment_failed`/`.canceled`.
+  Ambos métodos lanzan `PaymentGatewayNotConfiguredException` (501)
+  cuando `config('finisher.payments.stripe.secret')` o `.webhook_secret`
+  están vacíos — este proyecto no tiene una cuenta Stripe real todavía
+  (brief §67/§71: "no inventar credenciales"), así que ese es el camino
+  esperado en dev/test/CI; el código SDK en sí es real y queda listo en
+  cuanto existan llaves reales vía `.env` (`STRIPE_KEY`, `STRIPE_SECRET`,
+  `STRIPE_WEBHOOK_SECRET`). La verificación de firma se probó de verdad
+  (payload firmado con el mismo esquema HMAC que usa Stripe, sin red) —
+  ver `tests/Feature/Commerce/StripePaymentGatewayTest.php`.
+  `createPayment()`'s happy path (una llamada HTTP real a Stripe) no se
+  pudo ejercitar en este entorno por no tener llaves de prueba ni acceso
+  de red — sí se verificó que compila/tipa correctamente contra el SDK
+  real (phpstan) y que el camino "no configurado" nunca finge éxito.
 
 `App\Actions\Commerce\MarkOrderPaid` centraliza "qué pasa cuando una Order
 queda pagada" (brief §83 — componer, no un God Action): confirma la Order
@@ -143,7 +154,8 @@ firma (ver `docs/api/v1.md`).
 
 ## Deuda conocida
 
-- Stripe real (SDK + implementación) — ver arriba.
+- Stripe: SDK real instalado e implementado (`createPayment`/
+  `handleWebhook`), sin cuenta/llaves reales todavía — ver arriba.
 - OpenPay — solo el contrato existe, ningún stub siquiera (brief §71
   explícitamente prefiere no crear una implementación falsa sin
   documentación/credenciales).

@@ -90,6 +90,115 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthenticated"
 
+  /events:
+    post:
+      tags: [Event Ops]
+      summary: Creación manual de evento (Event + EventEdition + EventRace[]) — requiere events.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, sport_id, edition_name, year, event_date, city, country, races]
+              properties:
+                name: { type: string }
+                sport_id: { type: integer }
+                organizer_id: { type: integer, nullable: true }
+                edition_name: { type: string }
+                year: { type: integer }
+                event_date: { type: string, format: date }
+                city: { type: string }
+                country: { type: string }
+                data_source_type: { type: string, enum: [manual, file, api], nullable: true }
+                races:
+                  type: array
+                  items:
+                    type: object
+                    required: [name]
+                    properties:
+                      name: { type: string }
+                      distance_value: { type: number, nullable: true }
+                      distance_unit: { type: string, nullable: true }
+      responses:
+        "201":
+          description: Evento creado
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /admin/organizers/{organizer}/data-source:
+    get:
+      tags: [Integrations]
+      summary: Ver la fuente de datos por defecto de un Organizer — requiere eventdata.manage
+      parameters:
+        - name: organizer
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+    put:
+      tags: [Integrations]
+      summary: Establecer la fuente de datos de un Organizer — requiere eventdata.manage
+      parameters:
+        - name: organizer
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: { type: string, enum: [manual, file, api] }
+                provider_connection_id: { type: integer, nullable: true }
+                active: { type: boolean }
+      responses:
+        "200":
+          description: OK
+
+  /admin/provider-connections/{providerConnection}/test:
+    post:
+      tags: [Integrations]
+      summary: Probar una ProviderConnection — requiere integrations.sync, nunca devuelve secretos
+      parameters:
+        - name: providerConnection
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+
+  /admin/incidents/{incident}/resolve:
+    post:
+      tags: [Event Ops]
+      summary: Resolver una incidencia — requiere incidents.manage, exige resolution_type
+      parameters:
+        - name: incident
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolution_type]
+              properties:
+                resolution_type: { type: string, enum: [fixed, reprinted, refunded, no_action_needed, escalated, other] }
+                notes: { type: string, nullable: true }
+      responses:
+        "200":
+          description: OK
+        "409":
+          description: Ya estaba resuelta
+
   /event-ops/{eventEdition}:
     get:
       tags: [Event Ops]
