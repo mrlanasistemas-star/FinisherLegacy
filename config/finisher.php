@@ -142,4 +142,63 @@ return [
     // guesses at (docs/api/v1.md §Versión).
     'api_version' => '1.0',
     'minimum_supported_client_version' => env('FINISHER_MINIMUM_SUPPORTED_CLIENT_VERSION'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Commerce ecosystem (brief §45-§217)
+    |--------------------------------------------------------------------------
+    */
+    'commerce' => [
+        // MXN initially, but every money row still carries its own
+        // `currency` column — never hardcoded elsewhere (brief §152).
+        'default_currency' => env('FINISHER_DEFAULT_CURRENCY', 'MXN'),
+
+        // Slug of the InventoryLocation Checkout reserves/commits stock
+        // against — a real deployment with multiple warehouses can extend
+        // CheckoutCart to pick one per order later; single-location for
+        // this phase (documented debt, brief §51).
+        'default_inventory_location_slug' => env('FINISHER_DEFAULT_INVENTORY_LOCATION', 'main-warehouse'),
+
+        // How long an inventory reservation from CheckoutCart survives
+        // before App\Console\Commands\ReleaseExpiredInventoryReservations
+        // releases it back to available stock (brief §158/§194).
+        'reservation_ttl_minutes' => env('FINISHER_RESERVATION_TTL_MINUTES', 30),
+
+        // A pending, unpaid Order older than this is eligible for
+        // automatic expiry — never applied to a paid Order (brief §196).
+        'order_payment_expiry_minutes' => env('FINISHER_ORDER_PAYMENT_EXPIRY_MINUTES', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payments (brief §64-§78)
+    |--------------------------------------------------------------------------
+    |
+    | Placeholders only — Stripe's SDK isn't installed in this codebase yet,
+    | so StripePaymentGateway stays a NotConfigured stub until
+    | `composer require stripe/stripe-php` + real keys land (brief §67/§71:
+    | "no inventar credenciales"). See docs/architecture/commerce.md §Debt.
+    */
+    'payments' => [
+        'stripe' => [
+            'key' => env('STRIPE_KEY'),
+            'secret' => env('STRIPE_SECRET'),
+            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Event media (brief §41-§46/§94-§101)
+    |--------------------------------------------------------------------------
+    */
+    'event_media' => [
+        'free_images_per_participation' => env('FINISHER_MEDIA_FREE_IMAGES', 5),
+        'free_videos_per_participation' => env('FINISHER_MEDIA_FREE_VIDEOS', 1),
+        'max_image_bytes' => env('FINISHER_MEDIA_MAX_IMAGE_BYTES', 8 * 1024 * 1024),
+        'max_video_bytes' => env('FINISHER_MEDIA_MAX_VIDEO_BYTES', 100 * 1024 * 1024),
+        'image_mimes' => ['jpg', 'jpeg', 'png', 'webp'],
+        'video_mimes' => ['mp4', 'webm'],
+        'disk' => env('FINISHER_MEDIA_DISK', 'public'),
+    ],
 ];

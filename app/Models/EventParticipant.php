@@ -105,4 +105,16 @@ class EventParticipant extends Model
     {
         return $this->hasMany(AthleteIdentityConflict::class);
     }
+
+    /** @return HasMany<LegacyPlateEntitlement, $this> */
+    public function legacyPlateEntitlements(): HasMany
+    {
+        return $this->hasMany(LegacyPlateEntitlement::class);
+    }
+
+    /** @return HasMany<AthleteEventMedia, $this> */
+    public function media(): HasMany
+    {
+        return $this->hasMany(AthleteEventMedia::class);
+    }
 }

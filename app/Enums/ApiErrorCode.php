@@ -24,4 +24,19 @@ enum ApiErrorCode: string
     case PlateAlreadyExists = 'PLATE_ALREADY_EXISTS';
     case PlateTemplateMissing = 'PLATE_TEMPLATE_MISSING';
     case ParticipantNotEligible = 'PARTICIPANT_NOT_ELIGIBLE';
+
+    // Commerce ecosystem (brief §145).
+    case ProductOutOfStock = 'PRODUCT_OUT_OF_STOCK';
+    case PriceNotAvailable = 'PRICE_NOT_AVAILABLE';
+    case OrderNotPayable = 'ORDER_NOT_PAYABLE';
+    case PaymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';
+    case PaymentAlreadyRecorded = 'PAYMENT_ALREADY_RECORDED';
+    case LegacyPlateNotPaid = 'LEGACY_PLATE_NOT_PAID';
+    case LegacyPlateAlreadyExists = 'LEGACY_PLATE_ALREADY_EXISTS';
+    case MediaLimitReached = 'MEDIA_LIMIT_REACHED';
+    case MediaTooLarge = 'MEDIA_TOO_LARGE';
+    case AssetAlreadyClaimed = 'ASSET_ALREADY_CLAIMED';
+    case EventDataSourceNotConfigured = 'EVENT_DATA_SOURCE_NOT_CONFIGURED';
+    case ProviderConnectionFailed = 'PROVIDER_CONNECTION_FAILED';
+    case InvalidWebhookSignature = 'INVALID_WEBHOOK_SIGNATURE';
 }

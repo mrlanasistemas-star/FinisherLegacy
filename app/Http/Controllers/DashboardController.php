@@ -13,6 +13,12 @@ class DashboardController extends Controller
         $user = $request->user();
         $user->loadMissing(['legacyId', 'athleteProfile']);
 
+        // Read-only counts for "Mi Legado" (brief §36-§38): the ecosystem
+        // summary reaches beyond medals/events into what the athlete owns,
+        // never a second read model — just cheap counts off the same
+        // canonical Athlete used by GetAthleteHistory.
+        $athlete = $user->athlete()->first();
+
         $profile = $user->athleteProfile;
         $completion = null;
 
@@ -41,6 +47,8 @@ class DashboardController extends Controller
                 'events' => $user->eventParticipations()->count(),
                 'plates' => $user->plates()->count(),
                 'legacyCodes' => $user->legacyCodes()->count(),
+                'ownedProducts' => $athlete === null ? 0 : $athlete->ownedProducts()->count(),
+                'media' => $athlete === null ? 0 : $athlete->eventMedia()->count(),
             ],
         ]);
     }

@@ -2,11 +2,14 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Award,
+    Boxes,
     Check,
     Compass,
     Copy,
-    CreditCard,
+    Package,
     QrCode,
+    Receipt,
+    ShoppingBag,
     Trophy,
     UserCircle,
 } from '@lucide/vue';
@@ -88,14 +91,19 @@ const statCards = computed(() => [
         label: 'Mis eventos',
         value: stats.events,
         icon: Trophy,
-        href: eventsIndex(),
+        href: '/dashboard/my-events',
     },
-    { label: 'Mis placas', value: stats.plates, icon: CreditCard, href: null },
     {
-        label: 'Legacy Codes',
-        value: stats.legacyCodes,
-        icon: QrCode,
-        href: null,
+        label: 'Mis Legacy Plates',
+        value: stats.plates,
+        icon: Boxes,
+        href: '/dashboard/my-plates',
+    },
+    {
+        label: 'Mi equipo',
+        value: stats.ownedProducts,
+        icon: Package,
+        href: '/dashboard/my-gear',
     },
 ]);
 </script>
@@ -260,6 +268,46 @@ const statCards = computed(() => [
                     <Link :href="eventsIndex()">
                         <Compass class="size-4 text-fl-gold" />
                         Explorar eventos
+                    </Link>
+                </Button>
+                <Button
+                    as-child
+                    variant="outline"
+                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                >
+                    <Link href="/tienda">
+                        <ShoppingBag class="size-4 text-fl-gold" />
+                        Ir a la tienda
+                    </Link>
+                </Button>
+                <Button
+                    as-child
+                    variant="outline"
+                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                >
+                    <Link href="/dashboard/my-gear">
+                        <Package class="size-4 text-fl-gold" />
+                        Mi equipo
+                    </Link>
+                </Button>
+                <Button
+                    as-child
+                    variant="outline"
+                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                >
+                    <Link href="/mis-pedidos">
+                        <Receipt class="size-4 text-fl-gold" />
+                        Mis pedidos
+                    </Link>
+                </Button>
+                <Button
+                    as-child
+                    variant="outline"
+                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                >
+                    <Link href="/dashboard/my-plates">
+                        <Boxes class="size-4 text-fl-gold" />
+                        Mis Legacy Plates
                     </Link>
                 </Button>
 

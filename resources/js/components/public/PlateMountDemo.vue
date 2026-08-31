@@ -8,23 +8,51 @@
  * showcase below it.
  */
 import { useIntersectionObserver } from '@vueuse/core';
-import { ref, useTemplateRef } from 'vue';
+import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
 import PlateShowcase from '@/components/public/PlateShowcase.vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+
+// Content-safety (cross-PC home bug fix, 2026-08-31): `.fl-mount-scene`
+// starts at opacity:0 and only `played` reveals it (same shape as the old
+// Reveal.vue bug). A bounded fallback timer now force-reveals it too, so
+// this can never stay permanently invisible if the observer never fires.
+const REVEAL_FALLBACK_MS = 2500;
 
 const prefersReducedMotion = useReducedMotion();
 const rootEl = useTemplateRef<HTMLElement>('root');
 const played = ref(prefersReducedMotion.value);
+let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+function play() {
+    if (fallbackTimer !== null) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+    }
+
+    played.value = true;
+}
 
 useIntersectionObserver(
     rootEl,
     ([entry]) => {
         if (entry?.isIntersecting) {
-            played.value = true;
+            play();
         }
     },
     { threshold: 0.4 },
 );
+
+onMounted(() => {
+    if (!played.value) {
+        fallbackTimer = setTimeout(play, REVEAL_FALLBACK_MS);
+    }
+});
+
+onBeforeUnmount(() => {
+    if (fallbackTimer !== null) {
+        clearTimeout(fallbackTimer);
+    }
+});
 
 const stages = ['Listón', 'Se sujeta', 'Medalla completa'];
 </script>

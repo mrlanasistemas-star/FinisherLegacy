@@ -118,6 +118,12 @@ class User extends Authenticatable implements ProductionActor
         return $this->hasMany(LegacyCode::class);
     }
 
+    /** @return HasMany<Order, $this> */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
     /** @return HasMany<EventParticipant, $this> */
     public function eventParticipations(): HasMany
     {

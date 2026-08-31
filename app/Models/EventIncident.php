@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\IncidentResolutionType;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use Database\Factories\EventIncidentFactory;
@@ -14,7 +15,8 @@ use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable([
     'event_edition_id', 'event_participant_id', 'plate_id', 'reported_by', 'type',
-    'description', 'status', 'resolved_by', 'resolved_at',
+    'entity_type', 'entity_id', 'description', 'status', 'resolved_by', 'resolved_at',
+    'resolution_type', 'resolution_notes', 'before_data', 'after_data',
 ])]
 class EventIncident extends Model
 {
@@ -26,6 +28,9 @@ class EventIncident extends Model
         return [
             'type' => IncidentType::class,
             'status' => IncidentStatus::class,
+            'resolution_type' => IncidentResolutionType::class,
+            'before_data' => 'array',
+            'after_data' => 'array',
             'resolved_at' => 'datetime',
         ];
     }

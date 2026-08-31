@@ -118,3 +118,18 @@ la lista completa sin revisar `meta.last_page`.
 - Enviar parámetros de láser (potencia/frecuencia/velocidad) al backend,
   ni recibirlos de él — esos viven en el perfil de máquina calibrado
   localmente.
+- **Calcular o enviar un precio.** `POST /checkout`, `POST .../payments/online`
+  y `POST .../payments/manual` siempre recalculan el monto server-side
+  (`App\Actions\Commerce\ResolveProductPrice`) — un cliente que envía
+  `amount`/`price` lo ve ignorado, nunca confiado (brief §68/§93,
+  ver `docs/architecture/commerce.md`).
+
+## 9. Tienda / Legacy Plate / Digital Closet (ecosistema comercial)
+
+Mismo patrón que el resto: navega el catálogo público
+(`GET /store/products`), agrega al carrito autenticado, `POST /checkout`,
+y consulta `GET /orders`. Un producto QR-capable (Trisuit, FAST T1 Socks,
+Chill Band, Racepack, y Legacy Plate vía su propio Legacy Code) aparece
+después en `GET /me/gear` una vez que la Order se marca `fulfilled`. Ver
+`docs/architecture/commerce.md` y `docs/architecture/athlete-assets.md`
+para el detalle de dominio completo — esta guía no lo repite.

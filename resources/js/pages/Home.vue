@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { Boxes, ShoppingBag, Trophy } from '@lucide/vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import CTASection from '@/components/public/CTASection.vue';
@@ -179,6 +180,56 @@ TODA UNA HISTORIA."
                 class="mb-14"
             />
             <PlateFlowSwitch />
+        </Reveal>
+    </section>
+
+    <!-- El ecosistema: la placa es la entrada, no el final -->
+    <section class="py-24 sm:py-28">
+        <Reveal as="div" class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <SectionHeading
+                eyebrow="Más que una placa"
+                title="Tu Legacy Plate abre la puerta a tu equipo."
+                description="El ecosistema Finisher Legacy sigue creciendo contigo: tu placa, tu equipo y tu historia, todo conectado."
+                class="mb-14"
+            />
+            <StaggerGroup as="div" class="grid gap-6 sm:grid-cols-3">
+                <div
+                    class="rounded-2xl border border-white/10 bg-fl-graphite/30 p-6"
+                >
+                    <Boxes class="size-6 text-fl-gold" />
+                    <p class="mt-4 font-semibold text-white">Legacy Plate</p>
+                    <p class="mt-1 text-sm text-white/50">
+                        La pieza física que guarda el resultado de tu carrera y
+                        te conecta a tu Legacy Profile.
+                    </p>
+                </div>
+                <div
+                    class="rounded-2xl border border-white/10 bg-fl-graphite/30 p-6"
+                >
+                    <ShoppingBag class="size-6 text-fl-gold" />
+                    <p class="mt-4 font-semibold text-white">Tienda</p>
+                    <p class="mt-1 text-sm text-white/50">
+                        Equipo pensado para acompañarte en cada meta, disponible
+                        en nuestra tienda.
+                    </p>
+                    <Link
+                        href="/tienda"
+                        class="mt-3 inline-block text-sm font-semibold text-fl-gold-soft hover:text-fl-gold"
+                    >
+                        Ir a la tienda →
+                    </Link>
+                </div>
+                <div
+                    class="rounded-2xl border border-white/10 bg-fl-graphite/30 p-6"
+                >
+                    <Trophy class="size-6 text-fl-gold" />
+                    <p class="mt-4 font-semibold text-white">Mi equipo</p>
+                    <p class="mt-1 text-sm text-white/50">
+                        Todo lo que adquieres queda registrado en tu propio
+                        clóset digital, dentro de tu Legacy Profile.
+                    </p>
+                </div>
+            </StaggerGroup>
         </Reveal>
     </section>
 

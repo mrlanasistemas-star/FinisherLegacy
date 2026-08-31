@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { Building2, Pencil, Plus } from '@lucide/vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Building2, Eye, Pencil, Plus } from '@lucide/vue';
 import { ref } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
 import ImageDropzone from '@/components/forms/ImageDropzone.vue';
@@ -175,15 +175,30 @@ function submit() {
                 </Badge>
             </template>
             <template #cell-actions="{ row }">
-                <Button
-                    size="sm"
-                    variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10 hover:text-white"
-                    @click="openEdit(row as unknown as OrganizerRow)"
-                >
-                    <Pencil class="size-3.5" />
-                    Editar
-                </Button>
+                <div class="flex justify-end gap-2">
+                    <Button
+                        as-child
+                        size="sm"
+                        variant="outline"
+                        class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                    >
+                        <Link
+                            :href="`/admin/organizers/${(row as unknown as OrganizerRow).id}`"
+                        >
+                            <Eye class="size-3.5" />
+                            Ver
+                        </Link>
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                        @click="openEdit(row as unknown as OrganizerRow)"
+                    >
+                        <Pencil class="size-3.5" />
+                        Editar
+                    </Button>
+                </div>
             </template>
         </AdminTable>
 

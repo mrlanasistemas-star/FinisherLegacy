@@ -103,8 +103,14 @@ test('duplicating a template copies its latest version as a new draft', function
     $clone = PlateTemplate::where('name', 'Original (copia)')->firstOrFail();
     $cloneVersion = $clone->versions()->firstOrFail();
 
+    // ->toEqual(), not ->toBe(): MySQL's native JSON column type
+    // re-serializes object key order on write (its internal binary JSON
+    // representation doesn't preserve insertion order the way SQLite's
+    // text-based storage does), so a strict `===` on the decoded array
+    // is comparing key order, not content — the clone's data is still
+    // identical to the original, just re-ordered by the database.
     expect($cloneVersion->status)->toBe(PlateTemplateVersionStatus::Draft)
-        ->and($cloneVersion->front_configuration)->toBe($version->front_configuration);
+        ->and($cloneVersion->front_configuration)->toEqual($version->front_configuration);
 });
 
 test('archiving a template does not affect plates already generated from it', function () {

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\LegacyCodeStatus;
 use App\Enums\PlateGenerationMode;
+use App\Enums\PlateLayoutType;
 use App\Enums\PlateStatus;
 use App\Enums\ProductionJobStatus;
 use App\Exceptions\PlateAlreadyExistsException;
@@ -11,6 +12,7 @@ use App\Exceptions\PlateTemplateMissingException;
 use App\Models\EventEdition;
 use App\Models\EventParticipant;
 use App\Models\LegacyCode;
+use App\Models\LegacyPlateModel;
 use App\Models\Plate;
 use App\Models\PlateTemplateVersion;
 use App\Models\ProductionJob;
@@ -119,6 +121,62 @@ class PlateGenerationService
             $this->queueProduction($plate);
 
             return $plate->fresh(['legacyCode', 'latestProductionJob']);
+        });
+    }
+
+    /**
+     * Legacy Plate v2 (brief §127-§129): the pre-manufactured model only
+     * needs the same dynamic fields as generateIntegrated(), plus the
+     * model reference and the operator-editable engraving name — the
+     * physical piece itself (shape/relief/decoration) isn't rendered here
+     * at all, it already exists. Reuses this class's own Legacy Code +
+     * ProductionJob wiring rather than a second pipeline (brief §128).
+     */
+    public function generateForLegacyPlateModel(
+        EventParticipant $participant,
+        LegacyPlateModel $model,
+        ?string $engravingDisplayName = null,
+        string $layoutVersion = 'v1',
+    ): Plate {
+        if (Plate::where('event_participant_id', $participant->id)->exists()) {
+            throw new PlateAlreadyExistsException;
+        }
+
+        $participant->loadMissing(['eventEdition.event', 'eventRace', 'result.splits']);
+        $edition = $participant->eventEdition;
+        $result = $participant->result;
+        $athleteName = $participant->full_name ?: trim("{$participant->first_name} {$participant->last_name}");
+
+        $dynamicFields = $this->snapshotBuilder->build($participant);
+
+        return DB::transaction(function () use ($participant, $edition, $result, $model, $athleteName, $engravingDisplayName, $layoutVersion, $dynamicFields) {
+            $plate = Plate::create([
+                'user_id' => $participant->user_id,
+                'athlete_id' => $participant->athlete_id,
+                'event_edition_id' => $edition->id,
+                'event_participant_id' => $participant->id,
+                'legacy_plate_model_id' => $model->id,
+                'serial_number' => CodeGenerator::generate('PLT', 8),
+                'generation_mode' => PlateGenerationMode::Integrated,
+                'athlete_name' => $athleteName,
+                'engraving_display_name' => $engravingDisplayName ?: $athleteName,
+                'bib_number' => $participant->bib_number,
+                'event_name' => $edition->event->name,
+                'race_name' => $participant->eventRace->name,
+                'official_time' => $result?->official_time,
+                'pace' => $result?->pace,
+                'event_date' => $edition->event_date,
+                'dynamic_fields' => $dynamicFields,
+                'layout_type' => PlateLayoutType::ManufacturedDynamic,
+                'layout_version' => $layoutVersion,
+                'status' => PlateStatus::Draft,
+                'linked_at' => $participant->user_id ? now() : null,
+            ]);
+
+            $this->attachLegacyCode($plate, $participant->user_id);
+            $this->queueProduction($plate);
+
+            return $plate->fresh(['legacyCode', 'latestProductionJob', 'legacyPlateModel']);
         });
     }
 

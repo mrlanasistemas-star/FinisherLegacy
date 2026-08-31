@@ -26,6 +26,21 @@ Qué transporte expone qué caso de uso, y qué Action/Query/Service comparten
 | Heartbeat / bootstrap de estación | - | - | ✓ | `App\Http\Controllers\Api\V1\Devices\DeviceController` |
 | Registro/login de usuario | ✓ (sesión) | ✓ (token) | - | `App\Actions\Fortify\CreateNewUser` |
 | Medallas propias | ✓ | ✓ | - | `App\Http\Controllers\Api\V1\MedalController` / equivalente web |
+| Catálogo de tienda | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\Store\ProductController` |
+| Carrito / checkout | - (pendiente) | ✓ | - | `App\Actions\Commerce\{AddCartItem,CheckoutCart}` |
+| Pedidos propios | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\Store\OrderController` |
+| Pago online / manual | - (pendiente) | ✓ | - | `App\Actions\Commerce\{CreateOnlinePayment,RegisterManualPayment}` |
+| Webhook de pago | - | ✓ (fuera de `/api/v1`) | - | `App\Actions\Commerce\ProcessPaymentWebhook` |
+| Modelos de Legacy Plate | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\LegacyPlateModelController` |
+| Generar Legacy Plate desde entitlement | - (pendiente) | - (pendiente) | - | `App\Actions\LegacyPlates\GenerateLegacyPlate` |
+| Mi equipo (Digital Closet) / claim de gear | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\GearController` |
+| Mis eventos (historial) | - (pendiente) | ✓ | - | `App\Queries\Athletes\GetAthleteHistory` (misma Query que el admin) |
+| Media de evento (subir/borrar/reordenar) | - (pendiente) | ✓ | - | `App\Actions\Media\*` |
+| Resolver fuente de datos de un evento | ✓ (admin, existente) | ✓ | - | `App\Actions\Integrations\ResolveEventDataSource` |
+| Crear evento manual | - (pendiente) | ✓ | - | `App\Actions\CreateEvent` |
+| Ver/establecer fuente de datos de un Organizer | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\Admin\OrganizerDataSourceController` |
+| Probar ProviderConnection | ✓ (admin) | ✓ | - | `App\Actions\Integrations\TestProviderConnection` |
+| Resolver incidencia (con resolution_type) | ✓ (admin, flujo viejo sin resolution_type) | ✓ | - | `App\Actions\ResolveIncident` |
 
 ## Por qué algunas cosas nunca son API
 

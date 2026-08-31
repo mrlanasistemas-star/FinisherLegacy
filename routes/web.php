@@ -8,17 +8,26 @@ use App\Http\Controllers\Admin\EditionController as AdminEditionController;
 use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\Integrations\ProviderConnectionController as AdminProviderConnectionController;
 use App\Http\Controllers\Admin\Integrations\SyncController as AdminSyncController;
+use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Admin\LegacyCodeController as AdminLegacyCodeController;
+use App\Http\Controllers\Admin\LegacyPlateModelController as AdminLegacyPlateModelController;
+use App\Http\Controllers\Admin\LegacyPlatePresaleController as AdminLegacyPlatePresaleController;
+use App\Http\Controllers\Admin\LegacyPlateProductionController as AdminLegacyPlateProductionController;
 use App\Http\Controllers\Admin\MachineProfileController as AdminMachineProfileController;
 use App\Http\Controllers\Admin\OrganizerController as AdminOrganizerController;
 use App\Http\Controllers\Admin\ParticipantController as AdminParticipantController;
 use App\Http\Controllers\Admin\PlateController as AdminPlateController;
 use App\Http\Controllers\Admin\PlateStudioController as AdminPlateStudioController;
 use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistrationController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductionDeviceController as AdminProductionDeviceController;
 use App\Http\Controllers\Admin\ProductionSetupController as AdminProductionSetupController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
+use App\Http\Controllers\Admin\Store\PaymentController as AdminStorePaymentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AthleteHistoryController;
 use App\Http\Controllers\AthleteProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
@@ -30,6 +39,10 @@ use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PreregistrationController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\Store\CartController as StoreCartController;
+use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
+use App\Http\Controllers\Store\OrderController as StoreOrderController;
+use App\Http\Controllers\Store\ProductController as StoreProductController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -55,10 +68,41 @@ Route::get('l/{code}/continue/{provider}', [LegacyCodeController::class, 'contin
 
 Route::get('/@{athleteProfile:username}', [PublicProfileController::class, 'show'])->name('profile.public');
 
+Route::prefix('tienda')->name('store.products.')->group(function () {
+    Route::get('/', [StoreProductController::class, 'index'])->name('index');
+    Route::get('{product:slug}', [StoreProductController::class, 'show'])->name('show');
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('l/{code}/claim', [LegacyCodeController::class, 'claim'])->name('legacy-code.claim');
 
+    Route::prefix('carrito')->name('store.cart.')->group(function () {
+        Route::get('/', [StoreCartController::class, 'show'])->name('show');
+        Route::post('items', [StoreCartController::class, 'addItem'])->name('items.store');
+        Route::patch('items/{item}', [StoreCartController::class, 'updateItem'])->name('items.update');
+        Route::delete('items/{item}', [StoreCartController::class, 'removeItem'])->name('items.destroy');
+    });
+
+    Route::prefix('checkout')->name('store.checkout.')->group(function () {
+        Route::get('/', [StoreCheckoutController::class, 'show'])->name('show');
+        Route::post('/', [StoreCheckoutController::class, 'store'])->name('store');
+        Route::post('{order:uuid}/online-payment', [StoreCheckoutController::class, 'onlinePayment'])->name('online-payment');
+    });
+
+    Route::prefix('mis-pedidos')->name('store.orders.')->group(function () {
+        Route::get('/', [StoreOrderController::class, 'index'])->name('index');
+        Route::get('{order:uuid}', [StoreOrderController::class, 'show'])->name('show');
+    });
+
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('dashboard/my-events', [AthleteHistoryController::class, 'myEvents'])->name('dashboard.my-events');
+    Route::get('dashboard/my-events/{participant}', [AthleteHistoryController::class, 'myEventShow'])->name('dashboard.my-events.show');
+    Route::post('dashboard/my-events/{participant}/media', [AthleteHistoryController::class, 'uploadMedia'])->name('dashboard.my-events.media.store');
+    Route::patch('dashboard/media/{media:uuid}/visibility', [AthleteHistoryController::class, 'updateMediaVisibility'])->name('dashboard.media.visibility');
+    Route::delete('dashboard/media/{media:uuid}', [AthleteHistoryController::class, 'destroyMedia'])->name('dashboard.media.destroy');
+    Route::get('dashboard/my-plates', [AthleteHistoryController::class, 'myPlates'])->name('dashboard.my-plates');
+    Route::get('dashboard/my-gear', [AthleteHistoryController::class, 'myGear'])->name('dashboard.my-gear');
 
     Route::get('dashboard/profile/edit', [AthleteProfileController::class, 'edit'])->name('dashboard.profile.edit');
     Route::patch('dashboard/profile', [AthleteProfileController::class, 'update'])->name('dashboard.profile.update');
@@ -126,6 +170,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
         Route::middleware('can:events.view')->get('editions', [AdminEditionController::class, 'index'])->name('editions.index');
+        Route::middleware('can:events.manage')->group(function () {
+            // Registered before the {eventEdition} wildcard route below —
+            // Laravel matches in registration order, so "create" would
+            // otherwise be swallowed as an eventEdition route parameter.
+            Route::get('editions/create', [AdminEditionController::class, 'create'])->name('editions.create');
+            Route::post('editions', [AdminEditionController::class, 'store'])->name('editions.store');
+            Route::post('editions/{eventEdition}/price-schedules', [AdminEditionController::class, 'storePriceSchedule'])->name('editions.price-schedules.store');
+        });
+        Route::middleware('can:events.view')->get('editions/{eventEdition}', [AdminEditionController::class, 'show'])->name('editions.show');
 
         Route::middleware('can:editions.manage')->prefix('events/{eventEdition}/production-setup')->name('editions.production-setup.')->group(function () {
             Route::get('/', [AdminProductionSetupController::class, 'show'])->name('show');
@@ -168,6 +221,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::middleware('can:plates.manage')->post('plates/{plate}/reprint', [AdminPlateController::class, 'reprint'])->name('plates.reprint');
         });
         Route::middleware('can:legacycodes.view')->get('legacy-codes', [AdminLegacyCodeController::class, 'index'])->name('legacy-codes.index');
+
+        Route::middleware('can:legacyplates.manage')->prefix('legacy-plate-models')->name('legacy-plate-models.')->group(function () {
+            Route::get('/', [AdminLegacyPlateModelController::class, 'index'])->name('index');
+            Route::get('{legacyPlateModel}', [AdminLegacyPlateModelController::class, 'show'])->name('show');
+            Route::post('/', [AdminLegacyPlateModelController::class, 'store'])->name('store');
+            Route::patch('{legacyPlateModel}', [AdminLegacyPlateModelController::class, 'update'])->name('update');
+            Route::patch('{legacyPlateModel}/fields', [AdminLegacyPlateModelController::class, 'updateFields'])->name('fields.update');
+        });
+
+        Route::middleware('can:legacyplates.produce')->prefix('legacy-plates/production')->name('legacy-plates.production.')->group(function () {
+            Route::get('/', [AdminLegacyPlateProductionController::class, 'index'])->name('index');
+            Route::post('entitlements/{legacyPlateEntitlement}/produce', [AdminLegacyPlateProductionController::class, 'produce'])->name('produce');
+        });
+
+        Route::middleware('can:legacyplates.manage')->get('legacy-plates/presales', [AdminLegacyPlatePresaleController::class, 'index'])->name('legacy-plates.presales.index');
 
         Route::middleware('can:platetemplates.view')->prefix('plate-studio')->name('plate-studio.')->group(function () {
             Route::get('/', [AdminPlateStudioController::class, 'index'])->name('index');
@@ -235,10 +303,39 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         Route::middleware('can:organizers.view')->get('organizers', [AdminOrganizerController::class, 'index'])->name('organizers.index');
+        Route::middleware('can:organizers.view')->get('organizers/{organizer}', [AdminOrganizerController::class, 'show'])->name('organizers.show');
         Route::middleware('can:organizers.manage')->post('organizers', [AdminOrganizerController::class, 'store'])->name('organizers.store');
         Route::middleware('can:organizers.manage')->patch('organizers/{organizer}', [AdminOrganizerController::class, 'update'])->name('organizers.update');
+        Route::middleware('can:eventdata.manage')->put('organizers/{organizer}/data-source', [AdminOrganizerController::class, 'updateDataSource'])->name('organizers.data-source.update');
+        Route::middleware('can:integrations.sync')->post('provider-connections/{providerConnection}/test', [AdminOrganizerController::class, 'testConnection'])->name('provider-connections.test');
+
+        Route::middleware('can:eventdata.manage')->get('data-sources', [AdminOrganizerController::class, 'dataSources'])->name('data-sources.index');
 
         Route::middleware('can:audit.view')->get('audit', [AdminAuditController::class, 'index'])->name('audit.index');
+        Route::get('settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+
+        Route::middleware('can:products.manage')->prefix('products')->name('products.')->group(function () {
+            Route::get('/', [AdminProductController::class, 'index'])->name('index');
+            Route::post('/', [AdminProductController::class, 'store'])->name('store');
+            Route::get('{product}', [AdminProductController::class, 'show'])->name('show');
+            Route::patch('{product}', [AdminProductController::class, 'update'])->name('update');
+            Route::post('{product}/variants', [AdminProductController::class, 'storeVariant'])->name('variants.store');
+            Route::patch('variants/{variant}', [AdminProductController::class, 'updateVariant'])->name('variants.update');
+        });
+
+        Route::middleware('can:inventory.manage')->prefix('inventory')->name('inventory.')->group(function () {
+            Route::get('/', [AdminInventoryController::class, 'index'])->name('index');
+            Route::post('adjust', [AdminInventoryController::class, 'adjust'])->name('adjust');
+        });
+
+        Route::middleware('can:orders.view')->prefix('orders')->name('orders.')->group(function () {
+            Route::get('/', [AdminStoreOrderController::class, 'index'])->name('index');
+            Route::get('{order:uuid}', [AdminStoreOrderController::class, 'show'])->name('show');
+        });
+        Route::middleware('can:orders.manage')->post('orders/items/{item}/fulfill', [AdminStoreOrderController::class, 'fulfillItem'])->name('orders.items.fulfill');
+
+        Route::middleware('can:payments.view')->get('payments', [AdminStorePaymentController::class, 'index'])->name('payments.index');
+        Route::middleware('can:payments.record_manual')->post('orders/{order:uuid}/payments/manual', [AdminStorePaymentController::class, 'registerManual'])->name('orders.payments.manual');
     });
 });
 

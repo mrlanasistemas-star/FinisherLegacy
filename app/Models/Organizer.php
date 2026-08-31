@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'legal_name', 'slug', 'email', 'phone', 'website', 'logo_path', 'status'])]
 class Organizer extends Model
@@ -26,5 +27,11 @@ class Organizer extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    /** @return HasOne<OrganizerDataSource, $this> */
+    public function dataSource(): HasOne
+    {
+        return $this->hasOne(OrganizerDataSource::class);
     }
 }
