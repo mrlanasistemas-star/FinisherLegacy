@@ -26,6 +26,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('production_jobs', function (Blueprint $table) {
+            // MySQL/InnoDB silently drops a foreign key's own auto-generated
+            // supporting index once another index covers the same leftmost
+            // column — this composite index became `event_edition_id_foreign`'s
+            // only supporting index the moment up() ran. Dropping it directly
+            // fails with error 1553 ("needed in a foreign key constraint");
+            // a replacement single-column index must exist first so the FK
+            // is never left without one, even for the instant between the
+            // two statements.
+            $table->index('event_edition_id', 'production_jobs_event_edition_id_index');
             $table->dropIndex('production_jobs_event_edition_status_index');
         });
     }

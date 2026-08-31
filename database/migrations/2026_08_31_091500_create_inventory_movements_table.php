@@ -25,8 +25,14 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
-            $table->index(['product_variant_id', 'inventory_location_id']);
-            $table->index(['reference_type', 'reference_id']);
+            // Explicit short names: MySQL's default naming convention
+            // (`{table}_{col1}_{col2}_index`) produces
+            // `inventory_movements_product_variant_id_inventory_location_id_index`
+            // (66 chars) for the first one, over MySQL's 64-char identifier
+            // limit — SQLite has no such limit, which is why this only
+            // surfaced against real MySQL.
+            $table->index(['product_variant_id', 'inventory_location_id'], 'inv_mov_variant_location_idx');
+            $table->index(['reference_type', 'reference_id'], 'inv_mov_reference_idx');
         });
     }
 
