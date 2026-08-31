@@ -3,6 +3,8 @@ export type DashboardStats = {
     events: number;
     plates: number;
     legacyCodes: number;
+    ownedProducts: number;
+    media: number;
 };
 
 export type DashboardProfileSummary = {

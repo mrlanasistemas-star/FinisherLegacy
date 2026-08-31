@@ -1,0 +1,76 @@
+<script setup lang="ts">
+import { Head, useForm } from '@inertiajs/vue3';
+import Money from '@/components/shared/Money.vue';
+import { Button } from '@/components/ui/button';
+
+type CheckoutItem = {
+    product_name: string;
+    variant_name: string;
+    quantity: number;
+    line_total_minor: number;
+};
+
+defineProps<{
+    items: CheckoutItem[];
+    subtotal_minor: number;
+    currency: string;
+}>();
+
+const form = useForm({});
+
+function placeOrder() {
+    form.post('/checkout');
+}
+</script>
+
+<template>
+    <Head title="Checkout — Finisher Legacy" />
+
+    <div class="bg-fl-black">
+        <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+            <h1 class="text-2xl font-black text-white">Confirmar pedido</h1>
+
+            <div
+                class="mt-8 divide-y divide-white/10 rounded-2xl border border-white/10 bg-fl-graphite/20"
+            >
+                <div
+                    v-for="(item, index) in items"
+                    :key="index"
+                    class="flex items-center justify-between px-5 py-4"
+                >
+                    <div>
+                        <p class="text-white">{{ item.product_name }}</p>
+                        <p class="text-sm text-white/40">
+                            {{ item.variant_name }} · x{{ item.quantity }}
+                        </p>
+                    </div>
+                    <p class="text-white/70">
+                        <Money
+                            :minor="item.line_total_minor"
+                            :currency="currency"
+                        />
+                    </p>
+                </div>
+                <div class="flex items-center justify-between px-5 py-4">
+                    <p class="font-medium text-white">Total</p>
+                    <p class="text-lg font-semibold text-fl-gold-soft">
+                        <Money :minor="subtotal_minor" :currency="currency" />
+                    </p>
+                </div>
+            </div>
+
+            <p class="mt-4 text-xs text-white/40">
+                El pago se resuelve de forma segura al confirmar el pedido; el
+                monto siempre lo determina el servidor.
+            </p>
+
+            <Button
+                class="mt-8 w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                :disabled="form.processing || !items.length"
+                @click="placeOrder"
+            >
+                Confirmar pedido
+            </Button>
+        </div>
+    </div>
+</template>

@@ -9,6 +9,13 @@
  * means "visible to any authenticated user" (the Mi Legacy items, which every
  * account — athlete or staff — can reach). Every href below points at a route
  * that exists today — nothing here is a dead link waiting for a future module.
+ *
+ * Ecosystem navigation redesign: Identity Conflicts, Event OS, standalone
+ * Legacy Codes, Estaciones, the old Plate Studio, and standalone Incidents
+ * were deliberately removed from this list (not deleted — their
+ * controllers/routes/permissions still exist, reachable by direct URL for
+ * whoever still needs them) because they don't serve the new product
+ * story. See docs/architecture/README.md for what's hidden vs removed.
  */
 import type { LucideIcon } from '@lucide/vue';
 import { resolveIcon } from '@/lib/iconMap';
@@ -16,10 +23,10 @@ import { resolveIcon } from '@/lib/iconMap';
 export type NavGroup =
     | 'legacy'
     | 'resumen'
-    | 'personas'
     | 'eventos'
-    | 'placas'
-    | 'operacion'
+    | 'legacyplates'
+    | 'tienda'
+    | 'atletas'
     | 'sistema';
 
 export interface NavItem {
@@ -38,16 +45,16 @@ export interface NavItem {
 export const navGroupLabels: Record<NavGroup, string> = {
     legacy: 'Mi Legacy',
     resumen: 'Panel administrativo',
-    personas: 'Personas',
     eventos: 'Eventos',
-    placas: 'Placas',
-    operacion: 'Operación',
+    legacyplates: 'Legacy Plates',
+    tienda: 'Tienda',
+    atletas: 'Atletas',
     sistema: 'Sistema',
 };
 
 export const navigation: NavItem[] = [
     {
-        label: 'Inicio',
+        label: 'Mi Legado',
         icon: resolveIcon('LayoutGrid'),
         href: '/dashboard',
         permission: null,
@@ -63,12 +70,41 @@ export const navigation: NavItem[] = [
         group: 'legacy',
     },
     {
+        label: 'Mis eventos',
+        icon: resolveIcon('Trophy'),
+        href: '/dashboard/my-events',
+        permission: null,
+        group: 'legacy',
+        mobilePriority: true,
+    },
+    {
         label: 'Mis medallas',
         icon: resolveIcon('Award'),
         href: '/dashboard/medals',
         permission: null,
         group: 'legacy',
+    },
+    {
+        label: 'Mis Legacy Plates',
+        icon: resolveIcon('Boxes'),
+        href: '/dashboard/my-plates',
+        permission: null,
+        group: 'legacy',
+    },
+    {
+        label: 'Mi equipo',
+        icon: resolveIcon('Package'),
+        href: '/dashboard/my-gear',
+        permission: null,
+        group: 'legacy',
         mobilePriority: true,
+    },
+    {
+        label: 'Mis pedidos',
+        icon: resolveIcon('Receipt'),
+        href: '/mis-pedidos',
+        permission: null,
+        group: 'legacy',
     },
     {
         label: 'Explorar eventos',
@@ -76,6 +112,14 @@ export const navigation: NavItem[] = [
         href: '/events',
         permission: null,
         group: 'legacy',
+    },
+    {
+        label: 'Tienda',
+        icon: resolveIcon('ShoppingBag'),
+        href: '/tienda',
+        permission: null,
+        group: 'legacy',
+        mobilePriority: true,
     },
 
     {
@@ -88,34 +132,13 @@ export const navigation: NavItem[] = [
     },
 
     {
-        label: 'Usuarios',
-        icon: resolveIcon('Users'),
-        href: '/admin/users',
-        permission: 'users.view',
-        group: 'personas',
+        label: 'Eventos',
+        icon: resolveIcon('Calendar'),
+        href: '/admin/editions',
+        permission: 'events.view',
+        group: 'eventos',
+        mobilePriority: true,
     },
-    {
-        label: 'Atletas',
-        icon: resolveIcon('UserCircle'),
-        href: '/admin/athletes',
-        permission: 'athletes.view',
-        group: 'personas',
-    },
-    {
-        label: 'Conflictos de identidad',
-        icon: resolveIcon('ShieldQuestion'),
-        href: '/admin/identity-conflicts',
-        permission: 'athletes.manage',
-        group: 'personas',
-    },
-    {
-        label: 'Roles y permisos',
-        icon: resolveIcon('ShieldCheck'),
-        href: '/admin/roles',
-        permission: 'roles.manage',
-        group: 'personas',
-    },
-
     {
         label: 'Organizadores',
         icon: resolveIcon('Building2'),
@@ -124,12 +147,11 @@ export const navigation: NavItem[] = [
         group: 'eventos',
     },
     {
-        label: 'Eventos y ediciones',
-        icon: resolveIcon('Calendar'),
-        href: '/admin/editions',
-        permission: 'events.view',
+        label: 'Fuentes de datos',
+        icon: resolveIcon('Database'),
+        href: '/admin/data-sources',
+        permission: 'eventdata.manage',
         group: 'eventos',
-        mobilePriority: true,
     },
     {
         label: 'Prerregistros',
@@ -152,79 +174,100 @@ export const navigation: NavItem[] = [
         permission: 'imports.manage',
         group: 'eventos',
     },
-    {
-        label: 'Integraciones',
-        icon: resolveIcon('Plug'),
-        href: '/admin/integrations',
-        permission: 'integrations.view',
-        group: 'eventos',
-    },
 
     {
-        label: 'Placas',
+        label: 'Legacy Plates',
         icon: resolveIcon('Boxes'),
         href: '/admin/plates',
         permission: 'plates.view',
-        group: 'placas',
+        group: 'legacyplates',
         mobilePriority: true,
     },
     {
-        label: 'Plate Studio',
-        icon: resolveIcon('Palette'),
-        href: '/admin/plate-studio',
-        permission: 'platetemplates.view',
-        group: 'placas',
-    },
-    {
-        label: 'Máquinas',
-        icon: resolveIcon('Settings2'),
-        href: '/admin/machine-profiles',
-        permission: 'platetemplates.view',
-        group: 'placas',
-    },
-    {
-        label: 'Legacy Codes',
-        icon: resolveIcon('QrCode'),
-        href: '/admin/legacy-codes',
-        permission: 'legacycodes.view',
-        group: 'placas',
-    },
-
-    {
-        label: 'Event OS',
-        icon: resolveIcon('Zap'),
-        href: '/operator',
-        permission: 'operator.access',
-        group: 'operacion',
-        mobilePriority: true,
+        label: 'Modelos',
+        icon: resolveIcon('LayoutTemplate'),
+        href: '/admin/legacy-plate-models',
+        permission: 'legacyplates.manage',
+        group: 'legacyplates',
     },
     {
         label: 'Producción',
         icon: resolveIcon('Factory'),
-        href: '/production',
-        permission: 'production.access',
-        group: 'operacion',
+        href: '/admin/legacy-plates/production',
+        permission: 'legacyplates.produce',
+        group: 'legacyplates',
     },
     {
-        label: 'Estaciones',
-        icon: resolveIcon('Cpu'),
-        href: '/admin/production-devices',
-        permission: 'productiondevices.view',
-        group: 'operacion',
-    },
-    {
-        label: 'Incidencias',
-        icon: resolveIcon('AlertTriangle'),
-        href: '/admin/incidents',
-        permission: 'incidents.view',
-        group: 'operacion',
+        label: 'Preventas',
+        icon: resolveIcon('Ticket'),
+        href: '/admin/legacy-plates/presales',
+        permission: 'legacyplates.manage',
+        group: 'legacyplates',
     },
 
+    {
+        label: 'Productos',
+        icon: resolveIcon('Package'),
+        href: '/admin/products',
+        permission: 'products.manage',
+        group: 'tienda',
+    },
+    {
+        label: 'Inventario',
+        icon: resolveIcon('Warehouse'),
+        href: '/admin/inventory',
+        permission: 'inventory.manage',
+        group: 'tienda',
+    },
+    {
+        label: 'Pedidos',
+        icon: resolveIcon('ShoppingCart'),
+        href: '/admin/orders',
+        permission: 'orders.view',
+        group: 'tienda',
+    },
+    {
+        label: 'Pagos',
+        icon: resolveIcon('CreditCard'),
+        href: '/admin/payments',
+        permission: 'payments.view',
+        group: 'tienda',
+    },
+
+    {
+        label: 'Atletas',
+        icon: resolveIcon('UserCircle'),
+        href: '/admin/athletes',
+        permission: 'athletes.view',
+        group: 'atletas',
+    },
+
+    {
+        label: 'Usuarios',
+        icon: resolveIcon('Users'),
+        href: '/admin/users',
+        permission: 'users.view',
+        group: 'sistema',
+    },
+    {
+        label: 'Roles y permisos',
+        icon: resolveIcon('ShieldCheck'),
+        href: '/admin/roles',
+        permission: 'roles.manage',
+        group: 'sistema',
+    },
     {
         label: 'Auditoría',
         icon: resolveIcon('History'),
         href: '/admin/audit',
         permission: 'audit.view',
+        group: 'sistema',
+    },
+    {
+        label: 'Configuración',
+        icon: resolveIcon('Settings'),
+        href: '/admin/settings',
+        permission: 'dashboard.admin.view',
         group: 'sistema',
     },
 ];
@@ -244,10 +287,10 @@ export function groupedNavigation(
     const groups: NavGroup[] = [
         'legacy',
         'resumen',
-        'personas',
         'eventos',
-        'placas',
-        'operacion',
+        'legacyplates',
+        'tienda',
+        'atletas',
         'sistema',
     ];
 

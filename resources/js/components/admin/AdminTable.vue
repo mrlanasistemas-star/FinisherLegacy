@@ -19,7 +19,7 @@ type PaginatedData<T> = {
 
 const props = defineProps<{
     columns: Column[];
-    rows: PaginatedData<Record<string, string | number | null>>;
+    rows: PaginatedData<Record<string, string | number | boolean | null>>;
     searchable?: boolean;
     initialQuery?: string;
 }>();

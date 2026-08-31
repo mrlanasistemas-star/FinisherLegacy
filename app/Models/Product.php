@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * and Racepack are first-class products too.
  */
 #[Fillable([
-    'uuid', 'name', 'slug', 'description', 'type', 'category_id', 'brand', 'status',
+    'uuid', 'name', 'slug', 'description', 'type', 'category_id', 'brand', 'image_path', 'status',
     'taxable', 'requires_shipping', 'qr_capable', 'tracks_inventory', 'active',
 ])]
 class Product extends Model
