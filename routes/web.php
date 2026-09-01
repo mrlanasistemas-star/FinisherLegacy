@@ -178,6 +178,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('editions', [AdminEditionController::class, 'store'])->name('editions.store');
             Route::post('editions/{eventEdition}/price-schedules', [AdminEditionController::class, 'storePriceSchedule'])->name('editions.price-schedules.store');
         });
+        Route::middleware('can:eventdata.manage')->put('editions/{eventEdition}/data-sources', [AdminEditionController::class, 'updateDataSources'])->name('editions.data-sources.update');
         Route::middleware('can:events.view')->get('editions/{eventEdition}', [AdminEditionController::class, 'show'])->name('editions.show');
 
         Route::middleware('can:editions.manage')->prefix('events/{eventEdition}/production-setup')->name('editions.production-setup.')->group(function () {
@@ -207,6 +208,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::middleware('can:integrations.manage')->group(function () {
                 Route::post('/', [AdminProviderConnectionController::class, 'store'])->name('store');
+                Route::patch('{providerConnection}', [AdminProviderConnectionController::class, 'update'])->name('update');
                 Route::post('{providerConnection}/test', [AdminProviderConnectionController::class, 'test'])->name('test');
                 Route::post('{providerConnection}/events', [AdminProviderConnectionController::class, 'linkEvent'])->name('events.link');
             });
@@ -236,6 +238,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         Route::middleware('can:legacyplates.manage')->get('legacy-plates/presales', [AdminLegacyPlatePresaleController::class, 'index'])->name('legacy-plates.presales.index');
+        Route::middleware('can:legacyplates.manage')->post('legacy-plates/presales/{legacyPlateEntitlement}/link', [AdminLegacyPlatePresaleController::class, 'linkParticipant'])->name('legacy-plates.presales.link');
 
         Route::middleware('can:platetemplates.view')->prefix('plate-studio')->name('plate-studio.')->group(function () {
             Route::get('/', [AdminPlateStudioController::class, 'index'])->name('index');
@@ -307,9 +310,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:organizers.manage')->post('organizers', [AdminOrganizerController::class, 'store'])->name('organizers.store');
         Route::middleware('can:organizers.manage')->patch('organizers/{organizer}', [AdminOrganizerController::class, 'update'])->name('organizers.update');
         Route::middleware('can:eventdata.manage')->put('organizers/{organizer}/data-source', [AdminOrganizerController::class, 'updateDataSource'])->name('organizers.data-source.update');
+        Route::middleware('can:eventdata.manage')->post('organizers/{organizer}/data-sources', [AdminOrganizerController::class, 'storeDataSource'])->name('organizers.data-sources.store');
         Route::middleware('can:integrations.sync')->post('provider-connections/{providerConnection}/test', [AdminOrganizerController::class, 'testConnection'])->name('provider-connections.test');
 
         Route::middleware('can:eventdata.manage')->get('data-sources', [AdminOrganizerController::class, 'dataSources'])->name('data-sources.index');
+        Route::middleware('can:eventdata.manage')->patch('data-sources/{dataSource}', [AdminOrganizerController::class, 'updateDataSourceEntry'])->name('data-sources.update');
+        Route::middleware('can:eventdata.manage')->post('data-sources/{dataSource}/deactivate', [AdminOrganizerController::class, 'deactivateDataSource'])->name('data-sources.deactivate');
 
         Route::middleware('can:audit.view')->get('audit', [AdminAuditController::class, 'index'])->name('audit.index');
         Route::get('settings', [AdminSettingsController::class, 'index'])->name('settings.index');

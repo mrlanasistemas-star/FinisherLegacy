@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Building2, PlugZap } from '@lucide/vue';
+import { Building2, PlugZap, Plus } from '@lucide/vue';
+import { ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -12,13 +16,23 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-type ProviderConnection = {
+type ProviderConnectionSummary = {
     id: number;
     name: string;
     provider_key: string;
     status: string;
     last_tested_at: string | null;
     last_successful_sync_at: string | null;
+};
+
+type DataSource = {
+    id: number;
+    name: string | null;
+    type: string;
+    purpose: string;
+    is_default: boolean;
+    active: boolean;
+    provider_connection: ProviderConnectionSummary | null;
 };
 
 const props = defineProps<{
@@ -39,30 +53,48 @@ const props = defineProps<{
         sport: string;
         status: string;
     }[];
-    dataSource: {
-        type: string;
-        active: boolean;
-        provider_connection: ProviderConnection | null;
-    } | null;
+    dataSources: DataSource[];
     providerConnections: { id: number; name: string; provider_key: string }[];
 }>();
 
-const dataSourceLabels: Record<string, string> = {
+const typeLabels: Record<string, string> = {
     manual: 'Manual',
     file: 'Archivo',
     api: 'API',
 };
 
-const form = useForm({
-    type: props.dataSource?.type ?? 'manual',
-    provider_connection_id:
-        props.dataSource?.provider_connection?.id ?? ('' as number | ''),
+const purposeLabels: Record<string, string> = {
+    participants: 'Participantes',
+    results: 'Resultados',
+    both: 'Ambos',
+};
+
+const showAddForm = ref(false);
+
+const addForm = useForm({
+    name: '',
+    type: 'manual',
+    purpose: 'both',
+    provider_connection_id: '' as number | '',
+    is_default: false,
 });
 
-function saveDataSource() {
-    form.put(`/admin/organizers/${props.organizer.id}/data-source`, {
+function addDataSource() {
+    addForm.post(`/admin/organizers/${props.organizer.id}/data-sources`, {
         preserveScroll: true,
+        onSuccess: () => {
+            addForm.reset();
+            showAddForm.value = false;
+        },
     });
+}
+
+function deactivate(sourceId: number) {
+    router.post(
+        `/admin/data-sources/${sourceId}/deactivate`,
+        {},
+        { preserveScroll: true },
+    );
 }
 
 function testConnection(connectionId: number) {
@@ -180,29 +212,49 @@ function testConnection(connectionId: number) {
                 </div>
             </TabsContent>
 
-            <TabsContent value="data" class="mt-6">
-                <div
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                >
-                    <h3
-                        class="mb-1 text-sm font-semibold text-white/70 uppercase"
+            <TabsContent value="data" class="mt-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3
+                            class="text-sm font-semibold text-white/70 uppercase"
+                        >
+                            Fuentes de datos
+                        </h3>
+                        <p class="text-xs text-white/40">
+                            Un organizador puede tener varias — Manual, Archivo
+                            y una o más conexiones API. Cada evento puede elegir
+                            una específica o heredar el default.
+                        </p>
+                    </div>
+                    <Button
+                        size="sm"
+                        class="shrink-0 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                        @click="showAddForm = !showAddForm"
                     >
-                        ¿Cómo recibiremos los datos?
-                    </h3>
-                    <p class="mb-4 text-xs text-white/40">
-                        Este será el valor por defecto para todos los eventos de
-                        este organizador — cada evento puede sobrescribirlo
-                        individualmente.
-                    </p>
+                        <Plus class="size-3.5" /> Agregar fuente de datos
+                    </Button>
+                </div>
 
-                    <div class="grid gap-4 sm:grid-cols-2">
+                <div
+                    v-if="showAddForm"
+                    class="rounded-xl border border-fl-gold/20 bg-fl-graphite/30 p-5"
+                >
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div class="grid gap-2">
-                            <Select v-model="form.type">
+                            <Label class="text-xs text-white/50">Nombre</Label>
+                            <Input
+                                v-model="addForm.name"
+                                class="border-white/10 bg-fl-black text-white"
+                                placeholder="API Resultados"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label class="text-xs text-white/50">Tipo</Label>
+                            <Select v-model="addForm.type">
                                 <SelectTrigger
                                     class="border-white/10 bg-fl-black text-white"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
+                                    ><SelectValue
+                                /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="manual"
                                         >Manual</SelectItem
@@ -214,8 +266,31 @@ function testConnection(connectionId: number) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div v-if="form.type === 'api'" class="grid gap-2">
-                            <Select v-model="form.provider_connection_id">
+                        <div class="grid gap-2">
+                            <Label class="text-xs text-white/50"
+                                >Propósito</Label
+                            >
+                            <Select v-model="addForm.purpose">
+                                <SelectTrigger
+                                    class="border-white/10 bg-fl-black text-white"
+                                    ><SelectValue
+                                /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="participants"
+                                        >Participantes</SelectItem
+                                    >
+                                    <SelectItem value="results"
+                                        >Resultados</SelectItem
+                                    >
+                                    <SelectItem value="both">Ambos</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div v-if="addForm.type === 'api'" class="grid gap-2">
+                            <Label class="text-xs text-white/50"
+                                >Conexión</Label
+                            >
+                            <Select v-model="addForm.provider_connection_id">
                                 <SelectTrigger
                                     class="border-white/10 bg-fl-black text-white"
                                 >
@@ -237,53 +312,105 @@ function testConnection(connectionId: number) {
                             </Select>
                         </div>
                     </div>
+                    <label
+                        class="mt-4 flex items-center gap-2 text-sm text-white/70"
+                    >
+                        <Checkbox
+                            :model-value="addForm.is_default"
+                            @update:model-value="
+                                (v) => (addForm.is_default = !!v)
+                            "
+                        />
+                        Marcar como default para este propósito
+                    </label>
                     <Button
                         class="mt-4 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                        :disabled="form.processing"
-                        @click="saveDataSource"
+                        :disabled="addForm.processing"
+                        @click="addDataSource"
                     >
-                        Guardar
+                        Guardar fuente
                     </Button>
+                </div>
 
+                <div
+                    v-if="!dataSources.length"
+                    class="rounded-xl border border-dashed border-white/15 bg-fl-graphite/20 p-8 text-center text-sm text-white/40"
+                >
+                    No hay fuentes de datos todavía.
+                </div>
+
+                <div
+                    v-for="source in dataSources"
+                    :key="source.id"
+                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                >
                     <div
-                        v-if="dataSource?.provider_connection"
-                        class="mt-6 rounded-lg border border-white/10 bg-fl-black/40 p-4 text-sm"
+                        class="flex flex-wrap items-start justify-between gap-3"
                     >
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-white">
-                                    {{ dataSource.provider_connection.name }}
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-medium text-white">
+                                    {{ source.name ?? typeLabels[source.type] }}
                                 </p>
-                                <p class="text-xs text-white/40">
-                                    {{ dataSourceLabels[dataSource.type] }} ·
-                                    estado:
-                                    {{ dataSource.provider_connection.status }}
+                                <Badge
+                                    v-if="source.is_default"
+                                    variant="outline"
+                                    class="border-fl-gold/30 text-fl-gold-soft"
+                                    >Default</Badge
+                                >
+                                <Badge
+                                    v-if="!source.active"
+                                    variant="outline"
+                                    class="border-white/20 text-white/40"
+                                    >Inactiva</Badge
+                                >
+                            </div>
+                            <p class="mt-1 text-xs text-white/40">
+                                {{ typeLabels[source.type] }} ·
+                                {{ purposeLabels[source.purpose] }}
+                            </p>
+                            <div
+                                v-if="source.provider_connection"
+                                class="mt-2 text-xs text-white/40"
+                            >
+                                <p class="text-white/60">
+                                    {{ source.provider_connection.name }} ({{
+                                        source.provider_connection.provider_key
+                                    }})
                                 </p>
-                                <p class="text-xs text-white/30">
+                                <p>
+                                    Estado:
+                                    {{ source.provider_connection.status }} ·
                                     Última prueba:
                                     {{
-                                        dataSource.provider_connection
+                                        source.provider_connection
                                             .last_tested_at ?? 'nunca'
-                                    }}
-                                    · Último sync:
-                                    {{
-                                        dataSource.provider_connection
-                                            .last_successful_sync_at ?? 'nunca'
                                     }}
                                 </p>
                             </div>
+                        </div>
+                        <div class="flex shrink-0 items-center gap-2">
                             <Button
+                                v-if="source.provider_connection"
                                 size="sm"
                                 variant="outline"
                                 class="border-white/15 text-white hover:bg-white/10"
                                 @click="
                                     testConnection(
-                                        dataSource.provider_connection!.id,
+                                        source.provider_connection!.id,
                                     )
                                 "
                             >
-                                <PlugZap class="size-3.5" />
-                                Probar conexión
+                                <PlugZap class="size-3.5" /> Probar conexión
+                            </Button>
+                            <Button
+                                v-if="source.active"
+                                size="sm"
+                                variant="outline"
+                                class="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                @click="deactivate(source.id)"
+                            >
+                                Desactivar
                             </Button>
                         </div>
                     </div>

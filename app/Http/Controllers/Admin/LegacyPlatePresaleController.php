@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\LegacyPlates\LinkLegacyPlateEntitlementToParticipant;
 use App\Http\Controllers\Controller;
 use App\Models\EventEdition;
+use App\Models\EventParticipant;
 use App\Models\LegacyPlateEntitlement;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 /**
  * Legacy Plate presales — separate from Event Preregistration (brief §16/
@@ -32,6 +37,7 @@ class LegacyPlatePresaleController extends Controller
                 ->map(fn (LegacyPlateEntitlement $entitlement) => [
                     'id' => $entitlement->id,
                     'athlete' => $entitlement->athlete?->full_name,
+                    'athlete_id' => $entitlement->athlete_id,
                     'bib_number' => $entitlement->eventParticipant?->bib_number,
                     'model' => $entitlement->legacyPlateModel?->name,
                     'status' => $entitlement->status->value,
@@ -44,6 +50,18 @@ class LegacyPlatePresaleController extends Controller
                     // LÍNEA / TERMINAL / EFECTIVO from that Order's screen.
                     'order_uuid' => $entitlement->orderItem?->order?->uuid,
                     'payment_status' => $entitlement->orderItem?->order?->payment_status->value,
+                    // Safe candidates only (brief §22: "no magic fuzzy
+                    // merge") — participants in this same edition whose
+                    // athlete_id already matches this entitlement's, i.e.
+                    // already resolved by the real identity matcher, never
+                    // a name-only guess made here.
+                    'link_candidates' => $entitlement->event_participant_id === null && $entitlement->athlete_id !== null
+                        ? EventParticipant::query()
+                            ->where('event_edition_id', $edition->id)
+                            ->where('athlete_id', $entitlement->athlete_id)
+                            ->get(['id', 'bib_number', 'full_name'])
+                            ->map(fn (EventParticipant $p) => ['id' => $p->id, 'bib_number' => $p->bib_number, 'full_name' => $p->full_name])
+                        : [],
                 ]);
         }
 
@@ -53,5 +71,30 @@ class LegacyPlatePresaleController extends Controller
             'selectedEventEditionId' => $edition?->id,
             'presales' => $presales,
         ]);
+    }
+
+    /**
+     * "Admin puede vincular manualmente" (brief §22) — reuses the exact
+     * same Action the automatic post-ingestion link uses
+     * (App\Actions\Athletes\IngestEventParticipant), so an edition/athlete
+     * mismatch is refused here exactly like it would be there.
+     */
+    public function linkParticipant(Request $request, LegacyPlateEntitlement $legacyPlateEntitlement, LinkLegacyPlateEntitlementToParticipant $link): RedirectResponse
+    {
+        $data = $request->validate([
+            'event_participant_id' => ['required', 'integer', 'exists:event_participants,id'],
+        ]);
+
+        $participant = EventParticipant::query()->whereKey($data['event_participant_id'])->firstOrFail();
+
+        try {
+            $link->handle($legacyPlateEntitlement, $participant);
+        } catch (Throwable $e) {
+            throw ValidationException::withMessages(['event_participant_id' => $e->getMessage()]);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Preventa vinculada al participante.']);
+
+        return back();
     }
 }

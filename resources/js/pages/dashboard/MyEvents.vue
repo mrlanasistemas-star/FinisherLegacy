@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Trophy } from '@lucide/vue';
+import AppContainer from '@/components/shared/AppContainer.vue';
 import EventResultCard from '@/components/shared/EventResultCard.vue';
 
 type Participation = {
@@ -24,13 +25,16 @@ defineProps<{ participations: Participation[] }>();
 <template>
     <Head title="Mis eventos" />
 
-    <div class="mx-auto max-w-4xl p-4 md:p-6">
+    <AppContainer class="py-4 md:py-6">
         <h1 class="text-xl font-bold text-white">Mis eventos</h1>
         <p class="mt-1 text-sm text-white/50">
             Cada meta que cruzaste, en un solo lugar.
         </p>
 
-        <div v-if="participations.length" class="mt-8 space-y-3">
+        <div
+            v-if="participations.length"
+            class="mt-8 grid gap-3 lg:grid-cols-2"
+        >
             <EventResultCard
                 v-for="p in participations"
                 :key="p.id"
@@ -59,5 +63,5 @@ defineProps<{ participations: Participation[] }>();
                 >Explorar eventos</Link
             >
         </div>
-    </div>
+    </AppContainer>
 </template>

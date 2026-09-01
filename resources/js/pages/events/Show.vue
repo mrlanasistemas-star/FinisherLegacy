@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { Calendar, MapPin, Trophy } from '@lucide/vue';
 import { computed } from 'vue';
+import LegacyPlatePresaleCard from '@/components/shared/LegacyPlatePresaleCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
@@ -263,6 +264,12 @@ const eventJsonLd = computed(() => {
                         </Link>
                     </Button>
                 </div>
+
+                <LegacyPlatePresaleCard
+                    v-if="edition && edition.legacy_plate"
+                    :event-edition-id="edition.id"
+                    :presale="edition.legacy_plate"
+                />
             </aside>
         </div>
     </section>

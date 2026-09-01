@@ -27,6 +27,14 @@ const form = useForm({
     provider_key: 'mock',
     base_url: '',
     api_key: '',
+    auth_type: 'none',
+    api_key_header: '',
+    basic_username: '',
+    test_endpoint: '',
+    events_endpoint: '',
+    event_endpoint: '',
+    participants_endpoint: '',
+    results_endpoint: '',
 });
 
 function submit() {
@@ -122,6 +130,101 @@ const statusLabel: Record<Connection['status'], string> = {
                         class="border-white/10 bg-fl-graphite/60 text-white"
                     />
                 </div>
+
+                <template v-if="form.provider_key === 'generic_rest'">
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Autenticación</Label
+                        >
+                        <select
+                            v-model="form.auth_type"
+                            class="h-9 w-full rounded-md border border-white/10 bg-fl-graphite/60 px-3 text-sm text-white"
+                        >
+                            <option value="none">Ninguna</option>
+                            <option value="bearer">Bearer token</option>
+                            <option value="api_key_header">
+                                API Key header
+                            </option>
+                            <option value="basic">Basic auth</option>
+                        </select>
+                    </div>
+                    <div v-if="form.auth_type === 'api_key_header'">
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Nombre del header</Label
+                        >
+                        <Input
+                            v-model="form.api_key_header"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            placeholder="X-Api-Key"
+                        />
+                    </div>
+                    <div v-if="form.auth_type === 'basic'">
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Usuario</Label
+                        >
+                        <Input
+                            v-model="form.basic_username"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint de prueba</Label
+                        >
+                        <Input
+                            v-model="form.test_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            placeholder="/health"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint participantes</Label
+                        >
+                        <Input
+                            v-model="form.participants_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            placeholder="/events/{external_event_id}/participants"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint resultados</Label
+                        >
+                        <Input
+                            v-model="form.results_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            placeholder="/events/{external_event_id}/results"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint del evento</Label
+                        >
+                        <Input
+                            v-model="form.event_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            placeholder="/events/{external_event_id}"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint listar eventos</Label
+                        >
+                        <Input
+                            v-model="form.events_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            placeholder="/events"
+                        />
+                    </div>
+                    <p
+                        class="text-xs text-white/30 sm:col-span-2 lg:col-span-4"
+                    >
+                        El mapeo de campos (field mapping) se configura desde el
+                        detalle de la conexión, una vez creada.
+                    </p>
+                </template>
+
                 <div class="sm:col-span-2 lg:col-span-4">
                     <Button
                         type="submit"
