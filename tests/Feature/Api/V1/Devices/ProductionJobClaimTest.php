@@ -178,7 +178,11 @@ test('an Idempotency-Key on claim replays the same result without duplicating ac
 
     $second->assertOk();
     $second->assertHeader('Idempotency-Replayed', 'true');
-    expect($second->json('data'))->toBe($first->json('data'))
+    // ->toEqual(), not ->toBe(): the replay is read back through the
+    // idempotency record's MySQL JSON column, which re-serializes key
+    // order on write, so a strict `===` here compares key order, not
+    // content (see PlateStudioTest.php for the same note).
+    expect($second->json('data'))->toEqual($first->json('data'))
         ->and($claimActivityCount())->toBe($countAfterFirst);
 });
 
