@@ -96,6 +96,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // "Mi Legado" (product UX consolidation brief §3-§6) — the card
+    // gallery lives on the main /dashboard route (nav item "Mi Legado"
+    // already pointed here); this is only its per-participation detail.
+    Route::get('dashboard/legado/{participant}', [AthleteHistoryController::class, 'legadoShow'])->name('dashboard.legado.show');
+
+    // Still reachable by direct URL (brief §3: "no necesariamente borres
+    // rutas") — not in the sidebar anymore, consolidated into Mi Legado.
     Route::get('dashboard/my-events', [AthleteHistoryController::class, 'myEvents'])->name('dashboard.my-events');
     Route::get('dashboard/my-events/{participant}', [AthleteHistoryController::class, 'myEventShow'])->name('dashboard.my-events.show');
     Route::post('dashboard/my-events/{participant}/media', [AthleteHistoryController::class, 'uploadMedia'])->name('dashboard.my-events.media.store');

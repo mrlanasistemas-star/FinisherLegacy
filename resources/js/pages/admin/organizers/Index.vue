@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Building2, Eye, Pencil, Plus } from '@lucide/vue';
+import { Building2, Database, Eye, Pencil, Plus } from '@lucide/vue';
 import { ref } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
 import ImageDropzone from '@/components/forms/ImageDropzone.vue';
@@ -134,13 +134,22 @@ function submit() {
                     Entidades que producen eventos en Finisher Legacy.
                 </p>
             </div>
-            <Button
-                class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                @click="openCreate"
-            >
-                <Plus class="size-4" />
-                Nuevo organizador
-            </Button>
+            <div class="flex items-center gap-2">
+                <Link
+                    href="/admin/data-sources"
+                    class="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-sm text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+                >
+                    <Database class="size-4" />
+                    Fuentes de datos
+                </Link>
+                <Button
+                    class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                    @click="openCreate"
+                >
+                    <Plus class="size-4" />
+                    Nuevo organizador
+                </Button>
+            </div>
         </div>
 
         <AdminTable

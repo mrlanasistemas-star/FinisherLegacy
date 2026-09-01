@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Queries\Athletes\GetAthleteLegado;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, GetAthleteLegado $legado): Response
     {
         $user = $request->user();
         $user->loadMissing(['legacyId', 'athleteProfile']);
 
-        // Read-only counts for "Mi Legado" (brief §36-§38): the ecosystem
-        // summary reaches beyond medals/events into what the athlete owns,
-        // never a second read model — just cheap counts off the same
-        // canonical Athlete used by GetAthleteHistory.
+        // Read-only counts for "Mi Legado" (product UX consolidation brief
+        // §3-§6): the ecosystem summary reaches beyond medals/events into
+        // what the athlete owns, never a second read model — just cheap
+        // counts off the same canonical Athlete used by GetAthleteHistory.
         $athlete = $user->athlete()->first();
 
         $profile = $user->athleteProfile;
@@ -50,6 +51,7 @@ class DashboardController extends Controller
                 'ownedProducts' => $athlete === null ? 0 : $athlete->ownedProducts()->count(),
                 'media' => $athlete === null ? 0 : $athlete->eventMedia()->count(),
             ],
+            'legado' => $athlete === null ? [] : $legado->handle($athlete),
         ]);
     }
 }
