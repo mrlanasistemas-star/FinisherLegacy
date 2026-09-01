@@ -193,7 +193,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('qr-test', [AdminProductionSetupController::class, 'markQrTested'])->name('qr-test');
         });
         Route::middleware('can:preregistrations.view')->get('preregistrations', [AdminPreregistrationController::class, 'index'])->name('preregistrations.index');
-        Route::middleware('can:participants.view')->get('participants', [AdminParticipantController::class, 'index'])->name('participants.index');
+        Route::middleware('can:participants.view')->prefix('participants')->name('participants.')->group(function () {
+            Route::get('/', [AdminParticipantController::class, 'index'])->name('index');
+            Route::get('export', [AdminParticipantController::class, 'export'])->name('export');
+            Route::get('{eventParticipant}', [AdminParticipantController::class, 'show'])->name('show');
+        });
 
         // Canonical athlete identity (docs/adr/0004-athlete-canonical-identity.md).
         Route::middleware('can:athletes.view')->prefix('athletes')->name('athletes.')->group(function () {

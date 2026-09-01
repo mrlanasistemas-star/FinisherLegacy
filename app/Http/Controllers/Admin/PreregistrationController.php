@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PreregistrationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\EventPreregistration;
 use Illuminate\Http\Request;
@@ -12,6 +13,16 @@ class PreregistrationController extends Controller
 {
     public function index(Request $request): Response
     {
+        // Every filter below runs in SQL before paginate() — never on the
+        // already-paginated ->data collection. Filtering the paged
+        // collection instead is the exact bug the "PAGO PENDIENTE" report
+        // described (paginator says 2 pages, 0 rows shown): it doesn't
+        // reproduce against this controller's code today (there was no
+        // status filter here at all until this change), but this is built
+        // so that failure mode can't happen here regardless — see
+        // tests/Feature/Admin/PreregistrationPaginationTest.php.
+        $status = $request->string('status')->toString();
+
         $preregistrations = EventPreregistration::query()
             ->with(['eventEdition.event', 'eventRace'])
             ->when($request->string('q')->toString(), fn ($q, $search) => $q->where(function ($query) use ($search) {
@@ -20,6 +31,7 @@ class PreregistrationController extends Controller
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('bib_number', 'like', "%{$search}%");
             }))
+            ->when($status !== '' && PreregistrationStatus::tryFrom($status) !== null, fn ($q) => $q->where('status', $status))
             ->orderByDesc('created_at')
             ->paginate(25)
             ->withQueryString();
@@ -36,7 +48,8 @@ class PreregistrationController extends Controller
 
         return Inertia::render('admin/preregistrations/Index', [
             'preregistrations' => $preregistrations,
-            'filters' => ['q' => $request->string('q')->toString()],
+            'statuses' => array_map(fn (PreregistrationStatus $s) => $s->value, PreregistrationStatus::cases()),
+            'filters' => ['q' => $request->string('q')->toString(), 'status' => $status ?: null],
         ]);
     }
 }
