@@ -1,8 +1,12 @@
 <?php
 
 use App\Actions\Athletes\EnsureAthleteForUser;
+use App\Actions\Support\CreateAthleteSupportSession;
+use App\Actions\Support\SubmitSupportMessage;
 use App\Enums\SupportActivityType;
 use App\Enums\SupportMessageStatus;
+use App\Enums\SupportMessageType;
+use App\Models\Athlete;
 use App\Models\AthleteSupportSession;
 use App\Models\EventParticipant;
 use App\Models\User;
@@ -32,7 +36,7 @@ test('an athlete cannot create a support session for someone else\'s participati
     $user = User::factory()->create();
     app(EnsureAthleteForUser::class)->handle($user, 'test');
 
-    $otherAthlete = \App\Models\Athlete::factory()->create();
+    $otherAthlete = Athlete::factory()->create();
     $participant = EventParticipant::factory()->create(['athlete_id' => $otherAthlete->id]);
 
     $this->actingAs($user)->post("/dashboard/legado/{$participant->id}/support", [
@@ -55,15 +59,15 @@ test('the public_code never reveals the athlete\'s internal id', function () {
 test('an athlete can only moderate messages on their own session', function () {
     $owner = User::factory()->create();
     $ownerAthlete = app(EnsureAthleteForUser::class)->handle($owner, 'test');
-    $session = app(\App\Actions\Support\CreateAthleteSupportSession::class)->handle(
+    $session = app(CreateAthleteSupportSession::class)->handle(
         $ownerAthlete,
         'Apoyo',
         SupportActivityType::Free,
     );
-    $message = app(\App\Actions\Support\SubmitSupportMessage::class)->handle(
+    $message = app(SubmitSupportMessage::class)->handle(
         $session,
         ['display_name' => 'Mamá'],
-        \App\Enums\SupportMessageType::Text,
+        SupportMessageType::Text,
         messageText: 'Vamos tú puedes',
     );
 

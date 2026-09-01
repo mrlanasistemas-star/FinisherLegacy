@@ -19,9 +19,11 @@ use App\Http\Controllers\Admin\ParticipantController as AdminParticipantControll
 use App\Http\Controllers\Admin\PlateController as AdminPlateController;
 use App\Http\Controllers\Admin\PlateStudioController as AdminPlateStudioController;
 use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistrationController;
+use App\Http\Controllers\Admin\ProductContentSectionController as AdminProductContentSectionController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductionDeviceController as AdminProductionDeviceController;
 use App\Http\Controllers\Admin\ProductionSetupController as AdminProductionSetupController;
+use App\Http\Controllers\Admin\ProductMediaController as AdminProductMediaController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
@@ -361,6 +363,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('{product}', [AdminProductController::class, 'update'])->name('update');
             Route::post('{product}/variants', [AdminProductController::class, 'storeVariant'])->name('variants.store');
             Route::patch('variants/{variant}', [AdminProductController::class, 'updateVariant'])->name('variants.update');
+
+            Route::post('{product}/media', [AdminProductMediaController::class, 'store'])->name('media.store');
+            Route::post('{product}/media/reorder', [AdminProductMediaController::class, 'reorder'])->name('media.reorder');
+            Route::post('media/{media}/primary', [AdminProductMediaController::class, 'setPrimary'])->name('media.primary');
+            Route::delete('media/{media}', [AdminProductMediaController::class, 'destroy'])->name('media.destroy');
+
+            Route::post('{product}/content-sections', [AdminProductContentSectionController::class, 'store'])->name('content-sections.store');
+            Route::patch('content-sections/{section}', [AdminProductContentSectionController::class, 'update'])->name('content-sections.update');
+            Route::delete('content-sections/{section}', [AdminProductContentSectionController::class, 'destroy'])->name('content-sections.destroy');
         });
 
         Route::middleware('can:inventory.manage')->prefix('inventory')->name('inventory.')->group(function () {

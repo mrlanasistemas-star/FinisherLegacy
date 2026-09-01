@@ -7,6 +7,8 @@ use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductContentSection;
+use App\Models\ProductMedia;
 use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -73,7 +75,7 @@ class ProductController extends Controller
 
     public function show(Product $product): Response
     {
-        $product->loadMissing(['category', 'variants.inventoryLevels.inventoryLocation']);
+        $product->loadMissing(['category', 'variants.inventoryLevels.inventoryLocation', 'media', 'contentSections']);
 
         return Inertia::render('admin/products/Show', [
             'product' => [
@@ -103,6 +105,22 @@ class ProductController extends Controller
                 'reserved' => $variant->inventoryLevels->sum('quantity_reserved'),
             ]),
             'categories' => ProductCategory::query()->orderBy('name')->get(['id', 'name']),
+            'media' => $product->media->map(fn (ProductMedia $m) => [
+                'id' => $m->id,
+                'type' => $m->type->value,
+                'url' => $m->url(),
+                'poster_url' => $m->posterUrl(),
+                'is_primary' => $m->is_primary,
+                'alt_text' => $m->alt_text,
+                'sort_order' => $m->sort_order,
+            ]),
+            'contentSections' => $product->contentSections->map(fn (ProductContentSection $s) => [
+                'id' => $s->id,
+                'type' => $s->type->value,
+                'title' => $s->title,
+                'content' => $s->content,
+                'sort_order' => $s->sort_order,
+            ]),
         ]);
     }
 

@@ -12,6 +12,8 @@ type ProductSummary = {
     currency: string;
     in_stock: boolean;
     image_url: string | null;
+    hover_image_url: string | null;
+    variant_count: number;
 };
 
 defineProps<{
@@ -83,6 +85,8 @@ defineProps<{
                     :currency="product.currency"
                     :in-stock="product.in_stock"
                     :image-url="product.image_url"
+                    :hover-image-url="product.hover_image_url"
+                    :variant-count="product.variant_count"
                 />
             </div>
             <p v-if="!products.length" class="py-16 text-center text-white/30">

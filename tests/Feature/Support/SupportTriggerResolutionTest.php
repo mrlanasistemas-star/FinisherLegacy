@@ -9,6 +9,7 @@ use App\Enums\SupportActivityType;
 use App\Enums\SupportMessageStatus;
 use App\Enums\SupportMessageType;
 use App\Enums\SupportTriggerType;
+use App\Models\AthleteSupportMessage;
 use App\Models\AthleteSupportSession;
 use App\Models\User;
 
@@ -28,7 +29,7 @@ beforeEach(function () {
     );
 });
 
-function submitAt(AthleteSupportSession $session, int $meters): \App\Models\AthleteSupportMessage
+function submitAt(AthleteSupportSession $session, int $meters): AthleteSupportMessage
 {
     return app(SubmitSupportMessage::class)->handle(
         $session,
