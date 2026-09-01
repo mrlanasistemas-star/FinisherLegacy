@@ -349,6 +349,12 @@ function rejectMessage(id: number) {
                 mode="athlete"
             />
             <p
+                v-else-if="legacyPlate.status === 'delivered'"
+                class="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/40"
+            >
+                Vista previa no disponible para esta Legacy Plate.
+            </p>
+            <p
                 v-else
                 class="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/40"
             >
