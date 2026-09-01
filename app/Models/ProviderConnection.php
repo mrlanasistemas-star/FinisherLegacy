@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ProviderConnectionStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -48,5 +49,37 @@ class ProviderConnection extends Model
     public function settingsArray(): array
     {
         return $this->settings ?? [];
+    }
+
+    /**
+     * Whether this connection talks to a real provider — a "Mock Event
+     * Provider" is a dev/test fixture (App\Services\Integrations\Providers\
+     * MockEventProviderAdapter), never something an organizer's real data
+     * should come from (product UX consolidation brief §39-§41).
+     */
+    public function isMock(): bool
+    {
+        return $this->provider_key === 'mock';
+    }
+
+    /**
+     * Every real connection, plus mock ones only where they're actually
+     * useful (local/testing) — outside those environments a mock
+     * connection must not appear as a selectable "real" data source
+     * anywhere an organizer/event picks one (brief §40). Existing mock
+     * connections are never deleted by this — it's a query scope, not a
+     * cleanup — so fixtures tests rely on stay intact (brief §40: "No
+     * borrar fixtures").
+     *
+     * @param  Builder<ProviderConnection>  $query
+     * @return Builder<ProviderConnection>
+     */
+    public function scopeSelectable(Builder $query): Builder
+    {
+        if (app()->environment(['local', 'testing'])) {
+            return $query;
+        }
+
+        return $query->where('provider_key', '!=', 'mock');
     }
 }

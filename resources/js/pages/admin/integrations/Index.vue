@@ -88,7 +88,7 @@ const statusLabel: Record<Connection['status'], string> = {
                             :key="key"
                             :value="key"
                         >
-                            {{ key }}
+                            {{ key === 'mock' ? '[SIMULACIÓN] mock' : key }}
                         </option>
                     </select>
                 </div>
@@ -166,7 +166,15 @@ const statusLabel: Record<Connection['status'], string> = {
                                 >{{ c.name }}</Link
                             >
                         </td>
-                        <td class="px-4 py-3">{{ c.provider_key }}</td>
+                        <td class="px-4 py-3">
+                            <span
+                                v-if="c.provider_key === 'mock'"
+                                class="mr-1 text-amber-400"
+                                title="Solo para pruebas. No usar con un organizador real."
+                                >[SIMULACIÓN]</span
+                            >
+                            {{ c.provider_key }}
+                        </td>
                         <td class="px-4 py-3">
                             <Badge
                                 variant="outline"

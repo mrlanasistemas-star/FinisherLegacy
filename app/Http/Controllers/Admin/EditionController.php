@@ -57,7 +57,7 @@ class EditionController extends Controller
         return Inertia::render('admin/editions/Create', [
             'sports' => Sport::query()->where('active', true)->orderBy('name')->get(['id', 'name']),
             'organizers' => Organizer::query()->orderBy('name')->get(['id', 'name']),
-            'providerConnections' => ProviderConnection::query()->orderBy('name')->get(['id', 'name', 'provider_key']),
+            'providerConnections' => ProviderConnection::query()->selectable()->orderBy('name')->get(['id', 'name', 'provider_key']),
         ]);
     }
 

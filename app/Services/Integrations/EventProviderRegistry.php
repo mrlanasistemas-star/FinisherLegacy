@@ -24,11 +24,24 @@ class EventProviderRegistry
     ];
 
     /**
+     * Every adapter except 'mock' outside local/testing (product UX
+     * consolidation brief §39-§40) — an admin creating a new connection in
+     * production should never be offered "mock" as if it were a real
+     * provider choice. `get()` below is untouched: an existing mock
+     * connection (however it got created) still works everywhere, this
+     * only hides the option from *new* connections.
+     *
      * @return list<string>
      */
     public function keys(): array
     {
-        return array_keys(self::ADAPTERS);
+        $keys = array_keys(self::ADAPTERS);
+
+        if (app()->environment(['local', 'testing'])) {
+            return $keys;
+        }
+
+        return array_values(array_filter($keys, fn (string $key) => $key !== 'mock'));
     }
 
     public function get(string $providerKey): EventProviderAdapter

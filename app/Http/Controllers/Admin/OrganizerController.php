@@ -91,7 +91,7 @@ class OrganizerController extends Controller
                     'last_successful_sync_at' => $organizer->dataSource->providerConnection->last_successful_sync_at?->diffForHumans(),
                 ] : null,
             ] : null,
-            'providerConnections' => ProviderConnection::query()->orderBy('name')->get(['id', 'name', 'provider_key']),
+            'providerConnections' => ProviderConnection::query()->selectable()->orderBy('name')->get(['id', 'name', 'provider_key']),
         ]);
     }
 

@@ -280,7 +280,20 @@ function submit() {
                                         v-for="connection in providerConnections"
                                         :key="connection.id"
                                         :value="connection.id"
+                                        :title="
+                                            connection.provider_key === 'mock'
+                                                ? 'Solo para pruebas. No usar con un organizador real.'
+                                                : undefined
+                                        "
                                     >
+                                        <span
+                                            v-if="
+                                                connection.provider_key ===
+                                                'mock'
+                                            "
+                                            class="mr-1 text-amber-400"
+                                            >[SIMULACIÓN]</span
+                                        >
                                         {{ connection.name }} ({{
                                             connection.provider_key
                                         }})

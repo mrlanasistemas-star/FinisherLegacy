@@ -228,7 +228,20 @@ function testConnection(connectionId: number) {
                                         v-for="connection in providerConnections"
                                         :key="connection.id"
                                         :value="connection.id"
+                                        :title="
+                                            connection.provider_key === 'mock'
+                                                ? 'Solo para pruebas. No usar con un organizador real.'
+                                                : undefined
+                                        "
                                     >
+                                        <span
+                                            v-if="
+                                                connection.provider_key ===
+                                                'mock'
+                                            "
+                                            class="mr-1 text-amber-400"
+                                            >[SIMULACIÓN]</span
+                                        >
                                         {{ connection.name }} ({{
                                             connection.provider_key
                                         }})
@@ -252,6 +265,15 @@ function testConnection(connectionId: number) {
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-white">
+                                    <span
+                                        v-if="
+                                            dataSource.provider_connection
+                                                .provider_key === 'mock'
+                                        "
+                                        class="mr-1 text-amber-400"
+                                        title="Solo para pruebas. No usar con un organizador real."
+                                        >[SIMULACIÓN]</span
+                                    >
                                     {{ dataSource.provider_connection.name }}
                                 </p>
                                 <p class="text-xs text-white/40">

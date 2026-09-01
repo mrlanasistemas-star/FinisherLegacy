@@ -92,8 +92,16 @@ function submitLink() {
 
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-xl font-bold text-white">
+                <h1
+                    class="flex items-center gap-2 text-xl font-bold text-white"
+                >
                     {{ connection.name }}
+                    <span
+                        v-if="connection.provider_key === 'mock'"
+                        class="rounded-full border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-400 uppercase"
+                        title="Solo para pruebas. No usar con un organizador real."
+                        >Simulación</span
+                    >
                 </h1>
                 <p class="text-sm text-white/50">
                     Proveedor: {{ connection.provider_key }}
