@@ -90,6 +90,13 @@ return [
             'preregistrations.manage' => 'Gestionar prerregistros',
         ],
     ],
+    'notifications' => [
+        'label' => 'Notificaciones',
+        'icon' => 'Bell',
+        'permissions' => [
+            'notifications.send' => 'Enviar notificaciones a atletas',
+        ],
+    ],
     'medals' => [
         'label' => 'Medallas',
         'icon' => 'Award',

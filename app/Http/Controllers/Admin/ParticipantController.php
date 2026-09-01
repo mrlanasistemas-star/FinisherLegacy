@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Notifications\SendAthleteNotification;
+use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Models\Athlete;
 use App\Models\EventEdition;
@@ -11,7 +13,11 @@ use App\Queries\Athletes\GetAthleteHistory;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
 use App\Queries\Operations\GetEventParticipantMetrics;
 use App\Queries\Operations\GetEventParticipantsList;
+use App\Support\Notifications\NotificationTemplates;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -69,7 +75,7 @@ class ParticipantController extends Controller
         $participant = $eventParticipant;
 
         $participant->loadMissing([
-            'eventEdition.event', 'eventRace', 'result', 'athlete',
+            'eventEdition.event', 'eventRace', 'result', 'athlete.user',
             'legacyPlateEntitlements.legacyPlateModel', 'legacyPlateEntitlements.plate',
             'plates', 'media',
         ]);
@@ -129,10 +135,60 @@ class ParticipantController extends Controller
                     'acquired_at' => $owned->acquired_at->toDateString(),
                     'order_uuid' => $owned->orderItem?->order?->uuid,
                 ])->values(),
-            // Wired once the admin notification module ships — the tab
-            // exists now so the page's shape doesn't change again later.
-            'comunicacion' => [],
+            'comunicacion' => $athlete?->user === null ? [] : $athlete->user->notifications()
+                ->latest()
+                ->limit(50)
+                ->get()
+                ->map(fn (DatabaseNotification $n) => [
+                    'id' => $n->id,
+                    'title' => $n->data['title'] ?? null,
+                    'message' => $n->data['message'] ?? null,
+                    'type' => $n->data['type'] ?? null,
+                    'sent_by_name' => $n->data['sent_by_name'] ?? null,
+                    'read_at' => $n->read_at?->diffForHumans(),
+                    'created_at' => $n->created_at->diffForHumans(),
+                ])
+                ->values(),
+            'canNotify' => $athlete?->user !== null,
+            'notificationTemplates' => NotificationTemplates::all(),
         ]);
+    }
+
+    /**
+     * "ENVIAR NOTIFICACIÓN" from the Comunicación tab (product UX
+     * consolidation brief §28, §38, §53) — the same App\Actions\
+     * Notifications\SendAthleteNotification a future bulk-reminder flow
+     * from Preregistros would call too, never a second send path.
+     */
+    public function notify(Request $request, EventParticipant $eventParticipant, SendAthleteNotification $send): RedirectResponse
+    {
+        $eventParticipant->loadMissing('athlete.user');
+        $user = $eventParticipant->athlete?->user;
+
+        if ($user === null) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Este participante no tiene una cuenta para notificar.']);
+
+            return back();
+        }
+
+        $data = $request->validate([
+            'type' => ['required', Rule::enum(NotificationType::class)],
+            'title' => ['required', 'string', 'max:150'],
+            'message' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $send->handle(
+            recipient: $user,
+            title: $data['title'],
+            message: $data['message'],
+            type: NotificationType::from($data['type']),
+            actionUrl: '/dashboard/legado/'.$eventParticipant->id,
+            sentBy: $request->user(),
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Notificación enviada.']);
+
+        return back();
     }
 
     public function export(Request $request, GetEventParticipantsList $list): StreamedResponse

@@ -35,6 +35,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\LegacyCodeController;
 use App\Http\Controllers\MedalController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PreregistrationController;
 use App\Http\Controllers\ProductionController;
@@ -110,6 +111,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('dashboard/media/{media:uuid}', [AthleteHistoryController::class, 'destroyMedia'])->name('dashboard.media.destroy');
     Route::get('dashboard/my-plates', [AthleteHistoryController::class, 'myPlates'])->name('dashboard.my-plates');
     Route::get('dashboard/my-gear', [AthleteHistoryController::class, 'myGear'])->name('dashboard.my-gear');
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     Route::get('dashboard/profile/edit', [AthleteProfileController::class, 'edit'])->name('dashboard.profile.edit');
     Route::patch('dashboard/profile', [AthleteProfileController::class, 'update'])->name('dashboard.profile.update');
@@ -197,6 +202,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [AdminParticipantController::class, 'index'])->name('index');
             Route::get('export', [AdminParticipantController::class, 'export'])->name('export');
             Route::get('{eventParticipant}', [AdminParticipantController::class, 'show'])->name('show');
+            Route::post('{eventParticipant}/notify', [AdminParticipantController::class, 'notify'])
+                ->middleware('can:notifications.send')
+                ->name('notify');
         });
 
         // Canonical athlete identity (docs/adr/0004-athlete-canonical-identity.md).

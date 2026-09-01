@@ -6,10 +6,37 @@
  * App\Queries\Commerce\GetAthleteOwnedProducts the athlete-facing pages and
  * the admin Athlete detail page already use.
  */
-import { Head, Link } from '@inertiajs/vue3';
-import { Boxes, Mail, ShoppingBag, Trophy, User } from '@lucide/vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import {
+    Bell,
+    Boxes,
+    Mail,
+    Send,
+    ShoppingBag,
+    Trophy,
+    User,
+} from '@lucide/vue';
+import { ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 type Historial = {
     id: number;
@@ -30,7 +57,19 @@ type Compra = {
     order_uuid: string | null;
 };
 
-defineProps<{
+type Mensaje = {
+    id: string;
+    title: string | null;
+    message: string | null;
+    type: string | null;
+    sent_by_name: string | null;
+    read_at: string | null;
+    created_at: string;
+};
+
+type NotificationTemplate = { title: string; message: string };
+
+const props = defineProps<{
     participant: {
         id: number;
         full_name: string;
@@ -60,7 +99,9 @@ defineProps<{
     };
     historial: Historial[];
     compras: Compra[];
-    comunicacion: unknown[];
+    comunicacion: Mensaje[];
+    canNotify: boolean;
+    notificationTemplates: Record<string, NotificationTemplate>;
 }>();
 
 function initials(name: string) {
@@ -70,6 +111,44 @@ function initials(name: string) {
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join('');
+}
+
+const typeLabels: Record<string, string> = {
+    payment_pending: 'Pago pendiente',
+    result_available: 'Resultado disponible',
+    legacy_plate_ready: 'Legacy Plate lista',
+    order_ready: 'Pedido listo',
+    event_updated: 'Evento actualizado',
+    custom: 'Mensaje personalizado',
+};
+
+const notifyOpen = ref(false);
+const notifyForm = useForm({
+    type: 'custom',
+    title: '',
+    message: '',
+});
+
+watch(
+    () => notifyForm.type,
+    (type) => {
+        const template = props.notificationTemplates[type];
+
+        if (template) {
+            notifyForm.title = template.title;
+            notifyForm.message = template.message;
+        }
+    },
+);
+
+function sendNotification() {
+    notifyForm.post(`/admin/participants/${props.participant.id}/notify`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            notifyOpen.value = false;
+            notifyForm.reset();
+        },
+    });
 }
 </script>
 
@@ -318,11 +397,116 @@ function initials(name: string) {
             </TabsContent>
 
             <TabsContent value="comunicacion" class="mt-6">
-                <p
-                    class="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-white/30"
+                <div class="mb-4 flex items-center justify-between">
+                    <p class="text-xs text-white/40">
+                        Historial de notificaciones enviadas a este atleta.
+                    </p>
+                    <Dialog v-model:open="notifyOpen">
+                        <DialogTrigger as-child>
+                            <Button
+                                :disabled="!canNotify"
+                                class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                            >
+                                <Send class="size-4" />
+                                Enviar notificación
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent
+                            class="dark border-white/10 bg-fl-graphite text-white"
+                        >
+                            <DialogHeader>
+                                <DialogTitle>Enviar notificación</DialogTitle>
+                            </DialogHeader>
+                            <div class="grid gap-4">
+                                <div class="grid gap-2">
+                                    <Label class="text-xs">Plantilla</Label>
+                                    <Select v-model="notifyForm.type">
+                                        <SelectTrigger
+                                            class="border-white/10 bg-fl-black text-white"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="custom"
+                                                >Mensaje
+                                                personalizado</SelectItem
+                                            >
+                                            <SelectItem
+                                                v-for="(
+                                                    template, key
+                                                ) in notificationTemplates"
+                                                :key="key"
+                                                :value="key"
+                                            >
+                                                {{ typeLabels[key] ?? key }}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label class="text-xs">Título</Label>
+                                    <input
+                                        v-model="notifyForm.title"
+                                        class="h-9 w-full rounded-md border border-white/10 bg-fl-black px-3 text-sm text-white"
+                                    />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label class="text-xs">Mensaje</Label>
+                                    <Textarea
+                                        v-model="notifyForm.message"
+                                        rows="4"
+                                        class="border-white/10 bg-fl-black text-white"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                                    :disabled="notifyForm.processing"
+                                    @click="sendNotification"
+                                >
+                                    Enviar
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+
+                <div
+                    class="divide-y divide-white/5 rounded-xl border border-white/10"
                 >
-                    Sin notificaciones enviadas todavía.
-                </p>
+                    <div
+                        v-for="msg in comunicacion"
+                        :key="msg.id"
+                        class="px-4 py-3 text-sm"
+                    >
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="font-medium text-white">
+                                {{ msg.title }}
+                            </p>
+                            <Badge
+                                variant="outline"
+                                class="border-white/20 text-white/50"
+                            >
+                                {{ msg.read_at ? 'Leída' : 'Enviada' }}
+                            </Badge>
+                        </div>
+                        <p class="mt-1 text-white/60">{{ msg.message }}</p>
+                        <p class="mt-1 text-xs text-white/30">
+                            {{ msg.created_at }}
+                            <span v-if="msg.sent_by_name"
+                                >· por {{ msg.sent_by_name }}</span
+                            >
+                        </p>
+                    </div>
+                    <div
+                        v-if="!comunicacion.length"
+                        class="flex flex-col items-center gap-3 px-4 py-10 text-center text-white/30"
+                    >
+                        <Bell class="size-8 text-white/10" />
+                        <p>Sin notificaciones enviadas todavía.</p>
+                    </div>
+                </div>
             </TabsContent>
         </Tabs>
     </div>
