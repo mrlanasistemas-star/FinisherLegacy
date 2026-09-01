@@ -70,6 +70,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('device-pairing-confirm', function (Request $request) {
             return Limit::perMinute(30)->by($request->ip());
         });
+
+        // Public, unauthenticated "leave a message" form (product UX
+        // consolidation brief §43: "Basic abuse protection") — by IP, not
+        // by session, since a supporter never has an account.
+        RateLimiter::for('support-message', function (Request $request) {
+            return Limit::perMinute(6)->by($request->ip());
+        });
     }
 
     /**

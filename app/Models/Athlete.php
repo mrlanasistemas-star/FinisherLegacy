@@ -106,6 +106,12 @@ class Athlete extends Model
         return $this->hasMany(AthleteEventMedia::class);
     }
 
+    /** @return HasMany<AthleteSupportSession, $this> */
+    public function supportSessions(): HasMany
+    {
+        return $this->hasMany(AthleteSupportSession::class);
+    }
+
     public function isMerged(): bool
     {
         return $this->identity_status === AthleteIdentityStatus::Merged;

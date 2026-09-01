@@ -44,6 +44,9 @@ use App\Http\Controllers\Store\CartController as StoreCartController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
+use App\Http\Controllers\SupportAudioController;
+use App\Http\Controllers\SupportController;
+use App\Http\Controllers\SupportSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -66,6 +69,18 @@ Route::get('preregistrations/{token}/qr.svg', [PreregistrationController::class,
 Route::get('l/{code}', [LegacyCodeController::class, 'show'])->name('legacy-code.show');
 Route::get('l/{code}/qr.svg', [LegacyCodeController::class, 'qr'])->name('legacy-code.qr');
 Route::get('l/{code}/continue/{provider}', [LegacyCodeController::class, 'continueTo'])->name('legacy-code.continue');
+
+// "MI EQUIPO DE APOYO" public side (product UX consolidation brief §32-§35)
+// — no account required, reached only through the impredecible public_code.
+Route::get('support/{publicCode}', [SupportController::class, 'show'])->name('support.show');
+Route::get('support/{publicCode}/qr.svg', [SupportController::class, 'qr'])->name('support.qr');
+Route::post('support/{publicCode}/messages', [SupportController::class, 'storeMessage'])
+    ->middleware('throttle:support-message')
+    ->name('support.messages.store');
+
+Route::get('support-messages/{message}/audio', [SupportAudioController::class, 'show'])
+    ->middleware('signed')
+    ->name('support-messages.audio');
 
 Route::get('/@{athleteProfile:username}', [PublicProfileController::class, 'show'])->name('profile.public');
 
@@ -101,6 +116,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // gallery lives on the main /dashboard route (nav item "Mi Legado"
     // already pointed here); this is only its per-participation detail.
     Route::get('dashboard/legado/{participant}', [AthleteHistoryController::class, 'legadoShow'])->name('dashboard.legado.show');
+
+    // "MI EQUIPO DE APOYO" athlete side (brief §32-§35, §44-§45) — lives
+    // inside Mi Legado's event detail, no separate sidebar module.
+    Route::post('dashboard/legado/{eventParticipant}/support', [SupportSessionController::class, 'store'])->name('dashboard.support.store');
+    Route::post('support-messages/{message}/approve', [SupportSessionController::class, 'approve'])->name('support-messages.approve');
+    Route::post('support-messages/{message}/reject', [SupportSessionController::class, 'reject'])->name('support-messages.reject');
 
     // Still reachable by direct URL (brief §3: "no necesariamente borres
     // rutas") — not in the sidebar anymore, consolidated into Mi Legado.

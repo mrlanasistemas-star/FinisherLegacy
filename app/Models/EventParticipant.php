@@ -117,4 +117,10 @@ class EventParticipant extends Model
     {
         return $this->hasMany(AthleteEventMedia::class);
     }
+
+    /** @return HasMany<AthleteSupportSession, $this> */
+    public function supportSessions(): HasMany
+    {
+        return $this->hasMany(AthleteSupportSession::class);
+    }
 }

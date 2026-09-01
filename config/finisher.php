@@ -201,4 +201,18 @@ return [
         'video_mimes' => ['mp4', 'webm'],
         'disk' => env('FINISHER_MEDIA_DISK', 'public'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Athlete Support ("Mi equipo de apoyo") — brief §29-§30
+    |--------------------------------------------------------------------------
+    */
+    'support' => [
+        'audio_max_seconds' => env('FINISHER_SUPPORT_AUDIO_MAX_SECONDS', 60),
+        'audio_max_bytes' => env('FINISHER_SUPPORT_AUDIO_MAX_BYTES', 10 * 1024 * 1024),
+        'audio_mimes' => ['webm', 'mp4', 'm4a', 'mpga', 'mp3', 'ogg', 'wav'],
+        // Private — audio is never served from a public disk URL, only
+        // through a signed, time-limited route (brief §41).
+        'audio_disk' => env('FINISHER_SUPPORT_AUDIO_DISK', 'local'),
+    ],
 ];

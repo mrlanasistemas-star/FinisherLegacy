@@ -4,8 +4,17 @@
  * one screen — result, medal, Legacy Plate viewer, media, purchases —
  * instead of three separate pages repeating the same event's story.
  */
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Camera, Package, Video as VideoIcon } from '@lucide/vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import {
+    Camera,
+    Check,
+    Copy,
+    Heart,
+    Package,
+    Video as VideoIcon,
+    X,
+} from '@lucide/vue';
+import { ref } from 'vue';
 import LegacyPlateViewer from '@/components/shared/LegacyPlateViewer.vue';
 import type {
     LegacyPlateModelData,
@@ -15,6 +24,8 @@ import MediaUploader from '@/components/shared/MediaUploader.vue';
 import Money from '@/components/shared/Money.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 type Split = {
     label: string | null;
@@ -64,6 +75,26 @@ type Purchase = {
     payment_status: string;
 };
 
+type SupportMessage = {
+    id: number;
+    type: 'text' | 'audio';
+    message_text: string | null;
+    audio_url: string | null;
+    contributor_name: string | null;
+    status: string;
+    is_surprise: boolean;
+    created_at: string;
+};
+
+type SupportSession = {
+    public_code: string;
+    title: string;
+    public_url: string;
+    qr_url: string;
+    status: string;
+    messages: SupportMessage[];
+};
+
 const {
     participant,
     result,
@@ -73,6 +104,7 @@ const {
     mediaLimits,
     mediaRemaining,
     purchases,
+    supportSession,
 } = defineProps<{
     participant: {
         id: number;
@@ -99,6 +131,7 @@ const {
     mediaLimits: { images: number; videos: number };
     mediaRemaining: { images: number; videos: number };
     purchases: Purchase[];
+    supportSession: SupportSession | null;
 }>();
 
 const legacyPlateStatusLabel: Record<string, string> = {
@@ -121,6 +154,40 @@ function toggleVisibility(media: Media) {
 
 function removeMedia(media: Media) {
     router.delete(`/dashboard/media/${media.uuid}`, { preserveScroll: true });
+}
+
+const supportForm = useForm({
+    title: `Apoya a ${participant.event ?? 'mi carrera'}`,
+});
+
+function createSupportSession() {
+    supportForm.post(`/dashboard/legado/${participant.id}/support`, {
+        preserveScroll: true,
+    });
+}
+
+const linkCopied = ref(false);
+
+async function copySupportLink() {
+    if (!supportSession) {
+        return;
+    }
+
+    await navigator.clipboard.writeText(supportSession.public_url);
+    linkCopied.value = true;
+    setTimeout(() => (linkCopied.value = false), 1800);
+}
+
+function approveMessage(id: number) {
+    router.post(
+        `/support-messages/${id}/approve`,
+        {},
+        { preserveScroll: true },
+    );
+}
+
+function rejectMessage(id: number) {
+    router.post(`/support-messages/${id}/reject`, {}, { preserveScroll: true });
 }
 </script>
 
@@ -288,6 +355,139 @@ function removeMedia(media: Media) {
                 Tu Legacy Plate está en preparación — el visor aparecerá en
                 cuanto se asigne un modelo.
             </p>
+        </section>
+
+        <!-- Apoyo -->
+        <section class="mt-8">
+            <h2
+                class="mb-3 flex items-center gap-1.5 text-sm tracking-wide text-white/40 uppercase"
+            >
+                <Heart class="size-3.5" />
+                Apoyo
+            </h2>
+
+            <div
+                v-if="!supportSession"
+                class="rounded-2xl border border-dashed border-white/10 p-6 text-center"
+            >
+                <p class="text-sm text-white/50">
+                    Crea un link para que tu familia y amigos te manden mensajes
+                    de apoyo durante este evento.
+                </p>
+                <Button
+                    class="mt-4 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                    :disabled="supportForm.processing"
+                    @click="createSupportSession"
+                >
+                    <Heart class="size-4" />
+                    Crear link de apoyo
+                </Button>
+            </div>
+
+            <div v-else class="grid gap-4 lg:grid-cols-[220px_1fr]">
+                <div
+                    class="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-fl-graphite/20 p-5 text-center"
+                >
+                    <div class="rounded-xl bg-white p-2">
+                        <img
+                            :src="supportSession.qr_url"
+                            alt="QR de apoyo"
+                            class="size-32"
+                        />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <Input
+                            :model-value="supportSession.public_url"
+                            readonly
+                            class="w-40 border-white/10 bg-fl-black text-xs text-white"
+                        />
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            class="text-white/60 hover:text-fl-gold"
+                            @click="copySupportLink"
+                        >
+                            <Check v-if="linkCopied" class="size-4" />
+                            <Copy v-else class="size-4" />
+                        </Button>
+                    </div>
+                </div>
+
+                <div
+                    class="divide-y divide-white/5 rounded-2xl border border-white/10"
+                >
+                    <div
+                        v-for="msg in supportSession.messages"
+                        :key="msg.id"
+                        class="flex items-start justify-between gap-3 px-4 py-3 text-sm"
+                    >
+                        <div class="min-w-0">
+                            <p class="text-white/80">
+                                {{ msg.contributor_name ?? 'Anónimo' }}
+                                <Badge
+                                    v-if="msg.is_surprise"
+                                    variant="outline"
+                                    class="ml-1 border-fl-gold/30 text-fl-gold-soft"
+                                    >🎁 Sorpresa</Badge
+                                >
+                            </p>
+                            <p
+                                v-if="msg.message_text"
+                                class="mt-1 text-white/60"
+                            >
+                                {{ msg.message_text }}
+                            </p>
+                            <audio
+                                v-else-if="msg.audio_url"
+                                :src="msg.audio_url"
+                                controls
+                                class="mt-1 h-8 w-full max-w-xs"
+                            />
+                            <p class="mt-1 text-xs text-white/30">
+                                {{ msg.created_at }}
+                            </p>
+                        </div>
+                        <div
+                            v-if="msg.status === 'pending'"
+                            class="flex shrink-0 gap-1"
+                        >
+                            <Button
+                                size="icon-sm"
+                                variant="ghost"
+                                class="text-emerald-400 hover:bg-emerald-500/10"
+                                @click="approveMessage(msg.id)"
+                            >
+                                <Check class="size-4" />
+                            </Button>
+                            <Button
+                                size="icon-sm"
+                                variant="ghost"
+                                class="text-red-400 hover:bg-red-500/10"
+                                @click="rejectMessage(msg.id)"
+                            >
+                                <X class="size-4" />
+                            </Button>
+                        </div>
+                        <Badge
+                            v-else
+                            variant="outline"
+                            class="shrink-0 border-white/20 text-white/40"
+                        >
+                            {{
+                                msg.status === 'approved'
+                                    ? 'Aprobado'
+                                    : 'Rechazado'
+                            }}
+                        </Badge>
+                    </div>
+                    <p
+                        v-if="!supportSession.messages.length"
+                        class="px-4 py-10 text-center text-white/30"
+                    >
+                        Sin mensajes de apoyo todavía.
+                    </p>
+                </div>
+            </div>
         </section>
 
         <!-- Media -->

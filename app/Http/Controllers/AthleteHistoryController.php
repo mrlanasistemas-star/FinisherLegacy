@@ -6,10 +6,12 @@ use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Actions\Media\DeleteAthleteEventMedia;
 use App\Actions\Media\UpdateAthleteEventMediaVisibility;
 use App\Actions\Media\UploadAthleteEventMedia;
+use App\Enums\SupportMessageType;
 use App\Exceptions\MediaLimitReachedException;
 use App\Exceptions\MediaTooLargeException;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteOwnedProduct;
+use App\Models\AthleteSupportMessage;
 use App\Models\EventParticipant;
 use App\Models\EventResultSplit;
 use App\Models\LegacyPlateEntitlement;
@@ -139,6 +141,7 @@ class AthleteHistoryController extends Controller
             'plates.legacyCode', 'plates.legacyPlateModel.fields', 'media',
         ]);
 
+        $supportSession = $participant->supportSessions()->with('messages.contributor')->latest()->first();
         $plate = $participant->plates->first();
         $entitlementRecord = $plate !== null ? null : LegacyPlateEntitlement::query()
             ->where('event_participant_id', $participant->id)
@@ -260,6 +263,26 @@ class AthleteHistoryController extends Controller
                 'order_uuid' => $item->order->uuid,
                 'payment_status' => $item->order->payment_status->value,
             ])->values(),
+            'supportSession' => $supportSession === null ? null : [
+                'public_code' => $supportSession->public_code,
+                'title' => $supportSession->title,
+                'public_url' => url("/support/{$supportSession->public_code}"),
+                'qr_url' => url("/support/{$supportSession->public_code}/qr.svg"),
+                'status' => $supportSession->status->value,
+                // A surprise message (brief §32) withholds its own content
+                // from the athlete even here — moderation stays possible
+                // (approve/reject "blind"), the content just isn't shown.
+                'messages' => $supportSession->messages->sortByDesc('created_at')->map(fn (AthleteSupportMessage $m) => [
+                    'id' => $m->id,
+                    'type' => $m->type->value,
+                    'message_text' => $m->is_surprise ? null : $m->message_text,
+                    'audio_url' => ! $m->is_surprise && $m->type === SupportMessageType::Audio ? $m->signedAudioUrl() : null,
+                    'contributor_name' => $m->contributor?->display_name,
+                    'status' => $m->status->value,
+                    'is_surprise' => $m->is_surprise,
+                    'created_at' => $m->created_at->diffForHumans(),
+                ])->values(),
+            ],
         ]);
     }
 
