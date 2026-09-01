@@ -61,7 +61,7 @@ function submit() {
 <template>
     <Head title="Nuevo evento" />
 
-    <div class="mx-auto max-w-3xl p-4 md:p-8">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-8 lg:px-8 xl:px-10">
         <div class="mb-6">
             <h1 class="text-xl font-bold text-white">Crear evento manual</h1>
             <p class="mt-1 text-sm text-white/50">
@@ -71,51 +71,140 @@ function submit() {
         </div>
 
         <form class="space-y-6" @submit.prevent="submit">
-            <section
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-            >
-                <h2 class="mb-4 text-sm font-semibold text-white/70 uppercase">
-                    General
-                </h2>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label>Nombre del evento</Label>
-                        <Input
-                            v-model="form.name"
-                            class="bg-fl-black"
-                            required
-                        />
-                        <p v-if="form.errors.name" class="text-xs text-red-400">
-                            {{ form.errors.name }}
-                        </p>
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Deporte</Label>
-                        <Select v-model="form.sport_id">
-                            <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+            <div class="grid gap-6 lg:grid-cols-2">
+                <section
+                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                >
+                    <h2
+                        class="mb-4 text-sm font-semibold text-white/70 uppercase"
+                    >
+                        Información general
+                    </h2>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2 sm:col-span-2">
+                            <Label>Nombre del evento</Label>
+                            <Input
+                                v-model="form.name"
+                                class="bg-fl-black"
+                                required
+                            />
+                            <p
+                                v-if="form.errors.name"
+                                class="text-xs text-red-400"
                             >
-                                <SelectValue
-                                    placeholder="Selecciona un deporte"
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="sport in sports"
-                                    :key="sport.id"
-                                    :value="sport.id"
+                                {{ form.errors.name }}
+                            </p>
+                        </div>
+                        <div class="grid gap-2">
+                            <Label>Deporte</Label>
+                            <Select v-model="form.sport_id">
+                                <SelectTrigger
+                                    class="border-white/10 bg-fl-black text-white"
                                 >
-                                    {{ sport.name }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p
-                            v-if="form.errors.sport_id"
-                            class="text-xs text-red-400"
-                        >
-                            {{ form.errors.sport_id }}
-                        </p>
+                                    <SelectValue
+                                        placeholder="Selecciona un deporte"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="sport in sports"
+                                        :key="sport.id"
+                                        :value="sport.id"
+                                    >
+                                        {{ sport.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p
+                                v-if="form.errors.sport_id"
+                                class="text-xs text-red-400"
+                            >
+                                {{ form.errors.sport_id }}
+                            </p>
+                        </div>
+                        <div class="grid gap-2">
+                            <Label>Edición</Label>
+                            <Input
+                                v-model="form.edition_name"
+                                class="bg-fl-black"
+                                placeholder="Edición 2027"
+                                required
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label>Año</Label>
+                            <Input
+                                v-model.number="form.year"
+                                type="number"
+                                class="bg-fl-black"
+                                required
+                            />
+                        </div>
                     </div>
+                </section>
+
+                <section
+                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                >
+                    <h2
+                        class="mb-4 text-sm font-semibold text-white/70 uppercase"
+                    >
+                        Fecha y ubicación
+                    </h2>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label>Fecha</Label>
+                            <Input
+                                v-model="form.event_date"
+                                type="date"
+                                class="bg-fl-black"
+                                required
+                            />
+                            <p
+                                v-if="form.errors.event_date"
+                                class="text-xs text-red-400"
+                            >
+                                {{ form.errors.event_date }}
+                            </p>
+                        </div>
+                        <div class="grid gap-2">
+                            <Label>Zona horaria</Label>
+                            <Input
+                                v-model="form.timezone"
+                                class="bg-fl-black"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label>Ciudad</Label>
+                            <Input
+                                v-model="form.city"
+                                class="bg-fl-black"
+                                required
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label>Estado</Label>
+                            <Input v-model="form.state" class="bg-fl-black" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label>País</Label>
+                            <Input
+                                v-model="form.country"
+                                class="bg-fl-black"
+                                required
+                            />
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                >
+                    <h2
+                        class="mb-4 text-sm font-semibold text-white/70 uppercase"
+                    >
+                        Organizador
+                    </h2>
                     <div class="grid gap-2">
                         <Label>Organizador (opcional)</Label>
                         <Select v-model="form.organizer_id">
@@ -135,122 +224,73 @@ function submit() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div class="grid gap-2">
-                        <Label>Edición</Label>
-                        <Input
-                            v-model="form.edition_name"
-                            class="bg-fl-black"
-                            placeholder="Edición 2027"
-                            required
-                        />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Año</Label>
-                        <Input
-                            v-model.number="form.year"
-                            type="number"
-                            class="bg-fl-black"
-                            required
-                        />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Fecha</Label>
-                        <Input
-                            v-model="form.event_date"
-                            type="date"
-                            class="bg-fl-black"
-                            required
-                        />
-                        <p
-                            v-if="form.errors.event_date"
-                            class="text-xs text-red-400"
-                        >
-                            {{ form.errors.event_date }}
-                        </p>
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Zona horaria</Label>
-                        <Input v-model="form.timezone" class="bg-fl-black" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Ciudad</Label>
-                        <Input
-                            v-model="form.city"
-                            class="bg-fl-black"
-                            required
-                        />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Estado</Label>
-                        <Input v-model="form.state" class="bg-fl-black" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>País</Label>
-                        <Input
-                            v-model="form.country"
-                            class="bg-fl-black"
-                            required
-                        />
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <section
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-            >
-                <h2 class="mb-1 text-sm font-semibold text-white/70 uppercase">
-                    ¿Cómo recibiremos los datos?
-                </h2>
-                <p class="mb-4 text-xs text-white/40">
-                    Puedes dejarlo en Manual y cambiarlo después desde la
-                    pestaña "Datos" del evento.
-                </p>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label>Fuente de datos</Label>
-                        <Select v-model="form.data_source_type">
-                            <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="manual">Manual</SelectItem>
-                                <SelectItem value="file">Archivo</SelectItem>
-                                <SelectItem value="api">API</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div
-                        v-if="form.data_source_type === 'api'"
-                        class="grid gap-2"
+                <section
+                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                >
+                    <h2
+                        class="mb-1 text-sm font-semibold text-white/70 uppercase"
                     >
-                        <Label>Conexión</Label>
-                        <Select
-                            v-model="form.data_source_provider_connection_id"
-                        >
-                            <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
-                            >
-                                <SelectValue
-                                    placeholder="Selecciona una conexión"
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="connection in providerConnections"
-                                    :key="connection.id"
-                                    :value="connection.id"
+                        ¿Cómo recibiremos los datos?
+                    </h2>
+                    <p class="mb-4 text-xs text-white/40">
+                        Puedes dejarlo en Manual y cambiarlo después desde la
+                        pestaña "Datos" del evento.
+                    </p>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label>Fuente de datos</Label>
+                            <Select v-model="form.data_source_type">
+                                <SelectTrigger
+                                    class="border-white/10 bg-fl-black text-white"
                                 >
-                                    {{ connection.name }} ({{
-                                        connection.provider_key
-                                    }})
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="manual"
+                                        >Manual</SelectItem
+                                    >
+                                    <SelectItem value="file"
+                                        >Archivo</SelectItem
+                                    >
+                                    <SelectItem value="api">API</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div
+                            v-if="form.data_source_type === 'api'"
+                            class="grid gap-2"
+                        >
+                            <Label>Conexión</Label>
+                            <Select
+                                v-model="
+                                    form.data_source_provider_connection_id
+                                "
+                            >
+                                <SelectTrigger
+                                    class="border-white/10 bg-fl-black text-white"
+                                >
+                                    <SelectValue
+                                        placeholder="Selecciona una conexión"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="connection in providerConnections"
+                                        :key="connection.id"
+                                        :value="connection.id"
+                                    >
+                                        {{ connection.name }} ({{
+                                            connection.provider_key
+                                        }})
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
 
             <section
                 class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"

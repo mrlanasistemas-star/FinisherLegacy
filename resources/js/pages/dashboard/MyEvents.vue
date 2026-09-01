@@ -24,7 +24,7 @@ defineProps<{ participations: Participation[] }>();
 <template>
     <Head title="Mis eventos" />
 
-    <div class="mx-auto max-w-4xl p-4 md:p-6">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <h1 class="text-xl font-bold text-white">Mis eventos</h1>
         <p class="mt-1 text-sm text-white/50">
             Cada meta que cruzaste, en un solo lugar.

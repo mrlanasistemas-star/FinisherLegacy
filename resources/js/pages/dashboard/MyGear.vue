@@ -19,7 +19,7 @@ defineProps<{ items: OwnedItem[] }>();
 <template>
     <Head title="Mi equipo" />
 
-    <div class="mx-auto max-w-4xl p-4 md:p-6">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <h1 class="text-xl font-bold text-white">Mi equipo</h1>
         <p class="mt-1 text-sm text-white/50">
             Tu clóset digital — el equipo que te acompaña en cada meta.
@@ -27,7 +27,7 @@ defineProps<{ items: OwnedItem[] }>();
 
         <div
             v-if="items.length"
-            class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3"
+            class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
         >
             <OwnedProductCard
                 v-for="item in items"

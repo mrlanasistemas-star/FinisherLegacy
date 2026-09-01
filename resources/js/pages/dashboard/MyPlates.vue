@@ -21,13 +21,16 @@ defineProps<{ plates: PlateRow[] }>();
 <template>
     <Head title="Mis Legacy Plates" />
 
-    <div class="mx-auto max-w-4xl p-4 md:p-6">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <h1 class="text-xl font-bold text-white">Mis Legacy Plates</h1>
         <p class="mt-1 text-sm text-white/50">
             La pieza física que guarda tu historia deportiva.
         </p>
 
-        <div v-if="plates.length" class="mt-8 grid gap-4 sm:grid-cols-2">
+        <div
+            v-if="plates.length"
+            class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
             <LegacyPlateCard
                 v-for="plate in plates"
                 :key="plate.id"
