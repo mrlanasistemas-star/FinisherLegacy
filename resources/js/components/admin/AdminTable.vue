@@ -27,9 +27,18 @@ const props = defineProps<{
 const query = ref(props.initialQuery ?? '');
 
 const applySearch = useDebounceFn(() => {
+    // Carries over whatever other filters are already in the URL (a status
+    // select next to this search box, say) — only `q` changes here, and
+    // `page` is dropped so a new search always lands on page 1 instead of
+    // preserving a page number the new, smaller result set may not have.
+    const params = Object.fromEntries(
+        new URLSearchParams(window.location.search),
+    );
+    delete params.page;
+
     router.get(
         window.location.pathname,
-        { q: query.value || undefined },
+        { ...params, q: query.value || undefined },
         { preserveState: true, replace: true },
     );
 }, 350);

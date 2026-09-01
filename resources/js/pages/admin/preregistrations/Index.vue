@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import type { AcceptableValue } from 'reka-ui';
 import AdminTable from '@/components/admin/AdminTable.vue';
 import { Badge } from '@/components/ui/badge';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     preregistrationStatus,
     statusClass,
     statusLabel,
 } from '@/lib/statusLabels';
 
-defineProps<{
+const props = defineProps<{
     preregistrations: {
         data: {
             id: number;
@@ -21,7 +29,8 @@ defineProps<{
         }[];
         links: { url: string | null; label: string; active: boolean }[];
     };
-    filters: { q: string };
+    statuses: string[];
+    filters: { q: string; status: string | null };
 }>();
 
 const columns = [
@@ -32,6 +41,21 @@ const columns = [
     { key: 'bib_number', label: 'Número' },
     { key: 'status', label: 'Estado' },
 ];
+
+// A status change navigates without a `page` param, same as the search
+// box — it always lands back on page 1 for the new, possibly smaller,
+// result set rather than preserving a page number that may not exist
+// anymore (product UX consolidation brief §80).
+function onStatusChange(value: AcceptableValue) {
+    router.get(
+        '/admin/preregistrations',
+        {
+            q: props.filters.q || undefined,
+            status: typeof value === 'string' ? value : undefined,
+        },
+        { preserveState: true, replace: true },
+    );
+}
 </script>
 
 <template>
@@ -39,6 +63,28 @@ const columns = [
 
     <div class="p-4 md:p-8">
         <h1 class="mb-6 text-xl font-bold text-white">Prerregistros</h1>
+
+        <div class="mb-4">
+            <Select
+                :model-value="filters.status ?? undefined"
+                @update:model-value="onStatusChange"
+            >
+                <SelectTrigger
+                    class="w-48 border-white/10 bg-fl-black text-white"
+                >
+                    <SelectValue placeholder="Todos los estados" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem
+                        v-for="status in statuses"
+                        :key="status"
+                        :value="status"
+                    >
+                        {{ statusLabel(preregistrationStatus, status) }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
 
         <AdminTable
             :columns="columns"
