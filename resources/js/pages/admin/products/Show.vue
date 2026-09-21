@@ -88,22 +88,29 @@ function submitVariant() {
 
 // --- Gallery ---------------------------------------------------------------
 
-const mediaForm = useForm<{ file: File | null; alt_text: string }>({
-    file: null,
+const MAX_FILES_PER_UPLOAD = 10;
+
+const mediaForm = useForm<{ files: File[]; alt_text: string }>({
+    files: [],
     alt_text: '',
 });
 
 function uploadMedia(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []).slice(0, MAX_FILES_PER_UPLOAD);
 
-    if (!file) {
+    if (!files.length) {
         return;
     }
 
-    mediaForm.file = file;
+    mediaForm.files = files;
     mediaForm.post(`/admin/products/${props.product.id}/media`, {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => mediaForm.reset(),
+        onFinish: () => {
+            input.value = '';
+        },
     });
 }
 
@@ -310,11 +317,12 @@ const sectionTypeHelp: Record<string, string> = {
                     class="cursor-pointer bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
                 >
                     <Plus class="size-3.5" />
-                    Subir imagen o video
+                    Subir imágenes o videos
                 </Button>
                 <input
                     type="file"
                     accept="image/*,video/*"
+                    multiple
                     class="hidden"
                     @change="uploadMedia"
                 />

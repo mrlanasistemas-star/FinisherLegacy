@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * NOT a source of truth for price (brief §56) — CheckoutCart always
  * re-resolves price/stock/totals server-side.
  */
-#[Fillable(['uuid', 'user_id', 'session_token', 'currency'])]
+#[Fillable(['uuid', 'user_id', 'session_token', 'currency', 'coupon_id'])]
 class Cart extends Model
 {
     /** @return BelongsTo<User, $this> */
@@ -24,5 +24,11 @@ class Cart extends Model
     public function items(): HasMany
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    /** @return BelongsTo<Coupon, $this> */
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 }

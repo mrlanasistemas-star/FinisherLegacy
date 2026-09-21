@@ -95,6 +95,34 @@ Un producto QR-capable o Legacy Plate sin Athlete resuelto lanza
   con Athlete conocido, crea un `AthleteOwnedProduct`.
 - `App\Actions\Commerce\CompleteOrder` — requiere confirmed + fulfilled.
 
+## Cupones
+
+Fase 1 únicamente (brief §30-§42): `Coupon` con `type` (`percentage` |
+`fixed_amount`) — `value` siempre entero (porcentaje 1-100, o minor units
+para monto fijo, nunca un float monetario). Nada de reglas BOGO/envío
+gratis/motor de reglas.
+
+- `App\Actions\Commerce\ValidateCoupon` — la única fuente de verdad de
+  elegibilidad (activo, vigencia, moneda, monto mínimo, límite total,
+  límite por usuario). Nunca confiar en el frontend.
+- `App\Actions\Commerce\ApplyCouponToCart`/`RemoveCouponFromCart` —
+  cart-time únicamente, para feedback de UX (brief §42); guardan/limpian
+  `Cart.coupon_id`.
+- `App\Actions\Commerce\ResolveCartDiscount` — calcula el descuento en
+  minor units, nunca mayor al subtotal (brief §40: total nunca negativo).
+- `CheckoutCart` es la única autoridad real: vuelve a resolver el cupón
+  contra un `Coupon::lockForUpdate()` dentro de la misma transacción del
+  checkout — dos checkouts concurrentes con el último uso disponible del
+  mismo cupón se serializan sobre ese lock, y el segundo se revalida
+  contra el conteo de `CouponRedemption` ya actualizado por el primero
+  (brief §39, la única forma real de resolver la carrera).
+- `CouponRedemption` es la fuente de verdad de "cuántas veces se usó" —
+  nunca un contador derivado que pueda desincronizarse — y el `Order`
+  congela `coupon_id`/`coupon_code`/`coupon_name` como snapshot histórico
+  (brief §38), igual que ya hace con sus líneas.
+- Permiso: `coupons.manage` (módulo `store`), UI en `/admin/coupons` —
+  una sola pantalla (brief §41), sin módulos separados.
+
 ## Pagos
 
 `App\Contracts\Commerce\PaymentGateway` — contrato para gateways online
@@ -162,9 +190,9 @@ firma (ver `docs/api/v1.md`).
 - Carrito de invitado (`session_token`) — el modelo lo soporta,
   `GetOrCreateCart` lo soporta, pero el checkout actual solo lo ejercita
   autenticado.
-- Impuestos/envío/descuentos — fuera de alcance a propósito (brief
-  §204-§206), campos preparados (`tax_minor`, `discount_minor`,
-  `requires_shipping`) sin motor real.
+- Impuestos/envío — fuera de alcance a propósito (brief §204-§206),
+  campos preparados (`tax_minor`, `requires_shipping`) sin motor real.
+  Descuentos ya tienen motor real vía cupones — ver arriba.
 - `ReleaseExpiredInventoryReservations` (brief §194-§195) — el comando/
   scheduler no se implementó en este pase; una reserva de checkout
   abandonado queda retenida hasta cancelación manual de la Order.

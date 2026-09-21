@@ -34,7 +34,13 @@ class SupportSessionController extends Controller
     {
         $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'api_support_sessions_index');
 
-        return $this->respond($athlete->supportSessions()->latest()->get()->map($this->summary(...)));
+        $sessions = $athlete->supportSessions()->latest()->paginate(20);
+
+        return $this->respond($sessions->getCollection()->map($this->summary(...))->values(), meta: [
+            'current_page' => $sessions->currentPage(),
+            'last_page' => $sessions->lastPage(),
+            'total' => $sessions->total(),
+        ]);
     }
 
     public function store(Request $request, EnsureAthleteForUser $ensureAthlete, CreateAthleteSupportSession $create): JsonResponse

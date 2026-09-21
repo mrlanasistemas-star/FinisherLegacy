@@ -186,7 +186,7 @@ function faqItems(
     </Head>
 
     <div class="bg-fl-black">
-        <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+        <div class="mx-auto w-full max-w-[1600px] px-4 py-10 sm:px-6 xl:px-8">
             <Link
                 href="/tienda"
                 class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"

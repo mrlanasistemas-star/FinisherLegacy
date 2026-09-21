@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AthleteController as AdminAthleteController;
 use App\Http\Controllers\Admin\AthleteIdentityConflictController as AdminAthleteIdentityConflictController;
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
+use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EditionController as AdminEditionController;
 use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
@@ -105,6 +106,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('items', [StoreCartController::class, 'addItem'])->name('items.store');
         Route::patch('items/{item}', [StoreCartController::class, 'updateItem'])->name('items.update');
         Route::delete('items/{item}', [StoreCartController::class, 'removeItem'])->name('items.destroy');
+        Route::post('coupon', [StoreCartController::class, 'applyCoupon'])->name('coupon.store');
+        Route::delete('coupon', [StoreCartController::class, 'removeCoupon'])->name('coupon.destroy');
     });
 
     Route::prefix('checkout')->name('store.checkout.')->group(function () {
@@ -412,6 +415,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::middleware('can:payments.view')->get('payments', [AdminStorePaymentController::class, 'index'])->name('payments.index');
         Route::middleware('can:payments.record_manual')->post('orders/{order:uuid}/payments/manual', [AdminStorePaymentController::class, 'registerManual'])->name('orders.payments.manual');
+
+        Route::middleware('can:coupons.manage')->prefix('coupons')->name('coupons.')->group(function () {
+            Route::get('/', [AdminCouponController::class, 'index'])->name('index');
+            Route::post('/', [AdminCouponController::class, 'store'])->name('store');
+            Route::patch('{coupon}', [AdminCouponController::class, 'update'])->name('update');
+            Route::delete('{coupon}', [AdminCouponController::class, 'destroy'])->name('destroy');
+        });
     });
 });
 

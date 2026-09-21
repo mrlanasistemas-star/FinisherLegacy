@@ -30,7 +30,7 @@ defineProps<{
     <Head title="Mis pedidos — Finisher Legacy" />
 
     <div class="bg-fl-black">
-        <div class="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        <div class="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-6 xl:px-8">
             <h1 class="text-2xl font-black text-white">Mis pedidos</h1>
 
             <div

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\V1\Store;
 
 use App\Actions\Commerce\AddCartItem;
+use App\Actions\Commerce\ApplyCouponToCart;
 use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\RemoveCartItem;
+use App\Actions\Commerce\RemoveCouponFromCart;
 use App\Actions\Commerce\UpdateCartItem;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
@@ -28,11 +30,13 @@ class CartController extends Controller
     use ApiResponses;
     use ResolvesAuthenticatedUser;
 
+    private const string EAGER_LOAD = 'items.productVariant.product.media';
+
     public function show(Request $request, GetOrCreateCart $getOrCreateCart): JsonResponse
     {
         $cart = $getOrCreateCart->handle($this->sanctumUser($request), null);
 
-        return $this->respond(new CartResource($cart->loadMissing('items.productVariant.product')));
+        return $this->respond(new CartResource($cart->loadMissing(self::EAGER_LOAD, 'coupon')));
     }
 
     public function addItem(AddCartItemRequest $request, GetOrCreateCart $getOrCreateCart, AddCartItem $addItem): JsonResponse
@@ -44,7 +48,7 @@ class CartController extends Controller
 
         $addItem->handle($cart, $variant, $request->integer('quantity'), $edition, $metadata);
 
-        return $this->respond(new CartResource($cart->fresh('items.productVariant.product')), 'Producto agregado al carrito.');
+        return $this->respond(new CartResource($cart->fresh([self::EAGER_LOAD, 'coupon'])), 'Producto agregado al carrito.');
     }
 
     public function updateItem(UpdateCartItemRequest $request, CartItem $item, UpdateCartItem $updateItem): JsonResponse
@@ -52,7 +56,7 @@ class CartController extends Controller
         $this->authorizeItem($request, $item);
         $updateItem->handle($item, $request->integer('quantity'));
 
-        return $this->respond(new CartResource($item->cart->fresh('items.productVariant.product')));
+        return $this->respond(new CartResource($item->cart->fresh([self::EAGER_LOAD, 'coupon'])));
     }
 
     public function removeItem(Request $request, CartItem $item, RemoveCartItem $removeItem): JsonResponse
@@ -61,7 +65,25 @@ class CartController extends Controller
         $cart = $item->cart;
         $removeItem->handle($item);
 
-        return $this->respond(new CartResource($cart->fresh('items.productVariant.product')));
+        return $this->respond(new CartResource($cart->fresh([self::EAGER_LOAD, 'coupon'])));
+    }
+
+    public function applyCoupon(Request $request, GetOrCreateCart $getOrCreateCart, ApplyCouponToCart $applyCoupon): JsonResponse
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'max:50']]);
+        $cart = $getOrCreateCart->handle($this->sanctumUser($request), null);
+
+        $applyCoupon->handle($cart, $data['code'], $this->sanctumUser($request));
+
+        return $this->respond(new CartResource($cart->fresh([self::EAGER_LOAD, 'coupon'])), 'Cupón aplicado.');
+    }
+
+    public function removeCoupon(Request $request, GetOrCreateCart $getOrCreateCart, RemoveCouponFromCart $removeCoupon): JsonResponse
+    {
+        $cart = $getOrCreateCart->handle($this->sanctumUser($request), null);
+        $removeCoupon->handle($cart);
+
+        return $this->respond(new CartResource($cart->fresh([self::EAGER_LOAD, 'coupon'])));
     }
 
     private function authorizeItem(Request $request, CartItem $item): void

@@ -119,6 +119,91 @@ test('a replayed webhook event has no second effect', function () {
     expect(PaymentWebhookReceipt::count())->toBe(1);
 });
 
+test('a paid payment never regresses to pending on a stale out-of-order webhook', function () {
+    $order = Order::factory()->create(['total_minor' => 50000]);
+    $payment = Payment::create([
+        'uuid' => (string) Str::uuid(), 'order_id' => $order->id, 'provider' => 'stripe', 'method' => 'online_card',
+        'status' => PaymentStatus::Paid, 'amount_minor' => 50000, 'currency' => 'MXN', 'provider_reference' => 'pi_123',
+    ]);
+
+    app(ProcessPaymentWebhook::class)->handle(new PaymentWebhookOutcome(
+        provider: 'stripe', eventId: 'evt_stale', providerReference: 'pi_123',
+        status: PaymentStatus::Pending, amountMinor: 50000, currency: 'MXN',
+    ));
+
+    expect($payment->fresh()->status)->toBe(PaymentStatus::Paid);
+});
+
+test('two different terminal statuses never swap into each other', function () {
+    $order = Order::factory()->create(['total_minor' => 50000]);
+    $payment = Payment::create([
+        'uuid' => (string) Str::uuid(), 'order_id' => $order->id, 'provider' => 'stripe', 'method' => 'online_card',
+        'status' => PaymentStatus::Refunded, 'amount_minor' => 50000, 'currency' => 'MXN', 'provider_reference' => 'pi_123',
+    ]);
+
+    app(ProcessPaymentWebhook::class)->handle(new PaymentWebhookOutcome(
+        provider: 'stripe', eventId: 'evt_1', providerReference: 'pi_123',
+        status: PaymentStatus::Cancelled, amountMinor: 50000, currency: 'MXN',
+    ));
+
+    expect($payment->fresh()->status)->toBe(PaymentStatus::Refunded);
+});
+
+test('a paid payment can move to partially_refunded and then to refunded', function () {
+    $order = Order::factory()->create(['total_minor' => 50000]);
+    $payment = Payment::create([
+        'uuid' => (string) Str::uuid(), 'order_id' => $order->id, 'provider' => 'stripe', 'method' => 'online_card',
+        'status' => PaymentStatus::Paid, 'amount_minor' => 50000, 'currency' => 'MXN', 'provider_reference' => 'pi_123',
+    ]);
+
+    app(ProcessPaymentWebhook::class)->handle(new PaymentWebhookOutcome(
+        provider: 'stripe', eventId: 'evt_1', providerReference: 'pi_123',
+        status: PaymentStatus::PartiallyRefunded, amountMinor: 50000, currency: 'MXN',
+    ));
+    expect($payment->fresh()->status)->toBe(PaymentStatus::PartiallyRefunded);
+
+    app(ProcessPaymentWebhook::class)->handle(new PaymentWebhookOutcome(
+        provider: 'stripe', eventId: 'evt_2', providerReference: 'pi_123',
+        status: PaymentStatus::Refunded, amountMinor: 50000, currency: 'MXN',
+    ));
+    expect($payment->fresh()->status)->toBe(PaymentStatus::Refunded);
+});
+
+test('a cancelled payment never moves to any other status', function () {
+    $order = Order::factory()->create(['total_minor' => 50000]);
+    $payment = Payment::create([
+        'uuid' => (string) Str::uuid(), 'order_id' => $order->id, 'provider' => 'stripe', 'method' => 'online_card',
+        'status' => PaymentStatus::Cancelled, 'amount_minor' => 50000, 'currency' => 'MXN', 'provider_reference' => 'pi_123',
+    ]);
+
+    app(ProcessPaymentWebhook::class)->handle(new PaymentWebhookOutcome(
+        provider: 'stripe', eventId: 'evt_1', providerReference: 'pi_123',
+        status: PaymentStatus::Paid, amountMinor: 50000, currency: 'MXN',
+    ));
+
+    expect($payment->fresh()->status)->toBe(PaymentStatus::Cancelled);
+});
+
+test('a webhook whose receipt was already committed by a concurrent delivery has no second effect', function () {
+    $order = Order::factory()->create(['total_minor' => 50000]);
+    $payment = Payment::create([
+        'uuid' => (string) Str::uuid(), 'order_id' => $order->id, 'provider' => 'stripe', 'method' => 'online_card',
+        'status' => PaymentStatus::Pending, 'amount_minor' => 50000, 'currency' => 'MXN', 'provider_reference' => 'pi_dup',
+    ]);
+    $outcome = new PaymentWebhookOutcome('stripe', 'evt_dup', 'pi_dup', PaymentStatus::Paid, 50000, 'MXN');
+
+    // Pre-seed the exact receipt this webhook would create — simulates a
+    // concurrent delivery that already won the race and committed first.
+    PaymentWebhookReceipt::create([
+        'provider' => 'stripe', 'event_id' => 'evt_dup', 'payload' => null, 'processed_at' => now(),
+    ]);
+
+    app(ProcessPaymentWebhook::class)->handle($outcome);
+
+    expect(PaymentWebhookReceipt::where('provider', 'stripe')->where('event_id', 'evt_dup')->count())->toBe(1)
+        ->and($payment->fresh()->status)->toBe(PaymentStatus::Pending);
+});
+
 test('a webhook amount mismatch never marks the payment paid', function () {
     $order = Order::factory()->create(['total_minor' => 50000]);
     $payment = Payment::create([

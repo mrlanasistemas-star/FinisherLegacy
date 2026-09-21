@@ -1,34 +1,56 @@
 <script setup lang="ts">
 /**
- * `finisher-hero-desktop.mp4` is a real, confirmed-present asset (see
- * public/media/home/hero/README.md) — it's rendered directly, no
- * useAssetExists probe needed for it (brand system §20: don't HEAD-check a
- * static path we already know exists). There's no `.webm` transcode and no
- * poster image yet, so those aren't referenced — a `<source>` pointing at a
- * file that doesn't exist would just be a guaranteed 404 on every load.
- * If a webm/poster set gets added later, reintroduce the cascade here.
+ * `finisher-hero-desktop.{mp4,webm}` and their posters are real,
+ * confirmed-present assets (see public/media/home/hero/README.md) — no
+ * useAssetExists probe needed (brand system §20: don't HEAD-check a static
+ * path we already know exists).
  *
  * Plays on every viewport width (parity request, 2026-08-21 polish pass —
  * mobile used to get the CSS scene only). `preload="metadata"` keeps the
  * initial fetch light, and the video pauses itself once the Hero scrolls
  * out of view (brand system §P6: never keep playing what isn't visible) —
- * it's `muted`+`loop` so resuming on re-entry is seamless. Falls back to
- * the CSS scene under prefers-reduced-motion or if the file fails to load.
+ * it's `muted`+`loop` so resuming on re-entry is seamless.
+ *
+ * Fallback order is video -> poster -> CSS scene, never straight to CSS:
+ * a real photo (poster) beats a drawn scene whenever we have one. `stage`
+ * moves to 'poster' if the file 404s (`@error`) OR if play() itself
+ * rejects — some browsers (autoplay policy, decode failure) reject the
+ * play() promise without ever firing `error`, and without handling that
+ * case `stage` would stay 'video' forever while nothing actually renders.
+ * prefers-reduced-motion skips straight to the poster too — a still frame,
+ * not the CSS scene, since it's just as static and more real.
  */
-import { useIntersectionObserver } from '@vueuse/core';
+import { useIntersectionObserver, useMediaQuery } from '@vueuse/core';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
 
+const DESKTOP_VIDEO_WEBM = '/media/home/hero/finisher-hero-desktop.webm';
 const DESKTOP_VIDEO_MP4 = '/media/home/hero/finisher-hero-desktop.mp4';
+const POSTER_DESKTOP = '/media/home/hero/finisher-hero-poster.webp';
+const POSTER_MOBILE = '/media/home/hero/finisher-hero-poster-mobile.webp';
 
 const prefersReducedMotion = useReducedMotion();
+const isMobile = useMediaQuery('(max-width: 640px)');
 const videoFailed = ref(false);
+const posterFailed = ref(false);
 const rootEl = useTemplateRef<HTMLElement>('root');
 const videoEl = useTemplateRef<HTMLVideoElement>('video');
 
-const stage = computed<'video' | 'css'>(() =>
-    !prefersReducedMotion.value && !videoFailed.value ? 'video' : 'css',
+const poster = computed(() =>
+    isMobile.value ? POSTER_MOBILE : POSTER_DESKTOP,
 );
+
+const stage = computed<'video' | 'poster' | 'css'>(() => {
+    if (posterFailed.value) {
+        return 'css';
+    }
+
+    if (prefersReducedMotion.value) {
+        return 'poster';
+    }
+
+    return videoFailed.value ? 'poster' : 'video';
+});
 
 useIntersectionObserver(
     rootEl,
@@ -38,7 +60,9 @@ useIntersectionObserver(
         }
 
         if (entry?.isIntersecting) {
-            videoEl.value.play().catch(() => {});
+            videoEl.value.play().catch(() => {
+                videoFailed.value = true;
+            });
         } else {
             videoEl.value.pause();
         }
@@ -56,6 +80,7 @@ useIntersectionObserver(
             v-if="stage === 'video'"
             ref="video"
             class="absolute inset-0 size-full object-cover"
+            :poster="poster"
             autoplay
             muted
             loop
@@ -64,10 +89,21 @@ useIntersectionObserver(
             aria-hidden="true"
             @error="videoFailed = true"
         >
+            <source :src="DESKTOP_VIDEO_WEBM" type="video/webm" />
             <source :src="DESKTOP_VIDEO_MP4" type="video/mp4" />
         </video>
 
-        <!-- CSS fallback scene: track lanes + amber dawn light -->
+        <img
+            v-else-if="stage === 'poster'"
+            :src="poster"
+            alt=""
+            aria-hidden="true"
+            class="absolute inset-0 size-full object-cover"
+            @error="posterFailed = true"
+        />
+
+        <!-- CSS fallback scene: track lanes + amber dawn light. Only
+             reached if the poster image itself also fails to load. -->
         <div v-else class="absolute inset-0">
             <div
                 class="absolute inset-0"

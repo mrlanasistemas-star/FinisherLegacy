@@ -3,6 +3,16 @@ import { Head, router } from '@inertiajs/vue3';
 import { Cpu, Link2, ShieldOff } from '@lucide/vue';
 import { ref } from 'vue';
 import HelpPopover from '@/components/HelpPopover.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -94,19 +104,17 @@ function approve() {
     );
 }
 
-function revoke(device: Device) {
-    if (
-        !confirm(
-            `¿Revocar "${device.name}"? Su token dejará de funcionar de inmediato.`,
-        )
-    ) {
+const revokeTarget = ref<Device | null>(null);
+
+function confirmRevoke() {
+    if (revokeTarget.value === null) {
         return;
     }
 
     router.post(
-        `/admin/production-devices/${device.id}/revoke`,
+        `/admin/production-devices/${revokeTarget.value.id}/revoke`,
         {},
-        { preserveScroll: true },
+        { preserveScroll: true, onFinish: () => (revokeTarget.value = null) },
     );
 }
 
@@ -238,7 +246,7 @@ const statusLabel: Record<Device['status'], string> = {
                     size="sm"
                     variant="outline"
                     class="fl-hover-lift mt-3 w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
-                    @click="revoke(device)"
+                    @click="revokeTarget = device"
                 >
                     <ShieldOff class="size-3.5" />
                     Revocar
@@ -318,5 +326,39 @@ const statusLabel: Record<Device['status'], string> = {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <AlertDialog
+            :open="revokeTarget !== null"
+            @update:open="
+                (open) => {
+                    if (!open) revokeTarget = null;
+                }
+            "
+        >
+            <AlertDialogContent
+                class="dark border-white/10 bg-fl-graphite text-white"
+            >
+                <AlertDialogHeader>
+                    <AlertDialogTitle
+                        >¿Revocar "{{ revokeTarget?.name }}"?</AlertDialogTitle
+                    >
+                    <AlertDialogDescription class="text-white/60">
+                        Su token dejará de funcionar de inmediato.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel
+                        class="border-white/10 bg-transparent text-white hover:bg-white/10"
+                        @click="revokeTarget = null"
+                        >Cancelar</AlertDialogCancel
+                    >
+                    <AlertDialogAction
+                        class="bg-red-600 text-white hover:bg-red-500"
+                        @click="confirmRevoke"
+                        >Revocar</AlertDialogAction
+                    >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>

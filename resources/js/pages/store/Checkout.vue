@@ -13,7 +13,10 @@ type CheckoutItem = {
 defineProps<{
     items: CheckoutItem[];
     subtotal_minor: number;
+    discount_minor: number;
+    total_minor: number;
     currency: string;
+    coupon: { code: string } | null;
 }>();
 
 const form = useForm({});
@@ -26,8 +29,8 @@ function placeOrder() {
 <template>
     <Head title="Checkout — Finisher Legacy" />
 
-    <div class="bg-fl-black">
-        <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-fl-black">
+        <div class="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 xl:px-8">
             <h1 class="text-2xl font-black text-white">Confirmar pedido</h1>
 
             <div
@@ -51,10 +54,27 @@ function placeOrder() {
                         />
                     </p>
                 </div>
+                <div
+                    class="flex items-center justify-between px-5 py-4 text-sm text-white/70"
+                >
+                    <p>Subtotal</p>
+                    <p>
+                        <Money :minor="subtotal_minor" :currency="currency" />
+                    </p>
+                </div>
+                <div
+                    v-if="discount_minor > 0"
+                    class="flex items-center justify-between px-5 py-4 text-sm text-emerald-400"
+                >
+                    <p>Descuento{{ coupon ? ` (${coupon.code})` : '' }}</p>
+                    <p>
+                        -<Money :minor="discount_minor" :currency="currency" />
+                    </p>
+                </div>
                 <div class="flex items-center justify-between px-5 py-4">
                     <p class="font-medium text-white">Total</p>
                     <p class="text-lg font-semibold text-fl-gold-soft">
-                        <Money :minor="subtotal_minor" :currency="currency" />
+                        <Money :minor="total_minor" :currency="currency" />
                     </p>
                 </div>
             </div>

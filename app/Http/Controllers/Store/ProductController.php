@@ -10,7 +10,6 @@ use App\Models\ProductMedia;
 use App\Models\ProductVariant;
 use App\Queries\Commerce\GetFeaturedProducts;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -65,7 +64,7 @@ class ProductController extends Controller
                 'category' => $product->category?->name,
                 'qr_capable' => $product->qr_capable,
                 'requires_shipping' => $product->requires_shipping,
-                'image_url' => $product->image_path ? Storage::disk('public')->url($product->image_path) : null,
+                'image_url' => $product->primaryImageUrl(),
                 'variants' => $product->variants->where('active', true)->values()->map(fn (ProductVariant $variant) => [
                     'id' => $variant->id,
                     'sku' => $variant->sku,

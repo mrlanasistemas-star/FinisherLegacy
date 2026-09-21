@@ -31,7 +31,7 @@ const description =
         <section
             class="border-b border-white/10 bg-gradient-to-b from-fl-graphite/40 to-fl-black py-16"
         >
-            <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto w-full max-w-[1600px] px-4 sm:px-6 xl:px-8">
                 <p
                     class="text-xs font-semibold tracking-[0.3em] text-fl-gold-soft uppercase"
                 >
@@ -47,7 +47,7 @@ const description =
             </div>
         </section>
 
-        <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+        <div class="mx-auto w-full max-w-[1600px] px-4 py-10 sm:px-6 xl:px-8">
             <div class="mb-8 flex flex-wrap gap-2">
                 <Link
                     href="/tienda"

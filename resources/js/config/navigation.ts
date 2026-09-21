@@ -214,6 +214,13 @@ export const navigation: NavItem[] = [
         permission: 'payments.view',
         group: 'tienda',
     },
+    {
+        label: 'Cupones',
+        icon: resolveIcon('Ticket'),
+        href: '/admin/coupons',
+        permission: 'coupons.manage',
+        group: 'tienda',
+    },
 
     {
         label: 'Atletas',

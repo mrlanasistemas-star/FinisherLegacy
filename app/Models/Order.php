@@ -23,6 +23,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'uuid', 'order_number', 'user_id', 'athlete_id', 'event_edition_id',
     'status', 'payment_status', 'fulfillment_status',
     'subtotal_minor', 'discount_minor', 'tax_minor', 'total_minor', 'currency',
+    'coupon_id', 'coupon_code', 'coupon_name',
     'customer_snapshot', 'confirmed_at', 'cancelled_at', 'completed_at',
 ])]
 class Order extends Model
@@ -75,6 +76,12 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /** @return BelongsTo<Coupon, $this> */
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function getActivitylogOptions(): LogOptions

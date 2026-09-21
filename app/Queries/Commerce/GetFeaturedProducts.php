@@ -5,7 +5,6 @@ namespace App\Queries\Commerce;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Active products for the Home "Tienda" teaser and the storefront catalog
@@ -41,7 +40,6 @@ class GetFeaturedProducts
         $galleryImages = $product->relationLoaded('media')
             ? $product->media->where('type', 'image')->sortByDesc('is_primary')->values()
             : collect();
-        $primaryImage = $galleryImages->first();
         $hoverImage = $galleryImages->get(1);
 
         return [
@@ -55,10 +53,7 @@ class GetFeaturedProducts
             'in_stock' => ! $product->tracks_inventory || $product->variants->contains(
                 fn (ProductVariant $variant) => $variant->inventoryLevels->sum(fn ($l) => $l->availableQuantity()) > 0,
             ),
-            // The gallery's primary image wins over the legacy image_path
-            // when both exist — brief §107 keeps image_path as a fallback,
-            // not the source of truth once a gallery is configured.
-            'image_url' => $primaryImage?->url() ?? ($product->image_path ? Storage::disk('public')->url($product->image_path) : null),
+            'image_url' => $product->primaryImageUrl(),
             'hover_image_url' => $hoverImage?->url(),
             'variant_count' => $product->variants->count(),
         ];

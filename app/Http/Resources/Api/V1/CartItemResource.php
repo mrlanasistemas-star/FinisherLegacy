@@ -22,6 +22,8 @@ class CartItemResource extends JsonResource
             'event_edition_id' => $this->event_edition_id,
             'variant' => new ProductVariantResource($this->whenLoaded('productVariant')),
             'product_name' => $this->productVariant?->product?->name,
+            'line_total_minor' => $this->productVariant !== null ? $this->productVariant->base_price_minor * $this->quantity : null,
+            'image_url' => $this->productVariant?->product?->primaryImageUrl(),
         ];
     }
 }

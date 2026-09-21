@@ -19,30 +19,46 @@ use Inertia\Inertia;
  */
 class ProductMediaController extends Controller
 {
+    /**
+     * A single multi-file upload — never unbounded (brief §26: "NO subir
+     * 50 archivos indiscriminadamente"). `files[]` is the batch path;
+     * `file` still works standalone for any existing single-file caller.
+     */
+    private const int MAX_FILES_PER_UPLOAD = 10;
+
     public function store(Request $request, Product $product): RedirectResponse
     {
         $data = $request->validate([
-            'file' => ['required', 'file', 'mimes:jpeg,png,webp,mp4,webm', 'max:51200'],
+            'file' => ['nullable', 'file', 'mimes:jpeg,png,webp,mp4,webm', 'max:51200'],
+            'files' => ['nullable', 'array', 'max:'.self::MAX_FILES_PER_UPLOAD],
+            'files.*' => ['file', 'mimes:jpeg,png,webp,mp4,webm', 'max:51200'],
             'alt_text' => ['nullable', 'string', 'max:150'],
         ]);
 
+        $files = array_filter([$request->file('file'), ...($request->file('files') ?? [])]);
+        abort_if($files === [], 422, 'Selecciona al menos un archivo.');
+
         $disk = (string) config('finisher.product_media.disk', 'product_media');
-        $file = $request->file('file');
-        $isVideo = str_starts_with((string) $file->getMimeType(), 'video/');
-        $path = $file->store('products/'.$product->id, $disk);
+        $nextSortOrder = ($product->media()->max('sort_order') ?? -1) + 1;
+        $hasPrimary = $product->media()->where('is_primary', true)->exists();
 
-        $product->media()->create([
-            'type' => $isVideo ? ProductMediaType::Video : ProductMediaType::Image,
-            'disk' => $disk,
-            'path' => $path,
-            'mime' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'sort_order' => ($product->media()->max('sort_order') ?? -1) + 1,
-            'is_primary' => $product->media()->count() === 0,
-            'alt_text' => $data['alt_text'] ?? null,
-        ]);
+        foreach (array_values($files) as $index => $file) {
+            $isVideo = str_starts_with((string) $file->getMimeType(), 'video/');
+            $path = $file->store('products/'.$product->id, $disk);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Archivo agregado a la galería.']);
+            $product->media()->create([
+                'type' => $isVideo ? ProductMediaType::Video : ProductMediaType::Image,
+                'disk' => $disk,
+                'path' => $path,
+                'mime' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'sort_order' => $nextSortOrder + $index,
+                'is_primary' => ! $hasPrimary && $index === 0,
+                'alt_text' => $data['alt_text'] ?? null,
+            ]);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => count($files) > 1 ? count($files).' archivos agregados a la galería.' : 'Archivo agregado a la galería.']);
 
         return back();
     }

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Store;
 
 use App\Actions\Commerce\AddCartItem;
+use App\Actions\Commerce\ApplyCouponToCart;
 use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\RemoveCartItem;
+use App\Actions\Commerce\RemoveCouponFromCart;
+use App\Actions\Commerce\ResolveCartDiscount;
 use App\Actions\Commerce\UpdateCartItem;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
@@ -14,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 /**
  * Cart — Web Controller → Action, no REST call from Vue (brief §62/§88-
@@ -22,10 +26,13 @@ use Inertia\Response;
  */
 class CartController extends Controller
 {
-    public function show(Request $request, GetOrCreateCart $getOrCreateCart): Response
+    public function show(Request $request, GetOrCreateCart $getOrCreateCart, ResolveCartDiscount $resolveDiscount): Response
     {
         $cart = $getOrCreateCart->handle($request->user(), null);
-        $cart->loadMissing('items.productVariant.product');
+        $cart->loadMissing('items.productVariant.product.media', 'items.eventEdition', 'coupon');
+
+        $subtotal = $cart->items->sum(fn ($item) => $item->productVariant->base_price_minor * $item->quantity);
+        $discount = $resolveDiscount->handle($cart->coupon, $subtotal);
 
         return Inertia::render('store/Cart', [
             'items' => $cart->items->map(fn ($item) => [
@@ -34,10 +41,47 @@ class CartController extends Controller
                 'product_name' => $item->productVariant->product->name,
                 'variant_name' => $item->productVariant->name,
                 'unit_price_minor' => $item->productVariant->base_price_minor,
+                'line_total_minor' => $item->productVariant->base_price_minor * $item->quantity,
                 'currency' => $item->productVariant->currency,
+                'image_url' => $item->productVariant->product->primaryImageUrl(),
+                'in_stock' => $item->productVariant->active,
+                'event_edition_name' => $item->eventEdition?->name,
             ]),
             'currency' => $cart->currency,
+            'subtotal_minor' => $subtotal,
+            'discount_minor' => $discount,
+            'total_minor' => max($subtotal - $discount, 0),
+            'coupon' => $cart->coupon !== null ? [
+                'code' => $cart->coupon->code,
+                'name' => $cart->coupon->name,
+            ] : null,
         ]);
+    }
+
+    public function applyCoupon(Request $request, GetOrCreateCart $getOrCreateCart, ApplyCouponToCart $applyCoupon): RedirectResponse
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'max:50']]);
+        $cart = $getOrCreateCart->handle($request->user(), null);
+
+        try {
+            $applyCoupon->handle($cart, $data['code'], $request->user());
+        } catch (Throwable $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Cupón aplicado.']);
+
+        return back();
+    }
+
+    public function removeCoupon(Request $request, GetOrCreateCart $getOrCreateCart, RemoveCouponFromCart $removeCoupon): RedirectResponse
+    {
+        $cart = $getOrCreateCart->handle($request->user(), null);
+        $removeCoupon->handle($cart);
+
+        return back();
     }
 
     public function addItem(Request $request, GetOrCreateCart $getOrCreateCart, AddCartItem $addItem): RedirectResponse

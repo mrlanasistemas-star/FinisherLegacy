@@ -239,7 +239,7 @@ async function finishPayment(tokenId: string) {
     <Head :title="`Pedido #${order.order_number} — Finisher Legacy`" />
 
     <div class="bg-fl-black">
-        <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+        <div class="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 xl:px-8">
             <Link
                 href="/mis-pedidos"
                 class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"

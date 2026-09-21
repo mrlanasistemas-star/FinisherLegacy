@@ -6,6 +6,7 @@ use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Actions\Commerce\CheckoutCart;
 use App\Actions\Commerce\CreateOnlinePayment;
 use App\Actions\Commerce\GetOrCreateCart;
+use App\Actions\Commerce\ResolveCartDiscount;
 use App\Exceptions\Api\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
@@ -24,12 +25,13 @@ use Throwable;
  */
 class CheckoutController extends Controller
 {
-    public function show(Request $request, GetOrCreateCart $getOrCreateCart): Response
+    public function show(Request $request, GetOrCreateCart $getOrCreateCart, ResolveCartDiscount $resolveDiscount): Response
     {
         $cart = $getOrCreateCart->handle($request->user(), null);
-        $cart->loadMissing('items.productVariant.product');
+        $cart->loadMissing('items.productVariant.product', 'coupon');
 
         $subtotal = $cart->items->sum(fn ($item) => $item->productVariant->base_price_minor * $item->quantity);
+        $discount = $resolveDiscount->handle($cart->coupon, $subtotal);
 
         return Inertia::render('store/Checkout', [
             'items' => $cart->items->map(fn ($item) => [
@@ -39,7 +41,10 @@ class CheckoutController extends Controller
                 'line_total_minor' => $item->productVariant->base_price_minor * $item->quantity,
             ]),
             'subtotal_minor' => $subtotal,
+            'discount_minor' => $discount,
+            'total_minor' => max($subtotal - $discount, 0),
             'currency' => $cart->currency,
+            'coupon' => $cart->coupon !== null ? ['code' => $cart->coupon->code] : null,
         ]);
     }
 

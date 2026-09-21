@@ -46,6 +46,21 @@ test('GET /api/v1/me/support-sessions only lists the authenticated athlete\'s ow
     $response->assertOk()->assertJsonCount(1, 'data');
 });
 
+test('GET /api/v1/me/support-sessions is capped at 20 per page instead of returning the whole history', function () {
+    $user = User::factory()->create();
+    $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
+
+    for ($i = 0; $i < 25; $i++) {
+        app(CreateAthleteSupportSession::class)->handle($athlete, "Sesión {$i}", SupportActivityType::Free);
+    }
+
+    $response = $this->withHeaders(meHeaders($user))->getJson('/api/v1/me/support-sessions');
+
+    $response->assertOk()->assertJsonCount(20, 'data');
+    expect($response->json('meta.total'))->toBe(25)
+        ->and($response->json('meta.last_page'))->toBe(2);
+});
+
 test('GET /api/v1/me/support-sessions/{id} rejects a session belonging to another athlete', function () {
     $user = User::factory()->create();
     app(EnsureAthleteForUser::class)->handle($user, 'test');

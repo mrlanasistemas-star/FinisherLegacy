@@ -17,7 +17,9 @@ import { useIntersectionObserver } from '@vueuse/core';
 import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
 
-const VIDEO_SRC = '/media/home/story/training-dawn.mp4';
+const VIDEO_SRC_WEBM = '/media/home/story/training-dawn.webm';
+const VIDEO_SRC_MP4 = '/media/home/story/training-dawn.mp4';
+const VIDEO_POSTER = '/media/home/story/training-dawn-poster.webp';
 
 const PHOTOS = [
     { src: '/media/home/story/training-dawn.jpeg', position: '62% 45%' },
@@ -60,12 +62,21 @@ function handleVideoEnded() {
     startCycle();
 }
 
+function handleVideoRejected() {
+    // play() can reject (autoplay policy, decode failure) without ever
+    // firing `error` — without this, showingVideo stays true forever and
+    // the photo cycle never starts.
+    videoFailed.value = true;
+    videoDone.value = true;
+    startCycle();
+}
+
 useIntersectionObserver(
     rootEl,
     ([entry]) => {
         if (entry?.isIntersecting) {
             if (showingVideo.value) {
-                videoEl.value?.play().catch(() => {});
+                videoEl.value?.play().catch(handleVideoRejected);
             } else {
                 startCycle();
             }
@@ -89,6 +100,7 @@ onBeforeUnmount(stopCycle);
             v-if="showingVideo"
             ref="video"
             class="absolute inset-0 size-full object-cover"
+            :poster="VIDEO_POSTER"
             muted
             playsinline
             preload="metadata"
@@ -96,7 +108,8 @@ onBeforeUnmount(stopCycle);
             @ended="handleVideoEnded"
             @error="videoFailed = true"
         >
-            <source :src="VIDEO_SRC" type="video/mp4" />
+            <source :src="VIDEO_SRC_WEBM" type="video/webm" />
+            <source :src="VIDEO_SRC_MP4" type="video/mp4" />
         </video>
 
         <img

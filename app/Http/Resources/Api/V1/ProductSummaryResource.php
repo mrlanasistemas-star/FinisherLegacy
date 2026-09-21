@@ -27,6 +27,7 @@ class ProductSummaryResource extends JsonResource
             'category' => $this->category?->name,
             'from_price_minor' => $this->variants->min('base_price_minor'),
             'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
+            'image_url' => $this->primaryImageUrl(),
         ];
     }
 }

@@ -21,7 +21,7 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $products = Product::query()
-            ->with(['category', 'variants'])
+            ->with(['category', 'variants', 'media'])
             ->where('active', true)
             ->where('status', 'active')
             ->when($request->string('category')->toString(), fn ($q, $slug) => $q->whereHas('category', fn ($c) => $c->where('slug', $slug)))
@@ -41,6 +41,6 @@ class ProductController extends Controller
     {
         abort_unless($product->active && $product->status->value === 'active', 404);
 
-        return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'variants.inventoryLevels'])));
+        return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'variants.inventoryLevels', 'media'])));
     }
 }

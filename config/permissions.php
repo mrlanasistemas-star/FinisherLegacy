@@ -197,6 +197,7 @@ return [
             'orders.manage' => 'Gestionar pedidos',
             'payments.view' => 'Ver pagos',
             'payments.record_manual' => 'Registrar pagos manuales (terminal/efectivo)',
+            'coupons.manage' => 'Gestionar cupones de descuento',
         ],
     ],
     'eventdata' => [

@@ -29,6 +29,34 @@ test('uploading the first image makes it primary automatically', function () {
     Storage::disk('product_media')->assertExists($media->path);
 });
 
+test('uploading multiple files in one request creates one row per file and only the first is primary', function () {
+    $this->actingAs($this->admin)->post("/admin/products/{$this->product->id}/media", [
+        'files' => [
+            UploadedFile::fake()->image('front.jpg'),
+            UploadedFile::fake()->image('back.jpg'),
+            UploadedFile::fake()->create('clip.mp4', 500, 'video/mp4'),
+        ],
+    ])->assertRedirect();
+
+    $media = $this->product->media()->orderBy('sort_order')->get();
+
+    expect($media)->toHaveCount(3)
+        ->and($media[0]->is_primary)->toBeTrue()
+        ->and($media[1]->is_primary)->toBeFalse()
+        ->and($media[2]->is_primary)->toBeFalse()
+        ->and($media[2]->type->value)->toBe('video');
+});
+
+test('a batch upload larger than the per-request limit is rejected', function () {
+    $files = array_map(fn ($i) => UploadedFile::fake()->image("img{$i}.jpg"), range(1, 11));
+
+    $this->actingAs($this->admin)->post("/admin/products/{$this->product->id}/media", [
+        'files' => $files,
+    ])->assertSessionHasErrors('files');
+
+    expect($this->product->media()->count())->toBe(0);
+});
+
 test('a second upload is not primary until explicitly set', function () {
     $first = ProductMedia::factory()->for($this->product)->create(['is_primary' => true, 'sort_order' => 0]);
 

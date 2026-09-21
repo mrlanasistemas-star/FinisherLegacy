@@ -43,4 +43,5 @@ enum ApiErrorCode: string
     case ProviderConnectionFailed = 'PROVIDER_CONNECTION_FAILED';
     case InvalidWebhookSignature = 'INVALID_WEBHOOK_SIGNATURE';
     case EventGearAlreadyAssigned = 'EVENT_GEAR_ALREADY_ASSIGNED';
+    case CouponNotApplicable = 'COUPON_NOT_APPLICABLE';
 }

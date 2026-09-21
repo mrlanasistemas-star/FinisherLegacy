@@ -16,6 +16,16 @@ import {
     edit as editRoute,
     store as storeTemplate,
 } from '@/actions/App/Http/Controllers/Admin/PlateStudioController';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -89,14 +99,20 @@ function duplicate(template: TemplateRow) {
     router.post(duplicateTemplate.url(template.id));
 }
 
-function archive(template: TemplateRow) {
-    if (
-        confirm(
-            `¿Archivar "${template.name}"? Las placas ya generadas no se ven afectadas.`,
-        )
-    ) {
-        router.post(archiveTemplate.url(template.id));
+const archiveTarget = ref<TemplateRow | null>(null);
+
+function confirmArchive() {
+    if (archiveTarget.value === null) {
+        return;
     }
+
+    router.post(
+        archiveTemplate.url(archiveTarget.value.id),
+        {},
+        {
+            onFinish: () => (archiveTarget.value = null),
+        },
+    );
 }
 
 const statusLabel: Record<string, string> = {
@@ -261,7 +277,7 @@ const statusLabel: Record<string, string> = {
                                 size="icon"
                                 variant="outline"
                                 class="size-8 border-white/15 text-white/60 hover:bg-white/10"
-                                @click="archive(template)"
+                                @click="archiveTarget = template"
                             >
                                 <Archive class="size-3.5" />
                             </Button>
@@ -364,5 +380,41 @@ const statusLabel: Record<string, string> = {
                 </form>
             </DialogContent>
         </Dialog>
+
+        <AlertDialog
+            :open="archiveTarget !== null"
+            @update:open="
+                (open) => {
+                    if (!open) archiveTarget = null;
+                }
+            "
+        >
+            <AlertDialogContent
+                class="dark border-white/10 bg-fl-graphite text-white"
+            >
+                <AlertDialogHeader>
+                    <AlertDialogTitle
+                        >¿Archivar "{{
+                            archiveTarget?.name
+                        }}"?</AlertDialogTitle
+                    >
+                    <AlertDialogDescription class="text-white/60">
+                        Las placas ya generadas no se ven afectadas.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel
+                        class="border-white/10 bg-transparent text-white hover:bg-white/10"
+                        @click="archiveTarget = null"
+                        >Cancelar</AlertDialogCancel
+                    >
+                    <AlertDialogAction
+                        class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                        @click="confirmArchive"
+                        >Archivar</AlertDialogAction
+                    >
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
 </template>

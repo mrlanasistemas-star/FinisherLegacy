@@ -14,6 +14,8 @@ use App\Exceptions\LegacyPlatePresaleDuplicateException;
 use App\Exceptions\ProductUnavailableException;
 use App\Models\Athlete;
 use App\Models\Cart;
+use App\Models\Coupon;
+use App\Models\CouponRedemption;
 use App\Models\EventEdition;
 use App\Models\InventoryLocation;
 use App\Models\LegacyPlateEntitlement;
@@ -39,6 +41,8 @@ class CheckoutCart
         private readonly ResolveProductPrice $resolvePrice,
         private readonly InventoryService $inventory,
         private readonly CreateLegacyPlateEntitlement $createEntitlement,
+        private readonly ValidateCoupon $validateCoupon,
+        private readonly ResolveCartDiscount $resolveDiscount,
     ) {}
 
     /**
@@ -100,6 +104,22 @@ class CheckoutCart
                 ];
             }
 
+            // Locked here (not just re-fetched) so a second concurrent
+            // checkout using the same coupon blocks until this transaction
+            // commits, then re-validates against the now-current
+            // redemption count — the only way "1 use left, two checkouts
+            // at once" resolves to exactly one winner (brief §39).
+            $coupon = $cart->coupon_id !== null
+                ? Coupon::query()->whereKey($cart->coupon_id)->lockForUpdate()->first()
+                : null;
+
+            if ($coupon !== null) {
+                $this->validateCoupon->handle($coupon, $cart->currency, $subtotal, $user);
+            }
+
+            $discount = $this->resolveDiscount->handle($coupon, $subtotal);
+            $total = max($subtotal - $discount, 0);
+
             $order = Order::create([
                 'uuid' => (string) Str::uuid(),
                 'order_number' => CodeGenerator::unique('FL', fn (string $c) => Order::query()->where('order_number', $c)->exists(), 8),
@@ -110,12 +130,26 @@ class CheckoutCart
                 'payment_status' => OrderPaymentStatus::Pending,
                 'fulfillment_status' => FulfillmentStatus::Unfulfilled,
                 'subtotal_minor' => $subtotal,
-                'discount_minor' => 0,
+                'discount_minor' => $discount,
                 'tax_minor' => 0,
-                'total_minor' => $subtotal,
+                'total_minor' => $total,
                 'currency' => $cart->currency,
+                'coupon_id' => $coupon?->id,
+                'coupon_code' => $coupon?->code,
+                'coupon_name' => $coupon?->name,
                 'customer_snapshot' => $customerSnapshot === [] ? null : $customerSnapshot,
             ]);
+
+            if ($coupon !== null) {
+                CouponRedemption::create([
+                    'uuid' => (string) Str::uuid(),
+                    'coupon_id' => $coupon->id,
+                    'user_id' => $user?->id,
+                    'order_id' => $order->id,
+                    'code' => $coupon->code,
+                    'discount_minor' => $discount,
+                ]);
+            }
 
             foreach ($lines as $line) {
                 $variantName = $line['variant']->name;
@@ -150,6 +184,7 @@ class CheckoutCart
             }
 
             $cart->items()->delete();
+            $cart->update(['coupon_id' => null]);
 
             return $order->fresh('items');
         });
