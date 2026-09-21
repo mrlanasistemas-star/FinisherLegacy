@@ -25,9 +25,14 @@ class OpenPayWebhookController extends Controller
         if (is_array($payload) && ($payload['type'] ?? null) === 'verification') {
             // Activating the webhook still requires an admin to paste this
             // code into the Openpay dashboard by hand — Openpay exposes no
-            // API to do that step (brief §52), so this only makes the code
-            // visible to whoever configured OPENPAY_MERCHANT_ID.
-            Log::info('Openpay webhook verification code received', ['code' => $payload['verification_code'] ?? null]);
+            // API to do that step (brief §52). The code itself is a bearer
+            // secret for that one-time handshake, so it is never written
+            // to logs in full — only that a verification ping arrived.
+            Log::info('Openpay webhook verification code received', [
+                'code_length' => is_string($payload['verification_code'] ?? null)
+                    ? strlen($payload['verification_code'])
+                    : null,
+            ]);
 
             return response()->noContent();
         }

@@ -1,30 +1,33 @@
 # Running the test suite locally
 
-## `php artisan test` can crash on this machine's default PHP config
+## `php artisan test` used to crash on this machine's default PHP config
 
-`php artisan test` shells out to a child `pest`/`phpunit` process that reads
-this machine's **default** `php.ini` — not whatever `-d` flags you passed to
-the outer `php artisan test` command, and not `phpunit.xml`'s `<ini>` block
-either. On this box that default is `memory_limit=128M` with Xdebug's
-`develop` mode always on.
+`php artisan test` shells out to a child `pest`/`phpunit` process. On this
+box the machine-wide default is `memory_limit=128M` with Xdebug's `develop`
+mode always on, and `-d` flags passed to the *outer* `php artisan test`
+command never reach that child process — nor does `xdebug.mode`, since
+Xdebug reads it once at PHP startup and `ini_set()` can't change it
+retroactively.
 
-Xdebug roughly doubles the memory a stack trace costs. Combine that with one
-test in the suite that intentionally exercises a 422 response while
-`APP_DEBUG=true` (so Laravel renders the full Symfony debug HTML error page,
-which is large), and the child process can hit `Allowed memory size of
-134217728 bytes exhausted` while rendering that one page — which looks like
-the whole suite crashed, but isn't a code bug.
+`memory_limit` is different: it's a normal runtime-adjustable directive, so
+`phpunit.xml`'s `<php><ini name="memory_limit" value="512M"/></php>` block
+*does* reach the child process (PHPUnit applies its own `<ini>` config via
+`ini_set()` while bootstrapping, regardless of which command launched it).
+That's now set explicitly, which is what actually fixed the crash this
+section used to work around: Xdebug roughly doubles the memory a stack
+trace costs, and one test intentionally exercises a 422 response while
+`APP_DEBUG=true` (so Laravel renders the full Symfony debug HTML error
+page, which is large) — together they used to exhaust the 128M default
+while rendering that one page, which looked like the whole suite crashing
+but wasn't a code bug. Plain `php artisan test` is fine now; no bypass
+command needed for this specific issue.
 
-**Don't "fix" this by lowering test coverage or changing app behavior.**
-Run Pest directly instead, bypassing the `artisan test` wrapper so your `-d`
-flags actually apply to the process running the tests:
+If you still see an unrelated memory error locally, Xdebug's own overhead
+is usually the next thing to try disabling for a run:
 
 ```sh
-php -d memory_limit=1G -d xdebug.mode=off vendor/bin/pest --colors=never
+php -d xdebug.mode=off artisan test
 ```
-
-This is a local `php.ini` quirk, not something to change in the app or in
-CI (CI doesn't have Xdebug enabled, so it doesn't hit this).
 
 ## Running the suite against real MySQL
 

@@ -74,6 +74,8 @@ class CheckoutController extends Controller
      */
     public function onlinePayment(Request $request, Order $order, CreateOnlinePayment $createPayment): JsonResponse
     {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
         try {
             $intent = $createPayment->handle($order, paymentData: $request->only(['token_id', 'device_session_id']));
 
