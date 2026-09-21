@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Me;
 
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteOwnedProduct;
@@ -25,10 +26,11 @@ use Illuminate\Http\Request;
 class EventsController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     public function index(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteHistory $history): JsonResponse
     {
-        $athlete = $ensureAthlete->handle($request->user(), 'me_events');
+        $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'me_events');
         $data = $history->handle($athlete, [
             'from' => $request->string('from')->toString() ?: null,
             'to' => $request->string('to')->toString() ?: null,
@@ -92,7 +94,7 @@ class EventsController extends Controller
      */
     public function show(EventParticipant $participant, Request $request, EnsureAthleteForUser $ensureAthlete, GetEventParticipantDetail $detail): JsonResponse
     {
-        $athlete = $ensureAthlete->handle($request->user(), 'me_events_show');
+        $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'me_events_show');
         abort_unless($participant->athlete_id === $athlete->id, 403);
 
         return $this->respond($detail->handle($participant));

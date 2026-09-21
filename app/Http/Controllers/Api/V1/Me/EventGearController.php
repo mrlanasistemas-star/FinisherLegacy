@@ -6,6 +6,7 @@ use App\Actions\Athletes\AssignOwnedProductToEvent;
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Actions\Athletes\RemoveOwnedProductFromEvent;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Models\AthleteOwnedProduct;
 use App\Models\EventGearSelection;
@@ -23,10 +24,11 @@ use Illuminate\Http\Request;
 class EventGearController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     public function index(EventParticipant $participant, EnsureAthleteForUser $ensureAthlete, Request $request, GetEventGear $query): JsonResponse
     {
-        $athlete = $ensureAthlete->handle($request->user(), 'me_event_gear_index');
+        $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'me_event_gear_index');
         abort_unless($participant->athlete_id === $athlete->id, 403);
 
         return $this->respond($query->handle($participant)->map(fn (EventGearSelection $selection) => $this->payload($selection)));
@@ -34,7 +36,7 @@ class EventGearController extends Controller
 
     public function store(Request $request, EventParticipant $participant, EnsureAthleteForUser $ensureAthlete, AssignOwnedProductToEvent $assign): JsonResponse
     {
-        $athlete = $ensureAthlete->handle($request->user(), 'me_event_gear_store');
+        $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'me_event_gear_store');
         abort_unless($participant->athlete_id === $athlete->id, 403);
 
         $data = $request->validate([
@@ -50,7 +52,7 @@ class EventGearController extends Controller
 
     public function destroy(EventParticipant $participant, EventGearSelection $gear, Request $request, EnsureAthleteForUser $ensureAthlete, RemoveOwnedProductFromEvent $remove): JsonResponse
     {
-        $athlete = $ensureAthlete->handle($request->user(), 'me_event_gear_destroy');
+        $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'me_event_gear_destroy');
         abort_unless($participant->athlete_id === $athlete->id, 403);
         abort_unless($gear->event_participant_id === $participant->id, 403);
 
