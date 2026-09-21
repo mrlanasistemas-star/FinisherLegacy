@@ -18,7 +18,7 @@ class GetAthleteOwnedProducts
     public function handle(Athlete $athlete): Collection
     {
         return $athlete->ownedProducts()
-            ->with(['product', 'productVariant'])
+            ->with(['product', 'productVariant', 'gearSelections.eventParticipant.eventEdition.event'])
             ->orderByDesc('acquired_at')
             ->get();
     }

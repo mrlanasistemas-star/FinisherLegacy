@@ -6,7 +6,7 @@ use App\Enums\AthleteEventMediaType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 /**
  * Belongs to Athlete + EventParticipant, never generically to User (brief
@@ -43,8 +43,18 @@ class AthleteEventMedia extends Model
         return $this->belongsTo(EventParticipant::class);
     }
 
+    /**
+     * Never a direct disk URL (brief §62) — public media gets a permanent
+     * link to App\Http\Controllers\AthleteEventMediaFileController, which
+     * serves it unconditionally; private media gets a signed, expiring
+     * one, same as AthleteSupportMessage::signedAudioUrl().
+     */
     public function url(): string
     {
-        return Storage::disk($this->disk)->url($this->path);
+        if ($this->is_public) {
+            return URL::route('athlete-media.show', ['media' => $this->uuid]);
+        }
+
+        return URL::temporarySignedRoute('athlete-media.show', now()->addHours(2), ['media' => $this->uuid]);
     }
 }

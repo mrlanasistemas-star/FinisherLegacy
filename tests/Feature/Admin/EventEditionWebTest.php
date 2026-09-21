@@ -78,7 +78,7 @@ test('the Organizer detail page exposes its Eventos and Datos/Integración tabs 
     $response->assertInertia(fn ($page) => $page->component('admin/organizers/Show')
         ->where('organizer.id', $organizer->id)
         ->has('events')
-        ->where('dataSource', null)
+        ->where('dataSources', [])
     );
 });
 
@@ -91,6 +91,6 @@ test('updating an Organizer data source never leaks a stored secret back into th
 
     $response = $this->actingAs($this->admin)->get("/admin/organizers/{$organizer->id}");
 
-    $response->assertInertia(fn ($page) => $page->where('dataSource.type', 'manual'));
+    $response->assertInertia(fn ($page) => $page->where('dataSources.0.type', 'manual'));
     $response->assertDontSee('client_secret', escape: false);
 });

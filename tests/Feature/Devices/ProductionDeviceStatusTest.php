@@ -45,7 +45,10 @@ test('capabilities round-trip as an array', function () {
         'capabilities' => ['laser_type' => 'fiber', 'power_w' => 30, 'work_area_mm' => ['width' => 200, 'height' => 200]],
     ]);
 
-    expect($device->fresh()->capabilities)->toBe([
+    // ->toEqual(), not ->toBe(): MySQL's native JSON column type re-serializes
+    // object key order on write, so a strict `===` here compares key order,
+    // not content (see PlateStudioTest.php for the same note).
+    expect($device->fresh()->capabilities)->toEqual([
         'laser_type' => 'fiber',
         'power_w' => 30,
         'work_area_mm' => ['width' => 200, 'height' => 200],

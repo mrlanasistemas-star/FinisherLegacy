@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ExternalLink, Plus } from '@lucide/vue';
 import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
@@ -34,13 +34,29 @@ type Edition = {
         distance_value: number | null;
         distance_unit: string | null;
     }[];
+    sync_mapping: { id: number; provider_connection: string } | null;
     data_source: {
         type: string | null;
         provider_connection: string | null;
         inherited: boolean;
-        organizer_default: {
+        participants_data_source_id: number | null;
+        results_data_source_id: number | null;
+        organizer_sources: {
+            id: number;
+            name: string | null;
+            type: string;
+            purpose: string;
+            is_default: boolean;
+        }[];
+        resolved_participants: {
             type: string;
             provider_connection: string | null;
+            is_override: boolean;
+        } | null;
+        resolved_results: {
+            type: string;
+            provider_connection: string | null;
+            is_override: boolean;
         } | null;
     };
 };
@@ -71,23 +87,48 @@ const priceTypeLabels: Record<string, string> = {
     standard: 'Estándar',
 };
 
-const effectiveDataSource = computed(() => {
-    if (!props.edition.data_source.inherited) {
-        return {
-            type: props.edition.data_source.type,
-            source: 'Definida en este evento',
-        };
-    }
+const typeLabels: Record<string, string> = {
+    manual: 'Manual',
+    file: 'Archivo',
+    api: 'API',
+};
 
-    if (props.edition.data_source.organizer_default) {
-        return {
-            type: props.edition.data_source.organizer_default.type,
-            source: 'Heredada del organizador',
-        };
-    }
+const participantSources = computed(() =>
+    props.edition.data_source.organizer_sources.filter(
+        (s) => s.purpose === 'participants' || s.purpose === 'both',
+    ),
+);
+const resultSources = computed(() =>
+    props.edition.data_source.organizer_sources.filter(
+        (s) => s.purpose === 'results' || s.purpose === 'both',
+    ),
+);
 
-    return { type: null, source: 'Sin configurar' };
+const sourcesForm = useForm({
+    participants_data_source_id:
+        props.edition.data_source.participants_data_source_id ??
+        ('' as number | ''),
+    results_data_source_id:
+        props.edition.data_source.results_data_source_id ?? ('' as number | ''),
 });
+
+function saveSources() {
+    sourcesForm.put(`/admin/editions/${props.edition.id}/data-sources`, {
+        preserveScroll: true,
+    });
+}
+
+function syncNow() {
+    if (!props.edition.sync_mapping) {
+        return;
+    }
+
+    router.post(
+        `/admin/integrations/mappings/${props.edition.sync_mapping.id}/sync`,
+        {},
+        { preserveScroll: true },
+    );
+}
 
 const priceForm = useForm({
     product_id: '' as number | '',
@@ -202,26 +243,173 @@ function submitPrice() {
                 </div>
             </TabsContent>
 
-            <TabsContent value="data" class="mt-6">
+            <TabsContent value="data" class="mt-6 space-y-4">
                 <div
                     class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm"
                 >
-                    <p class="text-xs text-white/30 uppercase">
-                        Fuente de datos efectiva
+                    <p
+                        class="mb-4 text-xs font-semibold text-white/50 uppercase"
+                    >
+                        Organizador:
+                        {{ edition.event.organizer ?? 'Sin organizador' }}
                     </p>
-                    <p class="mt-1 text-lg text-white uppercase">
-                        {{ effectiveDataSource.type ?? 'Sin configurar' }}
-                    </p>
-                    <p class="text-xs text-white/40">
-                        {{ effectiveDataSource.source }}
-                    </p>
-                    <p class="mt-4 text-xs text-white/40">
-                        Para cambiar la fuente de datos de este organizador, ve
-                        a
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label class="text-xs text-white/50"
+                                >Fuente de participantes</Label
+                            >
+                            <Select
+                                v-model="
+                                    sourcesForm.participants_data_source_id
+                                "
+                            >
+                                <SelectTrigger
+                                    class="border-white/10 bg-fl-black text-white"
+                                >
+                                    <SelectValue
+                                        placeholder="Heredar del organizador"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="source in participantSources"
+                                        :key="source.id"
+                                        :value="source.id"
+                                    >
+                                        {{
+                                            source.name ??
+                                            typeLabels[source.type]
+                                        }}<span v-if="source.is_default">
+                                            (default)</span
+                                        >
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p
+                                v-if="edition.data_source.resolved_participants"
+                                class="text-xs text-white/30"
+                            >
+                                Resuelto:
+                                {{
+                                    typeLabels[
+                                        edition.data_source
+                                            .resolved_participants.type
+                                    ]
+                                }}
+                                <span
+                                    v-if="
+                                        edition.data_source
+                                            .resolved_participants
+                                            .provider_connection
+                                    "
+                                >
+                                    ·
+                                    {{
+                                        edition.data_source
+                                            .resolved_participants
+                                            .provider_connection
+                                    }}</span
+                                >
+                            </p>
+                        </div>
+                        <div class="grid gap-2">
+                            <Label class="text-xs text-white/50"
+                                >Fuente de resultados</Label
+                            >
+                            <Select
+                                v-model="sourcesForm.results_data_source_id"
+                            >
+                                <SelectTrigger
+                                    class="border-white/10 bg-fl-black text-white"
+                                >
+                                    <SelectValue
+                                        placeholder="Heredar del organizador"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="source in resultSources"
+                                        :key="source.id"
+                                        :value="source.id"
+                                    >
+                                        {{
+                                            source.name ??
+                                            typeLabels[source.type]
+                                        }}<span v-if="source.is_default">
+                                            (default)</span
+                                        >
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p
+                                v-if="edition.data_source.resolved_results"
+                                class="text-xs text-white/30"
+                            >
+                                Resuelto:
+                                {{
+                                    typeLabels[
+                                        edition.data_source.resolved_results
+                                            .type
+                                    ]
+                                }}
+                                <span
+                                    v-if="
+                                        edition.data_source.resolved_results
+                                            .provider_connection
+                                    "
+                                >
+                                    ·
+                                    {{
+                                        edition.data_source.resolved_results
+                                            .provider_connection
+                                    }}</span
+                                >
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center gap-3">
+                        <Button
+                            class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                            :disabled="sourcesForm.processing"
+                            @click="saveSources"
+                        >
+                            Guardar fuentes
+                        </Button>
+                        <Button
+                            v-if="edition.sync_mapping"
+                            variant="outline"
+                            class="border-white/15 text-white hover:bg-white/10"
+                            @click="syncNow"
+                        >
+                            Sincronizar ahora
+                        </Button>
+                    </div>
+                    <p
+                        v-if="!edition.sync_mapping"
+                        class="mt-2 text-xs text-white/30"
+                    >
+                        Este evento no tiene una conexión API vinculada todavía
+                        —
                         <Link
-                            :href="`/admin/organizers`"
+                            href="/admin/integrations"
                             class="text-fl-gold hover:underline"
-                            >Organizadores</Link
+                            >vincúlalo desde Integraciones</Link
+                        >
+                        para poder sincronizar.
+                    </p>
+
+                    <p
+                        v-if="!edition.data_source.organizer_sources.length"
+                        class="mt-4 text-xs text-white/40"
+                    >
+                        No hay fuentes disponibles para este organizador todavía
+                        —
+                        <Link
+                            href="/admin/organizers"
+                            class="text-fl-gold hover:underline"
+                            >agrégalas desde Organizadores</Link
                         >.
                     </p>
                 </div>

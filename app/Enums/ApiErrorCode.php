@@ -33,10 +33,12 @@ enum ApiErrorCode: string
     case PaymentAlreadyRecorded = 'PAYMENT_ALREADY_RECORDED';
     case LegacyPlateNotPaid = 'LEGACY_PLATE_NOT_PAID';
     case LegacyPlateAlreadyExists = 'LEGACY_PLATE_ALREADY_EXISTS';
+    case LegacyPlatePresaleDuplicate = 'LEGACY_PLATE_PRESALE_DUPLICATE';
     case MediaLimitReached = 'MEDIA_LIMIT_REACHED';
     case MediaTooLarge = 'MEDIA_TOO_LARGE';
     case AssetAlreadyClaimed = 'ASSET_ALREADY_CLAIMED';
     case EventDataSourceNotConfigured = 'EVENT_DATA_SOURCE_NOT_CONFIGURED';
     case ProviderConnectionFailed = 'PROVIDER_CONNECTION_FAILED';
     case InvalidWebhookSignature = 'INVALID_WEBHOOK_SIGNATURE';
+    case EventGearAlreadyAssigned = 'EVENT_GEAR_ALREADY_ASSIGNED';
 }

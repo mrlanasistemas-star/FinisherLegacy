@@ -12,6 +12,8 @@ type ProductSummary = {
     currency: string;
     in_stock: boolean;
     image_url: string | null;
+    hover_image_url: string | null;
+    variant_count: number;
 };
 
 defineProps<{
@@ -72,7 +74,9 @@ defineProps<{
                 </Link>
             </div>
 
-            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+                class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            >
                 <ProductCard
                     v-for="product in products"
                     :key="product.uuid"
@@ -83,6 +87,8 @@ defineProps<{
                     :currency="product.currency"
                     :in-stock="product.in_stock"
                     :image-url="product.image_url"
+                    :hover-image-url="product.hover_image_url"
+                    :variant-count="product.variant_count"
                 />
             </div>
             <p v-if="!products.length" class="py-16 text-center text-white/30">

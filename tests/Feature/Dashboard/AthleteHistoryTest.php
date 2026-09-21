@@ -1,13 +1,16 @@
 <?php
 
+use App\Actions\Athletes\AssignOwnedProductToEvent;
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Actions\LegacyPlates\CreateLegacyPlateEntitlement;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Models\Athlete;
 use App\Models\AthleteEventMedia;
+use App\Models\AthleteOwnedProduct;
 use App\Models\EventEdition;
 use App\Models\EventParticipant;
 use App\Models\LegacyPlateModel;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -121,4 +124,25 @@ test('my-gear (Digital Closet) renders for an athlete with nothing owned yet', f
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->component('dashboard/MyGear')->where('items', []));
+});
+
+test('my-gear shows which event each owned product was used in', function () {
+    $user = User::factory()->create();
+    $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
+    $participant = EventParticipant::factory()->create(['athlete_id' => $athlete->id]);
+    $owned = AthleteOwnedProduct::create([
+        'uuid' => (string) Str::uuid(),
+        'athlete_id' => $athlete->id,
+        'product_id' => Product::factory()->create()->id,
+        'status' => 'active',
+        'acquired_at' => now(),
+    ]);
+    app(AssignOwnedProductToEvent::class)->handle($participant, $owned);
+
+    $response = $this->actingAs($user)->get('/dashboard/my-gear');
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('items.0.usage_history', 1)
+        ->where('items.0.usage_history.0.event_participant_id', $participant->id));
 });

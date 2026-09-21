@@ -6,6 +6,7 @@ use App\Enums\AthleteOwnedProductStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -55,6 +56,12 @@ class AthleteOwnedProduct extends Model
     public function productVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    /** @return HasMany<EventGearSelection, $this> */
+    public function gearSelections(): HasMany
+    {
+        return $this->hasMany(EventGearSelection::class);
     }
 
     public function getActivitylogOptions(): LogOptions

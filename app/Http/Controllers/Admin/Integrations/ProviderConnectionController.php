@@ -13,6 +13,7 @@ use App\Models\Sport;
 use App\Services\Integrations\EventProviderRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -49,24 +50,41 @@ class ProviderConnectionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'provider_key' => ['required', 'string'],
-            'name' => ['required', 'string', 'max:120'],
-            'base_url' => ['nullable', 'string', 'max:255'],
-            'api_key' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $data = $this->validatedConnection($request);
 
         ProviderConnection::create([
             'uuid' => (string) Str::uuid(),
             'provider_key' => $data['provider_key'],
             'name' => $data['name'],
-            'base_url' => $data['base_url'] ?? null,
-            'credentials' => $data['api_key'] ?? null,
-            'settings' => ['chunk_size' => 250],
+            'base_url' => $data['base_url'],
+            'credentials' => $data['api_key'],
+            'settings' => $data['settings'] + ['chunk_size' => 250],
             'status' => ProviderConnectionStatus::Untested,
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Conexión creada.']);
+
+        return back();
+    }
+
+    /**
+     * Never a required field: an empty `api_key` means "keep the current
+     * credential" (brief §34: "nunca devolver secrets al frontend", so the
+     * frontend can't send back what it never received) — only a non-empty
+     * value replaces it.
+     */
+    public function update(Request $request, ProviderConnection $providerConnection): RedirectResponse
+    {
+        $data = $this->validatedConnection($request);
+
+        $providerConnection->update([
+            'name' => $data['name'],
+            'base_url' => $data['base_url'],
+            'settings' => $data['settings'] + Arr::only($providerConnection->settingsArray(), ['chunk_size']),
+            ...($data['api_key'] !== null ? ['credentials' => $data['api_key']] : []),
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Conexión actualizada.']);
 
         return back();
     }
@@ -136,6 +154,12 @@ class ProviderConnectionController extends Controller
                 'base_url' => $providerConnection->base_url,
                 'last_tested_at' => $providerConnection->last_tested_at?->diffForHumans(),
                 'last_successful_sync_at' => $providerConnection->last_successful_sync_at?->diffForHumans(),
+                // `settings` (brief §33: auth type, endpoints, field
+                // mapping) is config, not a secret — safe to echo back for
+                // the edit form to prefill. `credentials` never appears
+                // here; `has_credentials` only says whether one is stored.
+                'settings' => $providerConnection->settingsArray(),
+                'has_credentials' => filled($providerConnection->credentials),
             ],
             'availableEvents' => $availableEvents,
             'listError' => $listError,
@@ -177,5 +201,58 @@ class ProviderConnectionController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Evento vinculado.']);
 
         return back();
+    }
+
+    /**
+     * Generic REST's config lives in `settings` (brief §33), never hardcoded
+     * per-provider fields — everything except name/base_url/api_key is
+     * only ever meaningful for provider_key=generic_rest, so it's optional
+     * here and simply omitted from `settings` for any other provider.
+     *
+     * @return array{provider_key: string, name: string, base_url: ?string, api_key: ?string, settings: array<string, mixed>}
+     */
+    private function validatedConnection(Request $request): array
+    {
+        $data = $request->validate([
+            'provider_key' => ['required', 'string'],
+            'name' => ['required', 'string', 'max:120'],
+            'base_url' => ['nullable', 'string', 'max:255'],
+            'api_key' => ['nullable', 'string', 'max:1000'],
+            'auth_type' => ['nullable', 'string', Rule::in(['none', 'bearer', 'api_key_header', 'basic'])],
+            'api_key_header' => ['nullable', 'string', 'max:100'],
+            'basic_username' => ['nullable', 'string', 'max:100'],
+            'test_endpoint' => ['nullable', 'string', 'max:255'],
+            'events_endpoint' => ['nullable', 'string', 'max:255'],
+            'event_endpoint' => ['nullable', 'string', 'max:255'],
+            'participants_endpoint' => ['nullable', 'string', 'max:255'],
+            'results_endpoint' => ['nullable', 'string', 'max:255'],
+            'event_field_mapping' => ['nullable', 'array'],
+            'participant_field_mapping' => ['nullable', 'array'],
+            'result_field_mapping' => ['nullable', 'array'],
+        ]);
+
+        $settings = $data['provider_key'] === 'generic_rest'
+            ? array_filter([
+                'auth_type' => $data['auth_type'] ?? 'none',
+                'api_key_header' => $data['api_key_header'] ?? null,
+                'basic_username' => $data['basic_username'] ?? null,
+                'test_endpoint' => $data['test_endpoint'] ?? null,
+                'events_endpoint' => $data['events_endpoint'] ?? null,
+                'event_endpoint' => $data['event_endpoint'] ?? null,
+                'participants_endpoint' => $data['participants_endpoint'] ?? null,
+                'results_endpoint' => $data['results_endpoint'] ?? null,
+                'event_field_mapping' => $data['event_field_mapping'] ?? null,
+                'participant_field_mapping' => $data['participant_field_mapping'] ?? null,
+                'result_field_mapping' => $data['result_field_mapping'] ?? null,
+            ], fn ($value) => $value !== null)
+            : [];
+
+        return [
+            'provider_key' => $data['provider_key'],
+            'name' => $data['name'],
+            'base_url' => $data['base_url'] ?? null,
+            'api_key' => filled($data['api_key'] ?? null) ? $data['api_key'] : null,
+            'settings' => $settings,
+        ];
     }
 }

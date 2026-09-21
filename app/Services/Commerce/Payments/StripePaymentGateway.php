@@ -35,7 +35,7 @@ class StripePaymentGateway implements PaymentGateway
         return 'stripe';
     }
 
-    public function createPayment(Order $order): OnlinePaymentIntent
+    public function createPayment(Order $order, array $paymentData = []): OnlinePaymentIntent
     {
         $secret = $this->secretKey();
 

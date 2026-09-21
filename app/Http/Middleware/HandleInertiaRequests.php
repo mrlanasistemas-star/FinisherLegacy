@@ -63,6 +63,11 @@ class HandleInertiaRequests extends Middleware
                 'isSuperAdmin' => $isSuperAdmin,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Cheap enough for every request (an indexed count on a tiny
+            // per-user table) — the header bell needs this on every page,
+            // not just the inbox, so a shared prop beats a second round
+            // trip (product UX consolidation brief §37).
+            'unreadNotificationsCount' => $user?->unreadNotifications()->count() ?? 0,
         ];
     }
 }

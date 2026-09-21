@@ -44,7 +44,7 @@ function formatDate(value: string | null): string | null {
 
     <QrScannerDialog v-model:open="scannerOpen" />
 
-    <div class="mx-auto max-w-7xl p-4 md:p-6">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1 class="text-xl font-bold text-white">Mis Medallas</h1>

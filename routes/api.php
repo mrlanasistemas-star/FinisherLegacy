@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\Integrations\SyncController as ApiIntegrationsSyncController;
 use App\Http\Controllers\Api\V1\LegacyCodeController;
 use App\Http\Controllers\Api\V1\LegacyPlateModelController;
+use App\Http\Controllers\Api\V1\Me\EventGearController as MeEventGearController;
 use App\Http\Controllers\Api\V1\Me\EventMediaController as MeEventMediaController;
 use App\Http\Controllers\Api\V1\Me\EventsController as MeEventsController;
 use App\Http\Controllers\Api\V1\MedalController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Api\V1\Store\CheckoutController;
 use App\Http\Controllers\Api\V1\Store\OrderController;
 use App\Http\Controllers\Api\V1\Store\PaymentController;
 use App\Http\Controllers\Api\V1\Store\ProductController;
+use App\Http\Controllers\Api\Webhooks\OpenPayWebhookController;
 use App\Http\Controllers\Api\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +56,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+
+        // Same controller/actions as `profile` above — `me/profile` is the
+        // name the mobile-facing minimal API surface uses (brief §26/§75).
+        Route::get('me/profile', [ProfileController::class, 'show'])->name('me.profile.show');
+        Route::patch('me/profile', [ProfileController::class, 'update'])->name('me.profile.update');
 
         Route::get('medals', [MedalController::class, 'index'])->name('medals.index');
         Route::post('medals', [MedalController::class, 'store'])->name('medals.store');
@@ -135,6 +142,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             ->name('gear.claim');
 
         Route::get('me/events', [MeEventsController::class, 'index'])->name('me.events.index');
+        // Same controller/action as `me/events` — `me/history` is the
+        // filterable name the minimal mobile-facing API surface uses
+        // (brief §24/§75); both accept the same from/to/event_id/... filters.
+        Route::get('me/history', [MeEventsController::class, 'index'])->name('me.history.index');
+        Route::get('me/events/{participant}', [MeEventsController::class, 'show'])->name('me.events.show');
 
         Route::prefix('me/events/{participant}/media')->name('me.events.media.')->group(function () {
             Route::get('/', [MeEventMediaController::class, 'index'])->name('index');
@@ -143,6 +155,14 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
         Route::patch('me/media/{media:uuid}', [MeEventMediaController::class, 'updateVisibility'])->name('me.media.update');
         Route::delete('me/media/{media:uuid}', [MeEventMediaController::class, 'destroy'])->name('me.media.destroy');
+
+        Route::prefix('me/events/{participant}/gear')->name('me.events.gear.')->group(function () {
+            Route::get('/', [MeEventGearController::class, 'index'])->name('index');
+            Route::post('/', [MeEventGearController::class, 'store'])->name('store');
+            // withoutScopedBindings(): see the identical route in routes/web.php —
+            // EventParticipant has no gears() relation, only gearSelections().
+            Route::delete('{gear:uuid}', [MeEventGearController::class, 'destroy'])->withoutScopedBindings()->name('destroy');
+        });
 
         /*
         |------------------------------------------------------------------
@@ -297,10 +317,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 /*
 |--------------------------------------------------------------------------
 | Payment webhooks — deliberately NOT under /api/v1 or auth:sanctum (brief
-| §113): the provider calls this directly, authenticated only by its own
-| signature, verified inside StripePaymentGateway::handleWebhook(). Routes
-| already outside the `web` middleware group's CSRF/session handling
-| (this file, not routes/web.php).
+| §113): the provider calls this directly. Stripe is authenticated by its
+| own signature (StripePaymentGateway::handleWebhook()); Openpay sends no
+| signature at all, so OpenPayPaymentGateway::handleWebhook() re-fetches
+| the transaction from Openpay's API instead (brief §52). Routes already
+| outside the `web` middleware group's CSRF/session handling (this file,
+| not routes/web.php).
 |--------------------------------------------------------------------------
 */
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('api.webhooks.stripe');
+Route::post('webhooks/openpay', OpenPayWebhookController::class)->name('api.webhooks.openpay');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Enums\DataSourcePurpose;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SetOrganizerDataSourceRequest;
@@ -28,8 +29,14 @@ class OrganizerDataSourceController extends Controller
 
     public function update(SetOrganizerDataSourceRequest $request, Organizer $organizer): JsonResponse
     {
+        // Targets the default 'both'-purpose source specifically, not just
+        // "any row for this organizer" — Organizer now supports multiple
+        // sources (brief §23-§27), so organizer_id alone is no longer
+        // unique. This endpoint's contract stays "set THE default source"
+        // exactly as before; multi-source management is a web-only
+        // surface (see Admin\OrganizerDataSourceController).
         $dataSource = OrganizerDataSource::query()->updateOrCreate(
-            ['organizer_id' => $organizer->id],
+            ['organizer_id' => $organizer->id, 'is_default' => true, 'purpose' => DataSourcePurpose::Both->value],
             [
                 'type' => $request->string('type')->toString(),
                 'provider_connection_id' => $request->integer('provider_connection_id') ?: null,

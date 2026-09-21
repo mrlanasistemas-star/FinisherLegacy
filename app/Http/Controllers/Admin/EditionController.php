@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\CreateEvent;
+use App\Actions\Integrations\ResolveEventDataSource;
+use App\Enums\DataSourcePurpose;
 use App\Enums\OrganizerDataSourceType;
+use App\Exceptions\EventDataSourceNotConfiguredException;
 use App\Http\Controllers\Controller;
 use App\Models\EventEdition;
+use App\Models\ExternalEventMapping;
 use App\Models\LegacyPlateModel;
 use App\Models\Organizer;
+use App\Models\OrganizerDataSource;
 use App\Models\Product;
 use App\Models\ProductPriceSchedule;
 use App\Models\ProviderConnection;
@@ -57,7 +62,7 @@ class EditionController extends Controller
         return Inertia::render('admin/editions/Create', [
             'sports' => Sport::query()->where('active', true)->orderBy('name')->get(['id', 'name']),
             'organizers' => Organizer::query()->orderBy('name')->get(['id', 'name']),
-            'providerConnections' => ProviderConnection::query()->orderBy('name')->get(['id', 'name', 'provider_key']),
+            'providerConnections' => ProviderConnection::query()->selectable()->orderBy('name')->get(['id', 'name', 'provider_key']),
         ]);
     }
 
@@ -89,9 +94,12 @@ class EditionController extends Controller
         return redirect()->route('admin.editions.show', $edition->id);
     }
 
-    public function show(EventEdition $eventEdition): Response
+    public function show(EventEdition $eventEdition, ResolveEventDataSource $resolveDataSource): Response
     {
-        $eventEdition->loadMissing(['event.organizer', 'races', 'dataSourceProviderConnection']);
+        $eventEdition->loadMissing([
+            'event.organizer.dataSources.providerConnection',
+            'races', 'dataSourceProviderConnection', 'participantsDataSource.providerConnection', 'resultsDataSource.providerConnection',
+        ]);
 
         $priceSchedules = ProductPriceSchedule::query()
             ->where('event_edition_id', $eventEdition->id)
@@ -108,7 +116,8 @@ class EditionController extends Controller
                 'active' => $schedule->active,
             ]);
 
-        $organizerDataSource = $eventEdition->event->organizer?->dataSource()->with('providerConnection')->first();
+        $organizerSources = $eventEdition->event->organizer?->dataSources->where('active', true) ?? collect();
+        $syncMapping = ExternalEventMapping::query()->where('event_edition_id', $eventEdition->id)->with('providerConnection')->first();
 
         return Inertia::render('admin/editions/Show', [
             'edition' => [
@@ -138,17 +147,64 @@ class EditionController extends Controller
                     'type' => $eventEdition->data_source_type,
                     'provider_connection' => $eventEdition->dataSourceProviderConnection?->name,
                     'inherited' => $eventEdition->data_source_type === null,
-                    'organizer_default' => $organizerDataSource ? [
-                        'type' => $organizerDataSource->type->value,
-                        'provider_connection' => $organizerDataSource->providerConnection?->name,
-                    ] : null,
+                    'participants_data_source_id' => $eventEdition->participants_data_source_id,
+                    'results_data_source_id' => $eventEdition->results_data_source_id,
+                    'organizer_sources' => $organizerSources->map(fn (OrganizerDataSource $source) => [
+                        'id' => $source->id,
+                        'name' => $source->name,
+                        'type' => $source->type->value,
+                        'purpose' => $source->purpose->value,
+                        'is_default' => $source->is_default,
+                    ])->values(),
+                    'resolved_participants' => $this->resolvedSourcePayload($eventEdition, $resolveDataSource, DataSourcePurpose::Participants),
+                    'resolved_results' => $this->resolvedSourcePayload($eventEdition, $resolveDataSource, DataSourcePurpose::Results),
                 ],
+                'sync_mapping' => $syncMapping ? [
+                    'id' => $syncMapping->id,
+                    'provider_connection' => $syncMapping->providerConnection->name,
+                ] : null,
             ],
             'priceSchedules' => $priceSchedules,
             'legacyPlateModels' => LegacyPlateModel::query()->where('active', true)->get(['id', 'name', 'slug']),
             'dataSourceTypes' => array_map(fn ($case) => $case->value, OrganizerDataSourceType::cases()),
             'products' => Product::query()->where('active', true)->get(['id', 'name', 'type']),
         ]);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function resolvedSourcePayload(EventEdition $edition, ResolveEventDataSource $resolveDataSource, DataSourcePurpose $purpose): ?array
+    {
+        try {
+            $resolved = $resolveDataSource->handle($edition, $purpose);
+        } catch (EventDataSourceNotConfiguredException) {
+            return null;
+        }
+
+        return [
+            'type' => $resolved->type->value,
+            'provider_connection' => $resolved->providerConnection?->name,
+            'is_override' => $resolved->isOverride,
+        ];
+    }
+
+    /**
+     * Per-purpose source selection (brief §28/§39) — null means "inherit
+     * the Organizer's default for that purpose", exactly the same
+     * semantics App\Actions\Integrations\ResolveEventDataSource already
+     * applies when reading these columns.
+     */
+    public function updateDataSources(Request $request, EventEdition $eventEdition): RedirectResponse
+    {
+        $data = $request->validate([
+            'participants_data_source_id' => ['nullable', 'integer', 'exists:organizer_data_sources,id'],
+            'results_data_source_id' => ['nullable', 'integer', 'exists:organizer_data_sources,id'],
+        ]);
+
+        $eventEdition->update($data);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Fuentes de datos del evento actualizadas.']);
+
+        return back();
     }
 
     /**

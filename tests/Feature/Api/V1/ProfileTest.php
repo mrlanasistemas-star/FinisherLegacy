@@ -11,17 +11,18 @@ test('a user can fetch their own profile', function () {
     $response = $this->withHeader('Authorization', "Bearer {$token}")->getJson('/api/v1/profile');
 
     $response->assertOk();
-    $response->assertJsonPath('data.username', 'ada');
+    $response->assertJsonPath('data.profile.username', 'ada');
 });
 
-test('a user without a profile yet gets null data instead of an error', function () {
+test('a user without a profile yet still gets their athlete identity and stats', function () {
     $user = User::factory()->create();
     $token = $user->createToken('test')->plainTextToken;
 
     $response = $this->withHeader('Authorization', "Bearer {$token}")->getJson('/api/v1/profile');
 
     $response->assertOk();
-    $response->assertJsonPath('data', null);
+    $response->assertJsonPath('data.profile', null);
+    $response->assertJsonStructure(['data' => ['athlete' => ['legacy_id', 'full_name'], 'stats']]);
 });
 
 test('a user can update their profile via the api', function () {

@@ -19,14 +19,17 @@ use App\Http\Controllers\Admin\ParticipantController as AdminParticipantControll
 use App\Http\Controllers\Admin\PlateController as AdminPlateController;
 use App\Http\Controllers\Admin\PlateStudioController as AdminPlateStudioController;
 use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistrationController;
+use App\Http\Controllers\Admin\ProductContentSectionController as AdminProductContentSectionController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductionDeviceController as AdminProductionDeviceController;
 use App\Http\Controllers\Admin\ProductionSetupController as AdminProductionSetupController;
+use App\Http\Controllers\Admin\ProductMediaController as AdminProductMediaController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
 use App\Http\Controllers\Admin\Store\PaymentController as AdminStorePaymentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AthleteEventMediaFileController;
 use App\Http\Controllers\AthleteHistoryController;
 use App\Http\Controllers\AthleteProfileController;
 use App\Http\Controllers\DashboardController;
@@ -35,6 +38,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\LegacyCodeController;
 use App\Http\Controllers\MedalController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PreregistrationController;
 use App\Http\Controllers\ProductionController;
@@ -43,6 +47,9 @@ use App\Http\Controllers\Store\CartController as StoreCartController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
+use App\Http\Controllers\SupportAudioController;
+use App\Http\Controllers\SupportController;
+use App\Http\Controllers\SupportSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -65,6 +72,23 @@ Route::get('preregistrations/{token}/qr.svg', [PreregistrationController::class,
 Route::get('l/{code}', [LegacyCodeController::class, 'show'])->name('legacy-code.show');
 Route::get('l/{code}/qr.svg', [LegacyCodeController::class, 'qr'])->name('legacy-code.qr');
 Route::get('l/{code}/continue/{provider}', [LegacyCodeController::class, 'continueTo'])->name('legacy-code.continue');
+
+// "MI EQUIPO DE APOYO" public side (product UX consolidation brief §32-§35)
+// — no account required, reached only through the impredecible public_code.
+Route::get('support/{publicCode}', [SupportController::class, 'show'])->name('support.show');
+Route::get('support/{publicCode}/qr.svg', [SupportController::class, 'qr'])->name('support.qr');
+Route::post('support/{publicCode}/messages', [SupportController::class, 'storeMessage'])
+    ->middleware('throttle:support-message')
+    ->name('support.messages.store');
+
+Route::get('support-messages/{message}/audio', [SupportAudioController::class, 'show'])
+    ->middleware('signed')
+    ->name('support-messages.audio');
+
+// Public media served unconditionally, private media requires a valid
+// signature — checked inside the controller, not route middleware, since
+// this one route serves both (product consolidation brief §62).
+Route::get('media/{media:uuid}/file', [AthleteEventMediaFileController::class, 'show'])->name('athlete-media.show');
 
 Route::get('/@{athleteProfile:username}', [PublicProfileController::class, 'show'])->name('profile.public');
 
@@ -96,6 +120,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // "Mi Legado" (product UX consolidation brief §3-§6) — the card
+    // gallery lives on the main /dashboard route (nav item "Mi Legado"
+    // already pointed here); this is only its per-participation detail.
+    Route::get('dashboard/legado/{participant}', [AthleteHistoryController::class, 'legadoShow'])->name('dashboard.legado.show');
+
+    // "MI EQUIPO DE APOYO" athlete side (brief §32-§35, §44-§45) — lives
+    // inside Mi Legado's event detail, no separate sidebar module.
+    Route::post('dashboard/legado/{eventParticipant}/support', [SupportSessionController::class, 'store'])->name('dashboard.support.store');
+
+    // "Equipo utilizado" (product consolidation brief §19-§20/§102) — lives
+    // inside Mi Legado's event detail, same participant param name as
+    // legadoShow's route model binding.
+    Route::post('dashboard/legado/{participant}/gear', [AthleteHistoryController::class, 'storeGear'])->name('dashboard.legado.gear.store');
+    // withoutScopedBindings(): Laravel's implicit nested-binding scoping
+    // would otherwise look for EventParticipant::gears() (pluralizing the
+    // {gear} segment) — the real relation is gearSelections(), and the
+    // controller already checks $gear->event_participant_id itself.
+    Route::delete('dashboard/legado/{participant}/gear/{gear:uuid}', [AthleteHistoryController::class, 'destroyGear'])
+        ->withoutScopedBindings()
+        ->name('dashboard.legado.gear.destroy');
+    Route::post('support-messages/{message}/approve', [SupportSessionController::class, 'approve'])->name('support-messages.approve');
+    Route::post('support-messages/{message}/reject', [SupportSessionController::class, 'reject'])->name('support-messages.reject');
+
+    // Still reachable by direct URL (brief §3: "no necesariamente borres
+    // rutas") — not in the sidebar anymore, consolidated into Mi Legado.
     Route::get('dashboard/my-events', [AthleteHistoryController::class, 'myEvents'])->name('dashboard.my-events');
     Route::get('dashboard/my-events/{participant}', [AthleteHistoryController::class, 'myEventShow'])->name('dashboard.my-events.show');
     Route::post('dashboard/my-events/{participant}/media', [AthleteHistoryController::class, 'uploadMedia'])->name('dashboard.my-events.media.store');
@@ -104,6 +153,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard/my-plates', [AthleteHistoryController::class, 'myPlates'])->name('dashboard.my-plates');
     Route::get('dashboard/my-gear', [AthleteHistoryController::class, 'myGear'])->name('dashboard.my-gear');
 
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
+    Route::get('dashboard/profile', [AthleteProfileController::class, 'show'])->name('dashboard.profile.show');
     Route::get('dashboard/profile/edit', [AthleteProfileController::class, 'edit'])->name('dashboard.profile.edit');
     Route::patch('dashboard/profile', [AthleteProfileController::class, 'update'])->name('dashboard.profile.update');
 
@@ -178,6 +232,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('editions', [AdminEditionController::class, 'store'])->name('editions.store');
             Route::post('editions/{eventEdition}/price-schedules', [AdminEditionController::class, 'storePriceSchedule'])->name('editions.price-schedules.store');
         });
+        Route::middleware('can:eventdata.manage')->put('editions/{eventEdition}/data-sources', [AdminEditionController::class, 'updateDataSources'])->name('editions.data-sources.update');
         Route::middleware('can:events.view')->get('editions/{eventEdition}', [AdminEditionController::class, 'show'])->name('editions.show');
 
         Route::middleware('can:editions.manage')->prefix('events/{eventEdition}/production-setup')->name('editions.production-setup.')->group(function () {
@@ -186,7 +241,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('qr-test', [AdminProductionSetupController::class, 'markQrTested'])->name('qr-test');
         });
         Route::middleware('can:preregistrations.view')->get('preregistrations', [AdminPreregistrationController::class, 'index'])->name('preregistrations.index');
-        Route::middleware('can:participants.view')->get('participants', [AdminParticipantController::class, 'index'])->name('participants.index');
+        Route::middleware('can:participants.view')->prefix('participants')->name('participants.')->group(function () {
+            Route::get('/', [AdminParticipantController::class, 'index'])->name('index');
+            Route::get('export', [AdminParticipantController::class, 'export'])->name('export');
+            Route::get('{eventParticipant}', [AdminParticipantController::class, 'show'])->name('show');
+            Route::post('{eventParticipant}/notify', [AdminParticipantController::class, 'notify'])
+                ->middleware('can:notifications.send')
+                ->name('notify');
+        });
 
         // Canonical athlete identity (docs/adr/0004-athlete-canonical-identity.md).
         Route::middleware('can:athletes.view')->prefix('athletes')->name('athletes.')->group(function () {
@@ -207,6 +269,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::middleware('can:integrations.manage')->group(function () {
                 Route::post('/', [AdminProviderConnectionController::class, 'store'])->name('store');
+                Route::patch('{providerConnection}', [AdminProviderConnectionController::class, 'update'])->name('update');
                 Route::post('{providerConnection}/test', [AdminProviderConnectionController::class, 'test'])->name('test');
                 Route::post('{providerConnection}/events', [AdminProviderConnectionController::class, 'linkEvent'])->name('events.link');
             });
@@ -236,6 +299,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         Route::middleware('can:legacyplates.manage')->get('legacy-plates/presales', [AdminLegacyPlatePresaleController::class, 'index'])->name('legacy-plates.presales.index');
+        Route::middleware('can:legacyplates.manage')->post('legacy-plates/presales/{legacyPlateEntitlement}/link', [AdminLegacyPlatePresaleController::class, 'linkParticipant'])->name('legacy-plates.presales.link');
 
         Route::middleware('can:platetemplates.view')->prefix('plate-studio')->name('plate-studio.')->group(function () {
             Route::get('/', [AdminPlateStudioController::class, 'index'])->name('index');
@@ -307,9 +371,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:organizers.manage')->post('organizers', [AdminOrganizerController::class, 'store'])->name('organizers.store');
         Route::middleware('can:organizers.manage')->patch('organizers/{organizer}', [AdminOrganizerController::class, 'update'])->name('organizers.update');
         Route::middleware('can:eventdata.manage')->put('organizers/{organizer}/data-source', [AdminOrganizerController::class, 'updateDataSource'])->name('organizers.data-source.update');
+        Route::middleware('can:eventdata.manage')->post('organizers/{organizer}/data-sources', [AdminOrganizerController::class, 'storeDataSource'])->name('organizers.data-sources.store');
         Route::middleware('can:integrations.sync')->post('provider-connections/{providerConnection}/test', [AdminOrganizerController::class, 'testConnection'])->name('provider-connections.test');
 
         Route::middleware('can:eventdata.manage')->get('data-sources', [AdminOrganizerController::class, 'dataSources'])->name('data-sources.index');
+        Route::middleware('can:eventdata.manage')->patch('data-sources/{dataSource}', [AdminOrganizerController::class, 'updateDataSourceEntry'])->name('data-sources.update');
+        Route::middleware('can:eventdata.manage')->post('data-sources/{dataSource}/deactivate', [AdminOrganizerController::class, 'deactivateDataSource'])->name('data-sources.deactivate');
 
         Route::middleware('can:audit.view')->get('audit', [AdminAuditController::class, 'index'])->name('audit.index');
         Route::get('settings', [AdminSettingsController::class, 'index'])->name('settings.index');
@@ -321,6 +388,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::patch('{product}', [AdminProductController::class, 'update'])->name('update');
             Route::post('{product}/variants', [AdminProductController::class, 'storeVariant'])->name('variants.store');
             Route::patch('variants/{variant}', [AdminProductController::class, 'updateVariant'])->name('variants.update');
+
+            Route::post('{product}/media', [AdminProductMediaController::class, 'store'])->name('media.store');
+            Route::post('{product}/media/reorder', [AdminProductMediaController::class, 'reorder'])->name('media.reorder');
+            Route::post('media/{media}/primary', [AdminProductMediaController::class, 'setPrimary'])->name('media.primary');
+            Route::delete('media/{media}', [AdminProductMediaController::class, 'destroy'])->name('media.destroy');
+
+            Route::post('{product}/content-sections', [AdminProductContentSectionController::class, 'store'])->name('content-sections.store');
+            Route::patch('content-sections/{section}', [AdminProductContentSectionController::class, 'update'])->name('content-sections.update');
+            Route::delete('content-sections/{section}', [AdminProductContentSectionController::class, 'destroy'])->name('content-sections.destroy');
         });
 
         Route::middleware('can:inventory.manage')->prefix('inventory')->name('inventory.')->group(function () {

@@ -15,6 +15,8 @@ defineProps<{
     currency: string;
     inStock: boolean;
     imageUrl?: string | null;
+    hoverImageUrl?: string | null;
+    variantCount?: number;
 }>();
 </script>
 
@@ -30,10 +32,18 @@ defineProps<{
                 :alt="name"
                 loading="lazy"
                 class="size-full object-cover transition duration-500 group-hover:scale-105"
+                :class="hoverImageUrl ? 'group-hover:opacity-0' : ''"
             />
             <div v-else class="flex size-full items-center justify-center">
                 <Package class="size-10 text-white/10" />
             </div>
+            <img
+                v-if="hoverImageUrl"
+                :src="hoverImageUrl"
+                :alt="name"
+                loading="lazy"
+                class="absolute inset-0 size-full object-cover opacity-0 transition duration-500 group-hover:opacity-100"
+            />
             <span
                 v-if="!inStock"
                 class="absolute top-3 left-3 rounded-full bg-fl-black/80 px-3 py-1 text-[10px] font-semibold tracking-wide text-white/60 uppercase"
@@ -58,6 +68,12 @@ defineProps<{
                     Desde <Money :minor="fromPriceMinor" :currency="currency" />
                 </span>
                 <span v-else>Precio no disponible</span>
+            </p>
+            <p
+                v-if="variantCount && variantCount > 1"
+                class="mt-1 text-xs text-white/30"
+            >
+                {{ variantCount }} opciones
             </p>
         </div>
     </Link>

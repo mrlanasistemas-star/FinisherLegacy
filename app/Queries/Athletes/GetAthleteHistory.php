@@ -24,6 +24,20 @@ use Illuminate\Database\Eloquent\Collection;
 class GetAthleteHistory
 {
     /**
+     * @param  array{
+     *     from?: string|null,
+     *     to?: string|null,
+     *     event_id?: int|null,
+     *     sport_id?: int|null,
+     *     event_race_id?: int|null,
+     *     legacy_plate?: string|null,
+     *     athlete_owned_product_id?: int|null,
+     * }  $filters  Every key applies only to `participations` — the other
+     *              collections stay "everything the Athlete has", since a
+     *              filter like `athlete_owned_product_id` has no sensible
+     *              meaning against, say, the orders list (product
+     *              consolidation brief §23: "no duplicar la Query si
+     *              GetAthleteHistory puede aceptar filtro DTO").
      * @return array{
      *     participations: Collection<int, EventParticipant>,
      *     plates: Collection<int, Plate>,
@@ -33,11 +47,35 @@ class GetAthleteHistory
      *     orders: Collection<int, Order>,
      * }
      */
-    public function handle(Athlete $athlete): array
+    public function handle(Athlete $athlete, array $filters = []): array
     {
         return [
             'participations' => $athlete->eventParticipations()
-                ->with(['eventEdition.event', 'eventRace', 'result'])
+                ->with(['eventEdition.event', 'eventRace', 'result', 'legacyPlateEntitlements', 'gearSelections'])
+                ->when($filters['from'] ?? null, fn ($q, $from) => $q->whereHas(
+                    'eventEdition',
+                    fn ($edition) => $edition->whereDate('event_date', '>=', $from),
+                ))
+                ->when($filters['to'] ?? null, fn ($q, $to) => $q->whereHas(
+                    'eventEdition',
+                    fn ($edition) => $edition->whereDate('event_date', '<=', $to),
+                ))
+                ->when($filters['event_id'] ?? null, fn ($q, $eventId) => $q->whereHas(
+                    'eventEdition',
+                    fn ($edition) => $edition->where('event_id', $eventId),
+                ))
+                ->when($filters['sport_id'] ?? null, fn ($q, $sportId) => $q->whereHas(
+                    'eventEdition.event',
+                    fn ($event) => $event->where('sport_id', $sportId),
+                ))
+                ->when($filters['event_race_id'] ?? null, fn ($q, $raceId) => $q->where('event_race_id', $raceId))
+                ->when($filters['legacy_plate'] ?? null, fn ($q, $status) => $status === 'none'
+                    ? $q->whereDoesntHave('legacyPlateEntitlements')
+                    : $q->whereHas('legacyPlateEntitlements', fn ($entitlement) => $entitlement->where('status', $status)))
+                ->when($filters['athlete_owned_product_id'] ?? null, fn ($q, $ownedProductId) => $q->whereHas(
+                    'gearSelections',
+                    fn ($gear) => $gear->where('athlete_owned_product_id', $ownedProductId),
+                ))
                 ->orderByDesc('created_at')
                 ->get(),
             'plates' => $athlete->plates()

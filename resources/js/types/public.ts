@@ -45,7 +45,24 @@ export type EventRacePreview = {
     start_time: string | null;
 };
 
+export type LegacyPlateModelOption = {
+    id: number;
+    name: string;
+    description: string | null;
+};
+
+export type EventLegacyPlatePresale = {
+    product_variant_id: number;
+    price_minor: number;
+    currency: string;
+    price_type: string;
+    presale_ends_at: string | null;
+    models: LegacyPlateModelOption[];
+    already_purchased: boolean;
+};
+
 export type EventEditionDetail = {
+    id: number;
     name: string;
     year: number;
     event_date: string;
@@ -56,6 +73,7 @@ export type EventEditionDetail = {
     registration_open_at: string | null;
     registration_close_at: string | null;
     races: EventRacePreview[];
+    legacy_plate: EventLegacyPlatePresale | null;
 };
 
 export type EventDetail = {

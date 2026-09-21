@@ -133,6 +133,31 @@ export const preregistrationStatus: StatusMap = {
     cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
 };
 
+export const legacyPlateEntitlementStatus: StatusMap = {
+    none: { label: 'No comprado', class: NEUTRAL },
+    pending_payment: {
+        label: 'Pago pendiente',
+        class: 'border-amber-500/30 text-amber-400',
+    },
+    paid: { label: 'Pagado', class: 'border-sky-500/30 text-sky-400' },
+    linked: {
+        label: 'Vinculado a participante',
+        class: 'border-sky-500/30 text-sky-400',
+    },
+    queued: {
+        label: 'En producción',
+        class: 'border-fl-gold/30 text-fl-gold',
+    },
+    produced: {
+        label: 'Lista',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    delivered: {
+        label: 'Entregada',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+};
+
 export const importStatus: StatusMap = {
     pending: { label: 'En espera', class: NEUTRAL },
     processing: {

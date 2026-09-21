@@ -2,7 +2,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Award,
-    Boxes,
     Check,
     Compass,
     Copy,
@@ -10,7 +9,6 @@ import {
     QrCode,
     Receipt,
     ShoppingBag,
-    Trophy,
     UserCircle,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
@@ -18,6 +16,7 @@ import Reveal from '@/components/motion/Reveal.vue';
 import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import FinisherMascot from '@/components/public/FinisherMascot.vue';
 import MascotEmptyState from '@/components/public/MascotEmptyState.vue';
+import LegadoCard from '@/components/shared/LegadoCard.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -31,10 +30,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { dashboard } from '@/routes';
-import {
-    create as createMedal,
-    index as medalsIndex,
-} from '@/routes/dashboard/medals';
+import { create as createMedal } from '@/routes/dashboard/medals';
 import { edit as editProfile } from '@/routes/dashboard/profile';
 import { index as eventsIndex } from '@/routes/events';
 import { show as legacyCodeShow } from '@/routes/legacy-code';
@@ -42,14 +38,33 @@ import type { DashboardProfileSummary, DashboardStats } from '@/types';
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
+        breadcrumbs: [{ title: 'Mi Legado', href: dashboard() }],
     },
 });
 
-const { legacyId, profile, stats } = defineProps<{
+type LegadoEntry = {
+    id: number;
+    event: string | null;
+    edition: string | null;
+    race: string | null;
+    bib_number: string | null;
+    event_date: string | null;
+    official_time: string | null;
+    pace: string | null;
+    position: number | null;
+    image_url: string | null;
+    has_medal: boolean;
+    has_legacy_plate: boolean;
+    legacy_plate_status: string | null;
+    photo_count: number;
+    video_count: number;
+};
+
+const { legacyId, profile, stats, legado } = defineProps<{
     legacyId: string | null;
     profile: DashboardProfileSummary | null;
     stats: DashboardStats;
+    legado: LegadoEntry[];
 }>();
 
 const page = usePage();
@@ -80,32 +95,9 @@ function goToLegacyCode() {
     );
 }
 
-const statCards = computed(() => [
-    {
-        label: 'Mis medallas',
-        value: stats.medals,
-        icon: Award,
-        href: medalsIndex(),
-    },
-    {
-        label: 'Mis eventos',
-        value: stats.events,
-        icon: Trophy,
-        href: '/dashboard/my-events',
-    },
-    {
-        label: 'Mis Legacy Plates',
-        value: stats.plates,
-        icon: Boxes,
-        href: '/dashboard/my-plates',
-    },
-    {
-        label: 'Mi equipo',
-        value: stats.ownedProducts,
-        icon: Package,
-        href: '/dashboard/my-gear',
-    },
-]);
+const legacyPlateCount = computed(
+    () => legado.filter((entry) => entry.has_legacy_plate).length,
+);
 </script>
 
 <template>
@@ -206,27 +198,50 @@ const statCards = computed(() => [
             <Progress :model-value="profile.completion" class="mt-3" />
         </div>
 
-        <!-- Stat cards -->
-        <StaggerGroup
-            as="div"
-            class="grid grid-cols-2 gap-4 lg:grid-cols-4"
-            :stagger-ms="70"
-        >
-            <component
-                :is="card.href ? Link : 'div'"
-                v-for="card in statCards"
-                :key="card.label"
-                :href="card.href ?? undefined"
-                class="fl-hover-lift rounded-xl border border-white/10 bg-fl-graphite/40 p-5 transition-colors"
-                :class="card.href ? 'hover:border-fl-gold/30' : ''"
-            >
-                <component :is="card.icon" class="size-5 text-fl-gold" />
-                <p class="mt-3 text-2xl font-bold text-white">
-                    {{ card.value }}
+        <!-- Mi Legado: one card per participation (medal + Legacy Plate +
+             result + media all belong to the same event, not three
+             separate menus) -->
+        <div v-if="legado.length">
+            <div class="mb-3 flex items-center justify-between">
+                <h2
+                    class="text-sm font-semibold tracking-wide text-white/60 uppercase"
+                >
+                    Mi Legado
+                </h2>
+                <p class="text-xs text-white/30">
+                    {{ legado.length }} evento{{
+                        legado.length === 1 ? '' : 's'
+                    }}
+                    · {{ legacyPlateCount }} Legacy Plate{{
+                        legacyPlateCount === 1 ? '' : 's'
+                    }}
+                    <span v-if="stats.media">· {{ stats.media }} media</span>
                 </p>
-                <p class="text-sm text-white/50">{{ card.label }}</p>
-            </component>
-        </StaggerGroup>
+            </div>
+            <StaggerGroup
+                as="div"
+                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                :stagger-ms="60"
+            >
+                <LegadoCard
+                    v-for="entry in legado"
+                    :key="entry.id"
+                    :id="entry.id"
+                    :event="entry.event"
+                    :edition="entry.edition"
+                    :race="entry.race"
+                    :bib-number="entry.bib_number"
+                    :event-date="entry.event_date"
+                    :official-time="entry.official_time"
+                    :pace="entry.pace"
+                    :image-url="entry.image_url"
+                    :has-legacy-plate="entry.has_legacy_plate"
+                    :legacy-plate-status="entry.legacy_plate_status"
+                    :photo-count="entry.photo_count"
+                    :video-count="entry.video_count"
+                />
+            </StaggerGroup>
+        </div>
 
         <!-- Quick actions -->
         <div>
@@ -300,17 +315,6 @@ const statCards = computed(() => [
                         Mis pedidos
                     </Link>
                 </Button>
-                <Button
-                    as-child
-                    variant="outline"
-                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
-                >
-                    <Link href="/dashboard/my-plates">
-                        <Boxes class="size-4 text-fl-gold" />
-                        Mis Legacy Plates
-                    </Link>
-                </Button>
-
                 <Dialog v-model:open="legacyCodeDialogOpen">
                     <DialogTrigger as-child>
                         <Button
@@ -352,8 +356,8 @@ const statCards = computed(() => [
 
         <!-- Empty state helper when brand new -->
         <MascotEmptyState
-            v-if="stats.medals === 0"
-            title="Tu colección comienza con una meta."
+            v-if="legado.length === 0"
+            title="Tu Legado comienza con una meta."
             description="Registra tu primera medalla y empieza a construir tu Legacy."
         >
             <Button

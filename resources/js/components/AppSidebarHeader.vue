@@ -2,6 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import NotificationBell from '@/components/NotificationBell.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { visibleNavigation } from '@/config/navigation';
 import type { BreadcrumbItem } from '@/types';
@@ -62,5 +63,6 @@ const breadcrumbs = computed(() =>
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
         </div>
+        <NotificationBell class="ml-auto" />
     </header>
 </template>

@@ -61,4 +61,16 @@ class Product extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    /** @return HasMany<ProductMedia, $this> */
+    public function media(): HasMany
+    {
+        return $this->hasMany(ProductMedia::class)->orderBy('sort_order');
+    }
+
+    /** @return HasMany<ProductContentSection, $this> */
+    public function contentSections(): HasMany
+    {
+        return $this->hasMany(ProductContentSection::class)->orderBy('sort_order');
+    }
 }

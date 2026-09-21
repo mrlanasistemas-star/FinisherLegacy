@@ -174,16 +174,33 @@ return [
     | Payments (brief §64-§78)
     |--------------------------------------------------------------------------
     |
-    | Placeholders only — Stripe's SDK isn't installed in this codebase yet,
-    | so StripePaymentGateway stays a NotConfigured stub until
-    | `composer require stripe/stripe-php` + real keys land (brief §67/§71:
-    | "no inventar credenciales"). See docs/architecture/commerce.md §Debt.
+    | Both `stripe/stripe-php` and `openpay/sdk` are real installed
+    | dependencies — every gateway below uses the official SDK, never a
+    | hand-rolled HTTP call. Real credentials are still a per-environment
+    | secret (brief §71: "no inventar credenciales"), so both stay
+    | NotConfigured stubs in dev/test/CI until real keys are set via env.
+    | `default_gateway` is which one CreateOnlinePayment uses when the
+    | caller doesn't pick one — OpenPay is the primary gateway (brief §49),
+    | Stripe stays available and fully wired for accounts that need it.
     */
     'payments' => [
+        'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'openpay'),
+
         'stripe' => [
             'key' => env('STRIPE_KEY'),
             'secret' => env('STRIPE_SECRET'),
             'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        ],
+
+        // Country codes match what Openpay\Data\Openpay::getInstance()
+        // accepts: MX, CO, or PE — MX matches this app's MXN default
+        // (`finisher.commerce.default_currency`).
+        'openpay' => [
+            'merchant_id' => env('OPENPAY_MERCHANT_ID'),
+            'private_key' => env('OPENPAY_PRIVATE_KEY'),
+            'public_key' => env('OPENPAY_PUBLIC_KEY'),
+            'country' => env('OPENPAY_COUNTRY', 'MX'),
+            'production_mode' => (bool) env('OPENPAY_PRODUCTION_MODE', false),
         ],
     ],
 
@@ -199,6 +216,29 @@ return [
         'max_video_bytes' => env('FINISHER_MEDIA_MAX_VIDEO_BYTES', 100 * 1024 * 1024),
         'image_mimes' => ['jpg', 'jpeg', 'png', 'webp'],
         'video_mimes' => ['mp4', 'webm'],
-        'disk' => env('FINISHER_MEDIA_DISK', 'public'),
+        'disk' => env('FINISHER_MEDIA_DISK', 'athlete_media'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Athlete Support ("Mi equipo de apoyo") — brief §29-§30
+    |--------------------------------------------------------------------------
+    */
+    'support' => [
+        'audio_max_seconds' => env('FINISHER_SUPPORT_AUDIO_MAX_SECONDS', 60),
+        'audio_max_bytes' => env('FINISHER_SUPPORT_AUDIO_MAX_BYTES', 10 * 1024 * 1024),
+        'audio_mimes' => ['webm', 'mp4', 'm4a', 'mpga', 'mp3', 'ogg', 'wav'],
+        // Private — audio is never served from a public disk URL, only
+        // through a signed, time-limited route (brief §41).
+        'audio_disk' => env('FINISHER_SUPPORT_AUDIO_DISK', 'support_audio'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product media (brief §57/§139)
+    |--------------------------------------------------------------------------
+    */
+    'product_media' => [
+        'disk' => env('FINISHER_PRODUCT_MEDIA_DISK', 'product_media'),
     ],
 ];

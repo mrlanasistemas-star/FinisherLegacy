@@ -2,19 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Athletes\AssignOwnedProductToEvent;
 use App\Actions\Athletes\EnsureAthleteForUser;
+use App\Actions\Athletes\RemoveOwnedProductFromEvent;
 use App\Actions\Media\DeleteAthleteEventMedia;
 use App\Actions\Media\UpdateAthleteEventMediaVisibility;
 use App\Actions\Media\UploadAthleteEventMedia;
+use App\Enums\LegacyPlateEntitlementStatus;
+use App\Exceptions\EventGearAlreadyAssignedException;
+use App\Exceptions\EventGearOwnershipMismatchException;
 use App\Exceptions\MediaLimitReachedException;
 use App\Exceptions\MediaTooLargeException;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteOwnedProduct;
+use App\Models\EventGearSelection;
 use App\Models\EventParticipant;
 use App\Models\EventResultSplit;
+use App\Models\LegacyPlateEntitlement;
 use App\Models\Medal;
 use App\Models\Plate;
 use App\Queries\Athletes\GetAthleteHistory;
+use App\Queries\Athletes\GetEventParticipantDetail;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
 use App\Services\Media\ResolveMediaEntitlement;
 use Illuminate\Http\RedirectResponse;
@@ -114,6 +122,45 @@ class AthleteHistoryController extends Controller
         ]);
     }
 
+    /**
+     * "MI LEGADO" event detail (product UX consolidation brief §5-§6): one
+     * full-experience screen per participation — result, medal, Legacy
+     * Plate (with its real model geometry for LegacyPlateViewer.vue),
+     * media, and what was bought for this event — instead of the three
+     * separate screens ("Mis eventos" / "Mis medallas" / "Mis Legacy
+     * Plates") this replaces. Deliberately reuses the exact same
+     * participant load as myEventShow() rather than a second query shape;
+     * this is that same screen with the Legacy Plate viewer and purchases
+     * folded in, not a competing read model.
+     */
+    public function legadoShow(
+        Request $request,
+        EventParticipant $participant,
+        EnsureAthleteForUser $ensureAthlete,
+        ResolveMediaEntitlement $entitlement,
+        GetEventParticipantDetail $detail,
+        GetAthleteOwnedProducts $ownedProducts,
+    ): Response {
+        $athlete = $ensureAthlete->handle($request->user(), 'dashboard_legado_show');
+        abort_unless($participant->athlete_id === $athlete->id, 403);
+
+        $payload = $detail->handle($participant);
+        $assignedOwnedProductIds = $participant->gearSelections()->pluck('athlete_owned_product_id');
+        $availableGear = $ownedProducts->handle($athlete)
+            ->reject(fn (AthleteOwnedProduct $owned) => $assignedOwnedProductIds->contains($owned->id));
+
+        return Inertia::render('dashboard/LegadoShow', [
+            ...$payload,
+            'mediaLimits' => $entitlement->limits(),
+            'mediaRemaining' => $entitlement->remaining($participant),
+            'availableGear' => $availableGear->map(fn (AthleteOwnedProduct $owned) => [
+                'uuid' => $owned->uuid,
+                'product' => $owned->product->name,
+                'variant' => $owned->productVariant?->name,
+            ])->values(),
+        ]);
+    }
+
     public function uploadMedia(Request $request, EventParticipant $participant, EnsureAthleteForUser $ensureAthlete, UploadAthleteEventMedia $upload): RedirectResponse
     {
         $athlete = $ensureAthlete->handle($request->user(), 'dashboard_media_upload');
@@ -156,22 +203,76 @@ class AthleteHistoryController extends Controller
         return back();
     }
 
-    public function myPlates(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteHistory $history): Response
+    public function storeGear(Request $request, EventParticipant $participant, EnsureAthleteForUser $ensureAthlete, AssignOwnedProductToEvent $assign): RedirectResponse
+    {
+        $athlete = $ensureAthlete->handle($request->user(), 'dashboard_gear_store');
+        abort_unless($participant->athlete_id === $athlete->id, 403);
+
+        $data = $request->validate([
+            'athlete_owned_product_uuid' => ['required', 'string'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $ownedProduct = AthleteOwnedProduct::query()->where('uuid', $data['athlete_owned_product_uuid'])->firstOrFail();
+
+        try {
+            $assign->handle($participant, $ownedProduct, $data['notes'] ?? null);
+        } catch (EventGearOwnershipMismatchException|EventGearAlreadyAssignedException $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+        }
+
+        return back();
+    }
+
+    public function destroyGear(Request $request, EventParticipant $participant, EventGearSelection $gear, EnsureAthleteForUser $ensureAthlete, RemoveOwnedProductFromEvent $remove): RedirectResponse
+    {
+        $athlete = $ensureAthlete->handle($request->user(), 'dashboard_gear_destroy');
+        abort_unless($participant->athlete_id === $athlete->id, 403);
+        abort_unless($gear->event_participant_id === $participant->id, 403);
+
+        $remove->handle($gear);
+
+        return back();
+    }
+
+    /**
+     * "Mis Legacy Plates" — every commercial right to a Legacy Plate this
+     * athlete has, paid presales with no result yet included (brief §12-
+     * §13: "debe mostrar también las preventas todavía sin resultado").
+     * Reads App\Models\LegacyPlateEntitlement directly rather than only
+     * App\Models\Plate — a paid-but-not-yet-produced presale has no Plate
+     * row at all, so GetAthleteHistory's 'plates' key (Plate-only) would
+     * silently drop it.
+     */
+    public function myPlates(Request $request, EnsureAthleteForUser $ensureAthlete): Response
     {
         $athlete = $ensureAthlete->handle($request->user(), 'dashboard_my_plates');
-        $data = $history->handle($athlete);
+
+        $entitlements = LegacyPlateEntitlement::query()
+            ->where('athlete_id', $athlete->id)
+            ->where('status', '!=', LegacyPlateEntitlementStatus::Cancelled)
+            ->with(['eventEdition.event', 'legacyPlateModel', 'plate.legacyCode', 'eventParticipant.eventRace'])
+            ->orderByDesc('created_at')
+            ->get();
 
         return Inertia::render('dashboard/MyPlates', [
-            'plates' => $data['plates']->map(fn (Plate $plate) => [
-                'id' => $plate->id,
-                'serial_number' => $plate->serial_number,
-                'status' => $plate->status->value,
-                'event_name' => $plate->event_name,
-                'race_name' => $plate->race_name,
-                'engraving_display_name' => $plate->engraving_display_name,
-                'legacy_code' => $plate->legacyCode?->code,
-                'produced_at' => $plate->produced_at?->toDateTimeString(),
-                'delivered_at' => $plate->delivered_at?->toDateTimeString(),
+            'plates' => $entitlements->map(fn (LegacyPlateEntitlement $entitlement) => [
+                'id' => $entitlement->id,
+                'presale_status' => $entitlement->status->value,
+                'event_name' => $entitlement->eventEdition?->event?->name,
+                'edition_name' => $entitlement->eventEdition?->name,
+                'race_name' => $entitlement->eventParticipant?->eventRace?->name,
+                'model_name' => $entitlement->legacyPlateModel?->name,
+                'price_type' => $entitlement->price_type,
+                'paid_at' => $entitlement->paid_at?->toDateTimeString(),
+                'plate' => $entitlement->plate ? [
+                    'id' => $entitlement->plate->id,
+                    'serial_number' => $entitlement->plate->serial_number,
+                    'engraving_display_name' => $entitlement->plate->engraving_display_name,
+                    'legacy_code' => $entitlement->plate->legacyCode?->code,
+                    'produced_at' => $entitlement->plate->produced_at?->toDateTimeString(),
+                    'delivered_at' => $entitlement->plate->delivered_at?->toDateTimeString(),
+                ] : null,
             ])->values(),
         ]);
     }
@@ -189,6 +290,11 @@ class AthleteHistoryController extends Controller
                 'status' => $owned->status->value,
                 'acquired_at' => $owned->acquired_at->toDateString(),
                 'asset_code' => $owned->asset_code,
+                'usage_history' => $owned->gearSelections->map(fn (EventGearSelection $selection) => [
+                    'event_participant_id' => $selection->event_participant_id,
+                    'event' => $selection->eventParticipant->eventEdition?->event?->name,
+                    'edition' => $selection->eventParticipant->eventEdition?->name,
+                ])->values()->all(),
             ])->values(),
         ]);
     }

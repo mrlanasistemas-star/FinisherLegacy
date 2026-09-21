@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Camera, Video as VideoIcon } from '@lucide/vue';
+import AppContainer from '@/components/shared/AppContainer.vue';
 import LegacyPlatePreview from '@/components/shared/LegacyPlatePreview.vue';
 import MediaUploader from '@/components/shared/MediaUploader.vue';
 
@@ -71,106 +72,116 @@ function removeMedia(media: Media) {
 <template>
     <Head :title="participant.event ?? 'Mi evento'" />
 
-    <div class="mx-auto max-w-4xl p-4 md:p-6">
-        <Link
-            href="/dashboard/my-events"
-            class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"
-            >← Mis eventos</Link
-        >
-
-        <h1 class="mt-4 text-2xl font-black text-white">
-            {{ participant.event ?? 'Evento' }}
-        </h1>
-        <p class="mt-1 text-sm text-white/50">
-            <span v-if="participant.race">{{ participant.race }} · </span>
-            <span v-if="participant.event_date">{{
-                participant.event_date
-            }}</span>
-            <span v-if="participant.bib_number">
-                · #{{ participant.bib_number }}</span
+    <AppContainer class="py-4 md:py-6">
+        <div class="max-w-3xl">
+            <Link
+                href="/dashboard/my-events"
+                class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"
+                >← Mis eventos</Link
             >
-        </p>
 
-        <div
-            v-if="result"
-            class="mt-8 grid grid-cols-3 gap-4 rounded-2xl border border-white/10 bg-fl-graphite/20 p-5"
-        >
-            <div>
-                <p class="text-[10px] tracking-widest text-white/30 uppercase">
-                    Tiempo oficial
-                </p>
-                <p class="mt-1 text-lg text-white">
-                    {{ result.official_time ?? '—' }}
-                </p>
-            </div>
-            <div>
-                <p class="text-[10px] tracking-widest text-white/30 uppercase">
-                    Ritmo
-                </p>
-                <p class="mt-1 text-lg text-white">{{ result.pace ?? '—' }}</p>
-            </div>
-            <div>
-                <p class="text-[10px] tracking-widest text-white/30 uppercase">
-                    Posición
-                </p>
-                <p class="mt-1 text-lg text-white">
-                    {{
-                        result.overall_position
-                            ? `#${result.overall_position}`
-                            : '—'
-                    }}
-                </p>
-            </div>
-        </div>
-
-        <div
-            v-if="result?.splits.length"
-            class="mt-4 divide-y divide-white/10 rounded-2xl border border-white/10 bg-fl-graphite/10"
-        >
-            <div
-                v-for="(split, index) in result.splits"
-                :key="index"
-                class="flex items-center justify-between px-5 py-3 text-sm"
-            >
-                <span class="text-white/60">{{
-                    split.label ??
-                    `${split.distance_value ?? ''} ${split.distance_unit ?? ''}`
+            <h1 class="mt-4 text-2xl font-black text-white">
+                {{ participant.event ?? 'Evento' }}
+            </h1>
+            <p class="mt-1 text-sm text-white/50">
+                <span v-if="participant.race">{{ participant.race }} · </span>
+                <span v-if="participant.event_date">{{
+                    participant.event_date
                 }}</span>
-                <span class="text-white">{{
-                    split.elapsed_time ?? split.segment_time ?? '—'
-                }}</span>
-            </div>
-        </div>
+                <span v-if="participant.bib_number">
+                    · #{{ participant.bib_number }}</span
+                >
+            </p>
 
-        <div v-if="plates.length" class="mt-8">
-            <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
-                Tu Legacy Plate
-            </h2>
-            <LegacyPlatePreview
-                v-for="plate in plates"
-                :key="plate.id"
-                :engraving-display-name="plate.engraving_display_name"
-                :event-name="participant.event"
-                :race-name="participant.race"
-                :official-time="result?.official_time ?? null"
-                :pace="result?.pace ?? null"
-                :serial-number="plate.serial_number"
-            />
-        </div>
-
-        <div v-if="medals.length" class="mt-8 space-y-3">
-            <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
-                Medallas
-            </h2>
             <div
-                v-for="medal in medals"
-                :key="medal.id"
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4"
+                v-if="result"
+                class="mt-8 grid grid-cols-3 gap-4 rounded-2xl border border-white/10 bg-fl-graphite/20 p-5"
             >
-                <p class="font-medium text-white">{{ medal.title }}</p>
-                <p v-if="medal.story" class="mt-1 text-sm text-white/50">
-                    {{ medal.story }}
-                </p>
+                <div>
+                    <p
+                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                    >
+                        Tiempo oficial
+                    </p>
+                    <p class="mt-1 text-lg text-white">
+                        {{ result.official_time ?? '—' }}
+                    </p>
+                </div>
+                <div>
+                    <p
+                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                    >
+                        Ritmo
+                    </p>
+                    <p class="mt-1 text-lg text-white">
+                        {{ result.pace ?? '—' }}
+                    </p>
+                </div>
+                <div>
+                    <p
+                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                    >
+                        Posición
+                    </p>
+                    <p class="mt-1 text-lg text-white">
+                        {{
+                            result.overall_position
+                                ? `#${result.overall_position}`
+                                : '—'
+                        }}
+                    </p>
+                </div>
+            </div>
+
+            <div
+                v-if="result?.splits.length"
+                class="mt-4 divide-y divide-white/10 rounded-2xl border border-white/10 bg-fl-graphite/10"
+            >
+                <div
+                    v-for="(split, index) in result.splits"
+                    :key="index"
+                    class="flex items-center justify-between px-5 py-3 text-sm"
+                >
+                    <span class="text-white/60">{{
+                        split.label ??
+                        `${split.distance_value ?? ''} ${split.distance_unit ?? ''}`
+                    }}</span>
+                    <span class="text-white">{{
+                        split.elapsed_time ?? split.segment_time ?? '—'
+                    }}</span>
+                </div>
+            </div>
+
+            <div v-if="plates.length" class="mt-8">
+                <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+                    Tu Legacy Plate
+                </h2>
+                <LegacyPlatePreview
+                    v-for="plate in plates"
+                    :key="plate.id"
+                    :engraving-display-name="plate.engraving_display_name"
+                    :event-name="participant.event"
+                    :race-name="participant.race"
+                    :official-time="result?.official_time ?? null"
+                    :pace="result?.pace ?? null"
+                    :serial-number="plate.serial_number"
+                />
+            </div>
+
+            <div v-if="medals.length" class="mt-8 space-y-3">
+                <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+                    Medallas
+                </h2>
+                <div
+                    v-for="medal in medals"
+                    :key="medal.id"
+                    class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4"
+                >
+                    <p class="font-medium text-white">{{ medal.title }}</p>
+                    <p v-if="medal.story" class="mt-1 text-sm text-white/50">
+                        {{ medal.story }}
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -189,7 +200,7 @@ function removeMedia(media: Media) {
 
             <div
                 v-if="media.length"
-                class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3"
+                class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
             >
                 <div
                     v-for="item in media"
@@ -235,5 +246,5 @@ function removeMedia(media: Media) {
                 </div>
             </div>
         </div>
-    </div>
+    </AppContainer>
 </template>

@@ -16,6 +16,16 @@
  * controllers/routes/permissions still exist, reachable by direct URL for
  * whoever still needs them) because they don't serve the new product
  * story. See docs/architecture/README.md for what's hidden vs removed.
+ *
+ * UX consolidation pass: "Mis eventos" / "Mis medallas" / "Mis Legacy
+ * Plates" were three separate places to see the same story (one medal +
+ * one Legacy Plate belong to one participation/event, not three menus).
+ * They're consolidated into "Mi Legado" (/dashboard, DashboardController) —
+ * a card per participation, each opening the full event experience at
+ * /dashboard/legado/{participant}. Those three routes/controllers/pages
+ * still exist and still work by direct URL; they're just not in this list
+ * anymore. "Fuentes de datos" is gone from here too — it's reachable from
+ * an Organizer's "Datos" tab, doesn't need a permanent top-level slot.
  */
 import type { LucideIcon } from '@lucide/vue';
 import { resolveIcon } from '@/lib/iconMap';
@@ -48,7 +58,7 @@ export const navGroupLabels: Record<NavGroup, string> = {
     eventos: 'Eventos',
     legacyplates: 'Legacy Plates',
     tienda: 'Tienda',
-    atletas: 'Atletas',
+    atletas: 'Personas',
     sistema: 'Sistema',
 };
 
@@ -65,29 +75,7 @@ export const navigation: NavItem[] = [
     {
         label: 'Mi perfil',
         icon: resolveIcon('UserCircle'),
-        href: '/dashboard/profile/edit',
-        permission: null,
-        group: 'legacy',
-    },
-    {
-        label: 'Mis eventos',
-        icon: resolveIcon('Trophy'),
-        href: '/dashboard/my-events',
-        permission: null,
-        group: 'legacy',
-        mobilePriority: true,
-    },
-    {
-        label: 'Mis medallas',
-        icon: resolveIcon('Award'),
-        href: '/dashboard/medals',
-        permission: null,
-        group: 'legacy',
-    },
-    {
-        label: 'Mis Legacy Plates',
-        icon: resolveIcon('Boxes'),
-        href: '/dashboard/my-plates',
+        href: '/dashboard/profile',
         permission: null,
         group: 'legacy',
     },
@@ -144,13 +132,6 @@ export const navigation: NavItem[] = [
         icon: resolveIcon('Building2'),
         href: '/admin/organizers',
         permission: 'organizers.view',
-        group: 'eventos',
-    },
-    {
-        label: 'Fuentes de datos',
-        icon: resolveIcon('Database'),
-        href: '/admin/data-sources',
-        permission: 'eventdata.manage',
         group: 'eventos',
     },
     {
@@ -241,14 +222,14 @@ export const navigation: NavItem[] = [
         permission: 'athletes.view',
         group: 'atletas',
     },
-
     {
         label: 'Usuarios',
         icon: resolveIcon('Users'),
         href: '/admin/users',
         permission: 'users.view',
-        group: 'sistema',
+        group: 'atletas',
     },
+
     {
         label: 'Roles y permisos',
         icon: resolveIcon('ShieldCheck'),
