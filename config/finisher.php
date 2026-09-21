@@ -174,16 +174,33 @@ return [
     | Payments (brief §64-§78)
     |--------------------------------------------------------------------------
     |
-    | Placeholders only — Stripe's SDK isn't installed in this codebase yet,
-    | so StripePaymentGateway stays a NotConfigured stub until
-    | `composer require stripe/stripe-php` + real keys land (brief §67/§71:
-    | "no inventar credenciales"). See docs/architecture/commerce.md §Debt.
+    | Both `stripe/stripe-php` and `openpay/sdk` are real installed
+    | dependencies — every gateway below uses the official SDK, never a
+    | hand-rolled HTTP call. Real credentials are still a per-environment
+    | secret (brief §71: "no inventar credenciales"), so both stay
+    | NotConfigured stubs in dev/test/CI until real keys are set via env.
+    | `default_gateway` is which one CreateOnlinePayment uses when the
+    | caller doesn't pick one — OpenPay is the primary gateway (brief §49),
+    | Stripe stays available and fully wired for accounts that need it.
     */
     'payments' => [
+        'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'openpay'),
+
         'stripe' => [
             'key' => env('STRIPE_KEY'),
             'secret' => env('STRIPE_SECRET'),
             'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        ],
+
+        // Country codes match what Openpay\Data\Openpay::getInstance()
+        // accepts: MX, CO, or PE — MX matches this app's MXN default
+        // (`finisher.commerce.default_currency`).
+        'openpay' => [
+            'merchant_id' => env('OPENPAY_MERCHANT_ID'),
+            'private_key' => env('OPENPAY_PRIVATE_KEY'),
+            'public_key' => env('OPENPAY_PUBLIC_KEY'),
+            'country' => env('OPENPAY_COUNTRY', 'MX'),
+            'production_mode' => (bool) env('OPENPAY_PRODUCTION_MODE', false),
         ],
     ],
 

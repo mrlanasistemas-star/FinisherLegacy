@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\Store\CheckoutController;
 use App\Http\Controllers\Api\V1\Store\OrderController;
 use App\Http\Controllers\Api\V1\Store\PaymentController;
 use App\Http\Controllers\Api\V1\Store\ProductController;
+use App\Http\Controllers\Api\Webhooks\OpenPayWebhookController;
 use App\Http\Controllers\Api\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -314,10 +315,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 /*
 |--------------------------------------------------------------------------
 | Payment webhooks — deliberately NOT under /api/v1 or auth:sanctum (brief
-| §113): the provider calls this directly, authenticated only by its own
-| signature, verified inside StripePaymentGateway::handleWebhook(). Routes
-| already outside the `web` middleware group's CSRF/session handling
-| (this file, not routes/web.php).
+| §113): the provider calls this directly. Stripe is authenticated by its
+| own signature (StripePaymentGateway::handleWebhook()); Openpay sends no
+| signature at all, so OpenPayPaymentGateway::handleWebhook() re-fetches
+| the transaction from Openpay's API instead (brief §52). Routes already
+| outside the `web` middleware group's CSRF/session handling (this file,
+| not routes/web.php).
 |--------------------------------------------------------------------------
 */
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('api.webhooks.stripe');
+Route::post('webhooks/openpay', OpenPayWebhookController::class)->name('api.webhooks.openpay');

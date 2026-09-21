@@ -21,9 +21,16 @@ interface PaymentGateway
 
     /**
      * Amount always comes from the already-computed Order — never a
-     * frontend-supplied value (brief §68/§93).
+     * frontend-supplied value (brief §68/§93). `$paymentData` is whatever
+     * this specific provider needs beyond the Order — Stripe needs
+     * nothing (its PaymentIntent is confirmed client-side after this
+     * call); OpenPay needs the `token_id`/`device_session_id` Openpay.js
+     * already produced client-side (never raw card data) before this
+     * method can charge it server-side.
+     *
+     * @param  array<string, mixed>  $paymentData
      */
-    public function createPayment(Order $order): OnlinePaymentIntent;
+    public function createPayment(Order $order, array $paymentData = []): OnlinePaymentIntent;
 
     /**
      * Verifies the request's signature and returns the normalized outcome

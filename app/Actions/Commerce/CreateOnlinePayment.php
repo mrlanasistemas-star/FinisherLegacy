@@ -24,8 +24,13 @@ class CreateOnlinePayment
 {
     public function __construct(private readonly PaymentGatewayRegistry $gateways) {}
 
-    public function handle(Order $order, string $provider = 'stripe'): OnlinePaymentIntent
+    /**
+     * @param  array<string, mixed>  $paymentData  Whatever the resolved gateway needs beyond the Order — see PaymentGateway::createPayment().
+     */
+    public function handle(Order $order, ?string $provider = null, array $paymentData = []): OnlinePaymentIntent
     {
+        $provider ??= (string) config('finisher.payments.default_gateway', 'openpay');
+
         if ($order->payment_status->value === 'paid') {
             throw new PaymentAlreadyRecordedException;
         }
@@ -35,7 +40,7 @@ class CreateOnlinePayment
         }
 
         $gateway = $this->gateways->get($provider);
-        $intent = $gateway->createPayment($order);
+        $intent = $gateway->createPayment($order, $paymentData);
 
         DB::transaction(function () use ($order, $provider, $intent) {
             Payment::create([

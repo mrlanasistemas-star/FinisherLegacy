@@ -82,6 +82,13 @@ test('CreateOnlinePayment fails cleanly instead of faking a Stripe payment when 
     app(CreateOnlinePayment::class)->handle($order, 'stripe');
 })->throws(PaymentGatewayNotConfiguredException::class);
 
+test('CreateOnlinePayment defaults to the configured gateway when none is given', function () {
+    config(['finisher.payments.default_gateway' => 'openpay']);
+    $order = Order::factory()->create();
+
+    app(CreateOnlinePayment::class)->handle($order);
+})->throws(PaymentGatewayNotConfiguredException::class);
+
 test('a webhook outcome marks the matching Payment and Order paid', function () {
     $order = Order::factory()->create(['total_minor' => 50000]);
     $payment = Payment::create([

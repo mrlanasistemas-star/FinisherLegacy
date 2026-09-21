@@ -18,13 +18,15 @@ class PaymentController extends Controller
 
     /**
      * Never returns a secret key — only whatever the client-side SDK needs
-     * (brief §112).
+     * (brief §112/§143). `token_id`/`device_session_id` come from
+     * Openpay.js running client-side; ignored entirely by gateways (like
+     * Stripe) that don't need them.
      */
     public function online(Request $request, Order $order, CreateOnlinePayment $createPayment): JsonResponse
     {
         abort_unless($order->user_id === $request->user()->id, 403);
 
-        $intent = $createPayment->handle($order);
+        $intent = $createPayment->handle($order, paymentData: $request->only(['token_id', 'device_session_id']));
 
         return $this->respond([
             'provider_reference' => $intent->providerReference,

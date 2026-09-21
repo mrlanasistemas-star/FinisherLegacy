@@ -3,6 +3,7 @@
 namespace App\Services\Commerce;
 
 use App\Contracts\Commerce\PaymentGateway;
+use App\Services\Commerce\Payments\OpenPayPaymentGateway;
 use App\Services\Commerce\Payments\StripePaymentGateway;
 use InvalidArgumentException;
 
@@ -17,6 +18,7 @@ class PaymentGatewayRegistry
      * @var array<string, class-string<PaymentGateway>>
      */
     private const GATEWAYS = [
+        'openpay' => OpenPayPaymentGateway::class,
         'stripe' => StripePaymentGateway::class,
     ];
 
