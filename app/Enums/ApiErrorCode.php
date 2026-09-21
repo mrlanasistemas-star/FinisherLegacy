@@ -27,6 +27,7 @@ enum ApiErrorCode: string
 
     // Commerce ecosystem (brief §145).
     case ProductOutOfStock = 'PRODUCT_OUT_OF_STOCK';
+    case ProductUnavailable = 'PRODUCT_UNAVAILABLE';
     case PriceNotAvailable = 'PRICE_NOT_AVAILABLE';
     case OrderNotPayable = 'ORDER_NOT_PAYABLE';
     case PaymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';

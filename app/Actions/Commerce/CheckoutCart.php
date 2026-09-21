@@ -7,9 +7,11 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
+use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Exceptions\AthleteRequiredException;
 use App\Exceptions\LegacyPlatePresaleDuplicateException;
+use App\Exceptions\ProductUnavailableException;
 use App\Models\Athlete;
 use App\Models\Cart;
 use App\Models\EventEdition;
@@ -61,6 +63,13 @@ class CheckoutCart
             foreach ($items as $item) {
                 $variant = $item->productVariant;
                 $product = $variant->product;
+
+                // Time may have passed since this line was added to the
+                // cart — re-checked here too, not just at add-to-cart time
+                // (brief item 34: never trust the frontend/cart state).
+                if (! $variant->active || ! $product->active || $product->status !== ProductStatus::Active) {
+                    throw new ProductUnavailableException;
+                }
 
                 if (($product->qr_capable || $product->type === ProductType::LegacyPlate) && $athlete === null) {
                     throw new AthleteRequiredException;
