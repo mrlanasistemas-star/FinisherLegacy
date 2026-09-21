@@ -84,10 +84,20 @@ jobs:
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
       - name: Configure environment
         run: |
           cp .env.example .env
           php artisan key:generate
+
+      - name: Install Node dependencies and build assets
+        run: |
+          npm ci
+          npm run build
 
       - name: Wait for MySQL
         run: |

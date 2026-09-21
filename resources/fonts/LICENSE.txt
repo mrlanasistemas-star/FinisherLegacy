@@ -1,0 +1,12 @@
+DejaVuSans.ttf / DejaVuSans-Bold.ttf
+
+Used by App\Services\GdPlateRenderer for plate text rendering (imagettfbbox
+requires a real, portable TTF file — an OS-specific path like
+"C:\Windows\Fonts\arial.ttf" only works on the machine that has that exact
+font installed). Copied from vendor/dompdf/dompdf/lib/fonts, which already
+carries this same license.
+
+DejaVu fonts are released under a Free license, based on the Bitstream Vera
+Fonts license with public-domain additions, permitting unlimited use,
+copying, modification, and redistribution — see
+https://dejavu-fonts.github.io/License.html for the full text.
