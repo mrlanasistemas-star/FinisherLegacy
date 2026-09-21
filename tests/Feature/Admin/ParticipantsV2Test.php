@@ -1,10 +1,12 @@
 <?php
 
+use App\Actions\Athletes\AssignOwnedProductToEvent;
 use App\Actions\LegacyPlates\CreateLegacyPlateEntitlement;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\ResultStatus;
 use App\Models\Athlete;
+use App\Models\AthleteOwnedProduct;
 use App\Models\EventEdition;
 use App\Models\EventParticipant;
 use App\Models\EventResult;
@@ -148,6 +150,26 @@ test('a participant profile shows the athlete\'s full event history, not just th
     $response->assertInertia(fn ($page) => $page
         ->component('admin/participants/Show')
         ->has('historial', 2));
+});
+
+test('a participant profile shows the gear used for this event', function () {
+    $athlete = Athlete::factory()->create();
+    $participant = EventParticipant::factory()->create(['event_edition_id' => $this->edition->id, 'athlete_id' => $athlete->id]);
+    $owned = AthleteOwnedProduct::create([
+        'uuid' => (string) Str::uuid(),
+        'athlete_id' => $athlete->id,
+        'product_id' => Product::factory()->create()->id,
+        'status' => 'active',
+        'acquired_at' => now(),
+    ]);
+    app(AssignOwnedProductToEvent::class)->handle($participant, $owned);
+
+    $response = $this->actingAs($this->admin)->get("/admin/participants/{$participant->id}");
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/participants/Show')
+        ->has('resumen.gear_used', 1));
 });
 
 test('the CSV export respects the current filters', function () {

@@ -7,9 +7,11 @@ use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Models\Athlete;
 use App\Models\EventEdition;
+use App\Models\EventGearSelection;
 use App\Models\EventParticipant;
 use App\Models\LegacyPlateEntitlement;
 use App\Queries\Athletes\GetAthleteHistory;
+use App\Queries\Athletes\GetEventGear;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
 use App\Queries\Operations\GetEventParticipantMetrics;
 use App\Queries\Operations\GetEventParticipantsList;
@@ -64,7 +66,7 @@ class ParticipantController extends Controller
         ]);
     }
 
-    public function show(EventParticipant $eventParticipant): Response
+    public function show(EventParticipant $eventParticipant, GetEventGear $eventGear): Response
     {
         // The route segment is {eventParticipant} (matching the operator
         // routes' convention) — implicit route-model binding matches by
@@ -115,6 +117,11 @@ class ParticipantController extends Controller
                     'serial_number' => $plate->serial_number,
                 ],
                 'media_count' => $participant->media->count(),
+                'gear_used' => $eventGear->handle($participant)->map(fn (EventGearSelection $selection) => [
+                    'uuid' => $selection->uuid,
+                    'product_name' => $selection->snapshot['product_name'] ?? null,
+                    'variant_name' => $selection->snapshot['variant_name'] ?? null,
+                ])->values(),
             ],
             'historial' => $athlete === null ? [] : app(GetAthleteHistory::class)->handle($athlete)['participations']
                 ->map(fn (EventParticipant $p) => [

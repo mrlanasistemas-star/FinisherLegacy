@@ -11,6 +11,7 @@ import {
     Bell,
     Boxes,
     Mail,
+    Package,
     Send,
     ShoppingBag,
     Trophy,
@@ -96,6 +97,11 @@ const props = defineProps<{
         } | null;
         plate: { status: string; serial_number: string | null } | null;
         media_count: number;
+        gear_used: {
+            uuid: string;
+            product_name: string | null;
+            variant_name: string | null;
+        }[];
     };
     historial: Historial[];
     compras: Compra[];
@@ -300,6 +306,37 @@ function sendNotification() {
                                 resumen.media_count === 1 ? '' : 's'
                             }}
                         </p>
+                    </div>
+                    <div
+                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5 sm:col-span-2 lg:col-span-4"
+                    >
+                        <Package class="size-4 text-fl-gold" />
+                        <p
+                            class="mt-2 text-xs tracking-widest text-white/30 uppercase"
+                        >
+                            Equipo utilizado
+                        </p>
+                        <p
+                            v-if="!resumen.gear_used.length"
+                            class="mt-1 text-sm text-white/40"
+                        >
+                            Sin equipo registrado para este evento.
+                        </p>
+                        <div v-else class="mt-2 flex flex-wrap gap-2">
+                            <Badge
+                                v-for="gear in resumen.gear_used"
+                                :key="gear.uuid"
+                                variant="outline"
+                                class="border-white/20 text-white/60"
+                            >
+                                {{ gear.product_name
+                                }}{{
+                                    gear.variant_name
+                                        ? ` — ${gear.variant_name}`
+                                        : ''
+                                }}
+                            </Badge>
+                        </div>
                     </div>
                 </div>
             </TabsContent>
