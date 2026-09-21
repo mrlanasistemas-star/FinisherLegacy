@@ -31,6 +31,7 @@ enum ApiErrorCode: string
     case OrderNotPayable = 'ORDER_NOT_PAYABLE';
     case PaymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';
     case PaymentAlreadyRecorded = 'PAYMENT_ALREADY_RECORDED';
+    case PaymentDeclined = 'PAYMENT_DECLINED';
     case LegacyPlateNotPaid = 'LEGACY_PLATE_NOT_PAID';
     case LegacyPlateAlreadyExists = 'LEGACY_PLATE_ALREADY_EXISTS';
     case LegacyPlatePresaleDuplicate = 'LEGACY_PLATE_PRESALE_DUPLICATE';

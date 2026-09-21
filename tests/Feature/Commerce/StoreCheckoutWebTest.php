@@ -61,3 +61,47 @@ test('the online payment endpoint reports unavailable instead of crashing when S
     $response->assertOk();
     $response->assertJson(['available' => false]);
 });
+
+test('the online payment endpoint accepts the token_id/device_session_id Openpay.js produces', function () {
+    config(['finisher.payments.openpay.merchant_id' => null, 'finisher.payments.openpay.private_key' => null]);
+    $user = User::factory()->create();
+    $order = Order::factory()->create(['user_id' => $user->id]);
+
+    $response = $this->actingAs($user)->postJson("/checkout/{$order->uuid}/online-payment", [
+        'token_id' => 'tok_test',
+        'device_session_id' => 'dsid_test',
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['available' => false]);
+});
+
+test('Mi pedido exposes Openpay\'s public config only when it is the default gateway with real credentials', function () {
+    config([
+        'finisher.payments.default_gateway' => 'openpay',
+        'finisher.payments.openpay.merchant_id' => 'mtest',
+        'finisher.payments.openpay.public_key' => 'pk_test',
+        'finisher.payments.openpay.production_mode' => false,
+    ]);
+    $user = User::factory()->create();
+    $order = Order::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)->get("/mis-pedidos/{$order->uuid}")
+        ->assertInertia(fn ($page) => $page
+            ->where('openpay.merchant_id', 'mtest')
+            ->where('openpay.public_key', 'pk_test')
+            ->where('openpay.sandbox', true));
+});
+
+test('Mi pedido omits Openpay config when credentials are missing', function () {
+    config([
+        'finisher.payments.default_gateway' => 'openpay',
+        'finisher.payments.openpay.merchant_id' => null,
+        'finisher.payments.openpay.public_key' => null,
+    ]);
+    $user = User::factory()->create();
+    $order = Order::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)->get("/mis-pedidos/{$order->uuid}")
+        ->assertInertia(fn ($page) => $page->where('openpay', null));
+});

@@ -6,12 +6,14 @@ use App\Contracts\Commerce\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Exceptions\InvalidPaymentWebhookSignatureException;
 use App\Exceptions\MissingPaymentTokenException;
+use App\Exceptions\PaymentDeclinedException;
 use App\Exceptions\PaymentGatewayNotConfiguredException;
 use App\Models\Order;
 use App\Support\Commerce\OnlinePaymentIntent;
 use App\Support\Commerce\PaymentWebhookOutcome;
 use Illuminate\Http\Request;
 use Openpay\Data\Openpay;
+use Openpay\Data\OpenpayApiError;
 
 /**
  * Real implementation using the official `openpay/sdk` Composer package
@@ -53,15 +55,19 @@ class OpenPayPaymentGateway implements PaymentGateway
             throw new MissingPaymentTokenException;
         }
 
-        $charge = $client->charges->create([
-            'method' => 'card',
-            'source_id' => $tokenId,
-            'device_session_id' => $deviceSessionId,
-            'amount' => $order->total_minor / 100,
-            'currency' => strtoupper($order->currency),
-            'description' => "Orden {$order->order_number}",
-            'order_id' => $order->uuid,
-        ]);
+        try {
+            $charge = $client->charges->create([
+                'method' => 'card',
+                'source_id' => $tokenId,
+                'device_session_id' => $deviceSessionId,
+                'amount' => $order->total_minor / 100,
+                'currency' => strtoupper($order->currency),
+                'description' => "Orden {$order->order_number}",
+                'order_id' => $order->uuid,
+            ]);
+        } catch (OpenpayApiError $e) {
+            throw new PaymentDeclinedException($e->getDescription() ?: $e->getMessage());
+        }
 
         return new OnlinePaymentIntent(
             providerReference: $charge->id,
