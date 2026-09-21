@@ -46,7 +46,14 @@ const stages = [
 ];
 
 const prefersReducedMotion = useReducedMotion();
-const usesSticky = computed(() => !prefersReducedMotion.value);
+// Fail-open (brief item C7): starts false so SSR/no-JS renders the plain,
+// complete, always-visible stage list below (v-else) — matching what
+// useReducedMotion() itself already does for the same reason. Only once
+// onMounted confirms JS is actually running, and that this browser has
+// what the scroll-driven morph needs, does this upgrade to the sticky
+// experience.
+const jsReady = ref(false);
+const usesSticky = computed(() => jsReady.value && !prefersReducedMotion.value);
 
 const wrapperEl = useTemplateRef<HTMLElement>('wrapper');
 const frameEl = useTemplateRef<HTMLElement>('frame');
@@ -74,6 +81,17 @@ function onScroll() {
 }
 
 onMounted(() => {
+    // requestAnimationFrame is near-universal, but this is the one API
+    // the whole morph depends on every frame — feature-detected rather
+    // than assumed (brief item C11), so a browser without it keeps the
+    // static list instead of running a scroll handler that can never
+    // actually update anything.
+    if (typeof requestAnimationFrame !== 'function') {
+        return;
+    }
+
+    jsReady.value = true;
+
     if (usesSticky.value) {
         measure();
         window.addEventListener('scroll', onScroll, { passive: true });

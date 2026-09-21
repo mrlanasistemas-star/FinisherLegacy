@@ -12,6 +12,17 @@ import { onMounted, ref } from 'vue';
  *
  * Uses a HEAD request rather than `new Image()` so it works for video
  * sources too, not just images.
+ *
+ * A HEAD request can fail for reasons that have nothing to do with
+ * whether the file exists (a proxy/CDN/security middleware rejecting
+ * HEAD specifically) — this composable fails toward "doesn't exist" on
+ * any such error, which is exactly why it must only ever gate a
+ * genuinely optional enhancement with an always-visible fallback (every
+ * current caller renders its own CSS/component scene in the `else`
+ * branch — see PlateMedia.vue, EventCard.vue). Never use this to decide
+ * whether to show a critical asset that has no fallback of its own — for
+ * an <img>, prefer @load/@error directly on the element; for a <video>,
+ * prefer the loadeddata/canplay/error events (brief item C9).
  */
 export function useAssetExists(url: string) {
     const exists = ref(false);

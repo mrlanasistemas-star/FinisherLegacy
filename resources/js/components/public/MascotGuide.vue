@@ -78,6 +78,13 @@ function applyBestTip() {
 }
 
 function startObserving() {
+    // Scroll-tracking is an enhancement — without it the mascot just stays
+    // on `welcome`/whatever tip goTo() last set, still fully usable via
+    // its Siguiente/Anterior buttons (brief item C8).
+    if (typeof IntersectionObserver === 'undefined') {
+        return;
+    }
+
     const els = document.querySelectorAll<HTMLElement>('[data-mascot-tip]');
 
     if (els.length === 0) {
