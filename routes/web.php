@@ -157,6 +157,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
+    Route::get('dashboard/profile', [AthleteProfileController::class, 'show'])->name('dashboard.profile.show');
     Route::get('dashboard/profile/edit', [AthleteProfileController::class, 'edit'])->name('dashboard.profile.edit');
     Route::patch('dashboard/profile', [AthleteProfileController::class, 'update'])->name('dashboard.profile.update');
 

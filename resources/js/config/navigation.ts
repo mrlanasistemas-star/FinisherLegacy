@@ -75,7 +75,7 @@ export const navigation: NavItem[] = [
     {
         label: 'Mi perfil',
         icon: resolveIcon('UserCircle'),
-        href: '/dashboard/profile/edit',
+        href: '/dashboard/profile',
         permission: null,
         group: 'legacy',
     },
