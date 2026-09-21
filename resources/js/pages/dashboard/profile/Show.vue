@@ -8,6 +8,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Boxes, MapPin, Package, UserCircle } from '@lucide/vue';
 import { computed } from 'vue';
+import Pagination from '@/components/public/Pagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,11 +29,20 @@ type Participation = {
     race: string | null;
     bib_number: string | null;
     event_date: string | null;
-    official_time: string | null;
-    pace: string | null;
-    position: number | null;
-    has_plate: boolean;
+    result: {
+        official_time: string | null;
+        pace: string | null;
+        overall_position: number | null;
+    } | null;
+    legacy_plate_status: string | null;
+    medal_count: number;
     gear_count: number;
+    media_count: number;
+};
+
+type PaginatedParticipations = {
+    data: Participation[];
+    links: { url: string | null; label: string; active: boolean }[];
 };
 
 const { athlete, profile, stats, filters, filterOptions, participations } =
@@ -63,7 +73,7 @@ const { athlete, profile, stats, filters, filterOptions, participations } =
             legacy_plate: string | null;
         };
         filterOptions: { events: FilterOption[]; sports: FilterOption[] };
-        participations: Participation[];
+        participations: PaginatedParticipations;
     }>();
 
 const initials = computed(() =>
@@ -338,11 +348,11 @@ const legacyPlateFilterOptions = [
             </div>
 
             <div
-                v-if="participations.length"
+                v-if="participations.data.length"
                 class="divide-y divide-white/5 rounded-2xl border border-white/10 bg-fl-graphite/20"
             >
                 <Link
-                    v-for="p in participations"
+                    v-for="p in participations.data"
                     :key="p.id"
                     :href="`/dashboard/legado/${p.id}`"
                     class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/5"
@@ -360,11 +370,13 @@ const legacyPlateFilterOptions = [
                         </p>
                     </div>
                     <div class="flex shrink-0 items-center gap-3 text-white/50">
-                        <span v-if="p.official_time" class="font-mono">{{
-                            p.official_time
-                        }}</span>
+                        <span
+                            v-if="p.result?.official_time"
+                            class="font-mono"
+                            >{{ p.result.official_time }}</span
+                        >
                         <Badge
-                            v-if="p.has_plate"
+                            v-if="p.legacy_plate_status"
                             variant="outline"
                             class="border-fl-gold/30 text-fl-gold-soft"
                         >
@@ -380,6 +392,11 @@ const legacyPlateFilterOptions = [
                     </div>
                 </Link>
             </div>
+            <Pagination
+                v-if="participations.data.length"
+                :links="participations.links"
+                class="mt-4"
+            />
             <p
                 v-else
                 class="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/40"

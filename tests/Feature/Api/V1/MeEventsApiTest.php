@@ -2,29 +2,21 @@
 
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Models\Athlete;
-use App\Models\AthleteOwnedProduct;
 use App\Models\EventParticipant;
-use App\Models\Order;
-use App\Models\Product;
 use App\Models\User;
-use Illuminate\Support\Str;
 
-test('GET /api/v1/me/events returns media, owned products, and orders alongside participations', function () {
+test('GET /api/v1/me/events returns a paginated, participation-centric history', function () {
     $user = User::factory()->create();
     $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
-    AthleteOwnedProduct::create([
-        'uuid' => (string) Str::uuid(), 'athlete_id' => $athlete->id, 'product_id' => Product::factory()->create()->id,
-        'status' => 'active', 'acquired_at' => now(),
-    ]);
-    Order::factory()->create(['athlete_id' => $athlete->id]);
+    EventParticipant::factory()->count(3)->create(['athlete_id' => $athlete->id]);
 
     $response = $this->withHeaders(['Authorization' => 'Bearer '.$user->createToken('t')->plainTextToken])
-        ->getJson('/api/v1/me/events');
+        ->getJson('/api/v1/me/events?per_page=2');
 
     $response->assertOk()
-        ->assertJsonStructure(['data' => ['participations', 'plates', 'medals', 'media', 'owned_products', 'orders']])
-        ->assertJsonCount(1, 'data.owned_products')
-        ->assertJsonCount(1, 'data.orders');
+        ->assertJsonStructure(['data' => ['data', 'links'], 'meta'])
+        ->assertJsonCount(2, 'data.data')
+        ->assertJsonStructure(['data' => ['data' => [['id', 'event', 'result', 'legacy_plate_status', 'medal_count', 'gear_count', 'media_count']]]]);
 });
 
 test('GET /api/v1/me/history is the same filterable read model as /me/events', function () {
@@ -35,7 +27,7 @@ test('GET /api/v1/me/history is the same filterable read model as /me/events', f
     $response = $this->withHeaders(['Authorization' => 'Bearer '.$user->createToken('t')->plainTextToken])
         ->getJson('/api/v1/me/history');
 
-    $response->assertOk()->assertJsonCount(1, 'data.participations');
+    $response->assertOk()->assertJsonCount(1, 'data.data');
 });
 
 test('GET /api/v1/me/history filters participations by event_race_id', function () {
@@ -48,8 +40,8 @@ test('GET /api/v1/me/history filters participations by event_race_id', function 
         ->getJson('/api/v1/me/history?event_race_id='.$matching->event_race_id);
 
     $response->assertOk()
-        ->assertJsonCount(1, 'data.participations')
-        ->assertJsonPath('data.participations.0.id', $matching->id);
+        ->assertJsonCount(1, 'data.data')
+        ->assertJsonPath('data.data.0.id', $matching->id);
 });
 
 test('GET /api/v1/me/events/{participant} returns the same detail shape as the Web Mi Legado page', function () {

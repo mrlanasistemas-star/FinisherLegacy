@@ -10,7 +10,6 @@ use App\Models\EventEdition;
 use App\Models\EventGearSelection;
 use App\Models\EventParticipant;
 use App\Models\LegacyPlateEntitlement;
-use App\Queries\Athletes\GetAthleteHistory;
 use App\Queries\Athletes\GetEventGear;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
 use App\Queries\Operations\GetEventParticipantMetrics;
@@ -123,7 +122,10 @@ class ParticipantController extends Controller
                     'variant_name' => $selection->snapshot['variant_name'] ?? null,
                 ])->values(),
             ],
-            'historial' => $athlete === null ? [] : app(GetAthleteHistory::class)->handle($athlete)['participations']
+            'historial' => $athlete === null ? [] : $athlete->eventParticipations()
+                ->with(['eventEdition.event', 'eventRace'])
+                ->orderByDesc('created_at')
+                ->get()
                 ->map(fn (EventParticipant $p) => [
                     'id' => $p->id,
                     'is_current' => $p->id === $participant->id,

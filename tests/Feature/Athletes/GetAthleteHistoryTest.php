@@ -1,39 +1,51 @@
 <?php
 
+use App\Actions\Athletes\AssignOwnedProductToEvent;
 use App\Enums\AthleteOwnedProductStatus;
 use App\Models\Athlete;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteOwnedProduct;
 use App\Models\EventParticipant;
-use App\Models\Order;
 use App\Models\Product;
 use App\Queries\Athletes\GetAthleteHistory;
 use Illuminate\Support\Str;
 
 /**
- * brief §35/§39/§104: history must include photos, video, and physical
- * products, not just participations/plates/medals.
+ * Participation-centric and paginated (product consolidation brief §27-
+ * §28) — each row carries summary counts (medals, gear, media), not the
+ * Athlete's full media/owned-products/orders collections.
  */
-test('GetAthleteHistory includes media, owned products, and orders', function () {
+test('GetAthleteHistory paginates participations with summary counts, not full related collections', function () {
     $athlete = Athlete::factory()->create();
     $participant = EventParticipant::factory()->create(['athlete_id' => $athlete->id]);
     $product = Product::factory()->create();
 
     AthleteEventMedia::create([
         'uuid' => (string) Str::uuid(), 'athlete_id' => $athlete->id, 'event_participant_id' => $participant->id,
-        'type' => 'image', 'disk' => 'public', 'path' => 'x.jpg', 'mime' => 'image/jpeg',
+        'type' => 'image', 'disk' => 'athlete_media', 'path' => 'x.jpg', 'mime' => 'image/jpeg',
         'size_bytes' => 10, 'checksum' => str_repeat('a', 64), 'is_public' => true, 'sort_order' => 0,
     ]);
-    AthleteOwnedProduct::create([
+    $owned = AthleteOwnedProduct::create([
         'uuid' => (string) Str::uuid(), 'athlete_id' => $athlete->id, 'product_id' => $product->id,
         'status' => AthleteOwnedProductStatus::Active, 'acquired_at' => now(),
     ]);
-    Order::factory()->create(['athlete_id' => $athlete->id]);
+    app(AssignOwnedProductToEvent::class)->handle($participant, $owned);
 
     $history = app(GetAthleteHistory::class)->handle($athlete);
 
-    expect($history)->toHaveKeys(['participations', 'plates', 'medals', 'media', 'owned_products', 'orders'])
-        ->and($history['media'])->toHaveCount(1)
-        ->and($history['owned_products'])->toHaveCount(1)
-        ->and($history['orders'])->toHaveCount(1);
+    expect($history->total())->toBe(1);
+    $row = GetAthleteHistory::summarize($history->items()[0]);
+    expect($row['media_count'])->toBe(1)
+        ->and($row['gear_count'])->toBe(1)
+        ->and($row['medal_count'])->toBe(0);
+});
+
+test('GetAthleteHistory respects the requested page size', function () {
+    $athlete = Athlete::factory()->create();
+    EventParticipant::factory()->count(3)->create(['athlete_id' => $athlete->id]);
+
+    $history = app(GetAthleteHistory::class)->handle($athlete, perPage: 2);
+
+    expect($history->total())->toBe(3)
+        ->and($history->items())->toHaveCount(2);
 });
