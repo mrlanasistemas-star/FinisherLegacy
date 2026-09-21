@@ -11,6 +11,7 @@ import {
     Copy,
     Heart,
     Package,
+    Plus,
     Video as VideoIcon,
     X,
 } from '@lucide/vue';
@@ -26,6 +27,13 @@ import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Split = {
     label: string | null;
@@ -75,6 +83,21 @@ type Purchase = {
     payment_status: string;
 };
 
+type GearUsed = {
+    uuid: string;
+    athlete_owned_product_uuid: string;
+    product_name: string | null;
+    variant_name: string | null;
+    asset_code: string | null;
+    notes: string | null;
+};
+
+type AvailableGear = {
+    uuid: string;
+    product: string;
+    variant: string | null;
+};
+
 type SupportMessage = {
     id: number;
     type: 'text' | 'audio';
@@ -103,6 +126,8 @@ const {
     media,
     mediaLimits,
     mediaRemaining,
+    gearUsed,
+    availableGear,
     purchases,
     supportSession,
 } = defineProps<{
@@ -130,6 +155,8 @@ const {
     media: Media[];
     mediaLimits: { images: number; videos: number };
     mediaRemaining: { images: number; videos: number };
+    gearUsed: GearUsed[];
+    availableGear: AvailableGear[];
     purchases: Purchase[];
     supportSession: SupportSession | null;
 }>();
@@ -154,6 +181,29 @@ function toggleVisibility(media: Media) {
 
 function removeMedia(media: Media) {
     router.delete(`/dashboard/media/${media.uuid}`, { preserveScroll: true });
+}
+
+const selectedOwnedProduct = ref<string | undefined>(undefined);
+
+function assignGear() {
+    if (!selectedOwnedProduct.value) {
+        return;
+    }
+
+    router.post(
+        `/dashboard/legado/${participant.id}/gear`,
+        { athlete_owned_product_uuid: selectedOwnedProduct.value },
+        {
+            preserveScroll: true,
+            onSuccess: () => (selectedOwnedProduct.value = undefined),
+        },
+    );
+}
+
+function removeGear(gear: GearUsed) {
+    router.delete(`/dashboard/legado/${participant.id}/gear/${gear.uuid}`, {
+        preserveScroll: true,
+    });
 }
 
 const supportForm = useForm({
@@ -361,6 +411,84 @@ function rejectMessage(id: number) {
                 Tu Legacy Plate está en preparación — el visor aparecerá en
                 cuanto se asigne un modelo.
             </p>
+        </section>
+
+        <!-- Equipo utilizado -->
+        <section class="mt-8">
+            <h2
+                class="mb-3 flex items-center gap-1.5 text-sm tracking-wide text-white/40 uppercase"
+            >
+                <Package class="size-3.5" />
+                Equipo utilizado
+            </h2>
+
+            <div
+                v-if="gearUsed.length"
+                class="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            >
+                <div
+                    v-for="item in gearUsed"
+                    :key="item.uuid"
+                    class="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-fl-graphite/20 p-4"
+                >
+                    <div class="min-w-0">
+                        <p class="truncate font-medium text-white">
+                            {{ item.product_name }}
+                        </p>
+                        <p
+                            v-if="item.variant_name"
+                            class="text-xs text-white/40"
+                        >
+                            {{ item.variant_name }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        class="shrink-0 text-xs text-red-400 hover:text-red-300"
+                        @click="removeGear(item)"
+                    >
+                        Quitar
+                    </button>
+                </div>
+            </div>
+            <p
+                v-else
+                class="mb-3 rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-white/40"
+            >
+                Todavía no agregaste el equipo que usaste en este evento.
+            </p>
+
+            <div
+                v-if="availableGear.length"
+                class="flex flex-wrap items-center gap-2"
+            >
+                <Select v-model="selectedOwnedProduct">
+                    <SelectTrigger
+                        class="w-56 border-white/10 bg-fl-black text-white"
+                    >
+                        <SelectValue placeholder="Elige de tu equipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="owned in availableGear"
+                            :key="owned.uuid"
+                            :value="owned.uuid"
+                        >
+                            {{ owned.product
+                            }}{{ owned.variant ? ` — ${owned.variant}` : '' }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+                <Button
+                    variant="outline"
+                    class="border-white/15 text-white/70 hover:text-white"
+                    :disabled="!selectedOwnedProduct"
+                    @click="assignGear"
+                >
+                    <Plus class="size-4" />
+                    Agregar equipo
+                </Button>
+            </div>
         </section>
 
         <!-- Apoyo -->

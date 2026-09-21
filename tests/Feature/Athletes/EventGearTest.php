@@ -88,6 +88,29 @@ test('removing a gear selection deletes it', function () {
     expect(app(GetEventGear::class)->handle($participant))->toHaveCount(0);
 });
 
+test('the me/events/{participant}/gear API endpoints assign, list, and remove gear', function () {
+    $user = User::factory()->create();
+    $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
+    $participant = EventParticipant::factory()->create(['athlete_id' => $athlete->id]);
+    $owned = makeOwnedProduct($athlete);
+    $headers = ['Authorization' => 'Bearer '.$user->createToken('t')->plainTextToken];
+
+    $store = $this->withHeaders($headers)->postJson("/api/v1/me/events/{$participant->id}/gear", [
+        'athlete_owned_product_uuid' => $owned->uuid,
+    ]);
+    $store->assertCreated();
+    $gearUuid = $store->json('data.uuid');
+
+    $this->withHeaders($headers)->getJson("/api/v1/me/events/{$participant->id}/gear")
+        ->assertOk()->assertJsonCount(1, 'data');
+
+    $this->withHeaders($headers)->deleteJson("/api/v1/me/events/{$participant->id}/gear/{$gearUuid}")
+        ->assertOk();
+
+    $this->withHeaders($headers)->getJson("/api/v1/me/events/{$participant->id}/gear")
+        ->assertOk()->assertJsonCount(0, 'data');
+});
+
 test('GET /api/v1/me/gear includes usage_history for gear assigned to an event', function () {
     $user = User::factory()->create();
     $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');

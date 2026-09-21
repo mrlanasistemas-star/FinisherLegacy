@@ -133,7 +133,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // inside Mi Legado's event detail, same participant param name as
     // legadoShow's route model binding.
     Route::post('dashboard/legado/{participant}/gear', [AthleteHistoryController::class, 'storeGear'])->name('dashboard.legado.gear.store');
-    Route::delete('dashboard/legado/{participant}/gear/{gear:uuid}', [AthleteHistoryController::class, 'destroyGear'])->name('dashboard.legado.gear.destroy');
+    // withoutScopedBindings(): Laravel's implicit nested-binding scoping
+    // would otherwise look for EventParticipant::gears() (pluralizing the
+    // {gear} segment) — the real relation is gearSelections(), and the
+    // controller already checks $gear->event_participant_id itself.
+    Route::delete('dashboard/legado/{participant}/gear/{gear:uuid}', [AthleteHistoryController::class, 'destroyGear'])
+        ->withoutScopedBindings()
+        ->name('dashboard.legado.gear.destroy');
     Route::post('support-messages/{message}/approve', [SupportSessionController::class, 'approve'])->name('support-messages.approve');
     Route::post('support-messages/{message}/reject', [SupportSessionController::class, 'reject'])->name('support-messages.reject');
 

@@ -159,7 +159,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::prefix('me/events/{participant}/gear')->name('me.events.gear.')->group(function () {
             Route::get('/', [MeEventGearController::class, 'index'])->name('index');
             Route::post('/', [MeEventGearController::class, 'store'])->name('store');
-            Route::delete('{gear:uuid}', [MeEventGearController::class, 'destroy'])->name('destroy');
+            // withoutScopedBindings(): see the identical route in routes/web.php —
+            // EventParticipant has no gears() relation, only gearSelections().
+            Route::delete('{gear:uuid}', [MeEventGearController::class, 'destroy'])->withoutScopedBindings()->name('destroy');
         });
 
         /*
