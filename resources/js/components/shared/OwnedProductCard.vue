@@ -8,6 +8,12 @@ import { Package, QrCode } from '@lucide/vue';
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 
+type UsageHistoryItem = {
+    event_participant_id: number;
+    event: string | null;
+    edition: string | null;
+};
+
 const props = defineProps<{
     product: string;
     variant: string | null;
@@ -15,6 +21,7 @@ const props = defineProps<{
     status: string;
     acquiredAt: string | null;
     assetCode: string | null;
+    usageHistory?: UsageHistoryItem[];
 }>();
 
 const labels: Record<string, string> = {
@@ -67,6 +74,21 @@ const className = computed(
                 <span v-if="assetCode" class="flex items-center gap-1"
                     ><QrCode class="size-3.5" /> {{ assetCode }}</span
                 >
+            </div>
+            <div
+                v-if="usageHistory?.length"
+                class="mt-3 border-t border-white/5 pt-3"
+            >
+                <p class="text-[10px] tracking-wide text-white/30 uppercase">
+                    Usado en
+                </p>
+                <p
+                    v-for="entry in usageHistory"
+                    :key="entry.event_participant_id"
+                    class="mt-1 truncate text-xs text-white/60"
+                >
+                    {{ entry.event ?? entry.edition ?? 'Evento' }}
+                </p>
             </div>
         </div>
     </div>

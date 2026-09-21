@@ -4,6 +4,12 @@ import { Package } from '@lucide/vue';
 import AppContainer from '@/components/shared/AppContainer.vue';
 import OwnedProductCard from '@/components/shared/OwnedProductCard.vue';
 
+type UsageHistoryItem = {
+    event_participant_id: number;
+    event: string | null;
+    edition: string | null;
+};
+
 type OwnedItem = {
     uuid: string;
     product: string;
@@ -12,6 +18,7 @@ type OwnedItem = {
     status: string;
     acquired_at: string | null;
     asset_code: string | null;
+    usage_history: UsageHistoryItem[];
 };
 
 defineProps<{ items: OwnedItem[] }>();
@@ -39,6 +46,7 @@ defineProps<{ items: OwnedItem[] }>();
                 :status="item.status"
                 :acquired-at="item.acquired_at"
                 :asset-code="item.asset_code"
+                :usage-history="item.usage_history"
             />
         </div>
 

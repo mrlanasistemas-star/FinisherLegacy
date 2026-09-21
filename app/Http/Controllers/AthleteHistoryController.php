@@ -290,6 +290,11 @@ class AthleteHistoryController extends Controller
                 'status' => $owned->status->value,
                 'acquired_at' => $owned->acquired_at->toDateString(),
                 'asset_code' => $owned->asset_code,
+                'usage_history' => $owned->gearSelections->map(fn (EventGearSelection $selection) => [
+                    'event_participant_id' => $selection->event_participant_id,
+                    'event' => $selection->eventParticipant->eventEdition?->event?->name,
+                    'edition' => $selection->eventParticipant->eventEdition?->name,
+                ])->values()->all(),
             ])->values(),
         ]);
     }
