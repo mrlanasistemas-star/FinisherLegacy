@@ -100,3 +100,17 @@ export type LegacyCodeAthlete = {
     city: string | null;
     sport: string | null;
 };
+
+export type PublicProductCard = {
+    uuid: string;
+    name: string;
+    slug: string;
+    type: string;
+    category: string | null;
+    from_price_minor: number | null;
+    currency: string;
+    in_stock: boolean;
+    image_url: string | null;
+    hover_image_url: string | null;
+    variant_count: number;
+};

@@ -1,30 +1,31 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import ProductCard from '@/components/shared/ProductCard.vue';
-
-type ProductSummary = {
-    uuid: string;
-    name: string;
-    slug: string;
-    type: string;
-    category: string | null;
-    from_price_minor: number | null;
-    currency: string;
-    in_stock: boolean;
-    image_url: string | null;
-    hover_image_url: string | null;
-    variant_count: number;
-};
+import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
+import type { PublicProductCard } from '@/types';
 
 defineProps<{
-    products: ProductSummary[];
+    products: PublicProductCard[];
     categories: { name: string; slug: string }[];
     filters: { category: string };
 }>();
+
+const canonicalUrl = useCanonicalUrl();
+const description =
+    'Legacy Plate, ropa técnica y accesorios pensados para acompañarte en cada meta — el ecosistema Finisher Legacy, en un solo lugar.';
 </script>
 
 <template>
-    <Head title="Tienda — Finisher Legacy" />
+    <Head title="Tienda — Finisher Legacy">
+        <meta name="description" :content="description" />
+        <link v-if="canonicalUrl" rel="canonical" :href="canonicalUrl" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Tienda — Finisher Legacy" />
+        <meta property="og:description" :content="description" />
+        <meta v-if="canonicalUrl" property="og:url" :content="canonicalUrl" />
+        <meta name="twitter:title" content="Tienda — Finisher Legacy" />
+        <meta name="twitter:description" :content="description" />
+    </Head>
 
     <div class="bg-fl-black">
         <section

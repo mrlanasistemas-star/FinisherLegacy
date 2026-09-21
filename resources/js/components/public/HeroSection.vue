@@ -23,12 +23,14 @@ defineProps<{
     primaryHref: NonNullable<InertiaLinkProps['href']>;
     secondaryLabel: string;
     secondaryHref: NonNullable<InertiaLinkProps['href']>;
+    tertiaryLabel?: string;
+    tertiaryHref?: NonNullable<InertiaLinkProps['href']>;
 }>();
 </script>
 
 <template>
     <section
-        class="relative flex min-h-[100svh] items-center overflow-hidden bg-fl-black"
+        class="relative flex min-h-[100svh] min-h-screen items-center overflow-hidden bg-fl-black"
     >
         <!-- Cinematic scene: video → poster photo → CSS scene cascade, see
              public/media/home/hero/README.md for the asset contract. -->
@@ -118,6 +120,13 @@ defineProps<{
 
                 <p class="text-sm text-white/60">
                     Tu Legacy ID te acompaña carrera tras carrera.
+                    <Link
+                        v-if="tertiaryLabel && tertiaryHref"
+                        :href="tertiaryHref"
+                        class="ml-2 font-semibold text-fl-gold-soft underline-offset-4 hover:text-fl-gold hover:underline"
+                    >
+                        {{ tertiaryLabel }}
+                    </Link>
                 </p>
             </div>
         </div>
@@ -130,27 +139,37 @@ defineProps<{
 
 <style scoped>
 /* Headline lines rise and clip in on load, staggered per line — a small
-   entrance beat instead of the text just being static on paint. */
+   entrance beat, never the mechanism that makes the H1 visible at all.
+   Base state is fully visible; the animation only applies inside
+   @supports for a browser that can actually run it (brief item C5/C6) —
+   a browser without clip-path support, or any other reason this rule
+   doesn't apply, still renders the headline immediately. */
 .fl-hero-line {
-    animation: fl-hero-line-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    opacity: 1;
 }
 
-@keyframes fl-hero-line-in {
-    from {
-        opacity: 0;
-        transform: translateY(0.4em);
-        clip-path: inset(0 0 100% 0);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-        clip-path: inset(0 0 0 0);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
+@supports (clip-path: inset(0 0 0 0)) {
     .fl-hero-line {
-        animation: none;
+        animation: fl-hero-line-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes fl-hero-line-in {
+        from {
+            opacity: 0;
+            transform: translateY(0.4em);
+            clip-path: inset(0 0 100% 0);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+            clip-path: inset(0 0 0 0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .fl-hero-line {
+            animation: none;
+        }
     }
 }
 </style>

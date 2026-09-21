@@ -12,6 +12,7 @@ import ProductCard from '@/components/shared/ProductCard.vue';
 import VariantSelector from '@/components/shared/VariantSelector.vue';
 import type { Variant } from '@/components/shared/VariantSelector.vue';
 import { Button } from '@/components/ui/button';
+import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 
 type GalleryItem = {
     id: number;
@@ -61,6 +62,18 @@ const props = defineProps<{
     product: Product;
     relatedProducts: RelatedProduct[];
 }>();
+
+const canonicalUrl = useCanonicalUrl();
+const metaDescription = computed(
+    () =>
+        props.product.description?.slice(0, 200) ??
+        `${props.product.name} — parte del ecosistema Finisher Legacy. Conoce precio, opciones y disponibilidad.`,
+);
+const primaryImageUrl = computed(
+    () =>
+        props.product.gallery.find((item) => item.is_primary)?.url ??
+        props.product.image_url,
+);
 
 // Falls back to the legacy single `image_path` when no gallery has been
 // configured yet (brief §107: additive, never a breaking migration).
@@ -145,7 +158,32 @@ function faqItems(
 </script>
 
 <template>
-    <Head :title="`${product.name} — Finisher Legacy`" />
+    <Head :title="`${product.name} — Finisher Legacy`">
+        <meta name="description" :content="metaDescription" />
+        <link v-if="canonicalUrl" rel="canonical" :href="canonicalUrl" />
+        <meta property="og:type" content="product" />
+        <meta
+            property="og:title"
+            :content="`${product.name} — Finisher Legacy`"
+        />
+        <meta property="og:description" :content="metaDescription" />
+        <meta v-if="canonicalUrl" property="og:url" :content="canonicalUrl" />
+        <meta
+            v-if="primaryImageUrl"
+            property="og:image"
+            :content="primaryImageUrl"
+        />
+        <meta
+            name="twitter:title"
+            :content="`${product.name} — Finisher Legacy`"
+        />
+        <meta name="twitter:description" :content="metaDescription" />
+        <meta
+            v-if="primaryImageUrl"
+            name="twitter:image"
+            :content="primaryImageUrl"
+        />
+    </Head>
 
     <div class="bg-fl-black">
         <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">

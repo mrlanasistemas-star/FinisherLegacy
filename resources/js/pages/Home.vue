@@ -20,17 +20,21 @@ import PlateMountDemo from '@/components/public/PlateMountDemo.vue';
 import ScrollCueButton from '@/components/public/ScrollCueButton.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
 import StickyLegacyJourney from '@/components/public/StickyLegacyJourney.vue';
+import ProductCard from '@/components/shared/ProductCard.vue';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 import { howItWorks, register } from '@/routes';
 import { index as eventsIndex } from '@/routes/events';
+import { index as storeIndex } from '@/routes/store/products';
 import type {
     EventEditionCard,
     LegacyProfilePreview as LegacyProfileType,
+    PublicProductCard,
 } from '@/types';
 
 defineProps<{
     featuredEditions: EventEditionCard[];
     legacyProfile: LegacyProfileType | null;
+    featuredProducts: PublicProductCard[];
 }>();
 
 const canonicalUrl = useCanonicalUrl();
@@ -78,6 +82,10 @@ const mascotTips = [
         text: 'Aquí vive tu colección: medallas, tiempos y ciudades, todo en un solo lugar.',
     },
     {
+        id: 'store',
+        text: 'Este es el equipo pensado para acompañarte en cada meta — todo queda registrado en tu Legacy Profile.',
+    },
+    {
         id: 'events',
         text: 'Estos son los próximos eventos disponibles. ¡Elige tu siguiente meta!',
     },
@@ -122,8 +130,10 @@ TU HISTORIA NO."
         subtitle="Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir."
         primary-label="CREAR MI LEGACY"
         :primary-href="register()"
-        secondary-label="DESCUBRIR CÓMO FUNCIONA"
-        :secondary-href="howItWorks()"
+        secondary-label="VER TIENDA"
+        :secondary-href="storeIndex()"
+        tertiary-label="Descubre cómo funciona →"
+        :tertiary-href="howItWorks()"
     />
 
     <!-- El significado -->
@@ -213,7 +223,7 @@ TODA UNA HISTORIA."
                         en nuestra tienda.
                     </p>
                     <Link
-                        href="/tienda"
+                        :href="storeIndex()"
                         class="mt-3 inline-block text-sm font-semibold text-fl-gold-soft hover:text-fl-gold"
                     >
                         Ir a la tienda →
@@ -230,6 +240,60 @@ TODA UNA HISTORIA."
                     </p>
                 </div>
             </StaggerGroup>
+        </Reveal>
+    </section>
+
+    <!-- Tienda Finisher Legacy — productos reales, no solo un link -->
+    <section data-mascot-tip="store" class="bg-fl-graphite/30 py-24 sm:py-28">
+        <Reveal as="div" class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <SectionHeading
+                eyebrow="Tienda Finisher Legacy"
+                title="El equipo que te acompaña en cada meta."
+                description="Legacy Plate es la puerta de entrada — el resto del ecosistema vive en la tienda."
+                class="mb-14"
+            />
+
+            <StaggerGroup
+                v-if="featuredProducts.length"
+                as="div"
+                class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
+                <ProductCard
+                    v-for="product in featuredProducts"
+                    :key="product.uuid"
+                    :name="product.name"
+                    :slug="product.slug"
+                    :category="product.category"
+                    :from-price-minor="product.from_price_minor"
+                    :currency="product.currency"
+                    :in-stock="product.in_stock"
+                    :image-url="product.image_url"
+                    :hover-image-url="product.hover_image_url"
+                    :variant-count="product.variant_count"
+                />
+            </StaggerGroup>
+            <div
+                v-else
+                class="rounded-2xl border border-dashed border-white/15 bg-fl-black/40 p-12 text-center"
+            >
+                <ShoppingBag class="mx-auto size-8 text-fl-gold-soft/60" />
+                <p class="mt-4 font-semibold text-white">
+                    Próximamente en la tienda
+                </p>
+                <p class="mx-auto mt-2 max-w-md text-sm text-white/50">
+                    Estamos preparando el equipo Finisher Legacy — placas, ropa
+                    técnica y accesorios pensados para acompañarte en cada meta.
+                </p>
+            </div>
+
+            <div class="mt-12 flex justify-center">
+                <Link
+                    :href="storeIndex()"
+                    class="text-sm font-semibold tracking-wide text-fl-gold-soft hover:text-fl-gold"
+                >
+                    VER TIENDA COMPLETA →
+                </Link>
+            </div>
         </Reveal>
     </section>
 

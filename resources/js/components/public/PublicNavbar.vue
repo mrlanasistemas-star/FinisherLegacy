@@ -15,15 +15,19 @@ import {
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { dashboard, home, howItWorks, login, register } from '@/routes';
 import { index as eventsIndex } from '@/routes/events';
+import { index as storeIndex } from '@/routes/store/products';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-const { isCurrentUrl } = useCurrentUrl();
+const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
 
 const navLinks = [
     { label: 'Inicio', href: home() },
     { label: 'Cómo funciona', href: howItWorks() },
     { label: 'Eventos', href: eventsIndex() },
+    // Also active on /tienda/{slug} product pages, not just the exact
+    // catalog URL — see isCurrentOrParentUrl below.
+    { label: 'Tienda', href: storeIndex(), matchPrefix: true },
 ];
 
 const scrolled = ref(false);
@@ -65,9 +69,10 @@ onBeforeUnmount(() => {
                     :href="link.href"
                     class="fl-nav-link relative py-1 text-sm font-medium tracking-wide text-white/60 transition-colors hover:text-fl-gold-soft"
                     :class="{
-                        'fl-nav-link--active text-fl-gold-soft': isCurrentUrl(
-                            link.href,
-                        ),
+                        'fl-nav-link--active text-fl-gold-soft':
+                            link.matchPrefix
+                                ? isCurrentOrParentUrl(link.href)
+                                : isCurrentUrl(link.href),
                     }"
                 >
                     {{ link.label }}

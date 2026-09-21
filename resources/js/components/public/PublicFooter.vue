@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import { contact, home, howItWorks, privacy, terms } from '@/routes';
 import { index as eventsIndex } from '@/routes/events';
+import { index as storeIndex } from '@/routes/store/products';
 
 const year = new Date().getFullYear();
 
@@ -10,6 +11,7 @@ const product = [
     { label: 'Inicio', href: home() },
     { label: 'Cómo funciona', href: howItWorks() },
     { label: 'Eventos', href: eventsIndex() },
+    { label: 'Tienda', href: storeIndex() },
 ];
 
 const legal = [

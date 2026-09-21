@@ -8,6 +8,7 @@ use App\Models\ProductCategory;
 use App\Models\ProductContentSection;
 use App\Models\ProductMedia;
 use App\Models\ProductVariant;
+use App\Queries\Commerce\GetFeaturedProducts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -32,7 +33,7 @@ class ProductController extends Controller
             ->get();
 
         return Inertia::render('store/Index', [
-            'products' => $products->map(fn (Product $product) => $this->summarize($product)),
+            'products' => $products->map(fn (Product $product) => GetFeaturedProducts::summarize($product)),
             'categories' => ProductCategory::query()->where('active', true)->orderBy('name')->get(['name', 'slug']),
             'filters' => ['category' => $request->string('category')->toString()],
         ]);
@@ -88,39 +89,7 @@ class ProductController extends Controller
                     'content' => $s->content,
                 ]),
             ],
-            'relatedProducts' => $related->map(fn (Product $p) => $this->summarize($p)),
+            'relatedProducts' => $related->map(fn (Product $p) => GetFeaturedProducts::summarize($p)),
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function summarize(Product $product): array
-    {
-        $firstVariant = $product->variants->first();
-        $galleryImages = $product->relationLoaded('media')
-            ? $product->media->where('type', 'image')->sortByDesc('is_primary')->values()
-            : collect();
-        $primaryImage = $galleryImages->first();
-        $hoverImage = $galleryImages->get(1);
-
-        return [
-            'uuid' => $product->uuid,
-            'name' => $product->name,
-            'slug' => $product->slug,
-            'type' => $product->type->value,
-            'category' => $product->category?->name,
-            'from_price_minor' => $product->variants->min('base_price_minor'),
-            'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
-            'in_stock' => ! $product->tracks_inventory || $product->variants->contains(
-                fn (ProductVariant $variant) => $variant->inventoryLevels->sum(fn ($l) => $l->availableQuantity()) > 0,
-            ),
-            // The gallery's primary image wins over the legacy image_path
-            // when both exist — brief §107 keeps image_path as a fallback,
-            // not the source of truth once a gallery is configured.
-            'image_url' => $primaryImage?->url() ?? ($product->image_path ? Storage::disk('public')->url($product->image_path) : null),
-            'hover_image_url' => $hoverImage?->url(),
-            'variant_count' => $product->variants->count(),
-        ];
     }
 }

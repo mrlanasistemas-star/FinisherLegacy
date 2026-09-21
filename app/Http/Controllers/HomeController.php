@@ -7,12 +7,14 @@ use App\Enums\EventStatus;
 use App\Http\Resources\EventEditionCardResource;
 use App\Models\AthleteProfile;
 use App\Models\EventEdition;
+use App\Models\Product;
+use App\Queries\Commerce\GetFeaturedProducts;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class HomeController extends Controller
 {
-    public function index(): Response
+    public function index(GetFeaturedProducts $featuredProducts): Response
     {
         $featuredEditions = EventEdition::query()
             ->whereHas('event', fn ($query) => $query->where('status', EventStatus::Published))
@@ -31,6 +33,7 @@ class HomeController extends Controller
 
         return Inertia::render('Home', [
             'featuredEditions' => $featuredEditions->map(fn ($edition) => (new EventEditionCardResource($edition))->resolve()),
+            'featuredProducts' => $featuredProducts->handle(5)->map(fn (Product $product) => GetFeaturedProducts::summarize($product)),
             'legacyProfile' => $legacyProfile ? [
                 'username' => $legacyProfile->username,
                 'name' => $legacyProfile->user->name,
