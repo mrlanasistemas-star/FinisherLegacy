@@ -10,8 +10,10 @@ use App\Models\EventPreregistration;
 use App\Models\LegacyPlateEntitlement;
 use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,11 +31,11 @@ class PreregistrationController extends Controller
         // Every filter below runs in SQL before paginate() — never on the
         // already-paginated ->data collection. Filtering the paged
         // collection instead is the exact bug the "PAGO PENDIENTE" report
-        // described (paginator says 2 pages, 0 rows shown): it doesn't
-        // reproduce against this controller's code today (there was no
-        // status filter here at all until this change), but this is built
-        // so that failure mode can't happen here regardless — see
-        // tests/Feature/Admin/PreregistrationPaginationTest.php.
+        // described (paginator says 2 pages, 0 rows shown): the legacy_plate
+        // filter used to do exactly that (filter the mapped page in PHP,
+        // after paginate() already fixed the total/last_page from the
+        // *unfiltered* count) — see tests/Feature/Admin/
+        // PreregistrationPaginationTest.php.
         $status = $request->string('status')->toString();
         $legacyPlateFilter = $request->string('legacy_plate')->toString() ?: 'all';
 
@@ -48,6 +50,21 @@ class PreregistrationController extends Controller
             ->when($status !== '' && PreregistrationStatus::tryFrom($status) !== null, fn ($q) => $q->where('status', $status))
             ->when($request->integer('event_edition_id') ?: null, fn ($q, $editionId) => $q->where('event_edition_id', $editionId));
 
+        // Counters always reflect search/status/event filters only, never
+        // the legacy_plate view filter below (unchanged behavior).
+        $countersQuery = clone $query;
+
+        $query->when($legacyPlateFilter !== 'all', function ($q) use ($legacyPlateFilter) {
+            match ($legacyPlateFilter) {
+                'linked' => $q->whereNotNull('matched_participant_id'),
+                'unlinked' => $q->whereNull('matched_participant_id'),
+                'none' => $q->whereNotExists(fn ($sub) => $this->entitlementExistsSubquery($sub)),
+                'pending' => $q->whereExists(fn ($sub) => $this->entitlementExistsSubquery($sub, [LegacyPlateEntitlementStatus::PendingPayment->value])),
+                'paid' => $q->whereExists(fn ($sub) => $this->entitlementExistsSubquery($sub, ['paid', 'linked', 'queued', 'produced', 'delivered'])),
+                default => null,
+            };
+        });
+
         $preregistrations = $query->orderByDesc('created_at')->paginate(25)->withQueryString();
 
         $entitlementsByKey = $this->entitlementsFor($preregistrations->getCollection());
@@ -59,23 +76,6 @@ class PreregistrationController extends Controller
             return $this->rowPayload($preregistration, $entitlement);
         });
 
-        // Legacy Plate filter applies after the read model is built (its
-        // states are derived, not a single column) — the page is small
-        // (25 rows), so filtering the mapped collection is simpler than a
-        // second SQL round-trip and just as correct.
-        if ($legacyPlateFilter !== 'all') {
-            $preregistrations->setCollection(
-                $preregistrations->getCollection()->filter(fn ($row) => match ($legacyPlateFilter) {
-                    'none' => $row['legacy_plate_status'] === 'none',
-                    'pending' => $row['legacy_plate_status'] === 'pending_payment',
-                    'paid' => in_array($row['legacy_plate_status'], ['paid', 'linked', 'queued', 'produced', 'delivered'], true),
-                    'linked' => $row['participant_linked'],
-                    'unlinked' => ! $row['participant_linked'],
-                    default => true,
-                })->values(),
-            );
-        }
-
         return Inertia::render('admin/preregistrations/Index', [
             'preregistrations' => $preregistrations,
             'statuses' => array_map(fn (PreregistrationStatus $s) => $s->value, PreregistrationStatus::cases()),
@@ -84,8 +84,31 @@ class PreregistrationController extends Controller
                 'status' => $status ?: null,
                 'legacy_plate' => $legacyPlateFilter,
             ],
-            'counters' => $this->counters(clone $query),
+            'counters' => $this->counters($countersQuery),
         ]);
+    }
+
+    /**
+     * A correlated EXISTS against legacy_plate_entitlements, matched the
+     * same way entitlementsFor() matches in PHP: by the preregistration's
+     * linked Athlete (via its User) + event_edition_id. Optionally
+     * constrained to a set of entitlement statuses.
+     *
+     * @param  list<string>  $statuses
+     */
+    private function entitlementExistsSubquery(QueryBuilder $sub, array $statuses = []): QueryBuilder
+    {
+        $sub->select(DB::raw(1))
+            ->from('legacy_plate_entitlements')
+            ->join('athletes', 'athletes.id', '=', 'legacy_plate_entitlements.athlete_id')
+            ->whereColumn('athletes.user_id', 'event_preregistrations.user_id')
+            ->whereColumn('legacy_plate_entitlements.event_edition_id', 'event_preregistrations.event_edition_id');
+
+        if ($statuses !== []) {
+            $sub->whereIn('legacy_plate_entitlements.status', $statuses);
+        }
+
+        return $sub;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Queries\Athletes;
 
 use App\Models\Athlete;
+use App\Models\EventEdition;
 use App\Models\EventParticipant;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -59,6 +60,16 @@ class GetAthleteHistory
                 'gearSelections',
                 fn ($gear) => $gear->where('athlete_owned_product_id', $ownedProductId),
             ))
+            // A sporting history orders by when the event actually
+            // happened, not by when the participation row was synced into
+            // this database — created_at is only a tie-breaker for same-
+            // day events (brief item 29).
+            ->orderBy(
+                EventEdition::query()
+                    ->select('event_date')
+                    ->whereColumn('event_editions.id', 'event_participants.event_edition_id'),
+                'desc',
+            )
             ->orderByDesc('created_at')
             ->paginate($perPage);
     }

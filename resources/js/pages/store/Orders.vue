@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Receipt } from '@lucide/vue';
+import Pagination from '@/components/public/Pagination.vue';
 import Money from '@/components/shared/Money.vue';
 import OrderStatusBadge from '@/components/shared/OrderStatusBadge.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
@@ -17,7 +18,12 @@ type OrderRow = {
     created_at: string;
 };
 
-defineProps<{ orders: OrderRow[] }>();
+defineProps<{
+    orders: {
+        data: OrderRow[];
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+    };
+}>();
 </script>
 
 <template>
@@ -28,11 +34,11 @@ defineProps<{ orders: OrderRow[] }>();
             <h1 class="text-2xl font-black text-white">Mis pedidos</h1>
 
             <div
-                v-if="orders.length"
+                v-if="orders.data.length"
                 class="mt-8 divide-y divide-white/10 border-y border-white/10"
             >
                 <Link
-                    v-for="order in orders"
+                    v-for="order in orders.data"
                     :key="order.uuid"
                     :href="`/mis-pedidos/${order.uuid}`"
                     class="flex flex-wrap items-center justify-between gap-3 py-5 hover:bg-white/[0.02]"
@@ -57,6 +63,9 @@ defineProps<{ orders: OrderRow[] }>();
                         </p>
                     </div>
                 </Link>
+            </div>
+            <div v-if="orders.data.length" class="mt-6">
+                <Pagination :links="orders.links" />
             </div>
 
             <div

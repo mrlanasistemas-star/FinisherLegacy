@@ -5,6 +5,7 @@ use App\Enums\AthleteOwnedProductStatus;
 use App\Models\Athlete;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteOwnedProduct;
+use App\Models\EventEdition;
 use App\Models\EventParticipant;
 use App\Models\Product;
 use App\Queries\Athletes\GetAthleteHistory;
@@ -48,4 +49,27 @@ test('GetAthleteHistory respects the requested page size', function () {
 
     expect($history->total())->toBe(3)
         ->and($history->items())->toHaveCount(2);
+});
+
+test('GetAthleteHistory orders by the real event date, not by row creation order (brief item 29)', function () {
+    $athlete = Athlete::factory()->create();
+
+    // Created first (older created_at) but the race it belongs to is
+    // the most recent one — sporting history must still surface it
+    // first. Ordering by created_at alone would put it last.
+    $recentEdition = EventEdition::factory()->create(['event_date' => now()->subDays(1)]);
+    $recentParticipant = EventParticipant::factory()->create([
+        'athlete_id' => $athlete->id,
+        'event_edition_id' => $recentEdition->id,
+    ]);
+
+    $olderEdition = EventEdition::factory()->create(['event_date' => now()->subYears(2)]);
+    EventParticipant::factory()->create([
+        'athlete_id' => $athlete->id,
+        'event_edition_id' => $olderEdition->id,
+    ]);
+
+    $history = app(GetAthleteHistory::class)->handle($athlete);
+
+    expect($history->items()[0]->id)->toBe($recentParticipant->id);
 });

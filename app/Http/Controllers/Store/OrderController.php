@@ -16,20 +16,26 @@ class OrderController extends Controller
 {
     public function index(Request $request): Response
     {
-        $orders = $request->user()->orders()->with('items')->orderByDesc('created_at')->get();
+        $orders = $request->user()->orders()
+            ->withCount('items')
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        $orders->through(fn (Order $order) => [
+            'uuid' => $order->uuid,
+            'order_number' => $order->order_number,
+            'status' => $order->status->value,
+            'payment_status' => $order->payment_status->value,
+            'fulfillment_status' => $order->fulfillment_status->value,
+            'total_minor' => $order->total_minor,
+            'currency' => $order->currency,
+            'items_count' => $order->items_count,
+            'created_at' => $order->created_at->toDateTimeString(),
+        ]);
 
         return Inertia::render('store/Orders', [
-            'orders' => $orders->map(fn (Order $order) => [
-                'uuid' => $order->uuid,
-                'order_number' => $order->order_number,
-                'status' => $order->status->value,
-                'payment_status' => $order->payment_status->value,
-                'fulfillment_status' => $order->fulfillment_status->value,
-                'total_minor' => $order->total_minor,
-                'currency' => $order->currency,
-                'items_count' => $order->items->count(),
-                'created_at' => $order->created_at->toDateTimeString(),
-            ]),
+            'orders' => $orders,
         ]);
     }
 
