@@ -6,6 +6,7 @@ use App\Actions\Commerce\CreateOnlinePayment;
 use App\Actions\Commerce\RegisterManualPayment;
 use App\Enums\PaymentMethod;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RegisterManualPaymentRequest;
 use App\Models\Order;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 class PaymentController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     /**
      * Never returns a secret key — only whatever the client-side SDK needs
@@ -24,7 +26,7 @@ class PaymentController extends Controller
      */
     public function online(Request $request, Order $order, CreateOnlinePayment $createPayment): JsonResponse
     {
-        abort_unless($order->user_id === $request->user()->id, 403);
+        abort_unless($order->user_id === $this->sanctumUser($request)->id, 403);
 
         $intent = $createPayment->handle($order, paymentData: $request->only(['token_id', 'device_session_id']));
 
@@ -44,7 +46,7 @@ class PaymentController extends Controller
             $order,
             PaymentMethod::from($request->string('method')->toString()),
             $request->integer('amount_minor'),
-            $request->user(),
+            $this->sanctumUser($request),
             $request->string('reference')->toString() ?: null,
             $request->string('notes')->toString() ?: null,
         );

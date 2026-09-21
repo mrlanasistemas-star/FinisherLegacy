@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
@@ -21,6 +22,7 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     public function __construct(private readonly CreateNewUser $creator) {}
 
@@ -64,14 +66,14 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $this->sanctumUser($request)->currentAccessToken()->delete();
 
         return $this->respond(null, 'Sesión cerrada.');
     }
 
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $user = $this->sanctumUser($request);
         $user->loadMissing(['legacyId', 'athlete']);
 
         return $this->respond(new UserResource($user));

@@ -7,6 +7,7 @@ use App\Exceptions\Athletes\AthleteIdentityConflictException;
 use App\Exceptions\LegacyCodeClaimConflictException;
 use App\Exceptions\LegacyCodeUnavailableException;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MedalResource;
 use App\Models\LegacyCode;
@@ -18,6 +19,7 @@ use Illuminate\Http\Request;
 class LegacyCodeController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     public function __construct(private readonly ClaimLegacyCodeService $claims) {}
 
@@ -48,7 +50,11 @@ class LegacyCodeController extends Controller
         $plate = $legacyCode->plate;
         $profile = $legacyCode->user?->athleteProfile;
         $showProfile = $profile && $profile->profile_visibility->value === 'public';
-        $viewer = $request->user();
+        // Public route (no auth:sanctum middleware) — a logged-in web
+        // session and a Bearer-authenticated mobile client are both valid
+        // "viewers" here, so both guards are checked explicitly rather
+        // than relying on the default guard alone.
+        $viewer = $request->user('sanctum') ?? $request->user();
 
         return $this->respond([
             'code' => $legacyCode->code,
@@ -75,7 +81,7 @@ class LegacyCodeController extends Controller
     public function claim(Request $request, string $code): JsonResponse
     {
         try {
-            $result = $this->claims->claim($code, $request->user(), $request->ip());
+            $result = $this->claims->claim($code, $this->sanctumUser($request), $request->ip());
         } catch (ModelNotFoundException) {
             abort(404);
         } catch (LegacyCodeUnavailableException) {

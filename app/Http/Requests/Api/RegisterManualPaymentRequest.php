@@ -9,7 +9,12 @@ class RegisterManualPaymentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('payments.record_manual') ?? false;
+        // See SetOrganizerDataSourceRequest — 'sanctum' first so a stale
+        // 'web' session cookie can never outrank this request's own
+        // Bearer token for a permission check. Falls back to the default
+        // guard because App\Http\Controllers\Admin\Store\PaymentController
+        // also reuses this same Form Request from a session-based route.
+        return ($this->user('sanctum') ?? $this->user())?->can('payments.record_manual') ?? false;
     }
 
     /**

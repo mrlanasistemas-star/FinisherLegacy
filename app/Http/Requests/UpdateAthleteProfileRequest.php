@@ -17,7 +17,11 @@ class UpdateAthleteProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        $currentProfileId = $this->user()->athleteProfile?->id;
+        // 'sanctum' first — see App\Http\Controllers\Api\V1\Concerns\
+        // ResolvesAuthenticatedUser. Falls back to the default guard
+        // because App\Http\Controllers\AthleteProfileController (Web,
+        // session-based) also reuses this same Form Request.
+        $currentProfileId = ($this->user('sanctum') ?? $this->user())->athleteProfile?->id;
         $mimes = implode(',', config('finisher.image.mimes'));
 
         return [

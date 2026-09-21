@@ -10,6 +10,7 @@ use App\Support\Integrations\ExternalPage;
 use App\Support\Integrations\ExternalParticipantData;
 use App\Support\Integrations\ExternalResultData;
 use App\Support\Integrations\ProviderConnectionTestResult;
+use App\Support\Integrations\RejectsPrivateNetworkUrls;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -226,9 +227,20 @@ class GenericRestEventProvider implements EventProviderAdapter
         return str_replace('{external_event_id}', $externalEventId, $template);
     }
 
+    /**
+     * Re-validated on every call, not just when the admin saved the
+     * connection (brief §41-§42) — DNS for an otherwise-public hostname
+     * can be repointed to a private/internal IP at any later time.
+     */
     private function url(ProviderConnection $connection, string $path): string
     {
-        return rtrim((string) $connection->base_url, '/').'/'.ltrim($path, '/');
+        $url = rtrim((string) $connection->base_url, '/').'/'.ltrim($path, '/');
+
+        if (! RejectsPrivateNetworkUrls::isSafe($url)) {
+            throw new ProviderConnectionFailedException('La URL del proveedor no está permitida (debe ser http/https pública, sin apuntar a una red privada/local).');
+        }
+
+        return $url;
     }
 
     /**
@@ -245,7 +257,11 @@ class GenericRestEventProvider implements EventProviderAdapter
         $credentials = (string) ($connection->credentials ?? '');
         $authType = $settings['auth_type'] ?? 'none';
 
-        $request = Http::timeout(15)->withHeaders($settings['headers'] ?? []);
+        // Redirects are never followed (brief §42): a provider's own URL
+        // passing the SSRF check above says nothing about where it might
+        // redirect a request to, and Guzzle would otherwise follow it
+        // there unconditionally.
+        $request = Http::timeout(15)->withOptions(['allow_redirects' => false])->withHeaders($settings['headers'] ?? []);
 
         return match ($authType) {
             'bearer' => $request->withToken($credentials),

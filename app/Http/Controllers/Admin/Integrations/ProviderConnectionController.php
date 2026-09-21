@@ -11,12 +11,14 @@ use App\Models\EventEdition;
 use App\Models\ProviderConnection;
 use App\Models\Sport;
 use App\Services\Integrations\EventProviderRegistry;
+use App\Support\Integrations\RejectsPrivateNetworkUrls;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -230,6 +232,16 @@ class ProviderConnectionController extends Controller
             'participant_field_mapping' => ['nullable', 'array'],
             'result_field_mapping' => ['nullable', 'array'],
         ]);
+
+        // Never trust an admin-typed URL as automatically safe to fetch
+        // (brief §41-§42) — same guard GenericRestEventProvider re-checks
+        // on every outbound request, applied here too so a bad config is
+        // rejected immediately instead of only failing at first sync.
+        if (filled($data['base_url'] ?? null) && ! RejectsPrivateNetworkUrls::isSafe($data['base_url'])) {
+            throw ValidationException::withMessages([
+                'base_url' => 'Esta URL no está permitida: debe ser http/https pública y no puede apuntar a una red privada o local.',
+            ]);
+        }
 
         $settings = $data['provider_key'] === 'generic_rest'
             ? array_filter([

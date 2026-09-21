@@ -20,7 +20,14 @@ class PublicAthleteController extends Controller
     {
         $athleteProfile->load(['user', 'mainSport']);
 
-        abort_unless($this->profiles->isVisibleTo($athleteProfile, $request->user()), 404);
+        // Public route (no auth:sanctum middleware) — a Bearer-
+        // authenticated mobile viewer must be recognized too, and 'sanctum'
+        // is checked first so a stale, unrelated 'web' session cookie can
+        // never be mistaken for who is actually asking (see
+        // App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser).
+        $viewer = $request->user('sanctum') ?? $request->user();
+
+        abort_unless($this->profiles->isVisibleTo($athleteProfile, $viewer), 404);
 
         $medals = $this->profiles->publicMedals($athleteProfile);
 

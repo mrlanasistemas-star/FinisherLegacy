@@ -7,6 +7,7 @@ use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\RemoveCartItem;
 use App\Actions\Commerce\UpdateCartItem;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\AddCartItemRequest;
 use App\Http\Requests\Api\UpdateCartItemRequest;
@@ -25,17 +26,18 @@ use Illuminate\Http\Request;
 class CartController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     public function show(Request $request, GetOrCreateCart $getOrCreateCart): JsonResponse
     {
-        $cart = $getOrCreateCart->handle($request->user(), null);
+        $cart = $getOrCreateCart->handle($this->sanctumUser($request), null);
 
         return $this->respond(new CartResource($cart->loadMissing('items.productVariant.product')));
     }
 
     public function addItem(AddCartItemRequest $request, GetOrCreateCart $getOrCreateCart, AddCartItem $addItem): JsonResponse
     {
-        $cart = $getOrCreateCart->handle($request->user(), null);
+        $cart = $getOrCreateCart->handle($this->sanctumUser($request), null);
         $variant = ProductVariant::findOrFail($request->integer('product_variant_id'));
         $edition = $request->filled('event_edition_id') ? EventEdition::find($request->integer('event_edition_id')) : null;
         $metadata = $request->filled('legacy_plate_model_id') ? ['legacy_plate_model_id' => $request->integer('legacy_plate_model_id')] : [];
@@ -64,6 +66,6 @@ class CartController extends Controller
 
     private function authorizeItem(Request $request, CartItem $item): void
     {
-        abort_unless($item->cart->user_id === $request->user()->id, 403);
+        abort_unless($item->cart->user_id === $this->sanctumUser($request)->id, 403);
     }
 }

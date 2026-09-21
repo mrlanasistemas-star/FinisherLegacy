@@ -9,7 +9,10 @@ class CreateEventRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('events.manage') ?? false;
+        // See SetOrganizerDataSourceRequest — 'sanctum' first so a stale
+        // 'web' session cookie can never outrank this request's own
+        // Bearer token for a permission check.
+        return ($this->user('sanctum') ?? $this->user())?->can('events.manage') ?? false;
     }
 
     /**

@@ -45,7 +45,7 @@ class ProfileController extends Controller
     public function update(UpdateAthleteProfileRequest $request): JsonResponse
     {
         $profile = $this->profiles->update(
-            $request->user(),
+            $this->sanctumUser($request),
             $request->safe()->except(['profile_photo', 'cover_photo']),
             $request->file('profile_photo'),
             $request->file('cover_photo'),

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMedalRequest;
 use App\Http\Requests\UpdateMedalRequest;
@@ -11,16 +12,18 @@ use App\Models\Medal;
 use App\Services\MedalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class MedalController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     public function __construct(private readonly MedalService $medals) {}
 
     public function index(Request $request): JsonResponse
     {
-        $medals = $request->user()->medals()
+        $medals = $this->sanctumUser($request)->medals()
             ->with(['images', 'eventEdition.event', 'eventRace'])
             ->orderByDesc('event_date')
             ->paginate(20);
@@ -31,7 +34,7 @@ class MedalController extends Controller
     public function store(StoreMedalRequest $request): JsonResponse
     {
         $medal = $this->medals->create(
-            $request->user(),
+            $this->sanctumUser($request),
             $request->safe()->except(['front_image', 'back_image', 'gallery_images']),
             $request->file('front_image'),
             $request->file('back_image'),
@@ -46,7 +49,7 @@ class MedalController extends Controller
 
     public function show(Request $request, Medal $medal): JsonResponse
     {
-        $this->authorize('view', $medal);
+        Gate::forUser($this->sanctumUser($request))->authorize('view', $medal);
 
         $medal->load(['images', 'eventEdition.event', 'eventRace']);
 
@@ -57,7 +60,7 @@ class MedalController extends Controller
 
     public function update(UpdateMedalRequest $request, Medal $medal): JsonResponse
     {
-        $this->authorize('update', $medal);
+        Gate::forUser($this->sanctumUser($request))->authorize('update', $medal);
 
         $updated = $this->medals->update(
             $medal,
@@ -72,9 +75,9 @@ class MedalController extends Controller
             ->response();
     }
 
-    public function destroy(Medal $medal): JsonResponse
+    public function destroy(Request $request, Medal $medal): JsonResponse
     {
-        $this->authorize('delete', $medal);
+        Gate::forUser($this->sanctumUser($request))->authorize('delete', $medal);
 
         $this->medals->delete($medal);
 
