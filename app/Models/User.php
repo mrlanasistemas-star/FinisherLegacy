@@ -136,6 +136,12 @@ class User extends Authenticatable implements ProductionActor
         return $this->hasMany(EventStaffAssignment::class);
     }
 
+    /** @return HasMany<PushDevice, $this> */
+    public function pushDevices(): HasMany
+    {
+        return $this->hasMany(PushDevice::class);
+    }
+
     public function productionActorLabel(): string
     {
         return $this->name;

@@ -42,26 +42,37 @@ use Throwable;
  */
 class AthleteHistoryController extends Controller
 {
+    /**
+     * Legacy direct-URL page (brief §3/§89: consolidated into Mi Legado,
+     * not deleted) — bounded to the first 100 participations rather than
+     * every one the Athlete has, matching GetAthleteHistory's now-paginated
+     * shape (brief §27-§28) without adding pagination UI to a page nobody
+     * reaches from navigation anymore.
+     */
     public function myEvents(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteHistory $history): Response
     {
         $athlete = $ensureAthlete->handle($request->user(), 'dashboard_my_events');
-        $data = $history->handle($athlete);
+        $participations = $history->handle($athlete, perPage: 100);
 
         return Inertia::render('dashboard/MyEvents', [
-            'participations' => $data['participations']->map(fn (EventParticipant $p) => [
-                'id' => $p->id,
-                'event' => $p->eventEdition?->event?->name,
-                'edition' => $p->eventEdition?->name,
-                'race' => $p->eventRace?->name,
-                'bib_number' => $p->bib_number,
-                'event_date' => $p->eventEdition?->event_date?->toDateString(),
-                'official_time' => $p->result?->official_time,
-                'pace' => $p->result?->pace,
-                'position' => $p->result?->overall_position,
-                'has_plate' => $p->plates->isNotEmpty(),
-                'has_medal' => $p->medals->isNotEmpty(),
-                'media_count' => $p->media->count(),
-            ])->values(),
+            'participations' => collect($participations->items())->map(function (EventParticipant $p) {
+                $summary = GetAthleteHistory::summarize($p);
+
+                return [
+                    'id' => $summary['id'],
+                    'event' => $summary['event'],
+                    'edition' => $summary['edition'],
+                    'race' => $summary['race'],
+                    'bib_number' => $summary['bib_number'],
+                    'event_date' => $summary['event_date'],
+                    'official_time' => $summary['result']['official_time'] ?? null,
+                    'pace' => $summary['result']['pace'] ?? null,
+                    'position' => $summary['result']['overall_position'] ?? null,
+                    'has_plate' => $summary['legacy_plate_status'] !== null,
+                    'has_medal' => $summary['medal_count'] > 0,
+                    'media_count' => $summary['media_count'],
+                ];
+            })->values(),
         ]);
     }
 

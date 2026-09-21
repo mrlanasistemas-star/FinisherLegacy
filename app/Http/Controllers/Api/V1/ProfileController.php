@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateAthleteProfileRequest;
 use App\Http\Resources\Api\V1\AthleteProfileResource;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 class ProfileController extends Controller
 {
     use ApiResponses;
+    use ResolvesAuthenticatedUser;
 
     public function __construct(private readonly AthleteProfileService $profiles) {}
 
@@ -26,8 +28,9 @@ class ProfileController extends Controller
      */
     public function show(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteProfileStats $stats): JsonResponse
     {
-        $athlete = $ensureAthlete->handle($request->user(), 'api_profile_show');
-        $profile = $request->user()->athleteProfile;
+        $user = $this->sanctumUser($request);
+        $athlete = $ensureAthlete->handle($user, 'api_profile_show');
+        $profile = $user->athleteProfile;
 
         return $this->respond([
             'athlete' => [

@@ -26,7 +26,7 @@ test('Mi Perfil shows the athlete\'s Legacy ID, stats, and history', function ()
         ->component('dashboard/profile/Show')
         ->where('athlete.legacy_id', $athlete->uuid)
         ->where('stats.event_count', 1)
-        ->has('participations', 1));
+        ->has('participations.data', 1));
 });
 
 test('Mi Perfil filters participations by event without losing them from the filter options', function () {
@@ -44,8 +44,8 @@ test('Mi Perfil filters participations by event without losing them from the fil
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->has('participations', 1)
-        ->where('participations.0.id', $matching->id)
+        ->has('participations.data', 1)
+        ->where('participations.data.0.id', $matching->id)
         ->has('filterOptions.events', 2));
 });
 
@@ -68,6 +68,6 @@ test('Mi Perfil filters participations by legacy_plate status', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->has('participations', 1)
-        ->where('participations.0.id', $withPlate->id));
+        ->has('participations.data', 1)
+        ->where('participations.data.0.id', $withPlate->id));
 });

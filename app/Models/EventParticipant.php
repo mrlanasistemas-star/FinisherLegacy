@@ -17,6 +17,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read bool|null $plates_exists Only present when a query eager-loads it via
  *                                          `withExists('plates')` — see
  *                                          App\Queries\Operations\SearchEventParticipants.
+ * @property-read int|null $photo_count Only present when eager-loaded via
+ *                                       `withCount(['media as photo_count' => ...])` — see
+ *                                       App\Queries\Athletes\GetAthleteLegado.
+ * @property-read int|null $video_count Only present when eager-loaded via
+ *                                       `withCount(['media as video_count' => ...])` — see
+ *                                       App\Queries\Athletes\GetAthleteLegado.
  */
 #[Fillable([
     'event_edition_id', 'event_race_id', 'user_id', 'athlete_id', 'external_participant_id', 'bib_number',

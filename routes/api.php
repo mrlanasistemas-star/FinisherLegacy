@@ -17,6 +17,9 @@ use App\Http\Controllers\Api\V1\LegacyPlateModelController;
 use App\Http\Controllers\Api\V1\Me\EventGearController as MeEventGearController;
 use App\Http\Controllers\Api\V1\Me\EventMediaController as MeEventMediaController;
 use App\Http\Controllers\Api\V1\Me\EventsController as MeEventsController;
+use App\Http\Controllers\Api\V1\Me\NotificationController as MeNotificationController;
+use App\Http\Controllers\Api\V1\Me\PushDeviceController as MePushDeviceController;
+use App\Http\Controllers\Api\V1\Me\SupportSessionController as MeSupportSessionController;
 use App\Http\Controllers\Api\V1\MedalController;
 use App\Http\Controllers\Api\V1\PreregistrationController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -163,6 +166,24 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             // EventParticipant has no gears() relation, only gearSelections().
             Route::delete('{gear:uuid}', [MeEventGearController::class, 'destroy'])->withoutScopedBindings()->name('destroy');
         });
+
+        Route::prefix('me/notifications')->name('me.notifications.')->group(function () {
+            Route::get('/', [MeNotificationController::class, 'index'])->name('index');
+            Route::post('read-all', [MeNotificationController::class, 'markAllRead'])->name('read-all');
+            Route::post('{notification}/read', [MeNotificationController::class, 'markRead'])->name('read');
+        });
+
+        Route::prefix('me/support-sessions')->name('me.support-sessions.')->group(function () {
+            Route::get('/', [MeSupportSessionController::class, 'index'])->name('index');
+            Route::post('/', [MeSupportSessionController::class, 'store'])->name('store');
+            Route::get('{supportSession}', [MeSupportSessionController::class, 'show'])->name('show');
+            Route::get('{supportSession}/manifest', [MeSupportSessionController::class, 'manifest'])->name('manifest');
+            Route::get('{supportSession}/triggered', [MeSupportSessionController::class, 'triggered'])->name('triggered');
+        });
+        Route::post('me/support-messages/{message}/consumed', [MeSupportSessionController::class, 'markConsumed'])->name('me.support-messages.consumed');
+
+        Route::post('me/push-devices', [MePushDeviceController::class, 'store'])->name('me.push-devices.store');
+        Route::delete('me/push-devices/{uuid}', [MePushDeviceController::class, 'destroy'])->name('me.push-devices.destroy');
 
         /*
         |------------------------------------------------------------------

@@ -72,10 +72,10 @@ class CheckoutController extends Controller
      * crashes when Stripe has no real keys, just reports "not available"
      * (brief §72: "gateway not configured elegantemente").
      */
-    public function onlinePayment(Order $order, CreateOnlinePayment $createPayment): JsonResponse
+    public function onlinePayment(Request $request, Order $order, CreateOnlinePayment $createPayment): JsonResponse
     {
         try {
-            $intent = $createPayment->handle($order);
+            $intent = $createPayment->handle($order, paymentData: $request->only(['token_id', 'device_session_id']));
 
             return response()->json(['available' => true, 'client_payload' => $intent->clientPayload]);
         } catch (ApiException $e) {

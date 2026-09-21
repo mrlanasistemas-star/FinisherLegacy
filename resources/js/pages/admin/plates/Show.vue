@@ -11,6 +11,11 @@ import { ref, watch } from 'vue';
 import { reprint as reprintAction } from '@/actions/App/Http/Controllers/Admin/PlateController';
 import DownloadPlateDialog from '@/components/plates/DownloadPlateDialog.vue';
 import PlatePreviewCard from '@/components/plates/PlatePreviewCard.vue';
+import LegacyPlateViewer from '@/components/shared/LegacyPlateViewer.vue';
+import type {
+    LegacyPlateModelData,
+    LegacyPlatePersonalization,
+} from '@/components/shared/LegacyPlateViewer.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -34,7 +39,15 @@ import {
 } from '@/lib/statusLabels';
 import type { PlateFace, PlateRenderMode } from '@/types/plate-studio';
 
-const { plate, resultComparison, splits, reprints, activities } = defineProps<{
+const {
+    plate,
+    legacyPlateModel,
+    personalization,
+    resultComparison,
+    splits,
+    reprints,
+    activities,
+} = defineProps<{
     plate: {
         id: number;
         serial_number: string;
@@ -53,6 +66,8 @@ const { plate, resultComparison, splits, reprints, activities } = defineProps<{
         production_job: { status: string; queued_at: string | null } | null;
         can_reprint: boolean;
     };
+    legacyPlateModel: LegacyPlateModelData | null;
+    personalization: LegacyPlatePersonalization;
     resultComparison: {
         original: { official_time: string | null; pace: string | null };
         current: { official_time: string | null; pace: string | null };
@@ -145,7 +160,7 @@ function submitReprint() {
             <ArrowLeft class="size-4" /> Volver a placas
         </Link>
 
-        <div class="grid gap-8 sm:grid-cols-[1fr_360px]">
+        <div class="grid gap-8 lg:grid-cols-[3fr_2fr]">
             <div>
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -369,14 +384,27 @@ function submitReprint() {
                 </div>
             </div>
 
-            <div class="flex justify-center">
-                <PlatePreviewCard
-                    v-model:face="face"
-                    v-model:mode="mode"
-                    :svg="svg"
-                    :warnings="[]"
-                    :loading="loading"
+            <div class="space-y-6 lg:sticky lg:top-8 lg:self-start">
+                <LegacyPlateViewer
+                    v-if="legacyPlateModel"
+                    :model="legacyPlateModel"
+                    :personalization="personalization"
+                    mode="admin"
                 />
+                <div class="flex flex-col items-center">
+                    <h2
+                        class="mb-3 self-start text-sm font-semibold text-white/70"
+                    >
+                        Grabado real (export de producción)
+                    </h2>
+                    <PlatePreviewCard
+                        v-model:face="face"
+                        v-model:mode="mode"
+                        :svg="svg"
+                        :warnings="[]"
+                        :loading="loading"
+                    />
+                </div>
             </div>
         </div>
 

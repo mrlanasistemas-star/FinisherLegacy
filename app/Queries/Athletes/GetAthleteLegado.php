@@ -4,71 +4,59 @@ namespace App\Queries\Athletes;
 
 use App\Enums\AthleteEventMediaType;
 use App\Models\Athlete;
-use App\Models\AthleteEventMedia;
 use App\Models\EventParticipant;
 use App\Models\LegacyPlateEntitlement;
-use App\Models\Medal;
-use App\Models\Plate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * "MI LEGADO" (product UX consolidation brief §3-§6) — one card per
- * participation instead of the three separate menus ("Mis eventos",
- * "Mis medallas", "Mis Legacy Plates") it replaces in navigation. Builds on
- * GetAthleteHistory rather than re-querying: same participations/plates/
- * medals/media this Athlete already has, just grouped by
- * event_participant_id so one card can show its medal photo, its Legacy
- * Plate status, and its media count together instead of three empty-until-
- * you-click-through screens.
+ * "MI LEGADO" (product UX consolidation brief §3-§6/§12-§14) — one card
+ * per participation instead of the three separate menus ("Mis eventos",
+ * "Mis medallas", "Mis Legacy Plates") it replaces in navigation. Queries
+ * EventParticipant directly with targeted eager loads/counts per row
+ * rather than going through the paginated, filtered GetAthleteHistory
+ * (brief §27-§28) — Mi Legado's card gallery genuinely needs a different
+ * shape (a medal's photo, not just a count; every participation, not one
+ * filtered page of them), so reusing that Query here would mean either
+ * pagination this screen was never meant to have or re-fetching the
+ * unbounded collections that Query no longer keeps.
  */
 class GetAthleteLegado
 {
-    public function __construct(private readonly GetAthleteHistory $history) {}
-
     /**
      * @return array<int, array<string, mixed>>
      */
     public function handle(Athlete $athlete): array
     {
-        $data = $this->history->handle($athlete);
-
-        $plates = $data['plates']->groupBy('event_participant_id');
-        $medals = $data['medals']->loadMissing('images')->groupBy('event_participant_id');
-        $media = $data['media']->groupBy('event_participant_id');
+        $participants = $athlete->eventParticipations()
+            ->with(['eventEdition.event', 'eventRace', 'result', 'medals.images', 'plates'])
+            ->withCount([
+                'media as photo_count' => fn ($q) => $q->where('type', AthleteEventMediaType::Image->value),
+                'media as video_count' => fn ($q) => $q->where('type', AthleteEventMediaType::Video->value),
+            ])
+            ->orderByDesc('created_at')
+            ->get();
 
         $entitlements = LegacyPlateEntitlement::query()
             ->where('athlete_id', $athlete->id)
             ->get()
             ->groupBy('event_participant_id');
 
-        return $data['participations']
+        return $participants
             ->map(fn (EventParticipant $participant) => $this->card(
                 $participant,
-                $plates->get($participant->id, new Collection),
-                $medals->get($participant->id, new Collection),
-                $media->get($participant->id, new Collection),
                 $entitlements->get($participant->id, new Collection)->first(),
             ))
             ->values()
             ->all();
     }
 
-    /**
-     * @param  Collection<int, Plate>  $plates
-     * @param  Collection<int, Medal>  $medals
-     * @param  Collection<int, AthleteEventMedia>  $media
-     * @return array<string, mixed>
-     */
-    private function card(
-        EventParticipant $participant,
-        Collection $plates,
-        Collection $medals,
-        Collection $media,
-        ?LegacyPlateEntitlement $entitlement,
-    ): array {
-        $medalImage = $medals->first()?->images->sortBy('sort_order')->first();
-        $plate = $plates->first();
+    /** @return array<string, mixed> */
+    private function card(EventParticipant $participant, ?LegacyPlateEntitlement $entitlement): array
+    {
+        $medal = $participant->medals->first();
+        $medalImage = $medal?->images->sortBy('sort_order')->first();
+        $plate = $participant->plates->first();
 
         return [
             'id' => $participant->id,
@@ -83,11 +71,11 @@ class GetAthleteLegado
             'image_url' => $medalImage
                 ? Storage::disk('public')->url($medalImage->optimized_path ?? $medalImage->original_path)
                 : null,
-            'has_medal' => $medals->isNotEmpty(),
+            'has_medal' => $participant->medals->isNotEmpty(),
             'has_legacy_plate' => $plate !== null || $entitlement !== null,
             'legacy_plate_status' => $plate?->status->value ?? $entitlement?->status->value,
-            'photo_count' => $media->where('type', AthleteEventMediaType::Image)->count(),
-            'video_count' => $media->where('type', AthleteEventMediaType::Video)->count(),
+            'photo_count' => $participant->photo_count,
+            'video_count' => $participant->video_count,
         ];
     }
 }

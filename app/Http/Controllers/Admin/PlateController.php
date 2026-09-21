@@ -65,7 +65,7 @@ class PlateController extends Controller
     {
         $plate->load([
             'legacyCode', 'eventEdition.event', 'eventParticipant.result.splits', 'user',
-            'plateTemplate', 'plateTemplateVersion', 'latestProductionJob',
+            'plateTemplate', 'plateTemplateVersion', 'latestProductionJob', 'legacyPlateModel.fields',
             'reprints' => fn ($q) => $q->latest()->with(['requestedBy', 'approvedBy']),
         ]);
 
@@ -117,6 +117,14 @@ class PlateController extends Controller
                     'queued_at' => $plate->latestProductionJob->queued_at->format('d/m/Y H:i'),
                 ] : null,
                 'can_reprint' => in_array($plate->status, [PlateStatus::Ready, PlateStatus::Delivered], true),
+            ],
+            'legacyPlateModel' => $plate->legacyPlateModel?->toViewerArray(),
+            'personalization' => [
+                'athlete_name' => $plate->engraving_display_name,
+                'race_label' => $plate->race_name,
+                'official_time' => $plate->official_time,
+                'pace' => $plate->pace,
+                'qr_url' => $plate->legacyCode ? route('legacy-code.qr', $plate->legacyCode->code) : null,
             ],
             'resultComparison' => $resultChanged ? [
                 'original' => ['official_time' => $plate->official_time, 'pace' => $plate->pace],

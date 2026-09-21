@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Athlete;
-use App\Queries\Athletes\GetAthleteHistory;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,10 +49,15 @@ class AthleteController extends Controller
         ]);
     }
 
-    public function show(Athlete $athlete, GetAthleteHistory $history): Response
+    public function show(Athlete $athlete): Response
     {
         $athlete->loadMissing('user');
-        $data = $history->handle($athlete);
+        $participations = $athlete->eventParticipations()
+            ->with(['eventEdition.event', 'eventRace', 'result'])
+            ->orderByDesc('created_at')
+            ->get();
+        $plates = $athlete->plates()->with(['eventEdition.event', 'legacyCode'])->get();
+        $medals = $athlete->medals()->get();
 
         return Inertia::render('admin/athletes/Show', [
             'athlete' => [
@@ -71,7 +75,7 @@ class AthleteController extends Controller
                     'email' => $athlete->user->email,
                 ] : null,
             ],
-            'participations' => $data['participations']->map(fn ($p) => [
+            'participations' => $participations->map(fn ($p) => [
                 'id' => $p->id,
                 'event' => $p->eventEdition?->event?->name,
                 'edition' => $p->eventEdition?->name,
@@ -80,14 +84,14 @@ class AthleteController extends Controller
                 'official_time' => $p->result?->official_time,
                 'source' => $p->source->value,
             ]),
-            'plates' => $data['plates']->map(fn ($p) => [
+            'plates' => $plates->map(fn ($p) => [
                 'id' => $p->id,
                 'serial_number' => $p->serial_number,
                 'event' => $p->eventEdition?->event?->name,
                 'legacy_code' => $p->legacyCode?->code,
                 'status' => $p->status->value,
             ]),
-            'medals' => $data['medals']->map(fn ($m) => [
+            'medals' => $medals->map(fn ($m) => [
                 'id' => $m->id,
                 'title' => $m->title,
                 'event_date' => $m->event_date?->toDateString(),

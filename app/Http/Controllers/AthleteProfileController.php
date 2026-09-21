@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Http\Requests\UpdateAthleteProfileRequest;
+use App\Models\EventEdition;
 use App\Models\EventParticipant;
 use App\Models\Sport;
 use App\Queries\Athletes\GetAthleteHistory;
@@ -38,13 +39,19 @@ class AthleteProfileController extends Controller
             'legacy_plate' => $request->string('legacy_plate')->toString() ?: null,
         ];
 
-        $filteredParticipations = $history->handle($athlete, $filters)['participations'];
+        $participations = $history->handle($athlete, $filters, perPage: 20);
+        $participations->through(fn (EventParticipant $p) => GetAthleteHistory::summarize($p));
 
-        // Filter dropdowns are built from the Athlete's full history, not
-        // the already-filtered result — otherwise picking one event would
-        // make every other event disappear from its own filter's options.
-        $allParticipations = $history->handle($athlete)['participations']
-            ->loadMissing('eventEdition.event.sport');
+        // Filter dropdowns come from a small, purpose-built distinct-editions
+        // query, not from loading every participation just to pluck an
+        // event/sport off it (product consolidation brief §27-§28) — and
+        // deliberately from the Athlete's full history, not the already-
+        // filtered result, or picking one event would make every other
+        // event disappear from its own filter's options.
+        $editions = EventEdition::query()
+            ->whereIn('id', $athlete->eventParticipations()->select('event_edition_id'))
+            ->with('event.sport')
+            ->get();
 
         return Inertia::render('dashboard/profile/Show', [
             'athlete' => [
@@ -65,32 +72,14 @@ class AthleteProfileController extends Controller
             'stats' => $stats->handle($athlete),
             'filters' => $filters,
             'filterOptions' => [
-                'events' => $allParticipations
-                    ->pluck('eventEdition.event')
-                    ->filter()
-                    ->unique('id')
+                'events' => $editions->pluck('event')->filter()->unique('id')
                     ->map(fn ($event) => ['id' => $event->id, 'name' => $event->name])
                     ->values(),
-                'sports' => $allParticipations
-                    ->pluck('eventEdition.event.sport')
-                    ->filter()
-                    ->unique('id')
+                'sports' => $editions->pluck('event.sport')->filter()->unique('id')
                     ->map(fn ($sport) => ['id' => $sport->id, 'name' => $sport->name])
                     ->values(),
             ],
-            'participations' => $filteredParticipations->map(fn (EventParticipant $p) => [
-                'id' => $p->id,
-                'event' => $p->eventEdition?->event?->name,
-                'edition' => $p->eventEdition?->name,
-                'race' => $p->eventRace?->name,
-                'bib_number' => $p->bib_number,
-                'event_date' => $p->eventEdition?->event_date?->toDateString(),
-                'official_time' => $p->result?->official_time,
-                'pace' => $p->result?->pace,
-                'position' => $p->result?->overall_position,
-                'has_plate' => $p->legacyPlateEntitlements->isNotEmpty(),
-                'gear_count' => $p->gearSelections->count(),
-            ])->values(),
+            'participations' => $participations,
         ]);
     }
 
