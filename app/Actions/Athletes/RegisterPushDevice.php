@@ -15,9 +15,11 @@ class RegisterPushDevice
 {
     public function handle(User $user, string $platform, string $provider, string $token, ?string $deviceName = null): PushDevice
     {
+        // `token` is encrypted at rest, so the lookup goes through its
+        // plain SHA-256 digest instead — see App\Models\PushDevice.
         $device = PushDevice::query()
             ->where('user_id', $user->id)
-            ->where('token', $token)
+            ->where('token_hash', hash('sha256', $token))
             ->first();
 
         if ($device !== null) {

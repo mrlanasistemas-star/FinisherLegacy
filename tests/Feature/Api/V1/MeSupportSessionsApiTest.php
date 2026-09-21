@@ -56,7 +56,7 @@ test('GET /api/v1/me/support-sessions/{id} rejects a session belonging to anothe
     $this->withHeaders(meHeaders($user))->getJson("/api/v1/me/support-sessions/{$session->id}")->assertForbidden();
 });
 
-test('GET /api/v1/me/support-sessions/{id}/manifest returns the config payload without messages', function () {
+test('GET /api/v1/me/support-sessions/{id}/manifest returns the config payload with no session yet', function () {
     $user = User::factory()->create();
     $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
     $session = app(CreateAthleteSupportSession::class)->handle($athlete, 'Mía', SupportActivityType::Free);
@@ -64,8 +64,42 @@ test('GET /api/v1/me/support-sessions/{id}/manifest returns the config payload w
     $response = $this->withHeaders(meHeaders($user))->getJson("/api/v1/me/support-sessions/{$session->id}/manifest");
 
     $response->assertOk()
-        ->assertJsonMissingPath('data.messages')
-        ->assertJsonPath('data.public_code', $session->public_code);
+        ->assertJsonPath('data.public_code', $session->public_code)
+        ->assertJsonPath('data.messages', []);
+});
+
+/**
+ * The manifest carries message metadata (id/type/trigger/is_surprise/
+ * audio shape) so a mobile client can plan its polling, but never the
+ * actual content — a surprise's text/audio is never exposed here even
+ * though its existence is (brief item 24-25).
+ */
+test('GET /api/v1/me/support-sessions/{id}/manifest exposes message metadata but never message content', function () {
+    $user = User::factory()->create();
+    $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
+    $session = app(CreateAthleteSupportSession::class)->handle($athlete, 'Mía', SupportActivityType::Free, autoApprove: true);
+
+    $message = app(SubmitSupportMessage::class)->handle(
+        session: $session,
+        contributor: ['display_name' => 'Mamá'],
+        type: SupportMessageType::Text,
+        messageText: 'Sorpresa para el km 10',
+        triggerType: SupportTriggerType::Distance,
+        triggerDistanceMeters: 10000,
+        isSurprise: true,
+    );
+
+    $response = $this->withHeaders(meHeaders($user))->getJson("/api/v1/me/support-sessions/{$session->id}/manifest");
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data.messages')
+        ->assertJsonPath('data.messages.0.id', $message->id)
+        ->assertJsonPath('data.messages.0.type', 'text')
+        ->assertJsonPath('data.messages.0.trigger_type', 'distance')
+        ->assertJsonPath('data.messages.0.trigger_distance_meters', 10000)
+        ->assertJsonPath('data.messages.0.is_surprise', true)
+        ->assertJsonMissingPath('data.messages.0.message_text')
+        ->assertJsonMissingPath('data.messages.0.audio_url');
 });
 
 test('GET /api/v1/me/support-sessions/{id}/triggered returns approved messages that match the distance trigger', function () {

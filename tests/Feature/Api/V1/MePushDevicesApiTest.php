@@ -36,7 +36,10 @@ test('registering the same token again updates the existing device instead of du
         'platform' => 'android', 'provider' => 'fcm', 'token' => 'same-token',
     ])->assertCreated();
 
-    expect(PushDevice::where('user_id', $user->id)->where('token', 'same-token')->count())->toBe(1);
+    $devices = PushDevice::where('user_id', $user->id)->get();
+
+    expect($devices)->toHaveCount(1);
+    expect($devices->first()->token)->toBe('same-token');
 });
 
 test('DELETE /api/v1/me/push-devices/{uuid} unregisters a device', function () {

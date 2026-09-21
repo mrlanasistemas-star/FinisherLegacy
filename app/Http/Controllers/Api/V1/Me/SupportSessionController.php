@@ -7,6 +7,7 @@ use App\Actions\Support\CreateAthleteSupportSession;
 use App\Actions\Support\GetTriggeredSupportMessages;
 use App\Actions\Support\MarkSupportMessageConsumed;
 use App\Enums\SupportActivityType;
+use App\Enums\SupportMessageStatus;
 use App\Enums\SupportMessageType;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
@@ -86,14 +87,39 @@ class SupportSessionController extends Controller
 
     /**
      * The compact config payload a mobile client needs to initialize its
-     * own message polling — no message content, see triggered() for that.
+     * own message polling — metadata only for messages that were approved
+     * for delivery (approved or already-consumed), never Pending/Rejected
+     * ones. A surprise's actual content (text/audio) is deliberately never
+     * included here — only that it exists and what shape it is — so the
+     * manifest can't be used to peek at a surprise before its trigger
+     * fires (brief §24-§25); see triggered() for the real content once it
+     * has.
      */
     public function manifest(Request $request, AthleteSupportSession $supportSession, EnsureAthleteForUser $ensureAthlete): JsonResponse
     {
         $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'api_support_sessions_manifest');
         abort_unless($supportSession->athlete_id === $athlete->id, 403);
 
-        return $this->respond($this->summary($supportSession));
+        $supportSession->loadMissing('messages');
+
+        return $this->respond([
+            ...$this->summary($supportSession),
+            'messages' => $supportSession->messages
+                ->whereIn('status', [SupportMessageStatus::Approved, SupportMessageStatus::Consumed])
+                ->sortBy('trigger_distance_meters')
+                ->map(fn (AthleteSupportMessage $m) => [
+                    'id' => $m->id,
+                    'type' => $m->type->value,
+                    'trigger_type' => $m->trigger_type->value,
+                    'trigger_distance_meters' => $m->trigger_distance_meters,
+                    'is_surprise' => $m->is_surprise,
+                    'has_audio' => $m->type === SupportMessageType::Audio && $m->audio_path !== null,
+                    'audio_mime' => $m->type === SupportMessageType::Audio ? $m->audio_mime : null,
+                    'audio_size_bytes' => $m->type === SupportMessageType::Audio ? $m->audio_size_bytes : null,
+                    'audio_duration_seconds' => $m->type === SupportMessageType::Audio ? $m->audio_duration_seconds : null,
+                    'updated_at' => $m->updated_at->toIso8601String(),
+                ])->values(),
+        ]);
     }
 
     public function triggered(Request $request, AthleteSupportSession $supportSession, EnsureAthleteForUser $ensureAthlete, GetTriggeredSupportMessages $query): JsonResponse
@@ -109,11 +135,15 @@ class SupportSessionController extends Controller
 
         $messages = $query->handle($supportSession, $data['distance_meters'], $data['consumed_ids'] ?? []);
 
+        // GetTriggeredSupportMessages already filters to messages whose
+        // trigger condition is met *now* — a surprise being withheld until
+        // then is the whole point of `is_surprise`, so once it's in this
+        // list there is nothing left to hide (brief items 21-23).
         return $this->respond($messages->map(fn (AthleteSupportMessage $m) => [
             'id' => $m->id,
             'type' => $m->type->value,
-            'message_text' => $m->is_surprise ? null : $m->message_text,
-            'audio_url' => ! $m->is_surprise && $m->type === SupportMessageType::Audio ? $m->signedAudioUrl() : null,
+            'message_text' => $m->message_text,
+            'audio_url' => $m->type === SupportMessageType::Audio ? $m->signedAudioUrl() : null,
             'contributor_name' => $m->contributor?->display_name,
             'is_surprise' => $m->is_surprise,
         ])->values());
