@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Package } from '@lucide/vue';
+import AppContainer from '@/components/shared/AppContainer.vue';
 import OwnedProductCard from '@/components/shared/OwnedProductCard.vue';
 
 type OwnedItem = {
@@ -19,7 +20,7 @@ defineProps<{ items: OwnedItem[] }>();
 <template>
     <Head title="Mi equipo" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
+    <AppContainer class="py-4 md:py-6">
         <h1 class="text-xl font-bold text-white">Mi equipo</h1>
         <p class="mt-1 text-sm text-white/50">
             Tu clóset digital — el equipo que te acompaña en cada meta.
@@ -51,5 +52,5 @@ defineProps<{ items: OwnedItem[] }>();
                 >Ir a la tienda</Link
             >
         </div>
-    </div>
+    </AppContainer>
 </template>

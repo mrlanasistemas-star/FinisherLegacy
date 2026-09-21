@@ -2,9 +2,12 @@
 
 namespace App\Actions\Athletes;
 
+use App\Actions\LegacyPlates\LinkLegacyPlateEntitlementToParticipant;
+use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\ResolveAthleteIdentityStatus;
 use App\Models\AthleteExternalIdentity;
 use App\Models\EventParticipant;
+use App\Models\LegacyPlateEntitlement;
 use App\Support\Athletes\AthleteIdentityCandidateData;
 use Illuminate\Support\Arr;
 
@@ -28,6 +31,7 @@ class IngestEventParticipant
     public function __construct(
         private readonly ResolveAthleteIdentity $resolveIdentity,
         private readonly LinkParticipantToAthlete $linkParticipant,
+        private readonly LinkLegacyPlateEntitlementToParticipant $linkEntitlement,
     ) {}
 
     /**
@@ -72,7 +76,7 @@ class IngestEventParticipant
         $result = $this->resolveIdentity->handle($candidateData, $sourceType, $sourceReference, $participant);
 
         if (in_array($result->status, [ResolveAthleteIdentityStatus::Matched, ResolveAthleteIdentityStatus::Created], true)) {
-            $this->linkParticipant->handle($participant, $result->athlete);
+            $participant = $this->linkParticipant->handle($participant, $result->athlete);
 
             if ($subjectId !== null) {
                 AthleteExternalIdentity::query()->firstOrCreate([
@@ -81,11 +85,38 @@ class IngestEventParticipant
                     'external_subject_id' => $subjectId,
                 ], ['athlete_id' => $result->athlete->id]);
             }
+
+            $this->linkPendingPresale($participant, $result->athlete->id);
         }
 
         // Conflict: athlete_id stays null, an AthleteIdentityConflict was
         // recorded for review — the participant row itself is never
         // rejected (docs/adr/0004 §26, don't fail the whole import).
         return $participant->fresh();
+    }
+
+    /**
+     * "Cuando después llega EventParticipant... vincular entitlement
+     * automáticamente cuando sea seguro" (brief §21) — this only runs once
+     * ResolveAthleteIdentity has already resolved a clean, unambiguous
+     * match/create for the Athlete (never a name-only guess of its own),
+     * and LinkLegacyPlateEntitlementToParticipant itself still refuses to
+     * cross an edition or athlete mismatch. At most one pending presale
+     * per athlete+edition is expected, but this links every unlinked one
+     * found rather than silently picking one if that invariant is ever
+     * violated.
+     */
+    private function linkPendingPresale(EventParticipant $participant, int $athleteId): void
+    {
+        $pending = LegacyPlateEntitlement::query()
+            ->where('athlete_id', $athleteId)
+            ->where('event_edition_id', $participant->event_edition_id)
+            ->whereNull('event_participant_id')
+            ->where('status', '!=', LegacyPlateEntitlementStatus::Cancelled)
+            ->get();
+
+        foreach ($pending as $entitlement) {
+            $this->linkEntitlement->handle($entitlement, $participant);
+        }
     }
 }

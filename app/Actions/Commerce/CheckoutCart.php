@@ -4,14 +4,17 @@ namespace App\Actions\Commerce;
 
 use App\Actions\LegacyPlates\CreateLegacyPlateEntitlement;
 use App\Enums\FulfillmentStatus;
+use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\ProductType;
 use App\Exceptions\AthleteRequiredException;
+use App\Exceptions\LegacyPlatePresaleDuplicateException;
 use App\Models\Athlete;
 use App\Models\Cart;
 use App\Models\EventEdition;
 use App\Models\InventoryLocation;
+use App\Models\LegacyPlateEntitlement;
 use App\Models\LegacyPlateModel;
 use App\Models\Order;
 use App\Models\User;
@@ -64,6 +67,10 @@ class CheckoutCart
                 }
 
                 $eventEdition = $item->event_edition_id !== null ? EventEdition::find($item->event_edition_id) : null;
+
+                if ($product->type === ProductType::LegacyPlate && $athlete !== null && $eventEdition !== null) {
+                    $this->guardAgainstDuplicatePresale($athlete, $eventEdition);
+                }
                 $price = $this->resolvePrice->handle($product, $variant, $eventEdition);
 
                 $this->inventory->reserve($variant, $location, $item->quantity, Cart::class, $cart->id, $user);
@@ -137,6 +144,26 @@ class CheckoutCart
 
             return $order->fresh('items');
         });
+    }
+
+    /**
+     * The same Athlete buying a second Legacy Plate for the same event is
+     * almost always an accidental double-click, not intent (brief §11) —
+     * blocked here, the one place every Legacy Plate line item passes
+     * through, regardless of which model was picked. A deliberate second
+     * purchase is an explicit admin action, not a second checkout.
+     */
+    private function guardAgainstDuplicatePresale(Athlete $athlete, EventEdition $eventEdition): void
+    {
+        $exists = LegacyPlateEntitlement::query()
+            ->where('athlete_id', $athlete->id)
+            ->where('event_edition_id', $eventEdition->id)
+            ->where('status', '!=', LegacyPlateEntitlementStatus::Cancelled)
+            ->exists();
+
+        if ($exists) {
+            throw new LegacyPlatePresaleDuplicateException;
+        }
     }
 
     private function defaultLocation(): InventoryLocation

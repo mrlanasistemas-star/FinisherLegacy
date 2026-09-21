@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'event_id', 'name', 'year', 'event_date', 'city', 'state', 'country', 'timezone',
     'registration_open_at', 'registration_close_at', 'operation_mode', 'status', 'results_status',
     'production_export_format', 'default_dpi', 'data_source_type', 'data_source_provider_connection_id',
+    'participants_data_source_id', 'results_data_source_id',
 ])]
 class EventEdition extends Model
 {
@@ -137,6 +138,29 @@ class EventEdition extends Model
     public function dataSourceProviderConnection(): BelongsTo
     {
         return $this->belongsTo(ProviderConnection::class, 'data_source_provider_connection_id');
+    }
+
+    /**
+     * Specific OrganizerDataSource picked for participants, overriding the
+     * Organizer's default-for-participants (brief §28/§39). Null means
+     * "inherit".
+     *
+     * @return BelongsTo<OrganizerDataSource, $this>
+     */
+    public function participantsDataSource(): BelongsTo
+    {
+        return $this->belongsTo(OrganizerDataSource::class, 'participants_data_source_id');
+    }
+
+    /**
+     * Specific OrganizerDataSource picked for results, overriding the
+     * Organizer's default-for-results. Null means "inherit".
+     *
+     * @return BelongsTo<OrganizerDataSource, $this>
+     */
+    public function resultsDataSource(): BelongsTo
+    {
+        return $this->belongsTo(OrganizerDataSource::class, 'results_data_source_id');
     }
 
     /** @return HasMany<LegacyPlateEntitlement, $this> */

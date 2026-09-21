@@ -29,9 +29,24 @@ class Organizer extends Model
         return $this->hasMany(Event::class);
     }
 
-    /** @return HasOne<OrganizerDataSource, $this> */
+    /**
+     * The default data source across every purpose — kept for backward
+     * compatibility with callers written before multi-source support
+     * (brief §23-§27): App\Actions\Integrations\ResolveEventDataSource and
+     * the staff API still ask "the" default this way. New code that needs
+     * a specific purpose should use `dataSources()` + `defaultFor()`
+     * instead.
+     *
+     * @return HasOne<OrganizerDataSource, $this>
+     */
     public function dataSource(): HasOne
     {
-        return $this->hasOne(OrganizerDataSource::class);
+        return $this->hasOne(OrganizerDataSource::class)->where('is_default', true);
+    }
+
+    /** @return HasMany<OrganizerDataSource, $this> */
+    public function dataSources(): HasMany
+    {
+        return $this->hasMany(OrganizerDataSource::class);
     }
 }

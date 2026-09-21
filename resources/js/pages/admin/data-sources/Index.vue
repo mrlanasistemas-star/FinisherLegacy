@@ -3,22 +3,39 @@ import { Head, Link } from '@inertiajs/vue3';
 import { Database } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 
-type Row = {
+type Source = {
     id: number;
-    name: string;
-    data_source: {
-        type: string;
-        provider_connection: string | null;
-        status: string | null;
+    name: string | null;
+    type: string;
+    purpose: string;
+    is_default: boolean;
+    active: boolean;
+    provider_connection: {
+        id: number;
+        name: string;
+        provider_key: string;
+        status: string;
     } | null;
 };
 
-defineProps<{ organizers: Row[] }>();
+type OrganizerRow = {
+    id: number;
+    name: string;
+    sources: Source[];
+};
 
-const labels: Record<string, string> = {
+defineProps<{ organizers: OrganizerRow[] }>();
+
+const typeLabels: Record<string, string> = {
     manual: 'Manual',
     file: 'Archivo',
     api: 'API',
+};
+
+const purposeLabels: Record<string, string> = {
+    participants: 'Participantes',
+    results: 'Resultados',
+    both: 'Ambos',
 };
 </script>
 
@@ -32,68 +49,69 @@ const labels: Record<string, string> = {
                 Fuentes de datos
             </h1>
             <p class="mt-1 text-sm text-white/50">
-                Cómo recibe información cada organizador — edítalo desde su
-                pestaña "Datos / Integración".
+                Cómo recibe información cada organizador — un organizador puede
+                tener varias. Agrega/edita desde su pestaña "Datos /
+                Integración".
             </p>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-white/10">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr
-                        class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+        <div class="space-y-4">
+            <div
+                v-for="organizer in organizers"
+                :key="organizer.id"
+                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-5"
+            >
+                <Link
+                    :href="`/admin/organizers/${organizer.id}`"
+                    class="font-medium text-white hover:text-fl-gold"
+                    >{{ organizer.name }}</Link
+                >
+
+                <div
+                    v-if="organizer.sources.length"
+                    class="mt-3 flex flex-wrap gap-2"
+                >
+                    <div
+                        v-for="source in organizer.sources"
+                        :key="source.id"
+                        class="flex items-center gap-2 rounded-lg border border-white/10 bg-fl-black/30 px-3 py-2 text-xs"
+                        :class="!source.active ? 'opacity-40' : ''"
                     >
-                        <th class="px-4 py-3 font-medium">Organizador</th>
-                        <th class="px-4 py-3 font-medium">Fuente</th>
-                        <th class="px-4 py-3 font-medium">Conexión</th>
-                        <th class="px-4 py-3 font-medium">Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="organizer in organizers"
-                        :key="organizer.id"
-                        class="border-b border-white/5 text-white/80 last:border-0"
-                    >
-                        <td class="px-4 py-3">
-                            <Link
-                                :href="`/admin/organizers/${organizer.id}`"
-                                class="hover:text-fl-gold"
-                                >{{ organizer.name }}</Link
-                            >
-                        </td>
-                        <td class="px-4 py-3">
-                            <Badge
-                                variant="outline"
-                                class="border-white/15 text-white/60"
-                            >
-                                {{
-                                    organizer.data_source
-                                        ? labels[organizer.data_source.type]
-                                        : 'Sin configurar'
-                                }}
-                            </Badge>
-                        </td>
-                        <td class="px-4 py-3 text-white/60">
-                            {{
-                                organizer.data_source?.provider_connection ??
-                                '—'
-                            }}
-                        </td>
-                        <td class="px-4 py-3 text-white/40">
-                            {{ organizer.data_source?.status ?? '—' }}
-                        </td>
-                    </tr>
-                    <tr v-if="!organizers.length">
-                        <td
-                            colspan="4"
-                            class="px-4 py-10 text-center text-white/30"
+                        <Badge
+                            variant="outline"
+                            class="border-white/15 text-white/60"
+                            >{{ typeLabels[source.type] }}</Badge
                         >
-                            Sin organizadores todavía.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                        <span class="text-white/70">{{
+                            source.name ?? purposeLabels[source.purpose]
+                        }}</span>
+                        <span class="text-white/30"
+                            >· {{ purposeLabels[source.purpose] }}</span
+                        >
+                        <Badge
+                            v-if="source.is_default"
+                            variant="outline"
+                            class="border-fl-gold/30 text-fl-gold-soft"
+                            >Default</Badge
+                        >
+                        <span
+                            v-if="source.provider_connection"
+                            class="text-white/40"
+                            >{{ source.provider_connection.status }}</span
+                        >
+                    </div>
+                </div>
+                <p v-else class="mt-3 text-xs text-white/30">
+                    Sin fuentes de datos configuradas.
+                </p>
+            </div>
+
+            <div
+                v-if="!organizers.length"
+                class="rounded-xl border border-dashed border-white/15 bg-fl-graphite/20 p-8 text-center text-sm text-white/40"
+            >
+                Sin organizadores todavía.
+            </div>
         </div>
     </div>
 </template>

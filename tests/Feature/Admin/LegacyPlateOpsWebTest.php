@@ -2,8 +2,10 @@
 
 use App\Actions\LegacyPlates\CreateLegacyPlateEntitlement;
 use App\Enums\LegacyPlateEntitlementStatus;
+use App\Models\Athlete;
 use App\Models\EventEdition;
 use App\Models\EventParticipant;
+use App\Models\EventRace;
 use App\Models\EventResult;
 use App\Models\LegacyPlateModel;
 use App\Models\User;
@@ -95,4 +97,64 @@ test('a production_operator without legacyplates.produce cannot reach the produc
     $operator->assignRole('production_operator');
 
     $this->actingAs($operator)->get('/admin/legacy-plates/production')->assertForbidden();
+});
+
+test('admin can manually link a presale to a safe candidate — one whose athlete_id already matches', function () {
+    $edition = EventEdition::factory()->create();
+    $model = LegacyPlateModel::factory()->create();
+    $athlete = Athlete::factory()->create();
+
+    $entitlement = app(CreateLegacyPlateEntitlement::class)->handle([
+        'athlete_id' => $athlete->id,
+        'event_edition_id' => $edition->id,
+        'legacy_plate_model_id' => $model->id,
+        'status' => LegacyPlateEntitlementStatus::Paid,
+    ]);
+
+    $race = EventRace::factory()->create(['event_edition_id' => $edition->id]);
+    $participant = EventParticipant::factory()->create([
+        'event_edition_id' => $edition->id,
+        'event_race_id' => $race->id,
+        'athlete_id' => $athlete->id,
+        'bib_number' => '505',
+    ]);
+
+    // The presales list only ever offers this participant as a candidate
+    // — it already matches the entitlement's athlete_id (brief §22: "no
+    // magic fuzzy merge").
+    $listResponse = $this->actingAs($this->admin)->get("/admin/legacy-plates/presales?event_edition_id={$edition->id}");
+    $listResponse->assertInertia(fn ($page) => $page->where('presales.0.link_candidates.0.id', $participant->id));
+
+    $this->actingAs($this->admin)
+        ->post("/admin/legacy-plates/presales/{$entitlement->id}/link", ['event_participant_id' => $participant->id])
+        ->assertRedirect();
+
+    expect($entitlement->fresh()->event_participant_id)->toBe($participant->id);
+});
+
+test('admin cannot link a presale to a participant from a different event edition', function () {
+    $edition = EventEdition::factory()->create();
+    $otherEdition = EventEdition::factory()->create();
+    $model = LegacyPlateModel::factory()->create();
+    $athlete = Athlete::factory()->create();
+
+    $entitlement = app(CreateLegacyPlateEntitlement::class)->handle([
+        'athlete_id' => $athlete->id,
+        'event_edition_id' => $edition->id,
+        'legacy_plate_model_id' => $model->id,
+        'status' => LegacyPlateEntitlementStatus::Paid,
+    ]);
+
+    $race = EventRace::factory()->create(['event_edition_id' => $otherEdition->id]);
+    $participant = EventParticipant::factory()->create([
+        'event_edition_id' => $otherEdition->id,
+        'event_race_id' => $race->id,
+        'athlete_id' => $athlete->id,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->post("/admin/legacy-plates/presales/{$entitlement->id}/link", ['event_participant_id' => $participant->id])
+        ->assertSessionHasErrors('event_participant_id');
+
+    expect($entitlement->fresh()->event_participant_id)->toBeNull();
 });

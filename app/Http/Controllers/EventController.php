@@ -2,12 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Commerce\ResolveProductPrice;
 use App\Enums\EventStatus;
+use App\Enums\LegacyPlateEntitlementStatus;
+use App\Enums\ProductType;
+use App\Exceptions\PriceNotAvailableException;
 use App\Http\Requests\StorePreregistrationRequest;
 use App\Http\Resources\EventEditionCardResource;
 use App\Models\Event;
 use App\Models\EventEdition;
 use App\Models\EventRace;
+use App\Models\LegacyPlateEntitlement;
+use App\Models\LegacyPlateModel;
+use App\Models\Product;
+use App\Models\ProductPriceSchedule;
 use App\Models\Sport;
 use App\Services\EventCatalogService;
 use App\Services\PreregistrationService;
@@ -21,6 +29,7 @@ class EventController extends Controller
     public function __construct(
         private readonly EventCatalogService $events,
         private readonly PreregistrationService $preregistrations,
+        private readonly ResolveProductPrice $resolvePrice,
     ) {}
 
     public function index(Request $request): Response
@@ -45,7 +54,7 @@ class EventController extends Controller
         ]);
     }
 
-    public function show(Event $event): Response
+    public function show(Request $request, Event $event): Response
     {
         abort_unless($event->status === EventStatus::Published, 404);
 
@@ -61,7 +70,7 @@ class EventController extends Controller
                 'sport' => $event->sport->name,
                 'organizer' => $event->organizer?->name,
             ],
-            'edition' => $edition ? $this->editionPayload($edition) : null,
+            'edition' => $edition ? $this->editionPayload($edition, $request) : null,
         ]);
     }
 
@@ -77,7 +86,7 @@ class EventController extends Controller
                 'name' => $event->name,
                 'slug' => $event->slug,
             ],
-            'edition' => $edition ? $this->editionPayload($edition) : null,
+            'edition' => $edition ? $this->editionPayload($edition, $request) : null,
             'isOpen' => $edition ? $this->preregistrations->isOpen($edition) : false,
             'prefill' => $user ? [
                 'first_name' => $user->first_name,
@@ -112,9 +121,10 @@ class EventController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function editionPayload(EventEdition $edition): array
+    private function editionPayload(EventEdition $edition, Request $request): array
     {
         return [
+            'id' => $edition->id,
             'name' => $edition->name,
             'year' => $edition->year,
             'event_date' => $edition->event_date->toDateString(),
@@ -131,6 +141,58 @@ class EventController extends Controller
                 'distance_unit' => $race->distance_unit,
                 'start_time' => $race->start_time,
             ]),
+            'legacy_plate' => $this->legacyPlatePayload($edition, $request),
+        ];
+    }
+
+    /**
+     * "PREVENTA LEGACY PLATE" (brief §3-§15): the price shown is always
+     * what App\Actions\Commerce\ResolveProductPrice resolves server-side —
+     * Vue never invents or carries a price as authority. Returns null when
+     * there's no active price schedule for this edition yet (Legacy Plate
+     * pricing is always event-scoped, brief §7/§202-§203) — the page shows
+     * no CTA rather than a broken one.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function legacyPlatePayload(EventEdition $edition, Request $request): ?array
+    {
+        $product = Product::query()->where('type', ProductType::LegacyPlate)->where('active', true)->with('variants')->first();
+        $variant = $product?->variants->firstWhere('active', true);
+
+        if ($product === null || $variant === null) {
+            return null;
+        }
+
+        try {
+            $price = $this->resolvePrice->handle($product, $variant, $edition);
+        } catch (PriceNotAvailableException) {
+            return null;
+        }
+
+        $schedule = $price->scheduleId !== null ? ProductPriceSchedule::find($price->scheduleId) : null;
+
+        $athlete = $request->user()?->athlete;
+        $existingEntitlement = $athlete !== null
+            ? LegacyPlateEntitlement::query()
+                ->where('athlete_id', $athlete->id)
+                ->where('event_edition_id', $edition->id)
+                ->where('status', '!=', LegacyPlateEntitlementStatus::Cancelled)
+                ->exists()
+            : false;
+
+        return [
+            'product_variant_id' => $variant->id,
+            'price_minor' => $price->amountMinor,
+            'currency' => $price->currency,
+            'price_type' => $price->priceType->value,
+            'presale_ends_at' => $schedule?->ends_at?->toDateString(),
+            'models' => LegacyPlateModel::query()->where('active', true)->orderBy('name')->get(['id', 'name', 'description'])->map(fn (LegacyPlateModel $model) => [
+                'id' => $model->id,
+                'name' => $model->name,
+                'description' => $model->description,
+            ]),
+            'already_purchased' => $existingEntitlement,
         ];
     }
 }

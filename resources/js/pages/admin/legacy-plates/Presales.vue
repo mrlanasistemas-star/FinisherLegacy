@@ -1,13 +1,29 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { Ticket } from '@lucide/vue';
+import { ref } from 'vue';
 import EventEditionSelector from '@/components/admin/EventEditionSelector.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+
+type LinkCandidate = {
+    id: number;
+    bib_number: string | null;
+    full_name: string;
+};
 
 type PresaleRow = {
     id: number;
     athlete: string | null;
+    athlete_id: number | null;
     bib_number: string | null;
     model: string | null;
     status: string;
@@ -16,6 +32,7 @@ type PresaleRow = {
     linked: boolean;
     order_uuid: string | null;
     payment_status: string | null;
+    link_candidates: LinkCandidate[];
 };
 
 defineProps<{
@@ -43,6 +60,22 @@ const statusClasses: Record<string, string> = {
     delivered: 'border-emerald-500/30 text-emerald-400',
     cancelled: 'border-red-500/30 text-red-400',
 };
+
+const selectedCandidate = ref<Record<number, string>>({});
+
+function linkParticipant(presaleId: number) {
+    const participantId = selectedCandidate.value[presaleId];
+
+    if (!participantId) {
+        return;
+    }
+
+    router.post(
+        `/admin/legacy-plates/presales/${presaleId}/link`,
+        { event_participant_id: participantId },
+        { preserveScroll: true },
+    );
+}
 </script>
 
 <template>
@@ -121,17 +154,59 @@ const statusClasses: Record<string, string> = {
                             >
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <Link
-                                v-if="row.order_uuid"
-                                :href="`/admin/orders/${row.order_uuid}`"
-                                class="text-xs font-medium text-fl-gold-soft hover:underline"
-                            >
-                                {{
-                                    row.payment_status === 'paid'
-                                        ? 'Ver pedido'
-                                        : 'Registrar pago'
-                                }}
-                            </Link>
+                            <div class="flex items-center justify-end gap-2">
+                                <template
+                                    v-if="
+                                        !row.linked &&
+                                        row.link_candidates.length
+                                    "
+                                >
+                                    <Select v-model="selectedCandidate[row.id]">
+                                        <SelectTrigger
+                                            class="h-8 w-44 border-white/10 bg-fl-graphite/60 text-xs text-white"
+                                        >
+                                            <SelectValue
+                                                placeholder="Vincular a…"
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                v-for="candidate in row.link_candidates"
+                                                :key="candidate.id"
+                                                :value="String(candidate.id)"
+                                            >
+                                                {{ candidate.full_name
+                                                }}<span
+                                                    v-if="candidate.bib_number"
+                                                >
+                                                    · #{{
+                                                        candidate.bib_number
+                                                    }}</span
+                                                >
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        size="sm"
+                                        class="h-8 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                                        :disabled="!selectedCandidate[row.id]"
+                                        @click="linkParticipant(row.id)"
+                                    >
+                                        Vincular
+                                    </Button>
+                                </template>
+                                <Link
+                                    v-if="row.order_uuid"
+                                    :href="`/admin/orders/${row.order_uuid}`"
+                                    class="text-xs font-medium text-fl-gold-soft hover:underline"
+                                >
+                                    {{
+                                        row.payment_status === 'paid'
+                                            ? 'Ver pedido'
+                                            : 'Registrar pago'
+                                    }}
+                                </Link>
+                            </div>
                         </td>
                     </tr>
                     <tr v-if="!presales.length">

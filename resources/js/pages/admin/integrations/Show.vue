@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, RefreshCw } from '@lucide/vue';
+import { ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type ExternalEvent = {
     external_id: string;
@@ -27,6 +30,20 @@ type Mapping = {
     last_sync: SyncSummary | null;
 };
 
+type GenericRestSettings = {
+    auth_type?: 'none' | 'bearer' | 'api_key_header' | 'basic';
+    api_key_header?: string;
+    basic_username?: string;
+    test_endpoint?: string;
+    events_endpoint?: string;
+    event_endpoint?: string;
+    participants_endpoint?: string;
+    results_endpoint?: string;
+    event_field_mapping?: Record<string, string>;
+    participant_field_mapping?: Record<string, string>;
+    result_field_mapping?: Record<string, string>;
+};
+
 const props = defineProps<{
     connection: {
         id: number;
@@ -36,6 +53,8 @@ const props = defineProps<{
         base_url: string | null;
         last_tested_at: string | null;
         last_successful_sync_at: string | null;
+        settings: GenericRestSettings;
+        has_credentials: boolean;
     };
     availableEvents: ExternalEvent[];
     listError: string | null;
@@ -50,6 +69,33 @@ function testConnection() {
         {},
         { preserveScroll: true },
     );
+}
+
+const editingSettings = ref(false);
+const settingsForm = useForm({
+    provider_key: props.connection.provider_key,
+    name: props.connection.name,
+    base_url: props.connection.base_url ?? '',
+    api_key: '',
+    auth_type: props.connection.settings.auth_type ?? 'none',
+    api_key_header: props.connection.settings.api_key_header ?? '',
+    basic_username: props.connection.settings.basic_username ?? '',
+    test_endpoint: props.connection.settings.test_endpoint ?? '',
+    events_endpoint: props.connection.settings.events_endpoint ?? '',
+    event_endpoint: props.connection.settings.event_endpoint ?? '',
+    participants_endpoint:
+        props.connection.settings.participants_endpoint ?? '',
+    results_endpoint: props.connection.settings.results_endpoint ?? '',
+});
+
+function saveSettings() {
+    settingsForm.patch(`/admin/integrations/${props.connection.id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingSettings.value = false;
+            settingsForm.api_key = '';
+        },
+    });
 }
 
 function syncNow(mappingId: number, syncType: 'roster' | 'results' | 'full') {
@@ -107,12 +153,155 @@ function submitLink() {
                     Proveedor: {{ connection.provider_key }}
                 </p>
             </div>
+            <div class="flex gap-2">
+                <Button
+                    variant="outline"
+                    class="border-white/15 text-white hover:bg-white/10"
+                    @click="editingSettings = !editingSettings"
+                >
+                    {{ editingSettings ? 'Cancelar' : 'Editar configuración' }}
+                </Button>
+                <Button
+                    variant="outline"
+                    class="border-white/15 text-white hover:bg-white/10"
+                    @click="testConnection"
+                >
+                    Probar conexión
+                </Button>
+            </div>
+        </div>
+
+        <div
+            v-if="editingSettings"
+            class="mb-8 rounded-xl border border-fl-gold/20 bg-fl-graphite/30 p-5"
+        >
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                    <Label class="mb-1 block text-xs text-white/50"
+                        >Nombre</Label
+                    >
+                    <Input
+                        v-model="settingsForm.name"
+                        class="border-white/10 bg-fl-graphite/60 text-white"
+                    />
+                </div>
+                <div>
+                    <Label class="mb-1 block text-xs text-white/50"
+                        >Base URL</Label
+                    >
+                    <Input
+                        v-model="settingsForm.base_url"
+                        class="border-white/10 bg-fl-graphite/60 text-white"
+                    />
+                </div>
+                <div>
+                    <Label class="mb-1 block text-xs text-white/50">
+                        API Key / Credencial
+                        <span class="text-white/30">{{
+                            connection.has_credentials
+                                ? '(guardada — deja en blanco para conservarla)'
+                                : ''
+                        }}</span>
+                    </Label>
+                    <Input
+                        v-model="settingsForm.api_key"
+                        type="password"
+                        :placeholder="
+                            connection.has_credentials ? '••••••••' : ''
+                        "
+                        class="border-white/10 bg-fl-graphite/60 text-white"
+                    />
+                </div>
+
+                <template v-if="connection.provider_key === 'generic_rest'">
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Autenticación</Label
+                        >
+                        <select
+                            v-model="settingsForm.auth_type"
+                            class="h-9 w-full rounded-md border border-white/10 bg-fl-graphite/60 px-3 text-sm text-white"
+                        >
+                            <option value="none">Ninguna</option>
+                            <option value="bearer">Bearer token</option>
+                            <option value="api_key_header">
+                                API Key header
+                            </option>
+                            <option value="basic">Basic auth</option>
+                        </select>
+                    </div>
+                    <div v-if="settingsForm.auth_type === 'api_key_header'">
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Nombre del header</Label
+                        >
+                        <Input
+                            v-model="settingsForm.api_key_header"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                    <div v-if="settingsForm.auth_type === 'basic'">
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Usuario</Label
+                        >
+                        <Input
+                            v-model="settingsForm.basic_username"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint de prueba</Label
+                        >
+                        <Input
+                            v-model="settingsForm.test_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint participantes</Label
+                        >
+                        <Input
+                            v-model="settingsForm.participants_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint resultados</Label
+                        >
+                        <Input
+                            v-model="settingsForm.results_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint del evento</Label
+                        >
+                        <Input
+                            v-model="settingsForm.event_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label class="mb-1 block text-xs text-white/50"
+                            >Endpoint listar eventos</Label
+                        >
+                        <Input
+                            v-model="settingsForm.events_endpoint"
+                            class="border-white/10 bg-fl-graphite/60 text-white"
+                        />
+                    </div>
+                </template>
+            </div>
+
             <Button
-                variant="outline"
-                class="border-white/15 text-white hover:bg-white/10"
-                @click="testConnection"
+                class="mt-4 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                :disabled="settingsForm.processing"
+                @click="saveSettings"
             >
-                Probar conexión
+                Guardar configuración
             </Button>
         </div>
 
