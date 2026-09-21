@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\Integrations\SyncController as ApiIntegrationsSyncController;
 use App\Http\Controllers\Api\V1\LegacyCodeController;
 use App\Http\Controllers\Api\V1\LegacyPlateModelController;
+use App\Http\Controllers\Api\V1\Me\EventGearController as MeEventGearController;
 use App\Http\Controllers\Api\V1\Me\EventMediaController as MeEventMediaController;
 use App\Http\Controllers\Api\V1\Me\EventsController as MeEventsController;
 use App\Http\Controllers\Api\V1\MedalController;
@@ -54,6 +55,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+
+        // Same controller/actions as `profile` above — `me/profile` is the
+        // name the mobile-facing minimal API surface uses (brief §26/§75).
+        Route::get('me/profile', [ProfileController::class, 'show'])->name('me.profile.show');
+        Route::patch('me/profile', [ProfileController::class, 'update'])->name('me.profile.update');
 
         Route::get('medals', [MedalController::class, 'index'])->name('medals.index');
         Route::post('medals', [MedalController::class, 'store'])->name('medals.store');
@@ -135,6 +141,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             ->name('gear.claim');
 
         Route::get('me/events', [MeEventsController::class, 'index'])->name('me.events.index');
+        // Same controller/action as `me/events` — `me/history` is the
+        // filterable name the minimal mobile-facing API surface uses
+        // (brief §24/§75); both accept the same from/to/event_id/... filters.
+        Route::get('me/history', [MeEventsController::class, 'index'])->name('me.history.index');
+        Route::get('me/events/{participant}', [MeEventsController::class, 'show'])->name('me.events.show');
 
         Route::prefix('me/events/{participant}/media')->name('me.events.media.')->group(function () {
             Route::get('/', [MeEventMediaController::class, 'index'])->name('index');
@@ -143,6 +154,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
         Route::patch('me/media/{media:uuid}', [MeEventMediaController::class, 'updateVisibility'])->name('me.media.update');
         Route::delete('me/media/{media:uuid}', [MeEventMediaController::class, 'destroy'])->name('me.media.destroy');
+
+        Route::prefix('me/events/{participant}/gear')->name('me.events.gear.')->group(function () {
+            Route::get('/', [MeEventGearController::class, 'index'])->name('index');
+            Route::post('/', [MeEventGearController::class, 'store'])->name('store');
+            Route::delete('{gear:uuid}', [MeEventGearController::class, 'destroy'])->name('destroy');
+        });
 
         /*
         |------------------------------------------------------------------

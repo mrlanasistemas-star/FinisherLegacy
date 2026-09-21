@@ -11,13 +11,16 @@ use App\Models\EventParticipant;
 use App\Models\Order;
 use App\Models\Plate;
 use App\Queries\Athletes\GetAthleteHistory;
+use App\Queries\Athletes\GetEventParticipantDetail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * `GET /api/v1/me/events` — reuses the exact same GetAthleteHistory Query
- * as the admin Athlete Detail screen (brief §116/§173): "1 Athlete, N
- * events" holds for every consumer, never a second read model.
+ * `GET /api/v1/me/events` and `GET /api/v1/me/history` (same controller —
+ * product consolidation brief §24: "no duplicar la Query") — reuses the
+ * exact same GetAthleteHistory Query as the admin Athlete Detail screen
+ * (brief §116/§173): "1 Athlete, N events" holds for every consumer,
+ * never a second read model.
  */
 class EventsController extends Controller
 {
@@ -26,7 +29,15 @@ class EventsController extends Controller
     public function index(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteHistory $history): JsonResponse
     {
         $athlete = $ensureAthlete->handle($request->user(), 'me_events');
-        $data = $history->handle($athlete);
+        $data = $history->handle($athlete, [
+            'from' => $request->string('from')->toString() ?: null,
+            'to' => $request->string('to')->toString() ?: null,
+            'event_id' => $request->integer('event_id') ?: null,
+            'sport_id' => $request->integer('sport_id') ?: null,
+            'event_race_id' => $request->integer('event_race_id') ?: null,
+            'legacy_plate' => $request->string('legacy_plate')->toString() ?: null,
+            'athlete_owned_product_id' => $request->integer('athlete_owned_product_id') ?: null,
+        ]);
 
         return $this->respond([
             'participations' => $data['participations']->map(fn (EventParticipant $p) => [
@@ -72,5 +83,18 @@ class EventsController extends Controller
                 'currency' => $order->currency,
             ])->values(),
         ]);
+    }
+
+    /**
+     * `GET /api/v1/me/events/{participant}` (product consolidation brief
+     * §25) — same App\Queries\Athletes\GetEventParticipantDetail Web's
+     * "Mi Legado" event detail renders.
+     */
+    public function show(EventParticipant $participant, Request $request, EnsureAthleteForUser $ensureAthlete, GetEventParticipantDetail $detail): JsonResponse
+    {
+        $athlete = $ensureAthlete->handle($request->user(), 'me_events_show');
+        abort_unless($participant->athlete_id === $athlete->id, 403);
+
+        return $this->respond($detail->handle($participant));
     }
 }

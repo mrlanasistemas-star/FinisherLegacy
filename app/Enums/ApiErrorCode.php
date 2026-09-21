@@ -40,4 +40,5 @@ enum ApiErrorCode: string
     case EventDataSourceNotConfigured = 'EVENT_DATA_SOURCE_NOT_CONFIGURED';
     case ProviderConnectionFailed = 'PROVIDER_CONNECTION_FAILED';
     case InvalidWebhookSignature = 'INVALID_WEBHOOK_SIGNATURE';
+    case EventGearAlreadyAssigned = 'EVENT_GEAR_ALREADY_ASSIGNED';
 }

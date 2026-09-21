@@ -122,6 +122,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // "MI EQUIPO DE APOYO" athlete side (brief §32-§35, §44-§45) — lives
     // inside Mi Legado's event detail, no separate sidebar module.
     Route::post('dashboard/legado/{eventParticipant}/support', [SupportSessionController::class, 'store'])->name('dashboard.support.store');
+
+    // "Equipo utilizado" (product consolidation brief §19-§20/§102) — lives
+    // inside Mi Legado's event detail, same participant param name as
+    // legadoShow's route model binding.
+    Route::post('dashboard/legado/{participant}/gear', [AthleteHistoryController::class, 'storeGear'])->name('dashboard.legado.gear.store');
+    Route::delete('dashboard/legado/{participant}/gear/{gear:uuid}', [AthleteHistoryController::class, 'destroyGear'])->name('dashboard.legado.gear.destroy');
     Route::post('support-messages/{message}/approve', [SupportSessionController::class, 'approve'])->name('support-messages.approve');
     Route::post('support-messages/{message}/reject', [SupportSessionController::class, 'reject'])->name('support-messages.reject');
 

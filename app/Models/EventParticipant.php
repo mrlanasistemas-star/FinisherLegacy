@@ -123,4 +123,10 @@ class EventParticipant extends Model
     {
         return $this->hasMany(AthleteSupportSession::class);
     }
+
+    /** @return HasMany<EventGearSelection, $this> */
+    public function gearSelections(): HasMany
+    {
+        return $this->hasMany(EventGearSelection::class);
+    }
 }
