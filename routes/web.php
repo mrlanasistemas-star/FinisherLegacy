@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
 use App\Http\Controllers\Admin\Store\PaymentController as AdminStorePaymentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AthleteEventMediaFileController;
 use App\Http\Controllers\AthleteHistoryController;
 use App\Http\Controllers\AthleteProfileController;
 use App\Http\Controllers\DashboardController;
@@ -83,6 +84,11 @@ Route::post('support/{publicCode}/messages', [SupportController::class, 'storeMe
 Route::get('support-messages/{message}/audio', [SupportAudioController::class, 'show'])
     ->middleware('signed')
     ->name('support-messages.audio');
+
+// Public media served unconditionally, private media requires a valid
+// signature — checked inside the controller, not route middleware, since
+// this one route serves both (product consolidation brief §62).
+Route::get('media/{media:uuid}/file', [AthleteEventMediaFileController::class, 'show'])->name('athlete-media.show');
 
 Route::get('/@{athleteProfile:username}', [PublicProfileController::class, 'show'])->name('profile.public');
 

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
  * Store V2 product gallery (product UX consolidation brief §106-§110).
  */
 beforeEach(function () {
-    Storage::fake('public');
+    Storage::fake('product_media');
     $this->seed(RolePermissionSeeder::class);
     $this->admin = User::factory()->create();
     $this->admin->assignRole('admin');
@@ -26,7 +26,7 @@ test('uploading the first image makes it primary automatically', function () {
     $media = $this->product->media()->firstOrFail();
     expect($media->is_primary)->toBeTrue()
         ->and($media->type->value)->toBe('image');
-    Storage::disk('public')->assertExists($media->path);
+    Storage::disk('product_media')->assertExists($media->path);
 });
 
 test('a second upload is not primary until explicitly set', function () {
@@ -60,11 +60,11 @@ test('reordering updates each item\'s sort_order', function () {
 test('deleting the primary item promotes the next one, and removes the file', function () {
     $primary = ProductMedia::factory()->for($this->product)->create(['is_primary' => true, 'sort_order' => 0]);
     $other = ProductMedia::factory()->for($this->product)->create(['is_primary' => false, 'sort_order' => 1]);
-    Storage::disk('public')->put($primary->path, 'fake-content');
+    Storage::disk('product_media')->put($primary->path, 'fake-content');
 
     $this->actingAs($this->admin)->delete("/admin/products/media/{$primary->id}")->assertRedirect();
 
-    Storage::disk('public')->assertMissing($primary->path);
+    Storage::disk('product_media')->assertMissing($primary->path);
     expect(ProductMedia::query()->find($primary->id))->toBeNull()
         ->and($other->fresh()->is_primary)->toBeTrue();
 });

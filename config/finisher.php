@@ -216,7 +216,7 @@ return [
         'max_video_bytes' => env('FINISHER_MEDIA_MAX_VIDEO_BYTES', 100 * 1024 * 1024),
         'image_mimes' => ['jpg', 'jpeg', 'png', 'webp'],
         'video_mimes' => ['mp4', 'webm'],
-        'disk' => env('FINISHER_MEDIA_DISK', 'public'),
+        'disk' => env('FINISHER_MEDIA_DISK', 'athlete_media'),
     ],
 
     /*
@@ -230,6 +230,15 @@ return [
         'audio_mimes' => ['webm', 'mp4', 'm4a', 'mpga', 'mp3', 'ogg', 'wav'],
         // Private — audio is never served from a public disk URL, only
         // through a signed, time-limited route (brief §41).
-        'audio_disk' => env('FINISHER_SUPPORT_AUDIO_DISK', 'local'),
+        'audio_disk' => env('FINISHER_SUPPORT_AUDIO_DISK', 'support_audio'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product media (brief §57/§139)
+    |--------------------------------------------------------------------------
+    */
+    'product_media' => [
+        'disk' => env('FINISHER_PRODUCT_MEDIA_DISK', 'product_media'),
     ],
 ];

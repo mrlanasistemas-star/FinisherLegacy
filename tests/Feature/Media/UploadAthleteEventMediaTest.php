@@ -11,7 +11,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
-    Storage::fake('public');
+    Storage::fake('athlete_media');
 });
 
 function uploadPhoto(Athlete $athlete, EventParticipant $participant, string $name = 'photo.jpg')
@@ -67,10 +67,10 @@ test('a real checksum and mime are recorded, and deleting removes the stored fil
     expect($media->checksum)->toHaveLength(64)
         ->and($media->mime)->toStartWith('image/');
 
-    Storage::disk('public')->assertExists($media->path);
+    Storage::disk('athlete_media')->assertExists($media->path);
 
     app(DeleteAthleteEventMedia::class)->handle($media);
 
-    Storage::disk('public')->assertMissing($media->path);
+    Storage::disk('athlete_media')->assertMissing($media->path);
     expect(AthleteEventMedia::find($media->id))->toBeNull();
 });

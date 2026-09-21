@@ -19,7 +19,7 @@ class ProductMediaFactory extends Factory
         return [
             'product_id' => Product::factory(),
             'type' => ProductMediaType::Image,
-            'disk' => 'public',
+            'disk' => 'product_media',
             'path' => 'products/'.fake()->uuid().'.jpg',
             'mime' => 'image/jpeg',
             'size' => fake()->numberBetween(10_000, 500_000),

@@ -19,8 +19,6 @@ use Inertia\Inertia;
  */
 class ProductMediaController extends Controller
 {
-    private const DISK = 'public';
-
     public function store(Request $request, Product $product): RedirectResponse
     {
         $data = $request->validate([
@@ -28,13 +26,14 @@ class ProductMediaController extends Controller
             'alt_text' => ['nullable', 'string', 'max:150'],
         ]);
 
+        $disk = (string) config('finisher.product_media.disk', 'product_media');
         $file = $request->file('file');
         $isVideo = str_starts_with((string) $file->getMimeType(), 'video/');
-        $path = $file->store('products/'.$product->id, self::DISK);
+        $path = $file->store('products/'.$product->id, $disk);
 
         $product->media()->create([
             'type' => $isVideo ? ProductMediaType::Video : ProductMediaType::Image,
-            'disk' => self::DISK,
+            'disk' => $disk,
             'path' => $path,
             'mime' => $file->getMimeType(),
             'size' => $file->getSize(),

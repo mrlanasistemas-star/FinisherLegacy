@@ -78,7 +78,7 @@ test('messages are pending by default but auto-approved when the session allows 
 });
 
 test('a supporter can leave an audio message, stored on the private disk', function () {
-    Storage::fake('local');
+    Storage::fake('support_audio');
     $session = makeSupportSession();
 
     $response = $this->post("/support/{$session->public_code}/messages", [
@@ -91,14 +91,14 @@ test('a supporter can leave an audio message, stored on the private disk', funct
 
     $response->assertRedirect();
     $message = $session->messages()->firstOrFail();
-    expect($message->audio_disk)->toBe('local')
+    expect($message->audio_disk)->toBe('support_audio')
         ->and($message->audio_path)->not->toBeNull()
         ->and($message->trigger_distance_meters)->toBe(5000);
-    Storage::disk('local')->assertExists($message->audio_path);
+    Storage::disk('support_audio')->assertExists($message->audio_path);
 });
 
 test('audio messages are rejected when the session does not allow audio', function () {
-    Storage::fake('local');
+    Storage::fake('support_audio');
     $session = makeSupportSession(allowAudio: false);
 
     $this->post("/support/{$session->public_code}/messages", [
@@ -112,7 +112,7 @@ test('audio messages are rejected when the session does not allow audio', functi
 });
 
 test('audio is never reachable from a public disk URL, only a signed route', function () {
-    Storage::fake('local');
+    Storage::fake('support_audio');
     $session = makeSupportSession();
 
     $this->post("/support/{$session->public_code}/messages", [
