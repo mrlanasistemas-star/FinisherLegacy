@@ -6,10 +6,11 @@ use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Actions\Commerce\CheckoutCart;
 use App\Actions\Commerce\CreateOnlinePayment;
 use App\Actions\Commerce\GetOrCreateCart;
-use App\Actions\Commerce\ResolveCartDiscount;
 use App\Exceptions\Api\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Queries\Commerce\GetCartSummary;
+use App\Support\Commerce\CartSummaryItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,26 +26,24 @@ use Throwable;
  */
 class CheckoutController extends Controller
 {
-    public function show(Request $request, GetOrCreateCart $getOrCreateCart, ResolveCartDiscount $resolveDiscount): Response
+    public function show(Request $request, GetOrCreateCart $getOrCreateCart, GetCartSummary $getSummary): Response
     {
         $cart = $getOrCreateCart->handle($request->user(), null);
-        $cart->loadMissing('items.productVariant.product', 'coupon');
-
-        $subtotal = $cart->items->sum(fn ($item) => $item->productVariant->base_price_minor * $item->quantity);
-        $discount = $resolveDiscount->handle($cart->coupon, $subtotal);
+        $summary = $getSummary->handle($cart);
 
         return Inertia::render('store/Checkout', [
-            'items' => $cart->items->map(fn ($item) => [
-                'product_name' => $item->productVariant->product->name,
-                'variant_name' => $item->productVariant->name,
+            'items' => $summary->items->map(fn (CartSummaryItem $item) => [
+                'product_name' => $item->productName,
+                'variant_name' => $item->variantName,
                 'quantity' => $item->quantity,
-                'line_total_minor' => $item->productVariant->base_price_minor * $item->quantity,
+                'line_total_minor' => $item->lineTotalMinor,
+                'price_available' => $item->priceAvailable,
             ]),
-            'subtotal_minor' => $subtotal,
-            'discount_minor' => $discount,
-            'total_minor' => max($subtotal - $discount, 0),
-            'currency' => $cart->currency,
-            'coupon' => $cart->coupon !== null ? ['code' => $cart->coupon->code] : null,
+            'subtotal_minor' => $summary->subtotalMinor,
+            'discount_minor' => $summary->discountMinor,
+            'total_minor' => $summary->totalMinor,
+            'currency' => $summary->currency,
+            'coupon' => $summary->coupon !== null ? ['code' => $summary->coupon->code] : null,
         ]);
     }
 

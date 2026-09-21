@@ -4,6 +4,11 @@ import { Eye, Plus, Wrench } from '@lucide/vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    eventEditionPhase,
+    statusClass,
+    statusLabel,
+} from '@/lib/statusLabels';
 
 defineProps<{
     editions: {
@@ -53,8 +58,11 @@ const columns = [
             :initial-query="filters.q"
         >
             <template #cell-phase="{ row }">
-                <Badge variant="outline" class="border-white/15 text-white/60">
-                    {{ row.phase }}
+                <Badge
+                    variant="outline"
+                    :class="statusClass(eventEditionPhase, row.phase as string)"
+                >
+                    {{ statusLabel(eventEditionPhase, row.phase as string) }}
                 </Badge>
             </template>
             <template #cell-actions="{ row }">

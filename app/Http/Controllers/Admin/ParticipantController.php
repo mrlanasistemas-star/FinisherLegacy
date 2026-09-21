@@ -14,6 +14,7 @@ use App\Queries\Athletes\GetEventGear;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
 use App\Queries\Operations\GetEventParticipantMetrics;
 use App\Queries\Operations\GetEventParticipantsList;
+use App\Rules\RelativeInternalUrl;
 use App\Support\Notifications\NotificationTemplates;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -159,13 +160,14 @@ class ParticipantController extends Controller
                 ])
                 ->values(),
             'canNotify' => $athlete?->user !== null,
+            'hasPushDevices' => $athlete?->user?->pushDevices()->where('active', true)->exists() ?? false,
             'notificationTemplates' => NotificationTemplates::all(),
         ]);
     }
 
     /**
      * "ENVIAR NOTIFICACIÓN" from the Comunicación tab (product UX
-     * consolidation brief §28, §38, §53) — the same App\Actions\
+     * consolidation brief §28, §38, §46, §53) — the same App\Actions\
      * Notifications\SendAthleteNotification a future bulk-reminder flow
      * from Preregistros would call too, never a second send path.
      */
@@ -180,10 +182,14 @@ class ParticipantController extends Controller
             return back();
         }
 
+        $request->merge(['action_url' => $request->filled('action_url') ? $request->string('action_url')->toString() : null]);
+
         $data = $request->validate([
             'type' => ['required', Rule::enum(NotificationType::class)],
             'title' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'max:1000'],
+            'action_url' => ['nullable', 'string', 'max:255', new RelativeInternalUrl],
+            'push' => ['boolean'],
         ]);
 
         $send->handle(
@@ -191,8 +197,9 @@ class ParticipantController extends Controller
             title: $data['title'],
             message: $data['message'],
             type: NotificationType::from($data['type']),
-            actionUrl: '/dashboard/legado/'.$eventParticipant->id,
+            actionUrl: $data['action_url'] ?? '/dashboard/legado/'.$eventParticipant->id,
             sentBy: $request->user(),
+            push: $data['push'] ?? false,
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Notificación enviada.']);

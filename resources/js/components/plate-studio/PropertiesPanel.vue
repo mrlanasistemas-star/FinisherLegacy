@@ -30,6 +30,17 @@ function num(value: string): number {
 
     return Number.isFinite(parsed) ? parsed : 0;
 }
+
+const elementTypeLabels: Record<string, string> = {
+    static_text: 'Texto fijo',
+    dynamic_text: 'Texto dinámico',
+    qr: 'Código QR',
+    serial: 'Número de serie',
+    line: 'Línea',
+    rect: 'Rectángulo',
+    image: 'Imagen',
+    logo: 'Logo',
+};
 </script>
 
 <template>
@@ -43,7 +54,7 @@ function num(value: string): number {
                 <p
                     class="text-xs font-medium tracking-wide text-white/40 uppercase"
                 >
-                    {{ element.type }}
+                    {{ elementTypeLabels[element.type] ?? element.type }}
                 </p>
                 <div class="flex gap-1">
                     <Button

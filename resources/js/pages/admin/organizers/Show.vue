@@ -15,6 +15,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    eventStatus,
+    providerConnectionStatus,
+    statusLabel,
+} from '@/lib/statusLabels';
 
 type ProviderConnectionSummary = {
     id: number;
@@ -197,7 +202,9 @@ function testConnection(connectionId: number) {
                                     >
                                 </td>
                                 <td class="px-4 py-3">{{ event.sport }}</td>
-                                <td class="px-4 py-3">{{ event.status }}</td>
+                                <td class="px-4 py-3">
+                                    {{ statusLabel(eventStatus, event.status) }}
+                                </td>
                             </tr>
                             <tr v-if="!events.length">
                                 <td
@@ -378,7 +385,7 @@ function testConnection(connectionId: number) {
                                     v-if="source.is_default"
                                     variant="outline"
                                     class="border-fl-gold/30 text-fl-gold-soft"
-                                    >Default</Badge
+                                    >Predeterminada</Badge
                                 >
                                 <Badge
                                     v-if="!source.active"
@@ -402,8 +409,13 @@ function testConnection(connectionId: number) {
                                 </p>
                                 <p>
                                     Estado:
-                                    {{ source.provider_connection.status }} ·
-                                    Última prueba:
+                                    {{
+                                        statusLabel(
+                                            providerConnectionStatus,
+                                            source.provider_connection.status,
+                                        )
+                                    }}
+                                    · Última prueba:
                                     {{
                                         source.provider_connection
                                             .last_tested_at ?? 'nunca'

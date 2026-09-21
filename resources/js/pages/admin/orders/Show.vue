@@ -23,6 +23,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    fulfillmentStatus,
+    paymentStatus,
+    statusClass,
+    statusLabel,
+} from '@/lib/statusLabels';
 
 type Item = {
     id: number;
@@ -102,9 +108,15 @@ function fulfill(itemId: number, locationId: number) {
             </h1>
             <OrderStatusBadge :status="order.status" />
             <PaymentStatusBadge :status="order.payment_status" />
-            <Badge variant="outline" class="border-white/15 text-white/50">{{
-                order.fulfillment_status
-            }}</Badge>
+            <Badge
+                variant="outline"
+                :class="
+                    statusClass(fulfillmentStatus, order.fulfillment_status)
+                "
+                >{{
+                    statusLabel(fulfillmentStatus, order.fulfillment_status)
+                }}</Badge
+            >
         </div>
 
         <div
@@ -253,7 +265,7 @@ function fulfill(itemId: number, locationId: number) {
                         />
                     </div>
                     <p class="mt-1 text-xs text-white/40">
-                        {{ payment.status }} ·
+                        {{ statusLabel(paymentStatus, payment.status) }} ·
                         {{ payment.reference ?? 'sin referencia' }} ·
                         {{ payment.paid_at ?? 'sin fecha' }}
                     </p>

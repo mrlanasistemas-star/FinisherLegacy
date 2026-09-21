@@ -4,9 +4,11 @@ import { Download, Eye } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { exportBatch as exportBatchAction } from '@/actions/App/Http/Controllers/Admin/PlateController';
 import AdminTable from '@/components/admin/AdminTable.vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 import { plateStatus, statusClass, statusLabel } from '@/lib/statusLabels';
 
 const { plates, batchExportLimit } = defineProps<{
@@ -96,6 +98,8 @@ function downloadBatch() {
     <Head title="Placas" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
+
         <div class="mb-6 flex items-center justify-between">
             <h1 class="text-xl font-bold text-white">Placas</h1>
             <Button

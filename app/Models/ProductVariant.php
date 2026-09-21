@@ -58,4 +58,23 @@ class ProductVariant extends Model
     {
         return $this->hasMany(ProductPriceSchedule::class);
     }
+
+    /**
+     * The one place "can this actually be bought right now" is decided —
+     * never exposes exact stock counts (brief §176-§177), just this
+     * boolean. Callers should eager load `product` and `inventoryLevels`
+     * to avoid a lazy-load per variant.
+     */
+    public function isAvailable(): bool
+    {
+        if (! $this->active) {
+            return false;
+        }
+
+        if (! $this->product->tracks_inventory) {
+            return true;
+        }
+
+        return $this->inventoryLevels->sum(fn (InventoryLevel $l) => $l->availableQuantity()) > 0;
+    }
 }

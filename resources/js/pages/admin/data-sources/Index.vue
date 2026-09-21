@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { Database } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
+import { providerConnectionStatus, statusLabel } from '@/lib/statusLabels';
 
 type Source = {
     id: number;
@@ -92,12 +93,17 @@ const purposeLabels: Record<string, string> = {
                             v-if="source.is_default"
                             variant="outline"
                             class="border-fl-gold/30 text-fl-gold-soft"
-                            >Default</Badge
+                            >Predeterminada</Badge
                         >
                         <span
                             v-if="source.provider_connection"
                             class="text-white/40"
-                            >{{ source.provider_connection.status }}</span
+                            >{{
+                                statusLabel(
+                                    providerConnectionStatus,
+                                    source.provider_connection.status,
+                                )
+                            }}</span
                         >
                     </div>
                 </div>

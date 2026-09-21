@@ -2,8 +2,9 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Actions\Commerce\ResolveCartDiscount;
 use App\Models\Cart;
+use App\Queries\Commerce\GetCartSummary;
+use App\Support\Commerce\CartSummaryItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,17 +18,30 @@ class CartResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $subtotal = $this->items->sum(fn ($item) => $item->productVariant->base_price_minor * $item->quantity);
-        $discount = app(ResolveCartDiscount::class)->handle($this->coupon, $subtotal);
+        $summary = app(GetCartSummary::class)->handle($this->resource);
 
         return [
             'uuid' => $this->uuid,
-            'currency' => $this->currency,
-            'items' => CartItemResource::collection($this->whenLoaded('items')),
-            'subtotal_minor' => $subtotal,
-            'discount_minor' => $discount,
-            'total_minor' => max($subtotal - $discount, 0),
-            'coupon' => $this->coupon !== null ? ['code' => $this->coupon->code, 'name' => $this->coupon->name] : null,
+            'currency' => $summary->currency,
+            'items' => $summary->items->map(fn (CartSummaryItem $item) => [
+                'id' => $item->cartItemId,
+                'quantity' => $item->quantity,
+                'product_name' => $item->productName,
+                'product_slug' => $item->productSlug,
+                'variant_name' => $item->variantName,
+                'unit_price_minor' => $item->unitPriceMinor,
+                'line_total_minor' => $item->lineTotalMinor,
+                'currency' => $item->currency,
+                'price_type' => $item->priceType,
+                'price_available' => $item->priceAvailable,
+                'in_stock' => $item->inStock,
+                'image_url' => $item->imageUrl,
+                'event_edition_name' => $item->eventEditionName,
+            ])->values(),
+            'subtotal_minor' => $summary->subtotalMinor,
+            'discount_minor' => $summary->discountMinor,
+            'total_minor' => $summary->totalMinor,
+            'coupon' => $summary->coupon !== null ? ['code' => $summary->coupon->code, 'name' => $summary->coupon->name] : null,
         ];
     }
 }

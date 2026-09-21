@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import { TriangleAlert } from '@lucide/vue';
+import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 
@@ -7,10 +9,11 @@ type CheckoutItem = {
     product_name: string;
     variant_name: string;
     quantity: number;
-    line_total_minor: number;
+    line_total_minor: number | null;
+    price_available: boolean;
 };
 
-defineProps<{
+const props = defineProps<{
     items: CheckoutItem[];
     subtotal_minor: number;
     discount_minor: number;
@@ -18,6 +21,10 @@ defineProps<{
     currency: string;
     coupon: { code: string } | null;
 }>();
+
+const hasUnavailablePrice = computed(() =>
+    props.items.some((item) => !item.price_available),
+);
 
 const form = useForm({});
 
@@ -49,9 +56,17 @@ function placeOrder() {
                     </div>
                     <p class="text-white/70">
                         <Money
-                            :minor="item.line_total_minor"
+                            v-if="item.price_available"
+                            :minor="item.line_total_minor as number"
                             :currency="currency"
                         />
+                        <span
+                            v-else
+                            class="flex items-center gap-1 text-xs text-amber-400"
+                        >
+                            <TriangleAlert class="size-3.5" />
+                            Sin precio disponible
+                        </span>
                     </p>
                 </div>
                 <div
@@ -84,9 +99,20 @@ function placeOrder() {
                 monto siempre lo determina el servidor.
             </p>
 
+            <p
+                v-if="hasUnavailablePrice"
+                class="mt-4 flex items-center gap-1.5 text-xs text-amber-400"
+            >
+                <TriangleAlert class="size-3.5" />
+                Vuelve al carrito y quita los productos sin precio disponible
+                antes de confirmar.
+            </p>
+
             <Button
                 class="mt-8 w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                :disabled="form.processing || !items.length"
+                :disabled="
+                    form.processing || !items.length || hasUnavailablePrice
+                "
                 @click="placeOrder"
             >
                 Confirmar pedido

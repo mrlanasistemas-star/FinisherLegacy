@@ -6,6 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    externalSyncStatus,
+    providerConnectionStatus,
+    statusLabel,
+} from '@/lib/statusLabels';
 
 type ExternalEvent = {
     external_id: string;
@@ -310,7 +315,11 @@ function submitLink() {
                 class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
             >
                 <p class="text-xs text-white/40 uppercase">Estado</p>
-                <p class="mt-1 text-white">{{ connection.status }}</p>
+                <p class="mt-1 text-white">
+                    {{
+                        statusLabel(providerConnectionStatus, connection.status)
+                    }}
+                </p>
             </div>
             <div
                 class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
@@ -364,7 +373,13 @@ function submitLink() {
                                 :href="`/admin/integrations/sync-runs/${m.last_sync.id}`"
                                 class="text-fl-gold hover:underline"
                             >
-                                {{ m.last_sync.status }} ·
+                                {{
+                                    statusLabel(
+                                        externalSyncStatus,
+                                        m.last_sync.status,
+                                    )
+                                }}
+                                ·
                                 {{ m.last_sync.started_at }}
                             </Link>
                             <span v-else>—</span>

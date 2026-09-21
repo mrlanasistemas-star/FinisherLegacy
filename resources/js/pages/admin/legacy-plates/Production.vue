@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { CheckCircle2, Factory, XCircle } from '@lucide/vue';
+import { computed } from 'vue';
 import EventEditionSelector from '@/components/admin/EventEditionSelector.vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import HelpPopover from '@/components/HelpPopover.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 
 type QueueRow = {
     id: number;
@@ -19,11 +23,23 @@ type QueueRow = {
     reasons: string[];
 };
 
-defineProps<{
+const props = defineProps<{
     events: { id: number; name: string }[];
     selectedEventEditionId: number | null;
     queue: QueueRow[];
 }>();
+
+const kpis = computed(() => [
+    { label: 'En cola', value: props.queue.length },
+    {
+        label: 'Listas para producir',
+        value: props.queue.filter((r) => r.eligible).length,
+    },
+    {
+        label: 'Con requisitos pendientes',
+        value: props.queue.filter((r) => !r.eligible).length,
+    },
+]);
 
 const reasonLabels: Record<string, string> = {
     LEGACY_PLATE_NOT_PAID: 'Pago pendiente',
@@ -58,10 +74,16 @@ function produce(entitlementId: number) {
     <Head title="Producción de Legacy Plate" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
+
         <div class="mb-6">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
+            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
                 <Factory class="size-5 text-fl-gold" />
                 Producción de Legacy Plate
+                <HelpPopover
+                    title="¿Cómo funciona?"
+                    text="Solo aparecen placas con pago, participante vinculado, resultado y modelo suficientes para grabarse. El grabado real (frente, volteo, reverso, verificación de QR) ocurre en /production, ya sea desde una estación o de forma manual."
+                />
             </h1>
             <p class="mt-1 text-sm text-white/50">
                 Selecciona un evento para ver su cola.
@@ -73,6 +95,17 @@ function produce(entitlementId: number) {
             :model-value="selectedEventEditionId"
             class="mb-6"
         />
+
+        <div v-if="selectedEventEditionId" class="mb-6 grid grid-cols-3 gap-3">
+            <div
+                v-for="kpi in kpis"
+                :key="kpi.label"
+                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+            >
+                <p class="text-xl font-bold text-white">{{ kpi.value }}</p>
+                <p class="text-xs text-white/50">{{ kpi.label }}</p>
+            </div>
+        </div>
 
         <div
             v-if="selectedEventEditionId"

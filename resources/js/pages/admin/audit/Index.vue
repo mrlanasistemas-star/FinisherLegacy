@@ -2,6 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { History } from '@lucide/vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { SYSTEM_AREA_NAV } from '@/config/areaNav';
 
 type ActivityRow = {
     id: number;
@@ -68,6 +70,8 @@ function updateFilter(key: string, value: string | number | null) {
     <Head title="Auditoría" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="SYSTEM_AREA_NAV" />
+
         <div class="mb-6 flex items-center gap-2">
             <History class="size-5 text-fl-gold" />
             <div>

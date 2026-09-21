@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\Notifications\PushNotificationGateway;
+use App\Services\Notifications\NullPushNotificationGateway;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -20,7 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // No real provider (Expo/FCM/APNs) exists yet (brief §50-§52) —
+        // swap this binding for a real gateway once one is chosen, no
+        // caller (App\Jobs\SendPushNotificationJob) needs to change.
+        $this->app->bind(PushNotificationGateway::class, NullPushNotificationGateway::class);
     }
 
     /**

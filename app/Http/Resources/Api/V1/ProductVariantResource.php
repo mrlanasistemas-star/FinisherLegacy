@@ -16,8 +16,6 @@ class ProductVariantResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $available = $this->tracksInventoryAvailability();
-
         return [
             'uuid' => $this->uuid,
             'sku' => $this->sku,
@@ -26,22 +24,7 @@ class ProductVariantResource extends JsonResource
             'base_price_minor' => $this->base_price_minor,
             'currency' => $this->currency,
             'active' => $this->active,
-            'in_stock' => $available,
+            'in_stock' => $this->resource->isAvailable(),
         ];
-    }
-
-    /**
-     * Never exposes exact stock counts publicly (brief §177) — only
-     * whether it's currently purchasable.
-     */
-    private function tracksInventoryAvailability(): bool
-    {
-        if (! $this->product->tracks_inventory) {
-            return true;
-        }
-
-        $level = $this->inventoryLevels->first();
-
-        return $level === null ? false : $level->availableQuantity() > 0;
     }
 }

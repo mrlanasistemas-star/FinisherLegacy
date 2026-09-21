@@ -5,18 +5,19 @@
  * App\Queries\Operations\GetEventParticipantsList), and the KPI row above
  * the table is computed from paid Orders only, never the cart.
  */
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Boxes,
     Camera,
     Download,
     ShoppingBag,
     Trophy,
+    Upload,
     Users,
 } from '@lucide/vue';
 import { useDebounceFn } from '@vueuse/core';
 import type { AcceptableValue } from 'reka-ui';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import EventEditionSelector from '@/components/admin/EventEditionSelector.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import Money from '@/components/shared/Money.vue';
@@ -152,6 +153,11 @@ const kpiCards = (metrics: Record<string, number>) => [
     { label: 'CHILL BAND', value: metrics.chill_band, icon: ShoppingBag },
     { label: 'RACEPACK', value: metrics.racepack, icon: ShoppingBag },
 ];
+
+const page = usePage();
+const canImport = computed(() =>
+    (page.props.auth?.permissions ?? []).includes('imports.manage'),
+);
 
 function exportUrl() {
     const params = new URLSearchParams();
@@ -324,9 +330,19 @@ function exportUrl() {
                     </SelectContent>
                 </Select>
 
+                <Link
+                    v-if="canImport"
+                    href="/imports"
+                    class="ml-auto flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-sm text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+                >
+                    <Upload class="size-4" />
+                    Importar
+                </Link>
+
                 <a
                     :href="exportUrl()"
-                    class="ml-auto flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-sm text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+                    :class="{ 'ml-auto': !canImport }"
+                    class="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-sm text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
                 >
                     <Download class="size-4" />
                     Exportar CSV

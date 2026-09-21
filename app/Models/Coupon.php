@@ -14,6 +14,12 @@ use Spatie\Activitylog\Support\LogOptions;
 /**
  * Validity/eligibility rules live in App\Actions\Commerce\ValidateCoupon,
  * never here — this model is data, not a rule engine (brief §32/§35).
+ *
+ * @property-read int|null $used_count Only set when loaded via
+ *   `withCount(['redemptions as used_count' => fn ($q) => $q->active()])`
+ *   (App\Http\Controllers\Admin\CouponController::index) — the count of
+ *   redemptions that currently count toward usage limits, see
+ *   CouponRedemption::scopeActive().
  */
 #[Fillable([
     'uuid', 'code', 'name', 'description', 'type', 'value', 'currency',

@@ -2,6 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { LayoutTemplate, Plus } from '@lucide/vue';
 import { ref } from 'vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 
 type ModelRow = {
     id: number;
@@ -60,6 +62,8 @@ function submit() {
     <Head title="Modelos de Legacy Plate" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
+
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1

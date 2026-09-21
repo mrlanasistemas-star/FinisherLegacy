@@ -23,7 +23,10 @@ class CouponController extends Controller
     public function index(Request $request): Response
     {
         $coupons = Coupon::query()
-            ->withCount('redemptions')
+            // "used" only counts redeemed (paid) + still-fresh reserved
+            // rows — not an abandoned checkout's expired reservation, and
+            // not a released (cancelled) one (brief §33-§37).
+            ->withCount(['redemptions as used_count' => fn ($q) => $q->active()])
             ->when($request->string('q')->toString(), fn ($q, $search) => $q->where('code', 'like', "%{$search}%"))
             ->orderByDesc('created_at')
             ->paginate(25)
@@ -40,7 +43,7 @@ class CouponController extends Controller
             'ends_at' => $coupon->ends_at?->toDateString(),
             'usage_limit_total' => $coupon->usage_limit_total,
             'usage_limit_per_user' => $coupon->usage_limit_per_user,
-            'used_count' => $coupon->redemptions_count,
+            'used_count' => $coupon->used_count,
             'minimum_order_minor' => $coupon->minimum_order_minor,
             'active' => $coupon->active,
         ]);

@@ -7,12 +7,13 @@ use App\Actions\Commerce\ApplyCouponToCart;
 use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\RemoveCartItem;
 use App\Actions\Commerce\RemoveCouponFromCart;
-use App\Actions\Commerce\ResolveCartDiscount;
 use App\Actions\Commerce\UpdateCartItem;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\EventEdition;
 use App\Models\ProductVariant;
+use App\Queries\Commerce\GetCartSummary;
+use App\Support\Commerce\CartSummaryItem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,34 +27,32 @@ use Throwable;
  */
 class CartController extends Controller
 {
-    public function show(Request $request, GetOrCreateCart $getOrCreateCart, ResolveCartDiscount $resolveDiscount): Response
+    public function show(Request $request, GetOrCreateCart $getOrCreateCart, GetCartSummary $getSummary): Response
     {
         $cart = $getOrCreateCart->handle($request->user(), null);
-        $cart->loadMissing('items.productVariant.product.media', 'items.eventEdition', 'coupon');
-
-        $subtotal = $cart->items->sum(fn ($item) => $item->productVariant->base_price_minor * $item->quantity);
-        $discount = $resolveDiscount->handle($cart->coupon, $subtotal);
+        $summary = $getSummary->handle($cart);
 
         return Inertia::render('store/Cart', [
-            'items' => $cart->items->map(fn ($item) => [
-                'id' => $item->id,
+            'items' => $summary->items->map(fn (CartSummaryItem $item) => [
+                'id' => $item->cartItemId,
                 'quantity' => $item->quantity,
-                'product_name' => $item->productVariant->product->name,
-                'variant_name' => $item->productVariant->name,
-                'unit_price_minor' => $item->productVariant->base_price_minor,
-                'line_total_minor' => $item->productVariant->base_price_minor * $item->quantity,
-                'currency' => $item->productVariant->currency,
-                'image_url' => $item->productVariant->product->primaryImageUrl(),
-                'in_stock' => $item->productVariant->active,
-                'event_edition_name' => $item->eventEdition?->name,
+                'product_name' => $item->productName,
+                'variant_name' => $item->variantName,
+                'unit_price_minor' => $item->unitPriceMinor,
+                'line_total_minor' => $item->lineTotalMinor,
+                'currency' => $item->currency,
+                'price_available' => $item->priceAvailable,
+                'image_url' => $item->imageUrl,
+                'in_stock' => $item->inStock,
+                'event_edition_name' => $item->eventEditionName,
             ]),
-            'currency' => $cart->currency,
-            'subtotal_minor' => $subtotal,
-            'discount_minor' => $discount,
-            'total_minor' => max($subtotal - $discount, 0),
-            'coupon' => $cart->coupon !== null ? [
-                'code' => $cart->coupon->code,
-                'name' => $cart->coupon->name,
+            'currency' => $summary->currency,
+            'subtotal_minor' => $summary->subtotalMinor,
+            'discount_minor' => $summary->discountMinor,
+            'total_minor' => $summary->totalMinor,
+            'coupon' => $summary->coupon !== null ? [
+                'code' => $summary->coupon->code,
+                'name' => $summary->coupon->name,
             ] : null,
         ]);
     }

@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Minus, Plus, ShoppingCart, Tag, Trash2, X } from '@lucide/vue';
+import {
+    Minus,
+    Plus,
+    ShoppingCart,
+    Tag,
+    Trash2,
+    TriangleAlert,
+    X,
+} from '@lucide/vue';
+import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,15 +19,16 @@ type CartItem = {
     quantity: number;
     product_name: string;
     variant_name: string;
-    unit_price_minor: number;
-    line_total_minor: number;
+    unit_price_minor: number | null;
+    line_total_minor: number | null;
     currency: string;
+    price_available: boolean;
     image_url: string | null;
     in_stock: boolean;
     event_edition_name: string | null;
 };
 
-defineProps<{
+const props = defineProps<{
     items: CartItem[];
     currency: string;
     subtotal_minor: number;
@@ -26,6 +36,10 @@ defineProps<{
     total_minor: number;
     coupon: { code: string; name: string } | null;
 }>();
+
+const hasUnavailablePrice = computed(() =>
+    props.items.some((item) => !item.price_available),
+);
 
 function updateQuantity(item: CartItem, quantity: number) {
     if (quantity < 0 || quantity > 20) {
@@ -108,14 +122,25 @@ function removeCoupon() {
                                 Para {{ item.event_edition_name }}
                             </p>
                             <p
-                                v-if="!item.in_stock"
+                                v-if="!item.price_available"
+                                class="mt-1 flex items-center gap-1 text-xs text-amber-400"
+                            >
+                                <TriangleAlert class="size-3.5" />
+                                Ya no tiene un precio disponible — quítalo para
+                                continuar
+                            </p>
+                            <p
+                                v-else-if="!item.in_stock"
                                 class="mt-1 text-xs text-red-400"
                             >
                                 Ya no disponible
                             </p>
-                            <p class="mt-1 text-sm text-white/60">
+                            <p
+                                v-if="item.price_available"
+                                class="mt-1 text-sm text-white/60"
+                            >
                                 <Money
-                                    :minor="item.unit_price_minor"
+                                    :minor="item.unit_price_minor as number"
                                     :currency="item.currency"
                                 />
                                 c/u
@@ -168,9 +193,11 @@ function removeCoupon() {
 
                         <p class="shrink-0 font-medium text-white">
                             <Money
-                                :minor="item.line_total_minor"
+                                v-if="item.price_available"
+                                :minor="item.line_total_minor as number"
                                 :currency="item.currency"
                             />
+                            <span v-else class="text-white/30">—</span>
                         </p>
                     </div>
                 </div>
@@ -265,6 +292,14 @@ function removeCoupon() {
                         </dl>
 
                         <Button
+                            v-if="hasUnavailablePrice"
+                            disabled
+                            class="mt-5 w-full"
+                        >
+                            Quita los productos sin precio disponible
+                        </Button>
+                        <Button
+                            v-else
                             as-child
                             class="mt-5 w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
                         >

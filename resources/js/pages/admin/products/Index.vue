@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { productStatus, statusClass, statusLabel } from '@/lib/statusLabels';
 
 type ProductRow = {
     id: number;
@@ -100,13 +101,9 @@ function submit() {
             <template #cell-status="{ row }">
                 <Badge
                     variant="outline"
-                    :class="
-                        row.status === 'active'
-                            ? 'border-emerald-500/30 text-emerald-400'
-                            : 'border-white/20 text-white/50'
-                    "
+                    :class="statusClass(productStatus, row.status as string)"
                 >
-                    {{ row.status }}
+                    {{ statusLabel(productStatus, row.status as string) }}
                 </Badge>
             </template>
             <template #cell-actions="{ row }">
@@ -154,13 +151,13 @@ function submit() {
                                         >Legacy Plate</SelectItem
                                     >
                                     <SelectItem value="apparel"
-                                        >Apparel</SelectItem
+                                        >Ropa</SelectItem
                                     >
                                     <SelectItem value="accessory"
-                                        >Accessory</SelectItem
+                                        >Accesorio</SelectItem
                                     >
                                     <SelectItem value="equipment"
-                                        >Equipment</SelectItem
+                                        >Equipo</SelectItem
                                     >
                                 </SelectContent>
                             </Select>

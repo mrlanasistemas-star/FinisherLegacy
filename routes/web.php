@@ -257,6 +257,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:athletes.view')->prefix('athletes')->name('athletes.')->group(function () {
             Route::get('/', [AdminAthleteController::class, 'index'])->name('index');
             Route::get('{athlete}', [AdminAthleteController::class, 'show'])->name('show');
+            Route::post('{athlete}/notify', [AdminAthleteController::class, 'notify'])
+                ->middleware('can:notifications.send')
+                ->name('notify');
         });
         Route::middleware('can:athletes.manage')->prefix('identity-conflicts')->name('identity-conflicts.')->group(function () {
             Route::get('/', [AdminAthleteIdentityConflictController::class, 'index'])->name('index');

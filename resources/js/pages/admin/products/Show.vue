@@ -23,6 +23,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    productContentSectionType,
+    productType,
+    statusClass,
+    statusLabel,
+} from '@/lib/statusLabels';
 
 type Variant = {
     id: number;
@@ -212,14 +218,14 @@ const sectionTypeHelp: Record<string, string> = {
             </h1>
             <Badge
                 variant="outline"
-                class="border-white/15 text-white/50 uppercase"
-                >{{ product.type }}</Badge
+                :class="statusClass(productType, product.type)"
+                >{{ statusLabel(productType, product.type) }}</Badge
             >
             <Badge
                 v-if="product.qr_capable"
                 variant="outline"
                 class="border-fl-gold/30 text-fl-gold-soft"
-                >QR capable</Badge
+                >Compatible con QR</Badge
             >
         </div>
         <p class="mb-6 max-w-2xl text-sm text-white/50">
@@ -407,9 +413,13 @@ const sectionTypeHelp: Record<string, string> = {
                 <div>
                     <Badge
                         variant="outline"
-                        class="border-white/15 text-white/50 uppercase"
+                        :class="
+                            statusClass(productContentSectionType, section.type)
+                        "
                     >
-                        {{ section.type }}
+                        {{
+                            statusLabel(productContentSectionType, section.type)
+                        }}
                     </Badge>
                     <p class="mt-1 font-medium text-white">
                         {{ section.title }}

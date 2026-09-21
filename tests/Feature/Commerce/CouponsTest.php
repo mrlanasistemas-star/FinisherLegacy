@@ -2,16 +2,20 @@
 
 use App\Actions\Commerce\AddCartItem;
 use App\Actions\Commerce\ApplyCouponToCart;
+use App\Actions\Commerce\CancelOrder;
 use App\Actions\Commerce\CheckoutCart;
 use App\Actions\Commerce\GetOrCreateCart;
+use App\Actions\Commerce\MarkOrderPaid;
 use App\Actions\Commerce\RemoveCouponFromCart;
 use App\Actions\Commerce\ResolveCartDiscount;
+use App\Enums\CouponRedemptionStatus;
 use App\Enums\CouponRejectionReason;
 use App\Enums\CouponType;
 use App\Exceptions\CouponNotApplicableException;
 use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
+use App\Models\InventoryLocation;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -241,4 +245,101 @@ test('a coupon can never push an order total below zero', function () {
 
     expect($order->total_minor)->toBe(0)
         ->and($order->discount_minor)->toBe(5000);
+});
+
+// --- Reservation lifecycle (brief §32-§38, §108) --------------------------
+
+test('checkout reserves the coupon — it is not redeemed until the order is actually paid', function () {
+    $user = User::factory()->create();
+    $cart = cartWithProduct($user);
+    $coupon = makeCoupon();
+    app(ApplyCouponToCart::class)->handle($cart, 'TEST10', $user);
+
+    $order = app(CheckoutCart::class)->handle($cart->fresh(), $user, null);
+    $redemption = CouponRedemption::where('order_id', $order->id)->firstOrFail();
+
+    expect($redemption->status)->toBe(CouponRedemptionStatus::Reserved)
+        ->and($redemption->redeemed_at)->toBeNull()
+        ->and($redemption->expires_at)->not->toBeNull();
+});
+
+test('a pending (unpaid) reservation does not count toward the coupon usage limit once it expires', function () {
+    $user = User::factory()->create();
+    $cart = cartWithProduct($user);
+    $coupon = makeCoupon(['usage_limit_total' => 1]);
+    app(ApplyCouponToCart::class)->handle($cart, 'TEST10', $user);
+    $order = app(CheckoutCart::class)->handle($cart->fresh(), $user, null);
+
+    // Still within its reservation window — the "1 use" is held.
+    $otherUser = User::factory()->create();
+    $otherCart = cartWithProduct($otherUser);
+    expect(fn () => app(ApplyCouponToCart::class)->handle($otherCart, 'TEST10', $otherUser))
+        ->toThrow(CouponNotApplicableException::class);
+
+    // Expire the reservation (simulating an abandoned checkout).
+    CouponRedemption::where('order_id', $order->id)->update(['expires_at' => now()->subMinute()]);
+
+    $coupon2 = app(ApplyCouponToCart::class)->handle($otherCart->fresh(), 'TEST10', $otherUser);
+    expect($coupon2->id)->toBe($coupon->id);
+});
+
+test('MarkOrderPaid promotes the reservation to redeemed', function () {
+    $user = User::factory()->create();
+    $cart = cartWithProduct($user);
+    makeCoupon();
+    app(ApplyCouponToCart::class)->handle($cart, 'TEST10', $user);
+    $order = app(CheckoutCart::class)->handle($cart->fresh(), $user, null);
+
+    app(MarkOrderPaid::class)->handle($order);
+
+    $redemption = CouponRedemption::where('order_id', $order->id)->firstOrFail();
+    expect($redemption->status)->toBe(CouponRedemptionStatus::Redeemed)
+        ->and($redemption->redeemed_at)->not->toBeNull();
+});
+
+test('cancelling an unpaid order releases its coupon reservation for reuse', function () {
+    $user = User::factory()->create();
+    $cart = cartWithProduct($user);
+    $coupon = makeCoupon(['usage_limit_total' => 1]);
+    app(ApplyCouponToCart::class)->handle($cart, 'TEST10', $user);
+    $order = app(CheckoutCart::class)->handle($cart->fresh(), $user, null);
+
+    $location = InventoryLocation::query()->firstOrCreate(
+        ['slug' => config('finisher.commerce.default_inventory_location_slug', 'main-warehouse')],
+        ['name' => 'Main Warehouse', 'active' => true],
+    );
+    app(CancelOrder::class)->handle($order, $location);
+
+    $redemption = CouponRedemption::where('order_id', $order->id)->firstOrFail();
+    expect($redemption->status)->toBe(CouponRedemptionStatus::Released)
+        ->and($redemption->released_at)->not->toBeNull();
+
+    $otherUser = User::factory()->create();
+    $otherCart = cartWithProduct($otherUser);
+    $reapplied = app(ApplyCouponToCart::class)->handle($otherCart, 'TEST10', $otherUser);
+    expect($reapplied->id)->toBe($coupon->id);
+});
+
+test('cancelling an already-paid order does not un-redeem its coupon', function () {
+    $user = User::factory()->create();
+    $cart = cartWithProduct($user);
+    makeCoupon(['usage_limit_total' => 1]);
+    app(ApplyCouponToCart::class)->handle($cart, 'TEST10', $user);
+    $order = app(CheckoutCart::class)->handle($cart->fresh(), $user, null);
+    app(MarkOrderPaid::class)->handle($order);
+
+    $location = InventoryLocation::query()->firstOrCreate(
+        ['slug' => config('finisher.commerce.default_inventory_location_slug', 'main-warehouse')],
+        ['name' => 'Main Warehouse', 'active' => true],
+    );
+    app(CancelOrder::class)->handle($order->fresh(), $location);
+
+    $redemption = CouponRedemption::where('order_id', $order->id)->firstOrFail();
+    expect($redemption->status)->toBe(CouponRedemptionStatus::Redeemed);
+
+    // Still counts as used — a buy/cancel/rebuy cycle can't reuse it.
+    $otherUser = User::factory()->create();
+    $otherCart = cartWithProduct($otherUser);
+    expect(fn () => app(ApplyCouponToCart::class)->handle($otherCart, 'TEST10', $otherUser))
+        ->toThrow(CouponNotApplicableException::class);
 });

@@ -1,7 +1,29 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { Award, Boxes, Trophy, UserCircle } from '@lucide/vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Award, Bell, Boxes, Send, Trophy, UserCircle } from '@lucide/vue';
+import { ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { plateStatus, statusClass, statusLabel } from '@/lib/statusLabels';
 
 type Athlete = {
     id: number;
@@ -39,12 +61,68 @@ type MedalRow = {
     distance_label: string | null;
 };
 
-defineProps<{
+type Mensaje = {
+    id: string;
+    title: string | null;
+    message: string | null;
+    type: string | null;
+    sent_by_name: string | null;
+    read_at: string | null;
+    created_at: string;
+};
+
+type NotificationTemplate = { title: string; message: string };
+
+const props = defineProps<{
     athlete: Athlete;
     participations: Participation[];
     plates: PlateRow[];
     medals: MedalRow[];
+    comunicacion: Mensaje[];
+    canNotify: boolean;
+    hasPushDevices: boolean;
+    notificationTemplates: Record<string, NotificationTemplate>;
 }>();
+
+const typeLabels: Record<string, string> = {
+    payment_pending: 'Pago pendiente',
+    result_available: 'Resultado disponible',
+    legacy_plate_ready: 'Legacy Plate lista',
+    order_ready: 'Pedido listo',
+    event_updated: 'Evento actualizado',
+    custom: 'Mensaje personalizado',
+};
+
+const notifyOpen = ref(false);
+const notifyForm = useForm({
+    type: 'custom',
+    title: '',
+    message: '',
+    action_url: '',
+    push: false,
+});
+
+watch(
+    () => notifyForm.type,
+    (type) => {
+        const template = props.notificationTemplates[type];
+
+        if (template) {
+            notifyForm.title = template.title;
+            notifyForm.message = template.message;
+        }
+    },
+);
+
+function sendNotification() {
+    notifyForm.post(`/admin/athletes/${props.athlete.id}/notify`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            notifyOpen.value = false;
+            notifyForm.reset();
+        },
+    });
+}
 </script>
 
 <template>
@@ -171,8 +249,10 @@ defineProps<{
                             }}</span>
                             <Badge
                                 variant="outline"
-                                class="border-white/20 text-white/50"
-                                >{{ plate.status }}</Badge
+                                :class="statusClass(plateStatus, plate.status)"
+                                >{{
+                                    statusLabel(plateStatus, plate.status)
+                                }}</Badge
                             >
                         </div>
                         <p class="mt-1 text-xs text-white/40">
@@ -216,5 +296,135 @@ defineProps<{
                 </div>
             </section>
         </div>
+
+        <section class="mt-6">
+            <div class="mb-2 flex items-center justify-between">
+                <h2
+                    class="flex items-center gap-1.5 text-sm font-semibold text-white/70"
+                >
+                    <Bell class="size-4" /> Comunicación
+                </h2>
+
+                <Dialog v-model:open="notifyOpen">
+                    <DialogTrigger as-child>
+                        <Button
+                            :disabled="!canNotify"
+                            size="sm"
+                            class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                        >
+                            <Send class="size-3.5" />
+                            Enviar notificación
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent
+                        class="dark border-white/10 bg-fl-graphite text-white"
+                    >
+                        <DialogHeader>
+                            <DialogTitle>Enviar notificación</DialogTitle>
+                        </DialogHeader>
+                        <div class="grid gap-4">
+                            <div class="grid gap-2">
+                                <Label class="text-xs">Plantilla</Label>
+                                <Select v-model="notifyForm.type">
+                                    <SelectTrigger
+                                        class="border-white/10 bg-fl-black text-white"
+                                    >
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="custom"
+                                            >Mensaje personalizado</SelectItem
+                                        >
+                                        <SelectItem
+                                            v-for="(
+                                                template, key
+                                            ) in notificationTemplates"
+                                            :key="key"
+                                            :value="key"
+                                        >
+                                            {{ typeLabels[key] ?? key }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="grid gap-2">
+                                <Label class="text-xs">Título</Label>
+                                <Input
+                                    v-model="notifyForm.title"
+                                    class="border-white/10 bg-fl-black text-white"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label class="text-xs">Mensaje</Label>
+                                <Textarea
+                                    v-model="notifyForm.message"
+                                    rows="4"
+                                    class="border-white/10 bg-fl-black text-white"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label class="text-xs"
+                                    >Enlace (opcional — ruta interna, p. ej.
+                                    /dashboard/legado)</Label
+                                >
+                                <Input
+                                    v-model="notifyForm.action_url"
+                                    placeholder="/dashboard/legado"
+                                    class="border-white/10 bg-fl-black text-white"
+                                />
+                            </div>
+                            <label
+                                v-if="hasPushDevices"
+                                class="flex items-center gap-2 text-sm text-white/80"
+                            >
+                                <Checkbox v-model="notifyForm.push" />
+                                Enviar también push
+                            </label>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                                :disabled="notifyForm.processing"
+                                @click="sendNotification"
+                            >
+                                Enviar
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            <div
+                class="divide-y divide-white/5 rounded-xl border border-white/10"
+            >
+                <div
+                    v-for="msg in comunicacion.slice(0, 10)"
+                    :key="msg.id"
+                    class="p-3 text-sm"
+                >
+                    <div class="flex items-center justify-between">
+                        <p class="text-white">{{ msg.title }}</p>
+                        <span class="text-xs text-white/30">{{
+                            msg.created_at
+                        }}</span>
+                    </div>
+                    <p class="mt-0.5 text-xs text-white/50">
+                        {{ msg.message }}
+                    </p>
+                    <p
+                        v-if="msg.sent_by_name"
+                        class="mt-1 text-xs text-white/30"
+                    >
+                        Enviado por {{ msg.sent_by_name }}
+                    </p>
+                </div>
+                <p
+                    v-if="!comunicacion.length"
+                    class="p-4 text-center text-sm text-white/30"
+                >
+                    Sin notificaciones enviadas todavía.
+                </p>
+            </div>
+        </section>
     </div>
 </template>

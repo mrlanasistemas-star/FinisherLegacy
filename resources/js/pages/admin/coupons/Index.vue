@@ -3,6 +3,8 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Ticket, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import HelpPopover from '@/components/HelpPopover.vue';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -33,6 +35,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { COMMERCE_ORDERS_AREA_NAV } from '@/config/areaNav';
 
 type CouponRow = {
     id: number;
@@ -60,12 +63,24 @@ defineProps<{
 
 const columns = [
     { key: 'code', label: 'Código' },
+    { key: 'kind', label: 'Tipo' },
     { key: 'discount', label: 'Descuento' },
     { key: 'vigencia', label: 'Vigencia' },
     { key: 'usage', label: 'Usos' },
     { key: 'active', label: 'Estado' },
     { key: 'actions', label: '' },
 ];
+
+/**
+ * Not a second entity — a Coupon with a usage_limit_total reads as a
+ * classic "cupón" (finite unit-limited codes); one with only a date
+ * window and no usage limit reads as a "promoción" (time-bound, open
+ * usage). Same table, same validation, just two ways to configure it —
+ * a rule engine or a second table would be over-scoped for Phase 1.
+ */
+function couponKind(coupon: CouponRow): 'Cupón' | 'Promoción' {
+    return coupon.usage_limit_total ? 'Cupón' : 'Promoción';
+}
 
 function emptyForm() {
     return {
@@ -160,10 +175,16 @@ function confirmDestroy() {
     <Head title="Cupones" />
 
     <div class="w-full max-w-[1600px] px-4 py-4 sm:px-6 md:py-8 xl:px-8">
+        <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
+
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
+            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
                 <Ticket class="size-5 text-fl-gold" />
                 Cupones
+                <HelpPopover
+                    title="Cupón vs. promoción"
+                    text="Es la misma tabla, dos formas de usarla. Ponle un límite de usos y tienes un cupón clásico de código limitado. Déjalo sin límite de usos y solo con fecha de fin y tienes una promoción por tiempo. Ambos siempre requieren el código en el carrito — Fase 1 no aplica descuentos automáticos sin código."
+                />
             </h1>
             <Button
                 class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
@@ -183,6 +204,19 @@ function confirmDestroy() {
             <template #cell-code="{ row }">
                 <span class="font-mono text-white">{{ row.code }}</span>
                 <div class="text-xs text-white/50">{{ row.name }}</div>
+            </template>
+
+            <template #cell-kind="{ row }">
+                <Badge
+                    variant="outline"
+                    :class="
+                        couponKind(row as unknown as CouponRow) === 'Cupón'
+                            ? 'border-fl-gold/30 text-fl-gold-soft'
+                            : 'border-sky-500/30 text-sky-400'
+                    "
+                >
+                    {{ couponKind(row as unknown as CouponRow) }}
+                </Badge>
             </template>
 
             <template #cell-discount="{ row }">
@@ -335,6 +369,11 @@ function confirmDestroy() {
                         </div>
                     </div>
 
+                    <p class="-mt-2 text-xs text-white/40">
+                        Con límite de usos → cupón clásico. Sin límite, solo con
+                        fecha de fin → promoción por tiempo.
+                    </p>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
                             <Label>Límite total de usos</Label>
@@ -343,7 +382,7 @@ function confirmDestroy() {
                                 type="number"
                                 min="1"
                                 class="bg-fl-black"
-                                placeholder="Sin límite"
+                                placeholder="Sin límite (promoción)"
                             />
                         </div>
                         <div class="grid gap-2">

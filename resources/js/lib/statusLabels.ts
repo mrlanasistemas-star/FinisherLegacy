@@ -175,6 +175,134 @@ export const importStatus: StatusMap = {
     failed: { label: 'Falló', class: 'border-red-500/30 text-red-400' },
 };
 
+export const productStatus: StatusMap = {
+    draft: { label: 'Borrador', class: NEUTRAL },
+    active: {
+        label: 'Activo',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    archived: { label: 'Archivado', class: NEUTRAL },
+};
+
+export const fulfillmentStatus: StatusMap = {
+    unfulfilled: { label: 'Sin surtir', class: NEUTRAL },
+    partially_fulfilled: {
+        label: 'Parcialmente surtido',
+        class: 'border-amber-500/30 text-amber-400',
+    },
+    fulfilled: {
+        label: 'Surtido',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+};
+
+export const paymentStatus: StatusMap = {
+    pending: {
+        label: 'Pendiente',
+        class: 'border-amber-500/30 text-amber-400',
+    },
+    authorized: {
+        label: 'Autorizado',
+        class: 'border-sky-500/30 text-sky-400',
+    },
+    paid: { label: 'Pagado', class: 'border-emerald-500/30 text-emerald-400' },
+    failed: { label: 'Fallido', class: 'border-red-500/30 text-red-400' },
+    refunded: { label: 'Reembolsado', class: NEUTRAL },
+    partially_refunded: {
+        label: 'Reembolso parcial',
+        class: 'border-orange-500/30 text-orange-400',
+    },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+};
+
+export const providerConnectionStatus: StatusMap = {
+    untested: { label: 'Sin probar', class: NEUTRAL },
+    connected: {
+        label: 'Conectado',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    failed: { label: 'Falló', class: 'border-red-500/30 text-red-400' },
+};
+
+export const externalSyncStatus: StatusMap = {
+    pending: { label: 'En espera', class: NEUTRAL },
+    running: { label: 'Ejecutando…', class: 'border-fl-gold/30 text-fl-gold' },
+    completed: {
+        label: 'Completado',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    partial: {
+        label: 'Parcial',
+        class: 'border-amber-500/30 text-amber-400',
+    },
+    failed: { label: 'Falló', class: 'border-red-500/30 text-red-400' },
+};
+
+export const eventStatus: StatusMap = {
+    draft: { label: 'Borrador', class: NEUTRAL },
+    published: {
+        label: 'Publicado',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    archived: { label: 'Archivado', class: NEUTRAL },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+};
+
+export const editionStatus: StatusMap = {
+    draft: { label: 'Borrador', class: NEUTRAL },
+    published: {
+        label: 'Publicado',
+        class: 'border-sky-500/30 text-sky-400',
+    },
+    in_progress: {
+        label: 'En curso',
+        class: 'border-fl-gold/30 text-fl-gold',
+    },
+    completed: {
+        label: 'Completado',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+};
+
+export const athleteOwnedProductStatus: StatusMap = {
+    unclaimed: { label: 'Sin reclamar', class: NEUTRAL },
+    assigned: { label: 'Asignado', class: 'border-sky-500/30 text-sky-400' },
+    active: {
+        label: 'Activo',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    revoked: { label: 'Revocado', class: 'border-red-500/30 text-red-400' },
+};
+
+export const productType: StatusMap = {
+    legacy_plate: {
+        label: 'Legacy Plate',
+        class: 'border-fl-gold/30 text-fl-gold',
+    },
+    apparel: { label: 'Ropa', class: 'border-sky-500/30 text-sky-400' },
+    accessory: { label: 'Accesorio', class: NEUTRAL },
+    equipment: { label: 'Equipo', class: NEUTRAL },
+};
+
+export const productContentSectionType: StatusMap = {
+    text: { label: 'Texto', class: NEUTRAL },
+    features: { label: 'Características', class: NEUTRAL },
+    steps: { label: 'Pasos', class: NEUTRAL },
+    video: { label: 'Video', class: NEUTRAL },
+    faq: { label: 'Preguntas frecuentes', class: NEUTRAL },
+};
+
+export const eventEditionPhase: StatusMap = {
+    upcoming: { label: 'Próximo', class: 'border-fl-gold/30 text-fl-gold' },
+    ongoing: {
+        label: 'En curso',
+        class: 'border-emerald-500/30 text-emerald-400',
+    },
+    finished: { label: 'Finalizado', class: NEUTRAL },
+};
+
 export function statusLabel(map: StatusMap, value: string): string {
     return map[value]?.label ?? value;
 }

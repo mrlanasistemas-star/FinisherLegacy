@@ -5,6 +5,7 @@ namespace App\Actions\Commerce;
 use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\User;
+use App\Queries\Commerce\GetCartSummary;
 
 /**
  * Cart-time validation only — a UX convenience so the shopper sees
@@ -15,12 +16,18 @@ use App\Models\User;
  */
 class ApplyCouponToCart
 {
-    public function __construct(private readonly ValidateCoupon $validateCoupon) {}
+    public function __construct(
+        private readonly ValidateCoupon $validateCoupon,
+        private readonly GetCartSummary $getCartSummary,
+    ) {}
 
     public function handle(Cart $cart, string $code, ?User $user): Coupon
     {
-        $cart->loadMissing('items.productVariant');
-        $subtotal = $cart->items->sum(fn ($item) => $item->productVariant->base_price_minor * $item->quantity);
+        // Same resolved-price subtotal CheckoutCart will actually charge
+        // (brief item 27/108) — a raw base_price_minor sum here could
+        // pass the minimum-order check on a subtotal the real checkout
+        // never sees.
+        $subtotal = $this->getCartSummary->handle($cart)->subtotalMinor;
 
         $coupon = $this->validateCoupon->findByCode($code);
         $this->validateCoupon->handle($coupon, $cart->currency, $subtotal, $user);

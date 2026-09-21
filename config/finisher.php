@@ -167,6 +167,13 @@ return [
         // A pending, unpaid Order older than this is eligible for
         // automatic expiry — never applied to a paid Order (brief §196).
         'order_payment_expiry_minutes' => env('FINISHER_ORDER_PAYMENT_EXPIRY_MINUTES', 60),
+
+        // How long a CouponRedemption stays "reserved" (counts against
+        // the coupon's usage limit) before it's ignored by
+        // App\Actions\Commerce\ValidateCoupon's usage count — an
+        // abandoned, never-paid checkout stops holding a coupon hostage
+        // without needing a cleanup scheduler (consolidation brief §37).
+        'coupon_reservation_minutes' => env('FINISHER_COUPON_RESERVATION_MINUTES', 60),
     ],
 
     /*

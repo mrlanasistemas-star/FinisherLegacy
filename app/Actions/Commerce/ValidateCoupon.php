@@ -51,12 +51,16 @@ class ValidateCoupon
             throw new CouponNotApplicableException(CouponRejectionReason::MinimumOrderNotMet);
         }
 
-        if ($coupon->usage_limit_total !== null && $coupon->redemptions()->count() >= $coupon->usage_limit_total) {
+        // A `reserved` redemption from an abandoned, never-paid checkout
+        // stops counting once it expires — never a permanently-held slot
+        // (brief §36-§37). Only `redeemed` (paid) and still-fresh
+        // `reserved` rows count.
+        if ($coupon->usage_limit_total !== null && $coupon->redemptions()->active()->count() >= $coupon->usage_limit_total) {
             throw new CouponNotApplicableException(CouponRejectionReason::UsageLimitReached);
         }
 
         if ($user !== null && $coupon->usage_limit_per_user !== null) {
-            $userRedemptions = $coupon->redemptions()->where('user_id', $user->id)->count();
+            $userRedemptions = $coupon->redemptions()->active()->where('user_id', $user->id)->count();
 
             if ($userRedemptions >= $coupon->usage_limit_per_user) {
                 throw new CouponNotApplicableException(CouponRejectionReason::PerUserLimitReached);

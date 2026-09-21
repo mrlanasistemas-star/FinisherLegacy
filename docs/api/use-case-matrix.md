@@ -26,16 +26,21 @@ Qué transporte expone qué caso de uso, y qué Action/Query/Service comparten
 | Heartbeat / bootstrap de estación | - | - | ✓ | `App\Http\Controllers\Api\V1\Devices\DeviceController` |
 | Registro/login de usuario | ✓ (sesión) | ✓ (token) | - | `App\Actions\Fortify\CreateNewUser` |
 | Medallas propias | ✓ | ✓ | - | `App\Http\Controllers\Api\V1\MedalController` / equivalente web |
-| Catálogo de tienda | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\Store\ProductController` |
-| Carrito / checkout | - (pendiente) | ✓ | - | `App\Actions\Commerce\{AddCartItem,CheckoutCart}` |
-| Pedidos propios | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\Store\OrderController` |
-| Pago online / manual | - (pendiente) | ✓ | - | `App\Actions\Commerce\{CreateOnlinePayment,RegisterManualPayment}` |
+| Catálogo de tienda | ✓ | ✓ | - | `App\Queries\Commerce\GetFeaturedProducts` / `App\Http\Controllers\Api\V1\Store\ProductController` |
+| Carrito / checkout | ✓ | ✓ | - | `App\Actions\Commerce\{AddCartItem,CheckoutCart}`, `App\Queries\Commerce\GetCartSummary` |
+| Cupones (aplicar/quitar en carrito) | ✓ | ✓ | - | `App\Actions\Commerce\{ApplyCouponToCart,RemoveCouponFromCart,ValidateCoupon}` |
+| Pedidos propios | ✓ | ✓ | - | `App\Http\Controllers\Api\V1\Store\OrderController` / equivalente web |
+| Pago online / manual | ✓ | ✓ | - | `App\Actions\Commerce\{CreateOnlinePayment,RegisterManualPayment}` |
 | Webhook de pago | - | ✓ (fuera de `/api/v1`) | - | `App\Actions\Commerce\ProcessPaymentWebhook` |
-| Modelos de Legacy Plate | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\LegacyPlateModelController` |
+| Modelos de Legacy Plate | ✓ (admin) | ✓ | - | `App\Http\Controllers\Api\V1\LegacyPlateModelController` |
 | Generar Legacy Plate desde entitlement | - (pendiente) | - (pendiente) | - | `App\Actions\LegacyPlates\GenerateLegacyPlate` |
-| Mi equipo (Digital Closet) / claim de gear | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\GearController` |
-| Mis eventos (historial) | - (pendiente) | ✓ | - | `App\Queries\Athletes\GetAthleteHistory` (misma Query que el admin) |
-| Media de evento (subir/borrar/reordenar) | - (pendiente) | ✓ | - | `App\Actions\Media\*` |
+| Mi equipo (Digital Closet) / claim de gear | ✓ | ✓ | - | `App\Http\Controllers\Api\V1\GearController` / `AthleteHistoryController::myGear()` |
+| Mis eventos (historial) | ✓ | ✓ | - | `App\Queries\Athletes\GetAthleteHistory` (misma Query que el admin) |
+| Media de evento (subir/borrar/reordenar) | ✓ | ✓ | - | `App\Actions\Media\*` |
+| Notificaciones propias (listar/marcar leídas) | ✓ | ✓ | - | Laravel database notifications — `App\Http\Controllers\NotificationController` / `Api\V1\Me\NotificationController` |
+| Enviar notificación a un atleta (admin) | ✓ (admin) | - (pendiente) | - | `App\Actions\Notifications\SendAthleteNotification` |
+| Registrar/eliminar dispositivo push | - | ✓ | - | `App\Actions\Athletes\RegisterPushDevice` / `Api\V1\Me\PushDeviceController` |
+| Mi equipo de apoyo (Support) | ✓ | ✓ | - | `App\Actions\Support\*` / `Api\V1\Me\SupportSessionController` |
 | Resolver fuente de datos de un evento | ✓ (admin, existente) | ✓ | - | `App\Actions\Integrations\ResolveEventDataSource` |
 | Crear evento manual | - (pendiente) | ✓ | - | `App\Actions\CreateEvent` |
 | Ver/establecer fuente de datos de un Organizer | - (pendiente) | ✓ | - | `App\Http\Controllers\Api\V1\Admin\OrganizerDataSourceController` |

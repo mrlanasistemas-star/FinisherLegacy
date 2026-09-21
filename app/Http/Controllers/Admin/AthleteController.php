@@ -2,9 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Notifications\SendAthleteNotification;
+use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Models\Athlete;
+use App\Rules\RelativeInternalUrl;
+use App\Support\Notifications\NotificationTemplates;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -97,6 +104,66 @@ class AthleteController extends Controller
                 'event_date' => $m->event_date?->toDateString(),
                 'distance_label' => $m->distance_label,
             ]),
+            'comunicacion' => $athlete->user === null ? [] : $athlete->user->notifications()
+                ->latest()
+                ->limit(50)
+                ->get()
+                ->map(fn (DatabaseNotification $n) => [
+                    'id' => $n->id,
+                    'title' => $n->data['title'] ?? null,
+                    'message' => $n->data['message'] ?? null,
+                    'type' => $n->data['type'] ?? null,
+                    'sent_by_name' => $n->data['sent_by_name'] ?? null,
+                    'read_at' => $n->read_at?->diffForHumans(),
+                    'created_at' => $n->created_at->diffForHumans(),
+                ])
+                ->values(),
+            'canNotify' => $athlete->user !== null,
+            'hasPushDevices' => $athlete->user?->pushDevices()->where('active', true)->exists() ?? false,
+            'notificationTemplates' => NotificationTemplates::all(),
         ]);
+    }
+
+    /**
+     * Same "Comunicación" send path as
+     * App\Http\Controllers\Admin\ParticipantController::notify — an
+     * Athlete Show page has no EventParticipant to default `action_url`
+     * to, so it lands on Mi Legado's root instead (brief §47: never a
+     * second send implementation, just another entry point to
+     * App\Actions\Notifications\SendAthleteNotification).
+     */
+    public function notify(Request $request, Athlete $athlete, SendAthleteNotification $send): RedirectResponse
+    {
+        $athlete->loadMissing('user');
+
+        if ($athlete->user === null) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Este atleta no tiene una cuenta para notificar.']);
+
+            return back();
+        }
+
+        $request->merge(['action_url' => $request->filled('action_url') ? $request->string('action_url')->toString() : null]);
+
+        $data = $request->validate([
+            'type' => ['required', Rule::enum(NotificationType::class)],
+            'title' => ['required', 'string', 'max:150'],
+            'message' => ['required', 'string', 'max:1000'],
+            'action_url' => ['nullable', 'string', 'max:255', new RelativeInternalUrl],
+            'push' => ['boolean'],
+        ]);
+
+        $send->handle(
+            recipient: $athlete->user,
+            title: $data['title'],
+            message: $data['message'],
+            type: NotificationType::from($data['type']),
+            actionUrl: $data['action_url'] ?? '/dashboard/legado',
+            sentBy: $request->user(),
+            push: $data['push'] ?? false,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Notificación enviada.']);
+
+        return back();
     }
 }

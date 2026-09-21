@@ -20,6 +20,7 @@ import {
 import { ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -28,6 +29,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -38,6 +40,11 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    athleteOwnedProductStatus,
+    statusClass,
+    statusLabel,
+} from '@/lib/statusLabels';
 
 type Historial = {
     id: number;
@@ -107,6 +114,7 @@ const props = defineProps<{
     compras: Compra[];
     comunicacion: Mensaje[];
     canNotify: boolean;
+    hasPushDevices: boolean;
     notificationTemplates: Record<string, NotificationTemplate>;
 }>();
 
@@ -133,6 +141,8 @@ const notifyForm = useForm({
     type: 'custom',
     title: '',
     message: '',
+    action_url: '',
+    push: false,
 });
 
 watch(
@@ -419,9 +429,19 @@ function sendNotification() {
                         </div>
                         <Badge
                             variant="outline"
-                            class="border-white/20 text-white/50"
+                            :class="
+                                statusClass(
+                                    athleteOwnedProductStatus,
+                                    compra.status,
+                                )
+                            "
                         >
-                            {{ compra.status }}
+                            {{
+                                statusLabel(
+                                    athleteOwnedProductStatus,
+                                    compra.status,
+                                )
+                            }}
                         </Badge>
                     </component>
                     <p
@@ -482,9 +502,9 @@ function sendNotification() {
                                 </div>
                                 <div class="grid gap-2">
                                     <Label class="text-xs">Título</Label>
-                                    <input
+                                    <Input
                                         v-model="notifyForm.title"
-                                        class="h-9 w-full rounded-md border border-white/10 bg-fl-black px-3 text-sm text-white"
+                                        class="border-white/10 bg-fl-black text-white"
                                     />
                                 </div>
                                 <div class="grid gap-2">
@@ -495,6 +515,24 @@ function sendNotification() {
                                         class="border-white/10 bg-fl-black text-white"
                                     />
                                 </div>
+                                <div class="grid gap-2">
+                                    <Label class="text-xs"
+                                        >Enlace (opcional — ruta interna, p. ej.
+                                        /dashboard/legado)</Label
+                                    >
+                                    <Input
+                                        v-model="notifyForm.action_url"
+                                        placeholder="/dashboard/legado"
+                                        class="border-white/10 bg-fl-black text-white"
+                                    />
+                                </div>
+                                <label
+                                    v-if="hasPushDevices"
+                                    class="flex items-center gap-2 text-sm text-white/80"
+                                >
+                                    <Checkbox v-model="notifyForm.push" />
+                                    Enviar también push
+                                </label>
                             </div>
                             <DialogFooter>
                                 <Button

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { Settings } from '@lucide/vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Badge } from '@/components/ui/badge';
+import { SYSTEM_AREA_NAV } from '@/config/areaNav';
 
 defineProps<{
     commerce: {
@@ -29,6 +31,8 @@ function mb(bytes: number): string {
     <Head title="Configuración" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="SYSTEM_AREA_NAV" />
+
         <h1 class="mb-1 flex items-center gap-2 text-xl font-bold text-white">
             <Settings class="size-5 text-fl-gold" />
             Configuración del sistema

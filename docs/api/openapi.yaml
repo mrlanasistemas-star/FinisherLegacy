@@ -466,6 +466,46 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /cart/coupon:
+    post:
+      tags: [Store]
+      summary: Aplica un cupón al carrito — validación de UX únicamente, CheckoutCart siempre revalida
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, maxLength: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Cart" }
+        "422":
+          description: COUPON_NOT_APPLICABLE — ver details.reason
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      tags: [Store]
+      summary: Quita el cupón del carrito
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Cart" }
+
   /checkout:
     post:
       tags: [Store]
@@ -625,10 +665,108 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /me/profile:
+    get:
+      tags: [Me]
+      summary: Perfil del usuario autenticado — mismo ProfileController que la sesión web
+      responses:
+        "200":
+          description: OK
+    patch:
+      tags: [Me]
+      summary: Actualiza el perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Error de validación
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ValidationError" }
+
   /me/events:
     get:
       tags: [Me]
       summary: Historial del Athlete — misma Query que el admin (GetAthleteHistory)
+      responses:
+        "200":
+          description: OK
+
+  /me/events/{participant}:
+    get:
+      tags: [Me]
+      summary: Detalle de una participación propia
+      parameters:
+        - name: participant
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /me/events/{participant}/gear:
+    get:
+      tags: [Me]
+      summary: Equipo asociado a esta participación (EventGearSelection)
+      parameters:
+        - name: participant
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+    post:
+      tags: [Me]
+      summary: Asocia un producto propio (AthleteOwnedProduct) a esta participación
+      parameters:
+        - name: participant
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [athlete_owned_product_id]
+              properties:
+                athlete_owned_product_id: { type: integer }
+      responses:
+        "201":
+          description: Asociado
+        "409":
+          description: EVENT_GEAR_ALREADY_ASSIGNED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /me/events/{participant}/gear/{gear}:
+    delete:
+      tags: [Me]
+      summary: Quita un producto asociado a esta participación
+      parameters:
+        - name: participant
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: gear
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
       responses:
         "200":
           description: OK
@@ -671,6 +809,183 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+
+  /me/history:
+    get:
+      tags: [Me]
+      summary: Alias filtrable de /me/events (mismo MeEventsController::index) — mismos filtros from/to/event_id
+      responses:
+        "200":
+          description: OK
+
+  /me/notifications:
+    get:
+      tags: [Me]
+      summary: Notificaciones del usuario autenticado (paginado)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        title: { type: string, nullable: true }
+                        message: { type: string, nullable: true }
+                        type: { type: string, nullable: true }
+                        action_url: { type: string, nullable: true }
+                        read_at: { type: string, format: date-time, nullable: true }
+                        created_at: { type: string, format: date-time }
+
+  /me/notifications/{notification}/read:
+    post:
+      tags: [Me]
+      summary: Marca una notificación propia como leída
+      parameters:
+        - name: notification
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /me/notifications/read-all:
+    post:
+      tags: [Me]
+      summary: Marca todas las notificaciones propias como leídas
+      responses:
+        "200":
+          description: OK
+
+  /me/support-sessions:
+    get:
+      tags: [Me]
+      summary: Sesiones de apoyo del Athlete autenticado (paginado, 20/página)
+      responses:
+        "200":
+          description: OK
+    post:
+      tags: [Me]
+      summary: Crea una sesión de apoyo ("Mi equipo de apoyo")
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, maxLength: 150 }
+                event_participant_id: { type: integer, nullable: true }
+                target_distance_meters: { type: integer, nullable: true }
+      responses:
+        "201":
+          description: Creada
+
+  /me/support-sessions/{supportSession}:
+    get:
+      tags: [Me]
+      summary: Detalle de una sesión propia, con sus mensajes
+      parameters:
+        - name: supportSession
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /me/support-sessions/{supportSession}/manifest:
+    get:
+      tags: [Me]
+      summary: Payload de configuración para el polling del cliente — nunca expone el contenido de una sorpresa antes de su disparo
+      parameters:
+        - name: supportSession
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+
+  /me/support-sessions/{supportSession}/triggered:
+    get:
+      tags: [Me]
+      summary: Mensajes ya disparados según distance_meters
+      parameters:
+        - name: supportSession
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: distance_meters
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: consumed_ids
+          in: query
+          schema: { type: array, items: { type: integer } }
+      responses:
+        "200":
+          description: OK
+
+  /me/support-messages/{message}/consumed:
+    post:
+      tags: [Me]
+      summary: Marca un mensaje de apoyo como consumido
+      parameters:
+        - name: message
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+
+  /me/push-devices:
+    post:
+      tags: [Me]
+      summary: Registra/actualiza un dispositivo push — token cifrado en reposo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, provider, token]
+              properties:
+                platform: { type: string, enum: [ios, android] }
+                provider: { type: string }
+                token: { type: string }
+                device_name: { type: string, nullable: true }
+      responses:
+        "200":
+          description: OK
+
+  /me/push-devices/{uuid}:
+    delete:
+      tags: [Me]
+      summary: Elimina un dispositivo push propio
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
 components:
   securitySchemes:
@@ -780,9 +1095,23 @@ components:
 
     Cart:
       type: object
+      description: >
+        Prices are always resolved via App\Actions\Commerce\
+        ResolveProductPrice (App\Queries\Commerce\GetCartSummary) — the
+        same source of truth CheckoutCart charges from, never a raw
+        ProductVariant.base_price_minor.
       properties:
         uuid: { type: string, format: uuid }
         currency: { type: string }
+        subtotal_minor: { type: integer }
+        discount_minor: { type: integer }
+        total_minor: { type: integer }
+        coupon:
+          type: object
+          nullable: true
+          properties:
+            code: { type: string }
+            name: { type: string }
         items:
           type: array
           items:
@@ -790,9 +1119,19 @@ components:
             properties:
               id: { type: integer }
               quantity: { type: integer }
-              event_edition_id: { type: integer, nullable: true }
-              variant: { $ref: "#/components/schemas/ProductVariant" }
-              product_name: { type: string, nullable: true }
+              product_name: { type: string }
+              product_slug: { type: string, nullable: true }
+              variant_name: { type: string }
+              unit_price_minor: { type: integer, nullable: true }
+              line_total_minor: { type: integer, nullable: true }
+              currency: { type: string }
+              price_type: { type: string, nullable: true }
+              price_available:
+                type: boolean
+                description: false if the line's price schedule no longer applies (e.g. a presale window closed) since it was added
+              in_stock: { type: boolean }
+              image_url: { type: string, nullable: true }
+              event_edition_name: { type: string, nullable: true }
 
     OrderItem:
       type: object

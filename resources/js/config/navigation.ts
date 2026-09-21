@@ -26,6 +26,15 @@
  * still exist and still work by direct URL; they're just not in this list
  * anymore. "Fuentes de datos" is gone from here too — it's reachable from
  * an Organizer's "Datos" tab, doesn't need a permanent top-level slot.
+ *
+ * Personal/Trabajo consolidation (brief §2-§11/§119-§121): a sidebar item
+ * earns its top-level slot only if someone reaches for it often —
+ * everything else moves to an area's SecondaryNav tab bar
+ * (resources/js/config/areaNav.ts) instead of disappearing. That's why
+ * Importaciones, Modelos, Preventas, Pagos, Cupones, Roles y permisos and
+ * Auditoría aren't in this list even though their routes/pages are very
+ * much alive — Importaciones lives inside its Event context, the rest
+ * live in the Legacy Plate / Comercio / Sistema area tab bars.
  */
 import type { LucideIcon } from '@lucide/vue';
 import { resolveIcon } from '@/lib/iconMap';
@@ -53,7 +62,7 @@ export interface NavItem {
 }
 
 export const navGroupLabels: Record<NavGroup, string> = {
-    legacy: 'Mi Legacy',
+    legacy: 'Personal',
     resumen: 'Panel administrativo',
     eventos: 'Eventos',
     legacyplates: 'Legacy Plates',
@@ -128,10 +137,10 @@ export const navigation: NavItem[] = [
         mobilePriority: true,
     },
     {
-        label: 'Organizadores',
-        icon: resolveIcon('Building2'),
-        href: '/admin/organizers',
-        permission: 'organizers.view',
+        label: 'Participantes',
+        icon: resolveIcon('UserCheck'),
+        href: '/admin/participants',
+        permission: 'participants.view',
         group: 'eventos',
     },
     {
@@ -142,47 +151,33 @@ export const navigation: NavItem[] = [
         group: 'eventos',
     },
     {
-        label: 'Participantes',
-        icon: resolveIcon('UserCheck'),
-        href: '/admin/participants',
-        permission: 'participants.view',
+        label: 'Organizadores',
+        icon: resolveIcon('Building2'),
+        href: '/admin/organizers',
+        permission: 'organizers.view',
         group: 'eventos',
     },
     {
-        label: 'Importaciones',
-        icon: resolveIcon('Upload'),
-        href: '/imports',
-        permission: 'imports.manage',
+        label: 'Operación del evento',
+        icon: resolveIcon('Radio'),
+        href: '/operator',
+        permission: 'operator.access',
         group: 'eventos',
     },
 
-    {
-        label: 'Legacy Plates',
-        icon: resolveIcon('Boxes'),
-        href: '/admin/plates',
-        permission: 'plates.view',
-        group: 'legacyplates',
-        mobilePriority: true,
-    },
-    {
-        label: 'Modelos',
-        icon: resolveIcon('LayoutTemplate'),
-        href: '/admin/legacy-plate-models',
-        permission: 'legacyplates.manage',
-        group: 'legacyplates',
-    },
     {
         label: 'Producción',
         icon: resolveIcon('Factory'),
         href: '/admin/legacy-plates/production',
         permission: 'legacyplates.produce',
         group: 'legacyplates',
+        mobilePriority: true,
     },
     {
-        label: 'Preventas',
-        icon: resolveIcon('Ticket'),
-        href: '/admin/legacy-plates/presales',
-        permission: 'legacyplates.manage',
+        label: 'Placas',
+        icon: resolveIcon('Boxes'),
+        href: '/admin/plates',
+        permission: 'plates.view',
         group: 'legacyplates',
     },
 
@@ -194,13 +189,6 @@ export const navigation: NavItem[] = [
         group: 'tienda',
     },
     {
-        label: 'Inventario',
-        icon: resolveIcon('Warehouse'),
-        href: '/admin/inventory',
-        permission: 'inventory.manage',
-        group: 'tienda',
-    },
-    {
         label: 'Pedidos',
         icon: resolveIcon('ShoppingCart'),
         href: '/admin/orders',
@@ -208,17 +196,10 @@ export const navigation: NavItem[] = [
         group: 'tienda',
     },
     {
-        label: 'Pagos',
-        icon: resolveIcon('CreditCard'),
-        href: '/admin/payments',
-        permission: 'payments.view',
-        group: 'tienda',
-    },
-    {
-        label: 'Cupones',
-        icon: resolveIcon('Ticket'),
-        href: '/admin/coupons',
-        permission: 'coupons.manage',
+        label: 'Inventario',
+        icon: resolveIcon('Warehouse'),
+        href: '/admin/inventory',
+        permission: 'inventory.manage',
         group: 'tienda',
     },
 
@@ -237,20 +218,6 @@ export const navigation: NavItem[] = [
         group: 'atletas',
     },
 
-    {
-        label: 'Roles y permisos',
-        icon: resolveIcon('ShieldCheck'),
-        href: '/admin/roles',
-        permission: 'roles.manage',
-        group: 'sistema',
-    },
-    {
-        label: 'Auditoría',
-        icon: resolveIcon('History'),
-        href: '/admin/audit',
-        permission: 'audit.view',
-        group: 'sistema',
-    },
     {
         label: 'Configuración',
         icon: resolveIcon('Settings'),

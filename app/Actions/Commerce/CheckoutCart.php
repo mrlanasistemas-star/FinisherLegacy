@@ -3,6 +3,7 @@
 namespace App\Actions\Commerce;
 
 use App\Actions\LegacyPlates\CreateLegacyPlateEntitlement;
+use App\Enums\CouponRedemptionStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
@@ -141,6 +142,11 @@ class CheckoutCart
             ]);
 
             if ($coupon !== null) {
+                // `reserved`, not `redeemed` — this Order isn't paid yet
+                // (brief §32-§34). App\Actions\Commerce\MarkOrderPaid
+                // promotes it to `redeemed` once payment actually clears;
+                // an abandoned/cancelled Order never permanently consumes
+                // the coupon (brief §36-§37).
                 CouponRedemption::create([
                     'uuid' => (string) Str::uuid(),
                     'coupon_id' => $coupon->id,
@@ -148,6 +154,8 @@ class CheckoutCart
                     'order_id' => $order->id,
                     'code' => $coupon->code,
                     'discount_minor' => $discount,
+                    'status' => CouponRedemptionStatus::Reserved,
+                    'expires_at' => now()->addMinutes((int) config('finisher.commerce.coupon_reservation_minutes', 60)),
                 ]);
             }
 

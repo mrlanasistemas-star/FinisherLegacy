@@ -15,6 +15,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    editionStatus,
+    eventEditionPhase,
+    statusClass,
+    statusLabel,
+} from '@/lib/statusLabels';
 
 type Edition = {
     id: number;
@@ -164,9 +170,11 @@ function submitPrice() {
                     >, {{ edition.country }} · {{ edition.event_date }}
                 </p>
             </div>
-            <Badge variant="outline" class="border-white/15 text-white/60">{{
-                edition.phase
-            }}</Badge>
+            <Badge
+                variant="outline"
+                :class="statusClass(eventEditionPhase, edition.phase)"
+                >{{ statusLabel(eventEditionPhase, edition.phase) }}</Badge
+            >
         </div>
 
         <Tabs default-value="general">
@@ -186,7 +194,9 @@ function submitPrice() {
                 >
                     <div>
                         <p class="text-xs text-white/30 uppercase">Estado</p>
-                        <p class="text-white">{{ edition.status }}</p>
+                        <p class="text-white">
+                            {{ statusLabel(editionStatus, edition.status) }}
+                        </p>
                     </div>
                     <div>
                         <p class="text-xs text-white/30 uppercase">

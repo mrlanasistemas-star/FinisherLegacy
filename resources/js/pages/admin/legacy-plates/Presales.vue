@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Ticket } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EventEditionSelector from '@/components/admin/EventEditionSelector.vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import HelpPopover from '@/components/HelpPopover.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 
 type LinkCandidate = {
     id: number;
@@ -35,11 +38,37 @@ type PresaleRow = {
     link_candidates: LinkCandidate[];
 };
 
-defineProps<{
+const props = defineProps<{
     events: { id: number; name: string }[];
     selectedEventEditionId: number | null;
     presales: PresaleRow[];
 }>();
+
+const kpis = computed(() => {
+    const total = props.presales.length;
+    const paid = props.presales.filter((p) =>
+        ['paid', 'linked', 'queued', 'produced', 'delivered'].includes(
+            p.status,
+        ),
+    ).length;
+    const pendingPayment = props.presales.filter(
+        (p) => p.status === 'pending_payment',
+    ).length;
+    const pendingLink = props.presales.filter(
+        (p) => !p.linked && p.status !== 'cancelled',
+    ).length;
+    const readyForProduction = props.presales.filter(
+        (p) => p.status === 'linked',
+    ).length;
+
+    return [
+        { label: 'Total preventas', value: total },
+        { label: 'Pagadas', value: paid },
+        { label: 'Pendientes de pago', value: pendingPayment },
+        { label: 'Pendientes de vincular', value: pendingLink },
+        { label: 'Listas para producción', value: readyForProduction },
+    ];
+});
 
 const statusLabels: Record<string, string> = {
     pending_payment: 'Pago pendiente',
@@ -82,14 +111,21 @@ function linkParticipant(presaleId: number) {
     <Head title="Preventas Legacy Plate" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
+
         <div class="mb-6">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
+            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
                 <Ticket class="size-5 text-fl-gold" />
                 Preventas de Legacy Plate
+                <HelpPopover
+                    title="¿Qué es una preventa?"
+                    text="Una preventa es un Legacy Plate comprado antes del evento. Se vincula al corredor cuando su participación oficial está disponible."
+                />
             </h1>
             <p class="mt-1 text-sm text-white/50">
-                Preventa Legacy Plate — distinta del prerregistro al evento.
-                Puede existir antes de conocer el dorsal.
+                Compras realizadas antes del evento. Aquí puedes revisar pagos,
+                vincular corredores cuando aparezcan en la lista oficial y
+                preparar placas para producción.
             </p>
         </div>
 
@@ -98,6 +134,20 @@ function linkParticipant(presaleId: number) {
             :model-value="selectedEventEditionId"
             class="mb-6"
         />
+
+        <div
+            v-if="selectedEventEditionId"
+            class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5"
+        >
+            <div
+                v-for="kpi in kpis"
+                :key="kpi.label"
+                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+            >
+                <p class="text-xl font-bold text-white">{{ kpi.value }}</p>
+                <p class="text-xs text-white/50">{{ kpi.label }}</p>
+            </div>
+        </div>
 
         <div
             v-if="selectedEventEditionId"
@@ -124,7 +174,16 @@ function linkParticipant(presaleId: number) {
                         class="border-b border-white/5 text-white/80 last:border-0"
                     >
                         <td class="px-4 py-3">
-                            {{ row.athlete ?? 'Sin vincular todavía' }}
+                            <Link
+                                v-if="row.athlete_id"
+                                :href="`/admin/athletes/${row.athlete_id}`"
+                                class="hover:text-fl-gold-soft hover:underline"
+                            >
+                                {{ row.athlete }}
+                            </Link>
+                            <span v-else class="text-white/40"
+                                >Sin vincular todavía</span
+                            >
                         </td>
                         <td class="px-4 py-3 font-mono text-fl-gold">
                             {{ row.linked ? `#${row.bib_number}` : '—' }}
@@ -206,6 +265,13 @@ function linkParticipant(presaleId: number) {
                                             : 'Registrar pago'
                                     }}
                                 </Link>
+                                <Link
+                                    v-if="row.status === 'linked'"
+                                    href="/admin/legacy-plates/production"
+                                    class="text-xs font-medium text-fl-gold-soft hover:underline"
+                                >
+                                    Ir a producción
+                                </Link>
                             </div>
                         </td>
                     </tr>
@@ -214,7 +280,7 @@ function linkParticipant(presaleId: number) {
                             colspan="7"
                             class="px-4 py-10 text-center text-white/30"
                         >
-                            Sin preventas para este evento.
+                            No hay preventas para este evento.
                         </td>
                     </tr>
                 </tbody>
