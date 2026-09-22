@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\Notifications\PushNotificationGateway;
+use App\Services\Commerce\InventoryService;
 use App\Services\Notifications\NullPushNotificationGateway;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         // swap this binding for a real gateway once one is chosen, no
         // caller (App\Jobs\SendPushNotificationJob) needs to change.
         $this->app->bind(PushNotificationGateway::class, NullPushNotificationGateway::class);
+
+        // Singleton so its defaultLocation() cache (consolidation brief
+        // §9-§11) is shared for the whole request instead of re-querying
+        // the same unchanging InventoryLocation row per variant checked.
+        $this->app->singleton(InventoryService::class);
     }
 
     /**
@@ -81,6 +87,13 @@ class AppServiceProvider extends ServiceProvider
         // by session, since a supporter never has an account.
         RateLimiter::for('support-message', function (Request $request) {
             return Limit::perMinute(6)->by($request->ip());
+        });
+
+        // Consolidation brief §41 — a real staff mistake (fat-fingering a
+        // bulk send, a stuck retry loop) should get slowed down, not a
+        // spam-detection engine.
+        RateLimiter::for('admin-notifications', function (Request $request) {
+            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
         });
     }
 

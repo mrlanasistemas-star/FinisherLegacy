@@ -159,13 +159,14 @@ return [
         // this phase (documented debt, brief §51).
         'default_inventory_location_slug' => env('FINISHER_DEFAULT_INVENTORY_LOCATION', 'main-warehouse'),
 
-        // How long an inventory reservation from CheckoutCart survives
-        // before App\Console\Commands\ReleaseExpiredInventoryReservations
-        // releases it back to available stock (brief §158/§194).
-        'reservation_ttl_minutes' => env('FINISHER_RESERVATION_TTL_MINUTES', 30),
-
         // A pending, unpaid Order older than this is eligible for
-        // automatic expiry — never applied to a paid Order (brief §196).
+        // automatic expiry (brief §196) — App\Console\Commands\
+        // ExpirePendingOrders runs on the schedule (routes/console.php)
+        // and calls App\Actions\Commerce\ExpirePendingOrder, which is also
+        // what actually releases a reserved inventory unit back to stock.
+        // There is deliberately no separate inventory-reservation TTL/
+        // command: Order expiry IS the inventory release policy for Fase
+        // 1 (consolidation brief §20-§21) — never applied to a paid Order.
         'order_payment_expiry_minutes' => env('FINISHER_ORDER_PAYMENT_EXPIRY_MINUTES', 60),
 
         // How long a CouponRedemption stays "reserved" (counts against

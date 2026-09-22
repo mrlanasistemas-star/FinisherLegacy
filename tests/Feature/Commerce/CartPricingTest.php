@@ -8,6 +8,7 @@ use App\Enums\CouponType;
 use App\Enums\ProductPriceType;
 use App\Models\Coupon;
 use App\Models\EventEdition;
+use App\Models\LegacyPlateModel;
 use App\Models\Product;
 use App\Models\ProductPriceSchedule;
 use App\Models\ProductVariant;
@@ -63,9 +64,11 @@ test('a Legacy Plate with no active schedule is flagged price-unavailable instea
     $user = User::factory()->create();
     $product = Product::factory()->legacyPlate()->create();
     $variant = ProductVariant::factory()->create(['product_id' => $product->id, 'base_price_minor' => 99999]);
+    $edition = EventEdition::factory()->create();
+    $model = LegacyPlateModel::factory()->create();
 
     $cart = app(GetOrCreateCart::class)->handle($user, null);
-    app(AddCartItem::class)->handle($cart, $variant, 1);
+    app(AddCartItem::class)->handle($cart, $variant, 1, $edition, ['legacy_plate_model_id' => $model->id]);
 
     $summary = app(GetCartSummary::class)->handle($cart->fresh());
     $item = $summary->items->first();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Notifications\SendAthleteNotification;
+use App\Contracts\Notifications\PushNotificationGateway;
 use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Models\Athlete;
@@ -66,7 +67,7 @@ class ParticipantController extends Controller
         ]);
     }
 
-    public function show(EventParticipant $eventParticipant, GetEventGear $eventGear): Response
+    public function show(EventParticipant $eventParticipant, GetEventGear $eventGear, PushNotificationGateway $pushGateway): Response
     {
         // The route segment is {eventParticipant} (matching the operator
         // routes' convention) — implicit route-model binding matches by
@@ -161,6 +162,7 @@ class ParticipantController extends Controller
                 ->values(),
             'canNotify' => $athlete?->user !== null,
             'hasPushDevices' => $athlete?->user?->pushDevices()->where('active', true)->exists() ?? false,
+            'pushEnabled' => $pushGateway->isConfigured(),
             'notificationTemplates' => NotificationTemplates::all(),
         ]);
     }

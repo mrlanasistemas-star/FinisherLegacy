@@ -5,6 +5,7 @@ namespace App\Actions\Commerce;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentProvider;
 use App\Enums\PaymentStatus;
+use App\Exceptions\OrderExpiredException;
 use App\Exceptions\OrderNotPayableException;
 use App\Exceptions\PaymentAlreadyRecordedException;
 use App\Exceptions\PaymentAttemptInProgressException;
@@ -32,7 +33,10 @@ use Throwable;
  */
 class CreateOnlinePayment
 {
-    public function __construct(private readonly PaymentGatewayRegistry $gateways) {}
+    public function __construct(
+        private readonly PaymentGatewayRegistry $gateways,
+        private readonly ExpirePendingOrder $expireOrder,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $paymentData  Whatever the resolved gateway needs beyond the Order — see PaymentGateway::createPayment().
@@ -46,6 +50,16 @@ class CreateOnlinePayment
 
             if ($locked->payment_status->value === 'paid') {
                 throw new PaymentAlreadyRecordedException;
+            }
+
+            // Lazily expire here too — never rely solely on the scheduler's
+            // cadence (consolidation brief §22): a pending Order past its
+            // window is rejected the moment anyone tries to pay it, not up
+            // to ~5 minutes later.
+            if ($this->expireOrder->isExpired($locked)) {
+                $this->expireOrder->handle($locked);
+
+                throw new OrderExpiredException;
             }
 
             if (in_array($locked->status->value, ['cancelled', 'completed'], true)) {

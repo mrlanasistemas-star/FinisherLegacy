@@ -19,6 +19,40 @@ use Illuminate\Support\Facades\DB;
  */
 class InventoryService
 {
+    /**
+     * Memoized for this instance's lifetime — see defaultLocation().
+     * InventoryService is bound as a singleton (AppServiceProvider), so
+     * this correctly stays cached for one request/console run and resets
+     * cleanly between tests (each test gets a fresh Application, hence a
+     * fresh singleton) — a `static` property would instead leak a stale
+     * location across RefreshDatabase-rolled-back test cases.
+     */
+    private ?InventoryLocation $cachedDefaultLocation = null;
+
+    /**
+     * The one location Fase 1 checkout actually reserves/decrements
+     * against (consolidation brief §9-§11) — App\Actions\Commerce\
+     * CheckoutCart and App\Actions\Commerce\IsVariantAvailableForCheckout
+     * both call this instead of each re-deriving it, so "available" can
+     * never mean stock at a location checkout will never touch. Cached
+     * because IsVariantAvailableForCheckout is called once per variant on
+     * a product listing — re-querying this unchanging row every time
+     * would be a real N+1 (brief §69).
+     */
+    public function defaultLocation(): InventoryLocation
+    {
+        if ($this->cachedDefaultLocation !== null) {
+            return $this->cachedDefaultLocation;
+        }
+
+        $slug = config('finisher.commerce.default_inventory_location_slug', 'main-warehouse');
+
+        return $this->cachedDefaultLocation = InventoryLocation::query()->firstOrCreate(
+            ['slug' => $slug],
+            ['name' => 'Main Warehouse', 'active' => true],
+        );
+    }
+
     public function reserve(ProductVariant $variant, InventoryLocation $location, int $quantity, ?string $referenceType = null, ?int $referenceId = null, ?User $actor = null): InventoryLevel
     {
         return DB::transaction(function () use ($variant, $location, $quantity, $referenceType, $referenceId, $actor) {

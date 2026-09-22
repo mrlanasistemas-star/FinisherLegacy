@@ -35,6 +35,18 @@ class SendAthleteNotification
     ): void {
         $recipient->notify(new AthleteAlert($title, $message, $type, $actionUrl, $metadata, $sentBy));
 
+        // An admin-sent notification is audited here once, regardless of
+        // whether the caller was Web or API (consolidation brief §42) —
+        // never the message body itself (could be considered sensitive),
+        // never a push token.
+        if ($sentBy !== null) {
+            activity()
+                ->causedBy($sentBy)
+                ->performedOn($recipient)
+                ->withProperties(['type' => $type->value, 'push_requested' => $push])
+                ->log('notification_sent');
+        }
+
         if (! $push) {
             return;
         }

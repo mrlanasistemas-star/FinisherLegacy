@@ -4,6 +4,7 @@ use App\Actions\Commerce\AddCartItem;
 use App\Actions\Commerce\ApplyCouponToCart;
 use App\Actions\Commerce\CancelOrder;
 use App\Actions\Commerce\CheckoutCart;
+use App\Actions\Commerce\ExpirePendingOrder;
 use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\MarkOrderPaid;
 use App\Actions\Commerce\RemoveCouponFromCart;
@@ -11,6 +12,7 @@ use App\Actions\Commerce\ResolveCartDiscount;
 use App\Enums\CouponRedemptionStatus;
 use App\Enums\CouponRejectionReason;
 use App\Enums\CouponType;
+use App\Enums\OrderStatus;
 use App\Exceptions\CouponNotApplicableException;
 use App\Models\Cart;
 use App\Models\Coupon;
@@ -342,4 +344,39 @@ test('cancelling an already-paid order does not un-redeem its coupon', function 
     $otherCart = cartWithProduct($otherUser);
     expect(fn () => app(ApplyCouponToCart::class)->handle($otherCart, 'TEST10', $otherUser))
         ->toThrow(CouponNotApplicableException::class);
+});
+
+// --- Late webhook / expired-reservation race (brief §14, §23-§26, §60) ----
+
+test('a late payment for an order whose reservation already expired and was reused never exceeds the usage limit', function () {
+    $coupon = makeCoupon(['usage_limit_total' => 1]);
+
+    // Order A reserves the single use, then goes stale (buyer abandons checkout).
+    $userA = User::factory()->create();
+    $cartA = cartWithProduct($userA);
+    app(ApplyCouponToCart::class)->handle($cartA, 'TEST10', $userA);
+    $orderA = app(CheckoutCart::class)->handle($cartA->fresh(), $userA, null);
+    $orderA->forceFill(['created_at' => now()->subMinutes(120)])->save();
+
+    // The scheduler expires A: cancels it and releases the coupon slot.
+    app(ExpirePendingOrder::class)->handle($orderA->fresh());
+    expect(CouponRedemption::where('order_id', $orderA->id)->firstOrFail()->status)->toBe(CouponRedemptionStatus::Released);
+
+    // Order B reserves the now-free slot and actually pays.
+    $userB = User::factory()->create();
+    $cartB = cartWithProduct($userB);
+    $reapplied = app(ApplyCouponToCart::class)->handle($cartB, 'TEST10', $userB);
+    expect($reapplied->id)->toBe($coupon->id);
+    $orderB = app(CheckoutCart::class)->handle($cartB->fresh(), $userB, null);
+    app(MarkOrderPaid::class)->handle($orderB);
+
+    expect(CouponRedemption::where('order_id', $orderB->id)->firstOrFail()->status)->toBe(CouponRedemptionStatus::Redeemed);
+
+    // A's payment webhook now arrives late — it must never resurrect A or
+    // push the coupon past its usage_limit_total of 1.
+    $resultA = app(MarkOrderPaid::class)->handle($orderA->fresh());
+
+    expect($resultA->status)->toBe(OrderStatus::Cancelled)
+        ->and(CouponRedemption::where('order_id', $orderA->id)->firstOrFail()->status)->toBe(CouponRedemptionStatus::Released)
+        ->and(CouponRedemption::where('coupon_id', $coupon->id)->where('status', CouponRedemptionStatus::Redeemed)->count())->toBe(1);
 });

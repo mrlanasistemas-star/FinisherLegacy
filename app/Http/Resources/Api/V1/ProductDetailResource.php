@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,11 @@ class ProductDetailResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Wire the inverse relation in memory so
+        // ProductVariant::isAvailable() never lazy-loads `product` per
+        // variant (no N+1, consolidation brief §69).
+        $this->variants->each(fn (ProductVariant $variant) => $variant->setRelation('product', $this->resource));
+
         return [
             'uuid' => $this->uuid,
             'name' => $this->name,

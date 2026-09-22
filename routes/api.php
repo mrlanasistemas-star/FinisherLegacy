@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\IncidentController as AdminIncidentController;
+use App\Http\Controllers\Api\V1\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\OrganizerDataSourceController;
 use App\Http\Controllers\Api\V1\Admin\ProviderConnectionController as AdminProviderConnectionController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -102,6 +103,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('incidents/{incident}/resolve', [AdminIncidentController::class, 'resolve'])
                 ->middleware('api.idempotent')
                 ->name('incidents.resolve');
+
+            Route::post('users/{user}/notifications', [AdminNotificationController::class, 'store'])
+                ->middleware('throttle:admin-notifications')
+                ->name('users.notifications.store');
         });
 
         /*

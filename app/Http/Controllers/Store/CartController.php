@@ -97,7 +97,14 @@ class CartController extends Controller
         $metadata = isset($data['legacy_plate_model_id']) ? ['legacy_plate_model_id' => $data['legacy_plate_model_id']] : [];
 
         $cart = $getOrCreateCart->handle($request->user(), null);
-        $addItem->handle($cart, $variant, $data['quantity'], $edition, $metadata);
+
+        try {
+            $addItem->handle($cart, $variant, $data['quantity'], $edition, $metadata);
+        } catch (Throwable $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Producto agregado al carrito.']);
 

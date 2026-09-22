@@ -81,6 +81,7 @@ const props = defineProps<{
     comunicacion: Mensaje[];
     canNotify: boolean;
     hasPushDevices: boolean;
+    pushEnabled: boolean;
     notificationTemplates: Record<string, NotificationTemplate>;
 }>();
 
@@ -374,12 +375,19 @@ function sendNotification() {
                                 />
                             </div>
                             <label
-                                v-if="hasPushDevices"
+                                v-if="pushEnabled && hasPushDevices"
                                 class="flex items-center gap-2 text-sm text-white/80"
                             >
                                 <Checkbox v-model="notifyForm.push" />
                                 Enviar también push
                             </label>
+                            <p
+                                v-else-if="hasPushDevices"
+                                class="text-xs text-white/30"
+                            >
+                                Push no configurado todavía — solo se guardará
+                                como notificación en la app.
+                            </p>
                         </div>
                         <DialogFooter>
                             <Button

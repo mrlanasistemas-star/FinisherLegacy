@@ -19,4 +19,9 @@ class NullPushNotificationGateway implements PushNotificationGateway
     {
         return PushSendResult::notConfigured();
     }
+
+    public function isConfigured(): bool
+    {
+        return false;
+    }
 }

@@ -39,3 +39,22 @@ test('the cart coupon endpoint is documented on the Store surface', function () 
     expect($spec['paths'])->toHaveKey('/cart/coupon');
     expect($spec['paths']['/cart/coupon'])->toHaveKeys(['post', 'delete']);
 });
+
+test('the admin send-notification endpoint is documented (consolidation brief §36-§46)', function () {
+    $spec = Yaml::parseFile(base_path('docs/api/openapi.yaml'));
+
+    expect($spec['paths'])->toHaveKey('/admin/users/{user}/notifications');
+    expect($spec['paths']['/admin/users/{user}/notifications'])->toHaveKey('post');
+    expect($spec['paths']['/admin/users/{user}/notifications']['post']['tags'])->toContain('Notifications');
+});
+
+test('the new consolidation-round error codes appear in the checkout/cart error descriptions', function () {
+    $raw = file_get_contents(base_path('docs/api/openapi.yaml'));
+
+    foreach ([
+        'CART_EVENT_MISMATCH', 'PRICE_CURRENCY_MISMATCH', 'ORDER_EXPIRED',
+        'LEGACY_PLATE_EVENT_REQUIRED', 'LEGACY_PLATE_MODEL_REQUIRED',
+    ] as $code) {
+        expect($raw)->toContain($code);
+    }
+});

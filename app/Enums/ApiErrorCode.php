@@ -44,4 +44,13 @@ enum ApiErrorCode: string
     case InvalidWebhookSignature = 'INVALID_WEBHOOK_SIGNATURE';
     case EventGearAlreadyAssigned = 'EVENT_GEAR_ALREADY_ASSIGNED';
     case CouponNotApplicable = 'COUPON_NOT_APPLICABLE';
+
+    // Final hardening round (consolidation brief §2-§13).
+    case LegacyPlateEventRequired = 'LEGACY_PLATE_EVENT_REQUIRED';
+    case LegacyPlateModelRequired = 'LEGACY_PLATE_MODEL_REQUIRED';
+    case LegacyPlateModelUnavailable = 'LEGACY_PLATE_MODEL_UNAVAILABLE';
+    case LegacyPlateQuantityInvalid = 'LEGACY_PLATE_QUANTITY_INVALID';
+    case CartEventMismatch = 'CART_EVENT_MISMATCH';
+    case PriceCurrencyMismatch = 'PRICE_CURRENCY_MISMATCH';
+    case OrderExpired = 'ORDER_EXPIRED';
 }

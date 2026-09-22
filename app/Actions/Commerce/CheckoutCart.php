@@ -11,10 +11,16 @@ use App\Enums\OrderStatus;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Exceptions\AthleteRequiredException;
+use App\Exceptions\CartEventMismatchException;
+use App\Exceptions\LegacyPlateEventRequiredException;
+use App\Exceptions\LegacyPlateModelRequiredException;
+use App\Exceptions\LegacyPlateModelUnavailableException;
 use App\Exceptions\LegacyPlatePresaleDuplicateException;
+use App\Exceptions\PriceCurrencyMismatchException;
 use App\Exceptions\ProductUnavailableException;
 use App\Models\Athlete;
 use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\EventEdition;
@@ -58,6 +64,15 @@ class CheckoutCart
             throw new RuntimeException('El carrito está vacío.');
         }
 
+        // One Order has exactly one event_edition_id (or none) — never
+        // ambiguous between two different events' lines (consolidation
+        // brief §6-§8). Checked here too, not just in AddCartItem: a cart
+        // built before this guard existed, or altered directly, must
+        // still never check out mixed.
+        if ($items->pluck('event_edition_id')->filter()->unique()->count() > 1) {
+            throw new CartEventMismatchException;
+        }
+
         $location = $this->defaultLocation();
 
         return DB::transaction(function () use ($cart, $user, $athlete, $customerSnapshot, $items, $location) {
@@ -81,11 +96,24 @@ class CheckoutCart
                 }
 
                 $eventEdition = $item->event_edition_id !== null ? EventEdition::find($item->event_edition_id) : null;
+                $legacyPlateModel = null;
 
-                if ($product->type === ProductType::LegacyPlate && $athlete !== null && $eventEdition !== null) {
-                    $this->guardAgainstDuplicatePresale($athlete, $eventEdition);
+                if ($product->type === ProductType::LegacyPlate) {
+                    $legacyPlateModel = $this->validateLegacyPlateLine($item, $eventEdition);
+
+                    if ($athlete !== null) {
+                        $this->guardAgainstDuplicatePresale($athlete, $eventEdition);
+                    }
                 }
+
                 $price = $this->resolvePrice->handle($product, $variant, $eventEdition);
+
+                // A cart is one currency end to end — never silently sum
+                // two different currencies into one subtotal (consolidation
+                // brief §12-§13).
+                if ($price->currency !== $cart->currency) {
+                    throw new PriceCurrencyMismatchException;
+                }
 
                 $this->inventory->reserve($variant, $location, $item->quantity, Cart::class, $cart->id, $user);
 
@@ -101,7 +129,7 @@ class CheckoutCart
                     'currency' => $price->currency,
                     'price_type' => $price->priceType->value,
                     'event_edition' => $eventEdition,
-                    'metadata' => $item->metadata ?? [],
+                    'legacy_plate_model' => $legacyPlateModel,
                 ];
             }
 
@@ -176,18 +204,19 @@ class CheckoutCart
                     'metadata' => ['price_type' => $line['price_type']],
                 ]);
 
-                if ($line['product']->type === ProductType::LegacyPlate) {
-                    $modelId = $line['metadata']['legacy_plate_model_id'] ?? null;
-
-                    if ($modelId !== null && LegacyPlateModel::query()->whereKey($modelId)->exists()) {
-                        $this->createEntitlement->handle([
-                            'athlete_id' => $athlete?->id,
-                            'event_edition_id' => $line['event_edition']->id,
-                            'legacy_plate_model_id' => $modelId,
-                            'order_item_id' => $orderItem->id,
-                            'price_type' => $line['price_type'],
-                        ]);
-                    }
+                // Already validated (event, model, active) in the loop
+                // above — a Legacy Plate OrderItem is never created without
+                // its LegacyPlateEntitlement in the same transaction, so an
+                // exception here rolls back the entire Order, never leaves
+                // a partial one (consolidation brief §4).
+                if ($line['legacy_plate_model'] !== null) {
+                    $this->createEntitlement->handle([
+                        'athlete_id' => $athlete?->id,
+                        'event_edition_id' => $line['event_edition']->id,
+                        'legacy_plate_model_id' => $line['legacy_plate_model']->id,
+                        'order_item_id' => $orderItem->id,
+                        'price_type' => $line['price_type'],
+                    ]);
                 }
             }
 
@@ -196,6 +225,35 @@ class CheckoutCart
 
             return $order->fresh('items');
         });
+    }
+
+    /**
+     * Authoritative re-check (consolidation brief §2-§4) — AddCartItem
+     * already enforces this at add-to-cart time, but a cart can be older
+     * than that guard, or a model can be deactivated after it was added.
+     * Never soft-skip a Legacy Plate line into an OrderItem with no
+     * entitlement: every failure here throws, which rolls back the whole
+     * checkout transaction.
+     */
+    private function validateLegacyPlateLine(CartItem $item, ?EventEdition $eventEdition): LegacyPlateModel
+    {
+        if ($eventEdition === null) {
+            throw new LegacyPlateEventRequiredException;
+        }
+
+        $modelId = $item->metadata['legacy_plate_model_id'] ?? null;
+
+        if ($modelId === null) {
+            throw new LegacyPlateModelRequiredException;
+        }
+
+        $model = LegacyPlateModel::query()->find((int) $modelId);
+
+        if ($model === null || ! $model->active) {
+            throw new LegacyPlateModelUnavailableException;
+        }
+
+        return $model;
     }
 
     /**
@@ -220,11 +278,6 @@ class CheckoutCart
 
     private function defaultLocation(): InventoryLocation
     {
-        $slug = config('finisher.commerce.default_inventory_location_slug', 'main-warehouse');
-
-        return InventoryLocation::query()->firstOrCreate(
-            ['slug' => $slug],
-            ['name' => 'Main Warehouse', 'active' => true],
-        );
+        return $this->inventory->defaultLocation();
     }
 }

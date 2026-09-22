@@ -22,6 +22,7 @@ tags:
   - name: Legacy Plate
   - name: Gear
   - name: Me
+  - name: Notifications
 
 paths:
   /health:
@@ -461,7 +462,11 @@ paths:
                 properties:
                   data: { $ref: "#/components/schemas/Cart" }
         "422":
-          description: Sin stock suficiente u otro error de validación
+          description: >
+            Sin stock suficiente u otro error de validación —
+            LEGACY_PLATE_EVENT_REQUIRED / LEGACY_PLATE_MODEL_REQUIRED /
+            LEGACY_PLATE_MODEL_UNAVAILABLE / LEGACY_PLATE_QUANTITY_INVALID /
+            CART_EVENT_MISMATCH
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -520,7 +525,11 @@ paths:
                 properties:
                   data: { $ref: "#/components/schemas/Order" }
         "422":
-          description: PRODUCT_OUT_OF_STOCK / PRICE_NOT_AVAILABLE / ATHLETE_REQUIRED
+          description: >
+            PRODUCT_OUT_OF_STOCK / PRICE_NOT_AVAILABLE / ATHLETE_REQUIRED /
+            CART_EVENT_MISMATCH / PRICE_CURRENCY_MISMATCH /
+            LEGACY_PLATE_EVENT_REQUIRED / LEGACY_PLATE_MODEL_REQUIRED /
+            LEGACY_PLATE_MODEL_UNAVAILABLE / LEGACY_PLATE_QUANTITY_INVALID
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -576,6 +585,11 @@ paths:
       responses:
         "201":
           description: OK — client_payload sin secretos
+        "422":
+          description: ORDER_EXPIRED — la Order pendiente ya expiró y fue cancelada al intentar cobrarla
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
         "501":
           description: Gateway no configurado todavía (ver docs/architecture/commerce.md)
           content:
@@ -613,6 +627,61 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+
+  /admin/users/{user}/notifications:
+    post:
+      tags: [Notifications]
+      summary: >
+        Enviar una notificación a un usuario — equivalente REST del botón
+        "Comunicación" en Admin (Participante/Atleta), reutiliza
+        App\Actions\Notifications\SendAthleteNotification. Requiere
+        notifications.send. Nunca reconstruye la notificación fuera de la
+        Action; push solo se intenta si push.enabled=true (ver
+        push_available en la respuesta). Auditado vía activity log
+        (remitente/destinatario/tipo/push_requested), nunca el cuerpo del
+        mensaje ni el token push. Rate limit ~30/min por admin.
+      parameters:
+        - name: user
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, title, message]
+              properties:
+                type: { type: string, description: "Ver App\\Enums\\NotificationType" }
+                title: { type: string, maxLength: 150 }
+                message: { type: string, maxLength: 1000 }
+                action_url: { type: string, nullable: true, description: "Solo rutas relativas internas" }
+                push: { type: boolean, default: false }
+      responses:
+        "201":
+          description: Notificación creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      push_requested: { type: boolean }
+                      push_available:
+                        type: boolean
+                        description: Si el PushNotificationGateway realmente configurado puede entregarla (false con NullPushNotificationGateway)
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          description: action_url inseguro u otro error de validación
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Rate limit excedido (throttle:admin-notifications)
 
   /legacy-plate-models:
     get:

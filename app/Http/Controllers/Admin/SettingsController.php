@@ -21,8 +21,8 @@ class SettingsController extends Controller
             'commerce' => [
                 'default_currency' => config('finisher.commerce.default_currency'),
                 'default_inventory_location_slug' => config('finisher.commerce.default_inventory_location_slug'),
-                'reservation_ttl_minutes' => config('finisher.commerce.reservation_ttl_minutes'),
                 'order_payment_expiry_minutes' => config('finisher.commerce.order_payment_expiry_minutes'),
+                'coupon_reservation_minutes' => config('finisher.commerce.coupon_reservation_minutes'),
             ],
             'media' => [
                 'free_images_per_participation' => config('finisher.event_media.free_images_per_participation'),

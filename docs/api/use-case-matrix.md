@@ -38,7 +38,7 @@ Qué transporte expone qué caso de uso, y qué Action/Query/Service comparten
 | Mis eventos (historial) | ✓ | ✓ | - | `App\Queries\Athletes\GetAthleteHistory` (misma Query que el admin) |
 | Media de evento (subir/borrar/reordenar) | ✓ | ✓ | - | `App\Actions\Media\*` |
 | Notificaciones propias (listar/marcar leídas) | ✓ | ✓ | - | Laravel database notifications — `App\Http\Controllers\NotificationController` / `Api\V1\Me\NotificationController` |
-| Enviar notificación a un atleta (admin) | ✓ (admin) | - (pendiente) | - | `App\Actions\Notifications\SendAthleteNotification` |
+| Enviar notificación a un atleta (admin) | ✓ (admin) | ✓ (admin) | - | `App\Actions\Notifications\SendAthleteNotification` (Web: `Admin\ParticipantController`/`AthleteController`; API: `Api\V1\Admin\NotificationController`) |
 | Registrar/eliminar dispositivo push | - | ✓ | - | `App\Actions\Athletes\RegisterPushDevice` / `Api\V1\Me\PushDeviceController` |
 | Mi equipo de apoyo (Support) | ✓ | ✓ | - | `App\Actions\Support\*` / `Api\V1\Me\SupportSessionController` |
 | Resolver fuente de datos de un evento | ✓ (admin, existente) | ✓ | - | `App\Actions\Integrations\ResolveEventDataSource` |

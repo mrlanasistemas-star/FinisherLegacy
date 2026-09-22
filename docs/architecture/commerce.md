@@ -184,15 +184,21 @@ firma (ver `docs/api/v1.md`).
 
 - Stripe: SDK real instalado e implementado (`createPayment`/
   `handleWebhook`), sin cuenta/llaves reales todavía — ver arriba.
-- OpenPay — solo el contrato existe, ningún stub siquiera (brief §71
-  explícitamente prefiere no crear una implementación falsa sin
-  documentación/credenciales).
+- Openpay: `App\Services\Commerce\Payments\OpenPayPaymentGateway` +
+  `OpenPayWebhookController` implementados igual que Stripe
+  (`createPayment`/`handleWebhook`, guard de configuración honesto vía
+  `PaymentGatewayNotConfiguredException`) — sin cuenta/llaves reales
+  todavía, por lo que el E2E de sandbox sigue pendiente por credenciales,
+  no por código faltante (ver `tests/Feature/Commerce/
+  OpenPayPaymentGatewayTest.php`).
 - Carrito de invitado (`session_token`) — el modelo lo soporta,
   `GetOrCreateCart` lo soporta, pero el checkout actual solo lo ejercita
   autenticado.
 - Impuestos/envío — fuera de alcance a propósito (brief §204-§206),
   campos preparados (`tax_minor`, `requires_shipping`) sin motor real.
   Descuentos ya tienen motor real vía cupones — ver arriba.
-- `ReleaseExpiredInventoryReservations` (brief §194-§195) — el comando/
-  scheduler no se implementó en este pase; una reserva de checkout
-  abandonado queda retenida hasta cancelación manual de la Order.
+- Expiración de reservas — ya no es deuda. `App\Actions\Commerce\
+  ExpirePendingOrder` cancela toda Order pendiente/no pagada más vieja
+  que `finisher.commerce.order_payment_expiry_minutes` y libera su
+  inventario/cupón reservado; corre vía `finisher:expire-pending-orders`
+  cada 5 minutos (`routes/console.php`).

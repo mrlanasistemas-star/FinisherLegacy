@@ -9,8 +9,8 @@ defineProps<{
     commerce: {
         default_currency: string;
         default_inventory_location_slug: string;
-        reservation_ttl_minutes: number;
         order_payment_expiry_minutes: number;
+        coupon_reservation_minutes: number;
     };
     media: {
         free_images_per_participation: number;
@@ -64,15 +64,15 @@ function mb(bytes: number): string {
                         </dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-white/50">TTL de reserva</dt>
-                        <dd class="text-white">
-                            {{ commerce.reservation_ttl_minutes }} min
-                        </dd>
-                    </div>
-                    <div class="flex justify-between">
                         <dt class="text-white/50">Expiración de pago</dt>
                         <dd class="text-white">
                             {{ commerce.order_payment_expiry_minutes }} min
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-white/50">Reserva de cupón</dt>
+                        <dd class="text-white">
+                            {{ commerce.coupon_reservation_minutes }} min
                         </dd>
                     </div>
                 </dl>

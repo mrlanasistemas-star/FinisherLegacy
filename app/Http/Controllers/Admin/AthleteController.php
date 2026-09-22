@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Notifications\SendAthleteNotification;
+use App\Contracts\Notifications\PushNotificationGateway;
 use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Models\Athlete;
@@ -56,7 +57,7 @@ class AthleteController extends Controller
         ]);
     }
 
-    public function show(Athlete $athlete): Response
+    public function show(Athlete $athlete, PushNotificationGateway $pushGateway): Response
     {
         $athlete->loadMissing('user');
         $participations = $athlete->eventParticipations()
@@ -120,6 +121,7 @@ class AthleteController extends Controller
                 ->values(),
             'canNotify' => $athlete->user !== null,
             'hasPushDevices' => $athlete->user?->pushDevices()->where('active', true)->exists() ?? false,
+            'pushEnabled' => $pushGateway->isConfigured(),
             'notificationTemplates' => NotificationTemplates::all(),
         ]);
     }

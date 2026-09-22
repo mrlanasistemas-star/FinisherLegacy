@@ -36,6 +36,12 @@ class GetFeaturedProducts
      */
     public static function summarize(Product $product): array
     {
+        // Each variant already belongs to this exact $product instance —
+        // wiring the inverse relation in memory means
+        // ProductVariant::isAvailable() never lazy-loads it per variant
+        // (no N+1, consolidation brief §69).
+        $product->variants->each(fn (ProductVariant $variant) => $variant->setRelation('product', $product));
+
         $firstVariant = $product->variants->first();
         $galleryImages = $product->relationLoaded('media')
             ? $product->media->where('type', 'image')->sortByDesc('is_primary')->values()
@@ -50,9 +56,7 @@ class GetFeaturedProducts
             'category' => $product->category?->name,
             'from_price_minor' => $product->variants->min('base_price_minor'),
             'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
-            'in_stock' => ! $product->tracks_inventory || $product->variants->contains(
-                fn (ProductVariant $variant) => $variant->inventoryLevels->sum(fn ($l) => $l->availableQuantity()) > 0,
-            ),
+            'in_stock' => $product->variants->contains(fn (ProductVariant $variant) => $variant->isAvailable()),
             'image_url' => $product->primaryImageUrl(),
             'hover_image_url' => $hoverImage?->url(),
             'variant_count' => $product->variants->count(),

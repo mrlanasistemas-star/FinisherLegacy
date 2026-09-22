@@ -43,6 +43,9 @@ class ProductController extends Controller
         abort_unless($product->active && $product->status->value === 'active', 404);
 
         $product->loadMissing(['category', 'variants.inventoryLevels', 'media', 'contentSections']);
+        // Wire the inverse relation in memory so ProductVariant::isAvailable()
+        // never lazy-loads `product` per variant (no N+1, brief §69).
+        $product->variants->each(fn (ProductVariant $variant) => $variant->setRelation('product', $product));
 
         $related = Product::query()
             ->where('id', '!=', $product->id)
@@ -72,7 +75,7 @@ class ProductController extends Controller
                     'attributes' => $variant->attributes,
                     'base_price_minor' => $variant->base_price_minor,
                     'currency' => $variant->currency,
-                    'in_stock' => ! $product->tracks_inventory || $variant->inventoryLevels->sum(fn ($l) => $l->availableQuantity()) > 0,
+                    'in_stock' => $variant->isAvailable(),
                 ]),
                 'gallery' => $product->media->map(fn (ProductMedia $m) => [
                     'id' => $m->id,
