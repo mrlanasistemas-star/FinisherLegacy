@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateAthleteProfileRequest;
 use App\Http\Resources\Api\V1\AthleteProfileResource;
+use App\Models\AthleteFollow;
+use App\Models\LegacyMoment;
 use App\Queries\Athletes\GetAthleteProfileStats;
 use App\Services\AthleteProfileService;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +41,11 @@ class ProfileController extends Controller
             ],
             'profile' => $profile ? new AthleteProfileResource($profile->loadMissing('mainSport')) : null,
             'stats' => $stats->handle($athlete),
+            'social' => [
+                'followers_count' => AthleteFollow::query()->where('following_id', $user->id)->count(),
+                'following_count' => AthleteFollow::query()->where('follower_id', $user->id)->count(),
+                'moments_count' => LegacyMoment::query()->where('user_id', $user->id)->count(),
+            ],
         ]);
     }
 

@@ -128,7 +128,7 @@ class AthleteHistoryController extends Controller
                 'url' => $media->url(),
                 'is_public' => $media->is_public,
             ])->values(),
-            'mediaLimits' => $entitlement->limits(),
+            'mediaLimits' => $entitlement->limits($participant),
             'mediaRemaining' => $entitlement->remaining($participant),
         ]);
     }
@@ -162,7 +162,7 @@ class AthleteHistoryController extends Controller
 
         return Inertia::render('dashboard/LegadoShow', [
             ...$payload,
-            'mediaLimits' => $entitlement->limits(),
+            'mediaLimits' => $entitlement->limits($participant),
             'mediaRemaining' => $entitlement->remaining($participant),
             'availableGear' => $availableGear->map(fn (AthleteOwnedProduct $owned) => [
                 'uuid' => $owned->uuid,

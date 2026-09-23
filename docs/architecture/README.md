@@ -20,6 +20,7 @@ el código", no el "por qué se decidió así".
 | `docs/desktop/technology-decision.md` | Comparación .NET/Tauri/Electron para un futuro Desktop — documentación únicamente, sin código |
 | `docs/architecture/legacy-plate-v2.md` | Legacy Plate pre-manufacturada + grabado dinámico, name fitting, entitlement de producción |
 | `docs/architecture/commerce.md` | Catálogo, inventario, precio por ventana, carrito/checkout/orders, pagos online/manuales |
+| `docs/architecture/social.md` | Legacy Moments: follows, momentos, reacciones, mensajes de apoyo, bloqueos, reportes, feed/explorar/búsqueda, privacidad |
 | `docs/architecture/athlete-assets.md` | AthleteOwnedProduct/AssetCode (Digital Closet), Athlete history, media de evento |
 | `docs/architecture/event-data-source.md` | Organizer ↔ ProviderConnection ↔ Event, `GenericRestEventProvider` |
 

@@ -147,7 +147,7 @@ class AthleteController extends Controller
         $request->merge(['action_url' => $request->filled('action_url') ? $request->string('action_url')->toString() : null]);
 
         $data = $request->validate([
-            'type' => ['required', Rule::enum(NotificationType::class)],
+            'type' => ['required', Rule::enum(NotificationType::class)->only(NotificationType::adminSendable())],
             'title' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'max:1000'],
             'action_url' => ['nullable', 'string', 'max:255', new RelativeInternalUrl],

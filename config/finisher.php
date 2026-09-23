@@ -194,6 +194,14 @@ return [
     'payments' => [
         'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'openpay'),
 
+        // Gateway for `POST /api/v1/orders/{uuid}/payments/online` when the
+        // client doesn't name one. Stripe: its official React Native SDK
+        // (PaymentSheet) keeps card data off Laravel entirely, and its
+        // PaymentIntents can be resumed/synced (ResumablePaymentGateway).
+        'api_gateway' => env('FINISHER_API_PAYMENT_GATEWAY', 'stripe'),
+
+        'merchant_display_name' => env('FINISHER_MERCHANT_DISPLAY_NAME', 'Finisher Legacy'),
+
         'stripe' => [
             'key' => env('STRIPE_KEY'),
             'secret' => env('STRIPE_SECRET'),
@@ -223,7 +231,10 @@ return [
         'max_image_bytes' => env('FINISHER_MEDIA_MAX_IMAGE_BYTES', 8 * 1024 * 1024),
         'max_video_bytes' => env('FINISHER_MEDIA_MAX_VIDEO_BYTES', 100 * 1024 * 1024),
         'image_mimes' => ['jpg', 'jpeg', 'png', 'webp'],
-        'video_mimes' => ['mp4', 'webm'],
+        // `mov` (video/quicktime) is what iOS records natively. Accepted and
+        // stored as-is; a transcoding queue is future work (no ffmpeg on the
+        // current infrastructure) — see docs/COMMERCE_ARCHITECTURE.md.
+        'video_mimes' => ['mp4', 'webm', 'mov'],
         'disk' => env('FINISHER_MEDIA_DISK', 'athlete_media'),
     ],
 
@@ -248,5 +259,68 @@ return [
     */
     'product_media' => [
         'disk' => env('FINISHER_PRODUCT_MEDIA_DISK', 'product_media'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Legacy Moments — social layer (see docs/SOCIAL_ARCHITECTURE.md)
+    |--------------------------------------------------------------------------
+    |
+    | Interaction tied to sporting activity only — no DMs, no chat. Moment
+    | photos live on the public disk like avatars/medal images (they are
+    | meant to be seen); event media referenced by a Moment is never copied.
+    */
+    'social' => [
+        'moment_caption_max' => 1000,
+        'comment_max' => 500,
+        'moment_max_photos' => 4,
+        'moment_photo_max_kb' => 8192,
+        'feed_per_page' => 15,
+        'comments_per_page' => 30,
+        'search_min_length' => 2,
+        'reaction_types' => ['like', 'cheer'],
+        'report_reasons' => ['spam', 'harassment', 'inappropriate', 'impersonation', 'other'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Native social sign-in (Google / Apple)
+    |--------------------------------------------------------------------------
+    |
+    | The app obtains an ID token natively; the backend verifies its
+    | signature against the provider's public JWKS, its `aud` against these
+    | client IDs, and its `iss`/`exp` — then links or creates the User and
+    | issues the same Sanctum token as password login. A provider with no
+    | client IDs configured is disabled (the endpoint answers 422).
+    */
+    'social_auth' => [
+        'google' => [
+            // Comma-separated: iOS, Android and web client IDs are all
+            // valid audiences for tokens minted by the native SDKs.
+            'client_ids' => array_values(array_filter(explode(',', (string) env('GOOGLE_OAUTH_CLIENT_IDS', '')))),
+            'jwks_url' => 'https://www.googleapis.com/oauth2/v3/certs',
+            'issuers' => ['https://accounts.google.com', 'accounts.google.com'],
+        ],
+        'apple' => [
+            // The iOS bundle identifier (and Services ID if Sign in with
+            // Apple on web is ever added).
+            'client_ids' => array_values(array_filter(explode(',', (string) env('APPLE_SIGNIN_CLIENT_IDS', '')))),
+            'jwks_url' => 'https://appleid.apple.com/auth/keys',
+            'issuers' => ['https://appleid.apple.com'],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Memory Packs (paid extra event media) — foundation only
+    |--------------------------------------------------------------------------
+    |
+    | `media_entitlements` rows add images/videos on top of the free tier per
+    | participation. OFF until a real Memory Pack product exists in the store
+    | — never a guessed price. When on, a paid order item for a product of
+    | type `memory_pack` would grant rows; today only staff can grant them.
+    */
+    'memory_packs' => [
+        'enabled' => (bool) env('FINISHER_MEMORY_PACKS_ENABLED', false),
     ],
 ];

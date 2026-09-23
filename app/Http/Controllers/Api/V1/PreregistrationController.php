@@ -23,12 +23,17 @@ class PreregistrationController extends Controller
 
         $race = EventRace::query()
             ->where('event_edition_id', $edition->id)
-            ->findOrFail($request->integer('event_race_id'));
+            ->when(
+                $request->filled('event_race_uuid'),
+                fn ($q) => $q->where('uuid', $request->string('event_race_uuid')->toString()),
+                fn ($q) => $q->whereKey($request->integer('event_race_id')),
+            )
+            ->firstOrFail();
 
         $preregistration = $this->preregistrations->create(
             $edition,
             $race,
-            $request->safe()->except('event_race_id'),
+            $request->safe()->except(['event_race_id', 'event_race_uuid']),
             $request->user(),
         );
 

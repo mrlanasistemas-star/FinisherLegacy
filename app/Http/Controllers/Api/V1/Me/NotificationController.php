@@ -22,7 +22,8 @@ class NotificationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $notifications = $this->sanctumUser($request)->notifications()
+        $user = $this->sanctumUser($request);
+        $notifications = $user->notifications()
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -33,11 +34,35 @@ class NotificationController extends Controller
             'message' => $n->data['message'] ?? null,
             'type' => $n->data['type'] ?? null,
             'action_url' => $n->data['action_url'] ?? null,
+            // Structured deep-link target for social notifications
+            // (`{kind: athlete|moment, username?, moment_uuid?}`) — lets the
+            // app route without parsing web URLs.
+            'target' => $this->target($n->data['metadata'] ?? null),
             'read_at' => $n->read_at?->toIso8601String(),
             'created_at' => $n->created_at->toIso8601String(),
         ]);
 
-        return $this->respond($notifications);
+        return $this->respond($notifications, meta: ['unread_count' => $user->unreadNotifications()->count()]);
+    }
+
+    /**
+     * Only the whitelisted routing keys — never the rest of `metadata`,
+     * which may hold admin-side context.
+     *
+     * @return array<string, string>|null
+     */
+    private function target(mixed $metadata): ?array
+    {
+        if (! is_array($metadata) || ! in_array($metadata['kind'] ?? null, ['athlete', 'moment', 'order', 'event'], true)) {
+            return null;
+        }
+
+        return array_filter([
+            'kind' => $metadata['kind'],
+            'username' => is_string($metadata['username'] ?? null) ? $metadata['username'] : null,
+            'moment_uuid' => is_string($metadata['moment_uuid'] ?? null) ? $metadata['moment_uuid'] : null,
+            'order_uuid' => is_string($metadata['order_uuid'] ?? null) ? $metadata['order_uuid'] : null,
+        ], fn ($value) => $value !== null);
     }
 
     public function markRead(Request $request, string $notification): JsonResponse

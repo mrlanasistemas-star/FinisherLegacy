@@ -8,12 +8,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 #[Fillable(['event_edition_id', 'name', 'distance_value', 'distance_unit', 'race_type', 'start_time', 'active'])]
 class EventRace extends Model
 {
     /** @use HasFactory<EventRaceFactory> */
     use HasFactory;
+
+    /**
+     * `uuid` is the race's public identifier for API clients — never the
+     * integer PK (see the 2026_09_23 migration).
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (EventRace $race) {
+            $race->uuid ??= (string) Str::uuid();
+        });
+    }
 
     protected function casts(): array
     {

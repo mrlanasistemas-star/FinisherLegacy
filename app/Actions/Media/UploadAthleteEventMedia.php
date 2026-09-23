@@ -23,7 +23,13 @@ class UploadAthleteEventMedia
 {
     private const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 
-    private const VIDEO_MIMES = ['video/mp4', 'video/webm'];
+    public const IMAGE_MIME_TYPES = self::IMAGE_MIMES;
+
+    // video/quicktime = iOS's native .mov recording — accepted as-is (see
+    // config finisher.event_media.video_mimes).
+    private const VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/quicktime'];
+
+    public const VIDEO_MIME_TYPES = self::VIDEO_MIMES;
 
     public function __construct(private readonly ResolveMediaEntitlement $entitlement) {}
 

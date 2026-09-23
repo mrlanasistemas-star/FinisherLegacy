@@ -39,6 +39,8 @@ class UpdateAthleteProfileRequest extends FormRequest
             'country' => ['nullable', 'string', 'max:100'],
             'main_sport_id' => ['nullable', 'integer', 'exists:sports,id'],
             'profile_visibility' => ['required', 'string', 'in:public,private'],
+            'remove_profile_photo' => ['nullable', 'boolean'],
+            'remove_cover_photo' => ['nullable', 'boolean'],
             'profile_photo' => ['nullable', 'image', "mimes:{$mimes}", 'max:'.config('finisher.profile.avatar.max_kb')],
             'cover_photo' => ['nullable', 'image', "mimes:{$mimes}", 'max:'.config('finisher.profile.cover.max_kb')],
         ];

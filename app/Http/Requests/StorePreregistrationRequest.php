@@ -17,7 +17,10 @@ class StorePreregistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'event_race_id' => ['required', 'integer', 'exists:event_races,id'],
+            // API clients send the race's public `uuid`; the web form keeps
+            // sending the integer id.
+            'event_race_uuid' => ['required_without:event_race_id', 'nullable', 'uuid', 'exists:event_races,uuid'],
+            'event_race_id' => ['required_without:event_race_uuid', 'nullable', 'integer', 'exists:event_races,id'],
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:255'],

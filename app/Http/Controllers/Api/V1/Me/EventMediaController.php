@@ -14,6 +14,7 @@ use App\Http\Requests\Api\UploadAthleteEventMediaRequest;
 use App\Http\Resources\Api\V1\AthleteEventMediaResource;
 use App\Models\AthleteEventMedia;
 use App\Models\EventParticipant;
+use App\Services\Media\ResolveMediaEntitlement;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -69,12 +70,38 @@ class EventMediaController extends Controller
         return $this->respond(null, 'Archivo eliminado.');
     }
 
+    /**
+     * `GET me/events/{participant}/media-entitlement` — used/limit/
+     * remaining, max bytes and allowed MIME types, so the app never
+     * hardcodes media limits.
+     */
+    public function entitlement(Request $request, EventParticipant $participant, EnsureAthleteForUser $ensureAthlete, ResolveMediaEntitlement $entitlement): JsonResponse
+    {
+        $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'event_media_entitlement');
+        abort_unless($participant->athlete_id === $athlete->id, 403);
+
+        return $this->respond($entitlement->summary($participant));
+    }
+
     public function reorder(Request $request, EventParticipant $participant, EnsureAthleteForUser $ensureAthlete, ReorderAthleteEventMedia $reorder): JsonResponse
     {
         $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'event_media_reorder');
         abort_unless($participant->athlete_id === $athlete->id, 403);
 
-        $mediaIds = array_values(array_map(fn (mixed $id) => (int) $id, $request->array('media_ids')));
+        // Clients identify media by `uuid` (the only id the Resource
+        // exposes). `media_ids` (integer PKs) is still accepted for older
+        // callers.
+        $data = $request->validate([
+            'media_uuids' => ['required_without:media_ids', 'array', 'max:100'],
+            'media_uuids.*' => ['uuid'],
+            'media_ids' => ['required_without:media_uuids', 'array', 'max:100'],
+            'media_ids.*' => ['integer'],
+        ]);
+
+        $mediaIds = isset($data['media_uuids'])
+            ? $reorder->idsForUuids($participant, array_values($data['media_uuids']))
+            : array_values(array_map(fn (mixed $id) => (int) $id, $data['media_ids']));
+
         $reorder->handle($participant, $mediaIds);
 
         return $this->respond(AthleteEventMediaResource::collection(

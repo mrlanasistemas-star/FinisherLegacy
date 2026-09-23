@@ -159,6 +159,16 @@ Payment.status     pending | authorized | paid | failed | refunded | partially_r
   de red — sí se verificó que compila/tipa correctamente contra el SDK
   real (phpstan) y que el camino "no configurado" nunca finge éxito.
 
+### App móvil — Stripe PaymentSheet (gateway de `/api/v1`)
+
+`config('finisher.payments.api_gateway')` (default `stripe`) decide el gateway de `POST /api/v1/orders/{uuid}/payments/online` cuando el cliente no manda `provider`; la web conserva `default_gateway` (OpenPay). Stripe es el gateway móvil porque tiene SDK nativo oficial (PaymentSheet: la tarjeta va del dispositivo a Stripe, nunca a Laravel); OpenPay necesita Openpay.js (web).
+
+- `StripePaymentGateway` implementa `App\Contracts\Commerce\ResumablePaymentGateway`:
+  - `resumePayment()` — si la Order ya tiene un intento Stripe `pending`, `CreateOnlinePayment` devuelve el **mismo** PaymentIntent (mientras siga en `requires_payment_method|requires_confirmation|requires_action`) en vez de crear otro: cerrar la hoja, perder red o una tarjeta rechazada reintentan sin segundo cargo. Además `idempotency_key = payment-{uuid}` en Stripe.
+  - `fetchOutcome()` — lectura server-to-server del PaymentIntent. `App\Actions\Commerce\SyncOnlinePayment` (`POST /orders/{uuid}/payments/sync`) lo aplica vía `ProcessPaymentWebhook` (mismas verificaciones que el webhook). `processing` queda Pending con `metadata.provider_status`.
+- `ProcessPaymentWebhook` ignora un evento que repite el estado actual (sync + webhook del mismo pago → un solo `MarkOrderPaid`).
+- `OrderResource` expone `payment_state` (pending|processing|paid|failed|cancelled|refunded), `payable`, `expires_at` y `payment` (último intento, `Order::latestPayment`).
+
 `App\Actions\Commerce\MarkOrderPaid` centraliza "qué pasa cuando una Order
 queda pagada" (brief §83 — componer, no un God Action): confirma la Order
 si seguía pendiente, y mueve cualquier `LegacyPlateEntitlement` que esa
@@ -180,10 +190,13 @@ brief §70/§178).
 `auth:sanctum` — el proveedor llama directo, autenticado solo por su
 firma (ver `docs/api/v1.md`).
 
+## Memory Packs (base)
+
+`media_entitlements` (user, participación, order_item opcional, `extra_images`, `extra_videos`, `revoked_at`) suma cupo sobre el plan gratis en `ResolveMediaEntitlement` sólo con `FINISHER_MEMORY_PACKS_ENABLED=true`. Sin producto ni precio todavía (nada inventado).
+
 ## Deuda conocida
 
-- Stripe: SDK real instalado e implementado (`createPayment`/
-  `handleWebhook`), sin cuenta/llaves reales todavía — ver arriba.
+- Stripe: SDK real + PaymentSheet móvil + sync server-to-server implementados y probados con dobles (`tests/Feature/Api/V1/MobileCommerceTest.php`); falta sólo configurar llaves reales/sandbox y el endpoint de webhook en Stripe.
 - Openpay: `App\Services\Commerce\Payments\OpenPayPaymentGateway` +
   `OpenPayWebhookController` implementados igual que Stripe
   (`createPayment`/`handleWebhook`, guard de configuración honesto vía

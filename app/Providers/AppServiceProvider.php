@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\Notifications\PushNotificationGateway;
 use App\Services\Commerce\InventoryService;
 use App\Services\Notifications\NullPushNotificationGateway;
+use App\Services\Social\SocialVisibility;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -27,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         // swap this binding for a real gateway once one is chosen, no
         // caller (App\Jobs\SendPushNotificationJob) needs to change.
         $this->app->bind(PushNotificationGateway::class, NullPushNotificationGateway::class);
+
+        // Scoped (per request / per queued job) so a viewer's block and
+        // follow id lists are read once, never leaked across requests.
+        $this->app->scoped(SocialVisibility::class);
 
         // Singleton so its defaultLocation() cache (consolidation brief
         // §9-§11) is shared for the whole request instead of re-querying
@@ -94,6 +99,36 @@ class AppServiceProvider extends ServiceProvider
         // spam-detection engine.
         RateLimiter::for('admin-notifications', function (Request $request) {
             return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Social layer — generous for a real person tapping around, tight
+        // enough to stop scripted spam. Keyed by the Sanctum user.
+        RateLimiter::for('social-write', function (Request $request) {
+            return Limit::perMinute(40)->by('social-write:'.($request->user('sanctum')?->id ?: $request->ip()));
+        });
+
+        RateLimiter::for('social-comment', function (Request $request) {
+            return [
+                Limit::perMinute(10)->by('social-comment:'.($request->user('sanctum')?->id ?: $request->ip())),
+                Limit::perHour(120)->by('social-comment-h:'.($request->user('sanctum')?->id ?: $request->ip())),
+            ];
+        });
+
+        RateLimiter::for('search', function (Request $request) {
+            return Limit::perMinute(60)->by('search:'.($request->user('sanctum')?->id ?: $request->ip()));
+        });
+
+        RateLimiter::for('reports', function (Request $request) {
+            return Limit::perMinute(5)->by('reports:'.($request->user('sanctum')?->id ?: $request->ip()));
+        });
+
+        // Password reset emails and account deletion — slow on purpose.
+        RateLimiter::for('password-reset', function (Request $request) {
+            return Limit::perMinute(3)->by('password-reset:'.$request->ip().'|'.strtolower((string) $request->input('email')));
+        });
+
+        RateLimiter::for('social-auth', function (Request $request) {
+            return Limit::perMinute(10)->by('social-auth:'.$request->ip());
         });
     }
 

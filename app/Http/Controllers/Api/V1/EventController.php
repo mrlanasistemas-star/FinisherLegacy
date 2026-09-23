@@ -10,6 +10,7 @@ use App\Http\Requests\Api\CreateEventRequest;
 use App\Http\Resources\EventEditionCardResource;
 use App\Models\Event;
 use App\Services\EventCatalogService;
+use App\Services\PreregistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -82,7 +83,11 @@ class EventController extends Controller
             'sport' => $event->sport->name,
             'organizer' => $event->organizer?->name,
             'edition' => $edition ? [
+                // The same id EventEditionCardResource already exposes —
+                // the preregistration route binds on it.
+                'id' => $edition->id,
                 'name' => $edition->name,
+                'preregistration_open' => app(PreregistrationService::class)->isOpen($edition),
                 'year' => $edition->year,
                 'event_date' => $edition->event_date->toDateString(),
                 'city' => $edition->city,
@@ -92,6 +97,7 @@ class EventController extends Controller
                 'registration_open_at' => $edition->registration_open_at?->toDateString(),
                 'registration_close_at' => $edition->registration_close_at?->toDateString(),
                 'races' => $edition->races->map(fn ($race) => [
+                    'uuid' => $race->uuid,
                     'name' => $race->name,
                     'distance_value' => $race->distance_value,
                     'distance_unit' => $race->distance_unit,

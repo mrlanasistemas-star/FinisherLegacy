@@ -28,7 +28,7 @@ class SendAdminNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', 'string', Rule::enum(NotificationType::class)],
+            'type' => ['required', 'string', Rule::enum(NotificationType::class)->only(NotificationType::adminSendable())],
             'title' => ['required', 'string', 'max:150'],
             'message' => ['required', 'string', 'max:1000'],
             'action_url' => ['nullable', 'string', 'max:255', new RelativeInternalUrl],

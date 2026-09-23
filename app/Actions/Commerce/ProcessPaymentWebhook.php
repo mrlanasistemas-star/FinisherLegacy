@@ -86,8 +86,13 @@ class ProcessPaymentWebhook
                 return;
             }
 
-            $isValidTransition = $payment->status->value === $outcome->status->value
-                || in_array($outcome->status->value, self::VALID_TRANSITIONS[$payment->status->value], true);
+            // Same status again (e.g. a status sync followed by the webhook
+            // for the same payment) is a no-op, never a second MarkOrderPaid.
+            if ($payment->status->value === $outcome->status->value) {
+                return;
+            }
+
+            $isValidTransition = in_array($outcome->status->value, self::VALID_TRANSITIONS[$payment->status->value], true);
 
             if (! $isValidTransition) {
                 return;

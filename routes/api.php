@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Api\V1\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\OrganizerDataSourceController;
@@ -25,6 +26,12 @@ use App\Http\Controllers\Api\V1\MedalController;
 use App\Http\Controllers\Api\V1\PreregistrationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\PublicAthleteController;
+use App\Http\Controllers\Api\V1\Social\AthleteSocialController;
+use App\Http\Controllers\Api\V1\Social\CommentController;
+use App\Http\Controllers\Api\V1\Social\FeedController;
+use App\Http\Controllers\Api\V1\Social\MomentController;
+use App\Http\Controllers\Api\V1\Social\ReportController;
+use App\Http\Controllers\Api\V1\Social\SearchController;
 use App\Http\Controllers\Api\V1\Store\CartController;
 use App\Http\Controllers\Api\V1\Store\CheckoutController;
 use App\Http\Controllers\Api\V1\Store\OrderController;
@@ -54,9 +61,69 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware('throttle:login')
         ->name('auth.login');
 
+    // Same password broker, email and web reset page as Fortify's own
+    // forgot-password flow — just reachable without a web session.
+    Route::post('auth/forgot-password', [AccountController::class, 'forgotPassword'])
+        ->middleware('throttle:password-reset')
+        ->name('auth.forgot-password');
+    Route::post('auth/reset-password', [AccountController::class, 'resetPassword'])
+        ->middleware('throttle:password-reset')
+        ->name('auth.reset-password');
+
+    // Native Google / Apple ID token → Sanctum token (docs/ARCHITECTURE.md
+    // §Social sign-in). Disabled per provider until its client ids are set.
+    Route::post('auth/social/{provider}', [AccountController::class, 'socialSignIn'])
+        ->middleware('throttle:social-auth')
+        ->whereIn('provider', ['google', 'apple'])
+        ->name('auth.social');
+
     Route::middleware(['auth:sanctum', 'user.token'])->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::get('me', [AuthController::class, 'me'])->name('me');
+        Route::delete('me/account', [AccountController::class, 'destroy'])
+            ->middleware('throttle:password-reset')
+            ->name('me.account.destroy');
+
+        /*
+        |------------------------------------------------------------------
+        | Legacy Moments — social layer (docs/SOCIAL_ARCHITECTURE.md). No
+        | DMs/chat: every interaction hangs off a sporting Moment. Privacy
+        | is enforced server-side by App\Services\Social\SocialVisibility.
+        |------------------------------------------------------------------
+        */
+        Route::get('feed', [FeedController::class, 'feed'])->name('feed');
+        Route::get('explore', [FeedController::class, 'explore'])->name('explore');
+        Route::get('search', SearchController::class)->middleware('throttle:search')->name('search');
+
+        Route::post('moments', [MomentController::class, 'store'])
+            ->middleware(['throttle:social-write', 'api.idempotent'])
+            ->name('moments.store');
+        Route::get('moments/{moment:uuid}', [MomentController::class, 'show'])->name('moments.show');
+        Route::patch('moments/{moment:uuid}', [MomentController::class, 'update'])->middleware('throttle:social-write')->name('moments.update');
+        Route::delete('moments/{moment:uuid}', [MomentController::class, 'destroy'])->name('moments.destroy');
+        Route::put('moments/{moment:uuid}/reactions/{type}', [MomentController::class, 'react'])
+            ->middleware('throttle:social-write')
+            ->name('moments.reactions.store');
+        Route::delete('moments/{moment:uuid}/reactions/{type}', [MomentController::class, 'unreact'])
+            ->middleware('throttle:social-write')
+            ->name('moments.reactions.destroy');
+        Route::get('moments/{moment:uuid}/comments', [CommentController::class, 'index'])->name('moments.comments.index');
+        Route::post('moments/{moment:uuid}/comments', [CommentController::class, 'store'])
+            ->middleware(['throttle:social-comment', 'api.idempotent'])
+            ->name('moments.comments.store');
+        Route::delete('comments/{comment:uuid}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+        Route::prefix('athletes/{athleteProfile:username}')->name('athletes.')->group(function () {
+            Route::post('follow', [AthleteSocialController::class, 'follow'])->middleware('throttle:social-write')->name('follow');
+            Route::delete('follow', [AthleteSocialController::class, 'unfollow'])->middleware('throttle:social-write')->name('unfollow');
+            Route::get('followers', [AthleteSocialController::class, 'followers'])->name('followers');
+            Route::get('following', [AthleteSocialController::class, 'following'])->name('following');
+            Route::get('moments', [AthleteSocialController::class, 'moments'])->name('moments');
+            Route::post('block', [AthleteSocialController::class, 'block'])->middleware('throttle:social-write')->name('block');
+            Route::delete('block', [AthleteSocialController::class, 'unblock'])->middleware('throttle:social-write')->name('unblock');
+        });
+        Route::get('me/blocks', [AthleteSocialController::class, 'blocks'])->name('me.blocks');
+        Route::post('reports', [ReportController::class, 'store'])->middleware('throttle:reports')->name('reports.store');
 
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -134,6 +201,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('orders/{order:uuid}/payments/online', [PaymentController::class, 'online'])
             ->middleware('api.idempotent')
             ->name('orders.payments.online');
+        Route::post('orders/{order:uuid}/payments/sync', [PaymentController::class, 'sync'])
+            ->middleware('throttle:30,1')
+            ->name('orders.payments.sync');
 
         // Staff-only, gated by `payments.record_manual` inside the Form
         // Request (brief §114: "usar v1 route coherente sin inventar otra API").
@@ -163,6 +233,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/', [MeEventMediaController::class, 'store'])->name('store');
             Route::post('reorder', [MeEventMediaController::class, 'reorder'])->name('reorder');
         });
+        Route::get('me/events/{participant}/media-entitlement', [MeEventMediaController::class, 'entitlement'])
+            ->name('me.events.media-entitlement');
         Route::patch('me/media/{media:uuid}', [MeEventMediaController::class, 'updateVisibility'])->name('me.media.update');
         Route::delete('me/media/{media:uuid}', [MeEventMediaController::class, 'destroy'])->name('me.media.destroy');
 

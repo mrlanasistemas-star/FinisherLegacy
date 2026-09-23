@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -134,6 +135,40 @@ class User extends Authenticatable implements ProductionActor
     public function staffAssignments(): HasMany
     {
         return $this->hasMany(EventStaffAssignment::class);
+    }
+
+    /**
+     * Users this user follows (Legacy Moments social layer).
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function following(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'athlete_follows', 'follower_id', 'following_id')->withTimestamps();
+    }
+
+    /** @return BelongsToMany<User, $this> */
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'athlete_follows', 'following_id', 'follower_id')->withTimestamps();
+    }
+
+    /** @return HasMany<LegacyMoment, $this> */
+    public function moments(): HasMany
+    {
+        return $this->hasMany(LegacyMoment::class);
+    }
+
+    /** @return HasMany<UserBlock, $this> */
+    public function blocks(): HasMany
+    {
+        return $this->hasMany(UserBlock::class, 'blocker_id');
+    }
+
+    /** @return HasMany<UserSocialAccount, $this> */
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(UserSocialAccount::class);
     }
 
     /** @return HasMany<PushDevice, $this> */

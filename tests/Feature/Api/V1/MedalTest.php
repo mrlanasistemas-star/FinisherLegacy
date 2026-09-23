@@ -9,11 +9,6 @@ beforeEach(function () {
     Storage::fake('public');
 });
 
-function apiAuthHeader(User $user): array
-{
-    return ['Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken];
-}
-
 test('a user can list only their own medals', function () {
     $user = User::factory()->create();
     $other = User::factory()->create();

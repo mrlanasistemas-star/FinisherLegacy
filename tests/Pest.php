@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +48,24 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Bearer header for an /api/v1 request as $user. Declared here, not inside
+ * one test file, so it exists in every parallel worker — it used to live in
+ * MedalTest.php and failed with "undefined function" in other workers.
+ *
+ * @return array<string, string>
+ */
+function apiAuthHeader(User $user): array
+{
+    // The app instance (and its resolved auth guards) is shared by every
+    // request inside one test — without this, a second request as a
+    // different user would still be authenticated as the first one.
+    app('auth')->forgetGuards();
+    // Same for per-request (scoped) services, e.g. SocialVisibility's
+    // block/follow caches — each real HTTP request gets fresh ones.
+    app()->forgetScopedInstances();
+
+    return ['Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken];
 }

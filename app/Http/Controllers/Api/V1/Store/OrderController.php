@@ -15,21 +15,26 @@ class OrderController extends Controller
     use ApiResponses;
     use ResolvesAuthenticatedUser;
 
+    /**
+     * Standard Laravel resource pagination — `{data, links, meta}` — like
+     * every other paginated list in /api/v1 (medals, events). It used to go
+     * through respond(), which silently dropped links/meta.
+     */
     public function index(Request $request): JsonResponse
     {
         $orders = Order::query()
             ->where('user_id', $this->sanctumUser($request)->id)
-            ->with('items')
+            ->with(['items', 'latestPayment'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return $this->respond(OrderResource::collection($orders));
+        return OrderResource::collection($orders)->response();
     }
 
     public function show(Request $request, Order $order): JsonResponse
     {
         abort_unless($order->user_id === $this->sanctumUser($request)->id, 403);
 
-        return $this->respond(new OrderResource($order->loadMissing('items')));
+        return $this->respond(new OrderResource($order->loadMissing(['items', 'latestPayment'])));
     }
 }

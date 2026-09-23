@@ -23,19 +23,36 @@ class AthleteProfileService
     {
         $profile = $user->athleteProfile ?: $user->athleteProfile()->make();
 
+        $removeProfilePhoto = (bool) ($data['remove_profile_photo'] ?? false);
+        $removeCoverPhoto = (bool) ($data['remove_cover_photo'] ?? false);
+        unset($data['remove_profile_photo'], $data['remove_cover_photo']);
+
         $profile->fill($data);
 
         if ($profilePhoto) {
             $this->replaceImage($profile, 'profile_photo_path', $profilePhoto, cropSquare: 800);
+        } elseif ($removeProfilePhoto) {
+            $this->removeImage($profile, 'profile_photo_path');
         }
 
         if ($coverPhoto) {
             $this->replaceImage($profile, 'cover_photo_path', $coverPhoto, cropSquare: null);
+        } elseif ($removeCoverPhoto) {
+            $this->removeImage($profile, 'cover_photo_path');
         }
 
         $profile->save();
 
         return $profile->fresh();
+    }
+
+    private function removeImage(AthleteProfile $profile, string $column): void
+    {
+        if ($profile->{$column}) {
+            Storage::disk('public')->delete($profile->{$column});
+        }
+
+        $profile->{$column} = null;
     }
 
     private function replaceImage(AthleteProfile $profile, string $column, UploadedFile $file, ?int $cropSquare): void

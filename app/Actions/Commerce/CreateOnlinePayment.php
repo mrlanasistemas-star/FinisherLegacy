@@ -2,6 +2,7 @@
 
 namespace App\Actions\Commerce;
 
+use App\Contracts\Commerce\ResumablePaymentGateway;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentProvider;
 use App\Enums\PaymentStatus;
@@ -25,11 +26,17 @@ use Throwable;
  *
  * The local Payment row is reserved, inside a short row-locked
  * transaction, *before* the gateway's network call — never during it, so
- * a slow OpenPay round-trip never holds a DB lock. That reservation is
+ * a slow gateway round-trip never holds a DB lock. That reservation is
  * what makes a double-click/duplicate-request double charge impossible: a
  * second concurrent call blocks on the Order row lock, then — once the
  * first commits — sees the already-reserved attempt and is rejected
  * before it ever reaches the gateway.
+ *
+ * Exception to the rejection: with a ResumablePaymentGateway (Stripe) an
+ * in-progress attempt of the SAME provider is handed back to the client
+ * instead (same PaymentIntent) — that's how "cerré la hoja de pago",
+ * "se cortó la conexión" or "mi tarjeta fue rechazada, quiero reintentar"
+ * retry without ever creating a second charge.
  */
 class CreateOnlinePayment
 {
@@ -44,8 +51,10 @@ class CreateOnlinePayment
     public function handle(Order $order, ?string $provider = null, array $paymentData = []): OnlinePaymentIntent
     {
         $provider ??= (string) config('finisher.payments.default_gateway', 'openpay');
+        $gateway = $this->gateways->get($provider);
 
-        [$order, $payment] = DB::transaction(function () use ($order, $provider) {
+        /** @var array{0: Order, 1: Payment, 2: bool} $reservation */
+        $reservation = DB::transaction(function () use ($order, $provider, $gateway) {
             $locked = Order::query()->whereKey($order->getKey())->lockForUpdate()->firstOrFail();
 
             if ($locked->payment_status->value === 'paid') {
@@ -66,13 +75,22 @@ class CreateOnlinePayment
                 throw new OrderNotPayableException;
             }
 
-            $hasActiveAttempt = Payment::query()
+            $activeAttempt = Payment::query()
                 ->where('order_id', $locked->id)
                 ->whereIn('status', [PaymentStatus::Pending, PaymentStatus::Authorized])
-                ->exists();
+                ->latest('id')
+                ->first();
 
-            if ($hasActiveAttempt) {
-                throw new PaymentAttemptInProgressException;
+            if ($activeAttempt !== null) {
+                $resumable = $gateway instanceof ResumablePaymentGateway
+                    && $activeAttempt->provider->value === $provider
+                    && filled($activeAttempt->provider_reference);
+
+                if (! $resumable) {
+                    throw new PaymentAttemptInProgressException;
+                }
+
+                return [$locked, $activeAttempt, true];
             }
 
             $payment = Payment::create([
@@ -85,11 +103,27 @@ class CreateOnlinePayment
                 'currency' => $locked->currency,
             ]);
 
-            return [$locked, $payment];
+            return [$locked, $payment, false];
         });
 
+        [$order, $payment, $isResume] = $reservation;
+
+        if ($isResume) {
+            /** @var ResumablePaymentGateway $gateway */
+            $intent = $gateway->resumePayment($payment);
+
+            if ($intent === null) {
+                // Provider-side attempt is terminal (e.g. canceled) — never
+                // silently stack a new charge on top; the status sync or
+                // webhook settles it first.
+                throw new PaymentAttemptInProgressException;
+            }
+
+            return $intent;
+        }
+
         try {
-            $intent = $this->gateways->get($provider)->createPayment($order, $paymentData);
+            $intent = $gateway->createPayment($order, [...$paymentData, 'payment_uuid' => $payment->uuid]);
         } catch (Throwable $e) {
             $payment->update(['status' => PaymentStatus::Failed, 'failed_at' => now()]);
 

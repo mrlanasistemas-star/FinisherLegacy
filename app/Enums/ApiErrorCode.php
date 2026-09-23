@@ -53,4 +53,12 @@ enum ApiErrorCode: string
     case CartEventMismatch = 'CART_EVENT_MISMATCH';
     case PriceCurrencyMismatch = 'PRICE_CURRENCY_MISMATCH';
     case OrderExpired = 'ORDER_EXPIRED';
+
+    // Legacy Moments social layer.
+    case SocialActionNotAllowed = 'SOCIAL_ACTION_NOT_ALLOWED';
+    case MomentReferenceInvalid = 'MOMENT_REFERENCE_INVALID';
+
+    // Account.
+    case SocialAuthUnavailable = 'SOCIAL_AUTH_UNAVAILABLE';
+    case SocialAuthInvalidToken = 'SOCIAL_AUTH_INVALID_TOKEN';
 }

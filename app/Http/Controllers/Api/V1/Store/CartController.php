@@ -17,6 +17,7 @@ use App\Http\Resources\Api\V1\CartResource;
 use App\Models\CartItem;
 use App\Models\EventEdition;
 use App\Models\ProductVariant;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -40,9 +41,10 @@ class CartController extends Controller
     public function addItem(AddCartItemRequest $request, GetOrCreateCart $getOrCreateCart, AddCartItem $addItem): JsonResponse
     {
         $cart = $getOrCreateCart->handle($this->sanctumUser($request), null);
-        $variant = ProductVariant::findOrFail($request->integer('product_variant_id'));
+        $variant = $request->resolveVariant() ?? throw (new ModelNotFoundException)->setModel(ProductVariant::class);
         $edition = $request->filled('event_edition_id') ? EventEdition::find($request->integer('event_edition_id')) : null;
-        $metadata = $request->filled('legacy_plate_model_id') ? ['legacy_plate_model_id' => $request->integer('legacy_plate_model_id')] : [];
+        $plateModelId = $request->resolveLegacyPlateModelId();
+        $metadata = $plateModelId !== null ? ['legacy_plate_model_id' => $plateModelId] : [];
 
         $addItem->handle($cart, $variant, $request->integer('quantity'), $edition, $metadata);
 
