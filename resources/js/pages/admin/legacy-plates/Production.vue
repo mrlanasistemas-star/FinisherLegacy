@@ -1,13 +1,32 @@
 <script setup lang="ts">
+/**
+ * Legacy Plate production as a kanban board — Por pagar → Lista para
+ * imprimir → En impresión → Impresa → Entregada. Plates are printed front
+ * and back (no laser) and get their NFC chip programmed with the Legacy
+ * Code. "Enviar a impresión" always goes through GenerateLegacyPlate, the
+ * same eligibility rules as the API.
+ */
 import { Head, router } from '@inertiajs/vue3';
-import { CheckCircle2, Factory, XCircle } from '@lucide/vue';
-import { computed } from 'vue';
-import EventEditionSelector from '@/components/admin/EventEditionSelector.vue';
+import {
+    CheckCircle2,
+    CreditCard,
+    Flag,
+    Hash,
+    Nfc,
+    PackageCheck,
+    Printer,
+    Send,
+    Timer,
+    TriangleAlert,
+} from '@lucide/vue';
+import { computed, ref } from 'vue';
+import KanbanBoard from '@/components/admin/KanbanBoard.vue';
+import type { KanbanLane } from '@/components/admin/KanbanBoard.vue';
 import SecondaryNav from '@/components/admin/SecondaryNav.vue';
-import HelpPopover from '@/components/HelpPopover.vue';
-import { Badge } from '@/components/ui/badge';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import { Button } from '@/components/ui/button';
 import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
+import { timeAgo } from '@/lib/datetime';
 
 type QueueRow = {
     id: number;
@@ -23,23 +42,27 @@ type QueueRow = {
     reasons: string[];
 };
 
+type BoardCard = {
+    id: number;
+    athlete_name: string | null;
+    bib_number: string | null;
+    event: string | null;
+    race: string | null;
+    official_time: string | null;
+    model: string | null;
+    plate_id: number | null;
+    serial_number: string | null;
+    eligible: boolean;
+    reasons: string[];
+    updated_at: string | null;
+};
+
 const props = defineProps<{
     events: { id: number; name: string }[];
     selectedEventEditionId: number | null;
     queue: QueueRow[];
+    board: { key: string; count: number; items: BoardCard[] }[];
 }>();
-
-const kpis = computed(() => [
-    { label: 'En cola', value: props.queue.length },
-    {
-        label: 'Listas para producir',
-        value: props.queue.filter((r) => r.eligible).length,
-    },
-    {
-        label: 'Con requisitos pendientes',
-        value: props.queue.filter((r) => !r.eligible).length,
-    },
-]);
 
 const reasonLabels: Record<string, string> = {
     LEGACY_PLATE_NOT_PAID: 'Pago pendiente',
@@ -47,162 +70,210 @@ const reasonLabels: Record<string, string> = {
     IDENTITY_CONFLICT: 'Conflicto de identidad',
     NO_RESULT: 'Falta resultado',
     PLATE_ALREADY_EXISTS: 'Ya tiene Legacy Plate',
-    NO_MODEL: 'Modelo no disponible',
+    NO_MODEL: 'Layout no disponible',
     LEGACY_PLATE_ALREADY_EXISTS: 'Ya se generó',
 };
 
-const statusLabels: Record<string, string> = {
-    pending_payment: 'Pago pendiente',
-    paid: 'Pagado',
-    linked: 'Vinculado',
-    queued: 'En cola',
-    produced: 'Producido',
-    delivered: 'Entregado',
-    cancelled: 'Cancelado',
+const laneMeta: Record<
+    string,
+    { title: string; icon: typeof Printer; accent: string }
+> = {
+    pending_payment: {
+        title: 'Por pagar',
+        icon: CreditCard,
+        accent: 'bg-amber-100 text-amber-700',
+    },
+    ready: {
+        title: 'Lista para imprimir',
+        icon: Send,
+        accent: 'bg-sky-100 text-sky-700',
+    },
+    printing: {
+        title: 'En impresión',
+        icon: Printer,
+        accent: 'bg-violet-100 text-violet-700',
+    },
+    printed: {
+        title: 'Impresa · NFC',
+        icon: Nfc,
+        accent: 'bg-fl-cream text-fl-gold-ink',
+    },
+    delivered: {
+        title: 'Entregada',
+        icon: PackageCheck,
+        accent: 'bg-emerald-100 text-emerald-700',
+    },
 };
 
-function produce(entitlementId: number) {
-    router.post(
-        `/admin/legacy-plates/production/entitlements/${entitlementId}/produce`,
-        {},
-        { preserveScroll: true },
+const lanes = computed<KanbanLane<BoardCard>[]>(() =>
+    props.board.map((lane) => ({
+        key: lane.key,
+        title: laneMeta[lane.key]?.title ?? lane.key,
+        icon: laneMeta[lane.key]?.icon ?? Printer,
+        accent: laneMeta[lane.key]?.accent ?? 'bg-muted',
+        count: lane.count,
+        items: lane.items,
+    })),
+);
+
+const eventOptions = computed(() => [
+    { value: null, label: 'Todos los eventos', icon: Flag },
+    ...props.events.map((e) => ({ value: e.id, label: e.name })),
+]);
+
+function selectEvent(value: string | number | null) {
+    router.get(
+        '/admin/legacy-plates/production',
+        value ? { event_edition_id: value } : {},
+        { preserveState: true, replace: true },
     );
 }
+
+const producing = ref<number | null>(null);
+
+function produce(id: number) {
+    producing.value = id;
+    router.post(
+        `/admin/legacy-plates/production/entitlements/${id}/produce`,
+        {},
+        { preserveScroll: true, onFinish: () => (producing.value = null) },
+    );
+}
+
+const readyCount = computed(
+    () =>
+        props.board
+            .find((l) => l.key === 'ready')
+            ?.items.filter((i) => i.eligible).length ?? 0,
+);
 </script>
 
 <template>
-    <Head title="Producción de Legacy Plate" />
+    <Head title="Producción de Legacy Plates" />
 
-    <div class="p-4 md:p-8">
+    <div class="w-full p-4 md:p-8">
         <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
 
-        <div class="mb-6">
-            <h1
-                class="flex items-center gap-1.5 text-xl font-bold text-foreground"
-            >
-                <Factory class="size-5 text-fl-gold-ink" />
-                Producción de Legacy Plate
-                <HelpPopover
-                    title="¿Cómo funciona?"
-                    text="Solo aparecen placas con pago, participante vinculado, resultado y modelo suficientes para grabarse. El grabado real (frente, volteo, reverso, verificación de QR) ocurre en /production, ya sea desde una estación o de forma manual."
-                />
-            </h1>
-            <p class="mt-1 text-sm text-muted-foreground">
-                Selecciona un evento para ver su cola.
-            </p>
-        </div>
-
-        <EventEditionSelector
-            :events="events"
-            :model-value="selectedEventEditionId"
-            class="mb-6"
-        />
-
-        <div v-if="selectedEventEditionId" class="mb-6 grid grid-cols-3 gap-3">
-            <div
-                v-for="kpi in kpis"
-                :key="kpi.label"
-                class="rounded-xl border border-border bg-card/40 p-4"
-            >
-                <p class="text-xl font-bold text-foreground">{{ kpi.value }}</p>
-                <p class="text-xs text-muted-foreground">{{ kpi.label }}</p>
-            </div>
-        </div>
-
         <div
-            v-if="selectedEventEditionId"
-            class="overflow-x-auto rounded-xl border border-border"
+            class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
         >
-            <table class="w-full text-sm">
-                <thead>
-                    <tr
-                        class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
-                    >
-                        <th class="px-4 py-3 font-medium">Bib</th>
-                        <th class="px-4 py-3 font-medium">Atleta</th>
-                        <th class="px-4 py-3 font-medium">Modelo</th>
-                        <th class="px-4 py-3 font-medium">Pago</th>
-                        <th class="px-4 py-3 font-medium">Tiempo</th>
-                        <th class="px-4 py-3 font-medium">Ritmo</th>
-                        <th class="px-4 py-3 font-medium">Estado</th>
-                        <th class="px-4 py-3 font-medium">Elegibilidad</th>
-                        <th class="px-4 py-3 font-medium"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="row in queue"
-                        :key="row.id"
-                        class="border-b border-border text-foreground last:border-0"
-                    >
-                        <td class="px-4 py-3 font-mono text-fl-gold-ink">
-                            {{ row.bib_number ? `#${row.bib_number}` : '—' }}
-                        </td>
-                        <td class="px-4 py-3">{{ row.athlete_name ?? '—' }}</td>
-                        <td class="px-4 py-3">{{ row.model ?? '—' }}</td>
-                        <td class="px-4 py-3">
-                            <Badge
-                                variant="outline"
-                                :class="
-                                    row.paid
-                                        ? 'border-emerald-500/30 text-emerald-700'
-                                        : 'border-amber-500/30 text-amber-700'
-                                "
-                            >
-                                {{ row.paid ? 'Pagado' : 'Pendiente' }}
-                            </Badge>
-                        </td>
-                        <td class="px-4 py-3">
-                            {{ row.official_time ?? '—' }}
-                        </td>
-                        <td class="px-4 py-3">{{ row.pace ?? '—' }}</td>
-                        <td class="px-4 py-3 text-muted-foreground">
-                            {{ statusLabels[row.status] ?? row.status }}
-                        </td>
-                        <td class="px-4 py-3">
-                            <div
-                                v-if="row.eligible"
-                                class="flex items-center gap-1.5 text-emerald-700"
-                            >
-                                <CheckCircle2 class="size-4" />
-                                Listo para producir
-                            </div>
-                            <div v-else class="flex flex-wrap gap-1">
-                                <Badge
-                                    v-for="reason in row.reasons"
-                                    :key="reason"
-                                    variant="outline"
-                                    class="border-red-500/30 text-red-700"
-                                >
-                                    <XCircle class="mr-1 size-3" />
-                                    {{ reasonLabels[reason] ?? reason }}
-                                </Badge>
-                            </div>
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <Button
-                                size="sm"
-                                :disabled="!row.eligible"
-                                class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft disabled:opacity-30"
-                                @click="produce(row.id)"
-                            >
-                                Producir
-                            </Button>
-                        </td>
-                    </tr>
-                    <tr v-if="!queue.length">
-                        <td
-                            colspan="9"
-                            class="px-4 py-10 text-center text-muted-foreground/80"
+            <div class="flex items-center gap-3">
+                <span
+                    class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
+                >
+                    <Printer class="size-5" />
+                </span>
+                <div>
+                    <h1 class="text-xl font-semibold">Producción</h1>
+                    <p class="text-sm text-muted-foreground">
+                        Impresión frente y reverso + chip NFC programado con el
+                        Legacy Code.
+                        <span
+                            v-if="readyCount"
+                            class="font-medium text-foreground"
+                            >{{ readyCount }} listas para enviar.</span
                         >
-                            Sin Legacy Plates pendientes para este evento.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                    </p>
+                </div>
+            </div>
+            <FancySelect
+                :model-value="selectedEventEditionId"
+                :options="eventOptions"
+                aria-label="Evento"
+                class="w-full sm:w-80"
+                @update:model-value="selectEvent"
+            />
         </div>
-        <p v-else class="text-sm text-muted-foreground/80">
-            Selecciona un evento para ver la cola de producción.
-        </p>
+
+        <KanbanBoard :lanes="lanes" :item-key="(card) => card.id">
+            <template #card="{ item: card, lane }">
+                <article
+                    class="rounded-xl border border-border bg-card p-3.5 shadow-[0_1px_2px_rgb(23_23_20/0.04)]"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <p class="text-sm leading-snug font-semibold">
+                            {{ card.athlete_name ?? 'Sin participante' }}
+                        </p>
+                        <span
+                            v-if="card.bib_number"
+                            class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 font-mono text-[11px]"
+                            ><Hash class="size-3" />{{ card.bib_number }}</span
+                        >
+                    </div>
+                    <p
+                        v-if="card.event"
+                        class="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground"
+                    >
+                        <Flag class="size-3 shrink-0" />
+                        {{ card.event
+                        }}<template v-if="card.race">
+                            · {{ card.race }}</template
+                        >
+                    </p>
+                    <div
+                        class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]"
+                    >
+                        <span
+                            v-if="card.model"
+                            class="rounded-full bg-fl-cream px-2 py-0.5 font-medium text-fl-gold-ink"
+                            >{{ card.model }}</span
+                        >
+                        <span
+                            v-if="card.official_time"
+                            class="legacy-numeric inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5"
+                            ><Timer class="size-3" />{{
+                                card.official_time
+                            }}</span
+                        >
+                        <span
+                            v-if="card.serial_number"
+                            class="rounded-full bg-muted px-2 py-0.5 font-mono"
+                            >{{ card.serial_number }}</span
+                        >
+                    </div>
+
+                    <template v-if="lane.key === 'ready'">
+                        <ul
+                            v-if="!card.eligible && card.reasons.length"
+                            class="mt-3 space-y-1"
+                        >
+                            <li
+                                v-for="reason in card.reasons"
+                                :key="reason"
+                                class="flex items-center gap-1.5 text-xs text-amber-700"
+                            >
+                                <TriangleAlert class="size-3" />
+                                {{ reasonLabels[reason] ?? reason }}
+                            </li>
+                        </ul>
+                        <Button
+                            size="sm"
+                            class="mt-3 w-full rounded-full"
+                            :disabled="!card.eligible || producing === card.id"
+                            @click="produce(card.id)"
+                        >
+                            <Send class="size-3.5" />
+                            {{
+                                producing === card.id
+                                    ? 'Enviando…'
+                                    : 'Enviar a impresión'
+                            }}
+                        </Button>
+                    </template>
+                    <p
+                        v-else-if="lane.key === 'delivered'"
+                        class="mt-3 inline-flex items-center gap-1 text-xs text-emerald-700"
+                    >
+                        <CheckCircle2 class="size-3.5" /> Entregada
+                    </p>
+                    <p
+                        v-if="card.updated_at"
+                        class="mt-2 text-[11px] text-muted-foreground"
+                    >
+                        {{ timeAgo(card.updated_at) }}
+                    </p>
+                </article>
+            </template>
+        </KanbanBoard>
     </div>
 </template>

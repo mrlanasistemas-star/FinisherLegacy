@@ -13,4 +13,6 @@ enum ProductType: string
     case Apparel = 'apparel';
     case Accessory = 'accessory';
     case Equipment = 'equipment';
+    /** Internal: event photos sold by photographers (never listed in the store). */
+    case DigitalPhoto = 'digital_photo';
 }

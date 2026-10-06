@@ -9,11 +9,11 @@ use App\Models\EventGearSelection;
 use App\Models\EventParticipant;
 use App\Models\EventResultSplit;
 use App\Models\LegacyPlateEntitlement;
-use App\Models\LegacyPlateModelField;
 use App\Models\Medal;
 use App\Models\MedalImage;
 use App\Models\OrderItem;
 use App\Models\Plate;
+use App\Support\RaceDistanceFormatter;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -106,24 +106,7 @@ class GetEventParticipantDetail
                 'status' => $plate?->status->value ?? $entitlementRecord?->status->value,
                 'serial_number' => $plate?->serial_number,
                 'legacy_code' => $plate?->legacyCode?->code,
-                'model' => $plateModel === null ? null : [
-                    'name' => $plateModel->name,
-                    'slug' => $plateModel->slug,
-                    'width_mm' => (float) $plateModel->width_mm,
-                    'height_mm' => (float) $plateModel->height_mm,
-                    'engraving_area' => $plateModel->engraving_area,
-                    'preview_image_url' => $plateModel->preview_image_path ? Storage::disk('public')->url($plateModel->preview_image_path) : null,
-                    'fields' => $plateModel->fields->map(fn (LegacyPlateModelField $field) => [
-                        'field_key' => $field->field_key->value,
-                        'x' => (float) $field->x,
-                        'y' => (float) $field->y,
-                        'width' => (float) $field->width,
-                        'height' => (float) $field->height,
-                        'font_size' => $field->font_size !== null ? (float) $field->font_size : null,
-                        'alignment' => $field->alignment->value,
-                        'visible' => $field->visible,
-                    ])->values(),
-                ],
+                'model' => $plateModel?->toViewerArray(),
                 // Same reasoning as $plateModel above: $plate is read
                 // through an if/null check instead of ?? so PHPStan doesn't
                 // cross-link its nullability with $entitlementRecord's.
@@ -132,11 +115,21 @@ class GetEventParticipantDetail
                     'race_label' => $plate->race_name,
                     'official_time' => $plate->official_time,
                     'pace' => $plate->pace,
+                    'event_name' => $plate->event_name,
+                    'event_date' => $plate->event_date?->format('d/m/Y'),
+                    'distance' => RaceDistanceFormatter::format($participant->eventRace),
+                    'overall_position' => $participant->result?->overall_position !== null ? '#'.$participant->result->overall_position : null,
+                    'bib_number' => $plate->bib_number,
                 ] : [
                     'athlete_name' => $participant->athlete?->full_name,
                     'race_label' => $participant->eventRace?->name,
                     'official_time' => $participant->result?->official_time,
                     'pace' => $participant->result?->pace,
+                    'event_name' => $participant->eventEdition?->event?->name,
+                    'event_date' => $participant->eventEdition?->event_date?->format('d/m/Y'),
+                    'distance' => RaceDistanceFormatter::format($participant->eventRace),
+                    'overall_position' => $participant->result?->overall_position !== null ? '#'.$participant->result->overall_position : null,
+                    'bib_number' => $participant->bib_number,
                 ],
             ],
             'plates' => $participant->plates->map(fn (Plate $p) => [

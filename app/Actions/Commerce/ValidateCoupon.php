@@ -27,7 +27,10 @@ class ValidateCoupon
         return $coupon;
     }
 
-    public function handle(Coupon $coupon, string $currency, int $subtotalMinor, ?User $user): void
+    /**
+     * @param  int|null  $eligibleSubtotalMinor  Subtotal of the lines the coupon can discount (product-scoped coupons).
+     */
+    public function handle(Coupon $coupon, string $currency, int $subtotalMinor, ?User $user, ?int $eligibleSubtotalMinor = null): void
     {
         if (! $coupon->active) {
             throw new CouponNotApplicableException(CouponRejectionReason::Inactive);
@@ -45,6 +48,10 @@ class ValidateCoupon
 
         if ($coupon->currency !== null && $coupon->currency !== $currency) {
             throw new CouponNotApplicableException(CouponRejectionReason::CurrencyMismatch);
+        }
+
+        if (! $coupon->appliesToAllProducts() && $eligibleSubtotalMinor !== null && $eligibleSubtotalMinor <= 0) {
+            throw new CouponNotApplicableException(CouponRejectionReason::NoEligibleProducts);
         }
 
         if ($coupon->minimum_order_minor !== null && $subtotalMinor < $coupon->minimum_order_minor) {

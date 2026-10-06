@@ -34,6 +34,7 @@ const columns = [
             { label: 'Comunidad', href: communityIndex() },
             { label: 'Eventos', href: eventsIndex() },
             { label: 'Fotos', href: photosIndex() },
+            { label: 'Fotógrafos', href: '/fotografos' },
             { label: 'Tienda', href: storeIndex() },
         ],
     },

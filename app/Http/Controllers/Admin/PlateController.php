@@ -124,7 +124,12 @@ class PlateController extends Controller
                 'race_label' => $plate->race_name,
                 'official_time' => $plate->official_time,
                 'pace' => $plate->pace,
-                'qr_url' => $plate->legacyCode ? route('legacy-code.qr', $plate->legacyCode->code) : null,
+                'event_name' => $plate->event_name,
+                'event_date' => $plate->event_date?->format('d/m/Y'),
+                'distance' => $plate->dynamic_fields['distance'] ?? null,
+                'overall_position' => isset($plate->dynamic_fields['overall_position']) ? '#'.$plate->dynamic_fields['overall_position'] : null,
+                'bib_number' => $plate->bib_number,
+                'nfc_code' => $plate->legacyCode?->code,
             ],
             'resultComparison' => $resultChanged ? [
                 'original' => ['official_time' => $plate->official_time, 'pace' => $plate->pace],

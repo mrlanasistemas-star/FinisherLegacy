@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\LegacyPlateProductionController as AdminLegacyPla
 use App\Http\Controllers\Admin\MachineProfileController as AdminMachineProfileController;
 use App\Http\Controllers\Admin\OrganizerController as AdminOrganizerController;
 use App\Http\Controllers\Admin\ParticipantController as AdminParticipantController;
+use App\Http\Controllers\Admin\PhotographerController as AdminPhotographerController;
 use App\Http\Controllers\Admin\PlateController as AdminPlateController;
 use App\Http\Controllers\Admin\PlateStudioController as AdminPlateStudioController;
 use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistrationController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductionDeviceController as AdminProductionDeviceController;
 use App\Http\Controllers\Admin\ProductionSetupController as AdminProductionSetupController;
 use App\Http\Controllers\Admin\ProductMediaController as AdminProductMediaController;
+use App\Http\Controllers\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
@@ -49,6 +51,8 @@ use App\Http\Controllers\LegacyCodeController;
 use App\Http\Controllers\MedalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperatorController;
+use App\Http\Controllers\PhotographerJoinController;
+use App\Http\Controllers\PhotographerPortalController;
 use App\Http\Controllers\PhotosController;
 use App\Http\Controllers\PreregistrationController;
 use App\Http\Controllers\ProductionController;
@@ -82,6 +86,25 @@ Route::get('buscar', SearchController::class)->middleware('throttle:60,1')->name
 // "Fotos" — find event photos by event + bib (public photos only) and,
 // signed in, your own. Built on the existing AthleteEventMedia.
 Route::get('fotos', PhotosController::class)->middleware('throttle:60,1')->name('photos.index');
+
+// Photographers zone: public landing + dedicated registration (creates the
+// account too for guests). Selling is free; Finisher keeps a commission.
+Route::get('fotografos', [PhotographerJoinController::class, 'landing'])->name('photographers.landing');
+Route::get('fotografos/registro', [PhotographerJoinController::class, 'create'])->name('photographers.register');
+Route::post('fotografos/registro', [PhotographerJoinController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('photographers.register.store');
+
+// Portal del fotógrafo — the photographer's own uploads, prices and sales.
+Route::middleware(['auth', 'can:photographer.portal'])->prefix('fotografo')->name('photographer.')->group(function () {
+    Route::get('/', [PhotographerPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('fotos', [PhotographerPortalController::class, 'photos'])->name('photos');
+    Route::post('fotos', [PhotographerPortalController::class, 'upload'])->middleware('throttle:30,1')->name('photos.store');
+    Route::patch('fotos/{photo}', [PhotographerPortalController::class, 'updatePhoto'])->name('photos.update');
+    Route::delete('fotos/{photo}', [PhotographerPortalController::class, 'destroyPhoto'])->name('photos.destroy');
+    Route::get('ventas', [PhotographerPortalController::class, 'sales'])->name('sales');
+    Route::patch('perfil', [PhotographerPortalController::class, 'updateProfile'])->name('profile.update');
+});
 
 // "Comunidad" — the web face of the social layer (Legacy Moments).
 // Reading is public (SocialVisibility decides what each viewer sees);
@@ -129,6 +152,10 @@ Route::prefix('tienda')->name('store.products.')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('l/{code}/claim', [LegacyCodeController::class, 'claim'])->name('legacy-code.claim');
+
+    // Buying photographers' event photos (regular Order + payment flow).
+    Route::post('fotos/comprar', [PhotosController::class, 'checkout'])->middleware('throttle:20,1')->name('photos.checkout');
+    Route::get('fotos/descargar/{sale}', [PhotosController::class, 'download'])->name('photos.download');
 
     Route::prefix('comunidad')->name('community.')->group(function () {
         Route::post('publicaciones', [CommunityController::class, 'store'])->middleware('throttle:social-write')->name('posts.store');
@@ -482,7 +509,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('moments/{moment}', [AdminCommunityModerationController::class, 'destroyMoment'])->name('moments.destroy');
         });
 
-        Route::middleware('can:media.manage')->get('photos', [AdminEventPhotoController::class, 'index'])->name('photos.index');
+        Route::middleware('can:photos.manage')->group(function () {
+            Route::get('photos', [AdminEventPhotoController::class, 'index'])->name('photos.index');
+            Route::post('photos/review', [AdminEventPhotoController::class, 'review'])->name('photos.review');
+            Route::get('photographers', [AdminPhotographerController::class, 'index'])->name('photographers.index');
+            Route::patch('photographers/{photographer}/status', [AdminPhotographerController::class, 'updateStatus'])->name('photographers.status');
+            Route::post('photographers/{photographer}/payouts', [AdminPhotographerController::class, 'markPaid'])->name('photographers.payouts');
+        });
 
         Route::middleware('can:inventory.manage')->prefix('inventory')->name('inventory.')->group(function () {
             Route::get('/', [AdminInventoryController::class, 'index'])->name('index');
@@ -503,6 +536,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/', [AdminCouponController::class, 'store'])->name('store');
             Route::patch('{coupon}', [AdminCouponController::class, 'update'])->name('update');
             Route::delete('{coupon}', [AdminCouponController::class, 'destroy'])->name('destroy');
+        });
+
+        // Ofertas: automatic sale prices on all products or a selected set.
+        Route::middleware('can:coupons.manage')->prefix('promotions')->name('promotions.')->group(function () {
+            Route::get('/', [AdminPromotionController::class, 'index'])->name('index');
+            Route::post('/', [AdminPromotionController::class, 'store'])->name('store');
+            Route::patch('{promotion}', [AdminPromotionController::class, 'update'])->name('update');
+            Route::delete('{promotion}', [AdminPromotionController::class, 'destroy'])->name('destroy');
         });
     });
 });

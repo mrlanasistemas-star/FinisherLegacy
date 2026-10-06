@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * Product/ProductVariant pricing (brief §58).
  */
 #[Fillable([
-    'uuid', 'order_id', 'product_id', 'product_variant_id', 'name', 'sku',
+    'uuid', 'order_id', 'product_id', 'product_variant_id', 'event_photo_id', 'name', 'sku',
     'quantity', 'unit_price_minor', 'line_total_minor', 'currency', 'metadata', 'fulfilled_at',
 ])]
 class OrderItem extends Model
@@ -61,5 +61,11 @@ class OrderItem extends Model
     public function isFulfilled(): bool
     {
         return $this->fulfilled_at !== null;
+    }
+
+    /** @return BelongsTo<EventPhoto, $this> */
+    public function eventPhoto(): BelongsTo
+    {
+        return $this->belongsTo(EventPhoto::class);
     }
 }

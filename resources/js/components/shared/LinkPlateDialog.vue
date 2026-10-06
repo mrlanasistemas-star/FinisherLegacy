@@ -1,14 +1,13 @@
 <script setup lang="ts">
 /**
  * "Vincular mi placa" — the existing Legacy Code flow, not a new one:
- * type the code engraved on the plate (or scan its QR / tap its NFC tag,
- * which opens the same /l/{code} URL) and the Legacy Code page lets the
+ * tap the plate's NFC chip with the phone (opens /l/{code} directly) or
+ * type its Legacy Code here and the Legacy Code page lets the
  * signed-in athlete claim it (LegacyCodeController@claim).
  */
 import { router } from '@inertiajs/vue3';
-import { QrCode, ScanLine } from '@lucide/vue';
+import { Nfc } from '@lucide/vue';
 import { ref } from 'vue';
-import QrScannerDialog from '@/components/qr/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -25,7 +24,6 @@ import { show as legacyCodeShow } from '@/routes/legacy-code';
 const open = defineModel<boolean>('open', { default: false });
 
 const code = ref('');
-const scannerOpen = ref(false);
 
 function go() {
     const value = code.value.trim().toUpperCase();
@@ -37,11 +35,6 @@ function go() {
     open.value = false;
     router.visit(legacyCodeShow(value).url);
 }
-
-function openScanner() {
-    open.value = false;
-    scannerOpen.value = true;
-}
 </script>
 
 <template>
@@ -52,8 +45,9 @@ function openScanner() {
                     >Vincula tu placa</DialogTitle
                 >
                 <DialogDescription>
-                    Escribe el Legacy Code grabado en tu placa. Si la acercas a
-                    tu teléfono (NFC) o escaneas su QR llegarás al mismo lugar.
+                    Acerca tu placa a la parte trasera de tu teléfono: el chip
+                    NFC abre su página para vincularla. También puedes escribir
+                    su Legacy Code.
                 </DialogDescription>
             </DialogHeader>
             <form class="grid gap-2" @submit.prevent="go">
@@ -68,27 +62,22 @@ function openScanner() {
                 />
             </form>
             <DialogFooter class="gap-2 sm:justify-between">
-                <Button
-                    type="button"
-                    variant="outline"
-                    class="rounded-full"
-                    @click="openScanner"
+                <span
+                    class="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
                 >
-                    <ScanLine class="size-4" />
-                    Escanear QR
-                </Button>
+                    <Nfc class="size-4 text-fl-gold-ink" />
+                    Lectura NFC directa desde tu teléfono
+                </span>
                 <Button
                     type="button"
                     class="rounded-full"
                     :disabled="!code.trim()"
                     @click="go"
                 >
-                    <QrCode class="size-4" />
+                    <Nfc class="size-4" />
                     Continuar
                 </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
-
-    <QrScannerDialog v-model:open="scannerOpen" />
 </template>

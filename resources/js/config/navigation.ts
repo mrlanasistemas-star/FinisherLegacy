@@ -47,6 +47,7 @@ import { resolveIcon } from '@/lib/iconMap';
 
 export type NavGroup =
     | 'legacy'
+    | 'fotografo'
     | 'resumen'
     | 'eventos'
     | 'legacyplates'
@@ -69,6 +70,7 @@ export interface NavItem {
 
 export const navGroupLabels: Record<NavGroup, string> = {
     legacy: 'Personal',
+    fotografo: 'Fotógrafo',
     resumen: 'Resumen',
     eventos: 'Eventos',
     legacyplates: 'Producción',
@@ -177,6 +179,13 @@ export const navigation: NavItem[] = [
         permission: 'inventory.manage',
         group: 'resumen',
     },
+    {
+        label: 'Ofertas',
+        icon: resolveIcon('Tag'),
+        href: '/admin/promotions',
+        permission: 'coupons.manage',
+        group: 'resumen',
+    },
 
     // Producción — a Legacy Plate from engraving to its NFC/Legacy Code link.
     {
@@ -196,10 +205,41 @@ export const navigation: NavItem[] = [
     },
     {
         label: 'Vinculación NFC',
-        icon: resolveIcon('QrCode'),
+        icon: resolveIcon('Nfc'),
         href: '/admin/legacy-codes',
         permission: 'legacycodes.view',
         group: 'legacyplates',
+    },
+    {
+        label: 'Layouts de impresión',
+        icon: resolveIcon('Printer'),
+        href: '/admin/legacy-plate-models',
+        permission: 'legacyplates.manage',
+        group: 'legacyplates',
+    },
+
+    // Portal del fotógrafo.
+    {
+        label: 'Mi panel',
+        icon: resolveIcon('LayoutGrid'),
+        href: '/fotografo',
+        permission: 'photographer.portal',
+        group: 'fotografo',
+        exact: true,
+    },
+    {
+        label: 'Mis fotos en venta',
+        icon: resolveIcon('Camera'),
+        href: '/fotografo/fotos',
+        permission: 'photographer.portal',
+        group: 'fotografo',
+    },
+    {
+        label: 'Ventas y pagos',
+        icon: resolveIcon('Wallet'),
+        href: '/fotografo/ventas',
+        permission: 'photographer.portal',
+        group: 'fotografo',
     },
 
     {
@@ -244,7 +284,14 @@ export const navigation: NavItem[] = [
         label: 'Fotografías',
         icon: resolveIcon('Image'),
         href: '/admin/photos',
-        permission: 'media.manage',
+        permission: 'photos.manage',
+        group: 'contenido',
+    },
+    {
+        label: 'Fotógrafos',
+        icon: resolveIcon('Camera'),
+        href: '/admin/photographers',
+        permission: 'photos.manage',
         group: 'contenido',
     },
     {
@@ -321,6 +368,7 @@ export function groupedNavigation(
     const visible = visibleNavigation(permissions);
     const groups: NavGroup[] = [
         'legacy',
+        'fotografo',
         'resumen',
         'legacyplates',
         'eventos',

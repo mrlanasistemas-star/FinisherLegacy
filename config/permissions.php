@@ -222,6 +222,14 @@ return [
             'community.moderate' => 'Moderar la comunidad (reportes y publicaciones)',
         ],
     ],
+    'photos' => [
+        'label' => 'Fotografías de eventos',
+        'icon' => 'Camera',
+        'permissions' => [
+            'photos.manage' => 'Revisar fotos, aprobar fotógrafos y registrar pagos',
+            'photographer.portal' => 'Portal del fotógrafo (subir y vender fotos)',
+        ],
+    ],
     'access' => [
         'label' => 'Accesos especiales',
         'icon' => 'KeyRound',

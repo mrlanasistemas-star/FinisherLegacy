@@ -25,6 +25,7 @@ const PUBLIC_PREFIXES = [
     'community/',
     'photos/',
     'search/',
+    'photographers/',
 ];
 
 createInertiaApp({

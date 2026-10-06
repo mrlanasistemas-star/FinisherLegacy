@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Where one dynamic field (athlete_name, race_label, official_time, pace,
- * qr) sits inside its LegacyPlateModel's engraving_area — brief §6.
+ * Where one dynamic field sits on its LegacyPlateModel, and on which
+ * printed face (`face`: front|back). Keys: App\Enums\LegacyPlateFieldKey.
  */
 #[Fillable([
-    'legacy_plate_model_id', 'field_key', 'x', 'y', 'width', 'height',
+    'legacy_plate_model_id', 'field_key', 'face', 'x', 'y', 'width', 'height',
     'font_size', 'alignment', 'max_chars', 'required', 'visible', 'sort_order',
 ])]
 class LegacyPlateModelField extends Model

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\LegacyPlates\GenerateLegacyPlate;
+use App\Enums\LegacyPlateEntitlementStatus;
 use App\Http\Controllers\Controller;
 use App\Models\EventEdition;
 use App\Models\LegacyPlateEntitlement;
@@ -65,7 +66,54 @@ class LegacyPlateProductionController extends Controller
             })->values();
         }
 
+        // Kanban: every entitlement by its real status (all events, or the
+        // selected one) — Por pagar → Lista para imprimir → En impresión →
+        // Impresa → Entregada.
+        $lanes = [
+            'pending_payment' => [LegacyPlateEntitlementStatus::PendingPayment],
+            'ready' => [LegacyPlateEntitlementStatus::Paid, LegacyPlateEntitlementStatus::Linked],
+            'printing' => [LegacyPlateEntitlementStatus::Queued],
+            'printed' => [LegacyPlateEntitlementStatus::Produced],
+            'delivered' => [LegacyPlateEntitlementStatus::Delivered],
+        ];
+
+        $board = collect($lanes)->map(function (array $statuses, string $key) use ($edition) {
+            $query = LegacyPlateEntitlement::query()
+                ->whereIn('status', $statuses)
+                ->when($edition, fn ($q) => $q->where('event_edition_id', $edition->id));
+
+            return [
+                'key' => $key,
+                'count' => (clone $query)->count(),
+                'items' => $query
+                    ->with(['eventParticipant.result', 'eventParticipant.eventRace', 'eventEdition.event', 'legacyPlateModel', 'plate'])
+                    ->latest('updated_at')
+                    ->limit(40)
+                    ->get()
+                    ->map(function (LegacyPlateEntitlement $entitlement) use ($key) {
+                        $participant = $entitlement->eventParticipant;
+                        $check = $key === 'ready' ? $this->eligibility->checkForEntitlement($entitlement) : null;
+
+                        return [
+                            'id' => $entitlement->id,
+                            'athlete_name' => $participant?->full_name ?: ($participant ? trim("{$participant->first_name} {$participant->last_name}") : null),
+                            'bib_number' => $participant?->bib_number,
+                            'event' => $entitlement->eventEdition?->event?->name,
+                            'race' => $participant?->eventRace?->name,
+                            'official_time' => $participant?->result?->official_time,
+                            'model' => $entitlement->legacyPlateModel?->name,
+                            'plate_id' => $entitlement->plate_id,
+                            'serial_number' => $entitlement->plate?->serial_number,
+                            'eligible' => $check?->eligible ?? false,
+                            'reasons' => $check?->reasons ?? [],
+                            'updated_at' => $entitlement->updated_at?->toIso8601String(),
+                        ];
+                    }),
+            ];
+        })->values();
+
         return Inertia::render('admin/legacy-plates/Production', [
+            'board' => $board,
             'events' => EventEdition::with('event')->orderByDesc('event_date')->limit(100)->get()
                 ->map(fn (EventEdition $e) => ['id' => $e->id, 'name' => $e->event->name.' — '.$e->name]),
             'selectedEventEditionId' => $edition?->id,

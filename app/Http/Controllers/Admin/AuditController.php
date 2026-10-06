@@ -79,6 +79,7 @@ class AuditController extends Controller
                 'subject_id' => $activity->subject_id,
                 'description' => $this->describe($activity, $causerName, $causerId, $subjectBaseName),
                 'created_at' => $activity->created_at->format('d/m/Y H:i'),
+                'created_at_iso' => $activity->created_at->toIso8601String(),
             ];
         });
 

@@ -27,6 +27,7 @@ class CouponController extends Controller
             // rows — not an abandoned checkout's expired reservation, and
             // not a released (cancelled) one (brief §33-§37).
             ->withCount(['redemptions as used_count' => fn ($q) => $q->active()])
+            ->with('products:id,name')
             ->when($request->string('q')->toString(), fn ($q, $search) => $q->where('code', 'like', "%{$search}%"))
             ->orderByDesc('created_at')
             ->paginate(25)
@@ -46,21 +47,27 @@ class CouponController extends Controller
             'used_count' => $coupon->used_count,
             'minimum_order_minor' => $coupon->minimum_order_minor,
             'active' => $coupon->active,
+            'applies_to' => $coupon->applies_to ?? 'all',
+            'product_ids' => $coupon->products->pluck('id'),
+            'product_names' => $coupon->products->pluck('name'),
         ]);
 
         return Inertia::render('admin/coupons/Index', [
             'coupons' => $coupons,
             'filters' => ['q' => $request->string('q')->toString()],
+            'products' => PromotionController::productOptions(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        $productIds = $this->pullProductIds($data);
         $data['uuid'] = (string) Str::uuid();
         $data['created_by'] = $request->user()->id;
 
-        Coupon::create($data);
+        $coupon = Coupon::create($data);
+        $coupon->products()->sync($coupon->applies_to === 'products' ? $productIds : []);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Cupón creado.']);
 
@@ -69,7 +76,10 @@ class CouponController extends Controller
 
     public function update(Request $request, Coupon $coupon): RedirectResponse
     {
-        $coupon->update($this->validated($request, $coupon));
+        $data = $this->validated($request, $coupon);
+        $productIds = $this->pullProductIds($data);
+        $coupon->update($data);
+        $coupon->products()->sync($coupon->applies_to === 'products' ? $productIds : []);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Cupón actualizado.']);
 
@@ -116,7 +126,23 @@ class CouponController extends Controller
             'usage_limit_total' => ['nullable', 'integer', 'min:1'],
             'usage_limit_per_user' => ['nullable', 'integer', 'min:1'],
             'minimum_order_minor' => ['nullable', 'integer', 'min:0'],
+            'applies_to' => ['nullable', Rule::in(['all', 'products'])],
+            'product_ids' => ['required_if:applies_to,products', 'array'],
+            'product_ids.*' => ['integer', 'exists:products,id'],
             'active' => ['boolean'],
-        ]);
+        ], ['product_ids.required_if' => 'Selecciona al menos un producto.']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<int>
+     */
+    private function pullProductIds(array &$data): array
+    {
+        $ids = array_map('intval', $data['product_ids'] ?? []);
+        unset($data['product_ids']);
+        $data['applies_to'] ??= 'all';
+
+        return $ids;
     }
 }

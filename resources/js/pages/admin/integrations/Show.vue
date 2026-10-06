@@ -2,6 +2,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, RefreshCw } from '@lucide/vue';
 import { ref } from 'vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -223,17 +224,18 @@ function submitLink() {
                         <Label class="mb-1 block text-xs text-muted-foreground"
                             >Autenticación</Label
                         >
-                        <select
+                        <FancySelect
                             v-model="settingsForm.auth_type"
-                            class="h-9 w-full rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
-                        >
-                            <option value="none">Ninguna</option>
-                            <option value="bearer">Bearer token</option>
-                            <option value="api_key_header">
-                                API Key header
-                            </option>
-                            <option value="basic">Basic auth</option>
-                        </select>
+                            :options="[
+                                { value: 'none', label: 'Ninguna' },
+                                { value: 'bearer', label: 'Bearer token' },
+                                {
+                                    value: 'api_key_header',
+                                    label: 'API Key header',
+                                },
+                                { value: 'basic', label: 'Basic auth' },
+                            ]"
+                        />
                     </div>
                     <div v-if="settingsForm.auth_type === 'api_key_header'">
                         <Label class="mb-1 block text-xs text-muted-foreground"
@@ -481,27 +483,26 @@ function submitLink() {
                 </label>
             </div>
 
-            <select
+            <FancySelect
                 v-if="linkForm.mode === 'link'"
                 v-model="linkForm.event_edition_id"
-                class="h-9 w-full max-w-md rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
-            >
-                <option :value="null" disabled>Selecciona una edición…</option>
-                <option v-for="e in editions" :key="e.id" :value="e.id">
-                    {{ e.name }}
-                </option>
-            </select>
+                :options="editions.map((e) => ({ value: e.id, label: e.name }))"
+                placeholder="Selecciona una edición…"
+                class="max-w-md"
+            />
 
-            <select
+            <FancySelect
                 v-else
                 v-model="linkForm.sport_id"
-                class="h-9 w-full max-w-md rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
-            >
-                <option :value="null" disabled>Selecciona un deporte…</option>
-                <option v-for="s in sports" :key="s.id" :value="s.id">
-                    {{ s.name }}
-                </option>
-            </select>
+                :options="
+                    sports.map((sport) => ({
+                        value: sport.id,
+                        label: sport.name,
+                    }))
+                "
+                placeholder="Selecciona un deporte…"
+                class="max-w-md"
+            />
 
             <div class="mt-3">
                 <Button

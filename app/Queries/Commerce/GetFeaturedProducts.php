@@ -5,6 +5,7 @@ namespace App\Queries\Commerce;
 use App\Enums\ProductAvailability;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\Commerce\PromotionResolver;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -52,6 +53,9 @@ class GetFeaturedProducts
         // gallery image (admin-managed either way, never hardcoded).
         $hoverImage = $galleryImages->first(fn ($media) => $media->is_hover && ! $media->is_primary) ?? $galleryImages->get(1);
         $availability = $product->availability ?? ProductAvailability::Available;
+        $fromPrice = $product->variants->min('base_price_minor');
+        // Running "oferta" on the lowest price, for the card's sale badge.
+        $promotion = $fromPrice !== null ? app(PromotionResolver::class)->bestFor($product, (int) $fromPrice) : null;
 
         return [
             'uuid' => $product->uuid,
@@ -63,7 +67,9 @@ class GetFeaturedProducts
             'tagline' => $product->tagline,
             'availability' => $availability->value,
             'availability_label' => $availability->label(),
-            'from_price_minor' => $product->variants->min('base_price_minor'),
+            'from_price_minor' => $promotion !== null ? $fromPrice - $promotion->discountFor((int) $fromPrice) : $fromPrice,
+            'compare_at_minor' => $promotion !== null ? $fromPrice : null,
+            'promotion_label' => $promotion?->label(),
             'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
             'in_stock' => $product->variants->contains(fn (ProductVariant $variant) => $variant->isAvailable()),
             'image_url' => $product->primaryImageUrl(),

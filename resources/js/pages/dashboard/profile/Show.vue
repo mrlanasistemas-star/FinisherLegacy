@@ -8,10 +8,10 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Boxes, MapPin, Package, UserCircle } from '@lucide/vue';
 import { computed } from 'vue';
+import DatePicker from '@/components/DatePicker.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -254,29 +254,19 @@ const legacyPlateFilterOptions = [
             </h2>
 
             <div class="mb-4 flex flex-wrap items-center gap-2">
-                <Input
-                    type="date"
-                    :model-value="filters.from ?? undefined"
-                    class="w-40 border-border bg-background text-foreground"
-                    @change="
-                        applyFilters({
-                            from:
-                                ($event.target as HTMLInputElement).value ||
-                                null,
-                        })
-                    "
+                <DatePicker
+                    :model-value="filters.from ?? null"
+                    :range-with="filters.to ?? null"
+                    placeholder="Desde"
+                    class="w-44"
+                    @update:model-value="(v) => applyFilters({ from: v })"
                 />
-                <Input
-                    type="date"
-                    :model-value="filters.to ?? undefined"
-                    class="w-40 border-border bg-background text-foreground"
-                    @change="
-                        applyFilters({
-                            to:
-                                ($event.target as HTMLInputElement).value ||
-                                null,
-                        })
-                    "
+                <DatePicker
+                    :model-value="filters.to ?? null"
+                    :range-with="filters.from ?? null"
+                    placeholder="Hasta"
+                    class="w-44"
+                    @update:model-value="(v) => applyFilters({ to: v })"
                 />
                 <Select
                     :model-value="

@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
-import { Link } from '@inertiajs/vue3';
+import { Form, Head, Link } from '@inertiajs/vue3';
+import {
+    ArrowRight,
+    AtSign,
+    Camera,
+    CheckCircle2,
+    LockKeyhole,
+} from '@lucide/vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
-import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -31,8 +36,10 @@ defineProps<{
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-emerald-500"
+        class="mb-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+        role="status"
     >
+        <CheckCircle2 class="size-4 shrink-0" />
         {{ status }}
     </div>
 
@@ -40,11 +47,15 @@ defineProps<{
         v-bind="store.form()"
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"
-        class="flex flex-col gap-6"
+        class="flex flex-col gap-5"
     >
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
+        <div class="grid gap-2">
+            <Label for="email">Correo electrónico</Label>
+            <div class="relative">
+                <AtSign
+                    class="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                />
                 <Input
                     id="email"
                     type="email"
@@ -54,61 +65,86 @@ defineProps<{
                     :tabindex="1"
                     autocomplete="email"
                     placeholder="tucorreo@ejemplo.com"
+                    class="h-12 pl-10"
                 />
-                <InputError :message="errors.email" />
             </div>
+            <InputError :message="errors.email" />
+        </div>
 
-            <div class="grid gap-2">
-                <div class="flex items-center justify-between">
-                    <Label for="password">Contraseña</Label>
-                    <TextLink
-                        v-if="canResetPassword"
-                        :href="request()"
-                        class="text-sm text-fl-gold-ink decoration-fl-gold/40"
-                        :tabindex="5"
-                    >
-                        ¿Olvidaste tu contraseña?
-                    </TextLink>
-                </div>
+        <div class="grid gap-2">
+            <div class="flex items-center justify-between">
+                <Label for="password">Contraseña</Label>
+                <Link
+                    v-if="canResetPassword"
+                    :href="request()"
+                    class="text-sm font-medium text-fl-gold-ink hover:underline"
+                    :tabindex="5"
+                >
+                    ¿La olvidaste?
+                </Link>
+            </div>
+            <div class="relative">
+                <LockKeyhole
+                    class="pointer-events-none absolute top-1/2 left-3.5 z-10 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                />
                 <PasswordInput
                     id="password"
                     name="password"
                     required
                     :tabindex="2"
                     autocomplete="current-password"
-                    placeholder="Contraseña"
+                    placeholder="Tu contraseña"
+                    class="h-12 pl-10"
                 />
-                <InputError :message="errors.password" />
             </div>
-
-            <div class="flex items-center justify-between">
-                <Label for="remember" class="flex items-center space-x-3">
-                    <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <span>Recuérdame</span>
-                </Label>
-            </div>
-
-            <Button
-                type="submit"
-                class="mt-4 h-11 w-full rounded-full"
-                :tabindex="4"
-                :disabled="processing"
-                data-test="login-button"
-            >
-                <Spinner v-if="processing" />
-                Iniciar sesión
-            </Button>
+            <InputError :message="errors.password" />
         </div>
 
-        <p class="text-center text-sm text-muted-foreground">
-            ¿Aún no tienes tu Legacy?
+        <Label
+            for="remember"
+            class="flex w-fit cursor-pointer items-center gap-3 font-normal"
+        >
+            <Checkbox id="remember" name="remember" :tabindex="3" />
+            Mantener mi sesión iniciada
+        </Label>
+
+        <Button
+            type="submit"
+            size="lg"
+            class="mt-1 h-12 w-full rounded-full text-[15px]"
+            :tabindex="4"
+            :disabled="processing"
+            data-test="login-button"
+        >
+            <Spinner v-if="processing" />
+            Iniciar sesión
+            <ArrowRight v-if="!processing" class="size-4" />
+        </Button>
+
+        <div class="relative my-2 text-center text-xs text-muted-foreground">
+            <span
+                class="absolute inset-x-0 top-1/2 h-px bg-border"
+                aria-hidden="true"
+            />
+            <span class="relative bg-card px-3">¿Primera vez aquí?</span>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
             <Link
                 :href="register()"
-                class="font-medium text-fl-gold-ink hover:text-fl-gold-ink"
                 :tabindex="6"
+                class="flex items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-semibold transition-colors hover:border-foreground/30"
             >
-                Crea tu perfil
+                Crear mi perfil
             </Link>
-        </p>
+            <Link
+                href="/fotografos/registro"
+                class="flex items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+            >
+                <Camera class="size-4 text-fl-gold-ink" />
+                Soy fotógrafo
+            </Link>
+        </div>
     </Form>
 </template>

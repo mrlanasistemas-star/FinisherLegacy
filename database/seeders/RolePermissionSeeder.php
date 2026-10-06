@@ -23,7 +23,8 @@ class RolePermissionSeeder extends Seeder
         }
 
         $admin = Role::findOrCreate('admin');
-        $admin->syncPermissions(Permission::all());
+        // Everything except the photographer portal (that is a role of its own).
+        $admin->syncPermissions(Permission::query()->where('name', '!=', 'photographer.portal')->get());
 
         // super_admin does not need explicit permissions: Gate::before in
         // AppServiceProvider grants it everything unconditionally.
@@ -47,6 +48,9 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         Role::findOrCreate('athlete');
+
+        // Event photographers — only their portal (upload, prices, sales).
+        Role::findOrCreate('photographer')->syncPermissions(['photographer.portal']);
 
         $roles = Role::query()->whereIn('name', SystemRoles::names())->get();
 

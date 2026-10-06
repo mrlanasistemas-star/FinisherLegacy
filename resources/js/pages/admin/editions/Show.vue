@@ -2,6 +2,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ExternalLink, Plus } from '@lucide/vue';
 import { computed } from 'vue';
+import DatePicker from '@/components/DatePicker.vue';
 import Money from '@/components/shared/Money.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -583,19 +584,63 @@ function submitPrice() {
                         </div>
                         <div class="grid gap-2">
                             <Label class="text-xs">Inicio</Label>
-                            <Input
-                                v-model="priceForm.starts_at"
-                                type="datetime-local"
-                                class="bg-background"
-                            />
+                            <div class="grid grid-cols-[1fr_auto] gap-2">
+                                <DatePicker
+                                    :model-value="
+                                        priceForm.starts_at.slice(0, 10) || null
+                                    "
+                                    placeholder="Fecha"
+                                    @update:model-value="
+                                        (v) =>
+                                            (priceForm.starts_at = v
+                                                ? `${v}T${priceForm.starts_at.slice(11, 16) || '00:00'}`
+                                                : '')
+                                    "
+                                />
+                                <Input
+                                    type="time"
+                                    aria-label="Hora"
+                                    class="w-28"
+                                    :disabled="!priceForm.starts_at"
+                                    :model-value="
+                                        priceForm.starts_at.slice(11, 16)
+                                    "
+                                    @update:model-value="
+                                        (v) =>
+                                            (priceForm.starts_at = `${priceForm.starts_at.slice(0, 10)}T${v || '00:00'}`)
+                                    "
+                                />
+                            </div>
                         </div>
                         <div class="grid gap-2">
                             <Label class="text-xs">Fin</Label>
-                            <Input
-                                v-model="priceForm.ends_at"
-                                type="datetime-local"
-                                class="bg-background"
-                            />
+                            <div class="grid grid-cols-[1fr_auto] gap-2">
+                                <DatePicker
+                                    :model-value="
+                                        priceForm.ends_at.slice(0, 10) || null
+                                    "
+                                    placeholder="Fecha"
+                                    @update:model-value="
+                                        (v) =>
+                                            (priceForm.ends_at = v
+                                                ? `${v}T${priceForm.ends_at.slice(11, 16) || '23:59'}`
+                                                : '')
+                                    "
+                                />
+                                <Input
+                                    type="time"
+                                    aria-label="Hora"
+                                    class="w-28"
+                                    :disabled="!priceForm.ends_at"
+                                    :model-value="
+                                        priceForm.ends_at.slice(11, 16)
+                                    "
+                                    @update:model-value="
+                                        (v) =>
+                                            (priceForm.ends_at = `${priceForm.ends_at.slice(0, 10)}T${v || '23:59'}`)
+                                    "
+                                />
+                            </div>
                         </div>
                     </div>
                     <Button

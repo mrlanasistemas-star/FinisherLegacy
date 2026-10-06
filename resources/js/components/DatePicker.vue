@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * Date field backed by the shadcn-style Calendar — the value in/out is a
- * plain 'YYYY-MM-DD' string so it drops into existing form objects exactly
- * like the native <input type="date"> it replaces.
+ * Date field backed by the Finisher Legacy Calendar — value in/out is a
+ * plain 'YYYY-MM-DD' string so it drops into form objects exactly like a
+ * native <input type="date">, without the browser's widget.
  */
 import type { DateValue } from '@internationalized/date';
-import { getLocalTimeZone, parseDate } from '@internationalized/date';
-import { CalendarIcon } from '@lucide/vue';
+import { getLocalTimeZone, parseDate, today } from '@internationalized/date';
+import { CalendarDays, X } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -22,10 +22,15 @@ const props = withDefaults(
         placeholder?: string;
         maxValue?: DateValue;
         minValue?: DateValue;
+        /** Highlights a range between this field and another date. */
+        rangeWith?: string | null;
+        clearable?: boolean;
+        id?: string;
         class?: string;
     }>(),
     {
         placeholder: 'Selecciona una fecha',
+        clearable: true,
     },
 );
 
@@ -35,64 +40,101 @@ const emit = defineEmits<{
 
 const open = ref(false);
 
-const dateValue = computed<DateValue | undefined>(() => {
-    if (!props.modelValue) {
+function parse(value: string | null | undefined): DateValue | undefined {
+    if (!value) {
         return undefined;
     }
 
     try {
-        return parseDate(props.modelValue);
+        return parseDate(value.slice(0, 10));
     } catch {
         return undefined;
     }
-});
+}
 
-const formatted = computed(() => {
-    if (!dateValue.value) {
-        return null;
-    }
+const dateValue = computed(() => parse(props.modelValue));
+const rangeEnd = computed(() => parse(props.rangeWith));
 
-    return new Intl.DateTimeFormat('es-MX', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    }).format(dateValue.value.toDate(getLocalTimeZone()));
-});
+const formatted = computed(() =>
+    dateValue.value
+        ? new Intl.DateTimeFormat('es-MX', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+          }).format(dateValue.value.toDate(getLocalTimeZone()))
+        : null,
+);
 
 function onSelect(value: DateValue | undefined) {
     emit('update:modelValue', value ? value.toString() : null);
     open.value = false;
 }
+
+function clear() {
+    emit('update:modelValue', null);
+}
+
+function pickToday() {
+    onSelect(today(getLocalTimeZone()));
+}
 </script>
 
 <template>
     <Popover v-model:open="open">
-        <PopoverTrigger as-child>
+        <div :class="cn('relative w-full', props.class)">
+            <PopoverTrigger as-child>
+                <button
+                    :id="id"
+                    type="button"
+                    :class="
+                        cn(
+                            'flex h-10 w-full items-center gap-2.5 rounded-lg border border-input bg-card pr-9 pl-1.5 text-left text-sm shadow-[0_1px_2px_rgb(23_23_20/0.04)] transition-[border-color,box-shadow] hover:border-foreground/25 focus-visible:border-fl-gold focus-visible:ring-4 focus-visible:ring-fl-gold/15 focus-visible:outline-none data-[state=open]:border-fl-gold data-[state=open]:ring-4 data-[state=open]:ring-fl-gold/15',
+                            !formatted && 'text-muted-foreground/70',
+                        )
+                    "
+                >
+                    <span
+                        class="flex size-7 shrink-0 items-center justify-center rounded-md bg-fl-cream text-fl-gold-ink"
+                    >
+                        <CalendarDays class="size-4" />
+                    </span>
+                    <span class="truncate capitalize">{{
+                        formatted ?? placeholder
+                    }}</span>
+                </button>
+            </PopoverTrigger>
             <button
+                v-if="clearable && modelValue"
                 type="button"
-                :class="
-                    cn(
-                        'fl-focus-glow flex h-9 w-full items-center gap-2 rounded-md border border-input bg-transparent px-3 text-left text-sm text-foreground transition-colors hover:border-foreground/15',
-                        !formatted && 'text-muted-foreground/80',
-                        props.class,
-                    )
-                "
+                class="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Quitar fecha"
+                @click.stop="clear"
             >
-                <CalendarIcon
-                    class="size-4 shrink-0 text-muted-foreground/80"
-                />
-                <span class="truncate capitalize">{{
-                    formatted ?? placeholder
-                }}</span>
+                <X class="size-3.5" />
             </button>
-        </PopoverTrigger>
-        <PopoverContent class="w-auto bg-card">
+        </div>
+        <PopoverContent
+            class="w-auto rounded-2xl border-border bg-card p-0 shadow-[0_24px_48px_-20px_rgb(23_23_20/0.3)]"
+            align="start"
+        >
             <Calendar
                 :model-value="dateValue"
+                :range-end="rangeEnd"
                 :max-value="maxValue"
                 :min-value="minValue"
                 @update:model-value="onSelect"
-            />
+            >
+                <template #footer>
+                    <button
+                        type="button"
+                        class="text-xs font-semibold text-foreground hover:underline"
+                        @click="pickToday"
+                    >
+                        Hoy
+                    </button>
+                </template>
+            </Calendar>
         </PopoverContent>
     </Popover>
 </template>

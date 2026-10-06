@@ -77,6 +77,7 @@ class CheckoutCart
         return DB::transaction(function () use ($cart, $user, $athlete, $customerSnapshot, $items, $location) {
             $eventEditionId = $items->first(fn ($i) => $i->event_edition_id !== null)?->event_edition_id;
             $subtotal = 0;
+            $lineTotalsByProduct = [];
             $lines = [];
 
             foreach ($items as $item) {
@@ -118,6 +119,7 @@ class CheckoutCart
 
                 $lineTotal = $price->amountMinor * $item->quantity;
                 $subtotal += $lineTotal;
+                $lineTotalsByProduct[$product->id] = ($lineTotalsByProduct[$product->id] ?? 0) + $lineTotal;
 
                 $lines[] = [
                     'product' => $product,
@@ -142,10 +144,11 @@ class CheckoutCart
                 : null;
 
             if ($coupon !== null) {
-                $this->validateCoupon->handle($coupon, $cart->currency, $subtotal, $user);
+                $eligible = $coupon->eligibleSubtotal($lineTotalsByProduct);
+                $this->validateCoupon->handle($coupon, $cart->currency, $subtotal, $user, $eligible);
             }
 
-            $discount = $this->resolveDiscount->handle($coupon, $subtotal);
+            $discount = $this->resolveDiscount->handle($coupon, $subtotal, $coupon?->eligibleSubtotal($lineTotalsByProduct));
             $total = max($subtotal - $discount, 0);
 
             $order = Order::create([

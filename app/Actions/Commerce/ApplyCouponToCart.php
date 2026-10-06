@@ -27,10 +27,11 @@ class ApplyCouponToCart
         // (brief item 27/108) — a raw base_price_minor sum here could
         // pass the minimum-order check on a subtotal the real checkout
         // never sees.
-        $subtotal = $this->getCartSummary->handle($cart)->subtotalMinor;
+        $summary = $this->getCartSummary->handle($cart);
+        $subtotal = $summary->subtotalMinor;
 
         $coupon = $this->validateCoupon->findByCode($code);
-        $this->validateCoupon->handle($coupon, $cart->currency, $subtotal, $user);
+        $this->validateCoupon->handle($coupon, $cart->currency, $subtotal, $user, $coupon->eligibleSubtotal($summary->lineTotalsByProduct));
 
         $cart->update(['coupon_id' => $coupon->id]);
 

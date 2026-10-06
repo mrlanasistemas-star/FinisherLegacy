@@ -12,7 +12,7 @@
  *    below: the thing a visitor is missing without them is "how does this
  *    attach to my medal", which is the #1 misread risk for this product.
  */
-import { QrCode } from '@lucide/vue';
+import { Nfc } from '@lucide/vue';
 import { ref, useTemplateRef } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
 
@@ -267,7 +267,7 @@ const hotspots = [
                             <span
                                 class="flex size-8 items-center justify-center rounded-[4px] border border-foreground/15 bg-white/50 sm:size-9"
                             >
-                                <QrCode
+                                <Nfc
                                     class="size-4 text-fl-gold-ink sm:size-5"
                                 />
                             </span>

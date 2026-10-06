@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\PhotoSale;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -46,6 +47,19 @@ class OrderController extends Controller
         $order->loadMissing('items');
 
         return Inertia::render('store/OrderShow', [
+            // Paid photographer photos of this order — full-resolution downloads.
+            'photoDownloads' => PhotoSale::query()
+                ->where('order_id', $order->id)
+                ->where('buyer_user_id', $request->user()->id)
+                ->with('photo')
+                ->get()
+                ->filter(fn (PhotoSale $sale) => $sale->photo !== null)
+                ->map(fn (PhotoSale $sale) => [
+                    'uuid' => $sale->uuid,
+                    'thumb_url' => $sale->photo->thumbUrl(),
+                    'download_url' => route('photos.download', $sale),
+                ])
+                ->values(),
             'order' => [
                 'uuid' => $order->uuid,
                 'order_number' => $order->order_number,

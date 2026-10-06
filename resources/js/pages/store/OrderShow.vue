@@ -66,6 +66,11 @@ declare global {
 const props = defineProps<{
     order: OrderDetail;
     items: OrderItem[];
+    photoDownloads?: {
+        uuid: string;
+        thumb_url: string;
+        download_url: string;
+    }[];
     openpay: OpenpayConfig;
 }>();
 
@@ -240,6 +245,32 @@ async function finishPayment(tokenId: string) {
 
     <div class="bg-background">
         <div class="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 xl:px-8">
+            <section
+                v-if="photoDownloads && photoDownloads.length"
+                class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"
+            >
+                <p class="font-semibold text-emerald-900">
+                    Tus fotos están listas para descargar
+                </p>
+                <div class="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
+                    <a
+                        v-for="photo in photoDownloads"
+                        :key="photo.uuid"
+                        :href="photo.download_url"
+                        class="group relative overflow-hidden rounded-xl"
+                    >
+                        <img
+                            :src="photo.thumb_url"
+                            alt=""
+                            class="aspect-square w-full object-cover"
+                        />
+                        <span
+                            class="absolute inset-x-1 bottom-1 rounded-full bg-white/95 py-1 text-center text-[11px] font-semibold"
+                            >Descargar</span
+                        >
+                    </a>
+                </div>
+            </section>
             <Link
                 href="/mis-pedidos"
                 class="text-xs tracking-wide text-muted-foreground/80 uppercase hover:text-fl-gold-ink"

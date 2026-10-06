@@ -76,6 +76,12 @@ class User extends Authenticatable implements ProductionActor
     }
 
     /** @return HasOne<AthleteProfile, $this> */
+    /** @return HasOne<PhotographerProfile, $this> */
+    public function photographerProfile(): HasOne
+    {
+        return $this->hasOne(PhotographerProfile::class);
+    }
+
     public function athleteProfile(): HasOne
     {
         return $this->hasOne(AthleteProfile::class);

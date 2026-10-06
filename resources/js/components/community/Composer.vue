@@ -18,11 +18,14 @@ import {
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { store } from '@/routes/community/posts';
 import { edit as editProfile } from '@/routes/dashboard/profile';
-import type { MomentVisibility, VisibilityOption } from '@/types';
+import type { VisibilityOption } from '@/types';
 
 export type ComposerData = {
     has_profile: boolean;
@@ -48,9 +51,9 @@ const achievementMode = ref<'medal' | 'record'>('medal');
 const form = useForm<{
     type: string;
     caption: string;
-    visibility: MomentVisibility;
-    event_participant_id: number | null;
-    medal_uuid: string | null;
+    visibility: string | number | null;
+    event_participant_id: string | number | null;
+    medal_uuid: string | number | null;
     metrics: {
         title: string;
         distance_km: string;
@@ -177,6 +180,27 @@ function submit() {
 }
 
 const visibilityIcon = { public: Globe2, followers: Users, private: Lock };
+
+const visibilitySelectOptions = computed(() =>
+    props.visibilityOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+        description: option.description,
+        icon: visibilityIcon[option.value],
+    })),
+);
+
+const participationOptions = computed(() =>
+    props.composer.participations.map((p) => ({
+        value: p.id,
+        label: p.label,
+        description: p.date ?? undefined,
+    })),
+);
+
+const medalOptions = computed(() =>
+    props.composer.medals.map((m) => ({ value: m.uuid, label: m.title })),
+);
 </script>
 
 <template>
@@ -251,21 +275,14 @@ const visibilityIcon = { public: Globe2, followers: Users, private: Lock };
                     class="text-xs font-medium text-muted-foreground"
                     >¿En qué evento participaste?</label
                 >
-                <select
+                <FancySelect
                     v-if="composer.participations.length"
                     id="composer-event"
                     v-model="form.event_participant_id"
-                    class="mt-1.5 h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
-                >
-                    <option :value="null">Selecciona tu participación</option>
-                    <option
-                        v-for="p in composer.participations"
-                        :key="p.id"
-                        :value="p.id"
-                    >
-                        {{ p.label }}{{ p.date ? ` — ${p.date}` : '' }}
-                    </option>
-                </select>
+                    :options="participationOptions"
+                    placeholder="Selecciona tu participación"
+                    class="mt-1.5"
+                />
                 <p v-else class="mt-1.5 text-sm text-muted-foreground">
                     Aún no tienes participaciones registradas. Tu resultado
                     aparecerá aquí después de tu próximo evento.
@@ -305,60 +322,50 @@ const visibilityIcon = { public: Globe2, followers: Users, private: Lock };
                 </div>
 
                 <template v-if="achievementMode === 'medal'">
-                    <select
+                    <FancySelect
                         v-if="composer.medals.length"
                         v-model="form.medal_uuid"
+                        :options="medalOptions"
                         aria-label="Medalla"
-                        class="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
-                    >
-                        <option :value="null">Selecciona una medalla</option>
-                        <option
-                            v-for="medal in composer.medals"
-                            :key="medal.uuid"
-                            :value="medal.uuid"
-                        >
-                            {{ medal.title }}
-                        </option>
-                    </select>
+                        placeholder="Selecciona una medalla"
+                    />
                     <p v-else class="text-sm text-muted-foreground">
                         Registra una medalla en Mi Legado para compartirla.
                     </p>
                 </template>
 
                 <div v-else class="grid gap-2 sm:grid-cols-3">
-                    <input
+                    <Input
                         v-model="form.metrics.title"
-                        type="text"
                         maxlength="80"
                         placeholder="Título (ej. Fondo largo)"
                         aria-label="Título del entrenamiento"
-                        class="h-10 rounded-md border border-input bg-card px-3 text-sm sm:col-span-3"
+                        class="sm:col-span-3"
                     />
-                    <input
+                    <Input
                         v-model="form.metrics.distance_km"
                         type="number"
                         min="0"
                         step="0.01"
                         placeholder="Distancia (km)"
                         aria-label="Distancia en kilómetros"
-                        class="h-10 rounded-md border border-input bg-card px-3 text-sm"
                     />
-                    <input
+                    <Input
                         v-model="form.metrics.duration_minutes"
                         type="number"
                         min="0"
                         step="1"
                         placeholder="Tiempo (min)"
                         aria-label="Tiempo en minutos"
-                        class="h-10 rounded-md border border-input bg-card px-3 text-sm"
                     />
                     <label
-                        class="flex h-10 items-center gap-2 rounded-md border border-input bg-card px-3 text-sm"
+                        class="flex h-10 items-center gap-2 rounded-lg border border-input bg-card px-3 text-sm"
                     >
-                        <input
-                            v-model="form.metrics.is_personal_record"
-                            type="checkbox"
-                            class="accent-[#c9a45c]"
+                        <Checkbox
+                            :model-value="form.metrics.is_personal_record"
+                            @update:model-value="
+                                (v) => (form.metrics.is_personal_record = !!v)
+                            "
                         />
                         Marca personal
                     </label>
@@ -419,25 +426,13 @@ const visibilityIcon = { public: Globe2, followers: Users, private: Lock };
                     <label class="sr-only" for="composer-visibility"
                         >Quién puede verlo</label
                     >
-                    <div class="relative">
-                        <component
-                            :is="visibilityIcon[form.visibility]"
-                            class="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-                        />
-                        <select
-                            id="composer-visibility"
-                            v-model="form.visibility"
-                            class="h-9 appearance-none rounded-full border border-border bg-card pr-3 pl-7 text-xs font-medium"
-                        >
-                            <option
-                                v-for="option in visibilityOptions"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </option>
-                        </select>
-                    </div>
+                    <FancySelect
+                        id="composer-visibility"
+                        v-model="form.visibility"
+                        :options="visibilitySelectOptions"
+                        size="sm"
+                        class="h-9 w-40 rounded-full text-xs font-medium"
+                    />
                     <Button
                         type="submit"
                         size="sm"

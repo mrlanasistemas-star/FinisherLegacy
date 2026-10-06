@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\ProductAvailability;
+use App\Enums\ProductMediaType;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
@@ -29,7 +30,7 @@ class ProductController extends Controller
     public function index(Request $request): Response
     {
         $products = Product::query()
-            ->with('category')
+            ->with(['category', 'media', 'variants.inventoryLevels'])
             ->withCount('variants')
             ->when($request->string('q')->toString(), fn ($q, $search) => $q->where('name', 'like', "%{$search}%"))
             ->orderBy('sort_order')
@@ -48,6 +49,21 @@ class ProductController extends Controller
             'tracks_inventory' => $product->tracks_inventory,
             'active' => $product->active,
             'variants_count' => $product->variants_count,
+            'slug' => $product->slug,
+            'tagline' => $product->tagline,
+            // Visual card: primary first, then up to 4 more gallery images.
+            'gallery' => $product->media
+                ->where('type', ProductMediaType::Image)
+                ->sortByDesc('is_primary')
+                ->take(5)
+                ->values()
+                ->map(fn (ProductMedia $m) => ['id' => $m->id, 'url' => $m->url(), 'is_primary' => $m->is_primary]),
+            'media_count' => $product->media->count(),
+            'from_price_minor' => $product->variants->min('base_price_minor'),
+            'currency' => $product->variants->first()?->currency ?? 'MXN',
+            'stock' => $product->tracks_inventory
+                ? (int) $product->variants->sum(fn (ProductVariant $v) => $v->inventoryLevels->sum('quantity_on_hand') - $v->inventoryLevels->sum('quantity_reserved'))
+                : null,
         ]);
 
         return Inertia::render('admin/products/Index', [

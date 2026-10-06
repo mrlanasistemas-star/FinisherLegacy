@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { Award, IdCard, Medal, QrCode } from '@lucide/vue';
+import { Award, IdCard, Medal, Nfc } from '@lucide/vue';
 import CTASection from '@/components/public/CTASection.vue';
 import HowItWorksSteps from '@/components/public/HowItWorksSteps.vue';
 import MascotGuide from '@/components/public/MascotGuide.vue';
@@ -61,7 +61,7 @@ const steps = [
 const chain = [
     { icon: Medal, label: 'Medalla física' },
     { icon: Award, label: 'Placa' },
-    { icon: QrCode, label: 'Legacy Code' },
+    { icon: Nfc, label: 'Chip NFC · Legacy Code' },
     { icon: IdCard, label: 'Legacy Profile' },
 ];
 
@@ -72,9 +72,9 @@ const afterPlate = [
             'En el evento, o después si tu placa se generó de forma flexible.',
     },
     {
-        title: 'Escaneas tu Legacy Code',
+        title: 'Acercas tu teléfono a la placa',
         description:
-            'Un código único impreso en tu placa te lleva a su registro digital.',
+            'El chip NFC de tu placa abre su registro digital con su Legacy Code único.',
     },
     {
         title: 'Inicias sesión o creas tu Legacy ID',

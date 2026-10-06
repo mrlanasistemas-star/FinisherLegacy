@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { Plus, Trash2 } from '@lucide/vue';
+import DatePicker from '@/components/DatePicker.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -152,11 +153,12 @@ function submit() {
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
                             <Label>Fecha</Label>
-                            <Input
-                                v-model="form.event_date"
-                                type="date"
-                                class="bg-background"
-                                required
+                            <DatePicker
+                                :model-value="form.event_date || null"
+                                placeholder="Elige la fecha"
+                                @update:model-value="
+                                    (v) => (form.event_date = v ?? '')
+                                "
                             />
                             <p
                                 v-if="form.errors.event_date"

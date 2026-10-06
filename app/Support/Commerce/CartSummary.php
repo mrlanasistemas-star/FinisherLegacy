@@ -17,5 +17,7 @@ final class CartSummary
         public readonly int $totalMinor,
         public readonly string $currency,
         public readonly ?Coupon $coupon,
+        /** @var array<int, int> product_id => line total (minor units) */
+        public readonly array $lineTotalsByProduct = [],
     ) {}
 }

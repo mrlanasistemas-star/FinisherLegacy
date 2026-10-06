@@ -270,6 +270,32 @@ return [
     | photos live on the public disk like avatars/medal images (they are
     | meant to be seen); event media referenced by a Moment is never copied.
     */
+    /*
+    |--------------------------------------------------------------------------
+    | Event photo marketplace (photographers sell to athletes)
+    |--------------------------------------------------------------------------
+    |
+    | Photographers upload for free and set their own price; when an athlete
+    | buys, Finisher Legacy keeps platform_commission_percent of the price
+    | and the card processor fee (Stripe México estimate: percent + fixed
+    | per order, plus IVA on the fee) is also deducted from the sale. The
+    | photographer portal shows this exact breakdown.
+    */
+    'photos' => [
+        'platform_commission_percent' => (float) env('PHOTOS_PLATFORM_COMMISSION_PERCENT', 20),
+        'processor_fee_percent' => (float) env('PHOTOS_PROCESSOR_FEE_PERCENT', 3.6),
+        'processor_fee_fixed_minor' => (int) env('PHOTOS_PROCESSOR_FEE_FIXED_MINOR', 300),
+        'processor_fee_vat_percent' => (float) env('PHOTOS_PROCESSOR_FEE_VAT_PERCENT', 16),
+        'default_price_minor' => (int) env('PHOTOS_DEFAULT_PRICE_MINOR', 9900),
+        'min_price_minor' => 2000,
+        'max_price_minor' => 500000,
+        'max_files_per_upload' => 30,
+        'max_file_kb' => 25600,
+        'preview_max_width' => 1400,
+        'thumb_max_width' => 640,
+        'currency' => 'MXN',
+    ],
+
     'social' => [
         'moment_caption_max' => 1000,
         'comment_max' => 500,

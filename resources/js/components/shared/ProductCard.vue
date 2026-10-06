@@ -25,6 +25,8 @@ withDefaults(
         tagline?: string | null;
         availability?: ProductAvailability;
         availabilityLabel?: string;
+        compareAtMinor?: number | null;
+        promotionLabel?: string | null;
     }>(),
     {
         availability: 'available',
@@ -84,6 +86,12 @@ withDefaults(
                 }}
             </span>
             <span
+                v-else-if="promotionLabel"
+                class="absolute top-3 left-3 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-white uppercase"
+            >
+                {{ promotionLabel }}
+            </span>
+            <span
                 v-else-if="!inStock"
                 class="absolute top-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
             >
@@ -118,6 +126,13 @@ withDefaults(
                         :minor="fromPriceMinor"
                         :currency="currency"
                         class="font-medium"
+                        :class="compareAtMinor ? 'text-red-700' : ''"
+                    />
+                    <Money
+                        v-if="compareAtMinor"
+                        :minor="compareAtMinor"
+                        :currency="currency"
+                        class="ml-1.5 text-xs text-muted-foreground line-through"
                     />
                 </template>
                 <span v-else class="text-muted-foreground"

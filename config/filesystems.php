@@ -94,6 +94,16 @@ return [
             'report' => false,
         ],
 
+        // Photographer marketplace: full-resolution originals are PRIVATE
+        // (only a paid buyer downloads them, through PhotoDownloadController);
+        // watermarked previews/thumbnails are public.
+        'event_photo_originals' => [
+            'driver' => env('EVENT_PHOTO_ORIGINALS_DISK_DRIVER', 'local'),
+            'root' => env('EVENT_PHOTO_ORIGINALS_DISK_ROOT', storage_path('app/private/event-photos')),
+            'throw' => false,
+            'report' => false,
+        ],
+
         // No 'url'/'visibility': support audio is never linked to directly —
         // only App\Http\Controllers\SupportAudioController serves it, behind
         // a temporary signed URL (brief §62: "no URLs directas eternas").

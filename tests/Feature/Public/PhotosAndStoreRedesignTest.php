@@ -64,7 +64,7 @@ test('photo search by event and bib only returns public photos of visible profil
             ->component('photos/Index')
             ->where('searched', true)
             ->has('results', 1)
-            ->where('purchase.available', false)
+            ->where('purchase.available', true)
             ->where('mine', null)
         );
 });

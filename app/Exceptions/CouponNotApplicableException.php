@@ -31,6 +31,7 @@ class CouponNotApplicableException extends ApiException
             CouponRejectionReason::PerUserLimitReached => 'Ya usaste este cupón el máximo de veces permitido.',
             CouponRejectionReason::MinimumOrderNotMet => 'Tu compra no alcanza el monto mínimo para este cupón.',
             CouponRejectionReason::CurrencyMismatch => 'Este cupón no aplica para esta moneda.',
+            CouponRejectionReason::NoEligibleProducts => 'Este cupón solo aplica a productos que no están en tu carrito.',
         };
     }
 }

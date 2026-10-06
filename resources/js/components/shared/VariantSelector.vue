@@ -13,6 +13,8 @@ export type Variant = {
     name: string;
     attributes: Record<string, string> | null;
     base_price_minor: number;
+    sale_price_minor?: number | null;
+    promotion_label?: string | null;
     currency: string;
     in_stock: boolean;
 };
@@ -36,10 +38,10 @@ const selected = computed(
             :key="variant.id"
             type="button"
             :disabled="!variant.in_stock"
-            class="rounded-lg border px-4 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-30"
+            class="rounded-full border px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-30"
             :class="
                 modelValue === variant.id
-                    ? 'border-fl-gold bg-fl-gold/10 text-fl-gold-ink'
+                    ? 'border-foreground bg-foreground text-background'
                     : 'border-border text-muted-foreground hover:border-foreground/15'
             "
             @click="emit('update:modelValue', variant.id)"
@@ -47,10 +49,25 @@ const selected = computed(
             {{ variant.name }}
         </button>
     </div>
-    <p v-if="selected" class="mt-3 text-lg text-foreground">
+    <p v-if="selected" class="mt-4 flex flex-wrap items-baseline gap-2">
         <Money
-            :minor="selected.base_price_minor"
+            :minor="selected.sale_price_minor ?? selected.base_price_minor"
             :currency="selected.currency"
+            class="font-serif text-3xl"
+            :class="
+                selected.sale_price_minor ? 'text-red-700' : 'text-foreground'
+            "
         />
+        <template v-if="selected.sale_price_minor">
+            <Money
+                :minor="selected.base_price_minor"
+                :currency="selected.currency"
+                class="text-base text-muted-foreground line-through"
+            />
+            <span
+                class="rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-bold text-white uppercase"
+                >{{ selected.promotion_label ?? 'Oferta' }}</span
+            >
+        </template>
     </p>
 </template>

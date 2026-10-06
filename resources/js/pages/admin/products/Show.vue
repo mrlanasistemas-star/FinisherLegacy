@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ExternalLink, Package, Plus, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import ProductGalleryManager from '@/components/admin/ProductGalleryManager.vue';
 import type { AdminProductMedia } from '@/components/admin/ProductGalleryManager.vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
 import Money from '@/components/shared/Money.vue';
 import { Badge } from '@/components/ui/badge';
@@ -117,6 +118,11 @@ function saveDetails() {
         preserveScroll: true,
     });
 }
+
+const categoryOptions = computed(() => [
+    { value: null, label: 'Sin categoría' },
+    ...props.categories.map((c) => ({ value: c.id, label: c.name })),
+]);
 
 const availabilityOptions = [
     { value: 'available', label: 'Disponible (se puede comprar)' },
@@ -281,68 +287,35 @@ const sectionTypeHelp: Record<string, string> = {
             </div>
             <div class="grid gap-1.5">
                 <Label for="p-category">Categoría</Label>
-                <select
+                <FancySelect
                     id="p-category"
                     v-model="detailsForm.category_id"
-                    class="h-9 rounded-md border border-input bg-card px-3 text-sm"
-                >
-                    <option :value="null">Sin categoría</option>
-                    <option
-                        v-for="category in categories"
-                        :key="category.id"
-                        :value="category.id"
-                    >
-                        {{ category.name }}
-                    </option>
-                </select>
+                    :options="categoryOptions"
+                />
             </div>
             <div class="grid gap-1.5">
                 <Label for="p-type">Tipo</Label>
-                <select
+                <FancySelect
                     id="p-type"
                     v-model="detailsForm.type"
-                    class="h-9 rounded-md border border-input bg-card px-3 text-sm"
-                >
-                    <option
-                        v-for="option in typeOptions"
-                        :key="option.value"
-                        :value="option.value"
-                    >
-                        {{ option.label }}
-                    </option>
-                </select>
+                    :options="typeOptions"
+                />
             </div>
             <div class="grid gap-1.5">
                 <Label for="p-status">Publicación</Label>
-                <select
+                <FancySelect
                     id="p-status"
                     v-model="detailsForm.status"
-                    class="h-9 rounded-md border border-input bg-card px-3 text-sm"
-                >
-                    <option
-                        v-for="option in statusOptions"
-                        :key="option.value"
-                        :value="option.value"
-                    >
-                        {{ option.label }}
-                    </option>
-                </select>
+                    :options="statusOptions"
+                />
             </div>
             <div class="grid gap-1.5">
                 <Label for="p-availability">Disponibilidad</Label>
-                <select
+                <FancySelect
                     id="p-availability"
                     v-model="detailsForm.availability"
-                    class="h-9 rounded-md border border-input bg-card px-3 text-sm"
-                >
-                    <option
-                        v-for="option in availabilityOptions"
-                        :key="option.value"
-                        :value="option.value"
-                    >
-                        {{ option.label }}
-                    </option>
-                </select>
+                    :options="availabilityOptions"
+                />
                 <InputError :message="detailsForm.errors.availability" />
             </div>
             <div class="grid gap-1.5">

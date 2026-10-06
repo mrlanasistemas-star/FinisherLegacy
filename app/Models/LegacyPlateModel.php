@@ -10,17 +10,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * A pre-manufactured Legacy Plate reference (brief §3-§5): shape,
- * mechanism, relief and decoration already fixed by the supplier —
- * `engraving_area` is the only region Finisher Legacy ever writes into. See
- * docs/architecture/legacy-plate-v2.md.
+ * One of the (at most three) Legacy Plate layouts. A plate is PRINTED on
+ * its front and back — no laser — and carries an NFC chip programmed with
+ * its Legacy Code (no printed QR). `engraving_area` is the printable area
+ * of the front, `back_area` the one of the back; artwork + colors per
+ * face define the print. See docs/architecture/legacy-plate-v2.md.
  */
 #[Fillable([
-    'uuid', 'name', 'slug', 'sku', 'description', 'width_mm', 'height_mm',
-    'engraving_area', 'active', 'preview_image_path', 'metadata',
+    'uuid', 'name', 'slug', 'layout_slot', 'sku', 'description', 'width_mm', 'height_mm',
+    'engraving_area', 'back_area', 'active', 'preview_image_path', 'metadata',
+    'front_artwork_path', 'back_artwork_path', 'front_background', 'back_background',
+    'front_text_color', 'back_text_color',
 ])]
 class LegacyPlateModel extends Model
 {
+    /** The product offers exactly three layouts — never more. */
+    public const int MAX_LAYOUTS = 3;
+
     /** @use HasFactory<LegacyPlateModelFactory> */
     use HasFactory;
 
@@ -30,6 +36,8 @@ class LegacyPlateModel extends Model
             'width_mm' => 'decimal:2',
             'height_mm' => 'decimal:2',
             'engraving_area' => 'array',
+            'back_area' => 'array',
+            'layout_slot' => 'integer',
             'active' => 'boolean',
             'metadata' => 'array',
         ];
@@ -68,9 +76,17 @@ class LegacyPlateModel extends Model
             'width_mm' => (float) $this->width_mm,
             'height_mm' => (float) $this->height_mm,
             'engraving_area' => $this->engraving_area,
+            'back_area' => $this->back_area ?? $this->engraving_area,
             'preview_image_url' => $this->preview_image_path ? Storage::disk('public')->url($this->preview_image_path) : null,
+            'front_artwork_url' => $this->front_artwork_path ? Storage::disk('public')->url($this->front_artwork_path) : null,
+            'back_artwork_url' => $this->back_artwork_path ? Storage::disk('public')->url($this->back_artwork_path) : null,
+            'front_background' => $this->front_background ?? '#F3F2EE',
+            'back_background' => $this->back_background ?? '#171714',
+            'front_text_color' => $this->front_text_color ?? '#171714',
+            'back_text_color' => $this->back_text_color ?? '#F4EEDF',
             'fields' => $this->fields->map(fn (LegacyPlateModelField $field) => [
                 'field_key' => $field->field_key->value,
+                'face' => $field->face ?? 'front',
                 'x' => (float) $field->x,
                 'y' => (float) $field->y,
                 'width' => (float) $field->width,

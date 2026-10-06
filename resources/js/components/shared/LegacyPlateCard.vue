@@ -6,7 +6,7 @@
  * still shows up as "Preventa pagada · Esperando evento" instead of being
  * invisible until production.
  */
-import { Boxes, QrCode } from '@lucide/vue';
+import { Boxes, Nfc } from '@lucide/vue';
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 
@@ -86,7 +86,7 @@ const helperText = computed(() => helper[props.presaleStatus] ?? null);
         >
             <span>{{ serialNumber ?? 'Sin folio' }}</span>
             <span v-if="legacyCode" class="flex items-center gap-1"
-                ><QrCode class="size-3.5" /> {{ legacyCode }}</span
+                ><Nfc class="size-3.5" /> {{ legacyCode }}</span
             >
         </div>
     </div>

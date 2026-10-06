@@ -3,7 +3,11 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Ticket, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
+import ProductPicker from '@/components/admin/ProductPicker.vue';
+import type { PickerProduct } from '@/components/admin/ProductPicker.vue';
 import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import DatePicker from '@/components/DatePicker.vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
 import {
     AlertDialog,
@@ -27,13 +31,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { COMMERCE_ORDERS_AREA_NAV } from '@/config/areaNav';
 
@@ -51,6 +48,9 @@ type CouponRow = {
     used_count: number;
     minimum_order_minor: number | null;
     active: boolean;
+    applies_to: 'all' | 'products';
+    product_ids: number[];
+    product_names: string[];
 };
 
 defineProps<{
@@ -59,12 +59,14 @@ defineProps<{
         links: { url: string | null; label: string; active: boolean }[];
     };
     filters: { q: string };
+    products: PickerProduct[];
 }>();
 
 const columns = [
     { key: 'code', label: 'Código' },
     { key: 'kind', label: 'Tipo' },
     { key: 'discount', label: 'Descuento' },
+    { key: 'scope', label: 'Aplica a' },
     { key: 'vigencia', label: 'Vigencia' },
     { key: 'usage', label: 'Usos' },
     { key: 'active', label: 'Estado' },
@@ -87,14 +89,16 @@ function emptyForm() {
         code: '',
         name: '',
         description: '',
-        type: 'percentage' as 'percentage' | 'fixed_amount',
+        type: 'percentage' as string | number | null,
         value: 10,
         currency: '',
-        starts_at: '',
-        ends_at: '',
+        starts_at: null as string | null,
+        ends_at: null as string | null,
         usage_limit_total: '' as number | '',
         usage_limit_per_user: '' as number | '',
         minimum_order_minor: '' as number | '',
+        applies_to: 'all' as string | number | null,
+        product_ids: [] as number[],
         active: true,
     };
 }
@@ -124,13 +128,18 @@ function openEdit(coupon: CouponRow) {
         name: coupon.name,
         description: '',
         type: coupon.type,
-        value: coupon.value,
+        value: coupon.type === 'percentage' ? coupon.value : coupon.value / 100,
         currency: coupon.currency ?? '',
-        starts_at: coupon.starts_at ?? '',
-        ends_at: coupon.ends_at ?? '',
+        starts_at: coupon.starts_at,
+        ends_at: coupon.ends_at,
         usage_limit_total: coupon.usage_limit_total ?? '',
         usage_limit_per_user: coupon.usage_limit_per_user ?? '',
-        minimum_order_minor: coupon.minimum_order_minor ?? '',
+        minimum_order_minor:
+            coupon.minimum_order_minor !== null
+                ? coupon.minimum_order_minor / 100
+                : '',
+        applies_to: coupon.applies_to ?? 'all',
+        product_ids: [...(coupon.product_ids ?? [])],
         active: coupon.active,
     });
     form.reset();
@@ -145,13 +154,26 @@ function submit() {
         },
     };
 
+    // The form speaks pesos; the backend stores minor units.
+    const toServer = (data: ReturnType<typeof emptyForm>) => ({
+        ...data,
+        value:
+            data.type === 'percentage'
+                ? Math.round(Number(data.value))
+                : Math.round(Number(data.value) * 100),
+        minimum_order_minor:
+            data.minimum_order_minor === ''
+                ? null
+                : Math.round(Number(data.minimum_order_minor) * 100),
+    });
+
     if (editingId.value !== null) {
-        form.transform((data) => ({ ...data, _method: 'patch' })).post(
-            `/admin/coupons/${editingId.value}`,
-            options,
-        );
+        form.transform((data) => ({
+            ...toServer(data),
+            _method: 'patch',
+        })).post(`/admin/coupons/${editingId.value}`, options);
     } else {
-        form.post('/admin/coupons', options);
+        form.transform(toServer).post('/admin/coupons', options);
     }
 }
 
@@ -185,13 +207,10 @@ function confirmDestroy() {
                 Cupones
                 <HelpPopover
                     title="Cupón vs. promoción"
-                    text="Es la misma tabla, dos formas de usarla. Ponle un límite de usos y tienes un cupón clásico de código limitado. Déjalo sin límite de usos y solo con fecha de fin y tienes una promoción por tiempo. Ambos siempre requieren el código en el carrito — Fase 1 no aplica descuentos automáticos sin código."
+                    text="Un cupón es un código que el cliente escribe en el carrito. Puede descontar todo el carrito o solo productos seleccionados. Para precios rebajados automáticos (sin código) usa Ofertas."
                 />
             </h1>
-            <Button
-                class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                @click="openCreate"
-            >
+            <Button class="rounded-full" @click="openCreate">
                 <Plus class="size-4" />
                 Nuevo cupón
             </Button>
@@ -230,6 +249,23 @@ function confirmDestroy() {
                               (row.currency as string | null) ?? 'MXN',
                           )
                 }}
+            </template>
+
+            <template #cell-scope="{ row }">
+                <span v-if="row.applies_to !== 'products'"
+                    >Todo el carrito</span
+                >
+                <span v-else
+                    >{{
+                        (row.product_names as unknown as string[]).length
+                    }}
+                    productos:
+                    {{
+                        (row.product_names as unknown as string[])
+                            .slice(0, 3)
+                            .join(', ')
+                    }}</span
+                >
             </template>
 
             <template #cell-vigencia="{ row }">
@@ -321,27 +357,25 @@ function confirmDestroy() {
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
                             <Label>Tipo</Label>
-                            <Select v-model="form.type">
-                                <SelectTrigger
-                                    class="border-border bg-background text-foreground"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="percentage"
-                                        >Porcentaje</SelectItem
-                                    >
-                                    <SelectItem value="fixed_amount"
-                                        >Monto fijo</SelectItem
-                                    >
-                                </SelectContent>
-                            </Select>
+                            <FancySelect
+                                v-model="form.type"
+                                :options="[
+                                    {
+                                        value: 'percentage',
+                                        label: 'Porcentaje',
+                                    },
+                                    {
+                                        value: 'fixed_amount',
+                                        label: 'Monto fijo',
+                                    },
+                                ]"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label>{{
                                 form.type === 'percentage'
                                     ? 'Porcentaje (1-100)'
-                                    : 'Monto (centavos)'
+                                    : 'Monto (MXN)'
                             }}</Label>
                             <Input
                                 v-model.number="form.value"
@@ -355,26 +389,52 @@ function confirmDestroy() {
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
                             <Label>Inicia (opcional)</Label>
-                            <Input
+                            <DatePicker
                                 v-model="form.starts_at"
-                                type="date"
-                                class="bg-background"
+                                :range-with="form.ends_at"
+                                placeholder="Desde hoy"
                             />
                         </div>
                         <div class="grid gap-2">
                             <Label>Termina (opcional)</Label>
-                            <Input
+                            <DatePicker
                                 v-model="form.ends_at"
-                                type="date"
-                                class="bg-background"
+                                :range-with="form.starts_at"
+                                placeholder="Sin fecha de fin"
                             />
                         </div>
                     </div>
 
-                    <p class="-mt-2 text-xs text-muted-foreground/80">
-                        Con límite de usos → cupón clásico. Sin límite, solo con
-                        fecha de fin → promoción por tiempo.
-                    </p>
+                    <div class="grid gap-2">
+                        <Label>Aplica a</Label>
+                        <FancySelect
+                            v-model="form.applies_to"
+                            :options="[
+                                { value: 'all', label: 'Todo el carrito' },
+                                {
+                                    value: 'products',
+                                    label: 'Solo productos seleccionados',
+                                    description:
+                                        'El descuento se calcula sobre esas líneas',
+                                },
+                            ]"
+                        />
+                    </div>
+                    <div
+                        v-if="form.applies_to === 'products'"
+                        class="grid gap-2"
+                    >
+                        <ProductPicker
+                            v-model="form.product_ids"
+                            :products="products"
+                        />
+                        <p
+                            v-if="form.errors.product_ids"
+                            class="text-sm text-red-700"
+                        >
+                            {{ form.errors.product_ids }}
+                        </p>
+                    </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
@@ -400,9 +460,7 @@ function confirmDestroy() {
                     </div>
 
                     <div class="grid gap-2">
-                        <Label
-                            >Monto mínimo de compra (centavos, opcional)</Label
-                        >
+                        <Label>Monto mínimo de compra (MXN, opcional)</Label>
                         <Input
                             v-model.number="form.minimum_order_minor"
                             type="number"
@@ -414,14 +472,17 @@ function confirmDestroy() {
                     <label
                         class="flex items-center gap-2 text-sm text-foreground"
                     >
-                        <Checkbox v-model="form.active" />
+                        <Checkbox
+                            :model-value="form.active"
+                            @update:model-value="(v) => (form.active = !!v)"
+                        />
                         Activo
                     </label>
 
                     <DialogFooter>
                         <Button
                             type="submit"
-                            class="w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft sm:w-auto"
+                            class="w-full rounded-full sm:w-auto"
                             :disabled="form.processing"
                         >
                             Guardar

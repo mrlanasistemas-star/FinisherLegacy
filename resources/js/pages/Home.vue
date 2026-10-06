@@ -7,6 +7,7 @@ import ClosingCta from '@/components/public/home/ClosingCta.vue';
 import CommunityPreview from '@/components/public/home/CommunityPreview.vue';
 import FeatureTriptych from '@/components/public/home/FeatureTriptych.vue';
 import HomeHero from '@/components/public/home/HomeHero.vue';
+import PhotographersBand from '@/components/public/home/PhotographersBand.vue';
 import SportStrip from '@/components/public/home/SportStrip.vue';
 import StorePreview from '@/components/public/home/StorePreview.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
@@ -88,6 +89,8 @@ defineProps<{
     </section>
 
     <StorePreview :products="featuredProducts" />
+
+    <PhotographersBand />
 
     <AboutPreview />
 

@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Archive, Inbox, Mail, MailOpen } from '@lucide/vue';
 import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { CONTENT_AREA_NAV } from '@/config/areaNav';
@@ -93,26 +94,15 @@ function setStatus(message: Message, status: Message['status']) {
             >
                 {{ tab.label }}
             </button>
-            <select
-                :value="filters.type ?? ''"
+            <FancySelect
+                :model-value="filters.type"
+                :options="[{ value: null, label: 'Todos los tipos' }, ...types]"
                 aria-label="Tipo de contacto"
-                class="ml-auto h-9 rounded-full border border-border bg-card px-3 text-sm"
-                @change="
-                    filter(
-                        filters.status,
-                        ($event.target as HTMLSelectElement).value || null,
-                    )
+                class="ml-auto h-9 w-56 rounded-full"
+                @update:model-value="
+                    (value) => filter(filters.status, value as string | null)
                 "
-            >
-                <option value="">Todos los tipos</option>
-                <option
-                    v-for="type in types"
-                    :key="type.value"
-                    :value="type.value"
-                >
-                    {{ type.label }}
-                </option>
-            </select>
+            />
         </div>
 
         <div class="space-y-3">

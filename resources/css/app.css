@@ -445,3 +445,66 @@
 .fl-swal-cancel {
     color: #171714 !important;
 }
+
+/*
+  Native controls that legitimately stay native (file pickers, radios,
+  plain checkboxes) still get the Finisher Legacy look — no browser-default
+  grey widgets anywhere. Interactive selects/date pickers use FancySelect /
+  DatePicker instead.
+*/
+@layer base {
+    input[type='range'] {
+        accent-color: var(--fl-gold);
+        cursor: pointer;
+    }
+
+    input[type='checkbox'],
+    input[type='radio'] {
+        accent-color: var(--fl-gold);
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+    }
+
+    input[type='file'] {
+        font-size: 0.8125rem;
+        color: var(--muted-foreground);
+        cursor: pointer;
+    }
+
+    input[type='file']::file-selector-button {
+        margin-right: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 9999px;
+        background: var(--fl-cream);
+        color: var(--fl-gold-ink);
+        padding: 0.45rem 0.95rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 160ms ease;
+    }
+
+    input[type='file']::file-selector-button:hover {
+        background: var(--fl-gold-soft);
+    }
+
+    select {
+        appearance: none;
+        border: 1px solid var(--input);
+        border-radius: 0.5rem;
+        background-color: var(--card);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b675e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        padding: 0.5rem 2.25rem 0.5rem 0.875rem;
+        font-size: 0.875rem;
+    }
+
+    select:focus-visible {
+        outline: none;
+        border-color: var(--fl-gold);
+        box-shadow: 0 0 0 4px
+            color-mix(in srgb, var(--fl-gold) 15%, transparent);
+    }
+}

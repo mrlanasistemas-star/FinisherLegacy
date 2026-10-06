@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\Notifications\PushNotificationGateway;
 use App\Services\Commerce\InventoryService;
+use App\Services\Commerce\PromotionResolver;
 use App\Services\Notifications\NullPushNotificationGateway;
 use App\Services\Social\SocialVisibility;
 use Carbon\CarbonImmutable;
@@ -32,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         // Scoped (per request / per queued job) so a viewer's block and
         // follow id lists are read once, never leaked across requests.
         $this->app->scoped(SocialVisibility::class);
+        $this->app->scoped(PromotionResolver::class);
 
         // Singleton so its defaultLocation() cache (consolidation brief
         // §9-§11) is shared for the whole request instead of re-querying

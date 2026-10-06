@@ -118,6 +118,8 @@ export type PublicProductCard = {
     tagline?: string | null;
     availability?: ProductAvailability;
     availability_label?: string;
+    compare_at_minor?: number | null;
+    promotion_label?: string | null;
 };
 
 export type ProductAvailability = 'available' | 'coming_soon' | 'concept';

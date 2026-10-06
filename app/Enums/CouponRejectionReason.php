@@ -18,4 +18,5 @@ enum CouponRejectionReason: string
     case PerUserLimitReached = 'per_user_limit_reached';
     case MinimumOrderNotMet = 'minimum_order_not_met';
     case CurrencyMismatch = 'currency_mismatch';
+    case NoEligibleProducts = 'no_eligible_products';
 }

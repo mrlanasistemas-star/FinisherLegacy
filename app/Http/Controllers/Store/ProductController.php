@@ -11,6 +11,7 @@ use App\Models\ProductContentSection;
 use App\Models\ProductMedia;
 use App\Models\ProductVariant;
 use App\Queries\Commerce\GetFeaturedProducts;
+use App\Services\Commerce\PromotionResolver;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -62,7 +63,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function show(Product $product): Response
+    public function show(Product $product, PromotionResolver $promotions): Response
     {
         abort_unless($product->active && $product->status->value === 'active', 404);
 
@@ -102,6 +103,10 @@ class ProductController extends Controller
                     'name' => $variant->name,
                     'attributes' => $variant->attributes,
                     'base_price_minor' => $variant->base_price_minor,
+                    'sale_price_minor' => ($promo = $promotions->bestFor($product, $variant->base_price_minor)) !== null
+                        ? $variant->base_price_minor - $promo->discountFor($variant->base_price_minor)
+                        : null,
+                    'promotion_label' => $promo?->label(),
                     'currency' => $variant->currency,
                     'in_stock' => $variant->isAvailable(),
                 ]),

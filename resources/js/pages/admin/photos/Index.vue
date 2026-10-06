@@ -1,212 +1,285 @@
 <script setup lang="ts">
 /**
- * Administración → Fotografías. Overview of the event media that exists
- * today (uploaded by athletes per participation). Photographer upload,
- * review and publication are a planned module with no backend yet — the
- * panel below states that instead of offering a drop zone that does
- * nothing.
+ * Administración → Fotografías: review board for photographers' photos
+ * (Por revisar → Publicadas / Rechazadas) with multi-select approve /
+ * reject, sales figures, and the athletes' own media overview.
  */
-import { Head } from '@inertiajs/vue3';
-import { Camera, Clock, Eye, Globe2, Lock, UploadCloud } from '@lucide/vue';
+import { Head, router } from '@inertiajs/vue3';
+import {
+    Camera,
+    Check,
+    CheckCircle2,
+    Clock,
+    Globe2,
+    Lock,
+    RotateCcw,
+    ShoppingBag,
+    Wallet,
+    X,
+    XCircle,
+} from '@lucide/vue';
+import { computed, ref } from 'vue';
+import KanbanBoard from '@/components/admin/KanbanBoard.vue';
+import type { KanbanLane } from '@/components/admin/KanbanBoard.vue';
 import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import { Button } from '@/components/ui/button';
 import { CONTENT_AREA_NAV } from '@/config/areaNav';
-import { shortDate } from '@/lib/datetime';
 
-defineProps<{
+type PhotoCard = {
+    uuid: string;
+    thumb_url: string;
+    preview_url: string;
+    photographer: string | null;
+    event: string | null;
+    price_minor: number;
+    currency: string;
+    bib_numbers: string[];
+    rejection_reason: string | null;
+};
+
+const props = defineProps<{
+    board: { key: string; count: number; items: PhotoCard[] }[];
+    sales: {
+        count: number;
+        gross_minor: number;
+        platform_fee_minor: number;
+        net_minor: number;
+    };
     stats: { images: number; videos: number; public: number; private: number };
-    byEvent: {
-        edition_id: number;
-        event: string;
-        edition: string | null;
-        event_date: string | null;
-        total: number;
-        public_total: number;
-    }[];
-    recent: {
-        uuid: string;
-        url: string;
-        is_public: boolean;
-        event: string | null;
-        athlete: string | null;
-    }[];
 }>();
 
-const pipeline = [
-    { icon: Clock, label: 'En proceso', text: 'Fotos recibidas de fotógrafos' },
-    { icon: Eye, label: 'Listas para revisar', text: 'Etiquetado por número' },
-    { icon: Globe2, label: 'Publicadas', text: 'Visibles en Fotos' },
-];
+const money = (minor: number) =>
+    new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        maximumFractionDigits: 0,
+    }).format(minor / 100);
+
+const meta: Record<
+    string,
+    { title: string; icon: typeof Clock; accent: string }
+> = {
+    review: {
+        title: 'Por revisar',
+        icon: Clock,
+        accent: 'bg-amber-100 text-amber-700',
+    },
+    published: {
+        title: 'Publicadas',
+        icon: CheckCircle2,
+        accent: 'bg-emerald-100 text-emerald-700',
+    },
+    rejected: {
+        title: 'Rechazadas',
+        icon: XCircle,
+        accent: 'bg-red-100 text-red-700',
+    },
+};
+
+const lanes = computed<KanbanLane<PhotoCard>[]>(() =>
+    props.board.map((lane) => ({
+        ...meta[lane.key],
+        key: lane.key,
+        count: lane.count,
+        items: lane.items,
+    })),
+);
+
+const selected = ref<Set<string>>(new Set());
+function toggle(uuid: string) {
+    const next = new Set(selected.value);
+
+    if (next.has(uuid)) {
+        next.delete(uuid);
+    } else {
+        next.add(uuid);
+    }
+
+    selected.value = next;
+}
+
+function review(uuids: string[], action: 'publish' | 'reject' | 'review') {
+    router.post(
+        '/admin/photos/review',
+        { uuids, action },
+        {
+            preserveScroll: true,
+            onSuccess: () => (selected.value = new Set()),
+        },
+    );
+}
+
+const reviewUuids = computed(
+    () =>
+        props.board.find((l) => l.key === 'review')?.items.map((i) => i.uuid) ??
+        [],
+);
 </script>
 
 <template>
     <Head title="Fotografías" />
 
-    <div class="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 md:py-8">
+    <div class="w-full p-4 md:p-8">
         <SecondaryNav :items="CONTENT_AREA_NAV" />
 
-        <h1 class="mb-6 flex items-center gap-2 text-xl font-semibold">
-            <Camera class="size-5 text-fl-gold-ink" />
-            Fotografías
-        </h1>
-
-        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div class="fl-card p-4">
-                <p class="text-xs text-muted-foreground">Fotos</p>
-                <p class="legacy-numeric mt-1 text-2xl font-semibold">
-                    {{ stats.images }}
-                </p>
-            </div>
-            <div class="fl-card p-4">
-                <p class="text-xs text-muted-foreground">Videos</p>
-                <p class="legacy-numeric mt-1 text-2xl font-semibold">
-                    {{ stats.videos }}
-                </p>
-            </div>
-            <div class="fl-card p-4">
-                <p
-                    class="flex items-center gap-1 text-xs text-muted-foreground"
-                >
-                    <Globe2 class="size-3" /> Públicas
-                </p>
-                <p class="legacy-numeric mt-1 text-2xl font-semibold">
-                    {{ stats.public }}
-                </p>
-            </div>
-            <div class="fl-card p-4">
-                <p
-                    class="flex items-center gap-1 text-xs text-muted-foreground"
-                >
-                    <Lock class="size-3" /> Privadas
-                </p>
-                <p class="legacy-numeric mt-1 text-2xl font-semibold">
-                    {{ stats.private }}
-                </p>
-            </div>
-        </div>
-
-        <!-- Photographers: planned module -->
-        <section class="mt-10">
-            <h2 class="text-sm font-semibold">Gestión de fotógrafos</h2>
-            <div
-                class="mt-3 rounded-xl border-2 border-dashed border-foreground/15 bg-card p-6"
-            >
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <span
-                        class="flex size-12 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
-                    >
-                        <UploadCloud class="size-5" />
-                    </span>
-                    <div>
-                        <p class="font-semibold">
-                            Subir fotos del evento
-                            <span
-                                class="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
-                                >Próxima integración</span
-                            >
-                        </p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            La carga masiva por fotógrafos, el etiquetado por
-                            número y la venta de fotografías todavía no tienen
-                            backend. Hoy las fotos de evento las suben los
-                            propios atletas desde Mi Legado.
-                        </p>
-                    </div>
-                </div>
-                <ol class="mt-6 grid gap-3 sm:grid-cols-3">
-                    <li
-                        v-for="(step, index) in pipeline"
-                        :key="step.label"
-                        class="rounded-lg border border-border bg-background p-4 opacity-70"
-                    >
-                        <component
-                            :is="step.icon"
-                            class="size-4 text-muted-foreground"
-                        />
-                        <p class="mt-2 text-sm font-medium">
-                            {{ index + 1 }}. {{ step.label }}
-                        </p>
-                        <p class="text-xs text-muted-foreground">
-                            {{ step.text }}
-                        </p>
-                    </li>
-                </ol>
-            </div>
-        </section>
-
-        <div class="mt-10 grid gap-8 lg:grid-cols-5">
-            <section class="lg:col-span-2">
-                <h2 class="mb-3 text-sm font-semibold">Por evento</h2>
-                <div class="fl-card divide-y divide-border">
-                    <div
-                        v-for="row in byEvent"
-                        :key="row.edition_id"
-                        class="flex items-center justify-between gap-3 px-4 py-3"
-                    >
-                        <span class="min-w-0">
-                            <span class="block truncate text-sm font-medium">{{
-                                row.event
-                            }}</span>
-                            <span class="block text-xs text-muted-foreground">{{
-                                [row.edition, shortDate(row.event_date)]
-                                    .filter(Boolean)
-                                    .join(' · ')
-                            }}</span>
-                        </span>
-                        <span
-                            class="legacy-numeric shrink-0 text-right text-sm"
-                        >
-                            <span class="font-semibold">{{ row.total }}</span>
-                            <span
-                                class="block text-[11px] text-muted-foreground"
-                                >{{ row.public_total }} públicas</span
-                            >
-                        </span>
-                    </div>
-                    <p
-                        v-if="!byEvent.length"
-                        class="p-6 text-center text-sm text-muted-foreground"
-                    >
-                        Sin fotografías todavía.
+        <div
+            class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+        >
+            <div class="flex items-center gap-3">
+                <span
+                    class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
+                    ><Camera class="size-5"
+                /></span>
+                <div>
+                    <h1 class="text-xl font-semibold">Fotografías</h1>
+                    <p class="text-sm text-muted-foreground">
+                        Revisa lo que suben los fotógrafos antes de ponerlo a la
+                        venta.
                     </p>
                 </div>
-            </section>
-
-            <section class="lg:col-span-3">
-                <h2 class="mb-3 text-sm font-semibold">Subidas recientes</h2>
-                <div
-                    v-if="recent.length"
-                    class="grid grid-cols-3 gap-2 sm:grid-cols-4"
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <Button
+                    v-if="selected.size"
+                    class="rounded-full"
+                    @click="review([...selected], 'publish')"
+                    ><Check class="size-4" /> Publicar
+                    {{ selected.size }}</Button
                 >
-                    <figure
-                        v-for="photo in recent"
-                        :key="photo.uuid"
-                        class="relative overflow-hidden rounded-lg bg-muted"
+                <Button
+                    v-if="selected.size"
+                    variant="outline"
+                    class="rounded-full text-red-700"
+                    @click="review([...selected], 'reject')"
+                    ><X class="size-4" /> Rechazar {{ selected.size }}</Button
+                >
+                <Button
+                    v-if="!selected.size && reviewUuids.length"
+                    variant="outline"
+                    class="rounded-full"
+                    @click="review(reviewUuids, 'publish')"
+                    ><CheckCircle2 class="size-4" /> Publicar todas las
+                    pendientes</Button
+                >
+            </div>
+        </div>
+
+        <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="fl-card p-4">
+                <ShoppingBag class="size-4 text-sky-700" />
+                <p class="legacy-numeric mt-2 text-2xl font-semibold">
+                    {{ sales.count }}
+                </p>
+                <p class="text-xs text-muted-foreground">Fotos vendidas</p>
+            </div>
+            <div class="fl-card p-4">
+                <Wallet class="size-4 text-emerald-700" />
+                <p class="legacy-numeric mt-2 text-2xl font-semibold">
+                    {{ money(sales.gross_minor) }}
+                </p>
+                <p class="text-xs text-muted-foreground">Ventas</p>
+            </div>
+            <div class="fl-card p-4">
+                <Globe2 class="size-4 text-fl-gold-ink" />
+                <p class="legacy-numeric mt-2 text-2xl font-semibold">
+                    {{ money(sales.platform_fee_minor) }}
+                </p>
+                <p class="text-xs text-muted-foreground">Comisión Finisher</p>
+            </div>
+            <div class="fl-card p-4">
+                <Lock class="size-4 text-muted-foreground" />
+                <p class="legacy-numeric mt-2 text-2xl font-semibold">
+                    {{ stats.images }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                    Fotos subidas por atletas
+                </p>
+            </div>
+        </div>
+
+        <KanbanBoard :lanes="lanes" :item-key="(p) => p.uuid">
+            <template #card="{ item: photo, lane }">
+                <article
+                    class="overflow-hidden rounded-xl border bg-card transition-colors"
+                    :class="
+                        selected.has(photo.uuid)
+                            ? 'border-fl-gold ring-2 ring-fl-gold/30'
+                            : 'border-border'
+                    "
+                >
+                    <button
+                        type="button"
+                        class="relative block w-full"
+                        :aria-pressed="selected.has(photo.uuid)"
+                        @click="toggle(photo.uuid)"
                     >
                         <img
-                            :src="photo.url"
-                            :alt="photo.event ?? 'Foto de evento'"
+                            :src="photo.thumb_url"
+                            alt=""
                             loading="lazy"
-                            class="aspect-square w-full object-cover"
+                            class="aspect-[4/3] w-full object-cover"
                         />
                         <span
-                            v-if="!photo.is_public"
-                            class="absolute top-1.5 left-1.5 rounded-full bg-white/90 px-1.5 py-0.5 text-[10px]"
-                            >Privada</span
+                            class="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full border-2 border-white shadow"
+                            :class="
+                                selected.has(photo.uuid)
+                                    ? 'bg-fl-gold text-fl-black'
+                                    : 'bg-black/30'
+                            "
                         >
-                        <figcaption
-                            class="truncate px-2 py-1 text-[11px] text-muted-foreground"
-                        >
-                            {{ photo.athlete }}
-                        </figcaption>
-                    </figure>
-                </div>
-                <p
-                    v-else
-                    class="fl-card p-6 text-center text-sm text-muted-foreground"
-                >
-                    Aún no hay fotos subidas.
-                </p>
-            </section>
-        </div>
+                            <Check
+                                v-if="selected.has(photo.uuid)"
+                                class="size-3.5"
+                            />
+                        </span>
+                    </button>
+                    <div class="space-y-1.5 p-3 text-xs">
+                        <p class="truncate font-semibold">
+                            {{ photo.photographer }}
+                        </p>
+                        <p class="truncate text-muted-foreground">
+                            {{ photo.event }} · {{ money(photo.price_minor) }}
+                        </p>
+                        <p class="flex flex-wrap gap-1">
+                            <span
+                                v-for="bib in photo.bib_numbers"
+                                :key="bib"
+                                class="rounded-full bg-muted px-1.5 font-mono"
+                                >#{{ bib }}</span
+                            >
+                        </p>
+                        <p v-if="photo.rejection_reason" class="text-red-700">
+                            {{ photo.rejection_reason }}
+                        </p>
+                        <div class="flex gap-1 pt-1">
+                            <Button
+                                v-if="lane.key !== 'published'"
+                                size="sm"
+                                class="h-7 flex-1 rounded-full text-xs"
+                                @click="review([photo.uuid], 'publish')"
+                                ><Check class="size-3" /> Publicar</Button
+                            >
+                            <Button
+                                v-if="lane.key !== 'rejected'"
+                                size="sm"
+                                variant="outline"
+                                class="h-7 flex-1 rounded-full text-xs text-red-700"
+                                @click="review([photo.uuid], 'reject')"
+                                ><X class="size-3" /> Rechazar</Button
+                            >
+                            <Button
+                                v-if="lane.key !== 'review'"
+                                size="sm"
+                                variant="ghost"
+                                class="h-7 rounded-full text-xs"
+                                aria-label="Regresar a revisión"
+                                @click="review([photo.uuid], 'review')"
+                                ><RotateCcw class="size-3"
+                            /></Button>
+                        </div>
+                    </div>
+                </article>
+            </template>
+        </KanbanBoard>
     </div>
 </template>

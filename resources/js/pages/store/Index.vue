@@ -255,6 +255,8 @@ const plateFeatures = [
                 :tagline="product.tagline"
                 :availability="product.availability"
                 :availability-label="product.availability_label"
+                :compare-at-minor="product.compare_at_minor"
+                :promotion-label="product.promotion_label"
             />
         </div>
         <div

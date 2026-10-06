@@ -2,6 +2,7 @@
 
 namespace App\Actions\Commerce;
 
+use App\Actions\Photos\RecordPhotoSales;
 use App\Enums\CouponRedemptionStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
@@ -23,7 +24,10 @@ use Illuminate\Support\Facades\DB;
  */
 class MarkOrderPaid
 {
-    public function __construct(private readonly ConfirmOrder $confirmOrder) {}
+    public function __construct(
+        private readonly ConfirmOrder $confirmOrder,
+        private readonly RecordPhotoSales $recordPhotoSales,
+    ) {}
 
     public function handle(Order $order): Order
     {
@@ -65,6 +69,10 @@ class MarkOrderPaid
         }
 
         $this->redeemCoupon($order);
+
+        // Event photos bought from photographers: freeze the money split
+        // and unlock the download (digital, fulfilled on payment).
+        $this->recordPhotoSales->handle($order);
 
         return $order->fresh();
     }

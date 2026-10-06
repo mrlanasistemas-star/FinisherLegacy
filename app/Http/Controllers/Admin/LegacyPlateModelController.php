@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\LegacyPlateFieldKey;
 use App\Http\Controllers\Controller;
 use App\Models\LegacyPlateModel;
+use App\Models\LegacyPlateModelField;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,23 +16,27 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Catalog + "Personalización" in one screen (brief §12-§13): the pieces
- * arrive pre-manufactured, so there is no Figma-style design surface here
- * — just the model's real photo, its engraving_area, and simple numeric
- * inputs for where each of the 5 whitelisted dynamic fields sits. Never
- * writes decoration/background — that physically already exists on the
- * piece.
+ * Legacy Plate layouts — exactly three, each printed on its FRONT and
+ * BACK (no laser engraving) and carrying an NFC chip (no printed QR). The
+ * Show screen is a visual print editor: drag/resize every field on either
+ * face over the real artwork and see the exact print.
  */
 class LegacyPlateModelController extends Controller
 {
     public function index(): Response
     {
-        $models = LegacyPlateModel::query()->withCount('plates')->orderBy('name')->get();
+        $models = LegacyPlateModel::query()
+            ->with('fields')
+            ->withCount('plates')
+            ->orderByRaw('layout_slot is null, layout_slot')
+            ->orderBy('id')
+            ->get();
 
         return Inertia::render('admin/legacy-plate-models/Index', [
             'models' => $models->map(fn (LegacyPlateModel $model) => [
                 'id' => $model->id,
                 'uuid' => $model->uuid,
+                'layout_slot' => $model->layout_slot,
                 'name' => $model->name,
                 'slug' => $model->slug,
                 'sku' => $model->sku,
@@ -38,32 +44,36 @@ class LegacyPlateModelController extends Controller
                 'width_mm' => (float) $model->width_mm,
                 'height_mm' => (float) $model->height_mm,
                 'active' => $model->active,
-                'preview_image_url' => $model->preview_image_path ? Storage::disk('public')->url($model->preview_image_path) : null,
                 'plates_count' => $model->plates_count,
+                'viewer' => $model->toViewerArray(),
             ]),
+            'maxLayouts' => LegacyPlateModel::MAX_LAYOUTS,
+            'canCreate' => LegacyPlateModel::query()->count() < LegacyPlateModel::MAX_LAYOUTS,
         ]);
     }
 
     public function show(LegacyPlateModel $legacyPlateModel): Response
     {
-        $legacyPlateModel->loadMissing('fields');
+        $this->ensureFields($legacyPlateModel);
+        $legacyPlateModel->load('fields');
 
         return Inertia::render('admin/legacy-plate-models/Show', [
             'model' => [
                 'id' => $legacyPlateModel->id,
+                'layout_slot' => $legacyPlateModel->layout_slot,
                 'name' => $legacyPlateModel->name,
-                'slug' => $legacyPlateModel->slug,
                 'sku' => $legacyPlateModel->sku,
                 'description' => $legacyPlateModel->description,
                 'width_mm' => (float) $legacyPlateModel->width_mm,
                 'height_mm' => (float) $legacyPlateModel->height_mm,
-                'engraving_area' => $legacyPlateModel->engraving_area,
                 'active' => $legacyPlateModel->active,
-                'preview_image_url' => $legacyPlateModel->preview_image_path ? Storage::disk('public')->url($legacyPlateModel->preview_image_path) : null,
+                ...$legacyPlateModel->toViewerArray(),
             ],
-            'fields' => $legacyPlateModel->fields->map(fn ($field) => [
+            'fields' => $legacyPlateModel->fields->sortBy('sort_order')->values()->map(fn (LegacyPlateModelField $field) => [
                 'id' => $field->id,
                 'field_key' => $field->field_key->value,
+                'label' => $field->field_key->label(),
+                'face' => $field->face ?? $field->field_key->defaultFace(),
                 'x' => (float) $field->x,
                 'y' => (float) $field->y,
                 'width' => (float) $field->width,
@@ -79,40 +89,66 @@ class LegacyPlateModelController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if (LegacyPlateModel::query()->count() >= LegacyPlateModel::MAX_LAYOUTS) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Solo existen tres layouts de Legacy Plate. Edita uno de los existentes.']);
+
+            return back();
+        }
+
         $data = $this->modelAttributes($request);
         $data['uuid'] = (string) Str::uuid();
-        $data['slug'] = Str::slug($data['name']);
+        $data['slug'] = $this->uniqueSlug($data['name']);
+        $data['layout_slot'] = collect(range(1, LegacyPlateModel::MAX_LAYOUTS))
+            ->diff(LegacyPlateModel::query()->pluck('layout_slot')->filter())
+            ->first();
 
-        LegacyPlateModel::create($data);
+        $model = LegacyPlateModel::create($data);
+        $this->ensureFields($model);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Modelo creado.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Layout creado. Ahora acomoda sus campos.']);
 
-        return back();
+        return to_route('admin.legacy-plate-models.show', $model);
     }
 
     public function update(Request $request, LegacyPlateModel $legacyPlateModel): RedirectResponse
     {
-        $legacyPlateModel->update($this->modelAttributes($request));
+        $data = $this->modelAttributes($request, $legacyPlateModel);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Modelo actualizado.']);
+        foreach (['preview_image_path', 'front_artwork_path', 'back_artwork_path'] as $column) {
+            if (isset($data[$column]) && $legacyPlateModel->{$column}) {
+                Storage::disk('public')->delete($legacyPlateModel->{$column});
+            }
+        }
+
+        foreach (['front_artwork_path' => 'remove_front_artwork', 'back_artwork_path' => 'remove_back_artwork'] as $column => $flag) {
+            if ($request->boolean($flag) && ! isset($data[$column]) && $legacyPlateModel->{$column}) {
+                Storage::disk('public')->delete($legacyPlateModel->{$column});
+                $data[$column] = null;
+            }
+        }
+
+        $legacyPlateModel->update($data);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Layout actualizado.']);
 
         return back();
     }
 
     /**
-     * Bulk-saves every field's position/size in one request — the
-     * "Personalización" surface (brief §13/§15).
+     * Bulk-saves every field (face, position, size, type, visibility) in one
+     * request — what the visual editor sends on "Guardar".
      */
     public function updateFields(Request $request, LegacyPlateModel $legacyPlateModel): RedirectResponse
     {
         $data = $request->validate([
             'fields' => ['required', 'array'],
-            'fields.*.id' => ['required', 'integer', 'exists:legacy_plate_model_fields,id'],
-            'fields.*.x' => ['required', 'numeric'],
-            'fields.*.y' => ['required', 'numeric'],
-            'fields.*.width' => ['required', 'numeric', 'min:0.1'],
-            'fields.*.height' => ['required', 'numeric', 'min:0.1'],
-            'fields.*.font_size' => ['nullable', 'numeric', 'min:0.1'],
+            'fields.*.id' => ['required', 'integer', Rule::exists('legacy_plate_model_fields', 'id')->where('legacy_plate_model_id', $legacyPlateModel->id)],
+            'fields.*.face' => ['nullable', 'string', Rule::in(['front', 'back'])],
+            'fields.*.x' => ['required', 'numeric', 'min:0'],
+            'fields.*.y' => ['required', 'numeric', 'min:0'],
+            'fields.*.width' => ['required', 'numeric', 'min:0.5'],
+            'fields.*.height' => ['required', 'numeric', 'min:0.5'],
+            'fields.*.font_size' => ['nullable', 'numeric', 'min:0.5', 'max:40'],
             'fields.*.alignment' => ['required', 'string', Rule::in(['left', 'center', 'right'])],
             'fields.*.max_chars' => ['nullable', 'integer', 'min:1'],
             'fields.*.required' => ['boolean'],
@@ -122,6 +158,7 @@ class LegacyPlateModelController extends Controller
         DB::transaction(function () use ($data, $legacyPlateModel) {
             foreach ($data['fields'] as $field) {
                 $legacyPlateModel->fields()->whereKey($field['id'])->update([
+                    'face' => $field['face'] ?? 'front',
                     'x' => $field['x'], 'y' => $field['y'], 'width' => $field['width'], 'height' => $field['height'],
                     'font_size' => $field['font_size'] ?? null, 'alignment' => $field['alignment'],
                     'max_chars' => $field['max_chars'] ?? null, 'required' => $field['required'] ?? false,
@@ -130,52 +167,115 @@ class LegacyPlateModelController extends Controller
             }
         });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Zona de grabado actualizada.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Diseño de impresión guardado.']);
 
         return back();
     }
 
     /**
-     * Validates the raw form input, then shapes it into exactly
-     * LegacyPlateModel's fillable attributes — never passes
-     * engraving_x/y/width/height or the raw `preview_image` file through
-     * to mass assignment.
-     *
+     * Every layout carries one row per selectable field so the editor can
+     * show/hide any of them — created lazily (never a QR row).
+     */
+    private function ensureFields(LegacyPlateModel $model): void
+    {
+        $existing = $model->fields()->pluck('field_key')->map(fn ($key) => $key instanceof LegacyPlateFieldKey ? $key->value : $key)->all();
+        $width = (float) $model->width_mm;
+        $height = (float) $model->height_mm;
+        $sort = (int) $model->fields()->max('sort_order') + 1;
+
+        foreach (LegacyPlateFieldKey::selectable() as $index => $key) {
+            if (in_array($key->value, $existing, true)) {
+                continue;
+            }
+
+            $model->fields()->create([
+                'field_key' => $key,
+                'face' => $key->defaultFace(),
+                'x' => 8,
+                'y' => min(4 + ($index % 5) * ($height / 6), $height - 6),
+                'width' => max($width - 16, 4),
+                'height' => max($height / 7, 4),
+                'font_size' => 3.5,
+                'alignment' => 'center',
+                'required' => false,
+                'visible' => in_array($key, [LegacyPlateFieldKey::AthleteName, LegacyPlateFieldKey::OfficialTime, LegacyPlateFieldKey::EventName], true),
+                'sort_order' => $sort++,
+            ]);
+        }
+    }
+
+    private function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'layout';
+        $slug = $base;
+        $i = 2;
+
+        while (LegacyPlateModel::query()->where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$i}";
+            $i++;
+        }
+
+        return $slug;
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    private function modelAttributes(Request $request): array
+    private function modelAttributes(Request $request, ?LegacyPlateModel $model = null): array
     {
+        $color = ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'];
+        $image = ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:8192'];
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'sku' => ['nullable', 'string', 'max:60'],
+            'sku' => ['nullable', 'string', 'max:60', Rule::unique('legacy_plate_models', 'sku')->ignore($model?->id)],
             'description' => ['nullable', 'string', 'max:500'],
             'width_mm' => ['required', 'numeric', 'min:1'],
             'height_mm' => ['required', 'numeric', 'min:1'],
-            'engraving_x' => ['required', 'numeric', 'min:0'],
-            'engraving_y' => ['required', 'numeric', 'min:0'],
-            'engraving_width' => ['required', 'numeric', 'min:1'],
-            'engraving_height' => ['required', 'numeric', 'min:1'],
+            'engraving_x' => ['nullable', 'numeric', 'min:0'],
+            'engraving_y' => ['nullable', 'numeric', 'min:0'],
+            'engraving_width' => ['nullable', 'numeric', 'min:1'],
+            'engraving_height' => ['nullable', 'numeric', 'min:1'],
             'active' => ['boolean'],
-            'preview_image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
+            'front_background' => $color,
+            'back_background' => $color,
+            'front_text_color' => $color,
+            'back_text_color' => $color,
+            'preview_image' => $image,
+            'front_artwork' => $image,
+            'back_artwork' => $image,
         ]);
+
+        $width = (float) $data['width_mm'];
+        $height = (float) $data['height_mm'];
 
         $attributes = [
             'name' => $data['name'],
             'sku' => $data['sku'] ?? null,
             'description' => $data['description'] ?? null,
-            'width_mm' => $data['width_mm'],
-            'height_mm' => $data['height_mm'],
+            'width_mm' => $width,
+            'height_mm' => $height,
             'engraving_area' => [
-                'x' => $data['engraving_x'],
-                'y' => $data['engraving_y'],
-                'width' => $data['engraving_width'],
-                'height' => $data['engraving_height'],
+                'x' => $data['engraving_x'] ?? 4,
+                'y' => $data['engraving_y'] ?? 4,
+                'width' => $data['engraving_width'] ?? $width - 8,
+                'height' => $data['engraving_height'] ?? $height - 8,
             ],
+            'back_area' => $model?->back_area ?? ['x' => 4, 'y' => 4, 'width' => $width - 8, 'height' => $height - 8],
             'active' => $data['active'] ?? true,
         ];
 
-        if ($request->hasFile('preview_image')) {
-            $attributes['preview_image_path'] = $request->file('preview_image')->store('legacy-plate-models', 'public');
+        foreach (['front_background', 'back_background', 'front_text_color', 'back_text_color'] as $key) {
+            if (! empty($data[$key])) {
+                $attributes[$key] = strtoupper($data[$key]);
+            }
+        }
+
+        $uploads = ['preview_image' => 'preview_image_path', 'front_artwork' => 'front_artwork_path', 'back_artwork' => 'back_artwork_path'];
+        foreach ($uploads as $input => $column) {
+            if ($request->hasFile($input)) {
+                $attributes[$column] = $request->file($input)->store('legacy-plate-models', 'public');
+            }
         }
 
         return $attributes;

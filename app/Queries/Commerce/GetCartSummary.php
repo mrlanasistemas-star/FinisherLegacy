@@ -38,8 +38,9 @@ class GetCartSummary
         ]);
 
         $subtotal = 0;
+        $lineTotalsByProduct = [];
 
-        $items = $cart->items->map(function (CartItem $item) use ($cart, &$subtotal) {
+        $items = $cart->items->map(function (CartItem $item) use ($cart, &$subtotal, &$lineTotalsByProduct) {
             $variant = $item->productVariant;
             $product = $variant->product;
 
@@ -69,6 +70,7 @@ class GetCartSummary
 
             $lineTotal = $price->amountMinor * $item->quantity;
             $subtotal += $lineTotal;
+            $lineTotalsByProduct[$product->id] = ($lineTotalsByProduct[$product->id] ?? 0) + $lineTotal;
 
             return new CartSummaryItem(
                 cartItemId: $item->id,
@@ -87,9 +89,10 @@ class GetCartSummary
             );
         });
 
-        $discount = $this->resolveDiscount->handle($cart->coupon, $subtotal);
+        $discount = $this->resolveDiscount->handle($cart->coupon, $subtotal, $cart->coupon?->eligibleSubtotal($lineTotalsByProduct));
 
         return new CartSummary(
+            lineTotalsByProduct: $lineTotalsByProduct,
             items: $items,
             subtotalMinor: $subtotal,
             discountMinor: $discount,

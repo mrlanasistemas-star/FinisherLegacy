@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -24,7 +25,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable([
     'uuid', 'code', 'name', 'description', 'type', 'value', 'currency',
     'starts_at', 'ends_at', 'usage_limit_total', 'usage_limit_per_user',
-    'minimum_order_minor', 'active', 'metadata', 'created_by',
+    'minimum_order_minor', 'applies_to', 'active', 'metadata', 'created_by',
 ])]
 class Coupon extends Model
 {
@@ -71,5 +72,33 @@ class Coupon extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logFillable()->logOnlyDirty()->dontLogEmptyChanges();
+    }
+
+    /** @return BelongsToMany<Product, $this> */
+    public function products(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class);
+    }
+
+    public function appliesToAllProducts(): bool
+    {
+        return ($this->applies_to ?? 'all') !== 'products';
+    }
+
+    /**
+     * The part of a cart this coupon can discount: the whole subtotal, or
+     * only the lines of its selected products.
+     *
+     * @param  array<int, int>  $lineTotalsByProduct  product_id => line total (minor units)
+     */
+    public function eligibleSubtotal(array $lineTotalsByProduct): int
+    {
+        if ($this->appliesToAllProducts()) {
+            return array_sum($lineTotalsByProduct);
+        }
+
+        $ids = $this->products()->pluck('products.id')->map(fn ($id) => (int) $id)->all();
+
+        return array_sum(array_intersect_key($lineTotalsByProduct, array_flip($ids)));
     }
 }

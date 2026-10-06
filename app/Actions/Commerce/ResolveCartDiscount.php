@@ -12,16 +12,22 @@ use App\Models\Coupon;
  */
 class ResolveCartDiscount
 {
-    public function handle(?Coupon $coupon, int $subtotalMinor): int
+    /**
+     * @param  int|null  $eligibleSubtotalMinor  For coupons scoped to selected products: the
+     *                                           subtotal of just those lines (defaults to the whole cart).
+     */
+    public function handle(?Coupon $coupon, int $subtotalMinor, ?int $eligibleSubtotalMinor = null): int
     {
         if ($coupon === null) {
             return 0;
         }
 
+        $base = min($eligibleSubtotalMinor ?? $subtotalMinor, $subtotalMinor);
+
         $discount = $coupon->type === CouponType::Percentage
-            ? intdiv($subtotalMinor * $coupon->value, 100)
+            ? intdiv($base * $coupon->value, 100)
             : $coupon->value;
 
-        return min($discount, $subtotalMinor);
+        return min($discount, $base);
     }
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Plug } from '@lucide/vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -87,18 +88,16 @@ const statusLabel: Record<Connection['status'], string> = {
                     <Label class="mb-1 block text-xs text-muted-foreground"
                         >Proveedor</Label
                     >
-                    <select
+                    <FancySelect
                         v-model="form.provider_key"
-                        class="h-9 w-full rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
-                    >
-                        <option
-                            v-for="key in providerKeys"
-                            :key="key"
-                            :value="key"
-                        >
-                            {{ key === 'mock' ? '[SIMULACIÓN] mock' : key }}
-                        </option>
-                    </select>
+                        :options="
+                            providerKeys.map((key) => ({
+                                value: key,
+                                label:
+                                    key === 'mock' ? '[SIMULACIÓN] mock' : key,
+                            }))
+                        "
+                    />
                 </div>
                 <div>
                     <Label class="mb-1 block text-xs text-muted-foreground"
@@ -136,17 +135,18 @@ const statusLabel: Record<Connection['status'], string> = {
                         <Label class="mb-1 block text-xs text-muted-foreground"
                             >Autenticación</Label
                         >
-                        <select
+                        <FancySelect
                             v-model="form.auth_type"
-                            class="h-9 w-full rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
-                        >
-                            <option value="none">Ninguna</option>
-                            <option value="bearer">Bearer token</option>
-                            <option value="api_key_header">
-                                API Key header
-                            </option>
-                            <option value="basic">Basic auth</option>
-                        </select>
+                            :options="[
+                                { value: 'none', label: 'Ninguna' },
+                                { value: 'bearer', label: 'Bearer token' },
+                                {
+                                    value: 'api_key_header',
+                                    label: 'API Key header',
+                                },
+                                { value: 'basic', label: 'Basic auth' },
+                            ]"
+                        />
                     </div>
                     <div v-if="form.auth_type === 'api_key_header'">
                         <Label class="mb-1 block text-xs text-muted-foreground"

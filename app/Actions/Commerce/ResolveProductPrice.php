@@ -9,6 +9,7 @@ use App\Models\EventEdition;
 use App\Models\Product;
 use App\Models\ProductPriceSchedule;
 use App\Models\ProductVariant;
+use App\Services\Commerce\PromotionResolver;
 use App\Support\Commerce\ResolvedPrice;
 use DateTimeInterface;
 use Illuminate\Support\Carbon;
@@ -23,6 +24,8 @@ use Illuminate\Support\Collection;
  */
 class ResolveProductPrice
 {
+    public function __construct(private readonly PromotionResolver $promotions) {}
+
     /**
      * Higher wins a tie among schedules simultaneously active at $at —
      * a real, explicit rule (not incidental row order, brief §43).
@@ -36,7 +39,21 @@ class ResolveProductPrice
         'standard' => 1,
     ];
 
+    /**
+     * Base price (schedule or variant) with the best running "oferta"
+     * applied on top — what the cart shows and what checkout charges.
+     */
     public function handle(Product $product, ?ProductVariant $variant = null, ?EventEdition $eventEdition = null, ?DateTimeInterface $at = null): ResolvedPrice
+    {
+        $base = $this->basePrice($product, $variant, $eventEdition, $at);
+        $promotion = $this->promotions->bestFor($product, $base->amountMinor);
+
+        return $promotion === null
+            ? $base
+            : $base->withPromotion($base->amountMinor - $promotion->discountFor($base->amountMinor), $promotion->id, $promotion->label());
+    }
+
+    private function basePrice(Product $product, ?ProductVariant $variant, ?EventEdition $eventEdition, ?DateTimeInterface $at): ResolvedPrice
     {
         $at = Carbon::instance($at ?? now());
 

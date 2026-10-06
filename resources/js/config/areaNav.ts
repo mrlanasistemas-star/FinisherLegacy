@@ -13,7 +13,7 @@ export const LEGACY_PLATE_AREA_NAV = [
     },
     { label: 'Placas', href: '/admin/plates', permission: 'plates.view' },
     {
-        label: 'Modelos',
+        label: 'Layouts (3)',
         href: '/admin/legacy-plate-models',
         permission: 'legacyplates.manage',
     },
@@ -30,6 +30,11 @@ export const COMMERCE_ORDERS_AREA_NAV = [
     {
         label: 'Cupones',
         href: '/admin/coupons',
+        permission: 'coupons.manage',
+    },
+    {
+        label: 'Ofertas',
+        href: '/admin/promotions',
         permission: 'coupons.manage',
     },
 ];
@@ -82,5 +87,14 @@ export const CONTENT_AREA_NAV = [
         href: '/admin/community',
         permission: 'community.moderate',
     },
-    { label: 'Fotografías', href: '/admin/photos', permission: 'media.manage' },
+    {
+        label: 'Fotografías',
+        href: '/admin/photos',
+        permission: 'photos.manage',
+    },
+    {
+        label: 'Fotógrafos',
+        href: '/admin/photographers',
+        permission: 'photos.manage',
+    },
 ];

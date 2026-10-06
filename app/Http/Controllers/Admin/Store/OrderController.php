@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin\Store;
 
 use App\Actions\Commerce\FulfillOrderItem;
+use App\Enums\FulfillmentStatus;
+use App\Enums\OrderPaymentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryLocation;
@@ -20,32 +23,60 @@ use Inertia\Response;
  */
 class OrderController extends Controller
 {
+    /**
+     * Kanban board: one lane per real stage of the order lifecycle (derived
+     * from status / payment_status / fulfillment_status — no new state).
+     * Each lane shows its total count and its newest cards.
+     */
     public function index(Request $request): Response
     {
-        $orders = Order::query()
-            ->with(['user', 'eventEdition.event'])
-            ->when($request->string('q')->toString(), fn ($q, $search) => $q->where('order_number', 'like', "%{$search}%"))
-            ->orderByDesc('created_at')
-            ->paginate(25)
-            ->withQueryString();
+        $search = $request->string('q')->toString();
+        $base = fn () => Order::query()
+            ->when($search, fn ($q) => $q->where(fn ($w) => $w
+                ->where('order_number', 'like', "%{$search}%")
+                ->orWhereHas('user', fn ($u) => $u->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%"))));
 
-        $orders->through(fn (Order $order) => [
-            'id' => $order->id,
-            'uuid' => $order->uuid,
-            'order_number' => $order->order_number,
-            'customer' => $order->user === null ? '—' : $order->user->name,
-            'event' => $order->eventEdition?->event?->name,
-            'total_minor' => $order->total_minor,
-            'currency' => $order->currency,
-            'status' => $order->status->value,
-            'payment_status' => $order->payment_status->value,
-            'fulfillment_status' => $order->fulfillment_status->value,
-            'created_at' => $order->created_at->toDateTimeString(),
-        ]);
+        $lanes = [
+            'to_pay' => fn ($q) => $q->where('status', OrderStatus::Pending)->where('payment_status', '!=', OrderPaymentStatus::Paid),
+            'to_prepare' => fn ($q) => $q->where('status', OrderStatus::Confirmed)->where('fulfillment_status', FulfillmentStatus::Unfulfilled),
+            'in_progress' => fn ($q) => $q->where('status', OrderStatus::Confirmed)->where('fulfillment_status', FulfillmentStatus::PartiallyFulfilled),
+            'done' => fn ($q) => $q->where(fn ($w) => $w->where('status', OrderStatus::Completed)
+                ->orWhere(fn ($c) => $c->where('status', OrderStatus::Confirmed)->where('fulfillment_status', FulfillmentStatus::Fulfilled))),
+            'cancelled' => fn ($q) => $q->where('status', OrderStatus::Cancelled),
+        ];
+
+        $board = collect($lanes)->map(function (callable $scope, string $key) use ($base) {
+            $query = $scope($base());
+
+            return [
+                'key' => $key,
+                'count' => (clone $query)->count(),
+                'total_minor' => (int) (clone $query)->sum('total_minor'),
+                'orders' => $query->with(['user', 'eventEdition.event', 'items'])
+                    ->latest('id')
+                    ->limit(30)
+                    ->get()
+                    ->map(fn (Order $order) => [
+                        'id' => $order->id,
+                        'uuid' => $order->uuid,
+                        'order_number' => $order->order_number,
+                        'customer' => $order->user?->name,
+                        'event' => $order->eventEdition?->event?->name,
+                        'total_minor' => $order->total_minor,
+                        'currency' => $order->currency,
+                        'payment_status' => $order->payment_status->value,
+                        'fulfillment_status' => $order->fulfillment_status->value,
+                        'items_count' => (int) $order->items->sum('quantity'),
+                        'items_preview' => $order->items->take(2)->pluck('name')->values(),
+                        'has_photos' => $order->items->contains(fn (OrderItem $i) => $i->event_photo_id !== null),
+                        'created_at' => $order->created_at->toIso8601String(),
+                    ]),
+            ];
+        })->values();
 
         return Inertia::render('admin/orders/Index', [
-            'orders' => $orders,
-            'filters' => ['q' => $request->string('q')->toString()],
+            'board' => $board,
+            'filters' => ['q' => $search],
         ]);
     }
 
