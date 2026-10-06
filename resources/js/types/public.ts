@@ -111,6 +111,61 @@ export type PublicProductCard = {
     currency: string;
     in_stock: boolean;
     image_url: string | null;
+    image_alt?: string | null;
     hover_image_url: string | null;
     variant_count: number;
+    category_slug?: string | null;
+    tagline?: string | null;
+    availability?: ProductAvailability;
+    availability_label?: string;
 };
+
+export type ProductAvailability = 'available' | 'coming_soon' | 'concept';
+
+export type PublicSport = {
+    name: string;
+    slug: string;
+};
+
+export type HeroAthlete = {
+    username: string;
+    name: string;
+    sport: string | null;
+    city: string | null;
+    bio: string | null;
+    photo_url: string;
+};
+
+export type CompanyMilestone = {
+    id: number;
+    period: string;
+    title: string;
+    description: string | null;
+    location: string | null;
+    image_url: string | null;
+};
+
+export type CompanyGalleryItem = {
+    id: number;
+    image_url: string;
+    width: number | null;
+    height: number | null;
+    title: string | null;
+    description: string | null;
+};
+
+/** Only channels an admin configured (CompanySetting::contactChannels()). */
+export type CompanyChannels = Partial<
+    Record<
+        | 'email'
+        | 'phone'
+        | 'whatsapp'
+        | 'instagram_url'
+        | 'facebook_url'
+        | 'tiktok_url'
+        | 'youtube_url'
+        | 'linkedin_url'
+        | 'strava_url',
+        string
+    >
+>;

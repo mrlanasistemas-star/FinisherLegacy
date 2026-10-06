@@ -35,7 +35,7 @@ class MomentQuery
     {
         return $query
             ->with([
-                'author.athleteProfile',
+                'author.athleteProfile.mainSport',
                 'media.eventMedia',
                 'eventParticipant.eventEdition.event',
                 'eventParticipant.eventRace',

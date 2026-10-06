@@ -49,10 +49,8 @@ const active = computed(() => content[mode.value]);
 </script>
 
 <template>
-    <div
-        class="overflow-hidden rounded-2xl border border-white/10 bg-fl-graphite/40"
-    >
-        <div class="flex border-b border-white/10">
+    <div class="overflow-hidden rounded-2xl border border-border bg-card/40">
+        <div class="flex border-b border-border">
             <button
                 v-for="key in ['connected', 'manual'] as Mode[]"
                 :key="key"
@@ -60,8 +58,8 @@ const active = computed(() => content[mode.value]);
                 class="fl-focus-glow relative flex-1 px-4 py-4 text-sm font-semibold tracking-wide uppercase transition-colors"
                 :class="
                     mode === key
-                        ? 'text-fl-gold-soft'
-                        : 'text-white/40 hover:text-white/70'
+                        ? 'text-fl-gold-ink'
+                        : 'text-muted-foreground/80 hover:text-muted-foreground'
                 "
                 :aria-pressed="mode === key"
                 @click="mode = key"
@@ -79,11 +77,11 @@ const active = computed(() => content[mode.value]);
             <div :key="mode" class="flex flex-col gap-8 p-8 sm:p-10">
                 <div>
                     <span
-                        class="text-xs font-semibold tracking-[0.25em] text-fl-gold-soft uppercase"
+                        class="text-xs font-semibold tracking-[0.25em] text-fl-gold-ink uppercase"
                     >
                         {{ active.eyebrow }}
                     </span>
-                    <h3 class="mt-2 text-2xl font-bold text-white">
+                    <h3 class="mt-2 text-2xl font-bold text-foreground">
                         {{ active.title }}
                     </h3>
                 </div>
@@ -91,19 +89,21 @@ const active = computed(() => content[mode.value]);
                 <div class="flex flex-wrap items-center gap-2">
                     <template v-for="(step, index) in active.chain" :key="step">
                         <span
-                            class="fl-flow-node inline-block rounded-full border border-fl-gold/40 bg-fl-black px-3 py-1.5 text-sm font-medium text-fl-gold-soft transition-transform duration-200 hover:scale-110 hover:border-fl-gold/70"
+                            class="fl-flow-node inline-block rounded-full border border-fl-gold/40 bg-background px-3 py-1.5 text-sm font-medium text-fl-gold-ink transition-transform duration-200 hover:scale-110 hover:border-fl-gold/70"
                             :style="{ animationDelay: `${index * 100}ms` }"
                         >
                             {{ step }}
                         </span>
                         <ChevronRight
                             v-if="index < active.chain.length - 1"
-                            class="size-4 shrink-0 text-white/25"
+                            class="size-4 shrink-0 text-muted-foreground/80"
                         />
                     </template>
                 </div>
 
-                <p class="max-w-xl text-sm leading-relaxed text-white/60">
+                <p
+                    class="max-w-xl text-sm leading-relaxed text-muted-foreground"
+                >
                     {{ active.description }}
                 </p>
             </div>

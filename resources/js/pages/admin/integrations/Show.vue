@@ -136,7 +136,7 @@ function submitLink() {
     <div class="p-4 md:p-8">
         <Link
             href="/admin/integrations"
-            class="mb-4 inline-flex items-center gap-1 text-xs text-white/50 hover:text-white"
+            class="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-3.5" /> Integraciones
         </Link>
@@ -144,31 +144,31 @@ function submitLink() {
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1
-                    class="flex items-center gap-2 text-xl font-bold text-white"
+                    class="flex items-center gap-2 text-xl font-bold text-foreground"
                 >
                     {{ connection.name }}
                     <span
                         v-if="connection.provider_key === 'mock'"
-                        class="rounded-full border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-400 uppercase"
+                        class="rounded-full border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase"
                         title="Solo para pruebas. No usar con un organizador real."
                         >Simulación</span
                     >
                 </h1>
-                <p class="text-sm text-white/50">
+                <p class="text-sm text-muted-foreground">
                     Proveedor: {{ connection.provider_key }}
                 </p>
             </div>
             <div class="flex gap-2">
                 <Button
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     @click="editingSettings = !editingSettings"
                 >
                     {{ editingSettings ? 'Cancelar' : 'Editar configuración' }}
                 </Button>
                 <Button
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     @click="testConnection"
                 >
                     Probar conexión
@@ -178,31 +178,31 @@ function submitLink() {
 
         <div
             v-if="editingSettings"
-            class="mb-8 rounded-xl border border-fl-gold/20 bg-fl-graphite/30 p-5"
+            class="mb-8 rounded-xl border border-fl-gold/20 bg-card/30 p-5"
         >
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                    <Label class="mb-1 block text-xs text-white/50"
+                    <Label class="mb-1 block text-xs text-muted-foreground"
                         >Nombre</Label
                     >
                     <Input
                         v-model="settingsForm.name"
-                        class="border-white/10 bg-fl-graphite/60 text-white"
+                        class="border-border bg-card/60 text-foreground"
                     />
                 </div>
                 <div>
-                    <Label class="mb-1 block text-xs text-white/50"
+                    <Label class="mb-1 block text-xs text-muted-foreground"
                         >Base URL</Label
                     >
                     <Input
                         v-model="settingsForm.base_url"
-                        class="border-white/10 bg-fl-graphite/60 text-white"
+                        class="border-border bg-card/60 text-foreground"
                     />
                 </div>
                 <div>
-                    <Label class="mb-1 block text-xs text-white/50">
+                    <Label class="mb-1 block text-xs text-muted-foreground">
                         API Key / Credencial
-                        <span class="text-white/30">{{
+                        <span class="text-muted-foreground/80">{{
                             connection.has_credentials
                                 ? '(guardada — deja en blanco para conservarla)'
                                 : ''
@@ -214,18 +214,18 @@ function submitLink() {
                         :placeholder="
                             connection.has_credentials ? '••••••••' : ''
                         "
-                        class="border-white/10 bg-fl-graphite/60 text-white"
+                        class="border-border bg-card/60 text-foreground"
                     />
                 </div>
 
                 <template v-if="connection.provider_key === 'generic_rest'">
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Autenticación</Label
                         >
                         <select
                             v-model="settingsForm.auth_type"
-                            class="h-9 w-full rounded-md border border-white/10 bg-fl-graphite/60 px-3 text-sm text-white"
+                            class="h-9 w-full rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
                         >
                             <option value="none">Ninguna</option>
                             <option value="bearer">Bearer token</option>
@@ -236,66 +236,66 @@ function submitLink() {
                         </select>
                     </div>
                     <div v-if="settingsForm.auth_type === 'api_key_header'">
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Nombre del header</Label
                         >
                         <Input
                             v-model="settingsForm.api_key_header"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                     <div v-if="settingsForm.auth_type === 'basic'">
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Usuario</Label
                         >
                         <Input
                             v-model="settingsForm.basic_username"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint de prueba</Label
                         >
                         <Input
                             v-model="settingsForm.test_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint participantes</Label
                         >
                         <Input
                             v-model="settingsForm.participants_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint resultados</Label
                         >
                         <Input
                             v-model="settingsForm.results_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint del evento</Label
                         >
                         <Input
                             v-model="settingsForm.event_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint listar eventos</Label
                         >
                         <Input
                             v-model="settingsForm.events_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                 </template>
@@ -311,44 +311,40 @@ function submitLink() {
         </div>
 
         <div class="mb-8 grid gap-4 sm:grid-cols-3">
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">Estado</p>
-                <p class="mt-1 text-white">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">Estado</p>
+                <p class="mt-1 text-foreground">
                     {{
                         statusLabel(providerConnectionStatus, connection.status)
                     }}
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">Última prueba</p>
-                <p class="mt-1 text-white">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Última prueba
+                </p>
+                <p class="mt-1 text-foreground">
                     {{ connection.last_tested_at ?? '—' }}
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">
                     Último sync exitoso
                 </p>
-                <p class="mt-1 text-white">
+                <p class="mt-1 text-foreground">
                     {{ connection.last_successful_sync_at ?? '—' }}
                 </p>
             </div>
         </div>
 
-        <h2 class="mb-3 text-sm font-semibold text-white">
+        <h2 class="mb-3 text-sm font-semibold text-foreground">
             Eventos vinculados
         </h2>
-        <div class="mb-8 overflow-x-auto rounded-xl border border-white/10">
+        <div class="mb-8 overflow-x-auto rounded-xl border border-border">
             <table class="w-full text-sm">
                 <thead>
                     <tr
-                        class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                        class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                     >
                         <th class="px-4 py-3 font-medium">Evento</th>
                         <th class="px-4 py-3 font-medium">Último sync</th>
@@ -362,7 +358,7 @@ function submitLink() {
                     <tr
                         v-for="m in mappings"
                         :key="m.id"
-                        class="border-b border-white/5 text-white/80 last:border-0"
+                        class="border-b border-border text-foreground last:border-0"
                     >
                         <td class="px-4 py-3">
                             {{ m.event }} — {{ m.edition }}
@@ -371,7 +367,7 @@ function submitLink() {
                             <Link
                                 v-if="m.last_sync"
                                 :href="`/admin/integrations/sync-runs/${m.last_sync.id}`"
-                                class="text-fl-gold hover:underline"
+                                class="text-fl-gold-ink hover:underline"
                             >
                                 {{
                                     statusLabel(
@@ -394,7 +390,7 @@ function submitLink() {
                             <Badge
                                 v-if="(m.last_sync?.errors_count ?? 0) > 0"
                                 variant="outline"
-                                class="border-amber-500/30 text-amber-400"
+                                class="border-amber-500/30 text-amber-700"
                             >
                                 {{ m.last_sync?.errors_count }}
                             </Badge>
@@ -405,7 +401,7 @@ function submitLink() {
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    class="border-white/15 text-white hover:bg-white/10"
+                                    class="border-border text-foreground hover:bg-foreground/5"
                                     @click="syncNow(m.id, 'roster')"
                                 >
                                     <RefreshCw class="size-3.5" /> Roster
@@ -423,7 +419,7 @@ function submitLink() {
                     <tr v-if="!mappings.length">
                         <td
                             colspan="6"
-                            class="px-4 py-8 text-center text-white/40"
+                            class="px-4 py-8 text-center text-muted-foreground/80"
                         >
                             Sin eventos vinculados todavía.
                         </td>
@@ -432,20 +428,20 @@ function submitLink() {
             </table>
         </div>
 
-        <h2 class="mb-3 text-sm font-semibold text-white">
+        <h2 class="mb-3 text-sm font-semibold text-foreground">
             Eventos disponibles en el proveedor
         </h2>
-        <p v-if="listError" class="mb-4 text-sm text-red-400">
+        <p v-if="listError" class="mb-4 text-sm text-red-700">
             {{ listError }}
         </p>
         <div class="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div
                 v-for="event in availableEvents"
                 :key="event.external_id"
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
+                class="rounded-xl border border-border bg-card/30 p-4"
             >
-                <p class="text-white">{{ event.name }}</p>
-                <p class="text-xs text-white/50">
+                <p class="text-foreground">{{ event.name }}</p>
+                <p class="text-xs text-muted-foreground">
                     {{ event.date }} · {{ event.city }}
                 </p>
                 <Button
@@ -460,12 +456,12 @@ function submitLink() {
 
         <div
             v-if="linkForm.external_event_id"
-            class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
+            class="rounded-xl border border-border bg-card/30 p-4"
         >
-            <h3 class="mb-3 text-sm font-semibold text-white">
+            <h3 class="mb-3 text-sm font-semibold text-foreground">
                 Vincular {{ linkForm.external_event_id }}
             </h3>
-            <div class="mb-3 flex gap-4 text-sm text-white/70">
+            <div class="mb-3 flex gap-4 text-sm text-muted-foreground">
                 <label class="flex items-center gap-1.5">
                     <input
                         type="radio"
@@ -488,7 +484,7 @@ function submitLink() {
             <select
                 v-if="linkForm.mode === 'link'"
                 v-model="linkForm.event_edition_id"
-                class="h-9 w-full max-w-md rounded-md border border-white/10 bg-fl-graphite/60 px-3 text-sm text-white"
+                class="h-9 w-full max-w-md rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
             >
                 <option :value="null" disabled>Selecciona una edición…</option>
                 <option v-for="e in editions" :key="e.id" :value="e.id">
@@ -499,7 +495,7 @@ function submitLink() {
             <select
                 v-else
                 v-model="linkForm.sport_id"
-                class="h-9 w-full max-w-md rounded-md border border-white/10 bg-fl-graphite/60 px-3 text-sm text-white"
+                class="h-9 w-full max-w-md rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
             >
                 <option :value="null" disabled>Selecciona un deporte…</option>
                 <option v-for="s in sports" :key="s.id" :value="s.id">

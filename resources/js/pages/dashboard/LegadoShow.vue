@@ -247,22 +247,22 @@ function rejectMessage(id: number) {
     <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <Link
             href="/dashboard"
-            class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"
+            class="text-xs tracking-wide text-muted-foreground/80 uppercase hover:text-fl-gold-ink"
             >← Mi Legado</Link
         >
 
         <!-- Hero -->
         <div
-            class="relative mt-4 overflow-hidden rounded-2xl border border-fl-gold/20 bg-gradient-to-br from-fl-graphite via-fl-black to-fl-black p-6 md:p-8"
+            class="relative mt-4 overflow-hidden rounded-2xl border border-fl-gold/20 bg-gradient-to-br from-card via-background to-background p-6 md:p-8"
         >
             <div
                 class="absolute -top-20 -right-20 size-56 rounded-full bg-fl-gold/10 blur-3xl"
             />
             <div class="relative">
-                <h1 class="text-2xl font-black text-white md:text-3xl">
+                <h1 class="text-2xl font-black text-foreground md:text-3xl">
                     {{ participant.event ?? 'Evento' }}
                 </h1>
-                <p class="mt-1 text-sm text-white/50">
+                <p class="mt-1 text-sm text-muted-foreground">
                     <span v-if="participant.race"
                         >{{ participant.race }} ·
                     </span>
@@ -280,39 +280,41 @@ function rejectMessage(id: number) {
             <!-- Resultado -->
             <section
                 v-if="result"
-                class="rounded-2xl border border-white/10 bg-fl-graphite/20 p-5"
+                class="rounded-2xl border border-border bg-card/20 p-5"
             >
-                <h2 class="mb-4 text-sm tracking-wide text-white/40 uppercase">
+                <h2
+                    class="mb-4 text-sm tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Resultado
                 </h2>
                 <div class="grid grid-cols-3 gap-4 text-center">
                     <div>
                         <p
-                            class="text-[10px] tracking-widest text-white/30 uppercase"
+                            class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Tiempo oficial
                         </p>
-                        <p class="mt-1 text-lg text-white">
+                        <p class="mt-1 text-lg text-foreground">
                             {{ result.official_time ?? '—' }}
                         </p>
                     </div>
                     <div>
                         <p
-                            class="text-[10px] tracking-widest text-white/30 uppercase"
+                            class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Ritmo
                         </p>
-                        <p class="mt-1 text-lg text-white">
+                        <p class="mt-1 text-lg text-foreground">
                             {{ result.pace ?? '—' }}
                         </p>
                     </div>
                     <div>
                         <p
-                            class="text-[10px] tracking-widest text-white/30 uppercase"
+                            class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Posición
                         </p>
-                        <p class="mt-1 text-lg text-white">
+                        <p class="mt-1 text-lg text-foreground">
                             {{
                                 result.overall_position
                                     ? `#${result.overall_position}`
@@ -324,18 +326,18 @@ function rejectMessage(id: number) {
 
                 <div
                     v-if="result.splits.length"
-                    class="mt-4 divide-y divide-white/10 rounded-xl border border-white/10"
+                    class="mt-4 divide-y divide-border rounded-xl border border-border"
                 >
                     <div
                         v-for="(split, index) in result.splits"
                         :key="index"
                         class="flex items-center justify-between px-4 py-2.5 text-sm"
                     >
-                        <span class="text-white/60">{{
+                        <span class="text-muted-foreground">{{
                             split.label ??
                             `${split.distance_value ?? ''} ${split.distance_unit ?? ''}`
                         }}</span>
-                        <span class="text-white">{{
+                        <span class="text-foreground">{{
                             split.elapsed_time ?? split.segment_time ?? '—'
                         }}</span>
                     </div>
@@ -345,9 +347,11 @@ function rejectMessage(id: number) {
             <!-- Medalla -->
             <section
                 v-if="medals.length"
-                class="rounded-2xl border border-white/10 bg-fl-graphite/20 p-5"
+                class="rounded-2xl border border-border bg-card/20 p-5"
             >
-                <h2 class="mb-4 text-sm tracking-wide text-white/40 uppercase">
+                <h2
+                    class="mb-4 text-sm tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Medalla
                 </h2>
                 <div
@@ -359,13 +363,15 @@ function rejectMessage(id: number) {
                         v-if="medal.image_url"
                         :src="medal.image_url"
                         alt=""
-                        class="size-20 shrink-0 rounded-xl border border-white/10 object-cover"
+                        class="size-20 shrink-0 rounded-xl border border-border object-cover"
                     />
                     <div>
-                        <p class="font-medium text-white">{{ medal.title }}</p>
+                        <p class="font-medium text-foreground">
+                            {{ medal.title }}
+                        </p>
                         <p
                             v-if="medal.story"
-                            class="mt-1 text-sm text-white/50"
+                            class="mt-1 text-sm text-muted-foreground"
                         >
                             {{ medal.story }}
                         </p>
@@ -377,13 +383,15 @@ function rejectMessage(id: number) {
         <!-- Legacy Plate -->
         <section v-if="legacyPlate" class="mt-6">
             <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-sm tracking-wide text-white/40 uppercase">
+                <h2
+                    class="text-sm tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Legacy Plate
                 </h2>
                 <Badge
                     v-if="legacyPlate.status"
                     variant="outline"
-                    class="border-fl-gold/30 text-fl-gold-soft"
+                    class="border-fl-gold/30 text-fl-gold-ink"
                 >
                     {{
                         legacyPlateStatusLabel[legacyPlate.status] ??
@@ -400,13 +408,13 @@ function rejectMessage(id: number) {
             />
             <p
                 v-else-if="legacyPlate.status === 'delivered'"
-                class="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/40"
+                class="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground/80"
             >
                 Vista previa no disponible para esta Legacy Plate.
             </p>
             <p
                 v-else
-                class="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/40"
+                class="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground/80"
             >
                 Tu Legacy Plate está en preparación — el visor aparecerá en
                 cuanto se asigne un modelo.
@@ -416,7 +424,7 @@ function rejectMessage(id: number) {
         <!-- Equipo utilizado -->
         <section class="mt-8">
             <h2
-                class="mb-3 flex items-center gap-1.5 text-sm tracking-wide text-white/40 uppercase"
+                class="mb-3 flex items-center gap-1.5 text-sm tracking-wide text-muted-foreground/80 uppercase"
             >
                 <Package class="size-3.5" />
                 Equipo utilizado
@@ -429,22 +437,22 @@ function rejectMessage(id: number) {
                 <div
                     v-for="item in gearUsed"
                     :key="item.uuid"
-                    class="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-fl-graphite/20 p-4"
+                    class="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/20 p-4"
                 >
                     <div class="min-w-0">
-                        <p class="truncate font-medium text-white">
+                        <p class="truncate font-medium text-foreground">
                             {{ item.product_name }}
                         </p>
                         <p
                             v-if="item.variant_name"
-                            class="text-xs text-white/40"
+                            class="text-xs text-muted-foreground/80"
                         >
                             {{ item.variant_name }}
                         </p>
                     </div>
                     <button
                         type="button"
-                        class="shrink-0 text-xs text-red-400 hover:text-red-300"
+                        class="shrink-0 text-xs text-red-700 hover:text-red-700"
                         @click="removeGear(item)"
                     >
                         Quitar
@@ -453,7 +461,7 @@ function rejectMessage(id: number) {
             </div>
             <p
                 v-else
-                class="mb-3 rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-white/40"
+                class="mb-3 rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground/80"
             >
                 Todavía no agregaste el equipo que usaste en este evento.
             </p>
@@ -464,7 +472,7 @@ function rejectMessage(id: number) {
             >
                 <Select v-model="selectedOwnedProduct">
                     <SelectTrigger
-                        class="w-56 border-white/10 bg-fl-black text-white"
+                        class="w-56 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Elige de tu equipo" />
                     </SelectTrigger>
@@ -481,7 +489,7 @@ function rejectMessage(id: number) {
                 </Select>
                 <Button
                     variant="outline"
-                    class="border-white/15 text-white/70 hover:text-white"
+                    class="border-border text-muted-foreground hover:text-foreground"
                     :disabled="!selectedOwnedProduct"
                     @click="assignGear"
                 >
@@ -494,7 +502,7 @@ function rejectMessage(id: number) {
         <!-- Apoyo -->
         <section class="mt-8">
             <h2
-                class="mb-3 flex items-center gap-1.5 text-sm tracking-wide text-white/40 uppercase"
+                class="mb-3 flex items-center gap-1.5 text-sm tracking-wide text-muted-foreground/80 uppercase"
             >
                 <Heart class="size-3.5" />
                 Apoyo
@@ -502,9 +510,9 @@ function rejectMessage(id: number) {
 
             <div
                 v-if="!supportSession"
-                class="rounded-2xl border border-dashed border-white/10 p-6 text-center"
+                class="rounded-2xl border border-dashed border-border p-6 text-center"
             >
-                <p class="text-sm text-white/50">
+                <p class="text-sm text-muted-foreground">
                     Crea un link para que tu familia y amigos te manden mensajes
                     de apoyo durante este evento.
                 </p>
@@ -520,7 +528,7 @@ function rejectMessage(id: number) {
 
             <div v-else class="grid gap-4 lg:grid-cols-[220px_1fr]">
                 <div
-                    class="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-fl-graphite/20 p-5 text-center"
+                    class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card/20 p-5 text-center"
                 >
                     <div class="rounded-xl bg-white p-2">
                         <img
@@ -533,12 +541,12 @@ function rejectMessage(id: number) {
                         <Input
                             :model-value="supportSession.public_url"
                             readonly
-                            class="w-40 border-white/10 bg-fl-black text-xs text-white"
+                            class="w-40 border-border bg-background text-xs text-foreground"
                         />
                         <Button
                             size="icon-sm"
                             variant="ghost"
-                            class="text-white/60 hover:text-fl-gold"
+                            class="text-muted-foreground hover:text-fl-gold-ink"
                             @click="copySupportLink"
                         >
                             <Check v-if="linkCopied" class="size-4" />
@@ -548,7 +556,7 @@ function rejectMessage(id: number) {
                 </div>
 
                 <div
-                    class="divide-y divide-white/5 rounded-2xl border border-white/10"
+                    class="divide-y divide-border rounded-2xl border border-border"
                 >
                     <div
                         v-for="msg in supportSession.messages"
@@ -556,18 +564,18 @@ function rejectMessage(id: number) {
                         class="flex items-start justify-between gap-3 px-4 py-3 text-sm"
                     >
                         <div class="min-w-0">
-                            <p class="text-white/80">
+                            <p class="text-foreground">
                                 {{ msg.contributor_name ?? 'Anónimo' }}
                                 <Badge
                                     v-if="msg.is_surprise"
                                     variant="outline"
-                                    class="ml-1 border-fl-gold/30 text-fl-gold-soft"
+                                    class="ml-1 border-fl-gold/30 text-fl-gold-ink"
                                     >🎁 Sorpresa</Badge
                                 >
                             </p>
                             <p
                                 v-if="msg.message_text"
-                                class="mt-1 text-white/60"
+                                class="mt-1 text-muted-foreground"
                             >
                                 {{ msg.message_text }}
                             </p>
@@ -577,7 +585,7 @@ function rejectMessage(id: number) {
                                 controls
                                 class="mt-1 h-8 w-full max-w-xs"
                             />
-                            <p class="mt-1 text-xs text-white/30">
+                            <p class="mt-1 text-xs text-muted-foreground/80">
                                 {{ msg.created_at }}
                             </p>
                         </div>
@@ -588,7 +596,7 @@ function rejectMessage(id: number) {
                             <Button
                                 size="icon-sm"
                                 variant="ghost"
-                                class="text-emerald-400 hover:bg-emerald-500/10"
+                                class="text-emerald-700 hover:bg-emerald-500/10"
                                 @click="approveMessage(msg.id)"
                             >
                                 <Check class="size-4" />
@@ -596,7 +604,7 @@ function rejectMessage(id: number) {
                             <Button
                                 size="icon-sm"
                                 variant="ghost"
-                                class="text-red-400 hover:bg-red-500/10"
+                                class="text-red-700 hover:bg-red-500/10"
                                 @click="rejectMessage(msg.id)"
                             >
                                 <X class="size-4" />
@@ -605,7 +613,7 @@ function rejectMessage(id: number) {
                         <Badge
                             v-else
                             variant="outline"
-                            class="shrink-0 border-white/20 text-white/40"
+                            class="shrink-0 border-foreground/15 text-muted-foreground/80"
                         >
                             {{
                                 msg.status === 'approved'
@@ -616,7 +624,7 @@ function rejectMessage(id: number) {
                     </div>
                     <p
                         v-if="!supportSession.messages.length"
-                        class="px-4 py-10 text-center text-white/30"
+                        class="px-4 py-10 text-center text-muted-foreground/80"
                     >
                         Sin mensajes de apoyo todavía.
                     </p>
@@ -626,7 +634,9 @@ function rejectMessage(id: number) {
 
         <!-- Media -->
         <section class="mt-8">
-            <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+            <h2
+                class="mb-3 text-sm tracking-wide text-muted-foreground/80 uppercase"
+            >
                 Fotos y video
             </h2>
 
@@ -645,7 +655,7 @@ function rejectMessage(id: number) {
                 <div
                     v-for="item in media"
                     :key="item.uuid"
-                    class="group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-fl-black"
+                    class="group relative aspect-square overflow-hidden rounded-xl border border-border bg-background"
                 >
                     <img
                         v-if="item.type === 'image'"
@@ -659,24 +669,24 @@ function rejectMessage(id: number) {
                         muted
                     />
                     <div
-                        class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-fl-black/80 px-2 py-1.5 text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                        class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-background/80 px-2 py-1.5 text-xs opacity-0 transition-opacity group-hover:opacity-100"
                     >
                         <button
                             type="button"
-                            class="text-white/60 hover:text-white"
+                            class="text-muted-foreground hover:text-foreground"
                             @click="toggleVisibility(item)"
                         >
                             {{ item.is_public ? 'Pública' : 'Privada' }}
                         </button>
                         <button
                             type="button"
-                            class="text-red-400 hover:text-red-300"
+                            class="text-red-700 hover:text-red-700"
                             @click="removeMedia(item)"
                         >
                             Eliminar
                         </button>
                     </div>
-                    <span class="absolute top-2 right-2 text-white/50">
+                    <span class="absolute top-2 right-2 text-muted-foreground">
                         <VideoIcon
                             v-if="item.type === 'video'"
                             class="size-4"
@@ -689,22 +699,26 @@ function rejectMessage(id: number) {
 
         <!-- Pedidos / productos del evento -->
         <section v-if="purchases.length" class="mt-8">
-            <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+            <h2
+                class="mb-3 text-sm tracking-wide text-muted-foreground/80 uppercase"
+            >
                 Productos de este evento
             </h2>
             <div
-                class="divide-y divide-white/5 rounded-2xl border border-white/10 bg-fl-graphite/20"
+                class="divide-y divide-border rounded-2xl border border-border bg-card/20"
             >
                 <Link
                     v-for="item in purchases"
                     :key="item.id"
                     :href="`/mis-pedidos/${item.order_uuid}`"
-                    class="flex items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/5"
+                    class="flex items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-foreground/[0.03]"
                 >
-                    <span class="flex items-center gap-2 text-white/80">
-                        <Package class="size-4 text-fl-gold-soft" />
+                    <span class="flex items-center gap-2 text-foreground">
+                        <Package class="size-4 text-fl-gold-ink" />
                         {{ item.name }}
-                        <span v-if="item.quantity > 1" class="text-white/40"
+                        <span
+                            v-if="item.quantity > 1"
+                            class="text-muted-foreground/80"
                             >×{{ item.quantity }}</span
                         >
                     </span>
@@ -712,7 +726,7 @@ function rejectMessage(id: number) {
                         <Money
                             :minor="item.line_total_minor"
                             :currency="item.currency"
-                            class="text-white/60"
+                            class="text-muted-foreground"
                         />
                         <PaymentStatusBadge :status="item.payment_status" />
                     </span>

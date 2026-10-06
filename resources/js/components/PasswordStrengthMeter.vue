@@ -52,13 +52,15 @@ const current = computed(() => levels[score.value]);
             <span
                 v-for="segment in 4"
                 :key="segment"
-                class="h-1 flex-1 rounded-full bg-white/10 transition-colors duration-300"
+                class="h-1 flex-1 rounded-full bg-foreground/5 transition-colors duration-300"
                 :class="segment <= score ? current.class : ''"
             />
         </div>
-        <p class="text-xs text-white/40">
+        <p class="text-xs text-muted-foreground/80">
             Seguridad de la contraseña:
-            <span class="font-medium text-white/70">{{ current.label }}</span>
+            <span class="font-medium text-muted-foreground">{{
+                current.label
+            }}</span>
         </p>
     </div>
 </template>

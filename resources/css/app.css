@@ -5,13 +5,20 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@custom-variant dark (&:is(.dark *));
+/*
+  Finisher Legacy is LIGHT only — there is no dark theme and nothing reads
+  prefers-color-scheme. The `dark:` variant is pinned to a class that is
+  never set anywhere, so any leftover `dark:*` utility (shadcn primitives
+  ship a few) is inert instead of flipping parts of the UI.
+*/
+@custom-variant dark (&:is(.fl-never-dark *));
 
 @theme inline {
     --font-sans:
         Instrument Sans, ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --font-serif: Fraunces, ui-serif, Georgia, 'Times New Roman', serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -60,24 +67,36 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* Finisher Legacy brand palette — used by the public site and auth screens.
-       Additive: it does not touch the shadcn semantic tokens above, so the
-       authenticated app shell keeps its neutral theme untouched. */
+    /* Finisher Legacy brand palette. `fl-black`/`fl-graphite` are INK
+       colors now (text, the odd solid accent, photo overlays) — page and
+       card surfaces always use the semantic `background`/`card`/`muted`
+       tokens above. Gold is for fills, rules and accents; `fl-gold-ink` is
+       the deeper gold that passes contrast as text on paper/white. */
     --color-fl-black: var(--fl-black);
     --color-fl-graphite: var(--fl-graphite);
     --color-fl-graphite-light: var(--fl-graphite-light);
     --color-fl-gold: var(--fl-gold);
     --color-fl-gold-soft: var(--fl-gold-soft);
     --color-fl-gold-dim: var(--fl-gold-dim);
+    --color-fl-gold-ink: var(--fl-gold-ink);
+    --color-fl-paper: var(--fl-paper);
+    --color-fl-cream: var(--fl-cream);
+    --color-fl-stone: var(--fl-stone);
+    --color-fl-line: var(--fl-line);
 }
 
 :root {
-    --fl-black: hsl(240 8% 4%);
-    --fl-graphite: hsl(240 6% 10%);
-    --fl-graphite-light: hsl(240 5% 16%);
-    --fl-gold: hsl(42 55% 58%);
-    --fl-gold-soft: hsl(42 65% 72%);
-    --fl-gold-dim: hsl(42 30% 42%);
+    --fl-black: #171714;
+    --fl-graphite: #2a2925;
+    --fl-graphite-light: #3b3934;
+    --fl-gold: #c9a45c;
+    --fl-gold-soft: #e8d6ad;
+    --fl-gold-dim: #a8843f;
+    --fl-gold-ink: #85662b;
+    --fl-paper: #f8f7f3;
+    --fl-cream: #f4eedf;
+    --fl-stone: #6b675e;
+    --fl-line: #e7e3da;
 
     /* Motion tokens for the public site — durations only, easing stays the
        cubic-bezier already used by <Reveal>/<StaggerGroup> below. Kept under
@@ -119,47 +138,48 @@
 }
 
 /*
-  Finisher Legacy has one signature theme — negro, grafito, dorado — applied
-  everywhere (public site, auth, dashboard, admin). There is no separate
-  light palette: these tokens are the only palette, and the `dark` class
-  toggling machinery in useAppearance.ts is kept only so the appearance
-  cookie/class exists for tooling, but it always resolves to this theme.
+  Finisher Legacy has ONE theme, light and editorial: warm paper
+  background, white cards, warm-ink text, gold used sparingly. Public
+  site, auth, Mi Legado, Comunidad, store and admin all read these same
+  tokens — there is no alternate palette and no theme switcher.
 */
 :root {
-    --background: hsl(240 8% 4%);
-    --foreground: hsl(0 0% 96%);
-    --card: hsl(240 6% 10%);
-    --card-foreground: hsl(0 0% 96%);
-    --popover: hsl(240 6% 10%);
-    --popover-foreground: hsl(0 0% 96%);
-    --primary: hsl(42 55% 58%);
-    --primary-foreground: hsl(240 8% 4%);
-    --secondary: hsl(240 5% 16%);
-    --secondary-foreground: hsl(0 0% 96%);
-    --muted: hsl(240 6% 10%);
-    --muted-foreground: hsl(240 5% 65%);
-    --accent: hsl(240 5% 16%);
-    --accent-foreground: hsl(42 55% 58%);
-    --destructive: hsl(0 72% 55%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(240 5% 18%);
-    --input: hsl(240 5% 16%);
-    --ring: hsl(42 55% 58%);
-    --chart-1: hsl(42 55% 58%);
-    --chart-2: hsl(160 55% 45%);
-    --chart-3: hsl(210 65% 55%);
-    --chart-4: hsl(280 55% 60%);
-    --chart-5: hsl(0 65% 55%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(240 8% 5%);
-    --sidebar-foreground: hsl(0 0% 90%);
-    --sidebar-primary: hsl(42 55% 58%);
-    --sidebar-primary-foreground: hsl(240 8% 4%);
-    --sidebar-accent: hsl(240 5% 16%);
-    --sidebar-accent-foreground: hsl(0 0% 96%);
-    --sidebar-border: hsl(240 5% 18%);
-    --sidebar-ring: hsl(42 55% 58%);
-    --sidebar: hsl(240 8% 5%);
+    --background: #f8f7f3;
+    --foreground: #171714;
+    --card: #ffffff;
+    --card-foreground: #171714;
+    --popover: #ffffff;
+    --popover-foreground: #171714;
+    --primary: #171714;
+    --primary-foreground: #f8f7f3;
+    --secondary: #f1eee7;
+    --secondary-foreground: #171714;
+    --muted: #f1eee7;
+    --muted-foreground: #6b675e;
+    --accent: #f4eedf;
+    --accent-foreground: #171714;
+    --destructive: #c2410c;
+    --destructive-foreground: #ffffff;
+    --border: #e7e3da;
+    --input: #ddd8cd;
+    --ring: #c9a45c;
+    --chart-1: #c9a45c;
+    --chart-2: #3f7d64;
+    --chart-3: #3d6a99;
+    --chart-4: #7b5e9e;
+    --chart-5: #b4533a;
+    --radius: 0.625rem;
+    --sidebar-background: #ffffff;
+    --sidebar-foreground: #3b3934;
+    --sidebar-primary: #171714;
+    --sidebar-primary-foreground: #f8f7f3;
+    --sidebar-accent: #f4eedf;
+    --sidebar-accent-foreground: #171714;
+    --sidebar-border: #ebe7de;
+    --sidebar-ring: #c9a45c;
+    --sidebar: #ffffff;
+
+    color-scheme: light;
 }
 
 @layer base {
@@ -168,6 +188,58 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
+}
+
+/*
+  Editorial primitives shared by every surface (public + app shell) so
+  pages compose the same few looks instead of re-inventing them:
+  - .fl-eyebrow   small uppercase gold label above a title
+  - .fl-display   big serif editorial headline
+  - .fl-card      white surface, hairline border, near-zero shadow
+  - .fl-container standard max-width + gutters (16px on phones)
+*/
+@layer components {
+    .fl-eyebrow {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--fl-gold-ink);
+    }
+    .fl-display {
+        font-family: var(--font-serif);
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+        color: var(--foreground);
+    }
+    .fl-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 2px rgb(23 23 20 / 0.03);
+    }
+    .fl-container {
+        margin-inline: auto;
+        width: 100%;
+        max-width: 80rem;
+        padding-inline: 1rem;
+    }
+    @media (min-width: 640px) {
+        .fl-container {
+            padding-inline: 1.5rem;
+        }
+    }
+    @media (min-width: 1024px) {
+        .fl-container {
+            padding-inline: 2rem;
+        }
     }
 }
 
@@ -184,8 +256,8 @@
             box-shadow 300ms ease;
     }
     .fl-hover-lift:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
+        transform: translateY(-3px);
+        box-shadow: 0 18px 36px -24px rgb(23 23 20 / 0.28);
     }
 
     .fl-hover-glow {
@@ -197,7 +269,8 @@
         border-color: color-mix(in srgb, var(--fl-gold) 50%, transparent);
         box-shadow:
             0 0 0 1px color-mix(in srgb, var(--fl-gold) 30%, transparent),
-            0 0 24px -4px color-mix(in srgb, var(--fl-gold) 40%, transparent);
+            0 10px 24px -14px
+                color-mix(in srgb, var(--fl-gold) 45%, transparent);
     }
 
     .fl-hover-zoom {
@@ -366,4 +439,9 @@
 
 ::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+/* SweetAlert cancel button sits on a light chip, so its label must be ink. */
+.fl-swal-cancel {
+    color: #171714 !important;
 }

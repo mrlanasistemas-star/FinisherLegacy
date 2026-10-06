@@ -204,7 +204,7 @@ onBeforeUnmount(stopSpin);
 <template>
     <div class="select-none">
         <div
-            class="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-fl-black to-fl-graphite/60 p-6 sm:p-10"
+            class="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-background to-card/60 p-6 sm:p-10"
             style="perspective: 1200px"
         >
             <div
@@ -247,7 +247,7 @@ onBeforeUnmount(stopSpin);
                 >
                     <!-- Front face -->
                     <div
-                        class="absolute inset-0 overflow-hidden rounded-xl border border-white/15 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]"
+                        class="absolute inset-0 overflow-hidden rounded-xl border border-border shadow-[0_20px_60px_-15px_rgba(23,23,20,0.28)]"
                         style="backface-visibility: hidden"
                     >
                         <img
@@ -337,7 +337,7 @@ onBeforeUnmount(stopSpin);
 
                     <!-- Back face -->
                     <div
-                        class="absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl border border-white/15 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]"
+                        class="absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl border border-border shadow-[0_20px_60px_-15px_rgba(23,23,20,0.28)]"
                         style="
                             backface-visibility: hidden;
                             transform: rotateY(180deg);
@@ -364,7 +364,7 @@ onBeforeUnmount(stopSpin);
                             "
                         />
                         <p
-                            class="relative text-[10px] font-semibold tracking-[0.3em] text-white/40 uppercase"
+                            class="relative text-[10px] font-semibold tracking-[0.3em] text-muted-foreground/80 uppercase"
                         >
                             Finisher Legacy
                         </p>
@@ -381,8 +381,8 @@ onBeforeUnmount(stopSpin);
                     class="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
                     :class="
                         !showingBack
-                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-soft'
-                            : 'border-white/10 text-white/60 hover:border-white/20 hover:text-white'
+                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-ink'
+                            : 'border-border text-muted-foreground hover:border-foreground/15 hover:text-foreground'
                     "
                     @click="
                         stopSpin();
@@ -396,8 +396,8 @@ onBeforeUnmount(stopSpin);
                     class="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
                     :class="
                         showingBack
-                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-soft'
-                            : 'border-white/10 text-white/60 hover:border-white/20 hover:text-white'
+                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-ink'
+                            : 'border-border text-muted-foreground hover:border-foreground/15 hover:text-foreground'
                     "
                     @click="
                         stopSpin();
@@ -411,8 +411,8 @@ onBeforeUnmount(stopSpin);
                     class="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
                     :class="
                         spinning
-                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-soft'
-                            : 'border-white/10 text-white/60 hover:border-white/20 hover:text-white'
+                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-ink'
+                            : 'border-border text-muted-foreground hover:border-foreground/15 hover:text-foreground'
                     "
                     @click="toggleSpin"
                 >
@@ -421,7 +421,7 @@ onBeforeUnmount(stopSpin);
                 </button>
                 <button
                     type="button"
-                    class="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/20 hover:text-white"
+                    class="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/15 hover:text-foreground"
                     @click="zoomIn"
                 >
                     <Maximize2 class="size-3.5" />
@@ -429,7 +429,7 @@ onBeforeUnmount(stopSpin);
                 </button>
                 <button
                     type="button"
-                    class="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:border-white/20 hover:text-white"
+                    class="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/15 hover:text-foreground"
                     @click="reset"
                 >
                     <RotateCcw class="size-3.5" />
@@ -439,7 +439,7 @@ onBeforeUnmount(stopSpin);
 
             <p
                 v-if="interactive"
-                class="relative mt-3 text-center text-[11px] text-white/25"
+                class="relative mt-3 text-center text-[11px] text-muted-foreground/80"
             >
                 Arrastra para girar
             </p>
@@ -447,7 +447,7 @@ onBeforeUnmount(stopSpin);
 
         <p
             v-if="mode === 'admin' && model && !model.preview_image_url"
-            class="mt-2 text-center text-xs text-amber-400/80"
+            class="mt-2 text-center text-xs text-amber-700"
         >
             Sin foto del modelo — mostrando acabado genérico. Sube
             "preview_image" para la vista real.

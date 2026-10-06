@@ -26,8 +26,8 @@ withDefaults(
         <FinisherMascot variant="hero" class="fl-mascot-float shrink-0" />
 
         <div class="max-w-md">
-            <h3 class="text-xl font-bold text-white">{{ title }}</h3>
-            <p v-if="description" class="mt-2 text-sm text-white/60">
+            <h3 class="text-xl font-bold text-foreground">{{ title }}</h3>
+            <p v-if="description" class="mt-2 text-sm text-muted-foreground">
                 {{ description }}
             </p>
             <div v-if="$slots.default" class="mt-4">

@@ -238,16 +238,16 @@ async function finishPayment(tokenId: string) {
 <template>
     <Head :title="`Pedido #${order.order_number} — Finisher Legacy`" />
 
-    <div class="bg-fl-black">
+    <div class="bg-background">
         <div class="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 xl:px-8">
             <Link
                 href="/mis-pedidos"
-                class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"
+                class="text-xs tracking-wide text-muted-foreground/80 uppercase hover:text-fl-gold-ink"
                 >← Mis pedidos</Link
             >
 
             <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <h1 class="text-2xl font-black text-white">
+                <h1 class="text-2xl font-black text-foreground">
                     Pedido #{{ order.order_number }}
                 </h1>
                 <div class="flex items-center gap-2">
@@ -255,10 +255,12 @@ async function finishPayment(tokenId: string) {
                     <PaymentStatusBadge :status="order.payment_status" />
                 </div>
             </div>
-            <p class="mt-1 text-sm text-white/40">{{ order.created_at }}</p>
+            <p class="mt-1 text-sm text-muted-foreground/80">
+                {{ order.created_at }}
+            </p>
 
             <div
-                class="mt-8 divide-y divide-white/10 rounded-2xl border border-white/10 bg-fl-graphite/20"
+                class="mt-8 divide-y divide-border rounded-2xl border border-border bg-card/20"
             >
                 <div
                     v-for="(item, index) in items"
@@ -266,19 +268,19 @@ async function finishPayment(tokenId: string) {
                     class="flex items-center justify-between px-5 py-4"
                 >
                     <div>
-                        <p class="text-white">{{ item.name }}</p>
-                        <p class="text-sm text-white/40">
+                        <p class="text-foreground">{{ item.name }}</p>
+                        <p class="text-sm text-muted-foreground/80">
                             x{{ item.quantity }}
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <span
                             v-if="item.fulfilled"
-                            class="flex items-center gap-1 text-xs text-emerald-400"
+                            class="flex items-center gap-1 text-xs text-emerald-700"
                         >
                             <CheckCircle2 class="size-3.5" /> Entregado
                         </span>
-                        <p class="text-white/70">
+                        <p class="text-muted-foreground">
                             <Money
                                 :minor="item.line_total_minor"
                                 :currency="order.currency"
@@ -287,8 +289,8 @@ async function finishPayment(tokenId: string) {
                     </div>
                 </div>
                 <div class="flex items-center justify-between px-5 py-4">
-                    <p class="font-medium text-white">Total</p>
-                    <p class="text-lg font-semibold text-fl-gold-soft">
+                    <p class="font-medium text-foreground">Total</p>
+                    <p class="text-lg font-semibold text-fl-gold-ink">
                         <Money
                             :minor="order.total_minor"
                             :currency="order.currency"
@@ -310,13 +312,13 @@ async function finishPayment(tokenId: string) {
                     >
                         {{ loadingForm ? 'Cargando…' : 'Pagar en línea' }}
                     </Button>
-                    <p v-else class="text-sm text-white/50">
+                    <p v-else class="text-sm text-muted-foreground">
                         El pago en línea no está disponible en este momento.
                         Contacta a soporte para completar tu pago.
                     </p>
                     <p
                         v-if="formLoadFailed"
-                        class="mt-2 text-sm text-amber-400"
+                        class="mt-2 text-sm text-amber-700"
                     >
                         No se pudo cargar el formulario de pago. Verifica tu
                         conexión e intenta de nuevo.
@@ -325,22 +327,24 @@ async function finishPayment(tokenId: string) {
 
                 <form
                     v-else
-                    class="max-w-sm space-y-4 rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                    class="max-w-sm space-y-4 rounded-xl border border-border bg-card/30 p-5"
                     @submit.prevent="submitCardPayment"
                 >
                     <div class="grid gap-1.5">
-                        <Label class="text-white/70"
+                        <Label class="text-muted-foreground"
                             >Nombre en la tarjeta</Label
                         >
                         <Input
                             v-model="card.holderName"
                             required
                             autocomplete="cc-name"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                         />
                     </div>
                     <div class="grid gap-1.5">
-                        <Label class="text-white/70">Número de tarjeta</Label>
+                        <Label class="text-muted-foreground"
+                            >Número de tarjeta</Label
+                        >
                         <Input
                             v-model="card.cardNumber"
                             required
@@ -348,12 +352,12 @@ async function finishPayment(tokenId: string) {
                             maxlength="19"
                             placeholder="4111 1111 1111 1111"
                             autocomplete="cc-number"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                         />
                     </div>
                     <div class="grid grid-cols-3 gap-3">
                         <div class="grid gap-1.5">
-                            <Label class="text-white/70">Mes</Label>
+                            <Label class="text-muted-foreground">Mes</Label>
                             <Input
                                 v-model="card.expMonth"
                                 required
@@ -361,11 +365,11 @@ async function finishPayment(tokenId: string) {
                                 maxlength="2"
                                 placeholder="MM"
                                 autocomplete="cc-exp-month"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             />
                         </div>
                         <div class="grid gap-1.5">
-                            <Label class="text-white/70">Año</Label>
+                            <Label class="text-muted-foreground">Año</Label>
                             <Input
                                 v-model="card.expYear"
                                 required
@@ -373,11 +377,11 @@ async function finishPayment(tokenId: string) {
                                 maxlength="2"
                                 placeholder="AA"
                                 autocomplete="cc-exp-year"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             />
                         </div>
                         <div class="grid gap-1.5">
-                            <Label class="text-white/70">CVV</Label>
+                            <Label class="text-muted-foreground">CVV</Label>
                             <Input
                                 v-model="card.cvv"
                                 required
@@ -385,7 +389,7 @@ async function finishPayment(tokenId: string) {
                                 maxlength="4"
                                 placeholder="123"
                                 autocomplete="cc-csc"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             />
                         </div>
                     </div>
@@ -396,7 +400,7 @@ async function finishPayment(tokenId: string) {
                     >
                         {{ paying ? 'Procesando…' : 'Confirmar pago' }}
                     </Button>
-                    <p class="text-center text-[11px] text-white/30">
+                    <p class="text-center text-[11px] text-muted-foreground/80">
                         Tu tarjeta se procesa directamente con Openpay — este
                         sitio nunca almacena sus datos.
                     </p>
@@ -406,7 +410,7 @@ async function finishPayment(tokenId: string) {
                     v-if="paymentMessage"
                     class="mt-3 text-sm"
                     :class="
-                        paymentFailed ? 'text-amber-400' : 'text-emerald-400'
+                        paymentFailed ? 'text-amber-700' : 'text-emerald-700'
                     "
                 >
                     {{ paymentMessage }}

@@ -129,15 +129,15 @@ function submit() {
     <div class="p-4 md:p-8">
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-xl font-bold text-white">Organizadores</h1>
-                <p class="text-sm text-white/50">
+                <h1 class="text-xl font-bold text-foreground">Organizadores</h1>
+                <p class="text-sm text-muted-foreground">
                     Entidades que producen eventos en Finisher Legacy.
                 </p>
             </div>
             <div class="flex items-center gap-2">
                 <Link
                     href="/admin/data-sources"
-                    class="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-sm text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+                    class="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
                 >
                     <Database class="size-4" />
                     Fuentes de datos
@@ -160,7 +160,7 @@ function submit() {
         >
             <template #cell-logo_url="{ row }">
                 <div
-                    class="flex size-9 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-fl-black"
+                    class="flex size-9 items-center justify-center overflow-hidden rounded-lg border border-border bg-background"
                 >
                     <img
                         v-if="row.logo_url"
@@ -168,7 +168,7 @@ function submit() {
                         alt=""
                         class="size-full object-cover"
                     />
-                    <Building2 v-else class="size-4 text-white/20" />
+                    <Building2 v-else class="size-4 text-muted-foreground/80" />
                 </div>
             </template>
             <template #cell-status="{ row }">
@@ -176,8 +176,8 @@ function submit() {
                     variant="outline"
                     :class="
                         row.status === 'active'
-                            ? 'border-emerald-500/30 text-emerald-400'
-                            : 'border-white/20 text-white/50'
+                            ? 'border-emerald-500/30 text-emerald-700'
+                            : 'border-foreground/15 text-muted-foreground'
                     "
                 >
                     {{ row.status === 'active' ? 'Activo' : 'Inactivo' }}
@@ -189,7 +189,7 @@ function submit() {
                         as-child
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                        class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                     >
                         <Link
                             :href="`/admin/organizers/${(row as unknown as OrganizerRow).id}`"
@@ -201,7 +201,7 @@ function submit() {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                        class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                         @click="openEdit(row as unknown as OrganizerRow)"
                     >
                         <Pencil class="size-3.5" />
@@ -213,7 +213,7 @@ function submit() {
 
         <Dialog v-model:open="dialogOpen">
             <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white sm:max-w-2xl"
+                class="border-border bg-card text-foreground sm:max-w-2xl"
             >
                 <DialogHeader>
                     <DialogTitle>{{
@@ -236,14 +236,14 @@ function submit() {
                                 <Input
                                     v-model="form.name"
                                     required
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                             <div class="grid gap-2">
                                 <Label>Razón social (opcional)</Label>
                                 <Input
                                     v-model="form.legal_name"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                         </div>
@@ -254,12 +254,12 @@ function submit() {
                             <Input
                                 v-model="form.email"
                                 type="email"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
                             <Label>Teléfono</Label>
-                            <Input v-model="form.phone" class="bg-fl-black" />
+                            <Input v-model="form.phone" class="bg-background" />
                         </div>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
@@ -268,14 +268,14 @@ function submit() {
                             <Input
                                 v-model="form.website"
                                 placeholder="https://"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
                             <Label>Estado</Label>
                             <Select v-model="form.status">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>

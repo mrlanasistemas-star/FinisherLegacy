@@ -52,7 +52,7 @@ watch([face, mode], fetchPreview, { immediate: true });
         <div class="mx-auto max-w-4xl">
             <Link
                 :href="index().url"
-                class="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
+                class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             >
                 <ArrowLeft class="size-4" /> Volver al operador
             </Link>
@@ -60,12 +60,12 @@ watch([face, mode], fetchPreview, { immediate: true });
             <div class="mt-6 grid gap-8 sm:grid-cols-[1fr_360px]">
                 <div>
                     <h1
-                        class="flex items-center gap-2 text-2xl font-bold text-white"
+                        class="flex items-center gap-2 text-2xl font-bold text-foreground"
                     >
-                        <Zap class="size-5 text-fl-gold" />
+                        <Zap class="size-5 text-fl-gold-ink" />
                         {{ plate.athlete_name }}
                     </h1>
-                    <p class="mt-1 text-sm text-white/50">
+                    <p class="mt-1 text-sm text-muted-foreground">
                         Placa rápida — sin cuenta vinculada todavía.
                     </p>
 

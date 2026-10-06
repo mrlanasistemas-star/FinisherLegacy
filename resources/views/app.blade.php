@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,9 +8,9 @@
         <meta name="application-name" content="Finisher Legacy">
         <meta name="apple-mobile-web-app-title" content="Finisher Legacy">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="theme-color" content="#09090B">
-        <meta name="msapplication-TileColor" content="#09090B">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="theme-color" content="#F8F7F3">
+        <meta name="msapplication-TileColor" content="#F8F7F3">
 
         {{-- Open Graph — this is the site-wide default. Any page can
              override og:title/og:description/og:image via its own
@@ -19,7 +19,7 @@
         <meta property="og:site_name" content="Finisher Legacy">
         <meta property="og:type" content="website">
         <meta property="og:locale" content="es_MX">
-        <meta property="og:title" content="Finisher Legacy — Tu meta termina. Tu historia no.">
+        <meta property="og:title" content="Finisher Legacy — Tu esfuerzo merece una historia">
         <meta property="og:description" content="Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.">
         <meta property="og:image" content="{{ asset('images/brand/og-finisher-legacy.png') }}">
         <meta property="og:image:width" content="1200">
@@ -27,7 +27,7 @@
         <meta property="og:image:type" content="image/png">
         <meta property="og:image:alt" content="Finisher Legacy — Tu historia. Tu legado.">
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="Finisher Legacy — Tu meta termina. Tu historia no.">
+        <meta name="twitter:title" content="Finisher Legacy — Tu esfuerzo merece una historia">
         <meta name="twitter:description" content="Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.">
         <meta name="twitter:image" content="{{ asset('images/brand/og-finisher-legacy.png') }}">
         <meta name="twitter:image:alt" content="Finisher Legacy — Tu historia. Tu legado.">
@@ -77,29 +77,12 @@
             ], JSON_UNESCAPED_SLASHES) !!}
         </script>
 
-        {{-- Inline script to detect system dark mode preference and apply it immediately --}}
-        <script>
-            (function() {
-                const appearance = '{{ $appearance ?? "system" }}';
-
-                if (appearance === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-                    if (prefersDark) {
-                        document.documentElement.classList.add('dark');
-                    }
-                }
-            })();
-        </script>
-
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- Light is the only theme: paint the warm paper background before
+             CSS loads so there is never a dark/white flash. --}}
+        <meta name="color-scheme" content="light">
         <style>
             html {
-                background-color: oklch(1 0 0);
-            }
-
-            html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: #f8f7f3;
             }
         </style>
 

@@ -108,60 +108,60 @@ function applyFilter(value: string) {
     <Head title="Prerregistros" />
 
     <div class="p-4 md:p-8">
-        <h1 class="mb-1 text-xl font-bold text-white">Prerregistros</h1>
-        <p class="mb-6 text-sm text-white/50">
+        <h1 class="mb-1 text-xl font-bold text-foreground">Prerregistros</h1>
+        <p class="mb-6 text-sm text-muted-foreground">
             Prerregistro al evento y preventa de Legacy Plate, vistos juntos —
             siguen siendo cosas distintas.
         </p>
 
         <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Prerregistros
                 </p>
-                <p class="mt-1 text-2xl font-bold text-white">
+                <p class="mt-1 text-2xl font-bold text-foreground">
                     {{ counters.preregistrations }}
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Preventas Legacy Plate
                 </p>
-                <p class="mt-1 text-2xl font-bold text-fl-gold-soft">
+                <p class="mt-1 text-2xl font-bold text-fl-gold-ink">
                     {{ counters.presales }}
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Pagadas
                 </p>
-                <p class="mt-1 text-2xl font-bold text-emerald-400">
+                <p class="mt-1 text-2xl font-bold text-emerald-700">
                     {{ counters.paid }}
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Pendientes
                 </p>
-                <p class="mt-1 text-2xl font-bold text-amber-400">
+                <p class="mt-1 text-2xl font-bold text-amber-700">
                     {{ counters.pending }}
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Conversión
                 </p>
-                <p class="mt-1 text-2xl font-bold text-white">
+                <p class="mt-1 text-2xl font-bold text-foreground">
                     {{ counters.conversion_rate }}%
                 </p>
             </div>
@@ -175,8 +175,8 @@ function applyFilter(value: string) {
                 class="rounded-full border px-3 py-1.5 text-xs uppercase transition"
                 :class="
                     filters.legacy_plate === option.value
-                        ? 'border-fl-gold text-fl-gold-soft'
-                        : 'border-white/15 text-white/50 hover:border-white/30'
+                        ? 'border-fl-gold text-fl-gold-ink'
+                        : 'border-border text-muted-foreground hover:border-foreground/15'
                 "
                 @click="applyFilter(option.value)"
             >
@@ -190,7 +190,7 @@ function applyFilter(value: string) {
                 @update:model-value="onStatusChange"
             >
                 <SelectTrigger
-                    class="w-48 border-white/10 bg-fl-black text-white"
+                    class="w-48 border-border bg-background text-foreground"
                 >
                     <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
@@ -233,7 +233,7 @@ function applyFilter(value: string) {
             <template #cell-legacy_plate_paid_at="{ row }">
                 <span
                     v-if="row.legacy_plate_price_minor !== null"
-                    class="text-white/70"
+                    class="text-muted-foreground"
                 >
                     <Money
                         :minor="row.legacy_plate_price_minor as number"
@@ -241,24 +241,24 @@ function applyFilter(value: string) {
                             (row.legacy_plate_currency as string) ?? 'MXN'
                         "
                     />
-                    <span class="block text-xs text-white/40">{{
+                    <span class="block text-xs text-muted-foreground/80">{{
                         row.legacy_plate_paid_at ?? '—'
                     }}</span>
                 </span>
-                <span v-else class="text-white/30">—</span>
+                <span v-else class="text-muted-foreground/80">—</span>
             </template>
             <template #cell-participant_linked="{ row }">
                 <Badge
                     v-if="row.participant_linked"
                     variant="outline"
-                    class="border-emerald-500/30 text-emerald-400"
+                    class="border-emerald-500/30 text-emerald-700"
                     >Vinculado
                     {{ row.bib_number ? `· #${row.bib_number}` : '' }}</Badge
                 >
                 <Badge
                     v-else
                     variant="outline"
-                    class="border-white/20 text-white/50"
+                    class="border-foreground/15 text-muted-foreground"
                     >Sin vincular</Badge
                 >
             </template>

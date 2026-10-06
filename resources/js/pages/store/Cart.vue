@@ -74,22 +74,22 @@ function removeCoupon() {
 <template>
     <Head title="Tu carrito — Finisher Legacy" />
 
-    <div class="min-h-screen bg-fl-black">
+    <div class="min-h-screen bg-background">
         <div class="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-6 xl:px-8">
-            <h1 class="text-2xl font-black text-white">Tu carrito</h1>
+            <h1 class="text-2xl font-black text-foreground">Tu carrito</h1>
 
             <div
                 v-if="items.length"
                 class="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]"
             >
-                <div class="divide-y divide-white/10 border-y border-white/10">
+                <div class="divide-y divide-border border-y border-border">
                     <div
                         v-for="item in items"
                         :key="item.id"
                         class="flex items-start gap-4 py-5"
                     >
                         <div
-                            class="size-20 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-fl-graphite/40 sm:size-24"
+                            class="size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-card/40 sm:size-24"
                         >
                             <img
                                 v-if="item.image_url"
@@ -99,31 +99,31 @@ function removeCoupon() {
                             />
                             <div
                                 v-else
-                                class="flex size-full items-center justify-center text-white/20"
+                                class="flex size-full items-center justify-center text-muted-foreground/80"
                             >
                                 <ShoppingCart class="size-6" />
                             </div>
                         </div>
 
                         <div class="min-w-0 flex-1">
-                            <p class="font-medium text-white">
+                            <p class="font-medium text-foreground">
                                 {{ item.product_name }}
                             </p>
                             <p
                                 v-if="item.variant_name"
-                                class="text-sm text-white/40"
+                                class="text-sm text-muted-foreground/80"
                             >
                                 {{ item.variant_name }}
                             </p>
                             <p
                                 v-if="item.event_edition_name"
-                                class="mt-0.5 text-xs text-fl-gold-soft"
+                                class="mt-0.5 text-xs text-fl-gold-ink"
                             >
                                 Para {{ item.event_edition_name }}
                             </p>
                             <p
                                 v-if="!item.price_available"
-                                class="mt-1 flex items-center gap-1 text-xs text-amber-400"
+                                class="mt-1 flex items-center gap-1 text-xs text-amber-700"
                             >
                                 <TriangleAlert class="size-3.5" />
                                 Ya no tiene un precio disponible — quítalo para
@@ -131,13 +131,13 @@ function removeCoupon() {
                             </p>
                             <p
                                 v-else-if="!item.in_stock"
-                                class="mt-1 text-xs text-red-400"
+                                class="mt-1 text-xs text-red-700"
                             >
                                 Ya no disponible
                             </p>
                             <p
                                 v-if="item.price_available"
-                                class="mt-1 text-sm text-white/60"
+                                class="mt-1 text-sm text-muted-foreground"
                             >
                                 <Money
                                     :minor="item.unit_price_minor as number"
@@ -148,11 +148,11 @@ function removeCoupon() {
 
                             <div class="mt-3 flex items-center gap-3">
                                 <div
-                                    class="flex items-center rounded-lg border border-white/15"
+                                    class="flex items-center rounded-lg border border-border"
                                 >
                                     <button
                                         type="button"
-                                        class="p-1.5 text-white/60 hover:text-white disabled:opacity-30"
+                                        class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
                                         :disabled="item.quantity <= 1"
                                         @click="
                                             updateQuantity(
@@ -164,12 +164,12 @@ function removeCoupon() {
                                         <Minus class="size-3.5" />
                                     </button>
                                     <span
-                                        class="w-8 text-center text-sm text-white"
+                                        class="w-8 text-center text-sm text-foreground"
                                         >{{ item.quantity }}</span
                                     >
                                     <button
                                         type="button"
-                                        class="p-1.5 text-white/60 hover:text-white disabled:opacity-30"
+                                        class="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
                                         :disabled="item.quantity >= 20"
                                         @click="
                                             updateQuantity(
@@ -183,7 +183,7 @@ function removeCoupon() {
                                 </div>
                                 <button
                                     type="button"
-                                    class="text-white/30 hover:text-red-400"
+                                    class="text-muted-foreground/80 hover:text-red-700"
                                     @click="removeItem(item)"
                                 >
                                     <Trash2 class="size-4" />
@@ -191,36 +191,40 @@ function removeCoupon() {
                             </div>
                         </div>
 
-                        <p class="shrink-0 font-medium text-white">
+                        <p class="shrink-0 font-medium text-foreground">
                             <Money
                                 v-if="item.price_available"
                                 :minor="item.line_total_minor as number"
                                 :currency="item.currency"
                             />
-                            <span v-else class="text-white/30">—</span>
+                            <span v-else class="text-muted-foreground/80"
+                                >—</span
+                            >
                         </p>
                     </div>
                 </div>
 
                 <div class="lg:sticky lg:top-24 lg:self-start">
                     <div
-                        class="rounded-2xl border border-white/10 bg-fl-graphite/40 p-5"
+                        class="rounded-2xl border border-border bg-card/40 p-5"
                     >
-                        <h2 class="mb-4 font-semibold text-white">Resumen</h2>
+                        <h2 class="mb-4 font-semibold text-foreground">
+                            Resumen
+                        </h2>
 
                         <div
                             v-if="coupon"
                             class="mb-4 flex items-center justify-between rounded-lg border border-fl-gold/30 bg-fl-gold/10 px-3 py-2 text-sm"
                         >
                             <span
-                                class="flex items-center gap-1.5 text-fl-gold-soft"
+                                class="flex items-center gap-1.5 text-fl-gold-ink"
                             >
                                 <Tag class="size-3.5" />
                                 {{ coupon.code }}
                             </span>
                             <button
                                 type="button"
-                                class="text-white/50 hover:text-white"
+                                class="text-muted-foreground hover:text-foreground"
                                 @click="removeCoupon"
                             >
                                 <X class="size-4" />
@@ -234,12 +238,12 @@ function removeCoupon() {
                             <Input
                                 v-model="couponForm.code"
                                 placeholder="Código de descuento"
-                                class="border-white/10 bg-fl-black text-white uppercase placeholder:normal-case"
+                                class="border-border bg-background text-foreground uppercase placeholder:normal-case"
                             />
                             <Button
                                 type="submit"
                                 variant="outline"
-                                class="border-white/15 text-white hover:bg-white/10"
+                                class="border-border text-foreground hover:bg-foreground/5"
                                 :disabled="
                                     couponForm.processing || !couponForm.code
                                 "
@@ -249,15 +253,17 @@ function removeCoupon() {
                         </form>
                         <p
                             v-if="couponForm.errors.code"
-                            class="-mt-2 mb-4 text-xs text-red-400"
+                            class="-mt-2 mb-4 text-xs text-red-700"
                         >
                             {{ couponForm.errors.code }}
                         </p>
 
                         <dl
-                            class="space-y-2 border-t border-white/10 pt-4 text-sm"
+                            class="space-y-2 border-t border-border pt-4 text-sm"
                         >
-                            <div class="flex justify-between text-white/70">
+                            <div
+                                class="flex justify-between text-muted-foreground"
+                            >
                                 <dt>Subtotal</dt>
                                 <dd>
                                     <Money
@@ -268,7 +274,7 @@ function removeCoupon() {
                             </div>
                             <div
                                 v-if="discount_minor > 0"
-                                class="flex justify-between text-emerald-400"
+                                class="flex justify-between text-emerald-700"
                             >
                                 <dt>Descuento</dt>
                                 <dd>
@@ -279,7 +285,7 @@ function removeCoupon() {
                                 </dd>
                             </div>
                             <div
-                                class="flex justify-between border-t border-white/10 pt-2 text-base font-semibold text-white"
+                                class="flex justify-between border-t border-border pt-2 text-base font-semibold text-foreground"
                             >
                                 <dt>Total</dt>
                                 <dd>
@@ -311,11 +317,11 @@ function removeCoupon() {
 
             <div
                 v-else
-                class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-white/30"
+                class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-muted-foreground/80"
             >
                 <ShoppingCart class="size-10" />
                 <p>Tu carrito está vacío.</p>
-                <Link href="/tienda" class="text-fl-gold-soft hover:underline"
+                <Link href="/tienda" class="text-fl-gold-ink hover:underline"
                     >Ir a la tienda</Link
                 >
             </div>

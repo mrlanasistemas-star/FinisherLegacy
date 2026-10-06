@@ -92,6 +92,7 @@ export type PublicAthleteProfile = {
     username: string;
     bio: string | null;
     city: string | null;
+    state?: string | null;
     country: string | null;
     sport: string | null;
     photo_url: string | null;

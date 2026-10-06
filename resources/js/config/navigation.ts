@@ -31,10 +31,16 @@
  * earns its top-level slot only if someone reaches for it often —
  * everything else moves to an area's SecondaryNav tab bar
  * (resources/js/config/areaNav.ts) instead of disappearing. That's why
- * Importaciones, Modelos, Preventas, Pagos, Cupones, Roles y permisos and
- * Auditoría aren't in this list even though their routes/pages are very
- * much alive — Importaciones lives inside its Event context, the rest
- * live in the Legacy Plate / Comercio / Sistema area tab bars.
+ * Importaciones, Modelos, Preventas, Pagos and Cupones aren't in this list
+ * even though their routes/pages are very much alive — Importaciones lives
+ * inside its Event context, the rest live in the Legacy Plate / Comercio
+ * area tab bars (resources/js/config/areaNav.ts).
+ *
+ * Light redesign (2026-10): groups now read Resumen / Producción / Eventos /
+ * Contenido / Personas / Sistema. "Contenido" holds the new admin screens
+ * (Fotografías, Comunidad, Nosotros y trayectoria, Mensajes); Roles y
+ * permisos and Auditoría got a top-level slot in Sistema. Same rule as
+ * always: every entry is a real route guarded by the same `can:` key.
  */
 import type { LucideIcon } from '@lucide/vue';
 import { resolveIcon } from '@/lib/iconMap';
@@ -44,7 +50,7 @@ export type NavGroup =
     | 'resumen'
     | 'eventos'
     | 'legacyplates'
-    | 'tienda'
+    | 'contenido'
     | 'atletas'
     | 'sistema';
 
@@ -63,10 +69,10 @@ export interface NavItem {
 
 export const navGroupLabels: Record<NavGroup, string> = {
     legacy: 'Personal',
-    resumen: 'Panel administrativo',
+    resumen: 'Resumen',
     eventos: 'Eventos',
-    legacyplates: 'Legacy Plates',
-    tienda: 'Tienda',
+    legacyplates: 'Producción',
+    contenido: 'Contenido',
     atletas: 'Personas',
     sistema: 'Sistema',
 };
@@ -89,12 +95,26 @@ export const navigation: NavItem[] = [
         group: 'legacy',
     },
     {
+        label: 'Comunidad',
+        icon: resolveIcon('MessagesSquare'),
+        href: '/comunidad',
+        permission: null,
+        group: 'legacy',
+        mobilePriority: true,
+    },
+    {
+        label: 'Mis fotos',
+        icon: resolveIcon('Camera'),
+        href: '/fotos',
+        permission: null,
+        group: 'legacy',
+    },
+    {
         label: 'Mi equipo',
         icon: resolveIcon('Package'),
         href: '/dashboard/my-gear',
         permission: null,
         group: 'legacy',
-        mobilePriority: true,
     },
     {
         label: 'Mis pedidos',
@@ -119,6 +139,7 @@ export const navigation: NavItem[] = [
         mobilePriority: true,
     },
 
+    // Resumen — the business at a glance, plus commerce.
     {
         label: 'Inicio',
         icon: resolveIcon('LayoutGrid'),
@@ -126,6 +147,59 @@ export const navigation: NavItem[] = [
         permission: 'dashboard.admin.view',
         group: 'resumen',
         exact: true,
+    },
+    {
+        label: 'Pedidos',
+        icon: resolveIcon('ShoppingCart'),
+        href: '/admin/orders',
+        permission: 'orders.view',
+        group: 'resumen',
+        mobilePriority: true,
+    },
+    {
+        label: 'Productos',
+        icon: resolveIcon('Package'),
+        href: '/admin/products',
+        permission: 'products.manage',
+        group: 'resumen',
+    },
+    {
+        label: 'Categorías',
+        icon: resolveIcon('Tags'),
+        href: '/admin/product-categories',
+        permission: 'products.manage',
+        group: 'resumen',
+    },
+    {
+        label: 'Inventario',
+        icon: resolveIcon('Warehouse'),
+        href: '/admin/inventory',
+        permission: 'inventory.manage',
+        group: 'resumen',
+    },
+
+    // Producción — a Legacy Plate from engraving to its NFC/Legacy Code link.
+    {
+        label: 'Personalización',
+        icon: resolveIcon('Factory'),
+        href: '/admin/legacy-plates/production',
+        permission: 'legacyplates.produce',
+        group: 'legacyplates',
+        mobilePriority: true,
+    },
+    {
+        label: 'Legacy Plates',
+        icon: resolveIcon('Boxes'),
+        href: '/admin/plates',
+        permission: 'plates.view',
+        group: 'legacyplates',
+    },
+    {
+        label: 'Vinculación NFC',
+        icon: resolveIcon('QrCode'),
+        href: '/admin/legacy-codes',
+        permission: 'legacycodes.view',
+        group: 'legacyplates',
     },
 
     {
@@ -165,42 +239,34 @@ export const navigation: NavItem[] = [
         group: 'eventos',
     },
 
+    // Contenido — what the public site shows.
     {
-        label: 'Producción',
-        icon: resolveIcon('Factory'),
-        href: '/admin/legacy-plates/production',
-        permission: 'legacyplates.produce',
-        group: 'legacyplates',
-        mobilePriority: true,
+        label: 'Fotografías',
+        icon: resolveIcon('Image'),
+        href: '/admin/photos',
+        permission: 'media.manage',
+        group: 'contenido',
     },
     {
-        label: 'Placas',
-        icon: resolveIcon('Boxes'),
-        href: '/admin/plates',
-        permission: 'plates.view',
-        group: 'legacyplates',
-    },
-
-    {
-        label: 'Productos',
-        icon: resolveIcon('Package'),
-        href: '/admin/products',
-        permission: 'products.manage',
-        group: 'tienda',
+        label: 'Comunidad',
+        icon: resolveIcon('MessagesSquare'),
+        href: '/admin/community',
+        permission: 'community.moderate',
+        group: 'contenido',
     },
     {
-        label: 'Pedidos',
-        icon: resolveIcon('ShoppingCart'),
-        href: '/admin/orders',
-        permission: 'orders.view',
-        group: 'tienda',
+        label: 'Nosotros y trayectoria',
+        icon: resolveIcon('Newspaper'),
+        href: '/admin/content',
+        permission: 'content.manage',
+        group: 'contenido',
     },
     {
-        label: 'Inventario',
-        icon: resolveIcon('Warehouse'),
-        href: '/admin/inventory',
-        permission: 'inventory.manage',
-        group: 'tienda',
+        label: 'Mensajes de contacto',
+        icon: resolveIcon('Inbox'),
+        href: '/admin/messages',
+        permission: 'content.manage',
+        group: 'contenido',
     },
 
     {
@@ -225,6 +291,20 @@ export const navigation: NavItem[] = [
         permission: 'dashboard.admin.view',
         group: 'sistema',
     },
+    {
+        label: 'Roles y permisos',
+        icon: resolveIcon('ShieldCheck'),
+        href: '/admin/roles',
+        permission: 'roles.manage',
+        group: 'sistema',
+    },
+    {
+        label: 'Auditoría',
+        icon: resolveIcon('History'),
+        href: '/admin/audit',
+        permission: 'audit.view',
+        group: 'sistema',
+    },
 ];
 
 export function visibleNavigation(permissions: string[]): NavItem[] {
@@ -242,9 +322,9 @@ export function groupedNavigation(
     const groups: NavGroup[] = [
         'legacy',
         'resumen',
-        'eventos',
         'legacyplates',
-        'tienda',
+        'eventos',
+        'contenido',
         'atletas',
         'sistema',
     ];

@@ -103,14 +103,14 @@ async function removeGalleryImage(medalImageId: number) {
     <Head :title="`Editar ${medal.title}`" />
 
     <div class="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
-        <h1 class="text-xl font-bold text-white">Editar medalla</h1>
+        <h1 class="text-xl font-bold text-foreground">Editar medalla</h1>
 
         <div
             v-if="medal.is_official"
             class="flex items-start gap-3 rounded-xl border border-fl-gold/20 bg-fl-gold/5 p-4"
         >
-            <Lock class="mt-0.5 size-4 shrink-0 text-fl-gold" />
-            <p class="text-sm text-white/70">
+            <Lock class="mt-0.5 size-4 shrink-0 text-fl-gold-ink" />
+            <p class="text-sm text-muted-foreground">
                 Esta medalla está vinculada a un resultado oficial verificado.
                 El evento, la fecha y el resultado no se pueden editar aquí para
                 proteger la información oficial.
@@ -120,25 +120,33 @@ async function removeGalleryImage(medalImageId: number) {
         <form class="space-y-6" @submit.prevent="submit">
             <div
                 v-if="medal.is_official"
-                class="grid gap-4 rounded-xl border border-white/10 bg-fl-graphite/40 p-4 sm:grid-cols-2"
+                class="grid gap-4 rounded-xl border border-border bg-card/40 p-4 sm:grid-cols-2"
             >
                 <div>
-                    <p class="text-xs text-white/40 uppercase">Evento</p>
-                    <p class="text-white">{{ medal.event_name }}</p>
+                    <p class="text-xs text-muted-foreground/80 uppercase">
+                        Evento
+                    </p>
+                    <p class="text-foreground">{{ medal.event_name }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-white/40 uppercase">Distancia</p>
-                    <p class="text-white">{{ medal.race_name }}</p>
+                    <p class="text-xs text-muted-foreground/80 uppercase">
+                        Distancia
+                    </p>
+                    <p class="text-foreground">{{ medal.race_name }}</p>
                 </div>
                 <div v-if="medal.official_time">
-                    <p class="text-xs text-white/40 uppercase">Tiempo</p>
-                    <p class="font-mono text-fl-gold">
+                    <p class="text-xs text-muted-foreground/80 uppercase">
+                        Tiempo
+                    </p>
+                    <p class="font-mono text-fl-gold-ink">
                         {{ medal.official_time }}
                     </p>
                 </div>
                 <div v-if="medal.pace">
-                    <p class="text-xs text-white/40 uppercase">Ritmo</p>
-                    <p class="text-white">{{ medal.pace }}</p>
+                    <p class="text-xs text-muted-foreground/80 uppercase">
+                        Ritmo
+                    </p>
+                    <p class="text-foreground">{{ medal.pace }}</p>
                 </div>
             </div>
 
@@ -208,7 +216,7 @@ async function removeGalleryImage(medalImageId: number) {
                 <div class="grid gap-2">
                     <Label for="front_image">Reemplazar frente</Label>
                     <div
-                        class="aspect-square overflow-hidden rounded-xl border border-white/10 bg-fl-black"
+                        class="aspect-square overflow-hidden rounded-xl border border-border bg-background"
                     >
                         <img
                             v-if="frontPreview"
@@ -233,7 +241,7 @@ async function removeGalleryImage(medalImageId: number) {
                 <div class="grid gap-2">
                     <Label for="back_image">Reemplazar reverso</Label>
                     <div
-                        class="aspect-square overflow-hidden rounded-xl border border-white/10 bg-fl-black"
+                        class="aspect-square overflow-hidden rounded-xl border border-border bg-background"
                     >
                         <img
                             v-if="backPreview"
@@ -267,7 +275,7 @@ async function removeGalleryImage(medalImageId: number) {
                     <div
                         v-for="image in medal.gallery_images"
                         :key="image.id"
-                        class="relative size-20 overflow-hidden rounded-lg border border-white/10"
+                        class="relative size-20 overflow-hidden rounded-lg border border-border"
                     >
                         <img
                             v-if="image.url"
@@ -277,7 +285,7 @@ async function removeGalleryImage(medalImageId: number) {
                         />
                         <button
                             type="button"
-                            class="fl-focus-glow absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-fl-black/80 text-white/70 hover:text-white"
+                            class="fl-focus-glow absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-background/80 text-muted-foreground hover:text-foreground"
                             aria-label="Quitar imagen"
                             @click="removeGalleryImage(image.id)"
                         >
@@ -296,7 +304,7 @@ async function removeGalleryImage(medalImageId: number) {
 
             <p
                 v-if="quotaError"
-                class="fl-error-shake rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400"
+                class="fl-error-shake rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-700"
             >
                 {{ quotaError }}
             </p>

@@ -13,10 +13,16 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type AuthProfile = {
+    username: string;
+    photo_url: string | null;
+};
+
 export type Auth = {
-    user: User;
+    user: User | null;
     permissions: string[];
     isSuperAdmin: boolean;
+    profile: AuthProfile | null;
 };
 
 /* @chisel-passkeys */

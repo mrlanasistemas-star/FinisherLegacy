@@ -30,7 +30,7 @@ function scrollNext() {
 <template>
     <button
         type="button"
-        class="fl-focus-glow group flex flex-col items-center gap-2 text-white/40 transition-colors hover:text-fl-gold-soft"
+        class="fl-focus-glow group flex flex-col items-center gap-2 text-muted-foreground/80 transition-colors hover:text-fl-gold-ink"
         @click="scrollNext"
     >
         <span class="text-[10px] font-semibold tracking-[0.3em] uppercase">{{

@@ -52,9 +52,9 @@ const columns = [
 ];
 
 const eventBadgeClass: Record<string, string> = {
-    created: 'border-emerald-500/30 text-emerald-400',
-    updated: 'border-amber-500/30 text-amber-400',
-    deleted: 'border-red-500/30 text-red-400',
+    created: 'border-emerald-500/30 text-emerald-700',
+    updated: 'border-amber-500/30 text-amber-700',
+    deleted: 'border-red-500/30 text-red-700',
 };
 
 function updateFilter(key: string, value: string | number | null) {
@@ -73,10 +73,10 @@ function updateFilter(key: string, value: string | number | null) {
         <SecondaryNav :items="SYSTEM_AREA_NAV" />
 
         <div class="mb-6 flex items-center gap-2">
-            <History class="size-5 text-fl-gold" />
+            <History class="size-5 text-fl-gold-ink" />
             <div>
-                <h1 class="text-xl font-bold text-white">Auditoría</h1>
-                <p class="text-sm text-white/50">
+                <h1 class="text-xl font-bold text-foreground">Auditoría</h1>
+                <p class="text-sm text-muted-foreground">
                     Quién hizo qué, cuándo y sobre qué registro.
                 </p>
             </div>
@@ -94,7 +94,7 @@ function updateFilter(key: string, value: string | number | null) {
                 "
             >
                 <SelectTrigger
-                    class="w-48 border-white/10 bg-fl-graphite/60 text-white"
+                    class="w-48 border-border bg-card/60 text-foreground"
                 >
                     <SelectValue placeholder="Todos los usuarios" />
                 </SelectTrigger>
@@ -117,7 +117,7 @@ function updateFilter(key: string, value: string | number | null) {
                 "
             >
                 <SelectTrigger
-                    class="w-40 border-white/10 bg-fl-graphite/60 text-white"
+                    class="w-40 border-border bg-card/60 text-foreground"
                 >
                     <SelectValue placeholder="Toda acción" />
                 </SelectTrigger>
@@ -140,7 +140,7 @@ function updateFilter(key: string, value: string | number | null) {
                 "
             >
                 <SelectTrigger
-                    class="w-44 border-white/10 bg-fl-graphite/60 text-white"
+                    class="w-44 border-border bg-card/60 text-foreground"
                 >
                     <SelectValue placeholder="Todo tipo" />
                 </SelectTrigger>
@@ -159,7 +159,7 @@ function updateFilter(key: string, value: string | number | null) {
             <Input
                 type="date"
                 :model-value="filters.from"
-                class="w-40 border-white/10 bg-fl-graphite/60 text-white"
+                class="w-40 border-border bg-card/60 text-foreground"
                 @change="
                     (e: Event) =>
                         updateFilter(
@@ -171,7 +171,7 @@ function updateFilter(key: string, value: string | number | null) {
             <Input
                 type="date"
                 :model-value="filters.to"
-                class="w-40 border-white/10 bg-fl-graphite/60 text-white"
+                class="w-40 border-border bg-card/60 text-foreground"
                 @change="
                     (e: Event) =>
                         updateFilter('to', (e.target as HTMLInputElement).value)
@@ -185,16 +185,19 @@ function updateFilter(key: string, value: string | number | null) {
                     variant="outline"
                     :class="
                         eventBadgeClass[row.event as string] ??
-                        'border-white/20 text-white/50'
+                        'border-foreground/15 text-muted-foreground'
                     "
                 >
                     {{ row.event_label }}
                 </Badge>
             </template>
             <template #cell-subject_type="{ row }">
-                <span class="text-white/60">
+                <span class="text-muted-foreground">
                     {{ row.subject_type_label
-                    }}<span v-if="row.subject_id" class="text-white/30">
+                    }}<span
+                        v-if="row.subject_id"
+                        class="text-muted-foreground/80"
+                    >
                         #{{ row.subject_id }}</span
                     >
                 </span>

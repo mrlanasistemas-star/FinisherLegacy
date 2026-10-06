@@ -99,14 +99,16 @@ const stages = ['Listón', 'Se sujeta', 'Medalla completa'];
             <template v-for="(stage, index) in stages" :key="stage">
                 <span
                     class="transition-colors duration-500"
-                    :class="played ? 'text-fl-gold-soft' : 'text-white/30'"
+                    :class="
+                        played ? 'text-fl-gold-ink' : 'text-muted-foreground/80'
+                    "
                     :style="{ transitionDelay: `${index * 450 + 200}ms` }"
                 >
                     {{ stage }}
                 </span>
                 <span
                     v-if="index < stages.length - 1"
-                    class="text-white/15"
+                    class="text-muted-foreground/80"
                     aria-hidden="true"
                     >·</span
                 >

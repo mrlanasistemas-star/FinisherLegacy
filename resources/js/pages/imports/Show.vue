@@ -45,20 +45,20 @@ onBeforeUnmount(() => {
 
     <div class="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
         <div>
-            <h1 class="text-xl font-bold text-white">
+            <h1 class="text-xl font-bold text-foreground">
                 {{ importData.filename }}
             </h1>
-            <p class="mt-1 text-sm text-white/50">
+            <p class="mt-1 text-sm text-muted-foreground">
                 {{ importData.event }} — {{ importData.edition }}
             </p>
         </div>
 
-        <div class="rounded-xl border border-white/10 bg-fl-graphite/40 p-5">
+        <div class="rounded-xl border border-border bg-card/40 p-5">
             <div class="mb-2 flex items-center justify-between text-sm">
-                <span class="text-white/70">{{
+                <span class="text-muted-foreground">{{
                     statusLabel(importStatus, importData.status)
                 }}</span>
-                <span class="text-white/40"
+                <span class="text-muted-foreground/80"
                     >{{ importData.processed_rows }} /
                     {{ importData.total_rows ?? '…' }}</span
                 >
@@ -67,14 +67,18 @@ onBeforeUnmount(() => {
 
             <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
                 <div>
-                    <p class="text-xs text-white/40 uppercase">Correctos</p>
-                    <p class="text-lg font-semibold text-emerald-400">
+                    <p class="text-xs text-muted-foreground/80 uppercase">
+                        Correctos
+                    </p>
+                    <p class="text-lg font-semibold text-emerald-700">
                         {{ importData.successful_rows }}
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs text-white/40 uppercase">Con errores</p>
-                    <p class="text-lg font-semibold text-red-400">
+                    <p class="text-xs text-muted-foreground/80 uppercase">
+                        Con errores
+                    </p>
+                    <p class="text-lg font-semibold text-red-700">
                         {{ importData.failed_rows }}
                     </p>
                 </div>
@@ -82,14 +86,16 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-if="errors.length">
-            <h2 class="mb-2 text-sm font-semibold text-white/60 uppercase">
+            <h2
+                class="mb-2 text-sm font-semibold text-muted-foreground uppercase"
+            >
                 Errores ({{ errors.length }})
             </h2>
             <div class="max-h-80 space-y-1 overflow-y-auto">
                 <div
                     v-for="error in errors"
                     :key="error.row_number"
-                    class="rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-300"
+                    class="rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-700"
                 >
                     Fila {{ error.row_number }}: {{ error.error_message }}
                 </div>

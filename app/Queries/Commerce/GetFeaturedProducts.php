@@ -2,6 +2,7 @@
 
 namespace App\Queries\Commerce;
 
+use App\Enums\ProductAvailability;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,6 +27,7 @@ class GetFeaturedProducts
             ->with(['category', 'variants.inventoryLevels', 'media'])
             ->where('active', true)
             ->where('status', 'active')
+            ->orderBy('sort_order')
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get();
@@ -46,7 +48,10 @@ class GetFeaturedProducts
         $galleryImages = $product->relationLoaded('media')
             ? $product->media->where('type', 'image')->sortByDesc('is_primary')->values()
             : collect();
-        $hoverImage = $galleryImages->get(1);
+        // An image explicitly marked as hover wins; otherwise the second
+        // gallery image (admin-managed either way, never hardcoded).
+        $hoverImage = $galleryImages->first(fn ($media) => $media->is_hover && ! $media->is_primary) ?? $galleryImages->get(1);
+        $availability = $product->availability ?? ProductAvailability::Available;
 
         return [
             'uuid' => $product->uuid,
@@ -54,10 +59,15 @@ class GetFeaturedProducts
             'slug' => $product->slug,
             'type' => $product->type->value,
             'category' => $product->category?->name,
+            'category_slug' => $product->category?->slug,
+            'tagline' => $product->tagline,
+            'availability' => $availability->value,
+            'availability_label' => $availability->label(),
             'from_price_minor' => $product->variants->min('base_price_minor'),
             'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
             'in_stock' => $product->variants->contains(fn (ProductVariant $variant) => $variant->isAvailable()),
             'image_url' => $product->primaryImageUrl(),
+            'image_alt' => $galleryImages->first()?->alt_text,
             'hover_image_url' => $hoverImage?->url(),
             'variant_count' => $product->variants->count(),
         ];

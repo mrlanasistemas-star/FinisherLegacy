@@ -122,80 +122,92 @@ const eventJsonLd = computed(() => {
         </script>
     </Head>
 
-    <section class="relative border-b border-white/5">
+    <section class="fl-container pt-8 sm:pt-10">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="fl-eyebrow">{{ event.sport }}</span>
+            <Badge
+                v-if="edition"
+                variant="outline"
+                class="rounded-full border-border bg-card text-muted-foreground"
+            >
+                {{ phaseCopy[edition.phase] }}
+            </Badge>
+        </div>
+        <h1 class="fl-display mt-4 max-w-4xl text-4xl sm:text-6xl">
+            {{ event.name }}
+        </h1>
+        <p v-if="event.organizer" class="mt-3 text-sm text-muted-foreground">
+            Organizado por {{ event.organizer }}
+        </p>
+
         <div
-            class="relative flex h-72 items-end overflow-hidden bg-gradient-to-br from-fl-graphite-light via-fl-graphite to-fl-black sm:h-96"
+            class="relative mt-8 aspect-[16/9] overflow-hidden rounded-2xl bg-fl-cream sm:aspect-[21/9]"
         >
             <img
                 v-if="event.cover_url"
                 :src="event.cover_url"
-                :alt="event.name"
-                class="absolute inset-0 size-full object-cover opacity-60"
+                :alt="`Portada de ${event.name}`"
+                class="size-full object-cover"
+                fetchpriority="high"
             />
             <div
-                class="absolute inset-0 bg-gradient-to-t from-fl-black via-fl-black/40 to-transparent"
-            />
-
-            <div
-                class="relative mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6 lg:px-8"
+                v-else
+                class="flex size-full items-end p-6 sm:p-10"
+                aria-hidden="true"
+                style="
+                    background-image:
+                        radial-gradient(
+                            circle at 85% 20%,
+                            rgb(201 164 92 / 0.25),
+                            transparent 55%
+                        ),
+                        repeating-linear-gradient(
+                            115deg,
+                            rgb(23 23 20 / 0.035) 0px,
+                            rgb(23 23 20 / 0.035) 1px,
+                            transparent 1px,
+                            transparent 7px
+                        );
+                "
             >
-                <div class="flex flex-wrap items-center gap-2">
-                    <Badge
-                        variant="outline"
-                        class="border-fl-gold/30 bg-fl-black/60 text-fl-gold-soft"
-                    >
-                        {{ event.sport }}
-                    </Badge>
-                    <Badge
-                        v-if="edition"
-                        variant="outline"
-                        class="border-white/15 bg-fl-black/60 text-white/60"
-                    >
-                        {{ phaseCopy[edition.phase] }}
-                    </Badge>
-                </div>
-                <h1
-                    class="mt-4 text-3xl font-bold tracking-tight text-white sm:text-5xl"
+                <span
+                    class="font-serif text-3xl text-foreground/40 sm:text-5xl"
+                    >{{ event.sport }}</span
                 >
-                    {{ event.name }}
-                </h1>
-                <p v-if="event.organizer" class="mt-2 text-sm text-white/50">
-                    Organizado por {{ event.organizer }}
-                </p>
             </div>
         </div>
     </section>
 
-    <section class="py-16">
-        <div
-            class="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-3 lg:px-8"
-        >
+    <section class="py-12 sm:py-16">
+        <div class="fl-container grid gap-12 lg:grid-cols-3">
             <div class="space-y-10 lg:col-span-2">
                 <div v-if="event.description">
-                    <h2 class="text-lg font-semibold text-white">
+                    <h2 class="font-serif text-2xl text-foreground">
                         Sobre el evento
                     </h2>
                     <p
-                        class="mt-3 leading-relaxed whitespace-pre-line text-white/60"
+                        class="mt-3 leading-relaxed whitespace-pre-line text-muted-foreground"
                     >
                         {{ event.description }}
                     </p>
                 </div>
 
                 <div v-if="edition">
-                    <h2 class="text-lg font-semibold text-white">Distancias</h2>
+                    <h2 class="font-serif text-2xl text-foreground">
+                        Distancias
+                    </h2>
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
                         <div
                             v-for="race in edition.races"
                             :key="race.name"
-                            class="flex items-center justify-between rounded-xl border border-white/10 bg-fl-graphite/40 px-4 py-3"
+                            class="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3"
                         >
-                            <span class="font-medium text-white">{{
+                            <span class="font-medium text-foreground">{{
                                 race.name
                             }}</span>
                             <span
                                 v-if="race.start_time"
-                                class="text-sm text-white/40"
+                                class="text-sm text-muted-foreground/80"
                             >
                                 {{ race.start_time }}
                             </span>
@@ -205,7 +217,7 @@ const eventJsonLd = computed(() => {
 
                 <div
                     v-else
-                    class="rounded-xl border border-white/10 bg-fl-graphite/40 p-6 text-white/60"
+                    class="rounded-xl border border-border bg-card p-6 text-muted-foreground"
                 >
                     Este evento todavía no tiene una edición publicada con fecha
                     activa.
@@ -215,16 +227,18 @@ const eventJsonLd = computed(() => {
             <aside class="space-y-6">
                 <div
                     v-if="edition"
-                    class="space-y-5 rounded-2xl border border-white/10 bg-fl-graphite/50 p-6"
+                    class="space-y-5 rounded-2xl border border-border bg-card p-6"
                 >
                     <div class="flex items-start gap-3">
                         <Calendar
-                            class="mt-0.5 size-4 shrink-0 text-fl-gold-soft"
+                            class="mt-0.5 size-4 shrink-0 text-fl-gold-ink"
                         />
                         <div>
-                            <p class="text-xs text-white/40">Fecha</p>
+                            <p class="text-xs text-muted-foreground/80">
+                                Fecha
+                            </p>
                             <p
-                                class="text-sm font-medium text-white capitalize"
+                                class="text-sm font-medium text-foreground capitalize"
                             >
                                 {{ formattedDate }}
                             </p>
@@ -232,22 +246,26 @@ const eventJsonLd = computed(() => {
                     </div>
                     <div class="flex items-start gap-3">
                         <MapPin
-                            class="mt-0.5 size-4 shrink-0 text-fl-gold-soft"
+                            class="mt-0.5 size-4 shrink-0 text-fl-gold-ink"
                         />
                         <div>
-                            <p class="text-xs text-white/40">Ubicación</p>
-                            <p class="text-sm font-medium text-white">
+                            <p class="text-xs text-muted-foreground/80">
+                                Ubicación
+                            </p>
+                            <p class="text-sm font-medium text-foreground">
                                 {{ edition.city }}, {{ edition.country }}
                             </p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <Trophy
-                            class="mt-0.5 size-4 shrink-0 text-fl-gold-soft"
+                            class="mt-0.5 size-4 shrink-0 text-fl-gold-ink"
                         />
                         <div>
-                            <p class="text-xs text-white/40">Edición</p>
-                            <p class="text-sm font-medium text-white">
+                            <p class="text-xs text-muted-foreground/80">
+                                Edición
+                            </p>
+                            <p class="text-sm font-medium text-foreground">
                                 {{ edition.name }} · {{ edition.year }}
                             </p>
                         </div>
@@ -257,10 +275,10 @@ const eventJsonLd = computed(() => {
                         v-if="edition.phase !== 'finished'"
                         as-child
                         size="lg"
-                        class="w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                        class="w-full rounded-full"
                     >
                         <Link :href="preregister(event.slug)">
-                            PRERREGISTRARME
+                            Prerregistrarme
                         </Link>
                     </Button>
                 </div>

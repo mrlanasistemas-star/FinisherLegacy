@@ -2,17 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AthleteEventMediaType;
+use App\Http\Resources\Api\V1\MomentResource;
+use App\Models\AthleteEventMedia;
+use App\Models\AthleteFollow;
+use App\Models\LegacyMoment;
+use App\Models\Medal;
 use App\Queries\Athletes\GetAthleteLegado;
+use App\Queries\Social\MomentQuery;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, GetAthleteLegado $legado): Response
+    public function index(Request $request, GetAthleteLegado $legado, MomentQuery $moments): Response
     {
         $user = $request->user();
-        $user->loadMissing(['legacyId', 'athleteProfile']);
+        $user->loadMissing(['legacyId', 'athleteProfile.mainSport']);
 
         // Read-only counts for "Mi Legado" (product UX consolidation brief
         // §3-§6): the ecosystem summary reaches beyond medals/events into
@@ -52,6 +60,63 @@ class DashboardController extends Controller
                 'media' => $athlete === null ? 0 : $athlete->eventMedia()->count(),
             ],
             'legado' => $athlete === null ? [] : $legado->handle($athlete),
+
+            // Editorial "Mi Legado" header — the athlete's own data only.
+            'athlete' => [
+                'name' => $user->name,
+                'username' => $profile?->username,
+                'bio' => $profile?->bio,
+                'city' => $profile?->city,
+                'state' => $profile?->state,
+                'country' => $profile?->country,
+                'sport' => $profile?->mainSport?->name,
+                'photo_url' => $profile?->profile_photo_path ? Storage::disk('public')->url($profile->profile_photo_path) : null,
+                'cover_url' => $profile?->cover_photo_path ? Storage::disk('public')->url($profile->cover_photo_path) : null,
+            ],
+            'social' => [
+                'followers' => AthleteFollow::query()->where('following_id', $user->id)->count(),
+                'following' => AthleteFollow::query()->where('follower_id', $user->id)->count(),
+                'posts' => LegacyMoment::query()->where('user_id', $user->id)->count(),
+            ],
+            'medals' => Medal::query()
+                ->where('user_id', $user->id)
+                ->with('images')
+                ->latest('event_date')
+                ->limit(12)
+                ->get()
+                ->map(function (Medal $medal) {
+                    $front = $medal->images->firstWhere('type', 'front') ?? $medal->images->first();
+
+                    return [
+                        'id' => $medal->id,
+                        'title' => $medal->title,
+                        'distance_label' => $medal->distance_label,
+                        'event_date' => $medal->event_date?->toDateString(),
+                        'visibility' => $medal->visibility->value,
+                        'thumbnail_url' => $front?->thumbnail_path ? Storage::disk('public')->url($front->thumbnail_path) : null,
+                    ];
+                }),
+            'recentPhotos' => $athlete === null ? [] : AthleteEventMedia::query()
+                ->where('athlete_id', $athlete->id)
+                ->where('type', AthleteEventMediaType::Image)
+                ->with('eventParticipant.eventEdition.event')
+                ->latest('id')
+                ->limit(12)
+                ->get()
+                ->map(fn (AthleteEventMedia $media) => [
+                    'uuid' => $media->uuid,
+                    'url' => $media->url(),
+                    'is_public' => $media->is_public,
+                    'event' => $media->eventParticipant?->eventEdition?->event?->name,
+                    'participant_id' => $media->event_participant_id,
+                ]),
+            'recentPosts' => MomentResource::collection(
+                $moments->visibleTo($user)
+                    ->where('legacy_moments.user_id', $user->id)
+                    ->orderByDesc('legacy_moments.id')
+                    ->limit(3)
+                    ->get()
+            )->resolve($request),
         ]);
     }
 }

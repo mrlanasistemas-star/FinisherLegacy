@@ -142,7 +142,9 @@ function submit() {
     <Head title="Nueva importación" />
 
     <div class="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
-        <h1 class="text-xl font-bold text-white">Importar participantes</h1>
+        <h1 class="text-xl font-bold text-foreground">
+            Importar participantes
+        </h1>
 
         <div class="grid gap-2">
             <Label>Evento</Label>
@@ -165,17 +167,17 @@ function submit() {
         <div v-if="step === 'upload'" class="grid gap-2">
             <Label>Archivo (CSV o XLSX)</Label>
             <div
-                class="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 p-10 text-center"
+                class="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border p-10 text-center"
             >
-                <Upload class="size-6 text-white/40" />
-                <p class="text-sm text-white/50">
+                <Upload class="size-6 text-muted-foreground/80" />
+                <p class="text-sm text-muted-foreground">
                     Debe incluir una fila de encabezados
                 </p>
                 <input
                     type="file"
                     accept=".csv,.txt,.xlsx,.xls"
                     :disabled="!eventEditionId || uploading"
-                    class="mt-2 text-sm text-white/70"
+                    class="mt-2 text-sm text-muted-foreground"
                     @change="onFileChange"
                 />
                 <Spinner v-if="uploading" />
@@ -183,14 +185,14 @@ function submit() {
         </div>
 
         <div v-else class="space-y-5">
-            <p class="text-sm text-white/50">
+            <p class="text-sm text-muted-foreground">
                 {{ originalFilename }} — asigna cada columna de tu archivo:
             </p>
 
             <div v-for="field in fields" :key="field.key" class="grid gap-2">
                 <Label
                     >{{ field.label }}
-                    <span v-if="field.required" class="text-fl-gold"
+                    <span v-if="field.required" class="text-fl-gold-ink"
                         >*</span
                     ></Label
                 >
@@ -249,7 +251,7 @@ function submit() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        class="shrink-0 text-white/40 hover:text-red-400"
+                        class="shrink-0 text-muted-foreground/80 hover:text-red-700"
                         @click="removeSplitRow(index)"
                     >
                         <Trash2 class="size-4" />
@@ -259,7 +261,7 @@ function submit() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     @click="addSplitRow"
                 >
                     <Plus class="size-4" />

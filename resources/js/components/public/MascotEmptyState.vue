@@ -9,13 +9,13 @@ defineProps<{
 
 <template>
     <div
-        class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/15 bg-fl-graphite/30 px-6 py-14 text-center"
+        class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/30 px-6 py-14 text-center"
     >
         <FinisherMascot variant="empty" />
 
         <div class="max-w-sm">
-            <h3 class="text-base font-semibold text-white">{{ title }}</h3>
-            <p v-if="description" class="mt-1.5 text-sm text-white/50">
+            <h3 class="text-base font-semibold text-foreground">{{ title }}</h3>
+            <p v-if="description" class="mt-1.5 text-sm text-muted-foreground">
                 {{ description }}
             </p>
         </div>

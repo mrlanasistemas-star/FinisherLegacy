@@ -43,27 +43,27 @@ async function handleDelete() {
         <div class="mb-6 flex items-start justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="text-2xl font-bold text-white">
+                    <h1 class="text-2xl font-bold text-foreground">
                         {{ medal.title }}
                     </h1>
                     <Badge
                         v-if="medal.is_official"
                         variant="outline"
-                        class="border-fl-gold/30 text-fl-gold"
+                        class="border-fl-gold/30 text-fl-gold-ink"
                     >
                         Resultado oficial
                     </Badge>
                     <Badge
                         v-if="medal.visibility === 'private'"
                         variant="outline"
-                        class="border-white/15 text-white/50"
+                        class="border-border text-muted-foreground"
                     >
                         Privada
                     </Badge>
                 </div>
                 <p
                     v-if="medal.event_name || medal.race_name"
-                    class="mt-1 text-sm text-white/50"
+                    class="mt-1 text-sm text-muted-foreground"
                 >
                     {{
                         [medal.event_name, medal.race_name]
@@ -78,7 +78,7 @@ async function handleDelete() {
                     as-child
                     variant="outline"
                     size="icon"
-                    class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                    class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                     aria-label="Editar medalla"
                 >
                     <Link :href="edit(medal.id)">
@@ -88,7 +88,7 @@ async function handleDelete() {
                 <Button
                     variant="outline"
                     size="icon"
-                    class="border-white/15 text-red-400 hover:bg-red-500/10 hover:text-red-400"
+                    class="border-border text-red-700 hover:bg-red-500/10 hover:text-red-700"
                     aria-label="Archivar medalla"
                     @click="handleDelete"
                 >
@@ -99,14 +99,14 @@ async function handleDelete() {
 
         <div class="grid gap-6 sm:grid-cols-2">
             <div
-                class="overflow-hidden rounded-2xl border border-white/10 bg-fl-graphite/40"
+                class="overflow-hidden rounded-2xl border border-border bg-card/40"
             >
                 <div
-                    class="flex items-center justify-between px-4 py-2 text-xs text-white/40 uppercase"
+                    class="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground/80 uppercase"
                 >
                     Frente
                 </div>
-                <div class="aspect-square bg-fl-black">
+                <div class="aspect-square bg-background">
                     <img
                         v-if="medal.front_image_url"
                         :src="medal.front_image_url"
@@ -117,19 +117,21 @@ async function handleDelete() {
                         v-else
                         class="flex size-full items-center justify-center"
                     >
-                        <Award class="size-10 text-white/15" />
+                        <Award class="size-10 text-muted-foreground/80" />
                     </div>
                 </div>
             </div>
 
             <div
                 v-if="medal.back_image_url"
-                class="overflow-hidden rounded-2xl border border-white/10 bg-fl-graphite/40"
+                class="overflow-hidden rounded-2xl border border-border bg-card/40"
             >
-                <div class="px-4 py-2 text-xs text-white/40 uppercase">
+                <div
+                    class="px-4 py-2 text-xs text-muted-foreground/80 uppercase"
+                >
                     Reverso
                 </div>
-                <div class="aspect-square bg-fl-black">
+                <div class="aspect-square bg-background">
                     <img
                         :src="medal.back_image_url"
                         :alt="`${medal.title} — reverso`"
@@ -142,34 +144,34 @@ async function handleDelete() {
         <div class="mt-6 grid gap-6 sm:grid-cols-3">
             <div
                 v-if="medal.event_date"
-                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xs text-white/40 uppercase">Fecha</p>
-                <p class="mt-1 font-medium text-white">
+                <p class="text-xs text-muted-foreground/80 uppercase">Fecha</p>
+                <p class="mt-1 font-medium text-foreground">
                     {{ medal.event_date }}
                 </p>
             </div>
             <div
                 v-if="medal.official_time"
-                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xs text-white/40 uppercase">Tiempo</p>
-                <p class="mt-1 font-mono font-medium text-fl-gold">
+                <p class="text-xs text-muted-foreground/80 uppercase">Tiempo</p>
+                <p class="mt-1 font-mono font-medium text-fl-gold-ink">
                     {{ medal.official_time }}
                 </p>
             </div>
             <div
                 v-if="medal.pace"
-                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xs text-white/40 uppercase">Ritmo</p>
-                <p class="mt-1 font-medium text-white">{{ medal.pace }}</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">Ritmo</p>
+                <p class="mt-1 font-medium text-foreground">{{ medal.pace }}</p>
             </div>
         </div>
 
         <div v-if="medal.gallery_images.length" class="mt-6">
             <h2
-                class="mb-3 text-sm font-semibold tracking-wide text-white/60 uppercase"
+                class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
             >
                 Galería
             </h2>
@@ -177,7 +179,7 @@ async function handleDelete() {
                 <div
                     v-for="image in medal.gallery_images"
                     :key="image.id"
-                    class="aspect-square overflow-hidden rounded-xl border border-white/10 bg-fl-black"
+                    class="aspect-square overflow-hidden rounded-xl border border-border bg-background"
                 >
                     <img
                         v-if="image.url"
@@ -191,11 +193,13 @@ async function handleDelete() {
 
         <div v-if="medal.story" class="mt-6">
             <h2
-                class="text-sm font-semibold tracking-wide text-white/60 uppercase"
+                class="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
             >
                 Mi historia
             </h2>
-            <p class="mt-2 leading-relaxed whitespace-pre-line text-white/70">
+            <p
+                class="mt-2 leading-relaxed whitespace-pre-line text-muted-foreground"
+            >
                 {{ medal.story }}
             </p>
         </div>
@@ -205,12 +209,12 @@ async function handleDelete() {
             class="mt-6 flex items-center justify-between rounded-xl border border-fl-gold/20 bg-fl-gold/5 p-4"
         >
             <div class="flex items-center gap-3">
-                <QrCode class="size-5 text-fl-gold" />
+                <QrCode class="size-5 text-fl-gold-ink" />
                 <div>
-                    <p class="text-sm font-medium text-white">
+                    <p class="text-sm font-medium text-foreground">
                         Legacy Code vinculado
                     </p>
-                    <p class="font-mono text-xs text-white/50">
+                    <p class="font-mono text-xs text-muted-foreground">
                         {{ medal.legacy_code.code }}
                     </p>
                 </div>
@@ -219,7 +223,7 @@ async function handleDelete() {
                 as-child
                 variant="outline"
                 size="sm"
-                class="border-fl-gold/30 text-fl-gold hover:bg-fl-gold/10"
+                class="border-fl-gold/30 text-fl-gold-ink hover:bg-fl-gold/10"
             >
                 <Link :href="legacyCodeShow(medal.legacy_code.code)">Ver</Link>
             </Button>

@@ -288,7 +288,7 @@ function handlePointerMove(event: PointerEvent) {
                         :style="{ opacity: attachmentOpacity }"
                     >
                         <span
-                            class="absolute inset-0 rounded-full border-2 border-white/20"
+                            class="absolute inset-0 rounded-full border-2 border-foreground/15"
                             style="
                                 background: linear-gradient(
                                     155deg,
@@ -299,7 +299,7 @@ function handlePointerMove(event: PointerEvent) {
                             "
                         />
                         <span
-                            class="relative size-2 rounded-full bg-fl-black ring-1 ring-black/60 sm:size-2.5"
+                            class="relative size-2 rounded-full bg-background ring-1 ring-black/60 sm:size-2.5"
                         />
                     </span>
                     <span
@@ -308,7 +308,7 @@ function handlePointerMove(event: PointerEvent) {
                         :style="{ opacity: attachmentOpacity }"
                     >
                         <span
-                            class="absolute inset-0 rounded-full border-2 border-white/20"
+                            class="absolute inset-0 rounded-full border-2 border-foreground/15"
                             style="
                                 background: linear-gradient(
                                     155deg,
@@ -319,13 +319,13 @@ function handlePointerMove(event: PointerEvent) {
                             "
                         />
                         <span
-                            class="relative size-2 rounded-full bg-fl-black ring-1 ring-black/60 sm:size-2.5"
+                            class="relative size-2 rounded-full bg-background ring-1 ring-black/60 sm:size-2.5"
                         />
                     </span>
 
                     <div
                         ref="frame"
-                        class="fl-frame-sweep relative mx-auto w-full overflow-hidden border border-white/15 p-3 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.75)] sm:p-5 lg:p-8"
+                        class="fl-frame-sweep relative mx-auto w-full overflow-hidden border border-border p-3 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.75)] sm:p-5 lg:p-8"
                         style="
                             --glare-x: 50%;
                             --glare-y: 30%;
@@ -362,10 +362,10 @@ function handlePointerMove(event: PointerEvent) {
                             :style="contentStyle(0)"
                         >
                             <Medal
-                                class="fl-stage-icon size-9 text-fl-gold-soft sm:size-12 lg:size-16"
+                                class="fl-stage-icon size-9 text-fl-gold-ink sm:size-12 lg:size-16"
                             />
                             <span
-                                class="text-[9px] font-semibold tracking-[0.25em] text-fl-gold-soft uppercase sm:text-xs sm:tracking-[0.3em]"
+                                class="text-[9px] font-semibold tracking-[0.25em] text-fl-gold-ink uppercase sm:text-xs sm:tracking-[0.3em]"
                                 >El logro</span
                             >
                         </div>
@@ -376,17 +376,17 @@ function handlePointerMove(event: PointerEvent) {
                             :style="contentStyle(1)"
                         >
                             <p
-                                class="text-[9px] font-semibold tracking-[0.25em] text-fl-gold-soft uppercase sm:text-xs sm:tracking-[0.35em]"
+                                class="text-[9px] font-semibold tracking-[0.25em] text-fl-gold-ink uppercase sm:text-xs sm:tracking-[0.35em]"
                             >
                                 Finisher · Legacy
                             </p>
                             <div class="flex items-end justify-between">
                                 <span
-                                    class="legacy-numeric text-base font-bold text-white sm:text-2xl lg:text-3xl"
+                                    class="legacy-numeric text-base font-bold text-foreground sm:text-2xl lg:text-3xl"
                                     >03:42:18</span
                                 >
                                 <Award
-                                    class="fl-stage-icon size-4 text-fl-gold-soft sm:size-6 lg:size-8"
+                                    class="fl-stage-icon size-4 text-fl-gold-ink sm:size-6 lg:size-8"
                                 />
                             </div>
                         </div>
@@ -409,7 +409,7 @@ function handlePointerMove(event: PointerEvent) {
                                             40, 44, 47,
                                         ].includes(n)
                                             ? 'bg-fl-gold-soft'
-                                            : 'bg-white/10'
+                                            : 'bg-foreground/5'
                                     "
                                 />
                                 <span
@@ -424,17 +424,17 @@ function handlePointerMove(event: PointerEvent) {
                             :style="contentStyle(3)"
                         >
                             <div
-                                class="fl-stage-icon flex size-8 items-center justify-center rounded-full border-2 border-fl-gold/40 bg-black/30 text-fl-gold-soft sm:size-11 lg:size-14"
+                                class="fl-stage-icon flex size-8 items-center justify-center rounded-full border-2 border-fl-gold/40 bg-black/30 text-fl-gold-ink sm:size-11 lg:size-14"
                             >
                                 <IdCard class="size-4 sm:size-5 lg:size-6" />
                             </div>
                             <div
-                                class="legacy-numeric text-[10px] font-semibold text-white sm:text-xs lg:text-sm"
+                                class="legacy-numeric text-[10px] font-semibold text-foreground sm:text-xs lg:text-sm"
                             >
                                 12 medallas
                             </div>
                             <div
-                                class="h-1 w-20 rounded-full bg-white/15 sm:w-28 lg:h-1.5 lg:w-40"
+                                class="h-1 w-20 rounded-full bg-foreground/[0.07] sm:w-28 lg:h-1.5 lg:w-40"
                             >
                                 <div
                                     class="fl-profile-fill h-full rounded-full bg-gradient-to-r from-fl-gold to-fl-gold-soft"
@@ -465,17 +465,17 @@ function handlePointerMove(event: PointerEvent) {
                     <Transition name="fl-stage-fade" mode="out-in">
                         <div :key="activeIndex" class="min-w-0">
                             <span
-                                class="legacy-numeric text-xs font-semibold text-white/40"
+                                class="legacy-numeric text-xs font-semibold text-muted-foreground/80"
                             >
                                 0{{ activeIndex + 1 }} / 0{{ stages.length }}
                             </span>
                             <h3
-                                class="mt-2 text-2xl font-bold text-white sm:text-3xl lg:text-5xl"
+                                class="mt-2 text-2xl font-bold text-foreground sm:text-3xl lg:text-5xl"
                             >
                                 {{ stages[activeIndex].title }}
                             </h3>
                             <p
-                                class="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/60 lg:mx-0 lg:mt-4 lg:text-lg"
+                                class="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground lg:mx-0 lg:mt-4 lg:text-lg"
                             >
                                 {{ stages[activeIndex].copy }}
                             </p>
@@ -498,18 +498,19 @@ function handlePointerMove(event: PointerEvent) {
             class="flex items-start gap-4"
         >
             <div
-                class="flex size-12 shrink-0 items-center justify-center rounded-full border border-fl-gold/40 bg-fl-graphite/60 text-fl-gold-soft"
+                class="flex size-12 shrink-0 items-center justify-center rounded-full border border-fl-gold/40 bg-card/60 text-fl-gold-ink"
             >
                 <component :is="stage.icon" class="size-5" />
             </div>
             <div>
-                <span class="legacy-numeric text-xs font-semibold text-white/40"
+                <span
+                    class="legacy-numeric text-xs font-semibold text-muted-foreground/80"
                     >0{{ index + 1 }}</span
                 >
-                <h3 class="mt-1 text-lg font-semibold text-white">
+                <h3 class="mt-1 text-lg font-semibold text-foreground">
                     {{ stage.title }}
                 </h3>
-                <p class="mt-1 text-sm leading-relaxed text-white/60">
+                <p class="mt-1 text-sm leading-relaxed text-muted-foreground">
                     {{ stage.copy }}
                 </p>
             </div>

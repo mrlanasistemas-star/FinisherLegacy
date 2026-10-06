@@ -7,33 +7,36 @@
 
 type StatusMap = Record<string, { label: string; class: string }>;
 
-const NEUTRAL = 'border-white/20 text-white/60';
+const NEUTRAL = 'border-foreground/15 text-muted-foreground';
 
 export const legacyCodeStatus: StatusMap = {
     generated: { label: 'Generado', class: NEUTRAL },
-    available: { label: 'Disponible', class: 'border-sky-500/30 text-sky-400' },
-    assigned: { label: 'Asignado', class: 'border-fl-gold/30 text-fl-gold' },
+    available: { label: 'Disponible', class: 'border-sky-500/30 text-sky-700' },
+    assigned: {
+        label: 'Asignado',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
+    },
     claimed: {
         label: 'Reclamado',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    blocked: { label: 'Bloqueado', class: 'border-red-500/30 text-red-400' },
+    blocked: { label: 'Bloqueado', class: 'border-red-500/30 text-red-700' },
     replaced: {
         label: 'Reemplazado',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     cancelled: { label: 'Cancelado', class: NEUTRAL },
 };
 
 export const incidentStatus: StatusMap = {
-    open: { label: 'Abierta', class: 'border-red-500/30 text-red-400' },
+    open: { label: 'Abierta', class: 'border-red-500/30 text-red-700' },
     in_progress: {
         label: 'En proceso',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     resolved: {
         label: 'Resuelta',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
 };
 
@@ -41,120 +44,129 @@ export const plateStatus: StatusMap = {
     draft: { label: 'Borrador', class: NEUTRAL },
     pending_confirmation: {
         label: 'Pendiente de confirmación',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
-    queued: { label: 'En cola', class: 'border-sky-500/30 text-sky-400' },
+    queued: { label: 'En cola', class: 'border-sky-500/30 text-sky-700' },
     processing: {
         label: 'En producción',
-        class: 'border-fl-gold/30 text-fl-gold',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
     },
-    produced: { label: 'Producida', class: 'border-fl-gold/30 text-fl-gold' },
+    produced: {
+        label: 'Producida',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
+    },
     quality_check: {
         label: 'Control de calidad',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     ready: {
         label: 'Lista para entrega',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     delivered: {
         label: 'Entregada',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    cancelled: { label: 'Cancelada', class: 'border-red-500/30 text-red-400' },
+    cancelled: { label: 'Cancelada', class: 'border-red-500/30 text-red-700' },
     reprint: {
         label: 'En reimpresión',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
 };
 
 export const reprintStatus: StatusMap = {
     pending: {
         label: 'Pendiente',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     approved: {
         label: 'Aprobada',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    rejected: { label: 'Rechazada', class: 'border-red-500/30 text-red-400' },
+    rejected: { label: 'Rechazada', class: 'border-red-500/30 text-red-700' },
     completed: {
         label: 'Completada',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
 };
 
 export const productionJobStatus: StatusMap = {
-    queued: { label: 'En cola', class: 'border-sky-500/30 text-sky-400' },
-    assigned: { label: 'Asignada', class: 'border-fl-gold/30 text-fl-gold' },
-    preparing: { label: 'Preparando', class: 'border-fl-gold/30 text-fl-gold' },
+    queued: { label: 'En cola', class: 'border-sky-500/30 text-sky-700' },
+    assigned: {
+        label: 'Asignada',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
+    },
+    preparing: {
+        label: 'Preparando',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
+    },
     engraving_front: {
         label: 'Grabando frente',
-        class: 'border-fl-gold/30 text-fl-gold',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     awaiting_flip: {
         label: 'Voltea la placa',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     engraving_back: {
         label: 'Grabando reverso',
-        class: 'border-fl-gold/30 text-fl-gold',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     verifying_qr: {
         label: 'Verificando QR',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     ready: {
         label: 'Lista',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     delivered: {
         label: 'Entregada',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    failed: { label: 'Falló', class: 'border-red-500/30 text-red-400' },
+    failed: { label: 'Falló', class: 'border-red-500/30 text-red-700' },
     cancelled: { label: 'Cancelado', class: NEUTRAL },
 };
 
 export const preregistrationStatus: StatusMap = {
     pending: {
         label: 'Pendiente',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
-    matched: { label: 'Emparejado', class: 'border-sky-500/30 text-sky-400' },
+    matched: { label: 'Emparejado', class: 'border-sky-500/30 text-sky-700' },
     confirmed: {
         label: 'Confirmado',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     completed: {
         label: 'Completado',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-700' },
 };
 
 export const legacyPlateEntitlementStatus: StatusMap = {
     none: { label: 'No comprado', class: NEUTRAL },
     pending_payment: {
         label: 'Pago pendiente',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
-    paid: { label: 'Pagado', class: 'border-sky-500/30 text-sky-400' },
+    paid: { label: 'Pagado', class: 'border-sky-500/30 text-sky-700' },
     linked: {
         label: 'Vinculado a participante',
-        class: 'border-sky-500/30 text-sky-400',
+        class: 'border-sky-500/30 text-sky-700',
     },
     queued: {
         label: 'En producción',
-        class: 'border-fl-gold/30 text-fl-gold',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     produced: {
         label: 'Lista',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     delivered: {
         label: 'Entregada',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
 };
 
@@ -162,24 +174,24 @@ export const importStatus: StatusMap = {
     pending: { label: 'En espera', class: NEUTRAL },
     processing: {
         label: 'Procesando…',
-        class: 'border-fl-gold/30 text-fl-gold',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     completed: {
         label: 'Completada',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     completed_with_errors: {
         label: 'Completada con errores',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
-    failed: { label: 'Falló', class: 'border-red-500/30 text-red-400' },
+    failed: { label: 'Falló', class: 'border-red-500/30 text-red-700' },
 };
 
 export const productStatus: StatusMap = {
     draft: { label: 'Borrador', class: NEUTRAL },
     active: {
         label: 'Activo',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     archived: { label: 'Archivado', class: NEUTRAL },
 };
@@ -188,100 +200,103 @@ export const fulfillmentStatus: StatusMap = {
     unfulfilled: { label: 'Sin surtir', class: NEUTRAL },
     partially_fulfilled: {
         label: 'Parcialmente surtido',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     fulfilled: {
         label: 'Surtido',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-700' },
 };
 
 export const paymentStatus: StatusMap = {
     pending: {
         label: 'Pendiente',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
     authorized: {
         label: 'Autorizado',
-        class: 'border-sky-500/30 text-sky-400',
+        class: 'border-sky-500/30 text-sky-700',
     },
-    paid: { label: 'Pagado', class: 'border-emerald-500/30 text-emerald-400' },
-    failed: { label: 'Fallido', class: 'border-red-500/30 text-red-400' },
+    paid: { label: 'Pagado', class: 'border-emerald-500/30 text-emerald-700' },
+    failed: { label: 'Fallido', class: 'border-red-500/30 text-red-700' },
     refunded: { label: 'Reembolsado', class: NEUTRAL },
     partially_refunded: {
         label: 'Reembolso parcial',
-        class: 'border-orange-500/30 text-orange-400',
+        class: 'border-orange-500/30 text-orange-700',
     },
-    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-700' },
 };
 
 export const providerConnectionStatus: StatusMap = {
     untested: { label: 'Sin probar', class: NEUTRAL },
     connected: {
         label: 'Conectado',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    failed: { label: 'Falló', class: 'border-red-500/30 text-red-400' },
+    failed: { label: 'Falló', class: 'border-red-500/30 text-red-700' },
 };
 
 export const externalSyncStatus: StatusMap = {
     pending: { label: 'En espera', class: NEUTRAL },
-    running: { label: 'Ejecutando…', class: 'border-fl-gold/30 text-fl-gold' },
+    running: {
+        label: 'Ejecutando…',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
+    },
     completed: {
         label: 'Completado',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     partial: {
         label: 'Parcial',
-        class: 'border-amber-500/30 text-amber-400',
+        class: 'border-amber-500/30 text-amber-700',
     },
-    failed: { label: 'Falló', class: 'border-red-500/30 text-red-400' },
+    failed: { label: 'Falló', class: 'border-red-500/30 text-red-700' },
 };
 
 export const eventStatus: StatusMap = {
     draft: { label: 'Borrador', class: NEUTRAL },
     published: {
         label: 'Publicado',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     archived: { label: 'Archivado', class: NEUTRAL },
-    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-700' },
 };
 
 export const editionStatus: StatusMap = {
     draft: { label: 'Borrador', class: NEUTRAL },
     published: {
         label: 'Publicado',
-        class: 'border-sky-500/30 text-sky-400',
+        class: 'border-sky-500/30 text-sky-700',
     },
     in_progress: {
         label: 'En curso',
-        class: 'border-fl-gold/30 text-fl-gold',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     completed: {
         label: 'Completado',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-400' },
+    cancelled: { label: 'Cancelado', class: 'border-red-500/30 text-red-700' },
 };
 
 export const athleteOwnedProductStatus: StatusMap = {
     unclaimed: { label: 'Sin reclamar', class: NEUTRAL },
-    assigned: { label: 'Asignado', class: 'border-sky-500/30 text-sky-400' },
+    assigned: { label: 'Asignado', class: 'border-sky-500/30 text-sky-700' },
     active: {
         label: 'Activo',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
-    revoked: { label: 'Revocado', class: 'border-red-500/30 text-red-400' },
+    revoked: { label: 'Revocado', class: 'border-red-500/30 text-red-700' },
 };
 
 export const productType: StatusMap = {
     legacy_plate: {
         label: 'Legacy Plate',
-        class: 'border-fl-gold/30 text-fl-gold',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
     },
-    apparel: { label: 'Ropa', class: 'border-sky-500/30 text-sky-400' },
+    apparel: { label: 'Ropa', class: 'border-sky-500/30 text-sky-700' },
     accessory: { label: 'Accesorio', class: NEUTRAL },
     equipment: { label: 'Equipo', class: NEUTRAL },
 };
@@ -295,10 +310,10 @@ export const productContentSectionType: StatusMap = {
 };
 
 export const eventEditionPhase: StatusMap = {
-    upcoming: { label: 'Próximo', class: 'border-fl-gold/30 text-fl-gold' },
+    upcoming: { label: 'Próximo', class: 'border-fl-gold/30 text-fl-gold-ink' },
     ongoing: {
         label: 'En curso',
-        class: 'border-emerald-500/30 text-emerald-400',
+        class: 'border-emerald-500/30 text-emerald-700',
     },
     finished: { label: 'Finalizado', class: NEUTRAL },
 };

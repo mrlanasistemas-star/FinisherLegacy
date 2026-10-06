@@ -124,17 +124,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown));
 <template>
     <Dialog v-model:open="open">
         <DialogContent
-            class="dark top-[20%] max-w-lg translate-y-0 gap-0 overflow-hidden border-white/10 bg-fl-graphite p-0 text-white"
+            class="top-[20%] max-w-lg translate-y-0 gap-0 overflow-hidden border-border bg-card p-0 text-foreground"
             @keydown="onDialogKeydown"
         >
             <DialogTitle class="sr-only">Buscar módulo o acción</DialogTitle>
-            <div class="flex items-center gap-2 border-b border-white/10 px-4">
-                <Search class="size-4 text-white/40" />
+            <div class="flex items-center gap-2 border-b border-border px-4">
+                <Search class="size-4 text-muted-foreground/80" />
                 <Input
                     v-model="query"
                     autofocus
                     placeholder="Buscar módulo o acción…"
-                    class="border-0 bg-transparent text-white shadow-none focus-visible:ring-0"
+                    class="border-0 bg-transparent text-foreground shadow-none focus-visible:ring-0"
                 />
             </div>
             <div class="max-h-80 overflow-y-auto p-2">
@@ -145,21 +145,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown));
                     class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors"
                     :class="
                         index === selectedIndex
-                            ? 'bg-fl-gold/10 text-fl-gold'
-                            : 'text-white/80 hover:bg-white/5'
+                            ? 'bg-fl-gold/10 text-fl-gold-ink'
+                            : 'text-foreground hover:bg-foreground/[0.03]'
                     "
                     @mouseenter="selectedIndex = index"
                     @click="go(entry)"
                 >
                     <component :is="entry.icon" class="size-4 shrink-0" />
                     <span class="flex-1">{{ entry.label }}</span>
-                    <span v-if="entry.hint" class="text-xs text-white/30">{{
-                        entry.hint
-                    }}</span>
+                    <span
+                        v-if="entry.hint"
+                        class="text-xs text-muted-foreground/80"
+                        >{{ entry.hint }}</span
+                    >
                 </button>
                 <p
                     v-if="!results.length"
-                    class="px-3 py-6 text-center text-sm text-white/30"
+                    class="px-3 py-6 text-center text-sm text-muted-foreground/80"
                 >
                     Sin resultados.
                 </p>

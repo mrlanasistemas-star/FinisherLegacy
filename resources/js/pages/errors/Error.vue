@@ -67,10 +67,10 @@ const content = copy[status] ?? {
         </Reveal>
 
         <Reveal :delay-ms="120">
-            <h1 class="mt-6 text-2xl font-bold text-white sm:text-3xl">
+            <h1 class="mt-6 text-2xl font-bold text-foreground sm:text-3xl">
                 {{ content.title }}
             </h1>
-            <p class="mx-auto mt-3 max-w-md text-sm text-white/50">
+            <p class="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
                 {{ content.description }}
             </p>
         </Reveal>

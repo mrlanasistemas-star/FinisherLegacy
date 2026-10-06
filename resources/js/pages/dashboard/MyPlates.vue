@@ -30,8 +30,8 @@ defineProps<{ plates: PlateEntitlement[] }>();
     <Head title="Mis Legacy Plates" />
 
     <AppContainer class="py-4 md:py-6">
-        <h1 class="text-xl font-bold text-white">Mis Legacy Plates</h1>
-        <p class="mt-1 text-sm text-white/50">
+        <h1 class="text-xl font-bold text-foreground">Mis Legacy Plates</h1>
+        <p class="mt-1 text-sm text-muted-foreground">
             La pieza física que guarda tu historia deportiva — incluye tus
             preventas, aunque el evento todavía no haya pasado.
         </p>
@@ -58,11 +58,11 @@ defineProps<{ plates: PlateEntitlement[] }>();
 
         <div
             v-else
-            class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-white/30"
+            class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-muted-foreground/80"
         >
             <Boxes class="size-10" />
             <p>Todavía no tienes una Legacy Plate.</p>
-            <Link href="/events" class="text-fl-gold-soft hover:underline"
+            <Link href="/events" class="text-fl-gold-ink hover:underline"
                 >Explorar eventos</Link
             >
         </div>

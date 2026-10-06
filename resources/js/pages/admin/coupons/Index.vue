@@ -178,8 +178,10 @@ function confirmDestroy() {
         <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
 
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
-                <Ticket class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-1.5 text-xl font-bold text-foreground"
+            >
+                <Ticket class="size-5 text-fl-gold-ink" />
                 Cupones
                 <HelpPopover
                     title="Cupón vs. promoción"
@@ -202,8 +204,8 @@ function confirmDestroy() {
             :initial-query="filters.q"
         >
             <template #cell-code="{ row }">
-                <span class="font-mono text-white">{{ row.code }}</span>
-                <div class="text-xs text-white/50">{{ row.name }}</div>
+                <span class="font-mono text-foreground">{{ row.code }}</span>
+                <div class="text-xs text-muted-foreground">{{ row.name }}</div>
             </template>
 
             <template #cell-kind="{ row }">
@@ -211,8 +213,8 @@ function confirmDestroy() {
                     variant="outline"
                     :class="
                         couponKind(row as unknown as CouponRow) === 'Cupón'
-                            ? 'border-fl-gold/30 text-fl-gold-soft'
-                            : 'border-sky-500/30 text-sky-400'
+                            ? 'border-fl-gold/30 text-fl-gold-ink'
+                            : 'border-sky-500/30 text-sky-700'
                     "
                 >
                     {{ couponKind(row as unknown as CouponRow) }}
@@ -248,8 +250,8 @@ function confirmDestroy() {
                 <Badge
                     :class="
                         row.active
-                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                            : 'border-white/10 bg-white/5 text-white/50'
+                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700'
+                            : 'border-border bg-foreground/[0.03] text-muted-foreground'
                     "
                 >
                     {{ row.active ? 'Activo' : 'Inactivo' }}
@@ -261,7 +263,7 @@ function confirmDestroy() {
                     <Button
                         size="icon"
                         variant="ghost"
-                        class="size-8 text-white/60 hover:text-white"
+                        class="size-8 text-muted-foreground hover:text-foreground"
                         @click="openEdit(row as unknown as CouponRow)"
                     >
                         <Pencil class="size-4" />
@@ -269,7 +271,7 @@ function confirmDestroy() {
                     <Button
                         size="icon"
                         variant="ghost"
-                        class="size-8 text-white/60 hover:text-red-400"
+                        class="size-8 text-muted-foreground hover:text-red-700"
                         @click="deleteTarget = row as unknown as CouponRow"
                     >
                         <Trash2 class="size-4" />
@@ -280,7 +282,7 @@ function confirmDestroy() {
 
         <Dialog v-model:open="dialogOpen">
             <DialogContent
-                class="dark max-h-[90vh] overflow-y-auto border-white/10 bg-fl-graphite text-white sm:max-w-lg"
+                class="max-h-[90vh] overflow-y-auto border-border bg-card text-foreground sm:max-w-lg"
             >
                 <DialogHeader>
                     <DialogTitle>{{
@@ -293,7 +295,7 @@ function confirmDestroy() {
                             <Label>Código</Label>
                             <Input
                                 v-model="form.code"
-                                class="bg-fl-black font-mono uppercase"
+                                class="bg-background font-mono uppercase"
                                 placeholder="SPRING10"
                             />
                         </div>
@@ -301,7 +303,7 @@ function confirmDestroy() {
                             <Label>Nombre</Label>
                             <Input
                                 v-model="form.name"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 placeholder="Promo primavera"
                             />
                         </div>
@@ -311,7 +313,7 @@ function confirmDestroy() {
                         <Label>Descripción (opcional)</Label>
                         <Textarea
                             v-model="form.description"
-                            class="bg-fl-black"
+                            class="bg-background"
                             rows="2"
                         />
                     </div>
@@ -321,7 +323,7 @@ function confirmDestroy() {
                             <Label>Tipo</Label>
                             <Select v-model="form.type">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -345,7 +347,7 @@ function confirmDestroy() {
                                 v-model.number="form.value"
                                 type="number"
                                 min="1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
@@ -356,7 +358,7 @@ function confirmDestroy() {
                             <Input
                                 v-model="form.starts_at"
                                 type="date"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -364,12 +366,12 @@ function confirmDestroy() {
                             <Input
                                 v-model="form.ends_at"
                                 type="date"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
 
-                    <p class="-mt-2 text-xs text-white/40">
+                    <p class="-mt-2 text-xs text-muted-foreground/80">
                         Con límite de usos → cupón clásico. Sin límite, solo con
                         fecha de fin → promoción por tiempo.
                     </p>
@@ -381,7 +383,7 @@ function confirmDestroy() {
                                 v-model.number="form.usage_limit_total"
                                 type="number"
                                 min="1"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 placeholder="Sin límite (promoción)"
                             />
                         </div>
@@ -391,7 +393,7 @@ function confirmDestroy() {
                                 v-model.number="form.usage_limit_per_user"
                                 type="number"
                                 min="1"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 placeholder="Sin límite"
                             />
                         </div>
@@ -405,12 +407,12 @@ function confirmDestroy() {
                             v-model.number="form.minimum_order_minor"
                             type="number"
                             min="0"
-                            class="bg-fl-black"
+                            class="bg-background"
                         />
                     </div>
 
                     <label
-                        class="flex items-center gap-2 text-sm text-white/80"
+                        class="flex items-center gap-2 text-sm text-foreground"
                     >
                         <Checkbox v-model="form.active" />
                         Activo
@@ -437,22 +439,20 @@ function confirmDestroy() {
                 }
             "
         >
-            <AlertDialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <AlertDialogContent class="border-border bg-card text-foreground">
                 <AlertDialogHeader>
                     <AlertDialogTitle
                         >¿Eliminar el cupón
                         {{ deleteTarget?.code }}?</AlertDialogTitle
                     >
-                    <AlertDialogDescription class="text-white/60">
+                    <AlertDialogDescription class="text-muted-foreground">
                         Si el cupón ya fue usado, se desactivará en lugar de
                         eliminarse — su historial de pedidos se conserva.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel
-                        class="border-white/10 bg-transparent text-white hover:bg-white/10"
+                        class="border-border bg-transparent text-foreground hover:bg-foreground/5"
                         @click="deleteTarget = null"
                         >Cancelar</AlertDialogCancel
                     >

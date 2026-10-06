@@ -17,7 +17,8 @@ import UserInfo from '@/components/UserInfo.vue';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 
 const page = usePage();
-const user = computed(() => page.props.auth.user);
+// Authenticated-only surface — the route middleware guarantees a user.
+const user = computed(() => page.props.auth.user!);
 const { isMobile, state } = useSidebar();
 </script>
 

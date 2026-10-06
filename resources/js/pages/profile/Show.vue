@@ -1,61 +1,155 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { Award, MapPin, Trophy } from '@lucide/vue';
-import { computed } from 'vue';
-import MascotEmptyState from '@/components/public/MascotEmptyState.vue';
+/**
+ * Public Legacy Profile (/@username) — same editorial layout as Mi
+ * Legado, showing only what this viewer may see (the controller already
+ * filtered medals, posts and photos by their visibility).
+ */
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Award, PenLine, Share2, UserCheck, UserPlus } from '@lucide/vue';
+import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
+import PostCard from '@/components/community/PostCard.vue';
+import LegacyTimelineList from '@/components/profile/LegacyTimelineList.vue';
+import type { TimelineEntry } from '@/components/profile/LegacyTimelineList.vue';
+import ProfileHeader from '@/components/profile/ProfileHeader.vue';
+import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
+import { shortDate } from '@/lib/datetime';
+import { login } from '@/routes';
+import { follow, unfollow } from '@/routes/athletes';
 import { edit as editProfile } from '@/routes/dashboard/profile';
-import type { PublicAthleteMedal, PublicAthleteProfile } from '@/types';
+import type {
+    CommunityPost,
+    PublicAthleteMedal,
+    PublicAthleteProfile,
+} from '@/types';
 
-const { isOwner, profile, stats, medals } = defineProps<{
+type PublicEvent = {
+    event: string | null;
+    event_slug: string | null;
+    edition: string | null;
+    event_date: string | null;
+    race: string | null;
+    distance: string | null;
+    official_time: string | null;
+    pace: string | null;
+};
+
+const props = defineProps<{
     isOwner: boolean;
     profile: PublicAthleteProfile;
     stats: { medals: number; events: number };
     medals: PublicAthleteMedal[];
+    social: { followers: number; following: number; is_following: boolean };
+    events: PublicEvent[];
+    posts: CommunityPost[];
+    photos: { uuid: string; url: string; event: string | null }[];
 }>();
 
+const page = usePage();
+const isGuest = computed(() => !page.props.auth.user);
 const canonicalUrl = useCanonicalUrl();
 
-const initials = computed(() =>
-    profile.name
-        .split(' ')
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase(),
+type Tab = 'historia' | 'logros' | 'fotos' | 'publicaciones';
+const tabs = computed(() =>
+    (
+        [
+            { key: 'historia', label: 'Historia', count: props.events.length },
+            { key: 'logros', label: 'Logros', count: props.medals.length },
+            { key: 'fotos', label: 'Fotos', count: props.photos.length },
+            {
+                key: 'publicaciones',
+                label: 'Publicaciones',
+                count: props.posts.length,
+            },
+        ] as { key: Tab; label: string; count: number }[]
+    ).filter((tab) => tab.key === 'historia' || tab.count > 0),
 );
+const activeTab = ref<Tab>('historia');
+
+const location = computed(() =>
+    [props.profile.city, props.profile.state, props.profile.country]
+        .filter(Boolean)
+        .join(', '),
+);
+
+const headerStats = computed(() => [
+    { label: 'Eventos', value: props.stats.events },
+    { label: 'Medallas', value: props.stats.medals },
+    { label: 'Seguidores', value: props.social.followers },
+]);
+
+const timeline = computed<TimelineEntry[]>(() =>
+    props.events.map((event, index) => ({
+        key: `${event.event_slug}-${index}`,
+        date: event.event_date,
+        title: event.event ?? 'Evento',
+        subtitle: event.race,
+        distance: event.distance,
+        time: event.official_time,
+        pace: event.pace,
+        href: event.event_slug ? `/events/${event.event_slug}` : null,
+    })),
+);
+
+const followBusy = ref(false);
+
+function toggleFollow() {
+    followBusy.value = true;
+    const route = props.social.is_following
+        ? unfollow(props.profile.username)
+        : follow(props.profile.username);
+
+    router.visit(route, {
+        preserveScroll: true,
+        only: ['social'],
+        onFinish: () => (followBusy.value = false),
+    });
+}
+
+async function share() {
+    const url = canonicalUrl ?? window.location.href;
+
+    try {
+        if (navigator.share) {
+            await navigator.share({ title: props.profile.name, url });
+        } else {
+            await navigator.clipboard.writeText(url);
+            toast.success('Enlace copiado.');
+        }
+    } catch {
+        // Share sheet dismissed.
+    }
+}
 
 const metaDescription = computed(
     () =>
-        profile.bio ??
-        `El Legacy Profile de ${profile.name}: ${stats.medals} medallas, ${stats.events} eventos. Conserva, revive y comparte cada logro deportivo.`,
+        props.profile.bio ??
+        `El perfil de ${props.profile.name} en Finisher Legacy: ${props.stats.events} eventos y ${props.stats.medals} medallas.`,
 );
 
-// ProfilePage/Person structured data — every field is exactly what the
-// page already renders, nothing invented for athletes who haven't filled
-// in bio/city/sport (brand system: never present fabricated data as
-// real). Google surfaces this as a Profile rich result.
+// ProfilePage/Person structured data — only fields the page renders.
 const profileJsonLd = computed(() => {
     const person: Record<string, unknown> = {
         '@type': 'Person',
-        name: profile.name,
-        alternateName: `@${profile.username}`,
+        name: props.profile.name,
+        alternateName: `@${props.profile.username}`,
     };
 
-    if (profile.photo_url) {
-        person.image = profile.photo_url;
+    if (props.profile.photo_url) {
+        person.image = props.profile.photo_url;
     }
 
-    if (profile.bio) {
-        person.description = profile.bio;
+    if (props.profile.bio) {
+        person.description = props.profile.bio;
     }
 
-    if (profile.city || profile.country) {
+    if (props.profile.city || props.profile.country) {
         person.address = {
             '@type': 'PostalAddress',
-            addressLocality: profile.city ?? undefined,
-            addressCountry: profile.country ?? undefined,
+            addressLocality: props.profile.city ?? undefined,
+            addressCountry: props.profile.country ?? undefined,
         };
     }
 
@@ -63,190 +157,216 @@ const profileJsonLd = computed(() => {
         person.url = canonicalUrl;
     }
 
-    const data: Record<string, unknown> = {
+    return {
         '@context': 'https://schema.org',
         '@type': 'ProfilePage',
         mainEntity: person,
+        ...(canonicalUrl ? { url: canonicalUrl } : {}),
     };
-
-    if (canonicalUrl) {
-        data.url = canonicalUrl;
-    }
-
-    return data;
 });
 </script>
 
 <template>
-    <Head :title="`${profile.name} (@${profile.username}) | Finisher Legacy`">
-        <meta name="description" :content="metaDescription" />
-        <link v-if="canonicalUrl" rel="canonical" :href="canonicalUrl" />
-        <meta property="og:type" content="profile" />
+    <SeoHead
+        :title="`${profile.name} (@${profile.username})`"
+        :description="metaDescription"
+        :image="profile.photo_url"
+        type="profile"
+    />
+    <Head>
         <meta property="profile:username" :content="profile.username" />
-        <meta
-            property="og:title"
-            :content="`${profile.name} (@${profile.username})`"
-        />
-        <meta property="og:description" :content="metaDescription" />
-        <meta v-if="canonicalUrl" property="og:url" :content="canonicalUrl" />
-        <meta
-            v-if="profile.photo_url"
-            property="og:image"
-            :content="profile.photo_url"
-        />
-        <meta
-            name="twitter:title"
-            :content="`${profile.name} (@${profile.username})`"
-        />
-        <meta name="twitter:description" :content="metaDescription" />
-        <meta
-            v-if="profile.photo_url"
-            name="twitter:image"
-            :content="profile.photo_url"
-        />
         <script type="application/ld+json">
             {{ JSON.stringify(profileJsonLd) }}
         </script>
     </Head>
 
-    <section>
-        <div
-            class="relative h-48 w-full overflow-hidden bg-gradient-to-br from-fl-graphite-light via-fl-graphite to-fl-black sm:h-64"
+    <div class="fl-container py-6 sm:py-8">
+        <ProfileHeader
+            :name="profile.name"
+            :username="profile.username"
+            :bio="profile.bio"
+            :location="location"
+            :sports="profile.sport ? [profile.sport] : []"
+            :photo-url="profile.photo_url"
+            :cover-url="profile.cover_url"
+            :stats="headerStats"
         >
-            <img
-                v-if="profile.cover_url"
-                :src="profile.cover_url"
-                :alt="`Portada de ${profile.name}`"
-                class="size-full object-cover"
-            />
-        </div>
-
-        <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-            <div class="-mt-14 flex items-end justify-between">
-                <div
-                    class="flex size-28 items-center justify-center overflow-hidden rounded-full border-4 border-fl-graphite bg-fl-graphite text-3xl font-semibold text-fl-gold-soft"
-                >
-                    <img
-                        v-if="profile.photo_url"
-                        :src="profile.photo_url"
-                        :alt="profile.name"
-                        class="size-full object-cover"
-                    />
-                    <span v-else>{{ initials }}</span>
-                </div>
-
+            <template #actions>
                 <Button
                     v-if="isOwner"
                     as-child
                     variant="outline"
-                    class="mb-2 border-white/25 bg-fl-black text-white hover:bg-white/10 hover:text-white"
+                    class="rounded-full"
                 >
-                    <Link :href="editProfile()">Editar mi Legacy Profile</Link>
+                    <Link :href="editProfile()">
+                        <PenLine class="size-4" />
+                        Editar perfil
+                    </Link>
                 </Button>
+                <template v-else>
+                    <Button v-if="isGuest" as-child class="rounded-full">
+                        <Link :href="login()">
+                            <UserPlus class="size-4" />
+                            Seguir
+                        </Link>
+                    </Button>
+                    <Button
+                        v-else
+                        class="rounded-full"
+                        :variant="social.is_following ? 'outline' : 'default'"
+                        :disabled="followBusy"
+                        :aria-pressed="social.is_following"
+                        @click="toggleFollow"
+                    >
+                        <UserCheck v-if="social.is_following" class="size-4" />
+                        <UserPlus v-else class="size-4" />
+                        {{ social.is_following ? 'Siguiendo' : 'Seguir' }}
+                    </Button>
+                </template>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    class="rounded-full"
+                    aria-label="Compartir perfil"
+                    @click="share"
+                >
+                    <Share2 class="size-4" />
+                </Button>
+            </template>
+        </ProfileHeader>
+
+        <div class="mt-10">
+            <div
+                class="flex gap-1 overflow-x-auto border-b border-border"
+                role="tablist"
+                aria-label="Secciones del perfil"
+            >
+                <button
+                    v-for="tab in tabs"
+                    :id="`tab-${tab.key}`"
+                    :key="tab.key"
+                    type="button"
+                    role="tab"
+                    :aria-selected="activeTab === tab.key"
+                    :aria-controls="`panel-${tab.key}`"
+                    class="-mb-px shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors"
+                    :class="
+                        activeTab === tab.key
+                            ? 'border-foreground text-foreground'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                    "
+                    @click="activeTab = tab.key"
+                >
+                    {{ tab.label }}
+                    <span
+                        v-if="tab.count"
+                        class="ml-1 text-xs text-muted-foreground"
+                        >{{ tab.count }}</span
+                    >
+                </button>
             </div>
 
-            <div class="mt-4">
-                <h1 class="text-2xl font-bold text-white">
-                    {{ profile.name }}
-                </h1>
-                <p class="text-fl-gold-soft">@{{ profile.username }}</p>
-
-                <p
-                    v-if="profile.city || profile.country"
-                    class="mt-1 flex items-center gap-1 text-sm text-white/50"
-                >
-                    <MapPin class="size-3.5" />
-                    {{
-                        [profile.city, profile.country]
-                            .filter(Boolean)
-                            .join(', ')
-                    }}
-                </p>
-
-                <p
-                    v-if="profile.bio"
-                    class="mt-4 max-w-xl leading-relaxed text-white/70"
-                >
-                    {{ profile.bio }}
-                </p>
-            </div>
-
-            <div class="mt-6 flex gap-8 border-y border-white/10 py-4">
-                <div>
-                    <p class="text-xl font-bold text-white">
-                        {{ stats.medals }}
-                    </p>
-                    <p class="text-xs text-white/40 uppercase">Medallas</p>
-                </div>
-                <div>
-                    <p class="text-xl font-bold text-white">
-                        {{ stats.events }}
-                    </p>
-                    <p class="text-xs text-white/40 uppercase">Eventos</p>
-                </div>
-                <div v-if="profile.sport">
-                    <p class="text-xl font-bold text-white">
-                        {{ profile.sport }}
-                    </p>
-                    <p class="text-xs text-white/40 uppercase">Deporte</p>
-                </div>
-            </div>
-
-            <div class="py-10">
-                <h2
-                    class="mb-5 flex items-center gap-2 text-sm font-semibold tracking-wide text-white/60 uppercase"
-                >
-                    <Trophy class="size-4 text-fl-gold-soft" />
-                    Colección de medallas
+            <section
+                v-show="activeTab === 'historia'"
+                id="panel-historia"
+                role="tabpanel"
+                aria-labelledby="tab-historia"
+                class="max-w-4xl pt-8"
+            >
+                <h2 class="fl-display text-3xl sm:text-4xl">
+                    Cada logro cuenta.
                 </h2>
+                <div v-if="timeline.length" class="mt-8">
+                    <LegacyTimelineList :entries="timeline" />
+                </div>
+                <p v-else class="mt-4 text-muted-foreground">
+                    {{ profile.name }} aún no tiene participaciones públicas.
+                </p>
+            </section>
 
+            <section
+                v-show="activeTab === 'logros'"
+                id="panel-logros"
+                role="tabpanel"
+                aria-labelledby="tab-logros"
+                class="pt-8"
+            >
                 <div
-                    v-if="medals.length"
-                    class="grid grid-cols-2 gap-4 sm:grid-cols-3"
+                    class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
                 >
                     <div
                         v-for="medal in medals"
                         :key="medal.id"
-                        class="group overflow-hidden rounded-xl border border-white/10 bg-fl-graphite/40"
+                        class="fl-card overflow-hidden"
                     >
-                        <div
-                            class="aspect-square bg-gradient-to-br from-fl-graphite-light to-fl-black"
-                        >
+                        <div class="aspect-square bg-fl-cream">
                             <img
                                 v-if="medal.thumbnail_url"
                                 :src="medal.thumbnail_url"
                                 :alt="medal.title"
                                 loading="lazy"
-                                class="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                class="size-full object-cover"
                             />
                             <div
                                 v-else
                                 class="flex size-full items-center justify-center"
                             >
-                                <Award class="size-8 text-white/15" />
+                                <Award class="size-8 text-fl-gold-ink/60" />
                             </div>
                         </div>
                         <div class="p-3">
-                            <p class="truncate text-sm font-medium text-white">
+                            <p class="truncate text-sm font-semibold">
                                 {{ medal.title }}
                             </p>
-                            <p class="text-xs text-white/40">
-                                {{ medal.distance_label }}
+                            <p class="truncate text-xs text-muted-foreground">
+                                {{
+                                    [
+                                        medal.distance_label,
+                                        shortDate(medal.event_date),
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' · ')
+                                }}
                             </p>
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <MascotEmptyState
-                    v-else
-                    title="Todavía no hay medallas públicas aquí."
-                    :description="
-                        isOwner
-                            ? 'Las medallas que marques como públicas aparecerán en esta vitrina.'
-                            : undefined
-                    "
-                />
-            </div>
+            <section
+                v-show="activeTab === 'fotos'"
+                id="panel-fotos"
+                role="tabpanel"
+                aria-labelledby="tab-fotos"
+                class="pt-8"
+            >
+                <div
+                    class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+                >
+                    <img
+                        v-for="photo in photos"
+                        :key="photo.uuid"
+                        :src="photo.url"
+                        :alt="
+                            photo.event
+                                ? `${profile.name} en ${photo.event}`
+                                : `Foto de ${profile.name}`
+                        "
+                        loading="lazy"
+                        class="aspect-square w-full rounded-lg bg-muted object-cover"
+                    />
+                </div>
+            </section>
+
+            <section
+                v-show="activeTab === 'publicaciones'"
+                id="panel-publicaciones"
+                role="tabpanel"
+                aria-labelledby="tab-publicaciones"
+                class="max-w-2xl space-y-5 pt-8"
+            >
+                <PostCard v-for="post in posts" :key="post.uuid" :post="post" />
+            </section>
         </div>
-    </section>
+    </div>
 </template>

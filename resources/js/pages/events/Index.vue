@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { Search } from '@lucide/vue';
 import { useDebounceFn } from '@vueuse/core';
 import { reactive } from 'vue';
@@ -8,6 +8,7 @@ import EventCard from '@/components/public/EventCard.vue';
 import MascotGuide from '@/components/public/MascotGuide.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
+import SeoHead from '@/components/public/SeoHead.vue';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -16,7 +17,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 import { index as eventsIndex } from '@/routes/events';
 import type { EventEditionCard } from '@/types';
 
@@ -51,13 +51,6 @@ function applyFilters() {
 
 const debouncedApply = useDebounceFn(applyFilters, 350);
 
-// No `keepQuery` — filters (?q=/?sport=/?status=) are facets of the same
-// listing, not distinct documents, so canonical always points at the
-// clean /events URL (standard faceted-navigation practice: consolidate
-// ranking signal on one page instead of spreading it across every filter
-// combination).
-const canonicalUrl = useCanonicalUrl();
-
 const mascotTips = [
     {
         id: 'filters',
@@ -78,50 +71,33 @@ const statusOptions = [
 </script>
 
 <template>
-    <Head title="Eventos — Encuentra tu próxima meta">
-        <meta
-            name="description"
-            content="Explora próximos eventos deportivos, filtra por deporte o ciudad y prerregístrate para tu próxima carrera en Finisher Legacy."
-        />
-        <link v-if="canonicalUrl" rel="canonical" :href="canonicalUrl" />
-        <meta property="og:type" content="website" />
-        <meta
-            property="og:title"
-            content="Eventos — Encuentra tu próxima meta | Finisher Legacy"
-        />
-        <meta
-            property="og:description"
-            content="Explora próximos eventos deportivos y prerregístrate para tu próxima carrera."
-        />
-        <meta v-if="canonicalUrl" property="og:url" :content="canonicalUrl" />
-        <meta
-            name="twitter:title"
-            content="Eventos — Encuentra tu próxima meta | Finisher Legacy"
-        />
-        <meta
-            name="twitter:description"
-            content="Explora próximos eventos deportivos y prerregístrate para tu próxima carrera."
-        />
-    </Head>
+    <SeoHead
+        title="Eventos"
+        description="Explora próximos eventos deportivos, filtra por deporte o ciudad y prerregístrate para tu próxima carrera en Finisher Legacy."
+    />
 
-    <section data-mascot-tip="filters" class="border-b border-white/5 py-20">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section
+        data-mascot-tip="filters"
+        class="border-b border-border pt-12 pb-10 sm:pt-16"
+    >
+        <div class="fl-container">
             <SectionHeading
                 align="left"
                 eyebrow="Eventos"
-                title="Explora eventos"
-                description="Encuentra tu próxima meta y todo lo que necesitas saber antes de correrla."
+                as="h1"
+                title="Encuentra tu próxima meta."
+                description="Carreras, trails, triatlones y más: fechas, distancias y todo lo que necesitas saber antes de vivirlo."
             />
 
             <div class="mt-10 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
                 <div class="relative">
                     <Search
-                        class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40"
+                        class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/80"
                     />
                     <Input
                         v-model="form.q"
                         placeholder="Buscar por evento o ciudad…"
-                        class="border-white/10 bg-fl-graphite/60 pl-9 text-white placeholder:text-white/50"
+                        class="h-11 rounded-full border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground"
                         @input="debouncedApply"
                     />
                 </div>
@@ -136,7 +112,7 @@ const statusOptions = [
                     "
                 >
                     <SelectTrigger
-                        class="w-full border-white/10 bg-fl-graphite/60 text-white sm:w-44"
+                        class="h-11 w-full rounded-full border-border bg-card text-foreground sm:w-44"
                     >
                         <SelectValue placeholder="Deporte" />
                     </SelectTrigger>
@@ -162,7 +138,7 @@ const statusOptions = [
                     "
                 >
                     <SelectTrigger
-                        class="w-full border-white/10 bg-fl-graphite/60 text-white sm:w-44"
+                        class="h-11 w-full rounded-full border-border bg-card text-foreground sm:w-44"
                     >
                         <SelectValue placeholder="Estado" />
                     </SelectTrigger>
@@ -180,13 +156,13 @@ const statusOptions = [
         </div>
     </section>
 
-    <section data-mascot-tip="results" class="py-16">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section data-mascot-tip="results" class="py-12 sm:py-16">
+        <div class="fl-container">
             <div
                 v-if="editions.data.length === 0"
-                class="rounded-2xl border border-white/10 bg-fl-graphite/40 py-20 text-center"
+                class="rounded-xl border border-dashed border-foreground/15 bg-card py-20 text-center"
             >
-                <p class="text-white/50">
+                <p class="text-muted-foreground">
                     No encontramos eventos con esos filtros.
                 </p>
             </div>

@@ -32,13 +32,13 @@ const pages = computed(() => props.links.slice(1, -1));
             :href="prev.url"
             preserve-scroll
             aria-label="Anterior"
-            class="flex size-9 shrink-0 items-center justify-center rounded-md border border-white/10 text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+            class="flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
         >
             <ChevronLeft class="size-4" />
         </Link>
         <span
             v-else
-            class="flex size-9 shrink-0 items-center justify-center rounded-md text-white/15"
+            class="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground/80"
         >
             <ChevronLeft class="size-4" />
         </span>
@@ -47,7 +47,7 @@ const pages = computed(() => props.links.slice(1, -1));
             <template v-for="(link, index) in pages" :key="index">
                 <span
                     v-if="!link.url"
-                    class="flex size-9 items-center justify-center text-sm text-white/20"
+                    class="flex size-9 items-center justify-center text-sm text-muted-foreground/80"
                 >
                     …
                 </span>
@@ -59,7 +59,7 @@ const pages = computed(() => props.links.slice(1, -1));
                     :class="
                         link.active
                             ? 'border-fl-gold/40 bg-fl-gold text-fl-black'
-                            : 'border-white/10 text-white/70 hover:border-fl-gold/30 hover:text-fl-gold'
+                            : 'border-border text-muted-foreground hover:border-fl-gold/30 hover:text-fl-gold-ink'
                     "
                 >
                     <span v-html="link.label" />
@@ -72,13 +72,13 @@ const pages = computed(() => props.links.slice(1, -1));
             :href="next.url"
             preserve-scroll
             aria-label="Siguiente"
-            class="flex size-9 shrink-0 items-center justify-center rounded-md border border-white/10 text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+            class="flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
         >
             <ChevronRight class="size-4" />
         </Link>
         <span
             v-else
-            class="flex size-9 shrink-0 items-center justify-center rounded-md text-white/15"
+            class="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground/80"
         >
             <ChevronRight class="size-4" />
         </span>

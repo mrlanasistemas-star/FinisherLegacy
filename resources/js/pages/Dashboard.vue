@@ -1,40 +1,51 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+/**
+ * "Mi Legado" — the heart of the athlete profile. Same data as before
+ * (GetAthleteLegado participations, stats, Legacy ID) plus the profile
+ * header, medals, photos and own posts, laid out as an editorial profile.
+ * Every entry still opens the existing per-participation detail
+ * (/dashboard/legado/{participant}).
+ */
+import { Head, Link } from '@inertiajs/vue3';
 import {
     Award,
+    Camera,
     Check,
-    Compass,
     Copy,
+    ExternalLink,
+    Nfc,
     Package,
-    QrCode,
+    PenLine,
+    Plus,
     Receipt,
-    ShoppingBag,
-    UserCircle,
+    Share2,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
-import Reveal from '@/components/motion/Reveal.vue';
-import StaggerGroup from '@/components/motion/StaggerGroup.vue';
-import FinisherMascot from '@/components/public/FinisherMascot.vue';
-import MascotEmptyState from '@/components/public/MascotEmptyState.vue';
-import LegadoCard from '@/components/shared/LegadoCard.vue';
+import { toast } from 'vue-sonner';
+import PostPreview from '@/components/community/PostPreview.vue';
+import LegacyTimelineList from '@/components/profile/LegacyTimelineList.vue';
+import type { TimelineEntry } from '@/components/profile/LegacyTimelineList.vue';
+import ProfileHeader from '@/components/profile/ProfileHeader.vue';
+import LinkPlateDialog from '@/components/shared/LinkPlateDialog.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { shortDate } from '@/lib/datetime';
 import { dashboard } from '@/routes';
-import { create as createMedal } from '@/routes/dashboard/medals';
+import { index as communityIndex } from '@/routes/community';
+import { show as legadoShow } from '@/routes/dashboard/legado';
+import {
+    create as createMedal,
+    index as medalsIndex,
+} from '@/routes/dashboard/medals';
 import { edit as editProfile } from '@/routes/dashboard/profile';
 import { index as eventsIndex } from '@/routes/events';
-import { show as legacyCodeShow } from '@/routes/legacy-code';
-import type { DashboardProfileSummary, DashboardStats } from '@/types';
+import { index as photosIndex } from '@/routes/photos';
+import type {
+    CommunityPost,
+    DashboardProfileSummary,
+    DashboardStats,
+    MedalCard,
+} from '@/types';
 
 defineOptions({
     layout: {
@@ -60,137 +71,189 @@ type LegadoEntry = {
     video_count: number;
 };
 
-const { legacyId, profile, stats, legado } = defineProps<{
+const props = defineProps<{
     legacyId: string | null;
     profile: DashboardProfileSummary | null;
     stats: DashboardStats;
     legado: LegadoEntry[];
+    athlete: {
+        name: string;
+        username: string | null;
+        bio: string | null;
+        city: string | null;
+        state: string | null;
+        country: string | null;
+        sport: string | null;
+        photo_url: string | null;
+        cover_url: string | null;
+    };
+    social: { followers: number; following: number; posts: number };
+    medals: MedalCard[];
+    recentPhotos: {
+        uuid: string;
+        url: string;
+        is_public: boolean;
+        event: string | null;
+        participant_id: number;
+    }[];
+    recentPosts: CommunityPost[];
 }>();
 
-const page = usePage();
-const firstName = computed(() => page.props.auth.user.first_name);
+type Tab = 'historia' | 'logros' | 'fotos' | 'eventos';
+const tabs: { key: Tab; label: string }[] = [
+    { key: 'historia', label: 'Historia' },
+    { key: 'logros', label: 'Logros' },
+    { key: 'fotos', label: 'Fotos' },
+    { key: 'eventos', label: 'Eventos' },
+];
+const activeTab = ref<Tab>('historia');
+
+const location = computed(() =>
+    [props.athlete.city, props.athlete.state, props.athlete.country]
+        .filter(Boolean)
+        .join(', '),
+);
+
+const headerStats = computed(() => [
+    { label: 'Eventos', value: props.stats.events },
+    { label: 'Medallas', value: props.stats.medals },
+    { label: 'Placas', value: props.stats.plates },
+    { label: 'Seguidores', value: props.social.followers },
+    { label: 'Siguiendo', value: props.social.following },
+    { label: 'Fotos', value: props.stats.media },
+]);
+
+const sortedLegado = computed(() =>
+    [...props.legado].sort((a, b) =>
+        (b.event_date ?? '').localeCompare(a.event_date ?? ''),
+    ),
+);
+
+const timeline = computed<TimelineEntry[]>(() =>
+    sortedLegado.value.map((entry) => ({
+        key: entry.id,
+        date: entry.event_date,
+        title: entry.event ?? 'Evento',
+        subtitle: entry.race,
+        time: entry.official_time,
+        pace: entry.pace,
+        position: entry.position,
+        imageUrl: entry.image_url,
+        href: legadoShow(entry.id).url,
+        hasLegacyPlate: entry.has_legacy_plate,
+        photoCount: entry.photo_count,
+    })),
+);
 
 const copied = ref(false);
 
 async function copyLegacyId() {
-    if (!legacyId) {
+    if (!props.legacyId) {
         return;
     }
 
-    await navigator.clipboard.writeText(legacyId);
+    await navigator.clipboard.writeText(props.legacyId);
     copied.value = true;
     setTimeout(() => (copied.value = false), 1800);
 }
 
-const legacyCodeInput = ref('');
-const legacyCodeDialogOpen = ref(false);
-
-function goToLegacyCode() {
-    if (!legacyCodeInput.value.trim()) {
+async function shareProfile() {
+    if (!props.athlete.username) {
         return;
     }
 
-    router.visit(
-        legacyCodeShow(legacyCodeInput.value.trim().toUpperCase()).url,
-    );
+    const url = `${window.location.origin}/@${props.athlete.username}`;
+
+    try {
+        if (navigator.share) {
+            await navigator.share({ title: props.athlete.name, url });
+        } else {
+            await navigator.clipboard.writeText(url);
+            toast.success('Enlace de tu perfil copiado.');
+        }
+    } catch {
+        // Share sheet dismissed.
+    }
 }
 
-const legacyPlateCount = computed(
-    () => legado.filter((entry) => entry.has_legacy_plate).length,
-);
+const linkDialogOpen = ref(false);
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head title="Mi Legado" />
 
-    <div class="flex flex-col gap-6 p-4 md:p-6">
-        <!-- Welcome + Legacy ID -->
-        <Reveal
-            as="div"
-            class="relative overflow-hidden rounded-2xl border border-fl-gold/20 bg-gradient-to-br from-fl-graphite via-fl-black to-fl-black p-6 md:p-8"
+    <div class="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
+        <ProfileHeader
+            :name="athlete.name"
+            :username="athlete.username"
+            :bio="athlete.bio"
+            :location="location"
+            :sports="athlete.sport ? [athlete.sport] : []"
+            :photo-url="athlete.photo_url"
+            :cover-url="athlete.cover_url"
+            :stats="headerStats"
         >
-            <div
-                class="absolute -top-20 -right-20 size-56 rounded-full bg-fl-gold/10 blur-3xl"
-            />
-            <div
-                class="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between"
-            >
-                <div class="flex items-center gap-4">
-                    <FinisherMascot
-                        variant="small"
-                        class="hidden shrink-0 sm:block"
-                    />
-                    <div>
-                        <p class="text-sm text-white/50">Hola,</p>
-                        <h1 class="text-2xl font-bold text-white md:text-3xl">
-                            {{ firstName }}
-                        </h1>
-                    </div>
-                </div>
-
-                <div
-                    v-if="legacyId"
-                    class="flex items-center gap-3 rounded-xl border border-fl-gold/30 bg-fl-black/60 px-4 py-3"
+            <template #actions>
+                <Button as-child variant="outline" class="rounded-full">
+                    <Link :href="editProfile()">
+                        <PenLine class="size-4" />
+                        Editar perfil
+                    </Link>
+                </Button>
+                <Button
+                    v-if="athlete.username"
+                    as-child
+                    variant="outline"
+                    class="rounded-full"
                 >
-                    <div>
-                        <p
-                            class="text-[10px] font-medium tracking-widest text-white/40 uppercase"
-                        >
-                            Legacy ID
-                        </p>
-                        <p class="font-mono text-lg font-semibold text-fl-gold">
-                            {{ legacyId }}
-                        </p>
-                    </div>
-                    <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        class="text-white/60 hover:text-fl-gold"
-                        aria-label="Copiar Legacy ID"
-                        @click="copyLegacyId"
-                    >
-                        <Check v-if="copied" class="size-4" />
-                        <Copy v-else class="size-4" />
-                    </Button>
-                </div>
-            </div>
-        </Reveal>
+                    <Link :href="`/@${athlete.username}`">
+                        <ExternalLink class="size-4" />
+                        Ver perfil público
+                    </Link>
+                </Button>
+                <Button
+                    v-if="athlete.username"
+                    variant="ghost"
+                    size="icon"
+                    class="rounded-full"
+                    aria-label="Compartir mi perfil"
+                    @click="shareProfile"
+                >
+                    <Share2 class="size-4" />
+                </Button>
+            </template>
+        </ProfileHeader>
 
-        <!-- Profile prompt -->
+        <!-- Profile setup prompts -->
         <div
             v-if="!profile"
-            class="rounded-2xl border border-dashed border-fl-gold/30 bg-fl-graphite/40 p-6 text-center"
+            class="mt-8 flex flex-col gap-4 rounded-xl border border-dashed border-fl-gold/50 bg-fl-cream/60 p-6 sm:flex-row sm:items-center sm:justify-between"
         >
-            <p class="font-medium text-white">
-                Aún no has completado tu Legacy Profile.
-            </p>
-            <p class="mt-1 text-sm text-white/50">
-                Elige tu username y hazlo público cuando quieras compartir tu
-                colección.
-            </p>
-            <Button
-                as-child
-                class="mt-4 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-            >
-                <Link :href="editProfile()">Completar mi Legacy Profile</Link>
+            <div>
+                <p class="font-semibold">Crea tu perfil de atleta</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Elige tu username, tu deporte y tu foto. Decide si tu perfil
+                    es público o privado.
+                </p>
+            </div>
+            <Button as-child class="rounded-full">
+                <Link :href="editProfile()">Completar mi perfil</Link>
             </Button>
         </div>
-
-        <!-- Profile completion -->
         <div
             v-else-if="profile.completion < 100"
-            class="rounded-2xl border border-white/10 bg-fl-graphite/40 p-5"
+            class="mt-8 rounded-xl border border-border bg-card p-5"
         >
             <div class="flex items-center justify-between gap-4">
-                <p class="text-sm text-white/70">
-                    Tu Legacy Profile está
-                    <span class="font-semibold text-fl-gold"
+                <p class="text-sm text-muted-foreground">
+                    Tu perfil está
+                    <span class="font-semibold text-foreground"
                         >{{ profile.completion }}% completo</span
-                    >.
+                    >. Agrega foto, portada y una frase que te represente.
                 </p>
                 <Link
                     :href="editProfile()"
-                    class="shrink-0 text-sm font-medium text-fl-gold hover:text-fl-gold-soft"
+                    class="shrink-0 text-sm font-semibold underline-offset-4 hover:underline"
                 >
                     Completar
                 </Link>
@@ -198,174 +261,387 @@ const legacyPlateCount = computed(
             <Progress :model-value="profile.completion" class="mt-3" />
         </div>
 
-        <!-- Mi Legado: one card per participation (medal + Legacy Plate +
-             result + media all belong to the same event, not three
-             separate menus) -->
-        <div v-if="legado.length">
-            <div class="mb-3 flex items-center justify-between">
-                <h2
-                    class="text-sm font-semibold tracking-wide text-white/60 uppercase"
+        <div class="mt-10 grid gap-10 lg:grid-cols-12">
+            <!-- Main column -->
+            <div class="min-w-0 lg:col-span-8">
+                <div
+                    class="flex gap-1 overflow-x-auto border-b border-border"
+                    role="tablist"
+                    aria-label="Secciones de Mi Legado"
                 >
-                    Mi Legado
-                </h2>
-                <p class="text-xs text-white/30">
-                    {{ legado.length }} evento{{
-                        legado.length === 1 ? '' : 's'
-                    }}
-                    · {{ legacyPlateCount }} Legacy Plate{{
-                        legacyPlateCount === 1 ? '' : 's'
-                    }}
-                    <span v-if="stats.media">· {{ stats.media }} media</span>
-                </p>
-            </div>
-            <StaggerGroup
-                as="div"
-                class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                :stagger-ms="60"
-            >
-                <LegadoCard
-                    v-for="entry in legado"
-                    :key="entry.id"
-                    :id="entry.id"
-                    :event="entry.event"
-                    :edition="entry.edition"
-                    :race="entry.race"
-                    :bib-number="entry.bib_number"
-                    :event-date="entry.event_date"
-                    :official-time="entry.official_time"
-                    :pace="entry.pace"
-                    :image-url="entry.image_url"
-                    :has-legacy-plate="entry.has_legacy_plate"
-                    :legacy-plate-status="entry.legacy_plate_status"
-                    :photo-count="entry.photo_count"
-                    :video-count="entry.video_count"
-                />
-            </StaggerGroup>
-        </div>
+                    <button
+                        v-for="tab in tabs"
+                        :id="`tab-${tab.key}`"
+                        :key="tab.key"
+                        type="button"
+                        role="tab"
+                        :aria-selected="activeTab === tab.key"
+                        :aria-controls="`panel-${tab.key}`"
+                        class="-mb-px shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors"
+                        :class="
+                            activeTab === tab.key
+                                ? 'border-foreground text-foreground'
+                                : 'border-transparent text-muted-foreground hover:text-foreground'
+                        "
+                        @click="activeTab = tab.key"
+                    >
+                        {{ tab.label }}
+                    </button>
+                </div>
 
-        <!-- Quick actions -->
-        <div>
-            <h2
-                class="mb-3 text-sm font-semibold tracking-wide text-white/60 uppercase"
-            >
-                Acciones rápidas
-            </h2>
-            <StaggerGroup
-                as="div"
-                class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-                :stagger-ms="50"
-            >
-                <Button
-                    as-child
-                    variant="outline"
-                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                <!-- Historia -->
+                <section
+                    v-show="activeTab === 'historia'"
+                    id="panel-historia"
+                    role="tabpanel"
+                    aria-labelledby="tab-historia"
+                    class="pt-8"
                 >
-                    <Link :href="createMedal()">
-                        <Award class="size-4 text-fl-gold" />
-                        Agregar medalla
-                    </Link>
-                </Button>
-                <Button
-                    as-child
-                    variant="outline"
-                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                    <h2 class="fl-display text-3xl sm:text-4xl">
+                        Cada logro cuenta.
+                    </h2>
+                    <p class="mt-3 max-w-xl text-muted-foreground">
+                        Aquí se construye mi historia. Un registro de los
+                        momentos que me definen dentro y fuera del deporte.
+                    </p>
+
+                    <div v-if="timeline.length" class="mt-8">
+                        <LegacyTimelineList :entries="timeline" />
+                    </div>
+                    <div
+                        v-else
+                        class="mt-8 rounded-xl border border-dashed border-foreground/15 bg-card p-8 text-center"
+                    >
+                        <p class="font-serif text-2xl">
+                            Tu legado comienza con una meta.
+                        </p>
+                        <p
+                            class="mx-auto mt-2 max-w-md text-sm text-muted-foreground"
+                        >
+                            Cuando participes en un evento de Finisher Legacy tu
+                            resultado aparecerá aquí. También puedes registrar
+                            una medalla que ya tengas.
+                        </p>
+                        <div
+                            class="mt-6 flex flex-col justify-center gap-2 sm:flex-row"
+                        >
+                            <Button as-child class="rounded-full">
+                                <Link :href="createMedal()">
+                                    <Plus class="size-4" />
+                                    Agregar una medalla
+                                </Link>
+                            </Button>
+                            <Button
+                                as-child
+                                variant="outline"
+                                class="rounded-full"
+                            >
+                                <Link :href="eventsIndex()"
+                                    >Explorar eventos</Link
+                                >
+                            </Button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Logros -->
+                <section
+                    v-show="activeTab === 'logros'"
+                    id="panel-logros"
+                    role="tabpanel"
+                    aria-labelledby="tab-logros"
+                    class="pt-8"
                 >
-                    <Link :href="editProfile()">
-                        <UserCircle class="size-4 text-fl-gold" />
-                        Editar mi Legacy Profile
-                    </Link>
-                </Button>
-                <Button
-                    as-child
-                    variant="outline"
-                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                    <div class="flex items-end justify-between gap-4">
+                        <h2 class="fl-display text-3xl">Mis medallas</h2>
+                        <Link
+                            :href="medalsIndex()"
+                            class="text-sm font-semibold underline-offset-4 hover:underline"
+                            >Ver todas</Link
+                        >
+                    </div>
+                    <div
+                        v-if="medals.length"
+                        class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3"
+                    >
+                        <Link
+                            v-for="medal in medals"
+                            :key="medal.id"
+                            :href="`/dashboard/medals/${medal.id}`"
+                            class="group fl-card overflow-hidden transition-colors hover:border-foreground/20"
+                        >
+                            <div class="aspect-square bg-fl-cream">
+                                <img
+                                    v-if="medal.thumbnail_url"
+                                    :src="medal.thumbnail_url"
+                                    :alt="medal.title"
+                                    loading="lazy"
+                                    class="size-full object-cover"
+                                />
+                                <div
+                                    v-else
+                                    class="flex size-full items-center justify-center"
+                                >
+                                    <Award class="size-8 text-fl-gold-ink/60" />
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <p class="truncate text-sm font-semibold">
+                                    {{ medal.title }}
+                                </p>
+                                <p
+                                    class="truncate text-xs text-muted-foreground"
+                                >
+                                    {{
+                                        [
+                                            medal.distance_label,
+                                            shortDate(medal.event_date),
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' · ')
+                                    }}
+                                </p>
+                            </div>
+                        </Link>
+                    </div>
+                    <p v-else class="mt-6 text-muted-foreground">
+                        Aún no registras medallas.
+                    </p>
+                    <Button
+                        as-child
+                        variant="outline"
+                        class="mt-6 rounded-full"
+                    >
+                        <Link :href="createMedal()">
+                            <Plus class="size-4" />
+                            Agregar medalla
+                        </Link>
+                    </Button>
+                </section>
+
+                <!-- Fotos -->
+                <section
+                    v-show="activeTab === 'fotos'"
+                    id="panel-fotos"
+                    role="tabpanel"
+                    aria-labelledby="tab-fotos"
+                    class="pt-8"
                 >
-                    <Link :href="eventsIndex()">
-                        <Compass class="size-4 text-fl-gold" />
-                        Explorar eventos
-                    </Link>
-                </Button>
-                <Button
-                    as-child
-                    variant="outline"
-                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                    <div class="flex items-end justify-between gap-4">
+                        <h2 class="fl-display text-3xl">Mis fotos</h2>
+                        <Link
+                            :href="photosIndex()"
+                            class="text-sm font-semibold underline-offset-4 hover:underline"
+                            >Buscar mis fotos</Link
+                        >
+                    </div>
+                    <div
+                        v-if="recentPhotos.length"
+                        class="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3"
+                    >
+                        <Link
+                            v-for="photo in recentPhotos"
+                            :key="photo.uuid"
+                            :href="legadoShow(photo.participant_id).url"
+                            class="group relative aspect-square overflow-hidden rounded-lg bg-muted"
+                        >
+                            <img
+                                :src="photo.url"
+                                :alt="
+                                    photo.event
+                                        ? `Foto en ${photo.event}`
+                                        : 'Foto de evento'
+                                "
+                                loading="lazy"
+                                class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                            />
+                            <span
+                                v-if="!photo.is_public"
+                                class="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium"
+                                >Privada</span
+                            >
+                        </Link>
+                    </div>
+                    <div
+                        v-else
+                        class="mt-6 rounded-xl border border-dashed border-foreground/15 bg-card p-8 text-center"
+                    >
+                        <Camera class="mx-auto size-6 text-fl-gold-ink" />
+                        <p class="mt-3 text-sm text-muted-foreground">
+                            Sube fotos desde el detalle de cada evento en tu
+                            historia.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Eventos -->
+                <section
+                    v-show="activeTab === 'eventos'"
+                    id="panel-eventos"
+                    role="tabpanel"
+                    aria-labelledby="tab-eventos"
+                    class="pt-8"
                 >
-                    <Link href="/tienda">
-                        <ShoppingBag class="size-4 text-fl-gold" />
-                        Ir a la tienda
-                    </Link>
-                </Button>
-                <Button
-                    as-child
-                    variant="outline"
-                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
+                    <h2 class="fl-display text-3xl">Mis eventos</h2>
+                    <ul
+                        v-if="sortedLegado.length"
+                        class="mt-6 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card"
+                    >
+                        <li v-for="entry in sortedLegado" :key="entry.id">
+                            <Link
+                                :href="legadoShow(entry.id)"
+                                class="flex items-center justify-between gap-4 px-4 py-4 transition-colors hover:bg-muted/50 sm:px-5"
+                            >
+                                <span class="min-w-0">
+                                    <span class="block truncate font-medium">{{
+                                        entry.event
+                                    }}</span>
+                                    <span
+                                        class="block truncate text-xs text-muted-foreground"
+                                        >{{
+                                            [
+                                                entry.race,
+                                                shortDate(entry.event_date),
+                                                entry.bib_number
+                                                    ? `#${entry.bib_number}`
+                                                    : null,
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ')
+                                        }}</span
+                                    >
+                                </span>
+                                <span
+                                    v-if="entry.official_time"
+                                    class="legacy-numeric shrink-0 font-semibold"
+                                    >{{ entry.official_time }}</span
+                                >
+                            </Link>
+                        </li>
+                    </ul>
+                    <p v-else class="mt-6 text-muted-foreground">
+                        Todavía no tienes participaciones registradas.
+                    </p>
+                    <Button
+                        as-child
+                        variant="outline"
+                        class="mt-6 rounded-full"
+                    >
+                        <Link :href="eventsIndex()">Explorar eventos</Link>
+                    </Button>
+                </section>
+            </div>
+
+            <!-- Side column -->
+            <aside class="space-y-6 lg:col-span-4">
+                <!-- NFC -->
+                <div
+                    class="overflow-hidden rounded-xl bg-foreground p-6 text-background"
                 >
-                    <Link href="/dashboard/my-gear">
-                        <Package class="size-4 text-fl-gold" />
+                    <Nfc class="size-6 text-fl-gold" />
+                    <h2 class="mt-4 font-serif text-2xl leading-tight">
+                        Vincula tu placa NFC
+                    </h2>
+                    <p class="mt-2 text-sm leading-relaxed text-white/70">
+                        Conecta tu placa física con tu perfil y mantén vivo tu
+                        legado.
+                    </p>
+                    <Button
+                        class="mt-5 w-full rounded-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                        @click="linkDialogOpen = true"
+                    >
+                        Vincular mi placa
+                    </Button>
+                    <div
+                        v-if="legacyId"
+                        class="mt-5 flex items-center justify-between gap-3 border-t border-white/15 pt-4"
+                    >
+                        <div>
+                            <p
+                                class="text-[10px] tracking-[0.18em] text-white/50 uppercase"
+                            >
+                                Legacy ID
+                            </p>
+                            <p class="font-mono text-sm text-fl-gold">
+                                {{ legacyId }}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="flex size-8 items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                            aria-label="Copiar Legacy ID"
+                            @click="copyLegacyId"
+                        >
+                            <Check v-if="copied" class="size-4" />
+                            <Copy v-else class="size-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Community -->
+                <div class="fl-card p-5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold">Mis publicaciones</h2>
+                        <span class="text-xs text-muted-foreground"
+                            >{{ social.posts }} en total</span
+                        >
+                    </div>
+                    <div v-if="recentPosts.length" class="mt-4 space-y-3">
+                        <PostPreview
+                            v-for="post in recentPosts"
+                            :key="post.uuid"
+                            :post="post"
+                        />
+                    </div>
+                    <p v-else class="mt-3 text-sm text-muted-foreground">
+                        Comparte tu próxima carrera o marca personal con la
+                        comunidad.
+                    </p>
+                    <Button
+                        as-child
+                        variant="outline"
+                        class="mt-4 w-full rounded-full"
+                    >
+                        <Link :href="communityIndex()">Publicar un logro</Link>
+                    </Button>
+                </div>
+
+                <!-- Quick links -->
+                <nav
+                    class="fl-card divide-y divide-border"
+                    aria-label="Accesos"
+                >
+                    <Link
+                        href="/dashboard/my-gear"
+                        class="flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-muted/50"
+                    >
+                        <Package class="size-4 text-fl-gold-ink" />
                         Mi equipo
+                        <span class="ml-auto text-xs text-muted-foreground">{{
+                            stats.ownedProducts
+                        }}</span>
                     </Link>
-                </Button>
-                <Button
-                    as-child
-                    variant="outline"
-                    class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
-                >
-                    <Link href="/mis-pedidos">
-                        <Receipt class="size-4 text-fl-gold" />
+                    <Link
+                        href="/mis-pedidos"
+                        class="flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-muted/50"
+                    >
+                        <Receipt class="size-4 text-fl-gold-ink" />
                         Mis pedidos
                     </Link>
-                </Button>
-                <Dialog v-model:open="legacyCodeDialogOpen">
-                    <DialogTrigger as-child>
-                        <Button
-                            variant="outline"
-                            class="justify-start gap-2 border-white/10 bg-fl-graphite/40 text-white hover:border-fl-gold/30 hover:bg-fl-graphite/60 hover:text-white"
-                        >
-                            <QrCode class="size-4 text-fl-gold" />
-                            Vincular Legacy Code
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent
-                        class="dark border-white/10 bg-fl-graphite text-white"
+                    <Link
+                        :href="medalsIndex()"
+                        class="flex items-center gap-3 px-5 py-3.5 text-sm hover:bg-muted/50"
                     >
-                        <DialogHeader>
-                            <DialogTitle>Buscar Legacy Code</DialogTitle>
-                            <DialogDescription class="text-white/50">
-                                Ingresa el código impreso en tu placa para ver
-                                su información.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <Input
-                            v-model="legacyCodeInput"
-                            placeholder="FL-XXXXXXX"
-                            class="border-white/10 bg-fl-black text-white placeholder:text-white/30"
-                            @keyup.enter="goToLegacyCode"
-                        />
-                        <DialogFooter>
-                            <Button
-                                class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                                @click="goToLegacyCode"
-                            >
-                                Buscar
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </StaggerGroup>
+                        <Award class="size-4 text-fl-gold-ink" />
+                        Mis medallas
+                        <span class="ml-auto text-xs text-muted-foreground">{{
+                            stats.medals
+                        }}</span>
+                    </Link>
+                </nav>
+            </aside>
         </div>
-
-        <!-- Empty state helper when brand new -->
-        <MascotEmptyState
-            v-if="legado.length === 0"
-            title="Tu Legado comienza con una meta."
-            description="Registra tu primera medalla y empieza a construir tu Legacy."
-        >
-            <Button
-                as-child
-                class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-            >
-                <Link :href="createMedal()">Agregar mi primera medalla</Link>
-            </Button>
-        </MascotEmptyState>
     </div>
+
+    <LinkPlateDialog v-model:open="linkDialogOpen" />
 </template>

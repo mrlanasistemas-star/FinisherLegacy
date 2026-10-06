@@ -70,13 +70,13 @@ const litCount = () => lit.value.filter(Boolean).length;
 <template>
     <div class="relative">
         <span
-            class="absolute -top-8 left-10 text-[10px] font-semibold tracking-[0.2em] text-white/25 uppercase sm:left-12"
+            class="absolute -top-8 left-10 text-[10px] font-semibold tracking-[0.2em] text-muted-foreground/80 uppercase sm:left-12"
         >
             Vista previa
         </span>
 
         <div
-            class="absolute top-2 bottom-2 left-[15px] w-px bg-white/10 sm:left-[19px]"
+            class="absolute top-2 bottom-2 left-[15px] w-px bg-foreground/5 sm:left-[19px]"
             aria-hidden="true"
         >
             <div
@@ -104,26 +104,26 @@ const litCount = () => lit.value.filter(Boolean).length;
                         :class="
                             lit[index]
                                 ? 'border-fl-gold bg-fl-gold-soft shadow-[0_0_16px_-2px_rgba(224,202,137,0.8)]'
-                                : 'border-white/20 bg-fl-black'
+                                : 'border-foreground/15 bg-background'
                         "
                     />
                 </span>
 
                 <div>
                     <span
-                        class="legacy-numeric text-xs font-semibold text-fl-gold-soft"
+                        class="legacy-numeric text-xs font-semibold text-fl-gold-ink"
                     >
                         {{ entry.year }}
                     </span>
-                    <h3 class="mt-1 text-lg font-semibold text-white">
+                    <h3 class="mt-1 text-lg font-semibold text-foreground">
                         {{ entry.event }}
                     </h3>
                     <p
-                        class="legacy-numeric mt-1 flex flex-wrap items-center gap-x-2 text-sm text-white/60"
+                        class="legacy-numeric mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground"
                     >
                         <span>{{ entry.distance }}</span>
                         <span aria-hidden="true">·</span>
-                        <span class="text-white/80">{{ entry.time }}</span>
+                        <span class="text-foreground">{{ entry.time }}</span>
                     </p>
                 </div>
             </div>
@@ -135,10 +135,10 @@ const litCount = () => lit.value.filter(Boolean).length;
                     class="absolute top-0 left-0 flex size-[31px] items-center justify-center sm:size-[39px]"
                 >
                     <span
-                        class="size-3 rounded-full border-2 border-dashed border-white/20"
+                        class="size-3 rounded-full border-2 border-dashed border-foreground/15"
                     />
                 </span>
-                <p class="text-sm text-white/40 italic">
+                <p class="text-sm text-muted-foreground/80 italic">
                     Tu próxima carrera aparece aquí.
                 </p>
             </div>

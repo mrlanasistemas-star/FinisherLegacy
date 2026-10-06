@@ -79,11 +79,11 @@ useIntersectionObserver(
                 :key="`icon-${state.title}`"
             >
                 <div
-                    class="fl-hover-glow fl-journey-icon flex size-16 shrink-0 items-center justify-center rounded-full border bg-fl-graphite/60"
+                    class="fl-hover-glow fl-journey-icon flex size-16 shrink-0 items-center justify-center rounded-full border bg-card/60"
                     :class="[
                         state.accent === 'gold-soft'
-                            ? 'border-fl-gold-soft/30 text-fl-gold-soft'
-                            : 'border-fl-gold/40 text-fl-gold-soft',
+                            ? 'border-fl-gold-soft/30 text-fl-gold-ink'
+                            : 'border-fl-gold/40 text-fl-gold-ink',
                         {
                             'fl-journey-icon-play':
                                 revealed && !prefersReducedMotion,
@@ -113,14 +113,14 @@ useIntersectionObserver(
                 class="flex flex-col gap-2"
             >
                 <span
-                    class="legacy-numeric text-sm font-semibold text-white/40"
+                    class="legacy-numeric text-sm font-semibold text-muted-foreground/80"
                 >
                     {{ state.number }}
                 </span>
-                <h3 class="text-lg font-semibold text-white">
+                <h3 class="text-lg font-semibold text-foreground">
                     {{ state.title }}
                 </h3>
-                <p class="text-sm leading-relaxed text-white/60">
+                <p class="text-sm leading-relaxed text-muted-foreground">
                     {{ state.description }}
                 </p>
             </Reveal>
@@ -136,25 +136,25 @@ useIntersectionObserver(
             >
                 <div class="flex items-center gap-3">
                     <div
-                        class="flex size-12 shrink-0 items-center justify-center rounded-full border bg-fl-graphite/60"
+                        class="flex size-12 shrink-0 items-center justify-center rounded-full border bg-card/60"
                         :class="
                             state.accent === 'gold-soft'
-                                ? 'border-fl-gold-soft/30 text-fl-gold-soft'
-                                : 'border-fl-gold/40 text-fl-gold-soft'
+                                ? 'border-fl-gold-soft/30 text-fl-gold-ink'
+                                : 'border-fl-gold/40 text-fl-gold-ink'
                         "
                     >
                         <component :is="state.icon" class="size-5" />
                     </div>
                     <span
-                        class="legacy-numeric text-sm font-semibold text-white/40"
+                        class="legacy-numeric text-sm font-semibold text-muted-foreground/80"
                     >
                         {{ state.number }}
                     </span>
                 </div>
-                <h3 class="text-lg font-semibold text-white">
+                <h3 class="text-lg font-semibold text-foreground">
                     {{ state.title }}
                 </h3>
-                <p class="pb-2 text-sm leading-relaxed text-white/60">
+                <p class="pb-2 text-sm leading-relaxed text-muted-foreground">
                     {{ state.description }}
                 </p>
                 <div

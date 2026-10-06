@@ -2,8 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\CartItem;
+use App\Models\CompanySetting;
 use App\Support\PermissionCatalog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -61,6 +64,20 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
                 'permissions' => array_values(array_unique($permissions)),
                 'isSuperAdmin' => $isSuperAdmin,
+                // Navbar avatar + "Mi perfil" link — the public identity
+                // only (username/photo), never anything private.
+                // Queried (not lazy-loaded) so the relation never ends up
+                // serialized inside auth.user.
+                'profile' => function () use ($user) {
+                    $profile = $user?->athleteProfile()->first(['username', 'profile_photo_path']);
+
+                    return $profile === null ? null : [
+                        'username' => $profile->username,
+                        'photo_url' => $profile->profile_photo_path
+                            ? Storage::disk('public')->url($profile->profile_photo_path)
+                            : null,
+                    ];
+                },
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             // Cheap enough for every request (an indexed count on a tiny
@@ -68,6 +85,22 @@ class HandleInertiaRequests extends Middleware
             // not just the inbox, so a shared prop beats a second round
             // trip (product UX consolidation brief §37).
             'unreadNotificationsCount' => $user?->unreadNotifications()->count() ?? 0,
+            // Footer contact/social links — only channels an admin actually
+            // configured (cached; see CompanySetting::values()).
+            'company' => function () {
+                $values = CompanySetting::values();
+
+                return [
+                    'country' => $values['country'],
+                    'city' => $values['city'],
+                    'channels' => CompanySetting::contactChannels(),
+                ];
+            },
+            // Navbar cart badge — one aggregate query on the user's own
+            // cart (CartItem has no price authority, this is display only).
+            'cartCount' => fn () => $user === null ? 0 : (int) CartItem::query()
+                ->whereHas('cart', fn ($q) => $q->where('user_id', $user->id))
+                ->sum('quantity'),
         ];
     }
 }

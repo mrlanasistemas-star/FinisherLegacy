@@ -47,3 +47,40 @@ export const SYSTEM_AREA_NAV = [
     },
     { label: 'Auditoría', href: '/admin/audit', permission: 'audit.view' },
 ];
+
+export const CATALOG_AREA_NAV = [
+    {
+        label: 'Productos',
+        href: '/admin/products',
+        permission: 'products.manage',
+    },
+    {
+        label: 'Categorías',
+        href: '/admin/product-categories',
+        permission: 'products.manage',
+    },
+    {
+        label: 'Inventario',
+        href: '/admin/inventory',
+        permission: 'inventory.manage',
+    },
+];
+
+export const CONTENT_AREA_NAV = [
+    {
+        label: 'Nosotros y trayectoria',
+        href: '/admin/content',
+        permission: 'content.manage',
+    },
+    {
+        label: 'Mensajes de contacto',
+        href: '/admin/messages',
+        permission: 'content.manage',
+    },
+    {
+        label: 'Comunidad',
+        href: '/admin/community',
+        permission: 'community.moderate',
+    },
+    { label: 'Fotografías', href: '/admin/photos', permission: 'media.manage' },
+];

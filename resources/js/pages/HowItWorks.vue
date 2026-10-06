@@ -120,9 +120,10 @@ const afterPlate = [
         />
     </Head>
 
-    <section class="border-b border-white/10 py-24">
+    <section class="border-b border-border py-24">
         <div class="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <SectionHeading
+                align="center"
                 eyebrow="Cómo funciona"
                 title="De tu meta a tu legado."
                 description="Finisher Legacy conecta lo que vives en la pista con lo que conservas para siempre. Así es como sucede."
@@ -130,7 +131,7 @@ const afterPlate = [
         </div>
     </section>
 
-    <section data-mascot-tip="steps" class="border-b border-white/10 py-20">
+    <section data-mascot-tip="steps" class="border-b border-border py-20">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <HowItWorksSteps :steps="steps" />
         </div>
@@ -138,10 +139,11 @@ const afterPlate = [
 
     <section
         data-mascot-tip="chain"
-        class="border-b border-white/10 bg-fl-graphite/30 py-24"
+        class="border-b border-border bg-card/30 py-24"
     >
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
+                align="center"
                 eyebrow="La cadena Finisher Legacy"
                 title="De lo físico a lo digital"
                 description="Cada elemento existe para preservar el anterior. Tu medalla no desaparece: se convierte en algo que puedes volver a visitar."
@@ -152,18 +154,18 @@ const afterPlate = [
                 <PlateShowcase />
 
                 <div
-                    class="flex flex-col items-center gap-6 rounded-2xl border border-white/10 bg-fl-graphite/50 p-8 sm:flex-row sm:justify-center sm:gap-4 lg:flex-col lg:items-start"
+                    class="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card/50 p-8 sm:flex-row sm:justify-center sm:gap-4 lg:flex-col lg:items-start"
                 >
                     <template v-for="(step, index) in chain" :key="step.label">
                         <div
                             class="flex items-center gap-3 text-center lg:text-left"
                         >
                             <div
-                                class="flex size-12 shrink-0 cursor-default items-center justify-center rounded-full border border-fl-gold/30 bg-fl-black text-fl-gold-soft transition-transform duration-500 ease-out hover:rotate-[360deg] hover:border-fl-gold/60"
+                                class="flex size-12 shrink-0 cursor-default items-center justify-center rounded-full border border-fl-gold/30 bg-background text-fl-gold-ink transition-transform duration-500 ease-out hover:rotate-[360deg] hover:border-fl-gold/60"
                             >
                                 <component :is="step.icon" class="size-5" />
                             </div>
-                            <span class="text-sm font-medium text-white/80">{{
+                            <span class="text-sm font-medium text-foreground">{{
                                 step.label
                             }}</span>
                         </div>
@@ -177,9 +179,10 @@ const afterPlate = [
         </div>
     </section>
 
-    <section data-mascot-tip="flows" class="border-b border-white/10 py-24">
+    <section data-mascot-tip="flows" class="border-b border-border py-24">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
+                align="center"
                 eyebrow="Cómo preparamos tu placa"
                 title="Evento conectado. Evento no conectado."
                 description="Finisher Legacy nunca depende de tener acceso a la base de datos de un evento para poder entregarte tu placa."
@@ -210,10 +213,11 @@ const afterPlate = [
 
     <section
         data-mascot-tip="next"
-        class="border-b border-white/10 bg-fl-graphite/30 py-24"
+        class="border-b border-border bg-card/30 py-24"
     >
         <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
+                align="center"
                 eyebrow="Después de recibir tu placa"
                 title="¿Qué sigue?"
                 class="mb-12"
@@ -225,15 +229,15 @@ const afterPlate = [
                     class="flex gap-4"
                 >
                     <span
-                        class="flex size-8 shrink-0 items-center justify-center rounded-full border border-fl-gold/30 text-sm font-semibold text-fl-gold-soft"
+                        class="flex size-8 shrink-0 items-center justify-center rounded-full border border-fl-gold/30 text-sm font-semibold text-fl-gold-ink"
                     >
                         {{ index + 1 }}
                     </span>
                     <div>
-                        <p class="font-semibold text-white">
+                        <p class="font-semibold text-foreground">
                             {{ item.title }}
                         </p>
-                        <p class="mt-1 text-sm text-white/60">
+                        <p class="mt-1 text-sm text-muted-foreground">
                             {{ item.description }}
                         </p>
                     </div>

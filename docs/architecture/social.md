@@ -69,12 +69,16 @@ La app **ofrece** "Compartir como Legacy Moment" después de: ver/terminar una c
 
 ## URLs
 
-| Web (pendiente de mapeo en el sitio) | App |
+| Web | App |
 |---|---|
 | `finisherlegacy.com/@username` (ya existe en web) | `finisherlegacy://athlete/username` |
-| `finisherlegacy.com/moments/{uuid}` (**no existe aún en web**) | `finisherlegacy://moments/{uuid}` |
+| `finisherlegacy.com/comunidad/publicaciones/{uuid}` (web, CommunityController) | `finisherlegacy://moments/{uuid}` |
 
 `src/app/+native-intent.tsx` + `features/links/map-incoming-path.ts` traducen ambos formatos (y `/reset-password/{token}`) a rutas de la app. Para que los enlaces `https://` abran la app hace falta configurar Universal Links / App Links (archivos `apple-app-site-association` y `assetlinks.json` en el dominio) — ver `RELEASE_CHECKLIST.md`.
+
+## Web (Comunidad)
+
+`/comunidad` (feed Para ti / Siguiendo / Mis deportes), `/comunidad/publicaciones/{uuid}` (detalle + mensajes de apoyo) y seguir/dejar de seguir desde `/@username` — todo en `App\Http\Controllers\CommunityController`, que reutiliza las mismas Actions, `MomentQuery`, `SocialVisibility` y policies que la API. "Celebrar" es la reacción `cheer`.
 
 ## Moderación
 

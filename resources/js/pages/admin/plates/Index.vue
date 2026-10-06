@@ -101,7 +101,7 @@ function downloadBatch() {
         <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
 
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-white">Placas</h1>
+            <h1 class="text-xl font-bold text-foreground">Placas</h1>
             <Button
                 v-if="selected.size"
                 class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
@@ -111,7 +111,7 @@ function downloadBatch() {
                 Exportar lote ({{ selected.size }})
             </Button>
         </div>
-        <p v-if="overLimit" class="mb-4 text-xs text-amber-400">
+        <p v-if="overLimit" class="mb-4 text-xs text-amber-700">
             Máximo {{ batchExportLimit }} placas por lote. Descarga este grupo
             antes de seleccionar más.
         </p>
@@ -147,7 +147,7 @@ function downloadBatch() {
                     as-child
                     size="sm"
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                 >
                     <Link :href="`/admin/plates/${row.id}`">
                         <Eye class="size-3.5" />

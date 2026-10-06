@@ -158,13 +158,15 @@ function submitPrice() {
     <div class="p-4 md:p-8">
         <div class="mb-6 flex items-start justify-between">
             <div>
-                <p class="text-xs tracking-wide text-white/40 uppercase">
+                <p
+                    class="text-xs tracking-wide text-muted-foreground/80 uppercase"
+                >
                     {{ edition.event.organizer ?? 'Sin organizador' }}
                 </p>
-                <h1 class="text-xl font-bold text-white">
+                <h1 class="text-xl font-bold text-foreground">
                     {{ edition.event.name }} — {{ edition.name }}
                 </h1>
-                <p class="mt-1 text-sm text-white/50">
+                <p class="mt-1 text-sm text-muted-foreground">
                     {{ edition.city
                     }}<span v-if="edition.state">, {{ edition.state }}</span
                     >, {{ edition.country }} · {{ edition.event_date }}
@@ -190,31 +192,35 @@ function submitPrice() {
 
             <TabsContent value="general" class="mt-6">
                 <div
-                    class="grid grid-cols-2 gap-4 rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm sm:grid-cols-4"
+                    class="grid grid-cols-2 gap-4 rounded-xl border border-border bg-card/30 p-5 text-sm sm:grid-cols-4"
                 >
                     <div>
-                        <p class="text-xs text-white/30 uppercase">Estado</p>
-                        <p class="text-white">
+                        <p class="text-xs text-muted-foreground/80 uppercase">
+                            Estado
+                        </p>
+                        <p class="text-foreground">
                             {{ statusLabel(editionStatus, edition.status) }}
                         </p>
                     </div>
                     <div>
-                        <p class="text-xs text-white/30 uppercase">
+                        <p class="text-xs text-muted-foreground/80 uppercase">
                             Zona horaria
                         </p>
-                        <p class="text-white">{{ edition.timezone }}</p>
+                        <p class="text-foreground">{{ edition.timezone }}</p>
                     </div>
                     <div>
-                        <p class="text-xs text-white/30 uppercase">Año</p>
-                        <p class="text-white">{{ edition.year }}</p>
+                        <p class="text-xs text-muted-foreground/80 uppercase">
+                            Año
+                        </p>
+                        <p class="text-foreground">{{ edition.year }}</p>
                     </div>
                     <div>
-                        <p class="text-xs text-white/30 uppercase">
+                        <p class="text-xs text-muted-foreground/80 uppercase">
                             Página pública
                         </p>
                         <Link
                             :href="`/events/${edition.event.slug}`"
-                            class="inline-flex items-center gap-1 text-fl-gold hover:underline"
+                            class="inline-flex items-center gap-1 text-fl-gold-ink hover:underline"
                         >
                             Ver <ExternalLink class="size-3" />
                         </Link>
@@ -223,11 +229,11 @@ function submitPrice() {
             </TabsContent>
 
             <TabsContent value="races" class="mt-6">
-                <div class="overflow-x-auto rounded-xl border border-white/10">
+                <div class="overflow-x-auto rounded-xl border border-border">
                     <table class="w-full text-sm">
                         <thead>
                             <tr
-                                class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                                class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                             >
                                 <th class="px-4 py-3 font-medium">Nombre</th>
                                 <th class="px-4 py-3 font-medium">Distancia</th>
@@ -237,7 +243,7 @@ function submitPrice() {
                             <tr
                                 v-for="race in edition.races"
                                 :key="race.id"
-                                class="border-b border-white/5 text-white/80 last:border-0"
+                                class="border-b border-border text-foreground last:border-0"
                             >
                                 <td class="px-4 py-3">{{ race.name }}</td>
                                 <td class="px-4 py-3">
@@ -255,10 +261,10 @@ function submitPrice() {
 
             <TabsContent value="data" class="mt-6 space-y-4">
                 <div
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm"
+                    class="rounded-xl border border-border bg-card/30 p-5 text-sm"
                 >
                     <p
-                        class="mb-4 text-xs font-semibold text-white/50 uppercase"
+                        class="mb-4 text-xs font-semibold text-muted-foreground uppercase"
                     >
                         Organizador:
                         {{ edition.event.organizer ?? 'Sin organizador' }}
@@ -266,7 +272,7 @@ function submitPrice() {
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
-                            <Label class="text-xs text-white/50"
+                            <Label class="text-xs text-muted-foreground"
                                 >Fuente de participantes</Label
                             >
                             <Select
@@ -275,7 +281,7 @@ function submitPrice() {
                                 "
                             >
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue
                                         placeholder="Heredar del organizador"
@@ -298,7 +304,7 @@ function submitPrice() {
                             </Select>
                             <p
                                 v-if="edition.data_source.resolved_participants"
-                                class="text-xs text-white/30"
+                                class="text-xs text-muted-foreground/80"
                             >
                                 Resuelto:
                                 {{
@@ -324,14 +330,14 @@ function submitPrice() {
                             </p>
                         </div>
                         <div class="grid gap-2">
-                            <Label class="text-xs text-white/50"
+                            <Label class="text-xs text-muted-foreground"
                                 >Fuente de resultados</Label
                             >
                             <Select
                                 v-model="sourcesForm.results_data_source_id"
                             >
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue
                                         placeholder="Heredar del organizador"
@@ -354,7 +360,7 @@ function submitPrice() {
                             </Select>
                             <p
                                 v-if="edition.data_source.resolved_results"
-                                class="text-xs text-white/30"
+                                class="text-xs text-muted-foreground/80"
                             >
                                 Resuelto:
                                 {{
@@ -390,7 +396,7 @@ function submitPrice() {
                         <Button
                             v-if="edition.sync_mapping"
                             variant="outline"
-                            class="border-white/15 text-white hover:bg-white/10"
+                            class="border-border text-foreground hover:bg-foreground/5"
                             @click="syncNow"
                         >
                             Sincronizar ahora
@@ -398,13 +404,13 @@ function submitPrice() {
                     </div>
                     <p
                         v-if="!edition.sync_mapping"
-                        class="mt-2 text-xs text-white/30"
+                        class="mt-2 text-xs text-muted-foreground/80"
                     >
                         Este evento no tiene una conexión API vinculada todavía
                         —
                         <Link
                             href="/admin/integrations"
-                            class="text-fl-gold hover:underline"
+                            class="text-fl-gold-ink hover:underline"
                             >vincúlalo desde Integraciones</Link
                         >
                         para poder sincronizar.
@@ -412,13 +418,13 @@ function submitPrice() {
 
                     <p
                         v-if="!edition.data_source.organizer_sources.length"
-                        class="mt-4 text-xs text-white/40"
+                        class="mt-4 text-xs text-muted-foreground/80"
                     >
                         No hay fuentes disponibles para este organizador todavía
                         —
                         <Link
                             href="/admin/organizers"
-                            class="text-fl-gold hover:underline"
+                            class="text-fl-gold-ink hover:underline"
                             >agrégalas desde Organizadores</Link
                         >.
                     </p>
@@ -427,9 +433,9 @@ function submitPrice() {
 
             <TabsContent value="legacyplate" class="mt-6">
                 <div
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm"
+                    class="rounded-xl border border-border bg-card/30 p-5 text-sm"
                 >
-                    <p class="mb-3 text-xs text-white/30 uppercase">
+                    <p class="mb-3 text-xs text-muted-foreground/80 uppercase">
                         Modelos disponibles
                     </p>
                     <div class="flex flex-wrap gap-2">
@@ -437,23 +443,23 @@ function submitPrice() {
                             v-for="model in legacyPlateModels"
                             :key="model.id"
                             variant="outline"
-                            class="border-fl-gold/30 text-fl-gold-soft"
+                            class="border-fl-gold/30 text-fl-gold-ink"
                         >
                             {{ model.name }}
                         </Badge>
                         <p
                             v-if="!legacyPlateModels.length"
-                            class="text-white/30"
+                            class="text-muted-foreground/80"
                         >
                             Sin modelos activos.
                         </p>
                     </div>
-                    <p class="mt-4 text-xs text-white/40">
+                    <p class="mt-4 text-xs text-muted-foreground/80">
                         La preventa se vincula a un modelo específico al momento
                         de agregarla al carrito —
                         <Link
                             href="/admin/legacy-plate-models"
-                            class="text-fl-gold hover:underline"
+                            class="text-fl-gold-ink hover:underline"
                             >ver catálogo de modelos</Link
                         >.
                     </p>
@@ -461,11 +467,11 @@ function submitPrice() {
             </TabsContent>
 
             <TabsContent value="prices" class="mt-6 space-y-6">
-                <div class="overflow-x-auto rounded-xl border border-white/10">
+                <div class="overflow-x-auto rounded-xl border border-border">
                     <table class="w-full text-sm">
                         <thead>
                             <tr
-                                class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                                class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                             >
                                 <th class="px-4 py-3 font-medium">Producto</th>
                                 <th class="px-4 py-3 font-medium">Ventana</th>
@@ -477,7 +483,7 @@ function submitPrice() {
                             <tr
                                 v-for="schedule in priceSchedules"
                                 :key="schedule.id"
-                                class="border-b border-white/5 text-white/80 last:border-0"
+                                class="border-b border-border text-foreground last:border-0"
                             >
                                 <td class="px-4 py-3">
                                     {{ schedule.product }}
@@ -494,7 +500,9 @@ function submitPrice() {
                                         :currency="schedule.currency"
                                     />
                                 </td>
-                                <td class="px-4 py-3 text-xs text-white/40">
+                                <td
+                                    class="px-4 py-3 text-xs text-muted-foreground/80"
+                                >
                                     {{ schedule.starts_at ?? 'sin inicio' }} —
                                     {{ schedule.ends_at ?? 'sin fin' }}
                                 </td>
@@ -502,7 +510,7 @@ function submitPrice() {
                             <tr v-if="!priceSchedules.length">
                                 <td
                                     colspan="4"
-                                    class="px-4 py-10 text-center text-white/30"
+                                    class="px-4 py-10 text-center text-muted-foreground/80"
                                 >
                                     Sin precios configurados.
                                 </td>
@@ -512,11 +520,11 @@ function submitPrice() {
                 </div>
 
                 <form
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                    class="rounded-xl border border-border bg-card/30 p-5"
                     @submit.prevent="submitPrice"
                 >
                     <h3
-                        class="mb-4 text-sm font-semibold text-white/70 uppercase"
+                        class="mb-4 text-sm font-semibold text-muted-foreground uppercase"
                     >
                         Agregar precio
                     </h3>
@@ -525,7 +533,7 @@ function submitPrice() {
                             <Label class="text-xs">Producto</Label>
                             <Select v-model="priceForm.product_id">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue placeholder="Producto" />
                                 </SelectTrigger>
@@ -544,7 +552,7 @@ function submitPrice() {
                             <Label class="text-xs">Ventana</Label>
                             <Select v-model="priceForm.price_type">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -569,7 +577,7 @@ function submitPrice() {
                             <Input
                                 v-model.number="priceForm.amount_minor"
                                 type="number"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 placeholder="90000 = $900.00"
                             />
                         </div>
@@ -578,7 +586,7 @@ function submitPrice() {
                             <Input
                                 v-model="priceForm.starts_at"
                                 type="datetime-local"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -586,7 +594,7 @@ function submitPrice() {
                             <Input
                                 v-model="priceForm.ends_at"
                                 type="datetime-local"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
@@ -603,7 +611,7 @@ function submitPrice() {
 
             <TabsContent value="sales" class="mt-6">
                 <div
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm text-white/60"
+                    class="rounded-xl border border-border bg-card/30 p-5 text-sm text-muted-foreground"
                 >
                     <p>Preventas de Legacy Plate para este evento:</p>
                     <Button
@@ -621,7 +629,7 @@ function submitPrice() {
 
             <TabsContent value="production" class="mt-6">
                 <div
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm text-white/60"
+                    class="rounded-xl border border-border bg-card/30 p-5 text-sm text-muted-foreground"
                 >
                     <p>Cola de producción de Legacy Plate para este evento:</p>
                     <Button

@@ -94,7 +94,7 @@ onBeforeUnmount(stopCycle);
 <template>
     <div
         ref="root"
-        class="relative aspect-4/5 w-full overflow-hidden rounded-2xl border border-white/10 bg-fl-graphite/50"
+        class="relative aspect-4/5 w-full overflow-hidden rounded-2xl border border-border bg-card/50"
     >
         <video
             v-if="showingVideo"
@@ -127,7 +127,7 @@ onBeforeUnmount(stopCycle);
         />
 
         <div
-            class="pointer-events-none absolute inset-0 bg-gradient-to-t from-fl-black/60 via-transparent to-transparent"
+            class="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent"
         />
     </div>
 </template>

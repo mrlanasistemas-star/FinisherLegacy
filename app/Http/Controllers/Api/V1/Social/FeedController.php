@@ -8,15 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\AthleteResource;
 use App\Http\Resources\Api\V1\MomentResource;
 use App\Http\Resources\EventEditionCardResource;
-use App\Models\AthleteFollow;
-use App\Models\AthleteProfile;
-use App\Models\User;
 use App\Queries\Social\MomentQuery;
+use App\Queries\Social\SuggestedAthletes;
 use App\Services\EventCatalogService;
 use App\Services\Social\SocialVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class FeedController extends Controller
 {
@@ -55,7 +52,7 @@ class FeedController extends Controller
      * `GET /explore` — a small, fixed-size discovery payload: athletes to
      * follow, recent public Moments and upcoming events.
      */
-    public function explore(Request $request, EventCatalogService $events): JsonResponse
+    public function explore(Request $request, EventCatalogService $events, SuggestedAthletes $suggested): JsonResponse
     {
         $viewer = $this->sanctumUser($request);
 
@@ -68,38 +65,9 @@ class FeedController extends Controller
         $upcoming = $events->publishedEditions(['status' => 'upcoming'], perPage: 6);
 
         return $this->respond([
-            'athletes' => AthleteResource::collection($this->recommendedAthletes($viewer)),
+            'athletes' => AthleteResource::collection($suggested->handle($viewer)),
             'moments' => MomentResource::collection($recentMoments),
             'events' => EventEditionCardResource::collection($upcoming->getCollection()),
         ]);
-    }
-
-    /**
-     * Public athletes you don't follow yet, most-followed first — a plain,
-     * explainable heuristic, no opaque ranking.
-     *
-     * @return Collection<int, User>
-     */
-    private function recommendedAthletes(User $viewer): Collection
-    {
-        $exclude = [...$this->visibility->followingIds($viewer), $viewer->id];
-
-        return $this->visibility->scopeDiscoverableProfiles(AthleteProfile::query(), $viewer)
-            ->whereNotIn('athlete_profiles.user_id', $exclude)
-            ->with('user.athleteProfile')
-            ->select('athlete_profiles.*')
-            ->addSelect(['followers_count' => AthleteFollow::query()
-                ->selectRaw('count(*)')
-                ->whereColumn('athlete_follows.following_id', 'athlete_profiles.user_id')])
-            ->orderByDesc('followers_count')
-            ->orderByDesc('athlete_profiles.updated_at')
-            ->limit(12)
-            ->get()
-            ->map(function (AthleteProfile $profile) {
-                $profile->user->setAttribute('is_following', false);
-
-                return $profile->user;
-            })
-            ->values();
     }
 }

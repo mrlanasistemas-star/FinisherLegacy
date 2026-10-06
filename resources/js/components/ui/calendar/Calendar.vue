@@ -95,13 +95,13 @@ const monthFormatter = new Intl.DateTimeFormat('es-MX', {
             <div class="flex items-center justify-between px-1">
                 <button
                     type="button"
-                    class="fl-focus-glow flex size-7 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                    class="fl-focus-glow flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
                     aria-label="Mes anterior"
                     @click="goToPreviousMonth"
                 >
                     <ChevronLeft class="size-4" />
                 </button>
-                <p class="text-sm font-medium text-white capitalize">
+                <p class="text-sm font-medium text-foreground capitalize">
                     {{
                         monthFormatter.format(
                             month.value.toDate(getLocalTimeZone()),
@@ -110,7 +110,7 @@ const monthFormatter = new Intl.DateTimeFormat('es-MX', {
                 </p>
                 <button
                     type="button"
-                    class="fl-focus-glow flex size-7 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                    class="fl-focus-glow flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
                     aria-label="Mes siguiente"
                     @click="goToNextMonth"
                 >
@@ -119,7 +119,7 @@ const monthFormatter = new Intl.DateTimeFormat('es-MX', {
             </div>
 
             <div
-                class="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-white/40 uppercase"
+                class="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground/80 uppercase"
             >
                 <span v-for="(day, index) in weekDays" :key="index">{{
                     day
@@ -140,8 +140,8 @@ const monthFormatter = new Intl.DateTimeFormat('es-MX', {
                         cn(
                             'fl-focus-glow flex size-8 items-center justify-center rounded-md text-sm transition-colors',
                             isOutsideMonth(date, month.value)
-                                ? 'text-white/15'
-                                : 'text-white/80 hover:bg-white/10',
+                                ? 'text-muted-foreground/80'
+                                : 'text-foreground hover:bg-foreground/5',
                             isSelected(date) &&
                                 'bg-fl-gold text-fl-black hover:bg-fl-gold',
                             isDisabled(date) &&

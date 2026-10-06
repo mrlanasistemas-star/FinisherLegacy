@@ -96,59 +96,61 @@ function submitQrTest() {
 
     <div class="space-y-6 p-4 md:p-8">
         <div>
-            <p class="text-xs tracking-wide text-white/40 uppercase">
+            <p class="text-xs tracking-wide text-muted-foreground/80 uppercase">
                 Preparar evento para producción
             </p>
-            <h1 class="text-xl font-bold text-white">{{ edition.name }}</h1>
+            <h1 class="text-xl font-bold text-foreground">
+                {{ edition.name }}
+            </h1>
         </div>
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div
-                class="flex items-center gap-2 rounded-lg border border-white/10 bg-fl-graphite/40 p-3"
+                class="flex items-center gap-2 rounded-lg border border-border bg-card/40 p-3"
             >
                 <Check
                     v-if="checklist.template_assigned"
-                    class="size-4 shrink-0 text-emerald-400"
+                    class="size-4 shrink-0 text-emerald-700"
                 />
-                <AlertTriangle v-else class="size-4 shrink-0 text-amber-400" />
-                <span class="text-sm text-white/80">Molde asignado</span>
+                <AlertTriangle v-else class="size-4 shrink-0 text-amber-700" />
+                <span class="text-sm text-foreground">Molde asignado</span>
             </div>
             <div
-                class="flex items-center gap-2 rounded-lg border border-white/10 bg-fl-graphite/40 p-3"
+                class="flex items-center gap-2 rounded-lg border border-border bg-card/40 p-3"
             >
                 <Check
                     v-if="checklist.version_published"
-                    class="size-4 shrink-0 text-emerald-400"
+                    class="size-4 shrink-0 text-emerald-700"
                 />
-                <AlertTriangle v-else class="size-4 shrink-0 text-amber-400" />
-                <span class="text-sm text-white/80">Versión publicada</span>
+                <AlertTriangle v-else class="size-4 shrink-0 text-amber-700" />
+                <span class="text-sm text-foreground">Versión publicada</span>
             </div>
             <div
-                class="flex items-center gap-2 rounded-lg border border-white/10 bg-fl-graphite/40 p-3"
+                class="flex items-center gap-2 rounded-lg border border-border bg-card/40 p-3"
             >
                 <Check
                     v-if="checklist.qr_tested_at"
-                    class="size-4 shrink-0 text-emerald-400"
+                    class="size-4 shrink-0 text-emerald-700"
                 />
-                <AlertTriangle v-else class="size-4 shrink-0 text-amber-400" />
-                <span class="text-sm text-white/80">QR probado</span>
+                <AlertTriangle v-else class="size-4 shrink-0 text-amber-700" />
+                <span class="text-sm text-foreground">QR probado</span>
             </div>
         </div>
 
-        <Separator class="bg-white/10" />
+        <Separator class="bg-foreground/5" />
 
         <section class="space-y-3">
-            <h2 class="text-sm font-semibold text-white">
+            <h2 class="text-sm font-semibold text-foreground">
                 Molde principal del evento
             </h2>
-            <p class="text-xs text-white/40">
+            <p class="text-xs text-muted-foreground/80">
                 Todas las placas del evento usan este diseño por defecto. Solo
                 cambian los datos de cada corredor.
             </p>
 
             <div
                 v-if="!availableVersions.length"
-                class="rounded-lg border border-dashed border-white/15 p-4 text-sm text-white/50"
+                class="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground"
             >
                 No hay ninguna versión publicada todavía. Publica un molde en
                 Plate Studio primero.
@@ -156,7 +158,7 @@ function submitQrTest() {
             <div v-else class="flex gap-2">
                 <Select v-model="selectedVersion">
                     <SelectTrigger
-                        class="w-full border-white/10 bg-fl-black text-white"
+                        class="w-full border-border bg-background text-foreground"
                     >
                         <SelectValue
                             placeholder="Selecciona un molde publicado"
@@ -181,7 +183,7 @@ function submitQrTest() {
                 </Button>
             </div>
 
-            <p v-if="defaultAssignment" class="text-xs text-white/50">
+            <p v-if="defaultAssignment" class="text-xs text-muted-foreground">
                 Actual: {{ defaultAssignment.template_name }} — V{{
                     defaultAssignment.version
                 }}
@@ -192,7 +194,7 @@ function submitQrTest() {
                     as-child
                     variant="outline"
                     size="sm"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                 >
                     <a
                         :href="
@@ -211,7 +213,7 @@ function submitQrTest() {
                     as-child
                     variant="outline"
                     size="sm"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                 >
                     <a
                         :href="
@@ -230,17 +232,17 @@ function submitQrTest() {
         </section>
 
         <template v-if="races.length">
-            <Separator class="bg-white/10" />
+            <Separator class="bg-foreground/5" />
             <section class="space-y-3">
-                <h2 class="text-sm font-semibold text-white">
+                <h2 class="text-sm font-semibold text-foreground">
                     Personalizar por distancia (opcional)
                 </h2>
                 <div
                     v-for="race in races"
                     :key="race.id"
-                    class="flex items-center justify-between gap-2 rounded-lg border border-white/10 p-3"
+                    class="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
                 >
-                    <span class="text-sm text-white/80">{{ race.name }}</span>
+                    <span class="text-sm text-foreground">{{ race.name }}</span>
                     <Select
                         :model-value="
                             race.assignment
@@ -252,7 +254,7 @@ function submitQrTest() {
                         "
                     >
                         <SelectTrigger
-                            class="w-56 border-white/10 bg-fl-black text-white"
+                            class="w-56 border-border bg-background text-foreground"
                         >
                             <SelectValue placeholder="Usar molde principal" />
                         </SelectTrigger>
@@ -270,16 +272,16 @@ function submitQrTest() {
             </section>
         </template>
 
-        <Separator class="bg-white/10" />
+        <Separator class="bg-foreground/5" />
 
         <section class="space-y-3">
             <h2
-                class="flex items-center gap-2 text-sm font-semibold text-white"
+                class="flex items-center gap-2 text-sm font-semibold text-foreground"
             >
                 <QrCode class="size-4" />
                 Prueba física de QR
             </h2>
-            <p class="text-xs text-white/40">
+            <p class="text-xs text-muted-foreground/80">
                 El software solo valida la estructura del código. Antes de
                 producir en volumen, graba una muestra y escanéala con un
                 teléfono real.
@@ -287,7 +289,7 @@ function submitQrTest() {
 
             <p
                 v-if="checklist.qr_tested_at"
-                class="flex items-center gap-2 text-sm text-emerald-400"
+                class="flex items-center gap-2 text-sm text-emerald-700"
             >
                 <Check class="size-4" />
                 Probado el
@@ -300,11 +302,11 @@ function submitQrTest() {
             <Textarea
                 v-model="notes"
                 placeholder="Notas de la prueba (opcional)"
-                class="border-white/10 bg-fl-black text-white"
+                class="border-border bg-background text-foreground"
             />
             <Button
                 variant="outline"
-                class="border-white/15 text-white hover:bg-white/10"
+                class="border-border text-foreground hover:bg-foreground/5"
                 @click="submitQrTest"
             >
                 <Wrench class="size-4" />
@@ -313,12 +315,10 @@ function submitQrTest() {
         </section>
 
         <AlertDialog v-model:open="confirmOpen">
-            <AlertDialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <AlertDialogContent class="border-border bg-card text-foreground">
                 <AlertDialogHeader>
                     <AlertDialogTitle>El evento está en curso</AlertDialogTitle>
-                    <AlertDialogDescription class="text-white/60">
+                    <AlertDialogDescription class="text-muted-foreground">
                         Cambiar el molde principal ahora puede provocar que las
                         primeras placas tengan un diseño y el resto otro.
                         ¿Seguro que quieres continuar?
@@ -326,7 +326,7 @@ function submitQrTest() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel
-                        class="border-white/15 bg-transparent text-white hover:bg-white/10"
+                        class="border-border bg-transparent text-foreground hover:bg-foreground/5"
                         >Cancelar</AlertDialogCancel
                     >
                     <AlertDialogAction

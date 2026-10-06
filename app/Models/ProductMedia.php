@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'product_id', 'product_variant_id', 'type', 'disk', 'path', 'mime', 'size',
-    'sort_order', 'is_primary', 'alt_text', 'poster_path',
+    'sort_order', 'is_primary', 'is_hover', 'alt_text', 'poster_path',
 ])]
 class ProductMedia extends Model
 {
@@ -24,6 +24,7 @@ class ProductMedia extends Model
         return [
             'type' => ProductMediaType::class,
             'is_primary' => 'boolean',
+            'is_hover' => 'boolean',
         ];
     }
 

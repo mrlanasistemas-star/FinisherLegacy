@@ -42,7 +42,7 @@ function resolve(id: number) {
     <Head title="Incidencias" />
 
     <div class="p-4 md:p-8">
-        <h1 class="mb-6 text-xl font-bold text-white">Incidencias</h1>
+        <h1 class="mb-6 text-xl font-bold text-foreground">Incidencias</h1>
 
         <AdminTable
             :columns="columns"
@@ -63,7 +63,7 @@ function resolve(id: number) {
                     v-if="row.status !== 'resolved'"
                     size="sm"
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                    class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                     @click="resolve(row.id as number)"
                 >
                     Resolver

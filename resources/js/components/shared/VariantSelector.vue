@@ -39,15 +39,15 @@ const selected = computed(
             class="rounded-lg border px-4 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-30"
             :class="
                 modelValue === variant.id
-                    ? 'border-fl-gold bg-fl-gold/10 text-fl-gold-soft'
-                    : 'border-white/15 text-white/70 hover:border-white/30'
+                    ? 'border-fl-gold bg-fl-gold/10 text-fl-gold-ink'
+                    : 'border-border text-muted-foreground hover:border-foreground/15'
             "
             @click="emit('update:modelValue', variant.id)"
         >
             {{ variant.name }}
         </button>
     </div>
-    <p v-if="selected" class="mt-3 text-lg text-white">
+    <p v-if="selected" class="mt-3 text-lg text-foreground">
         <Money
             :minor="selected.base_price_minor"
             :currency="selected.currency"

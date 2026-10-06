@@ -45,9 +45,9 @@ function submit() {
 }
 
 const statusClass: Record<Connection['status'], string> = {
-    connected: 'border-emerald-500/30 text-emerald-400',
-    failed: 'border-red-500/30 text-red-400',
-    untested: 'border-white/20 text-white/50',
+    connected: 'border-emerald-500/30 text-emerald-700',
+    failed: 'border-red-500/30 text-red-700',
+    untested: 'border-foreground/15 text-muted-foreground',
 };
 
 const statusLabel: Record<Connection['status'], string> = {
@@ -61,22 +61,22 @@ const statusLabel: Record<Connection['status'], string> = {
     <Head title="Integraciones" />
 
     <div class="p-4 md:p-8">
-        <h1 class="mb-1 flex items-center gap-1.5 text-xl font-bold text-white">
-            <Plug class="size-5 text-fl-gold" />
+        <h1
+            class="mb-1 flex items-center gap-1.5 text-xl font-bold text-foreground"
+        >
+            <Plug class="size-5 text-fl-gold-ink" />
             Integraciones
             <HelpPopover
                 title="Ingestión unificada"
                 text="Cada conexión habla con un proveedor de eventos/timing (o el Mock Event Provider para pruebas) y produce los mismos datos canónicos que un CSV — corredores, resultados y splits terminan en el mismo Athlete/EventParticipant/EventResult de siempre."
             />
         </h1>
-        <p class="mb-6 text-sm text-white/50">
+        <p class="mb-6 text-sm text-muted-foreground">
             Conexiones a proveedores externos de eventos y resultados.
         </p>
 
-        <div
-            class="mb-8 rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-        >
-            <h2 class="mb-3 text-sm font-semibold text-white">
+        <div class="mb-8 rounded-xl border border-border bg-card/30 p-4">
+            <h2 class="mb-3 text-sm font-semibold text-foreground">
                 Nueva conexión
             </h2>
             <form
@@ -84,12 +84,12 @@ const statusLabel: Record<Connection['status'], string> = {
                 @submit.prevent="submit"
             >
                 <div>
-                    <Label class="mb-1 block text-xs text-white/50"
+                    <Label class="mb-1 block text-xs text-muted-foreground"
                         >Proveedor</Label
                     >
                     <select
                         v-model="form.provider_key"
-                        class="h-9 w-full rounded-md border border-white/10 bg-fl-graphite/60 px-3 text-sm text-white"
+                        class="h-9 w-full rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
                     >
                         <option
                             v-for="key in providerKeys"
@@ -101,44 +101,44 @@ const statusLabel: Record<Connection['status'], string> = {
                     </select>
                 </div>
                 <div>
-                    <Label class="mb-1 block text-xs text-white/50"
+                    <Label class="mb-1 block text-xs text-muted-foreground"
                         >Nombre</Label
                     >
                     <Input
                         v-model="form.name"
-                        class="border-white/10 bg-fl-graphite/60 text-white"
+                        class="border-border bg-card/60 text-foreground"
                         placeholder="Timing Provider — Guadalajara"
                     />
                 </div>
                 <div>
-                    <Label class="mb-1 block text-xs text-white/50"
+                    <Label class="mb-1 block text-xs text-muted-foreground"
                         >Base URL (opcional)</Label
                     >
                     <Input
                         v-model="form.base_url"
-                        class="border-white/10 bg-fl-graphite/60 text-white"
+                        class="border-border bg-card/60 text-foreground"
                         placeholder="https://api.proveedor.com"
                     />
                 </div>
                 <div>
-                    <Label class="mb-1 block text-xs text-white/50"
+                    <Label class="mb-1 block text-xs text-muted-foreground"
                         >API Key (opcional)</Label
                     >
                     <Input
                         v-model="form.api_key"
                         type="password"
-                        class="border-white/10 bg-fl-graphite/60 text-white"
+                        class="border-border bg-card/60 text-foreground"
                     />
                 </div>
 
                 <template v-if="form.provider_key === 'generic_rest'">
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Autenticación</Label
                         >
                         <select
                             v-model="form.auth_type"
-                            class="h-9 w-full rounded-md border border-white/10 bg-fl-graphite/60 px-3 text-sm text-white"
+                            class="h-9 w-full rounded-md border border-border bg-card/60 px-3 text-sm text-foreground"
                         >
                             <option value="none">Ninguna</option>
                             <option value="bearer">Bearer token</option>
@@ -149,76 +149,76 @@ const statusLabel: Record<Connection['status'], string> = {
                         </select>
                     </div>
                     <div v-if="form.auth_type === 'api_key_header'">
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Nombre del header</Label
                         >
                         <Input
                             v-model="form.api_key_header"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                             placeholder="X-Api-Key"
                         />
                     </div>
                     <div v-if="form.auth_type === 'basic'">
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Usuario</Label
                         >
                         <Input
                             v-model="form.basic_username"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint de prueba</Label
                         >
                         <Input
                             v-model="form.test_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                             placeholder="/health"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint participantes</Label
                         >
                         <Input
                             v-model="form.participants_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                             placeholder="/events/{external_event_id}/participants"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint resultados</Label
                         >
                         <Input
                             v-model="form.results_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                             placeholder="/events/{external_event_id}/results"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint del evento</Label
                         >
                         <Input
                             v-model="form.event_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                             placeholder="/events/{external_event_id}"
                         />
                     </div>
                     <div>
-                        <Label class="mb-1 block text-xs text-white/50"
+                        <Label class="mb-1 block text-xs text-muted-foreground"
                             >Endpoint listar eventos</Label
                         >
                         <Input
                             v-model="form.events_endpoint"
-                            class="border-white/10 bg-fl-graphite/60 text-white"
+                            class="border-border bg-card/60 text-foreground"
                             placeholder="/events"
                         />
                     </div>
                     <p
-                        class="text-xs text-white/30 sm:col-span-2 lg:col-span-4"
+                        class="text-xs text-muted-foreground/80 sm:col-span-2 lg:col-span-4"
                     >
                         El mapeo de campos (field mapping) se configura desde el
                         detalle de la conexión, una vez creada.
@@ -235,18 +235,18 @@ const statusLabel: Record<Connection['status'], string> = {
                     </Button>
                     <span
                         v-if="form.errors.name"
-                        class="ml-3 text-xs text-red-400"
+                        class="ml-3 text-xs text-red-700"
                         >{{ form.errors.name }}</span
                     >
                 </div>
             </form>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-white/10">
+        <div class="overflow-x-auto rounded-xl border border-border">
             <table class="w-full text-sm">
                 <thead>
                     <tr
-                        class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                        class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                     >
                         <th class="px-4 py-3 font-medium">Nombre</th>
                         <th class="px-4 py-3 font-medium">Proveedor</th>
@@ -260,19 +260,19 @@ const statusLabel: Record<Connection['status'], string> = {
                     <tr
                         v-for="c in connections"
                         :key="c.id"
-                        class="border-b border-white/5 text-white/80 last:border-0"
+                        class="border-b border-border text-foreground last:border-0"
                     >
                         <td class="px-4 py-3">
                             <Link
                                 :href="`/admin/integrations/${c.id}`"
-                                class="text-fl-gold hover:underline"
+                                class="text-fl-gold-ink hover:underline"
                                 >{{ c.name }}</Link
                             >
                         </td>
                         <td class="px-4 py-3">
                             <span
                                 v-if="c.provider_key === 'mock'"
-                                class="mr-1 text-amber-400"
+                                class="mr-1 text-amber-700"
                                 title="Solo para pruebas. No usar con un organizador real."
                                 >[SIMULACIÓN]</span
                             >
@@ -294,7 +294,7 @@ const statusLabel: Record<Connection['status'], string> = {
                     <tr v-if="!connections.length">
                         <td
                             colspan="6"
-                            class="px-4 py-8 text-center text-white/40"
+                            class="px-4 py-8 text-center text-muted-foreground/80"
                         >
                             Sin conexiones todavía.
                         </td>

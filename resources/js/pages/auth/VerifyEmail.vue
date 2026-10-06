@@ -46,17 +46,17 @@ async function copyLegacyId() {
             class="fl-hover-glow rounded-xl border border-fl-gold/30 bg-gradient-to-br from-fl-gold/10 to-transparent p-5 transition-shadow duration-300"
         >
             <p
-                class="text-xs font-medium tracking-widest text-white/40 uppercase"
+                class="text-xs font-medium tracking-widest text-muted-foreground/80 uppercase"
             >
                 Tu Legacy ID
             </p>
             <div class="mt-2 flex items-center justify-center gap-2">
-                <p class="font-mono text-2xl font-bold text-fl-gold">
+                <p class="font-mono text-2xl font-bold text-fl-gold-ink">
                     {{ legacyId }}
                 </p>
                 <button
                     type="button"
-                    class="fl-focus-glow flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-white/50 transition-colors hover:text-fl-gold"
+                    class="fl-focus-glow flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-fl-gold-ink"
                     aria-label="Copiar Legacy ID"
                     @click="copyLegacyId"
                 >
@@ -65,7 +65,7 @@ async function copyLegacyId() {
                     {{ copied ? 'Copiado' : 'Copiar' }}
                 </button>
             </div>
-            <p class="mt-3 text-sm text-white/50">
+            <p class="mt-3 text-sm text-muted-foreground">
                 Este es tu identificador permanente dentro de Finisher Legacy.
             </p>
         </div>
@@ -80,21 +80,18 @@ async function copyLegacyId() {
     </div>
 
     <div class="space-y-6 text-center">
-        <p class="text-sm text-white/50">
+        <p class="text-sm text-muted-foreground">
             Confirma tu correo para desbloquear tu Legacy Profile.
         </p>
 
         <div class="flex flex-col gap-2 sm:flex-row">
-            <Button
-                as-child
-                class="fl-hover-lift w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-            >
+            <Button as-child class="fl-hover-lift h-11 w-full rounded-full">
                 <Link :href="editProfile()">Completar mi perfil</Link>
             </Button>
             <Button
                 as-child
                 variant="outline"
-                class="fl-hover-lift w-full border-white/15 text-white hover:bg-white/5"
+                class="fl-hover-lift w-full border-border text-foreground hover:bg-foreground/[0.03]"
             >
                 <Link :href="dashboard()">Ir a mi Legacy</Link>
             </Button>
@@ -104,7 +101,7 @@ async function copyLegacyId() {
             <Button
                 variant="ghost"
                 :disabled="processing"
-                class="text-sm text-white/60 hover:bg-white/5 hover:text-fl-gold"
+                class="text-sm text-muted-foreground hover:bg-foreground/[0.03] hover:text-fl-gold-ink"
             >
                 <Spinner v-if="processing" />
                 Reenviar correo de verificación
@@ -114,7 +111,7 @@ async function copyLegacyId() {
         <TextLink
             :href="logout()"
             as="button"
-            class="mx-auto block text-sm text-fl-gold decoration-fl-gold/40"
+            class="mx-auto block text-sm text-fl-gold-ink decoration-fl-gold/40"
         >
             Cerrar sesión
         </TextLink>

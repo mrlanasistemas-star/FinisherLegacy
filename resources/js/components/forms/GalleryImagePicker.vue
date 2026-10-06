@@ -60,12 +60,12 @@ function remove(index: number) {
             <div
                 v-for="(url, index) in previewUrls"
                 :key="url"
-                class="relative size-20 overflow-hidden rounded-lg border border-white/10"
+                class="relative size-20 overflow-hidden rounded-lg border border-border"
             >
                 <img :src="url" class="size-full object-cover" alt="" />
                 <button
                     type="button"
-                    class="fl-focus-glow absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-fl-black/80 text-white/70 hover:text-white"
+                    class="fl-focus-glow absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-background/80 text-muted-foreground hover:text-foreground"
                     aria-label="Quitar imagen"
                     @click="remove(index)"
                 >
@@ -78,7 +78,7 @@ function remove(index: number) {
                 type="button"
                 :class="
                     cn(
-                        'fl-focus-glow flex size-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-white/15 text-white/40 transition-colors hover:border-fl-gold/40 hover:text-fl-gold',
+                        'fl-focus-glow flex size-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-muted-foreground/80 transition-colors hover:border-fl-gold/40 hover:text-fl-gold-ink',
                     )
                 "
                 @click="inputRef?.click()"

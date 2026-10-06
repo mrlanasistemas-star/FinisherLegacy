@@ -45,19 +45,19 @@ function copyCode() {
         <div
             class="space-y-3 rounded-xl border border-fl-gold/20 bg-fl-gold/5 p-4"
         >
-            <p class="flex items-center gap-2 text-sm text-fl-gold">
+            <p class="flex items-center gap-2 text-sm text-fl-gold-ink">
                 <CheckCircle2 class="size-4" />
                 Placa generada — {{ statusLabel(plateStatus, plate.status) }}
             </p>
-            <p class="font-mono text-sm text-white">
+            <p class="font-mono text-sm text-foreground">
                 Serial: {{ plate.serial_number }}
             </p>
             <div class="flex items-center gap-2">
-                <p class="font-mono text-sm text-white/80">
+                <p class="font-mono text-sm text-foreground">
                     {{ plate.legacy_code }}
                 </p>
                 <button
-                    class="text-white/40 hover:text-white"
+                    class="text-muted-foreground/80 hover:text-foreground"
                     title="Copiar Legacy Code"
                     @click="copyCode"
                 >
@@ -66,7 +66,7 @@ function copyCode() {
                 <Badge
                     v-if="copied"
                     variant="outline"
-                    class="border-emerald-500/30 text-emerald-400"
+                    class="border-emerald-500/30 text-emerald-700"
                     >Copiado</Badge
                 >
             </div>
@@ -83,7 +83,7 @@ function copyCode() {
             <Button
                 as-child
                 variant="outline"
-                class="border-white/15 text-white hover:bg-white/10"
+                class="border-border text-foreground hover:bg-foreground/5"
             >
                 <a :href="plate.qr_url ?? '#'" target="_blank" download>
                     <QrCode class="size-4" />
@@ -93,7 +93,7 @@ function copyCode() {
             <Button
                 as-child
                 variant="outline"
-                class="border-white/15 text-white hover:bg-white/10"
+                class="border-border text-foreground hover:bg-foreground/5"
             >
                 <Link href="/production">
                     <LayoutGrid class="size-4" />
@@ -103,7 +103,7 @@ function copyCode() {
             <Button
                 as-child
                 variant="outline"
-                class="border-white/15 text-white hover:bg-white/10"
+                class="border-border text-foreground hover:bg-foreground/5"
             >
                 <a :href="`/l/${plate.legacy_code}`" target="_blank">
                     <ExternalLink class="size-4" />
@@ -114,7 +114,7 @@ function copyCode() {
 
         <Button
             variant="ghost"
-            class="mt-2 w-full text-white/60 hover:text-white"
+            class="mt-2 w-full text-muted-foreground hover:text-foreground"
             @click="router.visit(generateAnotherHref)"
         >
             <Plus class="size-4" />

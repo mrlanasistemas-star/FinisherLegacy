@@ -89,6 +89,60 @@ class ProductMediaController extends Controller
         return back();
     }
 
+    /**
+     * Alt text and the "hover" role (the image a product card swaps to
+     * on hover) — at most one hover image per product.
+     */
+    public function update(Request $request, ProductMedia $media): RedirectResponse
+    {
+        $data = $request->validate([
+            'alt_text' => ['nullable', 'string', 'max:150'],
+            'is_hover' => ['sometimes', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($media, $data) {
+            if (($data['is_hover'] ?? false) === true) {
+                $media->product->media()->whereKeyNot($media->id)->update(['is_hover' => false]);
+            }
+
+            $media->update($data);
+        });
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Imagen actualizada.']);
+
+        return back();
+    }
+
+    /**
+     * Swaps the file behind an existing gallery item, keeping its order,
+     * primary/hover flags and alt text — the old file is removed from
+     * storage only after the new one is safely written.
+     */
+    public function replace(Request $request, ProductMedia $media): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:jpeg,png,webp,mp4,webm', 'max:51200'],
+        ]);
+
+        $file = $request->file('file');
+        $oldPaths = array_filter([$media->path, $media->poster_path]);
+        $isVideo = str_starts_with((string) $file->getMimeType(), 'video/');
+
+        $media->update([
+            'type' => $isVideo ? ProductMediaType::Video : ProductMediaType::Image,
+            'path' => $file->store('products/'.$media->product_id, $media->disk),
+            'poster_path' => null,
+            'mime' => $file->getMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        Storage::disk($media->disk)->delete($oldPaths);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Archivo reemplazado.']);
+
+        return back();
+    }
+
     public function destroy(ProductMedia $media): RedirectResponse
     {
         Storage::disk($media->disk)->delete(array_filter([$media->path, $media->poster_path]));

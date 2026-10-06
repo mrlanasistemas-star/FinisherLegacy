@@ -28,8 +28,8 @@ defineProps<{ items: OwnedItem[] }>();
     <Head title="Mi equipo" />
 
     <AppContainer class="py-4 md:py-6">
-        <h1 class="text-xl font-bold text-white">Mi equipo</h1>
-        <p class="mt-1 text-sm text-white/50">
+        <h1 class="text-xl font-bold text-foreground">Mi equipo</h1>
+        <p class="mt-1 text-sm text-muted-foreground">
             Tu clóset digital — el equipo que te acompaña en cada meta.
         </p>
 
@@ -52,11 +52,11 @@ defineProps<{ items: OwnedItem[] }>();
 
         <div
             v-else
-            class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-white/30"
+            class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-muted-foreground/80"
         >
             <Package class="size-10" />
             <p>Todavía no tienes productos en tu equipo.</p>
-            <Link href="/tienda" class="text-fl-gold-soft hover:underline"
+            <Link href="/tienda" class="text-fl-gold-ink hover:underline"
                 >Ir a la tienda</Link
             >
         </div>

@@ -26,7 +26,7 @@ const { imports } = defineProps<{
 
     <div class="p-4 md:p-6">
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-white">Importaciones</h1>
+            <h1 class="text-xl font-bold text-foreground">Importaciones</h1>
             <Button
                 as-child
                 class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
@@ -43,17 +43,19 @@ const { imports } = defineProps<{
                 v-for="item in imports"
                 :key="item.id"
                 :href="show(item.id).url"
-                class="fl-hover-glow flex items-center justify-between rounded-xl border border-white/10 bg-fl-graphite/40 p-4 transition-colors"
+                class="fl-hover-glow flex items-center justify-between rounded-xl border border-border bg-card/40 p-4 transition-colors"
             >
                 <div>
-                    <p class="font-medium text-white">{{ item.filename }}</p>
-                    <p class="text-xs text-white/50">
+                    <p class="font-medium text-foreground">
+                        {{ item.filename }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
                         {{ item.event }} — {{ item.edition }} ·
                         {{ item.created_at }}
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span class="text-xs text-white/40">
+                    <span class="text-xs text-muted-foreground/80">
                         {{ item.successful_rows }} ok
                         <span v-if="item.failed_rows">
                             · {{ item.failed_rows }} con error</span
@@ -70,7 +72,7 @@ const { imports } = defineProps<{
 
             <p
                 v-if="!imports.length"
-                class="py-16 text-center text-sm text-white/40"
+                class="py-16 text-center text-sm text-muted-foreground/80"
             >
                 Aún no has hecho ninguna importación.
             </p>

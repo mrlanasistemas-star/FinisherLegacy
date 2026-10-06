@@ -70,11 +70,11 @@ onBeforeUnmount(() => {
 });
 
 const statusClass: Record<string, string> = {
-    completed: 'border-emerald-500/30 text-emerald-400',
-    partial: 'border-amber-500/30 text-amber-400',
-    failed: 'border-red-500/30 text-red-400',
-    running: 'border-fl-gold/40 text-fl-gold',
-    pending: 'border-white/20 text-white/50',
+    completed: 'border-emerald-500/30 text-emerald-700',
+    partial: 'border-amber-500/30 text-amber-700',
+    failed: 'border-red-500/30 text-red-700',
+    running: 'border-fl-gold/40 text-fl-gold-ink',
+    pending: 'border-foreground/15 text-muted-foreground',
 };
 </script>
 
@@ -84,17 +84,17 @@ const statusClass: Record<string, string> = {
     <div class="p-4 md:p-8">
         <Link
             href="/admin/integrations"
-            class="mb-4 inline-flex items-center gap-1 text-xs text-white/50 hover:text-white"
+            class="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-3.5" /> Integraciones
         </Link>
 
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-xl font-bold text-white">
+                <h1 class="text-xl font-bold text-foreground">
                     Sincronización #{{ run.id }}
                 </h1>
-                <p class="text-sm text-white/50">
+                <p class="text-sm text-muted-foreground">
                     {{ run.provider }} — {{ run.event }} {{ run.edition }} ({{
                         run.sync_type
                     }})
@@ -106,60 +106,62 @@ const statusClass: Record<string, string> = {
         </div>
 
         <div class="mb-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">Eventos</p>
-                <p class="mt-1 text-lg text-white">{{ run.events_received }}</p>
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Eventos
+                </p>
+                <p class="mt-1 text-lg text-foreground">
+                    {{ run.events_received }}
+                </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">Participantes</p>
-                <p class="mt-1 text-lg text-white">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Participantes
+                </p>
+                <p class="mt-1 text-lg text-foreground">
                     {{ run.participants_received }}
                 </p>
-                <p class="text-xs text-white/40">
+                <p class="text-xs text-muted-foreground/80">
                     +{{ run.participants_created }} nuevos ·
                     {{ run.participants_updated }} actualizados
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">Resultados</p>
-                <p class="mt-1 text-lg text-white">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Resultados
+                </p>
+                <p class="mt-1 text-lg text-foreground">
                     {{ run.results_received }}
                 </p>
-                <p class="text-xs text-white/40">
+                <p class="text-xs text-muted-foreground/80">
                     +{{ run.results_created }} nuevos ·
                     {{ run.results_updated }} actualizados
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">Splits</p>
-                <p class="mt-1 text-lg text-white">{{ run.splits_received }}</p>
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">Splits</p>
+                <p class="mt-1 text-lg text-foreground">
+                    {{ run.splits_received }}
+                </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">
                     Conflictos de identidad
                 </p>
-                <p class="mt-1 text-lg text-white">
+                <p class="mt-1 text-lg text-foreground">
                     {{ run.identity_conflicts }}
                 </p>
             </div>
-            <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
-            >
-                <p class="text-xs text-white/40 uppercase">Errores</p>
+            <div class="rounded-xl border border-border bg-card/30 p-4">
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Errores
+                </p>
                 <p
                     class="mt-1 text-lg"
                     :class="
-                        run.errors_count > 0 ? 'text-amber-400' : 'text-white'
+                        run.errors_count > 0
+                            ? 'text-amber-700'
+                            : 'text-foreground'
                     "
                 >
                     {{ run.errors_count }}
@@ -167,12 +169,12 @@ const statusClass: Record<string, string> = {
             </div>
         </div>
 
-        <h2 class="mb-3 text-sm font-semibold text-white">Errores</h2>
-        <div class="overflow-x-auto rounded-xl border border-white/10">
+        <h2 class="mb-3 text-sm font-semibold text-foreground">Errores</h2>
+        <div class="overflow-x-auto rounded-xl border border-border">
             <table class="w-full text-sm">
                 <thead>
                     <tr
-                        class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                        class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                     >
                         <th class="px-4 py-3 font-medium">Tipo</th>
                         <th class="px-4 py-3 font-medium">ID externo</th>
@@ -184,14 +186,14 @@ const statusClass: Record<string, string> = {
                     <tr
                         v-for="(e, i) in errors"
                         :key="i"
-                        class="border-b border-white/5 text-white/80 last:border-0"
+                        class="border-b border-border text-foreground last:border-0"
                     >
                         <td class="px-4 py-3">{{ e.entity_type }}</td>
                         <td class="px-4 py-3">{{ e.external_id ?? '—' }}</td>
                         <td class="px-4 py-3">
                             <Badge
                                 variant="outline"
-                                class="border-amber-500/30 text-amber-400"
+                                class="border-amber-500/30 text-amber-700"
                                 >{{ e.code }}</Badge
                             >
                         </td>
@@ -200,7 +202,7 @@ const statusClass: Record<string, string> = {
                     <tr v-if="!errors.length">
                         <td
                             colspan="4"
-                            class="px-4 py-8 text-center text-white/40"
+                            class="px-4 py-8 text-center text-muted-foreground/80"
                         >
                             Sin errores.
                         </td>

@@ -6,8 +6,8 @@ import { AlertTriangle } from '@lucide/vue';
     <div
         class="mb-12 flex items-start gap-3 rounded-xl border border-fl-gold/25 bg-fl-gold/5 p-4"
     >
-        <AlertTriangle class="mt-0.5 size-4 shrink-0 text-fl-gold-soft" />
-        <p class="text-sm text-white/60">
+        <AlertTriangle class="mt-0.5 size-4 shrink-0 text-fl-gold-ink" />
+        <p class="text-sm text-muted-foreground">
             Este contenido es un texto de referencia (placeholder) y todavía no
             ha sido revisado ni aprobado por asesoría legal. No debe
             interpretarse como la versión definitiva de esta política.

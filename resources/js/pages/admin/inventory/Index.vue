@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { Plus, Warehouse } from '@lucide/vue';
 import { ref } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,6 +22,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { CATALOG_AREA_NAV } from '@/config/areaNav';
 
 type LevelRow = {
     id: number;
@@ -77,9 +79,13 @@ function submit() {
     <Head title="Inventario" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="CATALOG_AREA_NAV" />
+
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
-                <Warehouse class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-2 text-xl font-bold text-foreground"
+            >
+                <Warehouse class="size-5 text-fl-gold-ink" />
                 Inventario
             </h1>
             <Button
@@ -100,7 +106,7 @@ function submit() {
 
         <Dialog v-model:open="dialogOpen">
             <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white sm:max-w-md"
+                class="border-border bg-card text-foreground sm:max-w-md"
             >
                 <DialogHeader>
                     <DialogTitle>Ajustar inventario</DialogTitle>
@@ -110,7 +116,7 @@ function submit() {
                         <Label>Variante</Label>
                         <Select v-model="form.product_variant_id">
                             <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             >
                                 <SelectValue
                                     placeholder="Selecciona una variante"
@@ -131,7 +137,7 @@ function submit() {
                         <Label>Ubicación</Label>
                         <Select v-model="form.inventory_location_id">
                             <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             >
                                 <SelectValue
                                     placeholder="Selecciona una ubicación"
@@ -153,7 +159,7 @@ function submit() {
                             <Label>Tipo</Label>
                             <Select v-model="form.type">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -172,7 +178,7 @@ function submit() {
                             <Input
                                 v-model.number="form.quantity"
                                 type="number"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
@@ -180,7 +186,7 @@ function submit() {
                         <Label>Motivo (opcional)</Label>
                         <Textarea
                             v-model="form.notes"
-                            class="bg-fl-black"
+                            class="bg-background"
                             rows="2"
                         />
                     </div>

@@ -42,12 +42,12 @@ function submit() {
     <div class="p-4 md:p-8">
         <Link
             href="/admin/roles"
-            class="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
+            class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-4" /> Volver a roles
         </Link>
 
-        <h1 class="mt-4 mb-6 text-xl font-bold text-white">Nuevo rol</h1>
+        <h1 class="mt-4 mb-6 text-xl font-bold text-foreground">Nuevo rol</h1>
 
         <div class="space-y-6">
             <div class="grid gap-4 sm:grid-cols-2">
@@ -56,10 +56,10 @@ function submit() {
                     <Input
                         v-model="label"
                         required
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         placeholder="Ej. Coordinador de logística"
                     />
-                    <p class="text-xs text-white/30">
+                    <p class="text-xs text-muted-foreground/80">
                         El código interno se genera automáticamente a partir del
                         nombre.
                     </p>
@@ -68,7 +68,7 @@ function submit() {
                     <Label>Descripción (opcional)</Label>
                     <Textarea
                         v-model="description"
-                        class="h-full min-h-24 border-white/10 bg-fl-black text-white"
+                        class="h-full min-h-24 border-border bg-background text-foreground"
                     />
                 </div>
             </div>

@@ -27,7 +27,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <nav class="mb-6 flex gap-1 border-b border-white/10">
+    <nav class="mb-6 flex gap-1 border-b border-border">
         <Link
             v-for="item in visibleItems"
             :key="item.href"
@@ -35,8 +35,8 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
             class="border-b-2 px-3 py-2 text-sm font-medium transition-colors"
             :class="
                 isCurrentOrParentUrl(item.href)
-                    ? 'border-fl-gold text-white'
-                    : 'border-transparent text-white/50 hover:text-white'
+                    ? 'border-fl-gold text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
             "
         >
             {{ item.label }}

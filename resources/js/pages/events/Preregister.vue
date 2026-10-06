@@ -56,36 +56,38 @@ function submit() {
     <section class="mx-auto max-w-lg px-4 py-16 sm:px-6 lg:px-8">
         <template v-if="!edition || !isOpen">
             <div
-                class="mx-auto flex size-16 items-center justify-center rounded-full border border-fl-gold/30 bg-fl-graphite/60 text-fl-gold-soft"
+                class="mx-auto flex size-16 items-center justify-center rounded-full border border-fl-gold/30 bg-card/60 text-fl-gold-ink"
             >
                 <Clock class="size-7" />
             </div>
 
-            <h1 class="mt-6 text-center text-3xl font-bold text-white">
+            <h1 class="mt-6 text-center text-3xl font-bold text-foreground">
                 Prerregistro no disponible
             </h1>
-            <p class="mx-auto mt-4 max-w-md text-center text-white/60">
+            <p class="mx-auto mt-4 max-w-md text-center text-muted-foreground">
                 El prerregistro para
-                <span class="text-white">{{ event.name }}</span> no está abierto
-                en este momento.
+                <span class="text-foreground">{{ event.name }}</span> no está
+                abierto en este momento.
             </p>
         </template>
 
         <Reveal v-else>
             <div class="mb-8 text-center">
                 <p
-                    class="text-xs font-semibold tracking-widest text-fl-gold-soft uppercase"
+                    class="text-xs font-semibold tracking-widest text-fl-gold-ink uppercase"
                 >
                     Prerregistro
                 </p>
-                <h1 class="mt-2 text-2xl font-bold text-white">
+                <h1 class="mt-2 text-2xl font-bold text-foreground">
                     {{ event.name }}
                 </h1>
-                <p class="mt-1 text-sm text-white/60">{{ edition.name }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    {{ edition.name }}
+                </p>
             </div>
 
             <form
-                class="space-y-5 rounded-2xl border border-white/10 bg-fl-graphite/40 p-6"
+                class="space-y-5 rounded-2xl border border-border bg-card/40 p-6"
                 @submit.prevent="submit"
             >
                 <div class="grid gap-2">

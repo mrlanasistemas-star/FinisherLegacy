@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ProductAvailability;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
@@ -31,6 +32,7 @@ class ProductController extends Controller
             ->with('category')
             ->withCount('variants')
             ->when($request->string('q')->toString(), fn ($q, $search) => $q->where('name', 'like', "%{$search}%"))
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->paginate(25)
             ->withQueryString();
@@ -41,6 +43,7 @@ class ProductController extends Controller
             'type' => $product->type->value,
             'category' => $product->category === null ? '—' : $product->category->name,
             'status' => $product->status->value,
+            'availability' => ($product->availability ?? ProductAvailability::Available)->value,
             'qr_capable' => $product->qr_capable,
             'tracks_inventory' => $product->tracks_inventory,
             'active' => $product->active,
@@ -50,7 +53,7 @@ class ProductController extends Controller
         return Inertia::render('admin/products/Index', [
             'products' => $products,
             'filters' => ['q' => $request->string('q')->toString()],
-            'categories' => ProductCategory::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => ProductCategory::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -83,7 +86,11 @@ class ProductController extends Controller
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'description' => $product->description,
+                'tagline' => $product->tagline,
                 'type' => $product->type->value,
+                'availability' => ($product->availability ?? ProductAvailability::Available)->value,
+                'sort_order' => $product->sort_order,
+                'public_url' => route('store.products.show', $product->slug),
                 'category_id' => $product->category_id,
                 'brand' => $product->brand,
                 'status' => $product->status->value,
@@ -104,14 +111,17 @@ class ProductController extends Controller
                 'stock' => $variant->inventoryLevels->sum('quantity_on_hand'),
                 'reserved' => $variant->inventoryLevels->sum('quantity_reserved'),
             ]),
-            'categories' => ProductCategory::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => ProductCategory::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'media' => $product->media->map(fn (ProductMedia $m) => [
                 'id' => $m->id,
                 'type' => $m->type->value,
                 'url' => $m->url(),
                 'poster_url' => $m->posterUrl(),
                 'is_primary' => $m->is_primary,
+                'is_hover' => $m->is_hover,
                 'alt_text' => $m->alt_text,
+                'mime' => $m->mime,
+                'size' => $m->size,
                 'sort_order' => $m->sort_order,
             ]),
             'contentSections' => $product->contentSections->map(fn (ProductContentSection $s) => [
@@ -185,7 +195,7 @@ class ProductController extends Controller
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:2000'],
             'type' => ['required', 'string', Rule::enum(ProductType::class)],
@@ -197,6 +207,19 @@ class ProductController extends Controller
             'tracks_inventory' => ['boolean'],
             'active' => ['boolean'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
+            'availability' => ['nullable', 'string', Rule::enum(ProductAvailability::class)],
+            'tagline' => ['nullable', 'string', 'max:160'],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:65000'],
         ]);
+
+        // Optional on the wire (older clients/tests don't send them): an
+        // omitted value keeps the column's current value / its default.
+        foreach (['availability', 'sort_order'] as $optional) {
+            if (! isset($data[$optional])) {
+                unset($data[$optional]);
+            }
+        }
+
+        return $data;
     }
 }

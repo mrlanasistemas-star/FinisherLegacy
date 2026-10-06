@@ -13,7 +13,13 @@ export default defineConfig({
             refresh: true,
             fonts: [
                 bunny('Instrument Sans', {
+                    weights: [400, 500, 600, 700],
+                }),
+                // Editorial serif for display headings only (font-serif) —
+                // interface text stays on Instrument Sans.
+                bunny('Fraunces', {
                     weights: [400, 500, 600],
+                    styles: ['normal', 'italic'],
                 }),
             ],
         }),

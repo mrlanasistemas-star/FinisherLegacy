@@ -84,13 +84,13 @@ const legacyPlateLabels: Record<string, string> = {
 };
 
 const legacyPlateStatusBadge: Record<string, string> = {
-    pending_payment: 'border-amber-500/30 text-amber-400',
-    paid: 'border-sky-500/30 text-sky-400',
-    linked: 'border-sky-500/30 text-sky-400',
-    queued: 'border-fl-gold/30 text-fl-gold-soft',
-    produced: 'border-fl-gold/30 text-fl-gold-soft',
-    delivered: 'border-emerald-500/30 text-emerald-400',
-    cancelled: 'border-red-500/30 text-red-400',
+    pending_payment: 'border-amber-500/30 text-amber-700',
+    paid: 'border-sky-500/30 text-sky-700',
+    linked: 'border-sky-500/30 text-sky-700',
+    queued: 'border-fl-gold/30 text-fl-gold-ink',
+    produced: 'border-fl-gold/30 text-fl-gold-ink',
+    delivered: 'border-emerald-500/30 text-emerald-700',
+    cancelled: 'border-red-500/30 text-red-700',
 };
 
 const products = [
@@ -193,8 +193,8 @@ function exportUrl() {
     <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h1 class="text-xl font-bold text-white">Participantes</h1>
-                <p class="text-sm text-white/50">
+                <h1 class="text-xl font-bold text-foreground">Participantes</h1>
+                <p class="text-sm text-muted-foreground">
                     Los corredores reales del evento — filtra, mide, exporta.
                 </p>
             </div>
@@ -206,9 +206,9 @@ function exportUrl() {
 
         <div
             v-if="!selectedEventEditionId"
-            class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/10 py-20 text-center text-white/40"
+            class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-20 text-center text-muted-foreground/80"
         >
-            <Users class="size-10 text-white/15" />
+            <Users class="size-10 text-muted-foreground/80" />
             <p>Selecciona un evento para ver sus participantes.</p>
         </div>
 
@@ -220,25 +220,26 @@ function exportUrl() {
                 <div
                     v-for="card in kpiCards(metrics)"
                     :key="card.label"
-                    class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                    class="rounded-xl border border-border bg-card/40 p-4"
                 >
-                    <component :is="card.icon" class="size-4 text-fl-gold" />
-                    <p class="mt-2 text-xl font-bold text-white">
+                    <component
+                        :is="card.icon"
+                        class="size-4 text-fl-gold-ink"
+                    />
+                    <p class="mt-2 text-xl font-bold text-foreground">
                         {{ card.value }}
                     </p>
-                    <p class="text-xs text-white/50">{{ card.label }}</p>
+                    <p class="text-xs text-muted-foreground">
+                        {{ card.label }}
+                    </p>
                 </div>
-                <div
-                    class="rounded-xl border border-fl-gold/20 bg-fl-graphite/40 p-4"
-                >
-                    <p
-                        class="text-xs tracking-wide text-fl-gold-soft uppercase"
-                    >
+                <div class="rounded-xl border border-fl-gold/20 bg-card/40 p-4">
+                    <p class="text-xs tracking-wide text-fl-gold-ink uppercase">
                         Ingresos
                     </p>
                     <Money
                         :minor="metrics.revenue_minor"
-                        class="mt-2 block text-xl font-bold text-white"
+                        class="mt-2 block text-xl font-bold text-foreground"
                     />
                 </div>
             </div>
@@ -248,7 +249,7 @@ function exportUrl() {
                 <Input
                     v-model="q"
                     placeholder="Buscar nombre, bib, correo…"
-                    class="w-56 border-white/10 bg-fl-graphite/60 text-white"
+                    class="w-56 border-border bg-card/60 text-foreground"
                 />
                 <Select
                     :model-value="filters.event_race_id ?? undefined"
@@ -257,7 +258,7 @@ function exportUrl() {
                     "
                 >
                     <SelectTrigger
-                        class="w-44 border-white/10 bg-fl-black text-white"
+                        class="w-44 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Carrera" />
                     </SelectTrigger>
@@ -278,7 +279,7 @@ function exportUrl() {
                     "
                 >
                     <SelectTrigger
-                        class="w-40 border-white/10 bg-fl-black text-white"
+                        class="w-40 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Resultado" />
                     </SelectTrigger>
@@ -294,7 +295,7 @@ function exportUrl() {
                     "
                 >
                     <SelectTrigger
-                        class="w-48 border-white/10 bg-fl-black text-white"
+                        class="w-48 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Legacy Plate" />
                     </SelectTrigger>
@@ -315,7 +316,7 @@ function exportUrl() {
                     "
                 >
                     <SelectTrigger
-                        class="w-48 border-white/10 bg-fl-black text-white"
+                        class="w-48 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Producto" />
                     </SelectTrigger>
@@ -333,7 +334,7 @@ function exportUrl() {
                 <Link
                     v-if="canImport"
                     href="/imports"
-                    class="ml-auto flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-sm text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+                    class="ml-auto flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
                 >
                     <Upload class="size-4" />
                     Importar
@@ -342,7 +343,7 @@ function exportUrl() {
                 <a
                     :href="exportUrl()"
                     :class="{ 'ml-auto': !canImport }"
-                    class="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-sm text-white/70 transition-colors hover:border-fl-gold/30 hover:text-fl-gold"
+                    class="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
                 >
                     <Download class="size-4" />
                     Exportar CSV
@@ -351,12 +352,12 @@ function exportUrl() {
 
             <div
                 v-if="participants"
-                class="overflow-x-auto rounded-xl border border-white/10"
+                class="overflow-x-auto rounded-xl border border-border"
             >
                 <table class="w-full text-sm">
                     <thead>
                         <tr
-                            class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                            class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                         >
                             <th class="px-4 py-3 font-medium">Bib</th>
                             <th class="px-4 py-3 font-medium">Atleta</th>
@@ -373,15 +374,15 @@ function exportUrl() {
                         <tr
                             v-for="row in participants.data"
                             :key="row.id"
-                            class="border-b border-white/5 text-white/80 transition-colors last:border-0 hover:bg-white/5"
+                            class="border-b border-border text-foreground transition-colors last:border-0 hover:bg-foreground/[0.03]"
                         >
-                            <td class="px-4 py-3 font-mono text-fl-gold">
+                            <td class="px-4 py-3 font-mono text-fl-gold-ink">
                                 {{
                                     row.bib_number ? `#${row.bib_number}` : '—'
                                 }}
                             </td>
                             <td class="px-4 py-3">{{ row.name }}</td>
-                            <td class="px-4 py-3 text-white/60">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{ row.race ?? '—' }}
                             </td>
                             <td class="px-4 py-3">
@@ -389,7 +390,7 @@ function exportUrl() {
                                     >{{ row.official_time }} ·
                                     {{ row.pace }}</span
                                 >
-                                <span v-else class="text-white/30">{{
+                                <span v-else class="text-muted-foreground/80">{{
                                     resultLabels[row.result_status ?? ''] ??
                                     'Sin resultado'
                                 }}</span>
@@ -401,17 +402,20 @@ function exportUrl() {
                                     :class="
                                         legacyPlateStatusBadge[
                                             row.legacy_plate_status
-                                        ] ?? 'border-white/20 text-white/50'
+                                        ] ??
+                                        'border-foreground/15 text-muted-foreground'
                                     "
                                 >
                                     {{ row.legacy_plate_status }}
                                 </Badge>
-                                <span v-else class="text-white/25">—</span>
+                                <span v-else class="text-muted-foreground/80"
+                                    >—</span
+                                >
                             </td>
                             <td class="px-4 py-3">
                                 {{ row.payment_status ?? '—' }}
                             </td>
-                            <td class="px-4 py-3 text-white/60">
+                            <td class="px-4 py-3 text-muted-foreground">
                                 {{
                                     row.products.length
                                         ? row.products.join(', ')
@@ -421,18 +425,20 @@ function exportUrl() {
                             <td class="px-4 py-3">
                                 <span
                                     v-if="row.media_count"
-                                    class="flex items-center gap-1 text-white/50"
+                                    class="flex items-center gap-1 text-muted-foreground"
                                 >
                                     <Camera class="size-3.5" />{{
                                         row.media_count
                                     }}
                                 </span>
-                                <span v-else class="text-white/20">—</span>
+                                <span v-else class="text-muted-foreground/80"
+                                    >—</span
+                                >
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <Link
                                     :href="`/admin/participants/${row.id}`"
-                                    class="text-xs font-medium text-fl-gold-soft hover:underline"
+                                    class="text-xs font-medium text-fl-gold-ink hover:underline"
                                 >
                                     Ver
                                 </Link>
@@ -441,7 +447,7 @@ function exportUrl() {
                         <tr v-if="!participants.data.length">
                             <td
                                 colspan="9"
-                                class="px-4 py-10 text-center text-white/30"
+                                class="px-4 py-10 text-center text-muted-foreground/80"
                             >
                                 Sin participantes para estos filtros.
                             </td>

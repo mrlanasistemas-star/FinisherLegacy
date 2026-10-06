@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProductAvailability;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use Database\Factories\ProductFactory;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\Storage;
  * and Racepack are first-class products too.
  */
 #[Fillable([
-    'uuid', 'name', 'slug', 'description', 'type', 'category_id', 'brand', 'image_path', 'status',
+    'uuid', 'name', 'slug', 'description', 'tagline', 'type', 'category_id', 'brand', 'image_path', 'status',
+    'availability', 'sort_order',
     'taxable', 'requires_shipping', 'qr_capable', 'tracks_inventory', 'active',
 ])]
 class Product extends Model
@@ -31,6 +33,7 @@ class Product extends Model
         return [
             'type' => ProductType::class,
             'status' => ProductStatus::class,
+            'availability' => ProductAvailability::class,
             'taxable' => 'boolean',
             'requires_shipping' => 'boolean',
             'qr_capable' => 'boolean',
@@ -93,5 +96,16 @@ class Product extends Model
         }
 
         return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;
+    }
+
+    /**
+     * Published AND commercially available — "Próximamente"/"Concepto"
+     * products are catalog-only (see ProductAvailability).
+     */
+    public function isPurchasable(): bool
+    {
+        return $this->active
+            && $this->status === ProductStatus::Active
+            && ($this->availability ?? ProductAvailability::Available)->isPurchasable();
     }
 }

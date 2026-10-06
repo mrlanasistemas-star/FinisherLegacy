@@ -15,8 +15,8 @@ import { request } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Inicia sesión en tu Legacy',
-        description: 'Ingresa tus datos para continuar',
+        title: 'Inicia sesión',
+        description: 'Qué gusto verte de nuevo. Continúa tu historia.',
     },
 });
 
@@ -64,7 +64,7 @@ defineProps<{
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
-                        class="text-sm text-fl-gold decoration-fl-gold/40"
+                        class="text-sm text-fl-gold-ink decoration-fl-gold/40"
                         :tabindex="5"
                     >
                         ¿Olvidaste tu contraseña?
@@ -90,7 +90,7 @@ defineProps<{
 
             <Button
                 type="submit"
-                class="mt-4 w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                class="mt-4 h-11 w-full rounded-full"
                 :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
@@ -100,14 +100,14 @@ defineProps<{
             </Button>
         </div>
 
-        <p class="text-center text-sm text-white/50">
+        <p class="text-center text-sm text-muted-foreground">
             ¿Aún no tienes tu Legacy?
             <Link
                 :href="register()"
-                class="font-medium text-fl-gold hover:text-fl-gold-soft"
+                class="font-medium text-fl-gold-ink hover:text-fl-gold-ink"
                 :tabindex="6"
             >
-                Crea tu Legacy ID
+                Crea tu perfil
             </Link>
         </p>
     </Form>

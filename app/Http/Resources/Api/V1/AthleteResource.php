@@ -29,6 +29,9 @@ class AthleteResource extends JsonResource
             'name' => $this->name,
             'photo_url' => $profile?->profile_photo_path ? Storage::disk('public')->url($profile->profile_photo_path) : null,
             'city' => $profile?->city,
+            // Only when the caller eager-loaded it (feed/suggestions do) —
+            // never a per-row query.
+            'sport' => $profile !== null && $profile->relationLoaded('mainSport') ? $profile->mainSport?->name : null,
             'is_following' => $this->when(isset($this->resource->is_following), fn () => (bool) $this->resource->is_following),
         ];
     }

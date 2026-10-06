@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Store;
 
+use App\Enums\ProductAvailability;
+use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -28,12 +30,34 @@ class ProductController extends Controller
             ->where('active', true)
             ->where('status', 'active')
             ->when($request->string('category')->toString(), fn ($q, $slug) => $q->whereHas('category', fn ($c) => $c->where('slug', $slug)))
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
+        // The Legacy Plate gets the storefront's featured slot when it is
+        // published — the product is the entry point of the ecosystem.
+        $featured = $request->filled('category') ? null : $products->firstWhere('type', ProductType::LegacyPlate);
+
         return Inertia::render('store/Index', [
             'products' => $products->map(fn (Product $product) => GetFeaturedProducts::summarize($product)),
-            'categories' => ProductCategory::query()->where('active', true)->orderBy('name')->get(['name', 'slug']),
+            'featured' => $featured === null ? null : [
+                ...GetFeaturedProducts::summarize($featured),
+                'description' => $featured->description,
+                'gallery' => $featured->media->where('type', 'image')->sortByDesc('is_primary')->take(3)->values()
+                    ->map(fn (ProductMedia $m) => ['url' => $m->url(), 'alt_text' => $m->alt_text]),
+            ],
+            'categories' => ProductCategory::query()
+                ->where('active', true)
+                ->withCount(['products' => fn ($q) => $q->where('active', true)->where('status', 'active')])
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'description'])
+                ->map(fn (ProductCategory $category) => [
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'description' => $category->description,
+                    'products_count' => $category->products_count,
+                ]),
             'filters' => ['category' => $request->string('category')->toString()],
         ]);
     }
@@ -62,7 +86,11 @@ class ProductController extends Controller
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'description' => $product->description,
+                'tagline' => $product->tagline,
                 'type' => $product->type->value,
+                'availability' => ($product->availability ?? ProductAvailability::Available)->value,
+                'availability_label' => ($product->availability ?? ProductAvailability::Available)->label(),
+                'is_purchasable' => $product->isPurchasable(),
                 'brand' => $product->brand,
                 'category' => $product->category?->name,
                 'qr_capable' => $product->qr_capable,
@@ -84,6 +112,7 @@ class ProductController extends Controller
                     'poster_url' => $m->posterUrl(),
                     'alt_text' => $m->alt_text,
                     'is_primary' => $m->is_primary,
+                    'is_hover' => $m->is_hover,
                 ]),
                 'contentSections' => $product->contentSections->map(fn (ProductContentSection $s) => [
                     'type' => $s->type->value,

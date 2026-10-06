@@ -25,31 +25,33 @@ defineProps<{
 <template>
     <Link
         :href="`/dashboard/my-events/${id}`"
-        class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-fl-graphite/20 p-5 transition hover:border-fl-gold/30"
+        class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card/20 p-5 transition hover:border-fl-gold/30"
     >
         <div>
-            <p class="font-semibold text-white">
+            <p class="font-semibold text-foreground">
                 {{ event ?? edition ?? 'Evento' }}
             </p>
-            <p class="text-sm text-white/50">
+            <p class="text-sm text-muted-foreground">
                 <span v-if="race">{{ race }} · </span>
                 <span v-if="eventDate">{{ eventDate }}</span>
                 <span v-if="bibNumber"> · #{{ bibNumber }}</span>
             </p>
         </div>
 
-        <div class="flex items-center gap-5 text-sm text-white/60">
+        <div class="flex items-center gap-5 text-sm text-muted-foreground">
             <div v-if="officialTime" class="text-right">
-                <p class="text-white">{{ officialTime }}</p>
-                <p v-if="pace" class="text-xs text-white/40">{{ pace }}</p>
+                <p class="text-foreground">{{ officialTime }}</p>
+                <p v-if="pace" class="text-xs text-muted-foreground/80">
+                    {{ pace }}
+                </p>
             </div>
-            <p v-if="position" class="text-right text-white/40">
+            <p v-if="position" class="text-right text-muted-foreground/80">
                 #{{ position }}
             </p>
 
-            <div class="flex items-center gap-2 text-white/30">
-                <Trophy v-if="hasMedal" class="size-4 text-fl-gold-soft" />
-                <Boxes v-if="hasPlate" class="size-4 text-fl-gold-soft" />
+            <div class="flex items-center gap-2 text-muted-foreground/80">
+                <Trophy v-if="hasMedal" class="size-4 text-fl-gold-ink" />
+                <Boxes v-if="hasPlate" class="size-4 text-fl-gold-ink" />
                 <Camera v-if="mediaCount > 0" class="size-4" />
             </div>
         </div>

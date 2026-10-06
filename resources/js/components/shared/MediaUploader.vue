@@ -80,7 +80,7 @@ function onDrop(event: DragEvent) {
 
 <template>
     <div>
-        <div class="mb-3 flex gap-4 text-xs text-white/50">
+        <div class="mb-3 flex gap-4 text-xs text-muted-foreground">
             <span class="flex items-center gap-1"
                 ><ImageIcon class="size-3.5" /> Fotos
                 {{ imagesLimit - imagesRemaining }}/{{ imagesLimit }}</span
@@ -96,17 +96,19 @@ function onDrop(event: DragEvent) {
             :class="
                 isDragging
                     ? 'border-fl-gold bg-fl-gold/5'
-                    : 'border-white/15 hover:border-white/30'
+                    : 'border-border hover:border-foreground/15'
             "
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
             @drop.prevent="onDrop"
         >
-            <UploadCloud class="size-8 text-white/30" />
-            <p class="text-sm text-white/60">
+            <UploadCloud class="size-8 text-muted-foreground/80" />
+            <p class="text-sm text-muted-foreground">
                 Arrastra una foto o video, o haz clic para elegir un archivo
             </p>
-            <p class="text-xs text-white/30">JPG, PNG, WEBP, MP4 o WEBM</p>
+            <p class="text-xs text-muted-foreground/80">
+                JPG, PNG, WEBP, MP4 o WEBM
+            </p>
             <input
                 type="file"
                 class="hidden"
@@ -115,13 +117,13 @@ function onDrop(event: DragEvent) {
             />
         </label>
 
-        <p v-if="clientError" class="mt-2 text-sm text-red-400">
+        <p v-if="clientError" class="mt-2 text-sm text-red-700">
             {{ clientError }}
         </p>
-        <p v-if="form.errors.file" class="mt-2 text-sm text-red-400">
+        <p v-if="form.errors.file" class="mt-2 text-sm text-red-700">
             {{ form.errors.file }}
         </p>
-        <p v-if="form.processing" class="mt-2 text-sm text-white/40">
+        <p v-if="form.processing" class="mt-2 text-sm text-muted-foreground/80">
             Subiendo…
         </p>
     </div>

@@ -112,7 +112,9 @@ function save() {
 
     <div class="p-4 md:p-8">
         <div class="mb-1 flex items-center justify-between">
-            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
+            <h1
+                class="flex items-center gap-1.5 text-xl font-bold text-foreground"
+            >
                 Perfiles de máquina
                 <HelpPopover
                     title="Perfil de máquina"
@@ -127,7 +129,7 @@ function save() {
                 Nuevo perfil
             </Button>
         </div>
-        <p class="mb-6 text-sm text-white/50">
+        <p class="mb-6 text-sm text-muted-foreground">
             Ayuda al flujo ("Descargar para
             {{ profiles[0]?.name ?? 'tu máquina' }}"), no controla la máquina.
             Potencia/velocidad/frecuencia se calibran físicamente, no se
@@ -138,14 +140,14 @@ function save() {
             <div
                 v-for="profile in profiles"
                 :key="profile.id"
-                class="fl-hover-lift rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="fl-hover-lift rounded-xl border border-border bg-card/40 p-4"
             >
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <p class="font-semibold text-white">
+                        <p class="font-semibold text-foreground">
                             {{ profile.name }}
                         </p>
-                        <p class="text-xs text-white/50">
+                        <p class="text-xs text-muted-foreground">
                             {{ profile.type }} ·
                             {{ profile.software ?? 'Sin software' }}
                         </p>
@@ -154,21 +156,27 @@ function save() {
                         variant="outline"
                         :class="
                             profile.active
-                                ? 'border-emerald-500/30 text-emerald-400'
-                                : 'border-white/20 text-white/40'
+                                ? 'border-emerald-500/30 text-emerald-700'
+                                : 'border-foreground/15 text-muted-foreground/80'
                         "
                     >
                         {{ profile.active ? 'Activo' : 'Inactivo' }}
                     </Badge>
                 </div>
 
-                <dl class="mt-3 grid grid-cols-2 gap-2 text-xs text-white/60">
+                <dl
+                    class="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground"
+                >
                     <div>
-                        <dt class="text-white/30 uppercase">Formato</dt>
+                        <dt class="text-muted-foreground/80 uppercase">
+                            Formato
+                        </dt>
                         <dd>{{ profile.default_format.toUpperCase() }}</dd>
                     </div>
                     <div>
-                        <dt class="text-white/30 uppercase">Placa</dt>
+                        <dt class="text-muted-foreground/80 uppercase">
+                            Placa
+                        </dt>
                         <dd>
                             {{ profile.width_mm ?? '—' }} ×
                             {{ profile.height_mm ?? '—' }} mm
@@ -179,7 +187,7 @@ function save() {
                 <Button
                     size="sm"
                     variant="outline"
-                    class="fl-hover-lift mt-3 w-full border-white/15 text-white hover:bg-white/10"
+                    class="fl-hover-lift mt-3 w-full border-border text-foreground hover:bg-foreground/5"
                     @click="openEdit(profile)"
                 >
                     <Pencil class="size-3.5" />
@@ -189,16 +197,14 @@ function save() {
 
             <div
                 v-if="!profiles.length"
-                class="col-span-full rounded-xl border border-dashed border-white/15 p-10 text-center text-sm text-white/40"
+                class="col-span-full rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground/80"
             >
                 Sin perfiles de máquina todavía.
             </div>
         </div>
 
         <Dialog v-model:open="dialogOpen">
-            <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <DialogContent class="border-border bg-card text-foreground">
                 <DialogHeader>
                     <DialogTitle>{{
                         form.id ? 'Editar perfil' : 'Nuevo perfil de máquina'
@@ -209,7 +215,7 @@ function save() {
                         <Label>Nombre</Label>
                         <Input
                             v-model="form.name"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                             placeholder="Fiber 30W — LightBurn"
                         />
                     </div>
@@ -218,7 +224,7 @@ function save() {
                             <Label>Tipo</Label>
                             <Input
                                 v-model="form.type"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                                 placeholder="fiber"
                             />
                         </div>
@@ -226,7 +232,7 @@ function save() {
                             <Label>Software</Label>
                             <Input
                                 v-model="form.software"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                                 placeholder="LightBurn"
                             />
                         </div>
@@ -235,7 +241,7 @@ function save() {
                         <Label>Formato predeterminado</Label>
                         <Select v-model="form.default_format">
                             <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             >
                                 <SelectValue />
                             </SelectTrigger>
@@ -254,7 +260,7 @@ function save() {
                             <Input
                                 v-model="form.width_mm"
                                 type="number"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                                 placeholder="60"
                             />
                         </div>
@@ -263,13 +269,13 @@ function save() {
                             <Input
                                 v-model="form.height_mm"
                                 type="number"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                                 placeholder="40"
                             />
                         </div>
                     </div>
                     <label
-                        class="flex items-center gap-2.5 text-sm text-white/80"
+                        class="flex items-center gap-2.5 text-sm text-foreground"
                     >
                         <Checkbox
                             :model-value="form.active"

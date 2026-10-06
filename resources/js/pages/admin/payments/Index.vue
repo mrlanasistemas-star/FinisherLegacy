@@ -46,8 +46,10 @@ const columns = [
     <div class="p-4 md:p-8">
         <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
 
-        <h1 class="mb-6 flex items-center gap-2 text-xl font-bold text-white">
-            <CreditCard class="size-5 text-fl-gold" />
+        <h1
+            class="mb-6 flex items-center gap-2 text-xl font-bold text-foreground"
+        >
+            <CreditCard class="size-5 text-fl-gold-ink" />
             Pagos
         </h1>
 
@@ -58,12 +60,14 @@ const columns = [
             :initial-query="filters.q"
         >
             <template #cell-order_number="{ row }">
-                <span class="font-mono text-fl-gold-soft">{{
+                <span class="font-mono text-fl-gold-ink">{{
                     row.order_number
                 }}</span>
             </template>
             <template #cell-method="{ row }">
-                <Badge variant="outline" class="border-white/15 text-white/60"
+                <Badge
+                    variant="outline"
+                    class="border-border text-muted-foreground"
                     >{{ row.method }} · {{ row.provider }}</Badge
                 >
             </template>
@@ -81,7 +85,7 @@ const columns = [
                     as-child
                     size="sm"
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                 >
                     <Link :href="`/admin/orders/${row.order_uuid}`"
                         >Ver pedido</Link

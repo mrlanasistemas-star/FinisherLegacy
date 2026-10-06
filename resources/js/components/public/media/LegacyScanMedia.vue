@@ -36,7 +36,7 @@ const chain = [
             <template v-for="(step, index) in chain" :key="step.label">
                 <div class="flex flex-col items-center gap-1.5">
                     <span
-                        class="flex size-9 items-center justify-center overflow-hidden rounded-full border border-fl-gold/30 bg-fl-graphite/60 text-fl-gold-soft"
+                        class="flex size-9 items-center justify-center overflow-hidden rounded-full border border-fl-gold/30 bg-card/60 text-fl-gold-ink"
                     >
                         <img
                             v-if="step.photo"
@@ -48,14 +48,14 @@ const chain = [
                         <component :is="step.icon" v-else class="size-4" />
                     </span>
                     <span
-                        class="max-w-[4.5rem] text-center text-[10px] leading-tight font-medium tracking-wide text-white/50 uppercase"
+                        class="max-w-[4.5rem] text-center text-[10px] leading-tight font-medium tracking-wide text-muted-foreground uppercase"
                     >
                         {{ step.label }}
                     </span>
                 </div>
                 <ChevronRight
                     v-if="index < chain.length - 1"
-                    class="mb-4 size-3.5 shrink-0 text-white/20"
+                    class="mb-4 size-3.5 shrink-0 text-muted-foreground/80"
                     aria-hidden="true"
                 />
             </template>

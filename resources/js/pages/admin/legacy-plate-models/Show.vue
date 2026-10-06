@@ -98,19 +98,23 @@ function submit() {
 
     <div class="p-4 md:p-8">
         <div class="mb-6 flex items-center gap-3">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
-                <LayoutTemplate class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-2 text-xl font-bold text-foreground"
+            >
+                <LayoutTemplate class="size-5 text-fl-gold-ink" />
                 {{ model.name }}
             </h1>
-            <Badge variant="outline" class="border-white/15 text-white/50">{{
-                model.sku ?? 'Sin SKU'
-            }}</Badge>
+            <Badge
+                variant="outline"
+                class="border-border text-muted-foreground"
+                >{{ model.sku ?? 'Sin SKU' }}</Badge
+            >
             <Badge
                 variant="outline"
                 :class="
                     model.active
-                        ? 'border-emerald-500/30 text-emerald-400'
-                        : 'border-white/20 text-white/40'
+                        ? 'border-emerald-500/30 text-emerald-700'
+                        : 'border-foreground/15 text-muted-foreground/80'
                 "
             >
                 {{ model.active ? 'Activo' : 'Inactivo' }}
@@ -119,11 +123,11 @@ function submit() {
 
         <div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
             <div>
-                <p class="mb-2 text-xs text-white/40 uppercase">
+                <p class="mb-2 text-xs text-muted-foreground/80 uppercase">
                     Vista previa · zona de grabado (línea punteada)
                 </p>
                 <div
-                    class="relative aspect-[5/2] w-full overflow-hidden rounded-xl border border-white/10 bg-fl-black/60"
+                    class="relative aspect-[5/2] w-full overflow-hidden rounded-xl border border-border bg-background/60"
                 >
                     <img
                         v-if="model.preview_image_url"
@@ -133,7 +137,7 @@ function submit() {
                     />
                     <LayoutTemplate
                         v-else
-                        class="absolute inset-0 m-auto size-10 text-white/10"
+                        class="absolute inset-0 m-auto size-10 text-muted-foreground/80"
                     />
 
                     <div
@@ -144,32 +148,32 @@ function submit() {
                     <div
                         v-for="field in form.fields"
                         :key="field.id"
-                        class="absolute flex items-center justify-center border border-fl-gold-soft/70 bg-fl-gold-soft/10 text-[8px] text-fl-gold-soft uppercase"
+                        class="absolute flex items-center justify-center border border-fl-gold-soft/70 bg-fl-gold-soft/10 text-[8px] text-fl-gold-ink uppercase"
                         :style="fieldStyle(field)"
                     >
                         {{ fieldLabels[field.field_key] }}
                     </div>
                 </div>
-                <p class="mt-3 text-xs text-white/40">
+                <p class="mt-3 text-xs text-muted-foreground/80">
                     {{ model.description }}
                 </p>
             </div>
 
             <div class="space-y-4">
-                <p class="text-xs text-white/40 uppercase">
+                <p class="text-xs text-muted-foreground/80 uppercase">
                     Campos dinámicos — solo estos 5, nunca decoración libre
                 </p>
                 <div
                     v-for="field in form.fields"
                     :key="field.id"
-                    class="rounded-lg border border-white/10 bg-fl-graphite/30 p-4"
+                    class="rounded-lg border border-border bg-card/30 p-4"
                 >
                     <div class="mb-3 flex items-center justify-between">
-                        <h3 class="text-sm font-semibold text-white">
+                        <h3 class="text-sm font-semibold text-foreground">
                             {{ fieldLabels[field.field_key] }}
                         </h3>
                         <label
-                            class="flex items-center gap-2 text-xs text-white/50"
+                            class="flex items-center gap-2 text-xs text-muted-foreground"
                         >
                             <Checkbox
                                 :model-value="field.visible"
@@ -182,69 +186,69 @@ function submit() {
                     </div>
                     <div class="grid grid-cols-4 gap-2">
                         <div class="grid gap-1">
-                            <Label class="text-[10px] text-white/40"
+                            <Label class="text-[10px] text-muted-foreground/80"
                                 >X (mm)</Label
                             >
                             <Input
                                 v-model.number="field.x"
                                 type="number"
                                 step="0.1"
-                                class="h-8 bg-fl-black text-xs"
+                                class="h-8 bg-background text-xs"
                             />
                         </div>
                         <div class="grid gap-1">
-                            <Label class="text-[10px] text-white/40"
+                            <Label class="text-[10px] text-muted-foreground/80"
                                 >Y (mm)</Label
                             >
                             <Input
                                 v-model.number="field.y"
                                 type="number"
                                 step="0.1"
-                                class="h-8 bg-fl-black text-xs"
+                                class="h-8 bg-background text-xs"
                             />
                         </div>
                         <div class="grid gap-1">
-                            <Label class="text-[10px] text-white/40"
+                            <Label class="text-[10px] text-muted-foreground/80"
                                 >Ancho</Label
                             >
                             <Input
                                 v-model.number="field.width"
                                 type="number"
                                 step="0.1"
-                                class="h-8 bg-fl-black text-xs"
+                                class="h-8 bg-background text-xs"
                             />
                         </div>
                         <div class="grid gap-1">
-                            <Label class="text-[10px] text-white/40"
+                            <Label class="text-[10px] text-muted-foreground/80"
                                 >Alto</Label
                             >
                             <Input
                                 v-model.number="field.height"
                                 type="number"
                                 step="0.1"
-                                class="h-8 bg-fl-black text-xs"
+                                class="h-8 bg-background text-xs"
                             />
                         </div>
                     </div>
                     <div class="mt-2 grid grid-cols-3 gap-2">
                         <div class="grid gap-1">
-                            <Label class="text-[10px] text-white/40"
+                            <Label class="text-[10px] text-muted-foreground/80"
                                 >Tamaño de fuente</Label
                             >
                             <Input
                                 v-model.number="field.font_size"
                                 type="number"
                                 step="0.1"
-                                class="h-8 bg-fl-black text-xs"
+                                class="h-8 bg-background text-xs"
                             />
                         </div>
                         <div class="grid gap-1">
-                            <Label class="text-[10px] text-white/40"
+                            <Label class="text-[10px] text-muted-foreground/80"
                                 >Alineación</Label
                             >
                             <Select v-model="field.alignment">
                                 <SelectTrigger
-                                    class="h-8 border-white/10 bg-fl-black text-xs text-white"
+                                    class="h-8 border-border bg-background text-xs text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -262,13 +266,13 @@ function submit() {
                             </Select>
                         </div>
                         <div class="grid gap-1">
-                            <Label class="text-[10px] text-white/40"
+                            <Label class="text-[10px] text-muted-foreground/80"
                                 >Máx. caracteres</Label
                             >
                             <Input
                                 v-model.number="field.max_chars"
                                 type="number"
-                                class="h-8 bg-fl-black text-xs"
+                                class="h-8 bg-background text-xs"
                             />
                         </div>
                     </div>

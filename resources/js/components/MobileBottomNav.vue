@@ -69,13 +69,15 @@ function openScanner() {
     <QrScannerDialog v-model:open="scannerOpen" />
 
     <nav
-        class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/10 bg-fl-black/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden"
+        class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden"
     >
         <Link
             v-if="home"
             :href="home.href"
             class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] transition-colors"
-            :class="isActive(home) ? 'text-fl-gold' : 'text-white/40'"
+            :class="
+                isActive(home) ? 'text-fl-gold-ink' : 'text-muted-foreground/80'
+            "
         >
             <component :is="home.icon" class="size-5" />
             {{ home.label }}
@@ -86,7 +88,9 @@ function openScanner() {
             :key="item.href"
             :href="item.href"
             class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] transition-colors"
-            :class="isActive(item) ? 'text-fl-gold' : 'text-white/40'"
+            :class="
+                isActive(item) ? 'text-fl-gold-ink' : 'text-muted-foreground/80'
+            "
         >
             <component :is="item.icon" class="size-5" />
             {{ item.label }}
@@ -106,7 +110,9 @@ function openScanner() {
             :key="item.href"
             :href="item.href"
             class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] transition-colors"
-            :class="isActive(item) ? 'text-fl-gold' : 'text-white/40'"
+            :class="
+                isActive(item) ? 'text-fl-gold-ink' : 'text-muted-foreground/80'
+            "
         >
             <component :is="item.icon" class="size-5" />
             {{ item.label }}
@@ -114,7 +120,7 @@ function openScanner() {
 
         <button
             type="button"
-            class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] text-white/40 transition-colors"
+            class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] text-muted-foreground/80 transition-colors"
             @click="sheetOpen = true"
         >
             <MoreHorizontal class="size-5" />
@@ -125,27 +131,29 @@ function openScanner() {
     <Sheet v-model:open="sheetOpen">
         <SheetContent
             side="bottom"
-            class="dark max-h-[80svh] overflow-y-auto border-white/10 bg-fl-graphite"
+            class="max-h-[80svh] overflow-y-auto border-border bg-card"
         >
             <SheetHeader>
-                <SheetTitle class="text-white">¿Qué quieres hacer?</SheetTitle>
+                <SheetTitle class="text-foreground"
+                    >¿Qué quieres hacer?</SheetTitle
+                >
             </SheetHeader>
             <div class="grid gap-3 p-4 pt-0">
                 <button
                     type="button"
-                    class="fl-hover-glow flex items-center gap-4 rounded-xl border border-fl-gold/30 bg-fl-black/60 p-4 text-left transition-colors"
+                    class="fl-hover-glow flex items-center gap-4 rounded-xl border border-fl-gold/30 bg-background/60 p-4 text-left transition-colors"
                     @click="openScanner"
                 >
                     <div
-                        class="flex size-11 shrink-0 items-center justify-center rounded-full bg-fl-gold/10 text-fl-gold"
+                        class="flex size-11 shrink-0 items-center justify-center rounded-full bg-fl-gold/10 text-fl-gold-ink"
                     >
                         <QrCode class="size-5" />
                     </div>
                     <div>
-                        <p class="font-semibold text-white">
+                        <p class="font-semibold text-foreground">
                             Escanear el QR de mi placa
                         </p>
-                        <p class="mt-0.5 text-xs text-white/50">
+                        <p class="mt-0.5 text-xs text-muted-foreground">
                             Carga el evento, tiempo y ritmo automáticamente.
                         </p>
                     </div>
@@ -154,26 +162,26 @@ function openScanner() {
                 <SheetClose as-child>
                     <Link
                         :href="createMedal()"
-                        class="flex items-center gap-4 rounded-xl border border-white/10 bg-fl-black/40 p-4 transition-colors hover:border-white/20"
+                        class="flex items-center gap-4 rounded-xl border border-border bg-background/40 p-4 transition-colors hover:border-foreground/15"
                         @click="sheetOpen = false"
                     >
                         <div
-                            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/5 text-white/60"
+                            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-foreground/[0.03] text-muted-foreground"
                         >
                             <Award class="size-5" />
                         </div>
                         <div>
-                            <p class="font-semibold text-white">
+                            <p class="font-semibold text-foreground">
                                 Agregar medalla manualmente
                             </p>
-                            <p class="mt-0.5 text-xs text-white/50">
+                            <p class="mt-0.5 text-xs text-muted-foreground">
                                 Busca tu evento o captura los datos tú mismo.
                             </p>
                         </div>
                     </Link>
                 </SheetClose>
 
-                <div class="my-1 border-t border-white/10" />
+                <div class="my-1 border-t border-border" />
 
                 <Link
                     v-for="item in moreItems"
@@ -182,8 +190,8 @@ function openScanner() {
                     class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors"
                     :class="
                         isActive(item)
-                            ? 'bg-fl-gold/10 text-fl-gold'
-                            : 'text-white/70 hover:bg-white/5'
+                            ? 'bg-fl-gold/10 text-fl-gold-ink'
+                            : 'text-muted-foreground hover:bg-foreground/[0.03]'
                     "
                     @click="sheetOpen = false"
                 >
@@ -191,11 +199,11 @@ function openScanner() {
                     {{ item.label }}
                 </Link>
 
-                <div class="my-1 border-t border-white/10" />
+                <div class="my-1 border-t border-border" />
 
                 <Link
                     :href="editSettingsProfile()"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5"
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-foreground/[0.03]"
                     @click="sheetOpen = false"
                 >
                     <Settings class="size-4" />
@@ -205,7 +213,7 @@ function openScanner() {
                     :href="logout()"
                     method="post"
                     as="button"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-white/70 hover:bg-white/5"
+                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-foreground/[0.03]"
                 >
                     <LogOut class="size-4" />
                     Cerrar sesión

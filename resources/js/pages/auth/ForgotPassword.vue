@@ -49,7 +49,7 @@ defineProps<{
 
             <div class="my-6 flex items-center justify-start">
                 <Button
-                    class="w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                    class="h-11 w-full rounded-full"
                     :disabled="processing"
                     data-test="email-password-reset-link-button"
                 >
@@ -59,9 +59,11 @@ defineProps<{
             </div>
         </Form>
 
-        <div class="space-x-1 text-center text-sm text-white/50">
+        <div class="space-x-1 text-center text-sm text-muted-foreground">
             <span>¿Lo recordaste?</span>
-            <TextLink :href="login()" class="text-fl-gold decoration-fl-gold/40"
+            <TextLink
+                :href="login()"
+                class="text-fl-gold-ink decoration-fl-gold/40"
                 >Inicia sesión</TextLink
             >
         </div>

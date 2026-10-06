@@ -59,12 +59,14 @@ function submit() {
     <div class="p-4 md:p-8">
         <Link
             href="/admin/users"
-            class="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
+            class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-4" /> Volver a usuarios
         </Link>
 
-        <h1 class="mt-4 mb-6 text-xl font-bold text-white">Nuevo usuario</h1>
+        <h1 class="mt-4 mb-6 text-xl font-bold text-foreground">
+            Nuevo usuario
+        </h1>
 
         <div class="space-y-5">
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -73,7 +75,7 @@ function submit() {
                     <Input
                         v-model="form.first_name"
                         required
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     />
                 </div>
                 <div class="grid gap-2">
@@ -81,7 +83,7 @@ function submit() {
                     <Input
                         v-model="form.last_name"
                         required
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     />
                 </div>
                 <div class="grid gap-2">
@@ -90,14 +92,14 @@ function submit() {
                         v-model="form.email"
                         type="email"
                         required
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     />
                 </div>
                 <div class="grid gap-2">
                     <Label>Teléfono (opcional)</Label>
                     <Input
                         v-model="form.phone"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     />
                 </div>
             </div>
@@ -112,7 +114,7 @@ function submit() {
                     <Input
                         v-model="form.password_confirmation"
                         type="password"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     />
                 </div>
             </div>
@@ -121,7 +123,7 @@ function submit() {
                 <Label>Estado</Label>
                 <Select v-model="form.status">
                     <SelectTrigger
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     >
                         <SelectValue />
                     </SelectTrigger>
@@ -137,12 +139,12 @@ function submit() {
             <div class="grid gap-2">
                 <Label>Roles</Label>
                 <div
-                    class="grid grid-cols-2 gap-2 rounded-lg border border-white/10 p-3 sm:grid-cols-3 lg:grid-cols-4"
+                    class="grid grid-cols-2 gap-2 rounded-lg border border-border p-3 sm:grid-cols-3 lg:grid-cols-4"
                 >
                     <label
                         v-for="role in roles"
                         :key="role"
-                        class="flex items-center gap-2 text-sm text-white/80"
+                        class="flex items-center gap-2 text-sm text-foreground"
                     >
                         <Checkbox
                             :model-value="form.roles.includes(role)"

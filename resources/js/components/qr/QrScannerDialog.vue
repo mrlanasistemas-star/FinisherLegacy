@@ -99,7 +99,7 @@ onBeforeUnmount(stop);
             </DialogHeader>
 
             <div
-                class="relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-black"
+                class="relative aspect-square overflow-hidden rounded-xl border border-border bg-black"
             >
                 <video
                     ref="video"

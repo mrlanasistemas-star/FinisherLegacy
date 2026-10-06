@@ -140,7 +140,7 @@ function onPointerUp(e: PointerEvent) {
         @pointerdown="emit('select', null)"
     >
         <div
-            class="absolute inset-0 overflow-hidden rounded-sm border border-white/10 bg-white [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
+            class="absolute inset-0 overflow-hidden rounded-sm border border-border bg-white [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
             v-html="previewSvg"
         />
 
@@ -148,7 +148,7 @@ function onPointerUp(e: PointerEvent) {
             v-if="previewLoading"
             class="absolute inset-0 flex items-center justify-center bg-black/30"
         >
-            <Spinner class="text-white" />
+            <Spinner class="text-foreground" />
         </div>
 
         <div
@@ -158,7 +158,7 @@ function onPointerUp(e: PointerEvent) {
             :class="
                 el.id === selectedId
                     ? 'border-fl-gold bg-fl-gold/10'
-                    : 'border-transparent hover:border-white/40'
+                    : 'border-transparent hover:border-foreground/25'
             "
             :style="{
                 left: `${el.x_mm * scale()}px`,

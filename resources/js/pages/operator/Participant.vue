@@ -124,17 +124,17 @@ function generate() {
         <div class="mx-auto max-w-4xl">
             <Link
                 :href="index().url"
-                class="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
+                class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             >
                 <ArrowLeft class="size-4" /> Volver a la búsqueda
             </Link>
 
             <div class="mt-6 grid gap-8 sm:grid-cols-[1fr_360px]">
                 <div>
-                    <h1 class="text-2xl font-bold text-white">
+                    <h1 class="text-2xl font-bold text-foreground">
                         {{ participant.full_name }}
                     </h1>
-                    <p class="mt-1 text-sm text-white/50">
+                    <p class="mt-1 text-sm text-muted-foreground">
                         {{
                             [
                                 participant.bib_number
@@ -146,16 +146,19 @@ function generate() {
                                 .join(' · ')
                         }}
                     </p>
-                    <p v-if="templateName" class="mt-1 text-xs text-white/40">
+                    <p
+                        v-if="templateName"
+                        class="mt-1 text-xs text-muted-foreground/80"
+                    >
                         Molde: {{ templateName }}
                     </p>
-                    <p v-else class="mt-1 text-xs text-amber-400">
+                    <p v-else class="mt-1 text-xs text-amber-700">
                         Este evento no tiene un molde asignado — configúralo en
                         "Preparar evento para producción".
                     </p>
                     <span
                         v-if="participant.manual_override"
-                        class="mt-2 inline-block rounded-full border border-fl-gold/30 px-2.5 py-1 text-[10px] text-fl-gold uppercase"
+                        class="mt-2 inline-block rounded-full border border-fl-gold/30 px-2.5 py-1 text-[10px] text-fl-gold-ink uppercase"
                     >
                         Corrección manual
                     </span>
@@ -165,8 +168,8 @@ function generate() {
                         class="mt-4 rounded-lg border px-3 py-2 text-xs"
                         :class="
                             eligibility.eligible
-                                ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400'
-                                : 'border-amber-500/30 bg-amber-500/5 text-amber-400'
+                                ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700'
+                                : 'border-amber-500/30 bg-amber-500/5 text-amber-700'
                         "
                     >
                         <template v-if="eligibility.eligible">
@@ -183,19 +186,25 @@ function generate() {
                     </div>
 
                     <div
-                        class="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-white/10 bg-fl-graphite/40 p-5"
+                        class="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-border bg-card/40 p-5"
                     >
                         <div>
-                            <p class="text-xs text-white/40 uppercase">
+                            <p
+                                class="text-xs text-muted-foreground/80 uppercase"
+                            >
                                 Tiempo
                             </p>
-                            <p class="font-mono text-lg text-fl-gold">
+                            <p class="font-mono text-lg text-fl-gold-ink">
                                 {{ participant.official_time ?? '—' }}
                             </p>
                         </div>
                         <div>
-                            <p class="text-xs text-white/40 uppercase">Ritmo</p>
-                            <p class="text-lg text-white">
+                            <p
+                                class="text-xs text-muted-foreground/80 uppercase"
+                            >
+                                Ritmo
+                            </p>
+                            <p class="text-lg text-foreground">
                                 {{ participant.pace ?? '—' }}
                             </p>
                         </div>

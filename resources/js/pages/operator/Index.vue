@@ -260,17 +260,17 @@ function submitQuickPlate() {
 <template>
     <Head title="Event OS — Operador" />
 
-    <div class="min-h-svh bg-fl-black p-4 md:p-8">
+    <div class="min-h-svh bg-background p-4 md:p-8">
         <div class="mx-auto max-w-2xl">
             <div class="mb-6 flex items-center justify-between gap-4">
                 <div>
                     <p
-                        class="text-xs font-semibold tracking-[0.2em] text-fl-gold uppercase"
+                        class="text-xs font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                     >
                         Event OS
                     </p>
                     <h1
-                        class="flex items-center gap-1.5 text-2xl font-bold text-white"
+                        class="flex items-center gap-1.5 text-2xl font-bold text-foreground"
                     >
                         Operador
                         <HelpPopover
@@ -284,7 +284,7 @@ function submitQuickPlate() {
                     @update:model-value="onSelectEvent"
                 >
                     <SelectTrigger
-                        class="fl-focus-glow h-12 w-64 border-white/10 bg-fl-graphite/60 text-white transition-colors hover:border-fl-gold/40"
+                        class="fl-focus-glow h-12 w-64 border-border bg-card/60 text-foreground transition-colors hover:border-fl-gold/40"
                     >
                         <SelectValue placeholder="Selecciona un evento" />
                     </SelectTrigger>
@@ -303,14 +303,14 @@ function submitQuickPlate() {
             <template v-if="!activeEdition">
                 <Reveal>
                     <div
-                        class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/15 bg-fl-graphite/20 p-14 text-center"
+                        class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/20 p-14 text-center"
                     >
                         <div
-                            class="flex size-14 items-center justify-center rounded-full border border-fl-gold/25 bg-fl-black"
+                            class="flex size-14 items-center justify-center rounded-full border border-fl-gold/25 bg-background"
                         >
-                            <CalendarClock class="size-7 text-fl-gold" />
+                            <CalendarClock class="size-7 text-fl-gold-ink" />
                         </div>
-                        <p class="max-w-xs text-sm text-white/50">
+                        <p class="max-w-xs text-sm text-muted-foreground">
                             Selecciona un evento activo para empezar a buscar
                             corredores y generar placas.
                         </p>
@@ -321,7 +321,7 @@ function submitQuickPlate() {
             <template v-else>
                 <p
                     v-if="!activeEdition.hasTemplate"
-                    class="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-400"
+                    class="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700"
                 >
                     Este evento no tiene un molde de placa asignado. Configúralo
                     en "Preparar evento para producción" antes de generar
@@ -332,14 +332,14 @@ function submitQuickPlate() {
                     v-if="dashboard"
                     class="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4"
                 >
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-3"
-                    >
-                        <p class="text-[10px] text-white/40 uppercase">
+                    <div class="rounded-xl border border-border bg-card/30 p-3">
+                        <p
+                            class="text-[10px] text-muted-foreground/80 uppercase"
+                        >
                             Proveedor
                         </p>
                         <p
-                            class="mt-0.5 flex items-center gap-1.5 text-sm text-white"
+                            class="mt-0.5 flex items-center gap-1.5 text-sm text-foreground"
                         >
                             <span
                                 class="size-1.5 rounded-full"
@@ -348,7 +348,7 @@ function submitQuickPlate() {
                                         ? dashboard.provider.stale
                                             ? 'bg-amber-400'
                                             : 'bg-emerald-400'
-                                        : 'bg-white/30'
+                                        : 'bg-foreground/10'
                                 "
                             />
                             {{
@@ -361,51 +361,53 @@ function submitQuickPlate() {
                         </p>
                         <p
                             v-if="dashboard.provider.last_sync_at"
-                            class="mt-0.5 text-[10px] text-white/30"
+                            class="mt-0.5 text-[10px] text-muted-foreground/80"
                         >
                             Último sync: {{ dashboard.provider.last_sync_at }}
                         </p>
                     </div>
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-3"
-                    >
-                        <p class="text-[10px] text-white/40 uppercase">Datos</p>
-                        <p class="mt-0.5 text-sm text-white">
+                    <div class="rounded-xl border border-border bg-card/30 p-3">
+                        <p
+                            class="text-[10px] text-muted-foreground/80 uppercase"
+                        >
+                            Datos
+                        </p>
+                        <p class="mt-0.5 text-sm text-foreground">
                             {{ dashboard.data.participants }} corredores ·
                             {{ dashboard.data.results }} resultados
                         </p>
                         <p
                             v-if="dashboard.data.conflicts > 0"
-                            class="mt-0.5 text-[10px] text-amber-400"
+                            class="mt-0.5 text-[10px] text-amber-700"
                         >
                             {{ dashboard.data.conflicts }} conflicto(s) de
                             identidad
                         </p>
                     </div>
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-3"
-                    >
-                        <p class="text-[10px] text-white/40 uppercase">
+                    <div class="rounded-xl border border-border bg-card/30 p-3">
+                        <p
+                            class="text-[10px] text-muted-foreground/80 uppercase"
+                        >
                             Producción
                         </p>
-                        <p class="mt-0.5 text-sm text-white">
+                        <p class="mt-0.5 text-sm text-foreground">
                             {{ dashboard.production.pending }} pendientes ·
                             {{ dashboard.production.delivered }} entregadas
                         </p>
                         <p
                             v-if="dashboard.production.failed > 0"
-                            class="mt-0.5 text-[10px] text-red-400"
+                            class="mt-0.5 text-[10px] text-red-700"
                         >
                             {{ dashboard.production.failed }} con problema
                         </p>
                     </div>
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-3"
-                    >
-                        <p class="text-[10px] text-white/40 uppercase">
+                    <div class="rounded-xl border border-border bg-card/30 p-3">
+                        <p
+                            class="text-[10px] text-muted-foreground/80 uppercase"
+                        >
                             Estaciones
                         </p>
-                        <p class="mt-0.5 text-sm text-white">
+                        <p class="mt-0.5 text-sm text-foreground">
                             {{
                                 dashboard.stations.filter((s) => s.online)
                                     .length
@@ -415,7 +417,7 @@ function submitQuickPlate() {
                         </p>
                         <p
                             v-if="dashboard.metrics"
-                            class="mt-0.5 text-[10px] text-white/30"
+                            class="mt-0.5 text-[10px] text-muted-foreground/80"
                         >
                             Prom. producción:
                             {{
@@ -426,32 +428,32 @@ function submitQuickPlate() {
                 </div>
 
                 <p
-                    class="mb-2 text-xs font-semibold tracking-[0.2em] text-white/40 uppercase"
+                    class="mb-2 text-xs font-semibold tracking-[0.2em] text-muted-foreground/80 uppercase"
                 >
                     Buscar corredor
                 </p>
                 <div class="relative mb-3">
                     <Search
-                        class="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-white/40"
+                        class="absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground/80"
                     />
                     <Input
                         v-model="query"
                         autofocus
                         placeholder="Número de corredor o nombre…"
-                        class="fl-focus-glow h-14 border-white/10 bg-fl-graphite/60 pl-12 text-lg text-white placeholder:text-white/30"
+                        class="fl-focus-glow h-14 border-border bg-card/60 pl-12 text-lg text-foreground placeholder:text-muted-foreground/80"
                         @keyup.enter="runSearch"
                     />
                 </div>
 
                 <Button
                     variant="outline"
-                    class="fl-focus-glow h-12 w-full gap-2 border-fl-gold/30 text-sm font-semibold tracking-wide text-fl-gold uppercase hover:bg-fl-gold/10"
+                    class="fl-focus-glow h-12 w-full gap-2 border-fl-gold/30 text-sm font-semibold tracking-wide text-fl-gold-ink uppercase hover:bg-fl-gold/10"
                     @click="quickPlateOpen = true"
                 >
                     <Zap class="size-4" />
                     Generar placa rápida
                 </Button>
-                <p class="mt-1.5 mb-6 text-xs text-white/30">
+                <p class="mt-1.5 mb-6 text-xs text-muted-foreground/80">
                     Para corredores sin cuenta o sin resultado en el sistema
                     todavía. La placa se genera igual, con su propio Legacy Code
                     permanente — la persona puede reclamarla después escaneando
@@ -460,7 +462,7 @@ function submitQuickPlate() {
 
                 <div
                     v-if="searching"
-                    class="flex items-center gap-2 py-4 text-sm text-white/40"
+                    class="flex items-center gap-2 py-4 text-sm text-muted-foreground/80"
                 >
                     <Spinner /> Buscando…
                 </div>
@@ -470,13 +472,13 @@ function submitQuickPlate() {
                         v-for="participant in results"
                         :key="participant.id"
                         :href="showParticipant(participant.id).url"
-                        class="fl-hover-glow flex items-center justify-between rounded-xl border border-white/10 bg-fl-graphite/40 p-4 transition-colors"
+                        class="fl-hover-glow flex items-center justify-between rounded-xl border border-border bg-card/40 p-4 transition-colors"
                     >
                         <div>
-                            <p class="font-semibold text-white">
+                            <p class="font-semibold text-foreground">
                                 {{ participant.full_name }}
                             </p>
-                            <p class="text-xs text-white/50">
+                            <p class="text-xs text-muted-foreground">
                                 {{
                                     [
                                         participant.bib_number
@@ -491,7 +493,7 @@ function submitQuickPlate() {
                         </div>
                         <span
                             v-if="participant.has_plate"
-                            class="rounded-full border border-fl-gold/30 px-2.5 py-1 text-[10px] text-fl-gold uppercase"
+                            class="rounded-full border border-fl-gold/30 px-2.5 py-1 text-[10px] text-fl-gold-ink uppercase"
                             >Ya tiene placa</span
                         >
                     </Link>
@@ -499,7 +501,7 @@ function submitQuickPlate() {
 
                 <p
                     v-else-if="query.trim().length > 0"
-                    class="py-6 text-center text-sm text-white/30"
+                    class="py-6 text-center text-sm text-muted-foreground/80"
                 >
                     Sin corredores para «{{ query }}». Prueba con otro nombre o
                     número, o genera una placa rápida.
@@ -509,11 +511,11 @@ function submitQuickPlate() {
 
         <Dialog v-model:open="quickPlateOpen">
             <DialogContent
-                class="dark max-w-3xl border-white/10 bg-fl-graphite text-white"
+                class="max-w-3xl border-border bg-card text-foreground"
             >
                 <DialogHeader>
                     <DialogTitle class="flex items-center gap-2">
-                        <QrCode class="size-5 text-fl-gold" /> Placa rápida
+                        <QrCode class="size-5 text-fl-gold-ink" /> Placa rápida
                     </DialogTitle>
                 </DialogHeader>
                 <div class="grid gap-6 sm:grid-cols-[1fr_260px]">
@@ -523,7 +525,7 @@ function submitQuickPlate() {
                             <Input
                                 v-model="quickForm.athlete_name.value"
                                 required
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid grid-cols-2 gap-4">
@@ -531,14 +533,14 @@ function submitQuickPlate() {
                                 <Label>Número (opcional)</Label>
                                 <Input
                                     v-model="quickForm.bib_number.value"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                             <div class="grid gap-2">
                                 <Label>Distancia (opcional)</Label>
                                 <Input
                                     v-model="quickForm.race_name.value"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                         </div>
@@ -547,14 +549,14 @@ function submitQuickPlate() {
                                 <Label>Tiempo (si se tiene)</Label>
                                 <Input
                                     v-model="quickForm.official_time.value"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                             <div class="grid gap-2">
                                 <Label>Ritmo (si se tiene)</Label>
                                 <Input
                                     v-model="quickForm.pace.value"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                         </div>
@@ -563,21 +565,21 @@ function submitQuickPlate() {
                                 <Label class="text-xs">Natación</Label>
                                 <Input
                                     v-model="quickForm.swim_time.value"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                             <div class="grid gap-2">
                                 <Label class="text-xs">Ciclismo</Label>
                                 <Input
                                     v-model="quickForm.bike_time.value"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                             <div class="grid gap-2">
                                 <Label class="text-xs">Carrera</Label>
                                 <Input
                                     v-model="quickForm.run_time.value"
-                                    class="bg-fl-black"
+                                    class="bg-background"
                                 />
                             </div>
                         </div>
@@ -588,7 +590,7 @@ function submitQuickPlate() {
                             >
                             <Input
                                 v-model="quickForm.personal_phrase.value"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 maxlength="150"
                             />
                         </div>

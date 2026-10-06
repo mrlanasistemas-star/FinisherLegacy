@@ -102,8 +102,10 @@ function fulfill(itemId: number, locationId: number) {
 
     <div class="p-4 md:p-8">
         <div class="mb-6 flex flex-wrap items-center gap-3">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
-                <ShoppingCart class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-2 text-xl font-bold text-foreground"
+            >
+                <ShoppingCart class="size-5 text-fl-gold-ink" />
                 {{ order.order_number }}
             </h1>
             <OrderStatusBadge :status="order.status" />
@@ -120,23 +122,25 @@ function fulfill(itemId: number, locationId: number) {
         </div>
 
         <div
-            class="mb-6 grid grid-cols-2 gap-4 rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm sm:grid-cols-4"
+            class="mb-6 grid grid-cols-2 gap-4 rounded-xl border border-border bg-card/30 p-5 text-sm sm:grid-cols-4"
         >
             <div>
-                <p class="text-xs text-white/30 uppercase">Cliente</p>
-                <p class="text-white">{{ order.customer ?? '—' }}</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Cliente
+                </p>
+                <p class="text-foreground">{{ order.customer ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-xs text-white/30 uppercase">Atleta</p>
-                <p class="text-white">{{ order.athlete ?? '—' }}</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">Atleta</p>
+                <p class="text-foreground">{{ order.athlete ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-xs text-white/30 uppercase">Evento</p>
-                <p class="text-white">{{ order.event ?? '—' }}</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">Evento</p>
+                <p class="text-foreground">{{ order.event ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-xs text-white/30 uppercase">Total</p>
-                <p class="text-white">
+                <p class="text-xs text-muted-foreground/80 uppercase">Total</p>
+                <p class="text-foreground">
                     <Money
                         :minor="order.total_minor"
                         :currency="order.currency"
@@ -147,15 +151,15 @@ function fulfill(itemId: number, locationId: number) {
 
         <section class="mb-6">
             <h2
-                class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-white/70"
+                class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
             >
                 <Package2 class="size-4" /> Artículos
             </h2>
-            <div class="overflow-x-auto rounded-xl border border-white/10">
+            <div class="overflow-x-auto rounded-xl border border-border">
                 <table class="w-full text-sm">
                     <thead>
                         <tr
-                            class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                            class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                         >
                             <th class="px-4 py-3 font-medium">Producto</th>
                             <th class="px-4 py-3 font-medium">Cant.</th>
@@ -168,13 +172,14 @@ function fulfill(itemId: number, locationId: number) {
                         <tr
                             v-for="item in items"
                             :key="item.id"
-                            class="border-b border-white/5 text-white/80 last:border-0"
+                            class="border-b border-border text-foreground last:border-0"
                         >
                             <td class="px-4 py-3">
                                 {{ item.name }}
-                                <span class="block text-xs text-white/30">{{
-                                    item.sku
-                                }}</span>
+                                <span
+                                    class="block text-xs text-muted-foreground/80"
+                                    >{{ item.sku }}</span
+                                >
                             </td>
                             <td class="px-4 py-3">{{ item.quantity }}</td>
                             <td class="px-4 py-3">
@@ -187,18 +192,18 @@ function fulfill(itemId: number, locationId: number) {
                                 <Badge
                                     v-if="item.fulfilled"
                                     variant="outline"
-                                    class="border-emerald-500/30 text-emerald-400"
+                                    class="border-emerald-500/30 text-emerald-700"
                                     >Surtido</Badge
                                 >
                                 <Badge
                                     v-else
                                     variant="outline"
-                                    class="border-amber-500/30 text-amber-400"
+                                    class="border-amber-500/30 text-amber-700"
                                     >Pendiente</Badge
                                 >
                                 <span
                                     v-if="item.owned_asset_code"
-                                    class="ml-2 font-mono text-xs text-fl-gold-soft"
+                                    class="ml-2 font-mono text-xs text-fl-gold-ink"
                                     >{{ item.owned_asset_code }}</span
                                 >
                             </td>
@@ -210,7 +215,7 @@ function fulfill(itemId: number, locationId: number) {
                                     "
                                 >
                                     <SelectTrigger
-                                        class="h-8 w-40 border-white/10 bg-fl-black text-xs text-white"
+                                        class="h-8 w-40 border-border bg-background text-xs text-foreground"
                                     >
                                         <SelectValue
                                             placeholder="Surtir desde…"
@@ -236,7 +241,7 @@ function fulfill(itemId: number, locationId: number) {
         <section>
             <div class="mb-2 flex items-center justify-between">
                 <h2
-                    class="flex items-center gap-1.5 text-sm font-semibold text-white/70"
+                    class="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
                 >
                     <CreditCard class="size-4" /> Pagos
                 </h2>
@@ -253,10 +258,10 @@ function fulfill(itemId: number, locationId: number) {
                 <div
                     v-for="payment in payments"
                     :key="payment.id"
-                    class="rounded-lg border border-white/10 bg-fl-black/40 p-3 text-sm"
+                    class="rounded-lg border border-border bg-background/40 p-3 text-sm"
                 >
                     <div class="flex items-center justify-between">
-                        <span class="text-white"
+                        <span class="text-foreground"
                             >{{ payment.method }} ({{ payment.provider }})</span
                         >
                         <Money
@@ -264,13 +269,16 @@ function fulfill(itemId: number, locationId: number) {
                             :currency="order.currency"
                         />
                     </div>
-                    <p class="mt-1 text-xs text-white/40">
+                    <p class="mt-1 text-xs text-muted-foreground/80">
                         {{ statusLabel(paymentStatus, payment.status) }} ·
                         {{ payment.reference ?? 'sin referencia' }} ·
                         {{ payment.paid_at ?? 'sin fecha' }}
                     </p>
                 </div>
-                <p v-if="!payments.length" class="text-sm text-white/30">
+                <p
+                    v-if="!payments.length"
+                    class="text-sm text-muted-foreground/80"
+                >
                     Sin pagos registrados.
                 </p>
             </div>
@@ -278,7 +286,7 @@ function fulfill(itemId: number, locationId: number) {
 
         <Dialog v-model:open="paymentDialogOpen">
             <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white sm:max-w-md"
+                class="border-border bg-card text-foreground sm:max-w-md"
             >
                 <DialogHeader>
                     <DialogTitle>Registrar pago manual</DialogTitle>
@@ -288,7 +296,7 @@ function fulfill(itemId: number, locationId: number) {
                         <Label>Método</Label>
                         <Select v-model="paymentForm.method">
                             <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             >
                                 <SelectValue />
                             </SelectTrigger>
@@ -305,10 +313,10 @@ function fulfill(itemId: number, locationId: number) {
                         <Input
                             :model-value="paymentForm.amount_minor / 100"
                             type="number"
-                            class="bg-fl-black"
+                            class="bg-background"
                             disabled
                         />
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-muted-foreground/80">
                             El monto lo determina el servidor — no es editable.
                         </p>
                     </div>
@@ -319,7 +327,7 @@ function fulfill(itemId: number, locationId: number) {
                         <Label>Referencia / folio de la terminal</Label>
                         <Input
                             v-model="paymentForm.reference"
-                            class="bg-fl-black"
+                            class="bg-background"
                             required
                         />
                     </div>

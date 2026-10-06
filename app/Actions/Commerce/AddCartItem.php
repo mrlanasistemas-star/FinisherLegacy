@@ -2,7 +2,6 @@
 
 namespace App\Actions\Commerce;
 
-use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Exceptions\CartEventMismatchException;
 use App\Exceptions\LegacyPlateEventRequiredException;
@@ -30,7 +29,9 @@ class AddCartItem
         // — never trusted client-side, so re-checked here too (brief item
         // 34: a stale page or a hand-crafted request must not be able to
         // add something no longer for sale).
-        if (! $variant->active || ! $product->active || $product->status !== ProductStatus::Active) {
+        // "Próximamente"/"Concepto" products are shown in the catalog but
+        // are never purchasable (ProductAvailability).
+        if (! $variant->active || ! $product->isPurchasable()) {
             throw new ProductUnavailableException;
         }
 

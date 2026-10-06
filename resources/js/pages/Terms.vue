@@ -55,10 +55,10 @@ const sections = [
 
         <div class="space-y-8">
             <div v-for="section in sections" :key="section.title">
-                <h2 class="text-lg font-semibold text-white">
+                <h2 class="text-lg font-semibold text-foreground">
                     {{ section.title }}
                 </h2>
-                <p class="mt-2 leading-relaxed text-white/60">
+                <p class="mt-2 leading-relaxed text-muted-foreground">
                     {{ section.body }}
                 </p>
             </div>

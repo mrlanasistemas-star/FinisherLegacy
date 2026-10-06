@@ -45,14 +45,14 @@ const elementTypeLabels: Record<string, string> = {
 
 <template>
     <div class="space-y-4 p-3">
-        <p v-if="!element" class="px-1 text-sm text-white/40">
+        <p v-if="!element" class="px-1 text-sm text-muted-foreground/80">
             Selecciona un elemento para editar sus propiedades.
         </p>
 
         <template v-else>
             <div class="flex items-center justify-between">
                 <p
-                    class="text-xs font-medium tracking-wide text-white/40 uppercase"
+                    class="text-xs font-medium tracking-wide text-muted-foreground/80 uppercase"
                 >
                     {{ elementTypeLabels[element.type] ?? element.type }}
                 </p>
@@ -60,7 +60,7 @@ const elementTypeLabels: Record<string, string> = {
                     <Button
                         variant="ghost"
                         size="icon"
-                        class="size-7 text-white/60 hover:text-white"
+                        class="size-7 text-muted-foreground hover:text-foreground"
                         title="Duplicar"
                         @click="emit('duplicate')"
                     >
@@ -69,7 +69,7 @@ const elementTypeLabels: Record<string, string> = {
                     <Button
                         variant="ghost"
                         size="icon"
-                        class="size-7 text-red-400 hover:text-red-300"
+                        class="size-7 text-red-700 hover:text-red-700"
                         title="Eliminar"
                         @click="emit('delete')"
                     >
@@ -80,11 +80,11 @@ const elementTypeLabels: Record<string, string> = {
 
             <div class="grid grid-cols-2 gap-2">
                 <div class="grid gap-1">
-                    <Label class="text-xs text-white/50">X (mm)</Label>
+                    <Label class="text-xs text-muted-foreground">X (mm)</Label>
                     <Input
                         type="number"
                         step="0.1"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         :model-value="element.x_mm"
                         @update:model-value="
                             (v) => emit('update', { x_mm: num(String(v)) })
@@ -92,11 +92,11 @@ const elementTypeLabels: Record<string, string> = {
                     />
                 </div>
                 <div class="grid gap-1">
-                    <Label class="text-xs text-white/50">Y (mm)</Label>
+                    <Label class="text-xs text-muted-foreground">Y (mm)</Label>
                     <Input
                         type="number"
                         step="0.1"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         :model-value="element.y_mm"
                         @update:model-value="
                             (v) => emit('update', { y_mm: num(String(v)) })
@@ -104,11 +104,13 @@ const elementTypeLabels: Record<string, string> = {
                     />
                 </div>
                 <div class="grid gap-1">
-                    <Label class="text-xs text-white/50">Ancho (mm)</Label>
+                    <Label class="text-xs text-muted-foreground"
+                        >Ancho (mm)</Label
+                    >
                     <Input
                         type="number"
                         step="0.1"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         :model-value="element.width_mm"
                         @update:model-value="
                             (v) => emit('update', { width_mm: num(String(v)) })
@@ -116,11 +118,13 @@ const elementTypeLabels: Record<string, string> = {
                     />
                 </div>
                 <div class="grid gap-1">
-                    <Label class="text-xs text-white/50">Alto (mm)</Label>
+                    <Label class="text-xs text-muted-foreground"
+                        >Alto (mm)</Label
+                    >
                     <Input
                         type="number"
                         step="0.1"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         :model-value="element.height_mm"
                         @update:model-value="
                             (v) => emit('update', { height_mm: num(String(v)) })
@@ -131,7 +135,7 @@ const elementTypeLabels: Record<string, string> = {
 
             <template v-if="isTextElement(element.type)">
                 <div v-if="element.type === 'dynamic_text'" class="grid gap-1">
-                    <Label class="text-xs text-white/50">Campo</Label>
+                    <Label class="text-xs text-muted-foreground">Campo</Label>
                     <Select
                         :model-value="element.field"
                         @update:model-value="
@@ -143,7 +147,7 @@ const elementTypeLabels: Record<string, string> = {
                         "
                     >
                         <SelectTrigger
-                            class="w-full border-white/10 bg-fl-black text-white"
+                            class="w-full border-border bg-background text-foreground"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -159,11 +163,11 @@ const elementTypeLabels: Record<string, string> = {
                     </Select>
                 </div>
                 <div v-else class="grid gap-1">
-                    <Label class="text-xs text-white/50">
+                    <Label class="text-xs text-muted-foreground">
                         Texto (puedes usar &#123;&#123;campo&#125;&#125;)
                     </Label>
                     <Input
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         :model-value="element.text"
                         @update:model-value="
                             (v) => emit('update', { text: String(v) })
@@ -173,11 +177,13 @@ const elementTypeLabels: Record<string, string> = {
 
                 <div class="grid grid-cols-2 gap-2">
                     <div class="grid gap-1">
-                        <Label class="text-xs text-white/50">Tamaño (pt)</Label>
+                        <Label class="text-xs text-muted-foreground"
+                            >Tamaño (pt)</Label
+                        >
                         <Input
                             type="number"
                             step="0.5"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                             :model-value="element.font_size_pt"
                             @update:model-value="
                                 (v) =>
@@ -188,7 +194,9 @@ const elementTypeLabels: Record<string, string> = {
                         />
                     </div>
                     <div class="grid gap-1">
-                        <Label class="text-xs text-white/50">Grosor</Label>
+                        <Label class="text-xs text-muted-foreground"
+                            >Grosor</Label
+                        >
                         <Select
                             :model-value="String(element.font_weight ?? 400)"
                             @update:model-value="
@@ -197,7 +205,7 @@ const elementTypeLabels: Record<string, string> = {
                             "
                         >
                             <SelectTrigger
-                                class="w-full border-white/10 bg-fl-black text-white"
+                                class="w-full border-border bg-background text-foreground"
                             >
                                 <SelectValue />
                             </SelectTrigger>
@@ -214,7 +222,9 @@ const elementTypeLabels: Record<string, string> = {
 
                 <div class="grid grid-cols-2 gap-2">
                     <div class="grid gap-1">
-                        <Label class="text-xs text-white/50">Alineación</Label>
+                        <Label class="text-xs text-muted-foreground"
+                            >Alineación</Label
+                        >
                         <Select
                             :model-value="element.text_align ?? 'left'"
                             @update:model-value="
@@ -226,7 +236,7 @@ const elementTypeLabels: Record<string, string> = {
                             "
                         >
                             <SelectTrigger
-                                class="w-full border-white/10 bg-fl-black text-white"
+                                class="w-full border-border bg-background text-foreground"
                             >
                                 <SelectValue />
                             </SelectTrigger>
@@ -238,10 +248,12 @@ const elementTypeLabels: Record<string, string> = {
                         </Select>
                     </div>
                     <div class="grid gap-1">
-                        <Label class="text-xs text-white/50">Color</Label>
+                        <Label class="text-xs text-muted-foreground"
+                            >Color</Label
+                        >
                         <Input
                             type="color"
-                            class="h-9 border-white/10 bg-fl-black p-1"
+                            class="h-9 border-border bg-background p-1"
                             :model-value="element.color ?? '#0a090c'"
                             @update:model-value="
                                 (v) => emit('update', { color: String(v) })
@@ -257,18 +269,18 @@ const elementTypeLabels: Record<string, string> = {
                             (v) => emit('update', { auto_fit: !!v })
                         "
                     />
-                    <Label class="text-xs text-white/70"
+                    <Label class="text-xs text-muted-foreground"
                         >Ajuste automático si no cabe</Label
                     >
                 </div>
                 <div v-if="element.auto_fit" class="grid gap-1">
-                    <Label class="text-xs text-white/50"
+                    <Label class="text-xs text-muted-foreground"
                         >Tamaño mínimo (pt)</Label
                     >
                     <Input
                         type="number"
                         step="0.5"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         :model-value="element.min_font_size_pt"
                         @update:model-value="
                             (v) =>
@@ -285,7 +297,7 @@ const elementTypeLabels: Record<string, string> = {
                             (v) => emit('update', { required: !!v })
                         "
                     />
-                    <Label class="text-xs text-white/70"
+                    <Label class="text-xs text-muted-foreground"
                         >Advertir si queda vacío</Label
                     >
                 </div>
@@ -293,7 +305,7 @@ const elementTypeLabels: Record<string, string> = {
 
             <template v-else-if="element.type === 'qr'">
                 <div class="grid gap-1">
-                    <Label class="text-xs text-white/50"
+                    <Label class="text-xs text-muted-foreground"
                         >Corrección de errores</Label
                     >
                     <Select
@@ -307,7 +319,7 @@ const elementTypeLabels: Record<string, string> = {
                         "
                     >
                         <SelectTrigger
-                            class="w-full border-white/10 bg-fl-black text-white"
+                            class="w-full border-border bg-background text-foreground"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -321,7 +333,7 @@ const elementTypeLabels: Record<string, string> = {
                         </SelectContent>
                     </Select>
                 </div>
-                <p class="text-xs text-amber-400/80">
+                <p class="text-xs text-amber-700">
                     Valida este tamaño con una muestra de grabado antes de
                     producción masiva. Respeta la zona de silencio: no coloques
                     texto pegado al QR.
@@ -333,12 +345,12 @@ const elementTypeLabels: Record<string, string> = {
             >
                 <div class="grid grid-cols-2 gap-2">
                     <div class="grid gap-1">
-                        <Label class="text-xs text-white/50"
+                        <Label class="text-xs text-muted-foreground"
                             >Color de línea</Label
                         >
                         <Input
                             type="color"
-                            class="h-9 border-white/10 bg-fl-black p-1"
+                            class="h-9 border-border bg-background p-1"
                             :model-value="element.stroke ?? '#0a090c'"
                             @update:model-value="
                                 (v) => emit('update', { stroke: String(v) })
@@ -346,11 +358,13 @@ const elementTypeLabels: Record<string, string> = {
                         />
                     </div>
                     <div class="grid gap-1">
-                        <Label class="text-xs text-white/50">Grosor (mm)</Label>
+                        <Label class="text-xs text-muted-foreground"
+                            >Grosor (mm)</Label
+                        >
                         <Input
                             type="number"
                             step="0.1"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                             :model-value="element.stroke_width_mm ?? 0.2"
                             @update:model-value="
                                 (v) =>
@@ -362,11 +376,11 @@ const elementTypeLabels: Record<string, string> = {
                     </div>
                 </div>
                 <div v-if="element.type === 'rect'" class="grid gap-1">
-                    <Label class="text-xs text-white/50"
+                    <Label class="text-xs text-muted-foreground"
                         >Relleno (vacío = sin relleno)</Label
                     >
                     <Input
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         placeholder="none"
                         :model-value="element.fill"
                         @update:model-value="
@@ -380,11 +394,11 @@ const elementTypeLabels: Record<string, string> = {
                 v-else-if="element.type === 'image' || element.type === 'logo'"
             >
                 <div class="grid gap-1">
-                    <Label class="text-xs text-white/50"
+                    <Label class="text-xs text-muted-foreground"
                         >URL de la imagen</Label
                     >
                     <Input
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         placeholder="https://…"
                         :model-value="element.src"
                         @update:model-value="

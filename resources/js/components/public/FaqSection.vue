@@ -51,7 +51,7 @@ const openIndex = ref<number | null>(null);
 </script>
 
 <template>
-    <div class="mx-auto flex max-w-3xl flex-col divide-y divide-white/10">
+    <div class="mx-auto flex max-w-3xl flex-col divide-y divide-border">
         <Collapsible
             v-for="(faq, index) in faqs"
             :key="faq.question"
@@ -64,19 +64,19 @@ const openIndex = ref<number | null>(null);
             "
         >
             <CollapsibleTrigger
-                class="fl-focus-glow group flex w-full items-center justify-between gap-4 rounded-lg px-3 py-4 text-left transition-colors hover:bg-white/5"
+                class="fl-focus-glow group flex w-full items-center justify-between gap-4 rounded-lg px-3 py-4 text-left transition-colors hover:bg-foreground/[0.03]"
             >
                 <span
-                    class="font-medium text-white transition-colors group-hover:text-fl-gold-soft"
+                    class="font-medium text-foreground transition-colors group-hover:text-fl-gold-ink"
                     >{{ faq.question }}</span
                 >
                 <ChevronDown
-                    class="size-4 shrink-0 text-fl-gold-soft transition-transform duration-300"
+                    class="size-4 shrink-0 text-fl-gold-ink transition-transform duration-300"
                     :class="{ 'rotate-180': openIndex === index }"
                 />
             </CollapsibleTrigger>
             <CollapsibleContent class="fl-faq-content overflow-hidden">
-                <p class="pb-5 text-sm leading-relaxed text-white/60">
+                <p class="pb-5 text-sm leading-relaxed text-muted-foreground">
                     {{ faq.answer }}
                 </p>
             </CollapsibleContent>

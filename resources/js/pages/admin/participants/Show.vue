@@ -175,7 +175,7 @@ function sendNotification() {
     <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <Link
             href="/admin/participants"
-            class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"
+            class="text-xs tracking-wide text-muted-foreground/80 uppercase hover:text-fl-gold-ink"
             >← Participantes</Link
         >
 
@@ -183,16 +183,16 @@ function sendNotification() {
         <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
             <div class="flex items-center gap-4">
                 <div
-                    class="flex size-14 shrink-0 items-center justify-center rounded-full border border-fl-gold/30 bg-fl-graphite/60 text-lg font-bold text-fl-gold"
+                    class="flex size-14 shrink-0 items-center justify-center rounded-full border border-fl-gold/30 bg-card/60 text-lg font-bold text-fl-gold-ink"
                 >
                     {{ initials(participant.full_name) }}
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-white">
+                    <h1 class="text-xl font-bold text-foreground">
                         {{ participant.full_name }}
                     </h1>
                     <p
-                        class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/50"
+                        class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground"
                     >
                         <span
                             v-if="participant.email"
@@ -207,7 +207,7 @@ function sendNotification() {
                             <User class="size-3.5" />
                             <Link
                                 :href="`/admin/athletes/${participant.athlete_id}`"
-                                class="hover:text-fl-gold-soft hover:underline"
+                                class="hover:text-fl-gold-ink hover:underline"
                             >
                                 Ver perfil de atleta
                             </Link>
@@ -216,13 +216,13 @@ function sendNotification() {
                 </div>
             </div>
             <div class="text-right">
-                <p class="text-sm text-white/60">
+                <p class="text-sm text-muted-foreground">
                     {{ participant.event ?? participant.edition }}
                     <span v-if="participant.race">
                         · {{ participant.race }}</span
                     >
                 </p>
-                <p class="font-mono text-lg font-semibold text-fl-gold">
+                <p class="font-mono text-lg font-semibold text-fl-gold-ink">
                     {{
                         participant.bib_number
                             ? `#${participant.bib_number}`
@@ -242,21 +242,19 @@ function sendNotification() {
 
             <TabsContent value="resumen" class="mt-6">
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                    >
-                        <Trophy class="size-4 text-fl-gold" />
+                    <div class="rounded-xl border border-border bg-card/30 p-5">
+                        <Trophy class="size-4 text-fl-gold-ink" />
                         <p
-                            class="mt-2 text-xs tracking-widest text-white/30 uppercase"
+                            class="mt-2 text-xs tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Resultado
                         </p>
-                        <p class="mt-1 text-lg text-white">
+                        <p class="mt-1 text-lg text-foreground">
                             {{ resumen.result?.official_time ?? 'Pendiente' }}
                         </p>
                         <p
                             v-if="resumen.result?.pace"
-                            class="text-xs text-white/40"
+                            class="text-xs text-muted-foreground/80"
                         >
                             {{ resumen.result.pace }}
                             <span v-if="resumen.result.overall_position">
@@ -264,16 +262,14 @@ function sendNotification() {
                             >
                         </p>
                     </div>
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                    >
-                        <Boxes class="size-4 text-fl-gold" />
+                    <div class="rounded-xl border border-border bg-card/30 p-5">
+                        <Boxes class="size-4 text-fl-gold-ink" />
                         <p
-                            class="mt-2 text-xs tracking-widest text-white/30 uppercase"
+                            class="mt-2 text-xs tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Legacy Plate
                         </p>
-                        <p class="mt-1 text-lg text-white">
+                        <p class="mt-1 text-lg text-foreground">
                             {{
                                 resumen.plate?.status ??
                                 resumen.legacy_plate?.status ??
@@ -282,21 +278,19 @@ function sendNotification() {
                         </p>
                         <p
                             v-if="resumen.legacy_plate?.model"
-                            class="text-xs text-white/40"
+                            class="text-xs text-muted-foreground/80"
                         >
                             {{ resumen.legacy_plate.model }}
                         </p>
                     </div>
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                    >
-                        <ShoppingBag class="size-4 text-fl-gold" />
+                    <div class="rounded-xl border border-border bg-card/30 p-5">
+                        <ShoppingBag class="size-4 text-fl-gold-ink" />
                         <p
-                            class="mt-2 text-xs tracking-widest text-white/30 uppercase"
+                            class="mt-2 text-xs tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Pago Legacy Plate
                         </p>
-                        <p class="mt-1 text-lg text-white">
+                        <p class="mt-1 text-lg text-foreground">
                             {{
                                 resumen.legacy_plate?.paid_at
                                     ? 'Pagado'
@@ -304,32 +298,30 @@ function sendNotification() {
                             }}
                         </p>
                     </div>
-                    <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                    >
+                    <div class="rounded-xl border border-border bg-card/30 p-5">
                         <p
-                            class="text-xs tracking-widest text-white/30 uppercase"
+                            class="text-xs tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Media
                         </p>
-                        <p class="mt-1 text-lg text-white">
+                        <p class="mt-1 text-lg text-foreground">
                             {{ resumen.media_count }} archivo{{
                                 resumen.media_count === 1 ? '' : 's'
                             }}
                         </p>
                     </div>
                     <div
-                        class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5 sm:col-span-2 lg:col-span-4"
+                        class="rounded-xl border border-border bg-card/30 p-5 sm:col-span-2 lg:col-span-4"
                     >
-                        <Package class="size-4 text-fl-gold" />
+                        <Package class="size-4 text-fl-gold-ink" />
                         <p
-                            class="mt-2 text-xs tracking-widest text-white/30 uppercase"
+                            class="mt-2 text-xs tracking-widest text-muted-foreground/80 uppercase"
                         >
                             Equipo utilizado
                         </p>
                         <p
                             v-if="!resumen.gear_used.length"
-                            class="mt-1 text-sm text-white/40"
+                            class="mt-1 text-sm text-muted-foreground/80"
                         >
                             Sin equipo registrado para este evento.
                         </p>
@@ -338,7 +330,7 @@ function sendNotification() {
                                 v-for="gear in resumen.gear_used"
                                 :key="gear.uuid"
                                 variant="outline"
-                                class="border-white/20 text-white/60"
+                                class="border-foreground/15 text-muted-foreground"
                             >
                                 {{ gear.product_name
                                 }}{{
@@ -353,12 +345,12 @@ function sendNotification() {
             </TabsContent>
 
             <TabsContent value="historial" class="mt-6">
-                <p class="mb-3 text-xs text-white/40">
+                <p class="mb-3 text-xs text-muted-foreground/80">
                     Todos los eventos de esta misma persona — un Athlete, varios
                     eventos.
                 </p>
                 <div
-                    class="divide-y divide-white/5 rounded-xl border border-white/10"
+                    class="divide-y divide-border rounded-xl border border-border"
                 >
                     <div
                         v-for="entry in historial"
@@ -367,16 +359,16 @@ function sendNotification() {
                         :class="entry.is_current ? 'bg-fl-gold/5' : ''"
                     >
                         <div>
-                            <p class="text-white">
+                            <p class="text-foreground">
                                 {{ entry.event ?? entry.edition }}
                                 <Badge
                                     v-if="entry.is_current"
                                     variant="outline"
-                                    class="ml-2 border-fl-gold/30 text-fl-gold-soft"
+                                    class="ml-2 border-fl-gold/30 text-fl-gold-ink"
                                     >Actual</Badge
                                 >
                             </p>
-                            <p class="text-xs text-white/40">
+                            <p class="text-xs text-muted-foreground/80">
                                 <span v-if="entry.race"
                                     >{{ entry.race }} ·
                                 </span>
@@ -385,7 +377,7 @@ function sendNotification() {
                                 }}</span>
                             </p>
                         </div>
-                        <span class="font-mono text-fl-gold-soft">
+                        <span class="font-mono text-fl-gold-ink">
                             {{
                                 entry.bib_number ? `#${entry.bib_number}` : '—'
                             }}
@@ -393,7 +385,7 @@ function sendNotification() {
                     </div>
                     <p
                         v-if="!historial.length"
-                        class="px-4 py-10 text-center text-white/30"
+                        class="px-4 py-10 text-center text-muted-foreground/80"
                     >
                         Sin historial disponible.
                     </p>
@@ -402,7 +394,7 @@ function sendNotification() {
 
             <TabsContent value="compras" class="mt-6">
                 <div
-                    class="divide-y divide-white/5 rounded-xl border border-white/10"
+                    class="divide-y divide-border rounded-xl border border-border"
                 >
                     <component
                         :is="compra.order_uuid ? Link : 'div'"
@@ -413,18 +405,18 @@ function sendNotification() {
                                 ? `/admin/orders/${compra.order_uuid}`
                                 : undefined
                         "
-                        class="flex items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/5"
+                        class="flex items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-foreground/[0.03]"
                     >
                         <div>
-                            <p class="text-white">
+                            <p class="text-foreground">
                                 {{ compra.product }}
                                 <span
                                     v-if="compra.variant"
-                                    class="text-white/40"
+                                    class="text-muted-foreground/80"
                                     >— {{ compra.variant }}</span
                                 >
                             </p>
-                            <p class="text-xs text-white/40">
+                            <p class="text-xs text-muted-foreground/80">
                                 {{ compra.acquired_at ?? 'Sin fecha' }}
                             </p>
                         </div>
@@ -447,7 +439,7 @@ function sendNotification() {
                     </component>
                     <p
                         v-if="!compras.length"
-                        class="px-4 py-10 text-center text-white/30"
+                        class="px-4 py-10 text-center text-muted-foreground/80"
                     >
                         Sin productos comprados.
                     </p>
@@ -456,7 +448,7 @@ function sendNotification() {
 
             <TabsContent value="comunicacion" class="mt-6">
                 <div class="mb-4 flex items-center justify-between">
-                    <p class="text-xs text-white/40">
+                    <p class="text-xs text-muted-foreground/80">
                         Historial de notificaciones enviadas a este atleta.
                     </p>
                     <Dialog v-model:open="notifyOpen">
@@ -470,7 +462,7 @@ function sendNotification() {
                             </Button>
                         </DialogTrigger>
                         <DialogContent
-                            class="dark border-white/10 bg-fl-graphite text-white"
+                            class="border-border bg-card text-foreground"
                         >
                             <DialogHeader>
                                 <DialogTitle>Enviar notificación</DialogTitle>
@@ -480,7 +472,7 @@ function sendNotification() {
                                     <Label class="text-xs">Plantilla</Label>
                                     <Select v-model="notifyForm.type">
                                         <SelectTrigger
-                                            class="border-white/10 bg-fl-black text-white"
+                                            class="border-border bg-background text-foreground"
                                         >
                                             <SelectValue />
                                         </SelectTrigger>
@@ -505,7 +497,7 @@ function sendNotification() {
                                     <Label class="text-xs">Título</Label>
                                     <Input
                                         v-model="notifyForm.title"
-                                        class="border-white/10 bg-fl-black text-white"
+                                        class="border-border bg-background text-foreground"
                                     />
                                 </div>
                                 <div class="grid gap-2">
@@ -513,7 +505,7 @@ function sendNotification() {
                                     <Textarea
                                         v-model="notifyForm.message"
                                         rows="4"
-                                        class="border-white/10 bg-fl-black text-white"
+                                        class="border-border bg-background text-foreground"
                                     />
                                 </div>
                                 <div class="grid gap-2">
@@ -524,19 +516,19 @@ function sendNotification() {
                                     <Input
                                         v-model="notifyForm.action_url"
                                         placeholder="/dashboard/legado"
-                                        class="border-white/10 bg-fl-black text-white"
+                                        class="border-border bg-background text-foreground"
                                     />
                                 </div>
                                 <label
                                     v-if="pushEnabled && hasPushDevices"
-                                    class="flex items-center gap-2 text-sm text-white/80"
+                                    class="flex items-center gap-2 text-sm text-foreground"
                                 >
                                     <Checkbox v-model="notifyForm.push" />
                                     Enviar también push
                                 </label>
                                 <p
                                     v-else-if="hasPushDevices"
-                                    class="text-xs text-white/30"
+                                    class="text-xs text-muted-foreground/80"
                                 >
                                     Push no configurado todavía — solo se
                                     guardará como notificación en la app.
@@ -556,7 +548,7 @@ function sendNotification() {
                 </div>
 
                 <div
-                    class="divide-y divide-white/5 rounded-xl border border-white/10"
+                    class="divide-y divide-border rounded-xl border border-border"
                 >
                     <div
                         v-for="msg in comunicacion"
@@ -564,18 +556,20 @@ function sendNotification() {
                         class="px-4 py-3 text-sm"
                     >
                         <div class="flex items-center justify-between gap-3">
-                            <p class="font-medium text-white">
+                            <p class="font-medium text-foreground">
                                 {{ msg.title }}
                             </p>
                             <Badge
                                 variant="outline"
-                                class="border-white/20 text-white/50"
+                                class="border-foreground/15 text-muted-foreground"
                             >
                                 {{ msg.read_at ? 'Leída' : 'Enviada' }}
                             </Badge>
                         </div>
-                        <p class="mt-1 text-white/60">{{ msg.message }}</p>
-                        <p class="mt-1 text-xs text-white/30">
+                        <p class="mt-1 text-muted-foreground">
+                            {{ msg.message }}
+                        </p>
+                        <p class="mt-1 text-xs text-muted-foreground/80">
                             {{ msg.created_at }}
                             <span v-if="msg.sent_by_name"
                                 >· por {{ msg.sent_by_name }}</span
@@ -584,9 +578,9 @@ function sendNotification() {
                     </div>
                     <div
                         v-if="!comunicacion.length"
-                        class="flex flex-col items-center gap-3 px-4 py-10 text-center text-white/30"
+                        class="flex flex-col items-center gap-3 px-4 py-10 text-center text-muted-foreground/80"
                     >
-                        <Bell class="size-8 text-white/10" />
+                        <Bell class="size-8 text-muted-foreground/80" />
                         <p>Sin notificaciones enviadas todavía.</p>
                     </div>
                 </div>

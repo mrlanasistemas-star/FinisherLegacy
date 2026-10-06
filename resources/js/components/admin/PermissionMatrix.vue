@@ -67,7 +67,7 @@ function moduleCheckedCount(module: ModuleDef): number {
         <div
             v-for="(module, moduleKey) in modules"
             :key="moduleKey"
-            class="h-fit rounded-lg border border-white/10"
+            class="h-fit rounded-lg border border-border"
         >
             <Collapsible
                 :open="isModuleOpen(moduleKey)"
@@ -79,35 +79,35 @@ function moduleCheckedCount(module: ModuleDef): number {
                     <span class="flex items-center gap-2.5">
                         <component
                             :is="resolveIcon(module.icon)"
-                            class="size-4 text-fl-gold"
+                            class="size-4 text-fl-gold-ink"
                         />
-                        <span class="text-sm font-semibold text-white">{{
+                        <span class="text-sm font-semibold text-foreground">{{
                             module.label
                         }}</span>
-                        <span class="text-xs text-white/30">
+                        <span class="text-xs text-muted-foreground/80">
                             {{ moduleCheckedCount(module) }}/{{
                                 Object.keys(module.permissions).length
                             }}
                         </span>
                     </span>
                     <ChevronDown
-                        class="size-4 text-white/40 transition-transform"
+                        class="size-4 text-muted-foreground/80 transition-transform"
                         :class="isModuleOpen(moduleKey) ? 'rotate-180' : ''"
                     />
                 </CollapsibleTrigger>
                 <CollapsibleContent
-                    class="space-y-2 border-t border-white/10 px-4 py-3"
+                    class="space-y-2 border-t border-border px-4 py-3"
                 >
                     <label
                         v-for="(label, permKey) in module.permissions"
                         :key="permKey"
-                        class="flex items-center justify-between gap-2 text-sm text-white/80"
+                        class="flex items-center justify-between gap-2 text-sm text-foreground"
                         :class="readonly ? 'opacity-60' : 'cursor-pointer'"
                     >
                         <span>{{ label }}</span>
                         <input
                             type="checkbox"
-                            class="size-4 rounded border-white/20 bg-fl-black text-fl-gold accent-fl-gold"
+                            class="size-4 rounded border-foreground/15 bg-background text-fl-gold-ink accent-fl-gold"
                             :checked="isChecked(permKey)"
                             :disabled="readonly"
                             @change="

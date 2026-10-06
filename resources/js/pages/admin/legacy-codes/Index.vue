@@ -32,7 +32,7 @@ const columns = [
     <Head title="Legacy Codes" />
 
     <div class="p-4 md:p-8">
-        <h1 class="mb-6 text-xl font-bold text-white">Legacy Codes</h1>
+        <h1 class="mb-6 text-xl font-bold text-foreground">Legacy Codes</h1>
 
         <AdminTable
             :columns="columns"
@@ -41,7 +41,7 @@ const columns = [
             :initial-query="filters.q"
         >
             <template #cell-code="{ row }">
-                <span class="font-mono text-fl-gold">{{ row.code }}</span>
+                <span class="font-mono text-fl-gold-ink">{{ row.code }}</span>
             </template>
             <template #cell-status="{ row }">
                 <Badge

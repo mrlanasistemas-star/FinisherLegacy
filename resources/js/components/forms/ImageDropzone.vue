@@ -143,14 +143,14 @@ const displayError = computed(() => props.error ?? localError.value);
 
 <template>
     <div class="grid gap-2">
-        <span class="text-sm font-medium text-white/80">{{ label }}</span>
+        <span class="text-sm font-medium text-foreground">{{ label }}</span>
 
         <div
             ref="dropZone"
             role="button"
             tabindex="0"
             :class="[
-                'fl-focus-glow group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden border border-dashed border-white/15 bg-fl-black/40 transition-colors duration-300',
+                'fl-focus-glow group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden border border-dashed border-border bg-background/40 transition-colors duration-300',
                 aspect === 'square'
                     ? 'aspect-square rounded-2xl'
                     : 'aspect-[3/1] rounded-2xl',
@@ -177,10 +177,10 @@ const displayError = computed(() => props.error ?? localError.value);
                     class="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div
-                    class="absolute inset-0 flex flex-col items-center justify-end gap-2 bg-gradient-to-t from-fl-black/90 via-fl-black/10 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    class="absolute inset-0 flex flex-col items-center justify-end gap-2 bg-gradient-to-t from-background/90 via-background/10 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 >
                     <div
-                        class="flex items-center gap-2 text-xs font-medium text-white"
+                        class="flex items-center gap-2 text-xs font-medium text-foreground"
                     >
                         <Upload class="size-3.5" />
                         <span>Cambiar imagen</span>
@@ -188,7 +188,7 @@ const displayError = computed(() => props.error ?? localError.value);
                 </div>
                 <button
                     type="button"
-                    class="fl-focus-glow absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-fl-black/80 text-white/70 transition-colors hover:bg-fl-black hover:text-white"
+                    class="fl-focus-glow absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
                     aria-label="Quitar imagen"
                     @click.stop="remove"
                 >
@@ -196,7 +196,7 @@ const displayError = computed(() => props.error ?? localError.value);
                 </button>
                 <span
                     v-if="fileSizeLabel"
-                    class="absolute top-2 left-2 rounded-full bg-fl-black/80 px-2 py-0.5 text-[10px] font-medium text-white/70"
+                    class="absolute top-2 left-2 rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                 >
                     {{ fileSizeLabel }}
                 </span>
@@ -204,11 +204,11 @@ const displayError = computed(() => props.error ?? localError.value);
 
             <template v-else>
                 <ImagePlus
-                    class="size-8 text-white/30 transition-colors group-hover:text-fl-gold/70"
+                    class="size-8 text-muted-foreground/80 transition-colors group-hover:text-fl-gold-ink"
                 />
-                <p class="mt-2 px-4 text-center text-xs text-white/50">
+                <p class="mt-2 px-4 text-center text-xs text-muted-foreground">
                     Arrastra una imagen aquí o
-                    <span class="text-fl-gold">toca para elegir</span>
+                    <span class="text-fl-gold-ink">toca para elegir</span>
                 </p>
             </template>
         </div>
@@ -216,7 +216,7 @@ const displayError = computed(() => props.error ?? localError.value);
         <p v-if="displayError" class="fl-error-shake text-sm text-red-500">
             {{ displayError }}
         </p>
-        <p v-else-if="helpText" class="text-xs text-white/40">
+        <p v-else-if="helpText" class="text-xs text-muted-foreground/80">
             {{ helpText }}
         </p>
     </div>

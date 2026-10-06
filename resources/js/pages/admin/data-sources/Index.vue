@@ -45,11 +45,13 @@ const purposeLabels: Record<string, string> = {
 
     <div class="p-4 md:p-8">
         <div class="mb-6">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
-                <Database class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-2 text-xl font-bold text-foreground"
+            >
+                <Database class="size-5 text-fl-gold-ink" />
                 Fuentes de datos
             </h1>
-            <p class="mt-1 text-sm text-white/50">
+            <p class="mt-1 text-sm text-muted-foreground">
                 Cómo recibe información cada organizador — un organizador puede
                 tener varias. Agrega/edita desde su pestaña "Datos /
                 Integración".
@@ -60,11 +62,11 @@ const purposeLabels: Record<string, string> = {
             <div
                 v-for="organizer in organizers"
                 :key="organizer.id"
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-5"
+                class="rounded-xl border border-border bg-card/20 p-5"
             >
                 <Link
                     :href="`/admin/organizers/${organizer.id}`"
-                    class="font-medium text-white hover:text-fl-gold"
+                    class="font-medium text-foreground hover:text-fl-gold-ink"
                     >{{ organizer.name }}</Link
                 >
 
@@ -75,29 +77,29 @@ const purposeLabels: Record<string, string> = {
                     <div
                         v-for="source in organizer.sources"
                         :key="source.id"
-                        class="flex items-center gap-2 rounded-lg border border-white/10 bg-fl-black/30 px-3 py-2 text-xs"
+                        class="flex items-center gap-2 rounded-lg border border-border bg-background/30 px-3 py-2 text-xs"
                         :class="!source.active ? 'opacity-40' : ''"
                     >
                         <Badge
                             variant="outline"
-                            class="border-white/15 text-white/60"
+                            class="border-border text-muted-foreground"
                             >{{ typeLabels[source.type] }}</Badge
                         >
-                        <span class="text-white/70">{{
+                        <span class="text-muted-foreground">{{
                             source.name ?? purposeLabels[source.purpose]
                         }}</span>
-                        <span class="text-white/30"
+                        <span class="text-muted-foreground/80"
                             >· {{ purposeLabels[source.purpose] }}</span
                         >
                         <Badge
                             v-if="source.is_default"
                             variant="outline"
-                            class="border-fl-gold/30 text-fl-gold-soft"
+                            class="border-fl-gold/30 text-fl-gold-ink"
                             >Predeterminada</Badge
                         >
                         <span
                             v-if="source.provider_connection"
-                            class="text-white/40"
+                            class="text-muted-foreground/80"
                             >{{
                                 statusLabel(
                                     providerConnectionStatus,
@@ -107,14 +109,14 @@ const purposeLabels: Record<string, string> = {
                         >
                     </div>
                 </div>
-                <p v-else class="mt-3 text-xs text-white/30">
+                <p v-else class="mt-3 text-xs text-muted-foreground/80">
                     Sin fuentes de datos configuradas.
                 </p>
             </div>
 
             <div
                 v-if="!organizers.length"
-                class="rounded-xl border border-dashed border-white/15 bg-fl-graphite/20 p-8 text-center text-sm text-white/40"
+                class="rounded-xl border border-dashed border-border bg-card/20 p-8 text-center text-sm text-muted-foreground/80"
             >
                 Sin organizadores todavía.
             </div>

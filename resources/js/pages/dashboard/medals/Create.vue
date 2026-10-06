@@ -197,8 +197,8 @@ function submit() {
                             currentStep > index + 1
                                 ? 'border-fl-gold bg-fl-gold text-fl-black'
                                 : currentStep === index + 1
-                                  ? 'border-fl-gold text-fl-gold'
-                                  : 'border-white/15 text-white/30'
+                                  ? 'border-fl-gold text-fl-gold-ink'
+                                  : 'border-border text-muted-foreground/80'
                         "
                     >
                         <Check
@@ -211,8 +211,8 @@ function submit() {
                         class="hidden text-xs sm:inline"
                         :class="
                             currentStep === index + 1
-                                ? 'text-white'
-                                : 'text-white/30'
+                                ? 'text-foreground'
+                                : 'text-muted-foreground/80'
                         "
                     >
                         {{ label }}
@@ -224,7 +224,7 @@ function submit() {
                     :class="
                         currentStep > index + 1
                             ? 'bg-fl-gold/50'
-                            : 'bg-white/10'
+                            : 'bg-foreground/5'
                     "
                 />
             </template>
@@ -232,7 +232,7 @@ function submit() {
 
         <!-- Step 1: Origin -->
         <div v-if="currentStep === 1" class="space-y-5">
-            <h2 class="text-lg font-semibold text-white">
+            <h2 class="text-lg font-semibold text-foreground">
                 ¿Esta medalla pertenece a un evento registrado en Finisher
                 Legacy?
             </h2>
@@ -244,12 +244,12 @@ function submit() {
                     :class="
                         form.origin === 'registered'
                             ? 'border-fl-gold bg-fl-gold/10'
-                            : 'border-white/10 bg-fl-graphite/40'
+                            : 'border-border bg-card/40'
                     "
                     @click="form.origin = 'registered'"
                 >
-                    <p class="font-medium text-white">Buscar evento</p>
-                    <p class="mt-1 text-xs text-white/50">
+                    <p class="font-medium text-foreground">Buscar evento</p>
+                    <p class="mt-1 text-xs text-muted-foreground">
                         Ya está en Finisher Legacy
                     </p>
                 </button>
@@ -259,12 +259,14 @@ function submit() {
                     :class="
                         form.origin === 'manual'
                             ? 'border-fl-gold bg-fl-gold/10'
-                            : 'border-white/10 bg-fl-graphite/40'
+                            : 'border-border bg-card/40'
                     "
                     @click="form.origin = 'manual'"
                 >
-                    <p class="font-medium text-white">Registrar manualmente</p>
-                    <p class="mt-1 text-xs text-white/50">
+                    <p class="font-medium text-foreground">
+                        Registrar manualmente
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
                         No está en nuestro catálogo
                     </p>
                 </button>
@@ -273,7 +275,7 @@ function submit() {
             <div v-if="form.origin === 'registered'" class="space-y-4">
                 <div class="relative">
                     <Search
-                        class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40"
+                        class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/80"
                     />
                     <Input
                         v-model="searchQuery"
@@ -285,7 +287,7 @@ function submit() {
 
                 <div
                     v-if="searching"
-                    class="flex items-center gap-2 text-sm text-white/40"
+                    class="flex items-center gap-2 text-sm text-muted-foreground/80"
                 >
                     <Loader2 class="size-4 animate-spin" /> Buscando…
                 </div>
@@ -300,21 +302,21 @@ function submit() {
                             selectedEdition?.event_edition_id ===
                             edition.event_edition_id
                                 ? 'border-fl-gold bg-fl-gold/10'
-                                : 'border-white/10 bg-fl-graphite/40 hover:border-white/20'
+                                : 'border-border bg-card/40 hover:border-foreground/15'
                         "
                         @click="selectEdition(edition)"
                     >
-                        <p class="font-medium text-white">
+                        <p class="font-medium text-foreground">
                             {{ edition.name }} {{ edition.year }}
                         </p>
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-muted-foreground/80">
                             {{ edition.city }}, {{ edition.country }} ·
                             {{ edition.event_date }}
                         </p>
                     </button>
                 </div>
 
-                <p v-else class="text-sm text-white/40">
+                <p v-else class="text-sm text-muted-foreground/80">
                     Escribe para buscar un evento publicado.
                 </p>
 
@@ -329,7 +331,7 @@ function submit() {
                             :class="
                                 form.event_race_id === race.id
                                     ? 'border-fl-gold bg-fl-gold text-fl-black'
-                                    : 'border-white/15 text-white/70 hover:border-fl-gold/40'
+                                    : 'border-border text-muted-foreground hover:border-fl-gold/40'
                             "
                             @click="selectRace(race.id)"
                         >
@@ -379,11 +381,11 @@ function submit() {
 
         <!-- Step 2: Result -->
         <div v-else-if="currentStep === 2" class="space-y-5">
-            <h2 class="text-lg font-semibold text-white">Tu resultado</h2>
+            <h2 class="text-lg font-semibold text-foreground">Tu resultado</h2>
 
             <div
                 v-if="checkingMatch"
-                class="flex items-center gap-2 text-sm text-white/40"
+                class="flex items-center gap-2 text-sm text-muted-foreground/80"
             >
                 <Loader2 class="size-4 animate-spin" /> Buscando tu resultado
                 oficial…
@@ -392,7 +394,7 @@ function submit() {
             <Badge
                 v-if="officialMatch"
                 variant="outline"
-                class="border-fl-gold/30 text-fl-gold"
+                class="border-fl-gold/30 text-fl-gold-ink"
             >
                 Resultado oficial encontrado y verificado
             </Badge>
@@ -419,12 +421,14 @@ function submit() {
                     />
                 </div>
             </div>
-            <p class="text-xs text-white/40">Ambos campos son opcionales.</p>
+            <p class="text-xs text-muted-foreground/80">
+                Ambos campos son opcionales.
+            </p>
         </div>
 
         <!-- Step 3: Images -->
         <div v-else-if="currentStep === 3" class="space-y-5">
-            <h2 class="text-lg font-semibold text-white">
+            <h2 class="text-lg font-semibold text-foreground">
                 Fotografías de tu medalla
             </h2>
 
@@ -432,7 +436,7 @@ function submit() {
                 <div class="grid gap-2">
                     <Label for="front_image">Frente (obligatorio)</Label>
                     <div
-                        class="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-dashed border-white/15 bg-fl-graphite/40"
+                        class="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-card/40"
                     >
                         <img
                             v-if="frontPreview"
@@ -440,7 +444,7 @@ function submit() {
                             class="size-full object-cover"
                             alt="Frente"
                         />
-                        <Award v-else class="size-8 text-white/15" />
+                        <Award v-else class="size-8 text-muted-foreground/80" />
                     </div>
                     <Input
                         id="front_image"
@@ -459,7 +463,7 @@ function submit() {
                 <div class="grid gap-2">
                     <Label for="back_image">Reverso (opcional)</Label>
                     <div
-                        class="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-dashed border-white/15 bg-fl-graphite/40"
+                        class="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-card/40"
                     >
                         <img
                             v-if="backPreview"
@@ -467,7 +471,7 @@ function submit() {
                             class="size-full object-cover"
                             alt="Reverso"
                         />
-                        <Award v-else class="size-8 text-white/15" />
+                        <Award v-else class="size-8 text-muted-foreground/80" />
                     </div>
                     <Input
                         id="back_image"
@@ -496,7 +500,7 @@ function submit() {
 
         <!-- Step 4: Story -->
         <div v-else-if="currentStep === 4" class="space-y-5">
-            <h2 class="text-lg font-semibold text-white">
+            <h2 class="text-lg font-semibold text-foreground">
                 ¿Qué hace especial esta medalla?
             </h2>
             <Textarea
@@ -509,7 +513,7 @@ function submit() {
 
         <!-- Step 5: Privacy -->
         <div v-else-if="currentStep === 5" class="space-y-5">
-            <h2 class="text-lg font-semibold text-white">Privacidad</h2>
+            <h2 class="text-lg font-semibold text-foreground">Privacidad</h2>
             <Select v-model="form.visibility">
                 <SelectTrigger class="w-full sm:w-64">
                     <SelectValue />
@@ -527,12 +531,12 @@ function submit() {
 
         <!-- Step 6: Confirm -->
         <div v-else class="space-y-5">
-            <h2 class="text-lg font-semibold text-white">
+            <h2 class="text-lg font-semibold text-foreground">
                 Confirma tu medalla
             </h2>
 
             <div
-                class="flex gap-4 rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="flex gap-4 rounded-xl border border-border bg-card/40 p-4"
             >
                 <img
                     v-if="frontPreview"
@@ -541,14 +545,14 @@ function submit() {
                     alt="Frente"
                 />
                 <div class="min-w-0">
-                    <p class="truncate font-medium text-white">
+                    <p class="truncate font-medium text-foreground">
                         {{
                             form.origin === 'registered'
                                 ? selectedEdition?.name
                                 : form.event_name_manual
                         }}
                     </p>
-                    <p class="text-sm text-white/50">
+                    <p class="text-sm text-muted-foreground">
                         {{
                             [form.distance_label, form.event_date]
                                 .filter(Boolean)
@@ -557,13 +561,13 @@ function submit() {
                     </p>
                     <p
                         v-if="form.official_time"
-                        class="mt-1 font-mono text-sm text-fl-gold"
+                        class="mt-1 font-mono text-sm text-fl-gold-ink"
                     >
                         {{ form.official_time }}
                     </p>
                     <Badge
                         variant="outline"
-                        class="mt-2 border-white/15 text-white/50"
+                        class="mt-2 border-border text-muted-foreground"
                     >
                         {{
                             form.visibility === 'public' ? 'Pública' : 'Privada'
@@ -572,14 +576,14 @@ function submit() {
                 </div>
             </div>
 
-            <p v-if="form.story" class="text-sm text-white/60">
+            <p v-if="form.story" class="text-sm text-muted-foreground">
                 {{ form.story }}
             </p>
         </div>
 
         <p
             v-if="quotaError"
-            class="fl-error-shake mt-6 rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-400"
+            class="fl-error-shake mt-6 rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-700"
         >
             {{ quotaError }}
         </p>
@@ -589,7 +593,7 @@ function submit() {
             <Button
                 type="button"
                 variant="outline"
-                class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                 :disabled="currentStep === 1"
                 @click="back"
             >

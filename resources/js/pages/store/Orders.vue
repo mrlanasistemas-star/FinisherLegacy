@@ -29,25 +29,25 @@ defineProps<{
 <template>
     <Head title="Mis pedidos — Finisher Legacy" />
 
-    <div class="bg-fl-black">
+    <div class="bg-background">
         <div class="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-6 xl:px-8">
-            <h1 class="text-2xl font-black text-white">Mis pedidos</h1>
+            <h1 class="text-2xl font-black text-foreground">Mis pedidos</h1>
 
             <div
                 v-if="orders.data.length"
-                class="mt-8 divide-y divide-white/10 border-y border-white/10"
+                class="mt-8 divide-y divide-border border-y border-border"
             >
                 <Link
                     v-for="order in orders.data"
                     :key="order.uuid"
                     :href="`/mis-pedidos/${order.uuid}`"
-                    class="flex flex-wrap items-center justify-between gap-3 py-5 hover:bg-white/[0.02]"
+                    class="flex flex-wrap items-center justify-between gap-3 py-5 hover:bg-foreground/[0.03]"
                 >
                     <div>
-                        <p class="font-medium text-white">
+                        <p class="font-medium text-foreground">
                             #{{ order.order_number }}
                         </p>
-                        <p class="text-sm text-white/40">
+                        <p class="text-sm text-muted-foreground/80">
                             {{ order.items_count }} artículo(s) ·
                             {{ order.created_at }}
                         </p>
@@ -55,7 +55,7 @@ defineProps<{
                     <div class="flex items-center gap-2">
                         <OrderStatusBadge :status="order.status" />
                         <PaymentStatusBadge :status="order.payment_status" />
-                        <p class="ml-2 text-white">
+                        <p class="ml-2 text-foreground">
                             <Money
                                 :minor="order.total_minor"
                                 :currency="order.currency"
@@ -70,11 +70,11 @@ defineProps<{
 
             <div
                 v-else
-                class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-white/30"
+                class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-muted-foreground/80"
             >
                 <Receipt class="size-10" />
                 <p>Todavía no tienes pedidos.</p>
-                <Link href="/tienda" class="text-fl-gold-soft hover:underline"
+                <Link href="/tienda" class="text-fl-gold-ink hover:underline"
                     >Ir a la tienda</Link
                 >
             </div>

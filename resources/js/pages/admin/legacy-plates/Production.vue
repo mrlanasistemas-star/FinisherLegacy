@@ -77,15 +77,17 @@ function produce(entitlementId: number) {
         <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
 
         <div class="mb-6">
-            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
-                <Factory class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-1.5 text-xl font-bold text-foreground"
+            >
+                <Factory class="size-5 text-fl-gold-ink" />
                 Producción de Legacy Plate
                 <HelpPopover
                     title="¿Cómo funciona?"
                     text="Solo aparecen placas con pago, participante vinculado, resultado y modelo suficientes para grabarse. El grabado real (frente, volteo, reverso, verificación de QR) ocurre en /production, ya sea desde una estación o de forma manual."
                 />
             </h1>
-            <p class="mt-1 text-sm text-white/50">
+            <p class="mt-1 text-sm text-muted-foreground">
                 Selecciona un evento para ver su cola.
             </p>
         </div>
@@ -100,21 +102,21 @@ function produce(entitlementId: number) {
             <div
                 v-for="kpi in kpis"
                 :key="kpi.label"
-                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xl font-bold text-white">{{ kpi.value }}</p>
-                <p class="text-xs text-white/50">{{ kpi.label }}</p>
+                <p class="text-xl font-bold text-foreground">{{ kpi.value }}</p>
+                <p class="text-xs text-muted-foreground">{{ kpi.label }}</p>
             </div>
         </div>
 
         <div
             v-if="selectedEventEditionId"
-            class="overflow-x-auto rounded-xl border border-white/10"
+            class="overflow-x-auto rounded-xl border border-border"
         >
             <table class="w-full text-sm">
                 <thead>
                     <tr
-                        class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                        class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                     >
                         <th class="px-4 py-3 font-medium">Bib</th>
                         <th class="px-4 py-3 font-medium">Atleta</th>
@@ -131,9 +133,9 @@ function produce(entitlementId: number) {
                     <tr
                         v-for="row in queue"
                         :key="row.id"
-                        class="border-b border-white/5 text-white/80 last:border-0"
+                        class="border-b border-border text-foreground last:border-0"
                     >
-                        <td class="px-4 py-3 font-mono text-fl-gold">
+                        <td class="px-4 py-3 font-mono text-fl-gold-ink">
                             {{ row.bib_number ? `#${row.bib_number}` : '—' }}
                         </td>
                         <td class="px-4 py-3">{{ row.athlete_name ?? '—' }}</td>
@@ -143,8 +145,8 @@ function produce(entitlementId: number) {
                                 variant="outline"
                                 :class="
                                     row.paid
-                                        ? 'border-emerald-500/30 text-emerald-400'
-                                        : 'border-amber-500/30 text-amber-400'
+                                        ? 'border-emerald-500/30 text-emerald-700'
+                                        : 'border-amber-500/30 text-amber-700'
                                 "
                             >
                                 {{ row.paid ? 'Pagado' : 'Pendiente' }}
@@ -154,13 +156,13 @@ function produce(entitlementId: number) {
                             {{ row.official_time ?? '—' }}
                         </td>
                         <td class="px-4 py-3">{{ row.pace ?? '—' }}</td>
-                        <td class="px-4 py-3 text-white/50">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ statusLabels[row.status] ?? row.status }}
                         </td>
                         <td class="px-4 py-3">
                             <div
                                 v-if="row.eligible"
-                                class="flex items-center gap-1.5 text-emerald-400"
+                                class="flex items-center gap-1.5 text-emerald-700"
                             >
                                 <CheckCircle2 class="size-4" />
                                 Listo para producir
@@ -170,7 +172,7 @@ function produce(entitlementId: number) {
                                     v-for="reason in row.reasons"
                                     :key="reason"
                                     variant="outline"
-                                    class="border-red-500/30 text-red-400"
+                                    class="border-red-500/30 text-red-700"
                                 >
                                     <XCircle class="mr-1 size-3" />
                                     {{ reasonLabels[reason] ?? reason }}
@@ -191,7 +193,7 @@ function produce(entitlementId: number) {
                     <tr v-if="!queue.length">
                         <td
                             colspan="9"
-                            class="px-4 py-10 text-center text-white/30"
+                            class="px-4 py-10 text-center text-muted-foreground/80"
                         >
                             Sin Legacy Plates pendientes para este evento.
                         </td>
@@ -199,7 +201,7 @@ function produce(entitlementId: number) {
                 </tbody>
             </table>
         </div>
-        <p v-else class="text-sm text-white/30">
+        <p v-else class="text-sm text-muted-foreground/80">
             Selecciona un evento para ver la cola de producción.
         </p>
     </div>

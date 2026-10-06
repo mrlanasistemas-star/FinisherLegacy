@@ -112,11 +112,11 @@ const legacyPlateFilterOptions = [
     <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8">
         <!-- Header -->
         <div
-            class="flex flex-col gap-5 rounded-2xl border border-white/10 bg-fl-graphite/20 p-6 sm:flex-row sm:items-center sm:justify-between"
+            class="flex flex-col gap-5 rounded-2xl border border-border bg-card/20 p-6 sm:flex-row sm:items-center sm:justify-between"
         >
             <div class="flex items-center gap-4">
                 <div
-                    class="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-fl-gold/30 bg-fl-graphite text-2xl font-semibold text-fl-gold-soft"
+                    class="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-fl-gold/30 bg-card text-2xl font-semibold text-fl-gold-ink"
                 >
                     <img
                         v-if="profile?.profile_photo_url"
@@ -127,21 +127,21 @@ const legacyPlateFilterOptions = [
                     <span v-else>{{ initials }}</span>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-white">
+                    <h1 class="text-xl font-bold text-foreground">
                         {{ athlete.full_name }}
                     </h1>
                     <p
                         v-if="profile?.username"
-                        class="text-sm text-fl-gold-soft"
+                        class="text-sm text-fl-gold-ink"
                     >
                         @{{ profile.username }}
                     </p>
-                    <p class="text-xs text-white/30">
+                    <p class="text-xs text-muted-foreground/80">
                         Legacy ID · {{ athlete.legacy_id }}
                     </p>
                     <p
                         v-if="location"
-                        class="mt-1 flex items-center gap-1 text-sm text-white/50"
+                        class="mt-1 flex items-center gap-1 text-sm text-muted-foreground"
                     >
                         <MapPin class="size-3.5" />
                         {{ location }}
@@ -152,7 +152,7 @@ const legacyPlateFilterOptions = [
             <Button
                 as-child
                 variant="outline"
-                class="border-white/15 text-white/70 hover:text-white"
+                class="border-border text-muted-foreground hover:text-foreground"
             >
                 <Link href="/dashboard/profile/edit">
                     <UserCircle class="size-4" />
@@ -163,7 +163,7 @@ const legacyPlateFilterOptions = [
 
         <p
             v-if="profile?.bio"
-            class="mt-4 max-w-2xl text-sm leading-relaxed text-white/60"
+            class="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground"
         >
             {{ profile.bio }}
         </p>
@@ -171,63 +171,75 @@ const legacyPlateFilterOptions = [
         <!-- Stats -->
         <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4 text-center"
+                class="rounded-xl border border-border bg-card/20 p-4 text-center"
             >
-                <p class="text-2xl font-bold text-white">
+                <p class="text-2xl font-bold text-foreground">
                     {{ stats.event_count }}
                 </p>
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Eventos
                 </p>
             </div>
             <div
                 v-if="stats.total_distance_km !== null"
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4 text-center"
+                class="rounded-xl border border-border bg-card/20 p-4 text-center"
             >
-                <p class="text-2xl font-bold text-white">
+                <p class="text-2xl font-bold text-foreground">
                     {{ stats.total_distance_km }}
                 </p>
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Km recorridos
                 </p>
             </div>
             <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4 text-center"
+                class="rounded-xl border border-border bg-card/20 p-4 text-center"
             >
-                <p class="text-2xl font-bold text-fl-gold-soft">
+                <p class="text-2xl font-bold text-fl-gold-ink">
                     {{ stats.legacy_plate_count }}
                 </p>
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Legacy Plates
                 </p>
             </div>
             <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4 text-center"
+                class="rounded-xl border border-border bg-card/20 p-4 text-center"
             >
-                <p class="text-2xl font-bold text-white">
+                <p class="text-2xl font-bold text-foreground">
                     {{ stats.medal_count }}
                 </p>
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Medallas
                 </p>
             </div>
             <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4 text-center"
+                class="rounded-xl border border-border bg-card/20 p-4 text-center"
             >
-                <p class="text-2xl font-bold text-white">
+                <p class="text-2xl font-bold text-foreground">
                     {{ stats.gear_count }}
                 </p>
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Equipo
                 </p>
             </div>
             <div
-                class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4 text-center"
+                class="rounded-xl border border-border bg-card/20 p-4 text-center"
             >
-                <p class="text-2xl font-bold text-white">
+                <p class="text-2xl font-bold text-foreground">
                     {{ stats.media_count }}
                 </p>
-                <p class="text-[10px] tracking-wide text-white/40 uppercase">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Recuerdos
                 </p>
             </div>
@@ -235,7 +247,9 @@ const legacyPlateFilterOptions = [
 
         <!-- Historial -->
         <section class="mt-8">
-            <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+            <h2
+                class="mb-3 text-sm tracking-wide text-muted-foreground/80 uppercase"
+            >
                 Historial
             </h2>
 
@@ -243,7 +257,7 @@ const legacyPlateFilterOptions = [
                 <Input
                     type="date"
                     :model-value="filters.from ?? undefined"
-                    class="w-40 border-white/10 bg-fl-black text-white"
+                    class="w-40 border-border bg-background text-foreground"
                     @change="
                         applyFilters({
                             from:
@@ -255,7 +269,7 @@ const legacyPlateFilterOptions = [
                 <Input
                     type="date"
                     :model-value="filters.to ?? undefined"
-                    class="w-40 border-white/10 bg-fl-black text-white"
+                    class="w-40 border-border bg-background text-foreground"
                     @change="
                         applyFilters({
                             to:
@@ -277,7 +291,7 @@ const legacyPlateFilterOptions = [
                     "
                 >
                     <SelectTrigger
-                        class="w-44 border-white/10 bg-fl-black text-white"
+                        class="w-44 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Evento" />
                     </SelectTrigger>
@@ -305,7 +319,7 @@ const legacyPlateFilterOptions = [
                     "
                 >
                     <SelectTrigger
-                        class="w-40 border-white/10 bg-fl-black text-white"
+                        class="w-40 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Deporte" />
                     </SelectTrigger>
@@ -331,7 +345,7 @@ const legacyPlateFilterOptions = [
                     "
                 >
                     <SelectTrigger
-                        class="w-48 border-white/10 bg-fl-black text-white"
+                        class="w-48 border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="Legacy Plate" />
                     </SelectTrigger>
@@ -349,19 +363,19 @@ const legacyPlateFilterOptions = [
 
             <div
                 v-if="participations.data.length"
-                class="divide-y divide-white/5 rounded-2xl border border-white/10 bg-fl-graphite/20"
+                class="divide-y divide-border rounded-2xl border border-border bg-card/20"
             >
                 <Link
                     v-for="p in participations.data"
                     :key="p.id"
                     :href="`/dashboard/legado/${p.id}`"
-                    class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/5"
+                    class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-foreground/[0.03]"
                 >
                     <div class="min-w-0">
-                        <p class="truncate font-medium text-white">
+                        <p class="truncate font-medium text-foreground">
                             {{ p.event ?? p.edition ?? 'Evento' }}
                         </p>
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-muted-foreground/80">
                             <span v-if="p.race">{{ p.race }} · </span>
                             <span v-if="p.event_date">{{ p.event_date }}</span>
                             <span v-if="p.bib_number">
@@ -369,7 +383,9 @@ const legacyPlateFilterOptions = [
                             >
                         </p>
                     </div>
-                    <div class="flex shrink-0 items-center gap-3 text-white/50">
+                    <div
+                        class="flex shrink-0 items-center gap-3 text-muted-foreground"
+                    >
                         <span
                             v-if="p.result?.official_time"
                             class="font-mono"
@@ -378,14 +394,14 @@ const legacyPlateFilterOptions = [
                         <Badge
                             v-if="p.legacy_plate_status"
                             variant="outline"
-                            class="border-fl-gold/30 text-fl-gold-soft"
+                            class="border-fl-gold/30 text-fl-gold-ink"
                         >
                             <Boxes class="mr-1 size-3" />Legacy Plate
                         </Badge>
                         <Badge
                             v-if="p.gear_count > 0"
                             variant="outline"
-                            class="border-white/20 text-white/50"
+                            class="border-foreground/15 text-muted-foreground"
                         >
                             <Package class="mr-1 size-3" />{{ p.gear_count }}
                         </Badge>
@@ -399,7 +415,7 @@ const legacyPlateFilterOptions = [
             />
             <p
                 v-else
-                class="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-white/40"
+                class="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground/80"
             >
                 No hay participaciones con estos filtros.
             </p>

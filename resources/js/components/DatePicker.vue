@@ -72,19 +72,21 @@ function onSelect(value: DateValue | undefined) {
                 type="button"
                 :class="
                     cn(
-                        'fl-focus-glow flex h-9 w-full items-center gap-2 rounded-md border border-input bg-transparent px-3 text-left text-sm text-white transition-colors hover:border-white/25',
-                        !formatted && 'text-white/40',
+                        'fl-focus-glow flex h-9 w-full items-center gap-2 rounded-md border border-input bg-transparent px-3 text-left text-sm text-foreground transition-colors hover:border-foreground/15',
+                        !formatted && 'text-muted-foreground/80',
                         props.class,
                     )
                 "
             >
-                <CalendarIcon class="size-4 shrink-0 text-white/40" />
+                <CalendarIcon
+                    class="size-4 shrink-0 text-muted-foreground/80"
+                />
                 <span class="truncate capitalize">{{
                     formatted ?? placeholder
                 }}</span>
             </button>
         </PopoverTrigger>
-        <PopoverContent class="w-auto bg-fl-graphite">
+        <PopoverContent class="w-auto bg-card">
             <Calendar
                 :model-value="dateValue"
                 :max-value="maxValue"

@@ -32,43 +32,43 @@ const labels: Record<string, string> = {
 };
 
 const classes: Record<string, string> = {
-    unclaimed: 'border-white/20 text-white/50',
-    assigned: 'border-amber-500/30 text-amber-400',
-    active: 'border-emerald-500/30 text-emerald-400',
-    revoked: 'border-red-500/30 text-red-400',
+    unclaimed: 'border-foreground/15 text-muted-foreground',
+    assigned: 'border-amber-500/30 text-amber-700',
+    active: 'border-emerald-500/30 text-emerald-700',
+    revoked: 'border-red-500/30 text-red-700',
 };
 
 const label = computed(() => labels[props.status] ?? props.status);
 const className = computed(
-    () => classes[props.status] ?? 'border-white/20 text-white/50',
+    () => classes[props.status] ?? 'border-foreground/15 text-muted-foreground',
 );
 </script>
 
 <template>
-    <div
-        class="overflow-hidden rounded-2xl border border-white/10 bg-fl-graphite/30"
-    >
-        <div class="flex aspect-square items-center justify-center bg-fl-black">
+    <div class="overflow-hidden rounded-2xl border border-border bg-card/30">
+        <div
+            class="flex aspect-square items-center justify-center bg-background"
+        >
             <img
                 v-if="imageUrl"
                 :src="imageUrl"
                 :alt="product"
                 class="size-full object-cover"
             />
-            <Package v-else class="size-10 text-white/10" />
+            <Package v-else class="size-10 text-muted-foreground/80" />
         </div>
         <div class="p-4">
             <div class="flex items-start justify-between gap-2">
                 <div>
-                    <p class="font-medium text-white">{{ product }}</p>
-                    <p v-if="variant" class="text-sm text-white/40">
+                    <p class="font-medium text-foreground">{{ product }}</p>
+                    <p v-if="variant" class="text-sm text-muted-foreground/80">
                         {{ variant }}
                     </p>
                 </div>
                 <Badge variant="outline" :class="className">{{ label }}</Badge>
             </div>
             <div
-                class="mt-3 flex items-center justify-between text-xs text-white/40"
+                class="mt-3 flex items-center justify-between text-xs text-muted-foreground/80"
             >
                 <span v-if="acquiredAt">Adquirido {{ acquiredAt }}</span>
                 <span v-if="assetCode" class="flex items-center gap-1"
@@ -77,15 +77,17 @@ const className = computed(
             </div>
             <div
                 v-if="usageHistory?.length"
-                class="mt-3 border-t border-white/5 pt-3"
+                class="mt-3 border-t border-border pt-3"
             >
-                <p class="text-[10px] tracking-wide text-white/30 uppercase">
+                <p
+                    class="text-[10px] tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Usado en
                 </p>
                 <p
                     v-for="entry in usageHistory"
                     :key="entry.event_participant_id"
-                    class="mt-1 truncate text-xs text-white/60"
+                    class="mt-1 truncate text-xs text-muted-foreground"
                 >
                     {{ entry.event ?? entry.edition ?? 'Evento' }}
                 </p>

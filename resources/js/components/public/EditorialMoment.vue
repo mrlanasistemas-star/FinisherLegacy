@@ -20,7 +20,7 @@ const lines = [
 
 <template>
     <section
-        class="relative overflow-hidden border-t border-white/10 bg-fl-graphite/40 py-24 sm:py-32"
+        class="relative overflow-hidden border-t border-border bg-card/40 py-24 sm:py-32"
     >
         <div
             class="pointer-events-none absolute inset-0 opacity-40"
@@ -55,7 +55,7 @@ const lines = [
                         :key="line"
                         as="p"
                         :delay-ms="index * 90"
-                        class="text-xl leading-snug text-white/60 sm:text-2xl"
+                        class="text-xl leading-snug text-muted-foreground sm:text-2xl"
                     >
                         {{ line }}
                     </Reveal>
@@ -63,10 +63,10 @@ const lines = [
 
                 <Reveal
                     :delay-ms="lines.length * 90 + 100"
-                    class="mt-12 border-t border-white/10 pt-10"
+                    class="mt-12 border-t border-border pt-10"
                 >
                     <p
-                        class="text-2xl font-semibold tracking-tight text-white sm:text-3xl"
+                        class="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
                     >
                         Finisher Legacy preserva lo que hay detrás del metal.
                     </p>

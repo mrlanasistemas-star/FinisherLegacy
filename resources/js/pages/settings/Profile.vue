@@ -24,7 +24,8 @@ defineOptions({
 });
 
 const page = usePage();
-const user = computed(() => page.props.auth.user);
+// Authenticated-only surface — the route middleware guarantees a user.
+const user = computed(() => page.props.auth.user!);
 </script>
 
 <template>

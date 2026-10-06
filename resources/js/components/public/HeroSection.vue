@@ -30,7 +30,7 @@ defineProps<{
 
 <template>
     <section
-        class="relative flex min-h-[100svh] min-h-screen items-center overflow-hidden bg-fl-black"
+        class="relative flex min-h-[100svh] min-h-screen items-center overflow-hidden bg-background"
     >
         <!-- Cinematic scene: video → poster photo → CSS scene cascade, see
              public/media/home/hero/README.md for the asset contract. -->
@@ -44,11 +44,11 @@ defineProps<{
             aria-hidden="true"
         >
             <span
-                class="absolute -top-10 -right-16 text-[16rem] leading-none font-black tracking-tighter text-white xl:text-[20rem]"
+                class="absolute -top-10 -right-16 text-[16rem] leading-none font-black tracking-tighter text-foreground xl:text-[20rem]"
                 >42.195</span
             >
             <span
-                class="absolute bottom-10 -left-10 text-[9rem] leading-none font-black tracking-tighter text-white xl:text-[11rem]"
+                class="absolute bottom-10 -left-10 text-[9rem] leading-none font-black tracking-tighter text-foreground xl:text-[11rem]"
                 >03:42:18</span
             >
         </div>
@@ -60,7 +60,7 @@ defineProps<{
         >
             <div class="flex flex-col items-start gap-8">
                 <span
-                    class="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.4em] text-fl-gold-soft uppercase"
+                    class="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.4em] text-fl-gold-ink uppercase"
                 >
                     <span
                         class="h-px w-6 bg-fl-gold-soft/60"
@@ -78,7 +78,7 @@ defineProps<{
                      "TU META TERMINA." / "TU HISTORIA NO." always render
                      as exactly one line each from `sm:` up. -->
                 <h1
-                    class="text-3xl leading-[0.95] font-black tracking-tight text-white sm:text-4xl sm:whitespace-nowrap md:text-5xl lg:text-6xl xl:text-7xl"
+                    class="text-3xl leading-[0.95] font-black tracking-tight text-foreground sm:text-4xl sm:whitespace-nowrap md:text-5xl lg:text-6xl xl:text-7xl"
                 >
                     <template
                         v-for="(line, index) in title.split('\n')"
@@ -86,7 +86,7 @@ defineProps<{
                     >
                         <span
                             class="fl-hero-line inline-block"
-                            :class="{ 'text-fl-gold-soft': index === 1 }"
+                            :class="{ 'text-fl-gold-ink': index === 1 }"
                             :style="{ animationDelay: `${index * 140}ms` }"
                             >{{ line }}</span
                         >
@@ -94,7 +94,9 @@ defineProps<{
                     </template>
                 </h1>
 
-                <p class="max-w-lg text-lg leading-relaxed text-white/70">
+                <p
+                    class="max-w-lg text-lg leading-relaxed text-muted-foreground"
+                >
                     {{ subtitle }}
                 </p>
 
@@ -112,18 +114,18 @@ defineProps<{
                         as-child
                         size="lg"
                         variant="outline"
-                        class="border-white/30 bg-transparent px-8 text-base text-white hover:bg-white/5 hover:text-white"
+                        class="border-foreground/15 bg-transparent px-8 text-base text-foreground hover:bg-foreground/[0.03] hover:text-foreground"
                     >
                         <Link :href="secondaryHref">{{ secondaryLabel }}</Link>
                     </Button>
                 </div>
 
-                <p class="text-sm text-white/60">
+                <p class="text-sm text-muted-foreground">
                     Tu Legacy ID te acompaña carrera tras carrera.
                     <Link
                         v-if="tertiaryLabel && tertiaryHref"
                         :href="tertiaryHref"
-                        class="ml-2 font-semibold text-fl-gold-soft underline-offset-4 hover:text-fl-gold hover:underline"
+                        class="ml-2 font-semibold text-fl-gold-ink underline-offset-4 hover:text-fl-gold-ink hover:underline"
                     >
                         {{ tertiaryLabel }}
                     </Link>

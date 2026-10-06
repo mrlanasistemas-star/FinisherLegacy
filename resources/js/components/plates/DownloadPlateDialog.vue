@@ -79,7 +79,7 @@ function download() {
 
 <template>
     <Dialog v-model:open="open">
-        <DialogContent class="dark border-white/10 bg-fl-graphite text-white">
+        <DialogContent class="border-border bg-card text-foreground">
             <DialogHeader>
                 <DialogTitle>Descargar archivos de grabado</DialogTitle>
             </DialogHeader>
@@ -89,7 +89,7 @@ function download() {
                     <Label>Formato</Label>
                     <Select v-model="format">
                         <SelectTrigger
-                            class="w-full border-white/10 bg-fl-black text-white"
+                            class="w-full border-border bg-background text-foreground"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -113,7 +113,7 @@ function download() {
                     <Label>Cara</Label>
                     <Select v-model="face">
                         <SelectTrigger
-                            class="w-full border-white/10 bg-fl-black text-white"
+                            class="w-full border-border bg-background text-foreground"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -128,7 +128,7 @@ function download() {
                     <Label>Resolución</Label>
                     <Select v-model="dpi">
                         <SelectTrigger
-                            class="w-full border-white/10 bg-fl-black text-white"
+                            class="w-full border-border bg-background text-foreground"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -141,7 +141,7 @@ function download() {
 
                 <label
                     v-if="format === 'svg'"
-                    class="flex items-start gap-2.5 text-sm text-white/80"
+                    class="flex items-start gap-2.5 text-sm text-foreground"
                 >
                     <Checkbox
                         :model-value="textAsPaths"
@@ -150,7 +150,7 @@ function download() {
                     />
                     <span>
                         Convertir texto a trazos (paths)
-                        <span class="block text-xs text-white/40">
+                        <span class="block text-xs text-muted-foreground/80">
                             El archivo deja de depender de tener una fuente
                             instalada en la PC de producción — cada letra se
                             convierte a su contorno vectorial exacto, aunque el
@@ -160,16 +160,19 @@ function download() {
                     </span>
                 </label>
 
-                <p v-if="format === 'zip'" class="text-xs text-white/50">
+                <p
+                    v-if="format === 'zip'"
+                    class="text-xs text-muted-foreground"
+                >
                     Incluye frente y reverso como archivos SVG, PNG y PDF por
                     separado (nunca mezclados en un solo archivo), más qr.svg y
                     production.json con serial, Legacy Code y evento.
                 </p>
 
-                <div class="rounded-lg border border-white/10">
+                <div class="rounded-lg border border-border">
                     <button
                         type="button"
-                        class="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium text-white/60 hover:text-fl-gold"
+                        class="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium text-muted-foreground hover:text-fl-gold-ink"
                         @click="guideOpen = !guideOpen"
                     >
                         ¿Cómo grabar esta placa?
@@ -180,7 +183,7 @@ function download() {
                     </button>
                     <ol
                         v-if="guideOpen"
-                        class="list-inside list-decimal space-y-1 px-3 pb-3 text-xs text-white/50"
+                        class="list-inside list-decimal space-y-1 px-3 pb-3 text-xs text-muted-foreground"
                     >
                         <li v-for="step in guideSteps" :key="step">
                             {{ step }}

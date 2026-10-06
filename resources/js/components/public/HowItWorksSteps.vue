@@ -15,15 +15,17 @@ defineProps<{
         <div
             v-for="step in steps"
             :key="step.number"
-            class="group relative flex flex-col gap-4 rounded-2xl border border-white/10 bg-fl-graphite/50 p-6 transition-colors hover:border-fl-gold/30"
+            class="group relative flex flex-col gap-4 rounded-2xl border border-border bg-card/50 p-6 transition-colors hover:border-fl-gold/30"
         >
             <span
-                class="legacy-numeric text-4xl font-black text-white/15 transition-colors group-hover:text-fl-gold/25"
+                class="legacy-numeric text-4xl font-black text-muted-foreground/80 transition-colors group-hover:text-fl-gold-ink"
             >
                 {{ step.number }}
             </span>
-            <h3 class="text-lg font-semibold text-white">{{ step.title }}</h3>
-            <p class="text-sm leading-relaxed text-white/60">
+            <h3 class="text-lg font-semibold text-foreground">
+                {{ step.title }}
+            </h3>
+            <p class="text-sm leading-relaxed text-muted-foreground">
                 {{ step.description }}
             </p>
         </div>

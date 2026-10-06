@@ -39,7 +39,7 @@ const columns = [
 
     <div class="p-4 md:p-8">
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-white">Eventos</h1>
+            <h1 class="text-xl font-bold text-foreground">Eventos</h1>
             <Button
                 as-child
                 class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
@@ -71,7 +71,7 @@ const columns = [
                         as-child
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                     >
                         <Link :href="`/admin/editions/${row.id}`">
                             <Eye class="size-3.5" />
@@ -82,7 +82,7 @@ const columns = [
                         as-child
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                     >
                         <Link
                             :href="`/admin/events/${row.id}/production-setup`"

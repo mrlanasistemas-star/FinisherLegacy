@@ -42,27 +42,32 @@ const statusLabel: Record<string, string> = {
 
 <template>
     <div
-        class="flex flex-wrap items-center gap-3 border-b border-white/10 bg-fl-graphite/40 px-4 py-3"
+        class="flex flex-wrap items-center gap-3 border-b border-border bg-card/40 px-4 py-3"
     >
-        <Link href="/admin/plate-studio" class="text-white/50 hover:text-white">
+        <Link
+            href="/admin/plate-studio"
+            class="text-muted-foreground hover:text-foreground"
+        >
             <ArrowLeft class="size-4" />
         </Link>
 
         <div class="min-w-0">
-            <p class="truncate text-sm font-semibold text-white">
+            <p class="truncate text-sm font-semibold text-foreground">
                 {{ templateName }}
             </p>
-            <p class="text-xs text-white/40">Versión {{ version }}</p>
+            <p class="text-xs text-muted-foreground/80">
+                Versión {{ version }}
+            </p>
         </div>
 
         <Badge
             variant="outline"
             :class="
                 status === 'published'
-                    ? 'border-emerald-500/30 text-emerald-400'
+                    ? 'border-emerald-500/30 text-emerald-700'
                     : status === 'archived'
-                      ? 'border-white/20 text-white/40'
-                      : 'border-amber-500/30 text-amber-400'
+                      ? 'border-foreground/15 text-muted-foreground/80'
+                      : 'border-amber-500/30 text-amber-700'
             "
         >
             {{ statusLabel[status] }}
@@ -74,7 +79,7 @@ const statusLabel: Record<string, string> = {
                 @update:model-value="(v) => emit('update:zoom', Number(v))"
             >
                 <SelectTrigger
-                    class="w-24 border-white/10 bg-fl-black text-white"
+                    class="w-24 border-border bg-background text-foreground"
                 >
                     <SelectValue />
                 </SelectTrigger>
@@ -93,7 +98,7 @@ const statusLabel: Record<string, string> = {
                         <Button
                             variant="outline"
                             size="sm"
-                            class="border-white/15 text-white hover:bg-white/10"
+                            class="border-border text-foreground hover:bg-foreground/5"
                             :disabled="saving"
                             @click="emit('save')"
                         >
@@ -120,7 +125,7 @@ const statusLabel: Record<string, string> = {
                         <Button
                             variant="outline"
                             size="sm"
-                            class="border-white/15 text-white hover:bg-white/10"
+                            class="border-border text-foreground hover:bg-foreground/5"
                             @click="emit('new-version')"
                         >
                             <GitBranch class="size-4" />

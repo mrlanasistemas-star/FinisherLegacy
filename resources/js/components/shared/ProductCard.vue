@@ -1,79 +1,128 @@
 <script setup lang="ts">
 /**
- * Store product card — premium sport-tech, never stock counts, never a
- * dashboard-table look (brief §27-§28/§60/§64).
+ * Store product card — photo-led, never stock counts. Images come only
+ * from Administración → Productos (gallery primary + hover image); with
+ * none uploaded it shows the designed placeholder. "Próximamente" /
+ * "Concepto" products are labelled and never show a buy price.
  */
 import { Link } from '@inertiajs/vue3';
-import { Package } from '@lucide/vue';
 import Money from '@/components/shared/Money.vue';
+import ProductImagePlaceholder from '@/components/shared/ProductImagePlaceholder.vue';
+import type { ProductAvailability } from '@/types';
 
-defineProps<{
-    name: string;
-    slug: string;
-    category?: string | null;
-    fromPriceMinor: number | null;
-    currency: string;
-    inStock: boolean;
-    imageUrl?: string | null;
-    hoverImageUrl?: string | null;
-    variantCount?: number;
-}>();
+withDefaults(
+    defineProps<{
+        name: string;
+        slug: string;
+        category?: string | null;
+        fromPriceMinor: number | null;
+        currency: string;
+        inStock: boolean;
+        imageUrl?: string | null;
+        imageAlt?: string | null;
+        hoverImageUrl?: string | null;
+        variantCount?: number;
+        tagline?: string | null;
+        availability?: ProductAvailability;
+        availabilityLabel?: string;
+    }>(),
+    {
+        availability: 'available',
+    },
+);
 </script>
 
 <template>
     <Link
         :href="`/tienda/${slug}`"
-        class="group block overflow-hidden rounded-2xl border border-white/10 bg-fl-graphite/30 transition hover:border-fl-gold/40"
+        class="group flex h-full flex-col focus-visible:outline-none"
     >
-        <div class="relative aspect-square overflow-hidden bg-fl-black">
-            <img
-                v-if="imageUrl"
-                :src="imageUrl"
-                :alt="name"
-                loading="lazy"
-                class="size-full object-cover transition duration-500 group-hover:scale-105"
-                :class="hoverImageUrl ? 'group-hover:opacity-0' : ''"
+        <div
+            class="relative aspect-[4/5] overflow-hidden rounded-xl border border-border bg-card transition-colors group-hover:border-foreground/20 group-focus-visible:ring-2 group-focus-visible:ring-ring"
+        >
+            <template v-if="imageUrl">
+                <img
+                    :src="imageUrl"
+                    :alt="imageAlt || name"
+                    loading="lazy"
+                    decoding="async"
+                    class="size-full object-cover transition duration-700 ease-out group-hover:scale-[1.03]"
+                    :class="hoverImageUrl ? 'group-hover:opacity-0' : ''"
+                />
+                <img
+                    v-if="hoverImageUrl"
+                    :src="hoverImageUrl"
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                    class="absolute inset-0 size-full object-cover opacity-0 transition duration-700 group-hover:opacity-100"
+                />
+            </template>
+            <ProductImagePlaceholder
+                v-else
+                :name="name"
+                :label="
+                    availability === 'concept'
+                        ? 'Render en desarrollo'
+                        : 'Fotografía próximamente'
+                "
             />
-            <div v-else class="flex size-full items-center justify-center">
-                <Package class="size-10 text-white/10" />
-            </div>
-            <img
-                v-if="hoverImageUrl"
-                :src="hoverImageUrl"
-                :alt="name"
-                loading="lazy"
-                class="absolute inset-0 size-full object-cover opacity-0 transition duration-500 group-hover:opacity-100"
-            />
+
             <span
-                v-if="!inStock"
-                class="absolute top-3 left-3 rounded-full bg-fl-black/80 px-3 py-1 text-[10px] font-semibold tracking-wide text-white/60 uppercase"
+                v-if="availability !== 'available'"
+                class="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.14em] uppercase"
+                :class="
+                    availability === 'concept'
+                        ? 'border border-foreground/15 bg-white/90 text-foreground'
+                        : 'bg-foreground text-background'
+                "
+            >
+                {{
+                    availabilityLabel ||
+                    (availability === 'concept' ? 'Concepto' : 'Próximamente')
+                }}
+            </span>
+            <span
+                v-else-if="!inStock"
+                class="absolute top-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
             >
                 Agotado
             </span>
         </div>
-        <div class="p-4">
-            <p
-                v-if="category"
-                class="text-[10px] tracking-[0.2em] text-fl-gold-soft/70 uppercase"
-            >
-                {{ category }}
-            </p>
+
+        <div class="flex flex-1 flex-col pt-4">
+            <p v-if="category" class="fl-eyebrow">{{ category }}</p>
             <h3
-                class="mt-1 font-semibold text-white group-hover:text-fl-gold-soft"
+                class="mt-1 text-[15px] leading-snug font-semibold text-foreground underline-offset-4 group-hover:underline"
             >
                 {{ name }}
             </h3>
-            <p class="mt-2 text-sm text-white/60">
-                <span v-if="fromPriceMinor !== null">
-                    Desde <Money :minor="fromPriceMinor" :currency="currency" />
-                </span>
-                <span v-else>Precio no disponible</span>
-            </p>
             <p
-                v-if="variantCount && variantCount > 1"
-                class="mt-1 text-xs text-white/30"
+                v-if="tagline"
+                class="mt-1 line-clamp-2 text-sm text-muted-foreground"
             >
-                {{ variantCount }} opciones
+                {{ tagline }}
+            </p>
+            <p class="mt-2 text-sm text-foreground">
+                <template v-if="availability !== 'available'">
+                    <span class="text-muted-foreground">{{
+                        availability === 'concept'
+                            ? 'En desarrollo'
+                            : 'Muy pronto disponible'
+                    }}</span>
+                </template>
+                <template v-else-if="fromPriceMinor !== null">
+                    <span v-if="variantCount && variantCount > 1">Desde </span>
+                    <Money
+                        :minor="fromPriceMinor"
+                        :currency="currency"
+                        class="font-medium"
+                    />
+                </template>
+                <span v-else class="text-muted-foreground"
+                    >Precio por confirmar</span
+                >
             </p>
         </div>
     </Link>

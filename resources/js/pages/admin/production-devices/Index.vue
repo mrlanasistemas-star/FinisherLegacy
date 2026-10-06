@@ -130,7 +130,9 @@ const statusLabel: Record<Device['status'], string> = {
 
     <div class="p-4 md:p-8">
         <div class="mb-1 flex items-center justify-between">
-            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
+            <h1
+                class="flex items-center gap-1.5 text-xl font-bold text-foreground"
+            >
                 <Cpu class="size-5" />
                 Estaciones
                 <HelpPopover
@@ -139,7 +141,7 @@ const statusLabel: Record<Device['status'], string> = {
                 />
             </h1>
         </div>
-        <p class="mb-6 text-sm text-white/50">
+        <p class="mb-6 text-sm text-muted-foreground">
             Vincula un dispositivo desde un código de emparejamiento generado
             por el desktop. El token completo solo lo ve el dispositivo, una
             vez, al vincularse.
@@ -149,20 +151,22 @@ const statusLabel: Record<Device['status'], string> = {
             v-if="props.pendingPairings.length"
             class="mb-8 rounded-xl border border-fl-gold/30 bg-fl-gold/5 p-4"
         >
-            <h2 class="mb-3 text-sm font-semibold text-fl-gold">
+            <h2 class="mb-3 text-sm font-semibold text-fl-gold-ink">
                 Emparejamientos pendientes
             </h2>
             <div class="space-y-2">
                 <div
                     v-for="pairing in props.pendingPairings"
                     :key="pairing.id"
-                    class="flex items-center justify-between rounded-lg border border-white/10 bg-fl-black/40 p-3"
+                    class="flex items-center justify-between rounded-lg border border-border bg-background/40 p-3"
                 >
                     <div>
-                        <p class="font-mono text-lg tracking-widest text-white">
+                        <p
+                            class="font-mono text-lg tracking-widest text-foreground"
+                        >
                             {{ pairing.code }}
                         </p>
-                        <p class="text-xs text-white/50">
+                        <p class="text-xs text-muted-foreground">
                             {{ pairing.requested_name }} ·
                             {{
                                 pairing.requested_app_version ??
@@ -187,14 +191,14 @@ const statusLabel: Record<Device['status'], string> = {
             <div
                 v-for="device in props.devices"
                 :key="device.id"
-                class="fl-hover-lift rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="fl-hover-lift rounded-xl border border-border bg-card/40 p-4"
             >
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <p class="font-semibold text-white">
+                        <p class="font-semibold text-foreground">
                             {{ device.name }}
                         </p>
-                        <p class="text-xs text-white/50">
+                        <p class="text-xs text-muted-foreground">
                             {{
                                 device.station_code ?? 'Sin código de estación'
                             }}
@@ -205,10 +209,10 @@ const statusLabel: Record<Device['status'], string> = {
                             variant="outline"
                             :class="
                                 device.status === 'revoked'
-                                    ? 'border-red-500/30 text-red-400'
+                                    ? 'border-red-500/30 text-red-700'
                                     : device.online
-                                      ? 'border-emerald-500/30 text-emerald-400'
-                                      : 'border-white/20 text-white/40'
+                                      ? 'border-emerald-500/30 text-emerald-700'
+                                      : 'border-foreground/15 text-muted-foreground/80'
                             "
                         >
                             {{
@@ -222,21 +226,31 @@ const statusLabel: Record<Device['status'], string> = {
                     </div>
                 </div>
 
-                <dl class="mt-3 grid grid-cols-2 gap-2 text-xs text-white/60">
+                <dl
+                    class="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground"
+                >
                     <div>
-                        <dt class="text-white/30 uppercase">Máquina</dt>
+                        <dt class="text-muted-foreground/80 uppercase">
+                            Máquina
+                        </dt>
                         <dd>{{ device.machine_profile ?? '—' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-white/30 uppercase">Evento</dt>
+                        <dt class="text-muted-foreground/80 uppercase">
+                            Evento
+                        </dt>
                         <dd>{{ device.event_edition ?? 'Todos' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-white/30 uppercase">Última conexión</dt>
+                        <dt class="text-muted-foreground/80 uppercase">
+                            Última conexión
+                        </dt>
                         <dd>{{ device.last_seen_at ?? 'Nunca' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-white/30 uppercase">Versión app</dt>
+                        <dt class="text-muted-foreground/80 uppercase">
+                            Versión app
+                        </dt>
                         <dd>{{ device.app_version ?? '—' }}</dd>
                     </div>
                 </dl>
@@ -245,7 +259,7 @@ const statusLabel: Record<Device['status'], string> = {
                     v-if="device.status !== 'revoked'"
                     size="sm"
                     variant="outline"
-                    class="fl-hover-lift mt-3 w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    class="fl-hover-lift mt-3 w-full border-red-500/30 text-red-700 hover:bg-red-500/10"
                     @click="revokeTarget = device"
                 >
                     <ShieldOff class="size-3.5" />
@@ -255,16 +269,14 @@ const statusLabel: Record<Device['status'], string> = {
 
             <div
                 v-if="!props.devices.length"
-                class="col-span-full rounded-xl border border-dashed border-white/15 p-10 text-center text-sm text-white/40"
+                class="col-span-full rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground/80"
             >
                 Sin estaciones vinculadas todavía.
             </div>
         </div>
 
         <Dialog v-model:open="approveOpen">
-            <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <DialogContent class="border-border bg-card text-foreground">
                 <DialogHeader>
                     <DialogTitle>Vincular estación</DialogTitle>
                 </DialogHeader>
@@ -273,14 +285,14 @@ const statusLabel: Record<Device['status'], string> = {
                         <Label>Nombre</Label>
                         <Input
                             v-model="approveForm.name"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                         />
                     </div>
                     <div class="grid gap-2">
                         <Label>Perfil de máquina (opcional)</Label>
                         <Select v-model="approveForm.machine_profile_id">
                             <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             >
                                 <SelectValue placeholder="Sin asignar" />
                             </SelectTrigger>
@@ -299,7 +311,7 @@ const statusLabel: Record<Device['status'], string> = {
                         <Label>Evento (opcional — vacío ve todos)</Label>
                         <Select v-model="approveForm.event_edition_id">
                             <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             >
                                 <SelectValue placeholder="Todos los eventos" />
                             </SelectTrigger>
@@ -335,20 +347,18 @@ const statusLabel: Record<Device['status'], string> = {
                 }
             "
         >
-            <AlertDialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <AlertDialogContent class="border-border bg-card text-foreground">
                 <AlertDialogHeader>
                     <AlertDialogTitle
                         >¿Revocar "{{ revokeTarget?.name }}"?</AlertDialogTitle
                     >
-                    <AlertDialogDescription class="text-white/60">
+                    <AlertDialogDescription class="text-muted-foreground">
                         Su token dejará de funcionar de inmediato.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel
-                        class="border-white/10 bg-transparent text-white hover:bg-white/10"
+                        class="border-border bg-transparent text-foreground hover:bg-foreground/5"
                         @click="revokeTarget = null"
                         >Cancelar</AlertDialogCancel
                     >

@@ -63,8 +63,10 @@ function submit() {
 
     <div class="w-full px-4 py-4 sm:px-6 md:py-8 lg:px-8 xl:px-10">
         <div class="mb-6">
-            <h1 class="text-xl font-bold text-white">Crear evento manual</h1>
-            <p class="mt-1 text-sm text-white/50">
+            <h1 class="text-xl font-bold text-foreground">
+                Crear evento manual
+            </h1>
+            <p class="mt-1 text-sm text-muted-foreground">
                 El Organizador es opcional — un evento puede crearse sin
                 depender de un proveedor de datos.
             </p>
@@ -72,11 +74,9 @@ function submit() {
 
         <form class="space-y-6" @submit.prevent="submit">
             <div class="grid gap-6 lg:grid-cols-2">
-                <section
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                >
+                <section class="rounded-xl border border-border bg-card/30 p-5">
                     <h2
-                        class="mb-4 text-sm font-semibold text-white/70 uppercase"
+                        class="mb-4 text-sm font-semibold text-muted-foreground uppercase"
                     >
                         Información general
                     </h2>
@@ -85,12 +85,12 @@ function submit() {
                             <Label>Nombre del evento</Label>
                             <Input
                                 v-model="form.name"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 required
                             />
                             <p
                                 v-if="form.errors.name"
-                                class="text-xs text-red-400"
+                                class="text-xs text-red-700"
                             >
                                 {{ form.errors.name }}
                             </p>
@@ -99,7 +99,7 @@ function submit() {
                             <Label>Deporte</Label>
                             <Select v-model="form.sport_id">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue
                                         placeholder="Selecciona un deporte"
@@ -117,7 +117,7 @@ function submit() {
                             </Select>
                             <p
                                 v-if="form.errors.sport_id"
-                                class="text-xs text-red-400"
+                                class="text-xs text-red-700"
                             >
                                 {{ form.errors.sport_id }}
                             </p>
@@ -126,7 +126,7 @@ function submit() {
                             <Label>Edición</Label>
                             <Input
                                 v-model="form.edition_name"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 placeholder="Edición 2027"
                                 required
                             />
@@ -136,18 +136,16 @@ function submit() {
                             <Input
                                 v-model.number="form.year"
                                 type="number"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 required
                             />
                         </div>
                     </div>
                 </section>
 
-                <section
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                >
+                <section class="rounded-xl border border-border bg-card/30 p-5">
                     <h2
-                        class="mb-4 text-sm font-semibold text-white/70 uppercase"
+                        class="mb-4 text-sm font-semibold text-muted-foreground uppercase"
                     >
                         Fecha y ubicación
                     </h2>
@@ -157,12 +155,12 @@ function submit() {
                             <Input
                                 v-model="form.event_date"
                                 type="date"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 required
                             />
                             <p
                                 v-if="form.errors.event_date"
-                                class="text-xs text-red-400"
+                                class="text-xs text-red-700"
                             >
                                 {{ form.errors.event_date }}
                             </p>
@@ -171,37 +169,35 @@ function submit() {
                             <Label>Zona horaria</Label>
                             <Input
                                 v-model="form.timezone"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
                             <Label>Ciudad</Label>
                             <Input
                                 v-model="form.city"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 required
                             />
                         </div>
                         <div class="grid gap-2">
                             <Label>Estado</Label>
-                            <Input v-model="form.state" class="bg-fl-black" />
+                            <Input v-model="form.state" class="bg-background" />
                         </div>
                         <div class="grid gap-2">
                             <Label>País</Label>
                             <Input
                                 v-model="form.country"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 required
                             />
                         </div>
                     </div>
                 </section>
 
-                <section
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                >
+                <section class="rounded-xl border border-border bg-card/30 p-5">
                     <h2
-                        class="mb-4 text-sm font-semibold text-white/70 uppercase"
+                        class="mb-4 text-sm font-semibold text-muted-foreground uppercase"
                     >
                         Organizador
                     </h2>
@@ -209,7 +205,7 @@ function submit() {
                         <Label>Organizador (opcional)</Label>
                         <Select v-model="form.organizer_id">
                             <SelectTrigger
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             >
                                 <SelectValue placeholder="Sin organizador" />
                             </SelectTrigger>
@@ -226,15 +222,13 @@ function submit() {
                     </div>
                 </section>
 
-                <section
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-                >
+                <section class="rounded-xl border border-border bg-card/30 p-5">
                     <h2
-                        class="mb-1 text-sm font-semibold text-white/70 uppercase"
+                        class="mb-1 text-sm font-semibold text-muted-foreground uppercase"
                     >
                         ¿Cómo recibiremos los datos?
                     </h2>
-                    <p class="mb-4 text-xs text-white/40">
+                    <p class="mb-4 text-xs text-muted-foreground/80">
                         Puedes dejarlo en Manual y cambiarlo después desde la
                         pestaña "Datos" del evento.
                     </p>
@@ -243,7 +237,7 @@ function submit() {
                             <Label>Fuente de datos</Label>
                             <Select v-model="form.data_source_type">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -269,7 +263,7 @@ function submit() {
                                 "
                             >
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue
                                         placeholder="Selecciona una conexión"
@@ -291,7 +285,7 @@ function submit() {
                                                 connection.provider_key ===
                                                 'mock'
                                             "
-                                            class="mr-1 text-amber-400"
+                                            class="mr-1 text-amber-700"
                                             >[SIMULACIÓN]</span
                                         >
                                         {{ connection.name }} ({{
@@ -305,18 +299,18 @@ function submit() {
                 </section>
             </div>
 
-            <section
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
-            >
+            <section class="rounded-xl border border-border bg-card/30 p-5">
                 <div class="mb-4 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-white/70 uppercase">
+                    <h2
+                        class="text-sm font-semibold text-muted-foreground uppercase"
+                    >
                         Carreras / distancias
                     </h2>
                     <Button
                         type="button"
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                         @click="addRace"
                     >
                         <Plus class="size-3.5" />
@@ -333,7 +327,7 @@ function submit() {
                             <Label class="text-xs">Nombre</Label>
                             <Input
                                 v-model="race.name"
-                                class="bg-fl-black"
+                                class="bg-background"
                                 placeholder="21K"
                                 required
                             />
@@ -344,21 +338,21 @@ function submit() {
                                 v-model.number="race.distance_value"
                                 type="number"
                                 step="0.001"
-                                class="w-24 bg-fl-black"
+                                class="w-24 bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
                             <Label class="text-xs">Unidad</Label>
                             <Input
                                 v-model="race.distance_unit"
-                                class="w-16 bg-fl-black"
+                                class="w-16 bg-background"
                             />
                         </div>
                         <Button
                             type="button"
                             size="sm"
                             variant="outline"
-                            class="border-white/15 text-white/60 hover:bg-white/10"
+                            class="border-border text-muted-foreground hover:bg-foreground/5"
                             :disabled="form.races.length === 1"
                             @click="removeRace(index)"
                         >
@@ -366,7 +360,7 @@ function submit() {
                         </Button>
                     </div>
                 </div>
-                <p v-if="form.errors.races" class="mt-2 text-xs text-red-400">
+                <p v-if="form.errors.races" class="mt-2 text-xs text-red-700">
                     {{ form.errors.races }}
                 </p>
             </section>

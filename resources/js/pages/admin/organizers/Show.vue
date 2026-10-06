@@ -117,7 +117,7 @@ function testConnection(connectionId: number) {
     <div class="p-4 md:p-8">
         <div class="mb-6 flex items-center gap-4">
             <div
-                class="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-fl-graphite/40"
+                class="flex size-14 items-center justify-center overflow-hidden rounded-xl border border-border bg-card/40"
             >
                 <img
                     v-if="organizer.logo_url"
@@ -125,19 +125,19 @@ function testConnection(connectionId: number) {
                     alt=""
                     class="size-full object-cover"
                 />
-                <Building2 v-else class="size-6 text-white/20" />
+                <Building2 v-else class="size-6 text-muted-foreground/80" />
             </div>
             <div>
-                <h1 class="text-xl font-bold text-white">
+                <h1 class="text-xl font-bold text-foreground">
                     {{ organizer.name }}
                 </h1>
-                <p class="text-sm text-white/50">
+                <p class="text-sm text-muted-foreground">
                     {{ organizer.legal_name ?? 'Sin razón social' }}
                 </p>
             </div>
             <Badge
                 variant="outline"
-                class="ml-auto border-emerald-500/30 text-emerald-400"
+                class="ml-auto border-emerald-500/30 text-emerald-700"
             >
                 {{ organizer.status === 'active' ? 'Activo' : 'Inactivo' }}
             </Badge>
@@ -152,36 +152,46 @@ function testConnection(connectionId: number) {
 
             <TabsContent value="general" class="mt-6">
                 <div
-                    class="grid grid-cols-2 gap-4 rounded-xl border border-white/10 bg-fl-graphite/30 p-5 text-sm sm:grid-cols-3"
+                    class="grid grid-cols-2 gap-4 rounded-xl border border-border bg-card/30 p-5 text-sm sm:grid-cols-3"
                 >
                     <div>
-                        <p class="text-xs text-white/30 uppercase">Correo</p>
-                        <p class="text-white">{{ organizer.email ?? '—' }}</p>
+                        <p class="text-xs text-muted-foreground/80 uppercase">
+                            Correo
+                        </p>
+                        <p class="text-foreground">
+                            {{ organizer.email ?? '—' }}
+                        </p>
                     </div>
                     <div>
-                        <p class="text-xs text-white/30 uppercase">Teléfono</p>
-                        <p class="text-white">{{ organizer.phone ?? '—' }}</p>
+                        <p class="text-xs text-muted-foreground/80 uppercase">
+                            Teléfono
+                        </p>
+                        <p class="text-foreground">
+                            {{ organizer.phone ?? '—' }}
+                        </p>
                     </div>
                     <div>
-                        <p class="text-xs text-white/30 uppercase">Sitio web</p>
+                        <p class="text-xs text-muted-foreground/80 uppercase">
+                            Sitio web
+                        </p>
                         <a
                             v-if="organizer.website"
                             :href="organizer.website"
                             target="_blank"
-                            class="text-fl-gold hover:underline"
+                            class="text-fl-gold-ink hover:underline"
                             >{{ organizer.website }}</a
                         >
-                        <p v-else class="text-white">—</p>
+                        <p v-else class="text-foreground">—</p>
                     </div>
                 </div>
             </TabsContent>
 
             <TabsContent value="events" class="mt-6">
-                <div class="overflow-x-auto rounded-xl border border-white/10">
+                <div class="overflow-x-auto rounded-xl border border-border">
                     <table class="w-full text-sm">
                         <thead>
                             <tr
-                                class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                                class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                             >
                                 <th class="px-4 py-3 font-medium">Evento</th>
                                 <th class="px-4 py-3 font-medium">Deporte</th>
@@ -192,12 +202,12 @@ function testConnection(connectionId: number) {
                             <tr
                                 v-for="event in events"
                                 :key="event.id"
-                                class="border-b border-white/5 text-white/80 last:border-0"
+                                class="border-b border-border text-foreground last:border-0"
                             >
                                 <td class="px-4 py-3">
                                     <Link
                                         :href="`/events/${event.slug}`"
-                                        class="hover:text-fl-gold"
+                                        class="hover:text-fl-gold-ink"
                                         >{{ event.name }}</Link
                                     >
                                 </td>
@@ -209,7 +219,7 @@ function testConnection(connectionId: number) {
                             <tr v-if="!events.length">
                                 <td
                                     colspan="3"
-                                    class="px-4 py-10 text-center text-white/30"
+                                    class="px-4 py-10 text-center text-muted-foreground/80"
                                 >
                                     Sin eventos todavía.
                                 </td>
@@ -223,11 +233,11 @@ function testConnection(connectionId: number) {
                 <div class="flex items-center justify-between">
                     <div>
                         <h3
-                            class="text-sm font-semibold text-white/70 uppercase"
+                            class="text-sm font-semibold text-muted-foreground uppercase"
                         >
                             Fuentes de datos
                         </h3>
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-muted-foreground/80">
                             Un organizador puede tener varias — Manual, Archivo
                             y una o más conexiones API. Cada evento puede elegir
                             una específica o heredar el default.
@@ -244,22 +254,26 @@ function testConnection(connectionId: number) {
 
                 <div
                     v-if="showAddForm"
-                    class="rounded-xl border border-fl-gold/20 bg-fl-graphite/30 p-5"
+                    class="rounded-xl border border-fl-gold/20 bg-card/30 p-5"
                 >
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div class="grid gap-2">
-                            <Label class="text-xs text-white/50">Nombre</Label>
+                            <Label class="text-xs text-muted-foreground"
+                                >Nombre</Label
+                            >
                             <Input
                                 v-model="addForm.name"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                                 placeholder="API Resultados"
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label class="text-xs text-white/50">Tipo</Label>
+                            <Label class="text-xs text-muted-foreground"
+                                >Tipo</Label
+                            >
                             <Select v-model="addForm.type">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                     ><SelectValue
                                 /></SelectTrigger>
                                 <SelectContent>
@@ -274,12 +288,12 @@ function testConnection(connectionId: number) {
                             </Select>
                         </div>
                         <div class="grid gap-2">
-                            <Label class="text-xs text-white/50"
+                            <Label class="text-xs text-muted-foreground"
                                 >Propósito</Label
                             >
                             <Select v-model="addForm.purpose">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                     ><SelectValue
                                 /></SelectTrigger>
                                 <SelectContent>
@@ -294,12 +308,12 @@ function testConnection(connectionId: number) {
                             </Select>
                         </div>
                         <div v-if="addForm.type === 'api'" class="grid gap-2">
-                            <Label class="text-xs text-white/50"
+                            <Label class="text-xs text-muted-foreground"
                                 >Conexión</Label
                             >
                             <Select v-model="addForm.provider_connection_id">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue
                                         placeholder="Selecciona una conexión"
@@ -321,7 +335,7 @@ function testConnection(connectionId: number) {
                                                 connection.provider_key ===
                                                 'mock'
                                             "
-                                            class="mr-1 text-amber-400"
+                                            class="mr-1 text-amber-700"
                                             >[SIMULACIÓN]</span
                                         >
                                         {{ connection.name }} ({{
@@ -333,7 +347,7 @@ function testConnection(connectionId: number) {
                         </div>
                     </div>
                     <label
-                        class="mt-4 flex items-center gap-2 text-sm text-white/70"
+                        class="mt-4 flex items-center gap-2 text-sm text-muted-foreground"
                     >
                         <Checkbox
                             :model-value="addForm.is_default"
@@ -354,7 +368,7 @@ function testConnection(connectionId: number) {
 
                 <div
                     v-if="!dataSources.length"
-                    class="rounded-xl border border-dashed border-white/15 bg-fl-graphite/20 p-8 text-center text-sm text-white/40"
+                    class="rounded-xl border border-dashed border-border bg-card/20 p-8 text-center text-sm text-muted-foreground/80"
                 >
                     No hay fuentes de datos todavía.
                 </div>
@@ -362,20 +376,20 @@ function testConnection(connectionId: number) {
                 <div
                     v-for="source in dataSources"
                     :key="source.id"
-                    class="rounded-xl border border-white/10 bg-fl-graphite/30 p-5"
+                    class="rounded-xl border border-border bg-card/30 p-5"
                 >
                     <div
                         class="flex flex-wrap items-start justify-between gap-3"
                     >
                         <div>
                             <div class="flex items-center gap-2">
-                                <p class="font-medium text-white">
+                                <p class="font-medium text-foreground">
                                     <span
                                         v-if="
                                             source.provider_connection
                                                 ?.provider_key === 'mock'
                                         "
-                                        class="mr-1 text-amber-400"
+                                        class="mr-1 text-amber-700"
                                         title="Solo para pruebas. No usar con un organizador real."
                                         >[SIMULACIÓN]</span
                                     >
@@ -384,25 +398,25 @@ function testConnection(connectionId: number) {
                                 <Badge
                                     v-if="source.is_default"
                                     variant="outline"
-                                    class="border-fl-gold/30 text-fl-gold-soft"
+                                    class="border-fl-gold/30 text-fl-gold-ink"
                                     >Predeterminada</Badge
                                 >
                                 <Badge
                                     v-if="!source.active"
                                     variant="outline"
-                                    class="border-white/20 text-white/40"
+                                    class="border-foreground/15 text-muted-foreground/80"
                                     >Inactiva</Badge
                                 >
                             </div>
-                            <p class="mt-1 text-xs text-white/40">
+                            <p class="mt-1 text-xs text-muted-foreground/80">
                                 {{ typeLabels[source.type] }} ·
                                 {{ purposeLabels[source.purpose] }}
                             </p>
                             <div
                                 v-if="source.provider_connection"
-                                class="mt-2 text-xs text-white/40"
+                                class="mt-2 text-xs text-muted-foreground/80"
                             >
-                                <p class="text-white/60">
+                                <p class="text-muted-foreground">
                                     {{ source.provider_connection.name }} ({{
                                         source.provider_connection.provider_key
                                     }})
@@ -428,7 +442,7 @@ function testConnection(connectionId: number) {
                                 v-if="source.provider_connection"
                                 size="sm"
                                 variant="outline"
-                                class="border-white/15 text-white hover:bg-white/10"
+                                class="border-border text-foreground hover:bg-foreground/5"
                                 @click="
                                     testConnection(
                                         source.provider_connection!.id,
@@ -441,7 +455,7 @@ function testConnection(connectionId: number) {
                                 v-if="source.active"
                                 size="sm"
                                 variant="outline"
-                                class="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                class="border-red-500/30 text-red-700 hover:bg-red-500/10"
                                 @click="deactivate(source.id)"
                             >
                                 Desactivar

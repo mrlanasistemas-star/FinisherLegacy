@@ -81,13 +81,13 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusClasses: Record<string, string> = {
-    pending_payment: 'border-amber-500/30 text-amber-400',
-    paid: 'border-sky-500/30 text-sky-400',
-    linked: 'border-sky-500/30 text-sky-400',
-    queued: 'border-fl-gold/30 text-fl-gold-soft',
-    produced: 'border-emerald-500/30 text-emerald-400',
-    delivered: 'border-emerald-500/30 text-emerald-400',
-    cancelled: 'border-red-500/30 text-red-400',
+    pending_payment: 'border-amber-500/30 text-amber-700',
+    paid: 'border-sky-500/30 text-sky-700',
+    linked: 'border-sky-500/30 text-sky-700',
+    queued: 'border-fl-gold/30 text-fl-gold-ink',
+    produced: 'border-emerald-500/30 text-emerald-700',
+    delivered: 'border-emerald-500/30 text-emerald-700',
+    cancelled: 'border-red-500/30 text-red-700',
 };
 
 const selectedCandidate = ref<Record<number, string>>({});
@@ -114,15 +114,17 @@ function linkParticipant(presaleId: number) {
         <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
 
         <div class="mb-6">
-            <h1 class="flex items-center gap-1.5 text-xl font-bold text-white">
-                <Ticket class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-1.5 text-xl font-bold text-foreground"
+            >
+                <Ticket class="size-5 text-fl-gold-ink" />
                 Preventas de Legacy Plate
                 <HelpPopover
                     title="¿Qué es una preventa?"
                     text="Una preventa es un Legacy Plate comprado antes del evento. Se vincula al corredor cuando su participación oficial está disponible."
                 />
             </h1>
-            <p class="mt-1 text-sm text-white/50">
+            <p class="mt-1 text-sm text-muted-foreground">
                 Compras realizadas antes del evento. Aquí puedes revisar pagos,
                 vincular corredores cuando aparezcan en la lista oficial y
                 preparar placas para producción.
@@ -142,21 +144,21 @@ function linkParticipant(presaleId: number) {
             <div
                 v-for="kpi in kpis"
                 :key="kpi.label"
-                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xl font-bold text-white">{{ kpi.value }}</p>
-                <p class="text-xs text-white/50">{{ kpi.label }}</p>
+                <p class="text-xl font-bold text-foreground">{{ kpi.value }}</p>
+                <p class="text-xs text-muted-foreground">{{ kpi.label }}</p>
             </div>
         </div>
 
         <div
             v-if="selectedEventEditionId"
-            class="overflow-x-auto rounded-xl border border-white/10"
+            class="overflow-x-auto rounded-xl border border-border"
         >
             <table class="w-full text-sm">
                 <thead>
                     <tr
-                        class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                        class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                     >
                         <th class="px-4 py-3 font-medium">Atleta</th>
                         <th class="px-4 py-3 font-medium">Bib</th>
@@ -171,25 +173,25 @@ function linkParticipant(presaleId: number) {
                     <tr
                         v-for="row in presales"
                         :key="row.id"
-                        class="border-b border-white/5 text-white/80 last:border-0"
+                        class="border-b border-border text-foreground last:border-0"
                     >
                         <td class="px-4 py-3">
                             <Link
                                 v-if="row.athlete_id"
                                 :href="`/admin/athletes/${row.athlete_id}`"
-                                class="hover:text-fl-gold-soft hover:underline"
+                                class="hover:text-fl-gold-ink hover:underline"
                             >
                                 {{ row.athlete }}
                             </Link>
-                            <span v-else class="text-white/40"
+                            <span v-else class="text-muted-foreground/80"
                                 >Sin vincular todavía</span
                             >
                         </td>
-                        <td class="px-4 py-3 font-mono text-fl-gold">
+                        <td class="px-4 py-3 font-mono text-fl-gold-ink">
                             {{ row.linked ? `#${row.bib_number}` : '—' }}
                         </td>
                         <td class="px-4 py-3">{{ row.model ?? '—' }}</td>
-                        <td class="px-4 py-3 text-white/50">
+                        <td class="px-4 py-3 text-muted-foreground">
                             {{ row.price_type ?? '—' }}
                         </td>
                         <td class="px-4 py-3">
@@ -197,7 +199,7 @@ function linkParticipant(presaleId: number) {
                                 variant="outline"
                                 :class="
                                     statusClasses[row.status] ??
-                                    'border-white/20 text-white/50'
+                                    'border-foreground/15 text-muted-foreground'
                                 "
                             >
                                 {{ statusLabels[row.status] ?? row.status }}
@@ -208,7 +210,9 @@ function linkParticipant(presaleId: number) {
                                 v-if="row.payment_status"
                                 :status="row.payment_status"
                             />
-                            <span v-else class="text-xs text-white/30"
+                            <span
+                                v-else
+                                class="text-xs text-muted-foreground/80"
                                 >Sin pedido</span
                             >
                         </td>
@@ -222,7 +226,7 @@ function linkParticipant(presaleId: number) {
                                 >
                                     <Select v-model="selectedCandidate[row.id]">
                                         <SelectTrigger
-                                            class="h-8 w-44 border-white/10 bg-fl-graphite/60 text-xs text-white"
+                                            class="h-8 w-44 border-border bg-card/60 text-xs text-foreground"
                                         >
                                             <SelectValue
                                                 placeholder="Vincular a…"
@@ -257,7 +261,7 @@ function linkParticipant(presaleId: number) {
                                 <Link
                                     v-if="row.order_uuid"
                                     :href="`/admin/orders/${row.order_uuid}`"
-                                    class="text-xs font-medium text-fl-gold-soft hover:underline"
+                                    class="text-xs font-medium text-fl-gold-ink hover:underline"
                                 >
                                     {{
                                         row.payment_status === 'paid'
@@ -268,7 +272,7 @@ function linkParticipant(presaleId: number) {
                                 <Link
                                     v-if="row.status === 'linked'"
                                     href="/admin/legacy-plates/production"
-                                    class="text-xs font-medium text-fl-gold-soft hover:underline"
+                                    class="text-xs font-medium text-fl-gold-ink hover:underline"
                                 >
                                     Ir a producción
                                 </Link>
@@ -278,7 +282,7 @@ function linkParticipant(presaleId: number) {
                     <tr v-if="!presales.length">
                         <td
                             colspan="7"
-                            class="px-4 py-10 text-center text-white/30"
+                            class="px-4 py-10 text-center text-muted-foreground/80"
                         >
                             No hay preventas para este evento.
                         </td>
@@ -286,7 +290,7 @@ function linkParticipant(presaleId: number) {
                 </tbody>
             </table>
         </div>
-        <p v-else class="text-sm text-white/30">
+        <p v-else class="text-sm text-muted-foreground/80">
             Selecciona un evento para ver sus preventas.
         </p>
     </div>

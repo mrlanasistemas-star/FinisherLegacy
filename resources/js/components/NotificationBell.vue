@@ -17,7 +17,7 @@ const badge = computed(() => (count.value > 9 ? '9+' : String(count.value)));
 <template>
     <Link
         href="/notifications"
-        class="relative flex size-9 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+        class="relative flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/[0.03] hover:text-foreground"
         aria-label="Notificaciones"
     >
         <Bell class="size-4" />

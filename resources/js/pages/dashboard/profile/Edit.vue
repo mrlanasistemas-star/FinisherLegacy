@@ -96,8 +96,10 @@ const previewProfile = computed(() => ({
     >
         <form class="space-y-6" @submit.prevent="submit">
             <div>
-                <h1 class="text-xl font-bold text-white">Mi Legacy Profile</h1>
-                <p class="mt-1 text-sm text-white/50">
+                <h1 class="text-xl font-bold text-foreground">
+                    Mi Legacy Profile
+                </h1>
+                <p class="mt-1 text-sm text-muted-foreground">
                     Así es como el mundo verá tu colección de logros.
                 </p>
             </div>
@@ -113,7 +115,7 @@ const previewProfile = computed(() => ({
                 <p v-if="form.errors.username" class="text-sm text-red-500">
                     {{ form.errors.username }}
                 </p>
-                <p v-else class="text-xs text-white/40">
+                <p v-else class="text-xs text-muted-foreground/80">
                     Tu perfil público estará en /@{{
                         form.username || 'tunombre'
                     }}
@@ -218,16 +220,16 @@ const previewProfile = computed(() => ({
 
         <div class="lg:sticky lg:top-6 lg:self-start">
             <p
-                class="mb-3 text-sm font-semibold tracking-wide text-white/50 uppercase"
+                class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
             >
                 Vista previa en tiempo real
             </p>
             <div
-                class="rounded-2xl border border-white/5 bg-fl-black p-6 sm:p-8"
+                class="rounded-2xl border border-border bg-background p-6 sm:p-8"
             >
                 <LegacyProfilePreview :profile="previewProfile" />
             </div>
-            <p class="mt-3 text-center text-xs text-white/30">
+            <p class="mt-3 text-center text-xs text-muted-foreground/80">
                 Así se ve tu Legacy Profile mientras escribes.
             </p>
         </div>

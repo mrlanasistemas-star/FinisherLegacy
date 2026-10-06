@@ -19,9 +19,9 @@
         />
         <!-- Legibility wash — same criterion as the Hero: dark enough to
              read the CTA copy over it, still clearly a photograph. -->
-        <div class="absolute inset-0 bg-fl-black/60" />
+        <div class="absolute inset-0 bg-background/60" />
         <div
-            class="absolute inset-0 bg-gradient-to-b from-fl-black/50 via-transparent to-fl-black/70"
+            class="absolute inset-0 bg-gradient-to-b from-background/50 via-transparent to-background/70"
         />
     </div>
 </template>

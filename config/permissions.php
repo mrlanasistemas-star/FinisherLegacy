@@ -214,6 +214,14 @@ return [
             'media.manage' => 'Gestionar media de atletas',
         ],
     ],
+    'content' => [
+        'label' => 'Contenido y comunidad',
+        'icon' => 'Newspaper',
+        'permissions' => [
+            'content.manage' => 'Gestionar contenido corporativo (Nosotros, trayectoria, contacto)',
+            'community.moderate' => 'Moderar la comunidad (reportes y publicaciones)',
+        ],
+    ],
     'access' => [
         'label' => 'Accesos especiales',
         'icon' => 'KeyRound',

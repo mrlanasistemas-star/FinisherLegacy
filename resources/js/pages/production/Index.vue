@@ -171,7 +171,9 @@ function cancelJob(jobId: number) {
     <Head title="Producción" />
 
     <div class="min-h-svh p-4 md:p-6">
-        <h1 class="mb-6 flex items-center gap-1.5 text-xl font-bold text-white">
+        <h1
+            class="mb-6 flex items-center gap-1.5 text-xl font-bold text-foreground"
+        >
             Producción
             <HelpPopover
                 title="Flujo físico de grabado"
@@ -191,13 +193,13 @@ function cancelJob(jobId: number) {
                     'issue',
                 ] as const"
                 :key="key"
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-3"
+                class="rounded-xl border border-border bg-card/30 p-3"
             >
                 <p
-                    class="mb-3 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-white/50 uppercase"
+                    class="mb-3 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
                 >
                     {{ columnTitles[key] }}
-                    <span class="text-white/30"
+                    <span class="text-muted-foreground/80"
                         >({{ columns[key]?.length ?? 0 }})</span
                     >
                 </p>
@@ -206,13 +208,13 @@ function cancelJob(jobId: number) {
                     <div
                         v-for="card in columns[key]"
                         :key="card.id"
-                        class="fl-hover-lift rounded-lg border border-white/10 bg-fl-black/60 p-3 transition-colors hover:border-fl-gold/25"
+                        class="fl-hover-lift rounded-lg border border-border bg-background/60 p-3 transition-colors hover:border-fl-gold/25"
                         :class="{ 'opacity-50': pendingIds.has(card.id) }"
                     >
-                        <p class="truncate text-sm font-medium text-white">
+                        <p class="truncate text-sm font-medium text-foreground">
                             {{ card.athlete_name }}
                         </p>
-                        <p class="truncate text-xs text-white/40">
+                        <p class="truncate text-xs text-muted-foreground/80">
                             {{
                                 [
                                     card.bib_number
@@ -225,13 +227,15 @@ function cancelJob(jobId: number) {
                             }}
                         </p>
                         <div class="mt-1 flex items-center justify-between">
-                            <p class="font-mono text-[10px] text-white/30">
+                            <p
+                                class="font-mono text-[10px] text-muted-foreground/80"
+                            >
                                 {{ card.serial_number }}
                             </p>
                             <a
                                 :href="quickDownloadUrl(card)"
                                 :title="`Descargar ${card.download_format.toUpperCase()} (frente) — respaldo manual`"
-                                class="text-white/30 hover:text-fl-gold"
+                                class="text-muted-foreground/80 hover:text-fl-gold-ink"
                                 target="_blank"
                             >
                                 <Download class="size-3" />
@@ -240,21 +244,21 @@ function cancelJob(jobId: number) {
 
                         <p
                             v-if="key === 'processing' || key === 'issue'"
-                            class="mt-2 text-center text-sm font-bold text-fl-gold"
+                            class="mt-2 text-center text-sm font-bold text-fl-gold-ink"
                         >
                             {{ statusLabels[card.status] ?? card.status }}
                         </p>
 
                         <p
                             v-if="card.device"
-                            class="mt-1 flex items-center justify-center gap-1 text-[10px] text-white/40"
+                            class="mt-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground/80"
                         >
                             <span
                                 class="size-1.5 rounded-full"
                                 :class="
                                     card.device.online
                                         ? 'bg-emerald-400'
-                                        : 'bg-white/30'
+                                        : 'bg-foreground/10'
                                 "
                             />
                             Estación: {{ card.device.name }}
@@ -262,7 +266,7 @@ function cancelJob(jobId: number) {
 
                         <p
                             v-if="card.error_message"
-                            class="mt-1 text-[10px] text-red-400"
+                            class="mt-1 text-[10px] text-red-700"
                         >
                             {{ card.error_message }}
                         </p>
@@ -292,7 +296,7 @@ function cancelJob(jobId: number) {
                             <button
                                 v-if="key === 'pending' || key === 'processing'"
                                 type="button"
-                                class="fl-focus-glow flex items-center justify-center rounded-md border border-white/10 px-2 py-1.5 text-white/40 transition-colors hover:border-red-400/30 hover:text-red-400 disabled:pointer-events-none disabled:opacity-60"
+                                class="fl-focus-glow flex items-center justify-center rounded-md border border-border px-2 py-1.5 text-muted-foreground/80 transition-colors hover:border-red-400/30 hover:text-red-700 disabled:pointer-events-none disabled:opacity-60"
                                 :disabled="pendingIds.has(card.id)"
                                 aria-label="Cancelar"
                                 @click="cancelJob(card.id)"
@@ -307,28 +311,28 @@ function cancelJob(jobId: number) {
                     v-if="!columns[key]?.length"
                     class="flex flex-col items-center gap-1.5 py-8 text-center"
                 >
-                    <PackageOpen class="size-5 text-white/15" />
-                    <p class="text-xs text-white/20">Sin placas aquí</p>
+                    <PackageOpen class="size-5 text-muted-foreground/80" />
+                    <p class="text-xs text-muted-foreground/80">
+                        Sin placas aquí
+                    </p>
                 </div>
             </div>
         </div>
 
         <Dialog v-model:open="qrDialogOpen">
-            <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <DialogContent class="border-border bg-card text-foreground">
                 <DialogHeader>
                     <DialogTitle>Verificar QR</DialogTitle>
                 </DialogHeader>
                 <div class="space-y-2">
-                    <p class="text-xs text-white/50">
+                    <p class="text-xs text-muted-foreground">
                         Escanea o pega el valor leído del QR del reverso de
                         {{ qrDialogCard?.serial_number }}.
                     </p>
                     <Input
                         v-model="qrValue"
                         placeholder="https://finisherlegacy.com/l/FL-XXXXXXX"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                         @keyup.enter="submitQr"
                     />
                 </div>

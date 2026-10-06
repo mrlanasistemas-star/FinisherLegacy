@@ -43,22 +43,26 @@ const items = [
             <Button
                 variant="ghost"
                 size="icon"
-                class="size-8 text-white/50 hover:text-white"
+                class="size-8 text-muted-foreground hover:text-foreground"
                 title="Ayuda"
             >
                 <HelpCircle class="size-4" />
             </Button>
         </SheetTrigger>
-        <SheetContent class="dark border-white/10 bg-fl-graphite text-white">
+        <SheetContent class="border-border bg-card text-foreground">
             <SheetHeader>
-                <SheetTitle class="text-white">¿Qué estoy viendo?</SheetTitle>
+                <SheetTitle class="text-foreground"
+                    >¿Qué estoy viendo?</SheetTitle
+                >
             </SheetHeader>
             <div class="space-y-5 overflow-y-auto px-4 pb-6">
                 <div v-for="item in items" :key="item.q">
-                    <p class="text-sm font-semibold text-fl-gold">
+                    <p class="text-sm font-semibold text-fl-gold-ink">
                         {{ item.q }}
                     </p>
-                    <p class="mt-1 text-sm text-white/60">{{ item.a }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        {{ item.a }}
+                    </p>
                 </div>
             </div>
         </SheetContent>

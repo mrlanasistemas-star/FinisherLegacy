@@ -210,11 +210,11 @@ onBeforeUnmount(() => observer?.disconnect());
         <Transition name="fl-mascot-bubble">
             <div
                 v-if="open"
-                class="relative mb-2 w-[16.5rem] rounded-2xl border border-fl-gold/25 bg-fl-graphite/95 px-4 py-3 pr-7 text-sm leading-relaxed text-white/85 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.8)] backdrop-blur-sm sm:w-72"
+                class="relative mb-2 w-[16.5rem] rounded-2xl border border-fl-gold/25 bg-card/95 px-4 py-3 pr-7 text-sm leading-relaxed text-foreground shadow-[0_20px_50px_-15px_rgba(23,23,20,0.28)] backdrop-blur-sm sm:w-72"
             >
                 <button
                     type="button"
-                    class="fl-focus-glow absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full text-white/40 hover:text-white"
+                    class="fl-focus-glow absolute top-1.5 right-1.5 flex size-5 items-center justify-center rounded-full text-muted-foreground/80 hover:text-foreground"
                     aria-label="Cerrar"
                     @click="close"
                 >
@@ -225,11 +225,11 @@ onBeforeUnmount(() => observer?.disconnect());
                 </Transition>
 
                 <div
-                    class="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5"
+                    class="mt-3 flex items-center justify-between gap-2 border-t border-border pt-2.5"
                 >
                     <button
                         type="button"
-                        class="fl-focus-glow flex items-center gap-0.5 rounded-full px-1.5 py-1 text-xs font-medium text-white/50 transition-colors enabled:hover:text-fl-gold-soft disabled:pointer-events-none disabled:opacity-30"
+                        class="fl-focus-glow flex items-center gap-0.5 rounded-full px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors enabled:hover:text-fl-gold-ink disabled:pointer-events-none disabled:opacity-30"
                         :disabled="activeIndex === null"
                         @click="prev"
                     >
@@ -239,20 +239,20 @@ onBeforeUnmount(() => observer?.disconnect());
 
                     <span
                         v-if="activeIndex !== null"
-                        class="legacy-numeric text-[10px] font-semibold text-white/30"
+                        class="legacy-numeric text-[10px] font-semibold text-muted-foreground/80"
                     >
                         {{ activeIndex + 1 }} / {{ tips.length }}
                     </span>
                     <span
                         v-else
-                        class="text-[10px] font-semibold tracking-wide text-fl-gold-soft/70 uppercase"
+                        class="text-[10px] font-semibold tracking-wide text-fl-gold-ink uppercase"
                     >
                         Guía
                     </span>
 
                     <button
                         type="button"
-                        class="fl-focus-glow flex items-center gap-0.5 rounded-full px-1.5 py-1 text-xs font-medium text-white/50 transition-colors enabled:hover:text-fl-gold-soft disabled:pointer-events-none disabled:opacity-30"
+                        class="fl-focus-glow flex items-center gap-0.5 rounded-full px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors enabled:hover:text-fl-gold-ink disabled:pointer-events-none disabled:opacity-30"
                         :disabled="activeIndex === tips.length - 1"
                         @click="next"
                     >

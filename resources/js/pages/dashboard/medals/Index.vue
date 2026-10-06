@@ -47,8 +47,8 @@ function formatDate(value: string | null): string | null {
     <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-xl font-bold text-white">Mis Medallas</h1>
-                <p class="mt-1 text-sm text-white/50">
+                <h1 class="text-xl font-bold text-foreground">Mis Medallas</h1>
+                <p class="mt-1 text-sm text-muted-foreground">
                     Tu vitrina digital de logros.
                 </p>
             </div>
@@ -56,23 +56,23 @@ function formatDate(value: string | null): string | null {
 
         <!-- Guided "how to add" panel — the QR path skips typing event/time/pace -->
         <div
-            class="mb-8 grid gap-3 rounded-2xl border border-fl-gold/15 bg-gradient-to-br from-fl-graphite/60 to-fl-black p-5 sm:grid-cols-2 sm:p-6"
+            class="mb-8 grid gap-3 rounded-2xl border border-fl-gold/15 bg-gradient-to-br from-card/60 to-background p-5 sm:grid-cols-2 sm:p-6"
         >
             <button
                 type="button"
-                class="fl-hover-lift fl-hover-glow group flex items-center gap-4 rounded-xl border border-fl-gold/30 bg-fl-black/60 p-4 text-left transition-colors"
+                class="fl-hover-lift fl-hover-glow group flex items-center gap-4 rounded-xl border border-fl-gold/30 bg-background/60 p-4 text-left transition-colors"
                 @click="scannerOpen = true"
             >
                 <div
-                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-fl-gold/10 text-fl-gold transition-transform duration-300 group-hover:scale-110"
+                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-fl-gold/10 text-fl-gold-ink transition-transform duration-300 group-hover:scale-110"
                 >
                     <QrCode class="size-6" />
                 </div>
                 <div>
-                    <p class="font-semibold text-white">
+                    <p class="font-semibold text-foreground">
                         Escanear el QR de mi placa
                     </p>
-                    <p class="mt-0.5 text-xs text-white/50">
+                    <p class="mt-0.5 text-xs text-muted-foreground">
                         Más rápido — el evento, tiempo y ritmo se cargan solos.
                     </p>
                 </div>
@@ -80,16 +80,18 @@ function formatDate(value: string | null): string | null {
 
             <Link
                 :href="create()"
-                class="fl-hover-lift group flex items-center gap-4 rounded-xl border border-white/10 bg-fl-black/40 p-4 transition-colors hover:border-white/20"
+                class="fl-hover-lift group flex items-center gap-4 rounded-xl border border-border bg-background/40 p-4 transition-colors hover:border-foreground/15"
             >
                 <div
-                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/5 text-white/60 transition-transform duration-300 group-hover:scale-110"
+                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-foreground/[0.03] text-muted-foreground transition-transform duration-300 group-hover:scale-110"
                 >
                     <PenLine class="size-6" />
                 </div>
                 <div>
-                    <p class="font-semibold text-white">Agregar manualmente</p>
-                    <p class="mt-0.5 text-xs text-white/50">
+                    <p class="font-semibold text-foreground">
+                        Agregar manualmente
+                    </p>
+                    <p class="mt-0.5 text-xs text-muted-foreground">
                         Busca tu evento o captura los datos tú mismo.
                     </p>
                 </div>
@@ -118,10 +120,10 @@ function formatDate(value: string | null): string | null {
                 v-for="medal in medals"
                 :key="medal.id"
                 :href="show(medal.id)"
-                class="fl-hover-lift fl-hover-zoom group overflow-hidden rounded-xl border border-white/10 bg-fl-graphite/40 transition-colors duration-300 hover:border-fl-gold/30"
+                class="fl-hover-lift fl-hover-zoom group overflow-hidden rounded-xl border border-border bg-card/40 transition-colors duration-300 hover:border-fl-gold/30"
             >
                 <div
-                    class="relative aspect-square bg-gradient-to-br from-fl-graphite-light to-fl-black"
+                    class="relative aspect-square bg-gradient-to-br from-muted to-background"
                 >
                     <img
                         v-if="medal.thumbnail_url"
@@ -134,31 +136,31 @@ function formatDate(value: string | null): string | null {
                         v-else
                         class="flex size-full items-center justify-center"
                     >
-                        <Award class="size-8 text-white/15" />
+                        <Award class="size-8 text-muted-foreground/80" />
                     </div>
                     <Badge
                         v-if="medal.visibility === 'private'"
                         variant="outline"
-                        class="absolute top-2 right-2 border-white/15 bg-fl-black/70 text-[10px] text-white/60"
+                        class="absolute top-2 right-2 border-border bg-background/70 text-[10px] text-muted-foreground"
                     >
                         Privada
                     </Badge>
                     <div
-                        class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-fl-black/95 via-fl-black/40 to-transparent px-3 pt-6 pb-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                        class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent px-3 pt-6 pb-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     >
                         <p
                             v-if="formatDate(medal.event_date)"
-                            class="text-sm font-semibold text-fl-gold"
+                            class="text-sm font-semibold text-fl-gold-ink"
                         >
                             {{ formatDate(medal.event_date) }}
                         </p>
                     </div>
                 </div>
                 <div class="p-3">
-                    <p class="truncate text-sm font-medium text-white">
+                    <p class="truncate text-sm font-medium text-foreground">
                         {{ medal.title }}
                     </p>
-                    <p class="text-xs text-white/40">
+                    <p class="text-xs text-muted-foreground/80">
                         {{
                             [medal.distance_label, medal.event_date]
                                 .filter(Boolean)

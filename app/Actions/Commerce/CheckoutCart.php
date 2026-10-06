@@ -8,7 +8,6 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
-use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Exceptions\AthleteRequiredException;
 use App\Exceptions\CartEventMismatchException;
@@ -87,7 +86,7 @@ class CheckoutCart
                 // Time may have passed since this line was added to the
                 // cart — re-checked here too, not just at add-to-cart time
                 // (brief item 34: never trust the frontend/cart state).
-                if (! $variant->active || ! $product->active || $product->status !== ProductStatus::Active) {
+                if (! $variant->active || ! $product->isPurchasable()) {
                     throw new ProductUnavailableException;
                 }
 

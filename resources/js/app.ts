@@ -14,6 +14,7 @@ const PUBLIC_PAGES = new Set([
     'Privacy',
     'Terms',
     'Contact',
+    'About',
 ]);
 const PUBLIC_PREFIXES = [
     'events/',
@@ -21,10 +22,20 @@ const PUBLIC_PREFIXES = [
     'profile/',
     'errors/',
     'store/',
+    'community/',
+    'photos/',
+    'search/',
 ];
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    // "Nosotros | Finisher Legacy"; a title that already carries the brand
+    // (Home: "Finisher Legacy — Tu esfuerzo merece una historia") is kept as is.
+    title: (title) =>
+        !title
+            ? appName
+            : title.includes(appName)
+              ? title
+              : `${title} | ${appName}`,
     layout: (name) => {
         switch (true) {
             case PUBLIC_PAGES.has(name):
@@ -44,11 +55,11 @@ createInertiaApp({
         }
     },
     progress: {
-        color: '#4B5563',
+        color: '#C9A45C',
     },
 });
 
-// This will set light / dark mode on page load...
+// Light is the only theme — clears any stale dark preference...
 initializeTheme();
 
 // This will listen for flash toast data from the server...

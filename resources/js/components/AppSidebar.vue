@@ -68,8 +68,20 @@ function isItemActive(item: { href: string; exact?: boolean }): boolean {
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link href="/dashboard">
-                            <FinisherLegacyLogo variant="mark" size="sm" />
+                        <Link
+                            href="/"
+                            aria-label="Finisher Legacy — Ir al sitio"
+                        >
+                            <FinisherLegacyLogo
+                                variant="wordmark"
+                                size="xs"
+                                class="group-data-[collapsible=icon]:hidden"
+                            />
+                            <FinisherLegacyLogo
+                                variant="mark"
+                                size="xs"
+                                class="hidden group-data-[collapsible=icon]:block"
+                            />
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

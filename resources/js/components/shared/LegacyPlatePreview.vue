@@ -17,7 +17,7 @@ defineProps<{
 
 <template>
     <div
-        class="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-fl-graphite via-fl-black to-fl-graphite p-8 shadow-2xl"
+        class="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-background to-card p-8 shadow-2xl"
     >
         <div
             class="absolute inset-0 opacity-[0.06]"
@@ -30,45 +30,43 @@ defineProps<{
             "
         />
         <div class="relative">
-            <p
-                class="text-[10px] tracking-[0.35em] text-fl-gold-soft/80 uppercase"
-            >
+            <p class="text-[10px] tracking-[0.35em] text-fl-gold-ink uppercase">
                 Finisher Legacy
             </p>
-            <p class="mt-4 text-3xl font-black tracking-wide text-white">
+            <p class="mt-4 text-3xl font-black tracking-wide text-foreground">
                 {{ engravingDisplayName ?? '—' }}
             </p>
-            <p class="mt-2 text-sm text-white/60">
+            <p class="mt-2 text-sm text-muted-foreground">
                 {{ eventName ?? 'Evento no asignado'
                 }}<span v-if="raceName"> · {{ raceName }}</span>
             </p>
 
             <div
-                class="mt-6 flex flex-wrap gap-6 border-t border-white/10 pt-4 text-sm"
+                class="mt-6 flex flex-wrap gap-6 border-t border-border pt-4 text-sm"
             >
                 <div v-if="officialTime">
                     <p
-                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                        class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                     >
                         Tiempo
                     </p>
-                    <p class="text-white">{{ officialTime }}</p>
+                    <p class="text-foreground">{{ officialTime }}</p>
                 </div>
                 <div v-if="pace">
                     <p
-                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                        class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                     >
                         Ritmo
                     </p>
-                    <p class="text-white">{{ pace }}</p>
+                    <p class="text-foreground">{{ pace }}</p>
                 </div>
                 <div v-if="serialNumber">
                     <p
-                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                        class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                     >
                         Folio
                     </p>
-                    <p class="text-white">{{ serialNumber }}</p>
+                    <p class="text-foreground">{{ serialNumber }}</p>
                 </div>
             </div>
         </div>

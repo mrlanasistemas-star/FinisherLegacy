@@ -76,14 +76,14 @@ function removeMedia(media: Media) {
         <div class="max-w-3xl">
             <Link
                 href="/dashboard/my-events"
-                class="text-xs tracking-wide text-white/40 uppercase hover:text-fl-gold-soft"
+                class="text-xs tracking-wide text-muted-foreground/80 uppercase hover:text-fl-gold-ink"
                 >← Mis eventos</Link
             >
 
-            <h1 class="mt-4 text-2xl font-black text-white">
+            <h1 class="mt-4 text-2xl font-black text-foreground">
                 {{ participant.event ?? 'Evento' }}
             </h1>
-            <p class="mt-1 text-sm text-white/50">
+            <p class="mt-1 text-sm text-muted-foreground">
                 <span v-if="participant.race">{{ participant.race }} · </span>
                 <span v-if="participant.event_date">{{
                     participant.event_date
@@ -95,35 +95,35 @@ function removeMedia(media: Media) {
 
             <div
                 v-if="result"
-                class="mt-8 grid grid-cols-3 gap-4 rounded-2xl border border-white/10 bg-fl-graphite/20 p-5"
+                class="mt-8 grid grid-cols-3 gap-4 rounded-2xl border border-border bg-card/20 p-5"
             >
                 <div>
                     <p
-                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                        class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                     >
                         Tiempo oficial
                     </p>
-                    <p class="mt-1 text-lg text-white">
+                    <p class="mt-1 text-lg text-foreground">
                         {{ result.official_time ?? '—' }}
                     </p>
                 </div>
                 <div>
                     <p
-                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                        class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                     >
                         Ritmo
                     </p>
-                    <p class="mt-1 text-lg text-white">
+                    <p class="mt-1 text-lg text-foreground">
                         {{ result.pace ?? '—' }}
                     </p>
                 </div>
                 <div>
                     <p
-                        class="text-[10px] tracking-widest text-white/30 uppercase"
+                        class="text-[10px] tracking-widest text-muted-foreground/80 uppercase"
                     >
                         Posición
                     </p>
-                    <p class="mt-1 text-lg text-white">
+                    <p class="mt-1 text-lg text-foreground">
                         {{
                             result.overall_position
                                 ? `#${result.overall_position}`
@@ -135,25 +135,27 @@ function removeMedia(media: Media) {
 
             <div
                 v-if="result?.splits.length"
-                class="mt-4 divide-y divide-white/10 rounded-2xl border border-white/10 bg-fl-graphite/10"
+                class="mt-4 divide-y divide-border rounded-2xl border border-border bg-card/10"
             >
                 <div
                     v-for="(split, index) in result.splits"
                     :key="index"
                     class="flex items-center justify-between px-5 py-3 text-sm"
                 >
-                    <span class="text-white/60">{{
+                    <span class="text-muted-foreground">{{
                         split.label ??
                         `${split.distance_value ?? ''} ${split.distance_unit ?? ''}`
                     }}</span>
-                    <span class="text-white">{{
+                    <span class="text-foreground">{{
                         split.elapsed_time ?? split.segment_time ?? '—'
                     }}</span>
                 </div>
             </div>
 
             <div v-if="plates.length" class="mt-8">
-                <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+                <h2
+                    class="mb-3 text-sm tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Tu Legacy Plate
                 </h2>
                 <LegacyPlatePreview
@@ -169,16 +171,21 @@ function removeMedia(media: Media) {
             </div>
 
             <div v-if="medals.length" class="mt-8 space-y-3">
-                <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+                <h2
+                    class="mb-3 text-sm tracking-wide text-muted-foreground/80 uppercase"
+                >
                     Medallas
                 </h2>
                 <div
                     v-for="medal in medals"
                     :key="medal.id"
-                    class="rounded-xl border border-white/10 bg-fl-graphite/20 p-4"
+                    class="rounded-xl border border-border bg-card/20 p-4"
                 >
-                    <p class="font-medium text-white">{{ medal.title }}</p>
-                    <p v-if="medal.story" class="mt-1 text-sm text-white/50">
+                    <p class="font-medium text-foreground">{{ medal.title }}</p>
+                    <p
+                        v-if="medal.story"
+                        class="mt-1 text-sm text-muted-foreground"
+                    >
                         {{ medal.story }}
                     </p>
                 </div>
@@ -186,7 +193,9 @@ function removeMedia(media: Media) {
         </div>
 
         <div class="mt-8">
-            <h2 class="mb-3 text-sm tracking-wide text-white/40 uppercase">
+            <h2
+                class="mb-3 text-sm tracking-wide text-muted-foreground/80 uppercase"
+            >
                 Fotos y video
             </h2>
 
@@ -205,7 +214,7 @@ function removeMedia(media: Media) {
                 <div
                     v-for="item in media"
                     :key="item.uuid"
-                    class="group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-fl-black"
+                    class="group relative aspect-square overflow-hidden rounded-xl border border-border bg-background"
                 >
                     <img
                         v-if="item.type === 'image'"
@@ -219,24 +228,24 @@ function removeMedia(media: Media) {
                         muted
                     />
                     <div
-                        class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-fl-black/80 px-2 py-1.5 text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                        class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-background/80 px-2 py-1.5 text-xs opacity-0 transition-opacity group-hover:opacity-100"
                     >
                         <button
                             type="button"
-                            class="text-white/60 hover:text-white"
+                            class="text-muted-foreground hover:text-foreground"
                             @click="toggleVisibility(item)"
                         >
                             {{ item.is_public ? 'Pública' : 'Privada' }}
                         </button>
                         <button
                             type="button"
-                            class="text-red-400 hover:text-red-300"
+                            class="text-red-700 hover:text-red-700"
                             @click="removeMedia(item)"
                         >
                             Eliminar
                         </button>
                     </div>
-                    <span class="absolute top-2 right-2 text-white/50">
+                    <span class="absolute top-2 right-2 text-muted-foreground">
                         <VideoIcon
                             v-if="item.type === 'video'"
                             class="size-4"

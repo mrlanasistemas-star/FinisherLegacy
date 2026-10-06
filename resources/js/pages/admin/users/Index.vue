@@ -84,10 +84,10 @@ const statusOptions = [
 ];
 
 const statusBadgeClass: Record<string, string> = {
-    active: 'border-emerald-500/30 text-emerald-400',
-    suspended: 'border-amber-500/30 text-amber-400',
-    blocked: 'border-red-500/30 text-red-400',
-    pending: 'border-white/20 text-white/50',
+    active: 'border-emerald-500/30 text-emerald-700',
+    suspended: 'border-amber-500/30 text-amber-700',
+    blocked: 'border-red-500/30 text-red-700',
+    pending: 'border-foreground/15 text-muted-foreground',
 };
 
 function applyFilter(key: 'status' | 'role', value: string) {
@@ -234,7 +234,7 @@ function saveReset() {
 
     <div class="p-4 md:p-8">
         <div class="mb-1 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-white">Usuarios</h1>
+            <h1 class="text-xl font-bold text-foreground">Usuarios</h1>
             <Button
                 as-child
                 class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
@@ -245,7 +245,7 @@ function saveReset() {
                 </Link>
             </Button>
         </div>
-        <p class="mb-6 text-sm text-white/50">
+        <p class="mb-6 text-sm text-muted-foreground">
             Busca, filtra y administra el acceso de cada cuenta. No se eliminan
             usuarios desde aquí — solo se suspende o bloquea el acceso.
         </p>
@@ -258,7 +258,7 @@ function saveReset() {
                 "
             >
                 <SelectTrigger
-                    class="w-44 border-white/10 bg-fl-graphite/60 text-white"
+                    class="w-44 border-border bg-card/60 text-foreground"
                 >
                     <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
@@ -281,7 +281,7 @@ function saveReset() {
                 "
             >
                 <SelectTrigger
-                    class="w-44 border-white/10 bg-fl-graphite/60 text-white"
+                    class="w-44 border-border bg-card/60 text-foreground"
                 >
                     <SelectValue placeholder="Todos los roles" />
                 </SelectTrigger>
@@ -308,11 +308,11 @@ function saveReset() {
             <template #cell-legacy_id="{ row }">
                 <span
                     v-if="row.legacy_id"
-                    class="font-mono text-xs text-fl-gold"
+                    class="font-mono text-xs text-fl-gold-ink"
                 >
                     {{ row.legacy_id }}
                 </span>
-                <span v-else class="text-xs text-white/30">—</span>
+                <span v-else class="text-xs text-muted-foreground/80">—</span>
             </template>
             <template #cell-status="{ row }">
                 <Select
@@ -323,7 +323,7 @@ function saveReset() {
                     "
                 >
                     <SelectTrigger
-                        class="h-8 w-36 border-white/10 bg-transparent text-xs disabled:opacity-40"
+                        class="h-8 w-36 border-border bg-transparent text-xs disabled:opacity-40"
                         :class="statusBadgeClass[row.status as string]"
                     >
                         <SelectValue />
@@ -344,7 +344,7 @@ function saveReset() {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                        class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                         @click="openEditDialog(row as unknown as UserRow)"
                     >
                         <Pencil class="size-3.5" />
@@ -353,7 +353,7 @@ function saveReset() {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                        class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                         @click="openRolesDialog(row as unknown as UserRow)"
                     >
                         <ShieldCheck class="size-3.5" />
@@ -362,7 +362,7 @@ function saveReset() {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10 hover:text-white"
+                        class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
                         @click="openResetDialog(row as unknown as UserRow)"
                     >
                         <KeyRound class="size-3.5" />
@@ -373,9 +373,7 @@ function saveReset() {
         </AdminTable>
 
         <Dialog v-model:open="rolesDialogOpen">
-            <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <DialogContent class="border-border bg-card text-foreground">
                 <DialogHeader>
                     <DialogTitle
                         >Roles de {{ rolesDialogUser?.name }}</DialogTitle
@@ -385,7 +383,7 @@ function saveReset() {
                     <label
                         v-for="role in assignableRoles"
                         :key="role"
-                        class="flex items-center gap-2.5 text-sm text-white/80"
+                        class="flex items-center gap-2.5 text-sm text-foreground"
                     >
                         <Checkbox
                             :model-value="selectedRoles.includes(role)"
@@ -395,7 +393,7 @@ function saveReset() {
                     </label>
                     <p
                         v-if="!currentUserIsSuperAdmin"
-                        class="text-xs text-white/30"
+                        class="text-xs text-muted-foreground/80"
                     >
                         Solo un super administrador puede otorgar el rol de
                         super administrador.
@@ -414,7 +412,7 @@ function saveReset() {
 
         <Dialog v-model:open="editDialogOpen">
             <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white sm:max-w-xl"
+                class="border-border bg-card text-foreground sm:max-w-xl"
             >
                 <DialogHeader>
                     <DialogTitle>Editar usuario</DialogTitle>
@@ -425,14 +423,14 @@ function saveReset() {
                             <Label>Nombre</Label>
                             <Input
                                 v-model="editForm.first_name"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             />
                         </div>
                         <div class="grid gap-2">
                             <Label>Apellidos</Label>
                             <Input
                                 v-model="editForm.last_name"
-                                class="border-white/10 bg-fl-black text-white"
+                                class="border-border bg-background text-foreground"
                             />
                         </div>
                     </div>
@@ -441,14 +439,14 @@ function saveReset() {
                         <Input
                             v-model="editForm.email"
                             type="email"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                         />
                     </div>
                     <div class="grid gap-2">
                         <Label>Teléfono (opcional)</Label>
                         <Input
                             v-model="editForm.phone"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                         />
                     </div>
                 </div>
@@ -465,9 +463,7 @@ function saveReset() {
         </Dialog>
 
         <Dialog v-model:open="resetDialogOpen">
-            <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <DialogContent class="border-border bg-card text-foreground">
                 <DialogHeader>
                     <DialogTitle
                         >Restablecer contraseña de
@@ -484,7 +480,7 @@ function saveReset() {
                         <Input
                             v-model="resetPasswordConfirmation"
                             type="password"
-                            class="border-white/10 bg-fl-black text-white"
+                            class="border-border bg-background text-foreground"
                         />
                     </div>
                 </div>

@@ -155,7 +155,7 @@ function addImage(type: 'image' | 'logo') {
     <div class="space-y-4 p-3">
         <div>
             <p
-                class="mb-2 px-1 text-xs font-medium tracking-wide text-white/40 uppercase"
+                class="mb-2 px-1 text-xs font-medium tracking-wide text-muted-foreground/80 uppercase"
             >
                 Texto
             </p>
@@ -165,7 +165,7 @@ function addImage(type: 'image' | 'logo') {
                         <Button
                             variant="outline"
                             size="sm"
-                            class="border-white/10 text-white/80 hover:bg-white/10"
+                            class="border-border text-foreground hover:bg-foreground/5"
                             @click="addStaticText"
                         >
                             <Type class="size-4" />
@@ -181,7 +181,7 @@ function addImage(type: 'image' | 'logo') {
                         <Button
                             variant="outline"
                             size="sm"
-                            class="border-white/10 text-white/80 hover:bg-white/10"
+                            class="border-border text-foreground hover:bg-foreground/5"
                             @click="addSerial"
                         >
                             <AlignLeft class="size-4" />
@@ -197,7 +197,7 @@ function addImage(type: 'image' | 'logo') {
             <div class="mt-2 grid gap-1.5">
                 <Select @update:model-value="(v) => addDynamicField(String(v))">
                     <SelectTrigger
-                        class="w-full border-white/10 bg-fl-black text-white"
+                        class="w-full border-border bg-background text-foreground"
                     >
                         <SelectValue placeholder="+ Campo dinámico…" />
                     </SelectTrigger>
@@ -216,7 +216,7 @@ function addImage(type: 'image' | 'logo') {
 
         <div>
             <p
-                class="mb-2 px-1 text-xs font-medium tracking-wide text-white/40 uppercase"
+                class="mb-2 px-1 text-xs font-medium tracking-wide text-muted-foreground/80 uppercase"
             >
                 Código
             </p>
@@ -225,7 +225,7 @@ function addImage(type: 'image' | 'logo') {
                     <Button
                         variant="outline"
                         size="sm"
-                        class="w-full border-white/10 text-white/80 hover:bg-white/10"
+                        class="w-full border-border text-foreground hover:bg-foreground/5"
                         @click="addQr"
                     >
                         <QrCode class="size-4" />
@@ -241,7 +241,7 @@ function addImage(type: 'image' | 'logo') {
 
         <div>
             <p
-                class="mb-2 px-1 text-xs font-medium tracking-wide text-white/40 uppercase"
+                class="mb-2 px-1 text-xs font-medium tracking-wide text-muted-foreground/80 uppercase"
             >
                 Formas
             </p>
@@ -249,7 +249,7 @@ function addImage(type: 'image' | 'logo') {
                 <Button
                     variant="outline"
                     size="sm"
-                    class="border-white/10 text-white/80 hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     @click="addLine"
                 >
                     <Minus class="size-4" />
@@ -258,7 +258,7 @@ function addImage(type: 'image' | 'logo') {
                 <Button
                     variant="outline"
                     size="sm"
-                    class="border-white/10 text-white/80 hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     @click="addRect"
                 >
                     <Square class="size-4" />
@@ -269,7 +269,7 @@ function addImage(type: 'image' | 'logo') {
 
         <div>
             <p
-                class="mb-2 px-1 text-xs font-medium tracking-wide text-white/40 uppercase"
+                class="mb-2 px-1 text-xs font-medium tracking-wide text-muted-foreground/80 uppercase"
             >
                 Imagen
             </p>
@@ -277,7 +277,7 @@ function addImage(type: 'image' | 'logo') {
                 <Button
                     variant="outline"
                     size="sm"
-                    class="border-white/10 text-white/80 hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     @click="addImage('logo')"
                 >
                     <Image class="size-4" />
@@ -286,7 +286,7 @@ function addImage(type: 'image' | 'logo') {
                 <Button
                     variant="outline"
                     size="sm"
-                    class="border-white/10 text-white/80 hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     @click="addImage('image')"
                 >
                     <Braces class="size-4" />

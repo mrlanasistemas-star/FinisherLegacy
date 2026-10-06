@@ -55,17 +55,17 @@ function submit() {
     <div class="p-4 md:p-8">
         <Link
             href="/admin/roles"
-            class="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white"
+            class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-4" /> Volver a roles
         </Link>
 
         <div class="mt-4 mb-6 flex items-center gap-3">
-            <h1 class="text-xl font-bold text-white">{{ role.label }}</h1>
+            <h1 class="text-xl font-bold text-foreground">{{ role.label }}</h1>
             <Badge
                 v-if="role.is_system"
                 variant="outline"
-                class="border-fl-gold/30 text-fl-gold"
+                class="border-fl-gold/30 text-fl-gold-ink"
             >
                 <ShieldCheck class="mr-1 size-3" />
                 Rol del sistema
@@ -74,9 +74,11 @@ function submit() {
 
         <div
             v-if="role.is_super_admin"
-            class="mb-6 rounded-lg border border-fl-gold/20 bg-fl-gold/5 p-4 text-sm text-white/70"
+            class="mb-6 rounded-lg border border-fl-gold/20 bg-fl-gold/5 p-4 text-sm text-muted-foreground"
         >
-            <p class="font-semibold text-fl-gold">Acceso total al sistema.</p>
+            <p class="font-semibold text-fl-gold-ink">
+                Acceso total al sistema.
+            </p>
             <p class="mt-1">
                 Super Admin no se edita — siempre tiene todos los permisos, sin
                 excepción.
@@ -91,7 +93,7 @@ function submit() {
                         v-model="label"
                         required
                         :disabled="role.is_super_admin"
-                        class="border-white/10 bg-fl-black text-white disabled:opacity-50"
+                        class="border-border bg-background text-foreground disabled:opacity-50"
                     />
                 </div>
                 <div class="grid gap-2">
@@ -99,7 +101,7 @@ function submit() {
                     <Textarea
                         v-model="description"
                         :disabled="role.is_super_admin"
-                        class="h-full min-h-24 border-white/10 bg-fl-black text-white disabled:opacity-50"
+                        class="h-full min-h-24 border-border bg-background text-foreground disabled:opacity-50"
                     />
                 </div>
             </div>

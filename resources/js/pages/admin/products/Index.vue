@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Package, Plus } from '@lucide/vue';
 import { ref } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
+import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { CATALOG_AREA_NAV } from '@/config/areaNav';
 import { productStatus, statusClass, statusLabel } from '@/lib/statusLabels';
 
 type ProductRow = {
@@ -78,9 +80,13 @@ function submit() {
     <Head title="Productos" />
 
     <div class="p-4 md:p-8">
+        <SecondaryNav :items="CATALOG_AREA_NAV" />
+
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="flex items-center gap-2 text-xl font-bold text-white">
-                <Package class="size-5 text-fl-gold" />
+            <h1
+                class="flex items-center gap-2 text-xl font-bold text-foreground"
+            >
+                <Package class="size-5 text-fl-gold-ink" />
                 Productos
             </h1>
             <Button
@@ -111,7 +117,7 @@ function submit() {
                     as-child
                     size="sm"
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                 >
                     <Link
                         :href="`/admin/products/${(row as unknown as ProductRow).id}`"
@@ -123,7 +129,7 @@ function submit() {
 
         <Dialog v-model:open="dialogOpen">
             <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white sm:max-w-lg"
+                class="border-border bg-card text-foreground sm:max-w-lg"
             >
                 <DialogHeader>
                     <DialogTitle>Nuevo producto</DialogTitle>
@@ -133,7 +139,7 @@ function submit() {
                         <Label>Nombre</Label>
                         <Input
                             v-model="form.name"
-                            class="bg-fl-black"
+                            class="bg-background"
                             required
                         />
                     </div>
@@ -142,7 +148,7 @@ function submit() {
                             <Label>Tipo</Label>
                             <Select v-model="form.type">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -166,7 +172,7 @@ function submit() {
                             <Label>Categoría</Label>
                             <Select v-model="form.category_id">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue placeholder="Sin categoría" />
                                 </SelectTrigger>
@@ -187,7 +193,7 @@ function submit() {
                         <input
                             type="file"
                             accept="image/*"
-                            class="text-sm text-white/60"
+                            class="text-sm text-muted-foreground"
                             @change="
                                 form.image =
                                     ($event.target as HTMLInputElement)

@@ -46,15 +46,15 @@ function markAllRead() {
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1
-                    class="flex items-center gap-2 text-xl font-bold text-white"
+                    class="flex items-center gap-2 text-xl font-bold text-foreground"
                 >
-                    <Bell class="size-5 text-fl-gold" />
+                    <Bell class="size-5 text-fl-gold-ink" />
                     Notificaciones
                 </h1>
             </div>
             <Button
                 variant="outline"
-                class="border-white/10 text-white/70 hover:border-fl-gold/30 hover:text-fl-gold"
+                class="border-border text-muted-foreground hover:border-fl-gold/30 hover:text-fl-gold-ink"
                 @click="markAllRead"
             >
                 <Check class="size-4" />
@@ -62,7 +62,7 @@ function markAllRead() {
             </Button>
         </div>
 
-        <div class="divide-y divide-white/5 rounded-xl border border-white/10">
+        <div class="divide-y divide-border rounded-xl border border-border">
             <div
                 v-for="n in notifications.data"
                 :key="n.id"
@@ -70,15 +70,17 @@ function markAllRead() {
                 :class="n.read_at ? '' : 'bg-fl-gold/5'"
             >
                 <div class="min-w-0">
-                    <p class="font-medium text-white">{{ n.title }}</p>
-                    <p class="mt-1 text-sm text-white/60">{{ n.message }}</p>
-                    <p class="mt-2 text-xs text-white/30">
+                    <p class="font-medium text-foreground">{{ n.title }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        {{ n.message }}
+                    </p>
+                    <p class="mt-2 text-xs text-muted-foreground/80">
                         {{ n.created_at }}
                         <span v-if="n.action_url">
                             ·
                             <Link
                                 :href="n.action_url"
-                                class="text-fl-gold-soft hover:underline"
+                                class="text-fl-gold-ink hover:underline"
                                 >Ver</Link
                             >
                         </span>
@@ -88,7 +90,7 @@ function markAllRead() {
                     v-if="!n.read_at"
                     size="sm"
                     variant="ghost"
-                    class="shrink-0 text-white/50 hover:text-fl-gold"
+                    class="shrink-0 text-muted-foreground hover:text-fl-gold-ink"
                     @click="markRead(n.id)"
                 >
                     Marcar leída
@@ -96,9 +98,9 @@ function markAllRead() {
             </div>
             <div
                 v-if="!notifications.data.length"
-                class="flex flex-col items-center gap-3 px-4 py-16 text-center text-white/30"
+                class="flex flex-col items-center gap-3 px-4 py-16 text-center text-muted-foreground/80"
             >
-                <Bell class="size-10 text-white/10" />
+                <Bell class="size-10 text-muted-foreground/80" />
                 <p>Sin notificaciones todavía.</p>
             </div>
         </div>

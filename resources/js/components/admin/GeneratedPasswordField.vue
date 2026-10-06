@@ -41,11 +41,11 @@ async function copy() {
                 v-model="password"
                 :type="visible ? 'text' : 'password'"
                 autocomplete="new-password"
-                class="border-white/10 bg-fl-black pr-10 text-white"
+                class="border-border bg-background pr-10 text-foreground"
             />
             <button
                 type="button"
-                class="absolute top-1/2 right-2.5 -translate-y-1/2 text-white/40 hover:text-white"
+                class="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted-foreground/80 hover:text-foreground"
                 tabindex="-1"
                 @click="visible = !visible"
             >
@@ -57,7 +57,7 @@ async function copy() {
             type="button"
             variant="outline"
             size="icon"
-            class="border-white/15 text-white hover:bg-white/10"
+            class="border-border text-foreground hover:bg-foreground/5"
             title="Generar contraseña"
             @click="generate"
         >
@@ -67,11 +67,11 @@ async function copy() {
             type="button"
             variant="outline"
             size="icon"
-            class="border-white/15 text-white hover:bg-white/10"
+            class="border-border text-foreground hover:bg-foreground/5"
             title="Copiar"
             @click="copy"
         >
-            <Check v-if="copied" class="size-4 text-emerald-400" />
+            <Check v-if="copied" class="size-4 text-emerald-700" />
             <Copy v-else class="size-4" />
         </Button>
     </div>

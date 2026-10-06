@@ -36,12 +36,14 @@ function placeOrder() {
 <template>
     <Head title="Checkout — Finisher Legacy" />
 
-    <div class="min-h-screen bg-fl-black">
+    <div class="min-h-screen bg-background">
         <div class="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 xl:px-8">
-            <h1 class="text-2xl font-black text-white">Confirmar pedido</h1>
+            <h1 class="text-2xl font-black text-foreground">
+                Confirmar pedido
+            </h1>
 
             <div
-                class="mt-8 divide-y divide-white/10 rounded-2xl border border-white/10 bg-fl-graphite/20"
+                class="mt-8 divide-y divide-border rounded-2xl border border-border bg-card/20"
             >
                 <div
                     v-for="(item, index) in items"
@@ -49,12 +51,12 @@ function placeOrder() {
                     class="flex items-center justify-between px-5 py-4"
                 >
                     <div>
-                        <p class="text-white">{{ item.product_name }}</p>
-                        <p class="text-sm text-white/40">
+                        <p class="text-foreground">{{ item.product_name }}</p>
+                        <p class="text-sm text-muted-foreground/80">
                             {{ item.variant_name }} · x{{ item.quantity }}
                         </p>
                     </div>
-                    <p class="text-white/70">
+                    <p class="text-muted-foreground">
                         <Money
                             v-if="item.price_available"
                             :minor="item.line_total_minor as number"
@@ -62,7 +64,7 @@ function placeOrder() {
                         />
                         <span
                             v-else
-                            class="flex items-center gap-1 text-xs text-amber-400"
+                            class="flex items-center gap-1 text-xs text-amber-700"
                         >
                             <TriangleAlert class="size-3.5" />
                             Sin precio disponible
@@ -70,7 +72,7 @@ function placeOrder() {
                     </p>
                 </div>
                 <div
-                    class="flex items-center justify-between px-5 py-4 text-sm text-white/70"
+                    class="flex items-center justify-between px-5 py-4 text-sm text-muted-foreground"
                 >
                     <p>Subtotal</p>
                     <p>
@@ -79,7 +81,7 @@ function placeOrder() {
                 </div>
                 <div
                     v-if="discount_minor > 0"
-                    class="flex items-center justify-between px-5 py-4 text-sm text-emerald-400"
+                    class="flex items-center justify-between px-5 py-4 text-sm text-emerald-700"
                 >
                     <p>Descuento{{ coupon ? ` (${coupon.code})` : '' }}</p>
                     <p>
@@ -87,21 +89,21 @@ function placeOrder() {
                     </p>
                 </div>
                 <div class="flex items-center justify-between px-5 py-4">
-                    <p class="font-medium text-white">Total</p>
-                    <p class="text-lg font-semibold text-fl-gold-soft">
+                    <p class="font-medium text-foreground">Total</p>
+                    <p class="text-lg font-semibold text-fl-gold-ink">
                         <Money :minor="total_minor" :currency="currency" />
                     </p>
                 </div>
             </div>
 
-            <p class="mt-4 text-xs text-white/40">
+            <p class="mt-4 text-xs text-muted-foreground/80">
                 El pago se resuelve de forma segura al confirmar el pedido; el
                 monto siempre lo determina el servidor.
             </p>
 
             <p
                 v-if="hasUnavailablePrice"
-                class="mt-4 flex items-center gap-1.5 text-xs text-amber-400"
+                class="mt-4 flex items-center gap-1.5 text-xs text-amber-700"
             >
                 <TriangleAlert class="size-3.5" />
                 Vuelve al carrito y quita los productos sin precio disponible

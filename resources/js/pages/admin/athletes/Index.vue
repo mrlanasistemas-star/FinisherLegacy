@@ -32,14 +32,16 @@ const columns = [
     <Head title="Atletas" />
 
     <div class="p-4 md:p-8">
-        <h1 class="mb-1 flex items-center gap-1.5 text-xl font-bold text-white">
+        <h1
+            class="mb-1 flex items-center gap-1.5 text-xl font-bold text-foreground"
+        >
             Atletas
             <HelpPopover
                 title="Identidad canónica"
                 text="Un Athlete es una persona real, independiente de si tiene cuenta o no. Un mismo Athlete puede tener varias participaciones (dorsales) en distintos eventos — el dorsal identifica una participación, nunca a la persona."
             />
         </h1>
-        <p class="mb-6 text-sm text-white/50">
+        <p class="mb-6 text-sm text-muted-foreground">
             Busca por nombre, email o Legacy ID. La columna "Eventos" cuenta
             participaciones distintas — un mismo atleta puede aparecer varias
             veces con dorsales diferentes.
@@ -54,7 +56,7 @@ const columns = [
             <template #cell-full_name="{ row }">
                 <Link
                     :href="`/admin/athletes/${row.id}`"
-                    class="text-fl-gold hover:underline"
+                    class="text-fl-gold-ink hover:underline"
                 >
                     {{ row.full_name }}
                 </Link>

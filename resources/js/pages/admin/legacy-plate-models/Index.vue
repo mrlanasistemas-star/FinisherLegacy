@@ -67,12 +67,12 @@ function submit() {
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1
-                    class="flex items-center gap-2 text-xl font-bold text-white"
+                    class="flex items-center gap-2 text-xl font-bold text-foreground"
                 >
-                    <LayoutTemplate class="size-5 text-fl-gold" />
+                    <LayoutTemplate class="size-5 text-fl-gold-ink" />
                     Modelos de Legacy Plate
                 </h1>
-                <p class="mt-1 text-sm text-white/50">
+                <p class="mt-1 text-sm text-muted-foreground">
                     La pieza física ya viene fabricada — aquí solo se define
                     dónde va el grabado dinámico.
                 </p>
@@ -91,10 +91,10 @@ function submit() {
                 v-for="model in models"
                 :key="model.id"
                 :href="`/admin/legacy-plate-models/${model.id}`"
-                class="group overflow-hidden rounded-xl border border-white/10 bg-fl-graphite/30 transition hover:border-fl-gold/40"
+                class="group overflow-hidden rounded-xl border border-border bg-card/30 transition hover:border-fl-gold/40"
             >
                 <div
-                    class="flex aspect-[5/2] items-center justify-center bg-fl-black/60"
+                    class="flex aspect-[5/2] items-center justify-center bg-background/60"
                 >
                     <img
                         v-if="model.preview_image_url"
@@ -102,12 +102,15 @@ function submit() {
                         alt=""
                         class="size-full object-cover"
                     />
-                    <LayoutTemplate v-else class="size-8 text-white/15" />
+                    <LayoutTemplate
+                        v-else
+                        class="size-8 text-muted-foreground/80"
+                    />
                 </div>
                 <div class="p-4">
                     <div class="flex items-center justify-between">
                         <h3
-                            class="font-semibold text-white group-hover:text-fl-gold"
+                            class="font-semibold text-foreground group-hover:text-fl-gold-ink"
                         >
                             {{ model.name }}
                         </h3>
@@ -115,19 +118,19 @@ function submit() {
                             variant="outline"
                             :class="
                                 model.active
-                                    ? 'border-emerald-500/30 text-emerald-400'
-                                    : 'border-white/20 text-white/40'
+                                    ? 'border-emerald-500/30 text-emerald-700'
+                                    : 'border-foreground/15 text-muted-foreground/80'
                             "
                         >
                             {{ model.active ? 'Activo' : 'Inactivo' }}
                         </Badge>
                     </div>
-                    <p class="mt-1 text-xs text-white/40">
+                    <p class="mt-1 text-xs text-muted-foreground/80">
                         {{ model.sku ?? 'Sin SKU' }} · {{ model.width_mm }}×{{
                             model.height_mm
                         }}mm
                     </p>
-                    <p class="mt-2 text-xs text-white/30">
+                    <p class="mt-2 text-xs text-muted-foreground/80">
                         {{ model.plates_count }} Legacy Plates producidas
                     </p>
                 </div>
@@ -136,7 +139,7 @@ function submit() {
 
         <Dialog v-model:open="dialogOpen">
             <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white sm:max-w-lg"
+                class="border-border bg-card text-foreground sm:max-w-lg"
             >
                 <DialogHeader>
                     <DialogTitle>Nuevo modelo</DialogTitle>
@@ -146,19 +149,19 @@ function submit() {
                         <Label>Nombre</Label>
                         <Input
                             v-model="form.name"
-                            class="bg-fl-black"
+                            class="bg-background"
                             required
                         />
                     </div>
                     <div class="grid gap-2">
                         <Label>SKU (opcional)</Label>
-                        <Input v-model="form.sku" class="bg-fl-black" />
+                        <Input v-model="form.sku" class="bg-background" />
                     </div>
                     <div class="grid gap-2">
                         <Label>Descripción</Label>
                         <Textarea
                             v-model="form.description"
-                            class="bg-fl-black"
+                            class="bg-background"
                             rows="2"
                         />
                     </div>
@@ -169,7 +172,7 @@ function submit() {
                                 v-model.number="form.width_mm"
                                 type="number"
                                 step="0.1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -178,11 +181,11 @@ function submit() {
                                 v-model.number="form.height_mm"
                                 type="number"
                                 step="0.1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
-                    <p class="text-xs text-white/40">
+                    <p class="text-xs text-muted-foreground/80">
                         Zona de grabado (mm, relativa a la esquina superior
                         izquierda) — se puede ajustar campo por campo después de
                         crear el modelo.
@@ -194,7 +197,7 @@ function submit() {
                                 v-model.number="form.engraving_x"
                                 type="number"
                                 step="0.1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -203,7 +206,7 @@ function submit() {
                                 v-model.number="form.engraving_y"
                                 type="number"
                                 step="0.1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -212,7 +215,7 @@ function submit() {
                                 v-model.number="form.engraving_width"
                                 type="number"
                                 step="0.1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -221,7 +224,7 @@ function submit() {
                                 v-model.number="form.engraving_height"
                                 type="number"
                                 step="0.1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
@@ -230,7 +233,7 @@ function submit() {
                         <input
                             type="file"
                             accept="image/*"
-                            class="text-sm text-white/60"
+                            class="text-sm text-muted-foreground"
                             @change="
                                 form.preview_image =
                                     ($event.target as HTMLInputElement)

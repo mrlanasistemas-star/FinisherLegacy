@@ -21,5 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:6,1')
         ->name('user-password.update');
 
-    Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
+    // Light is the only theme (no dark mode, no selector) — the old URL
+    // stays alive as a redirect so bookmarks/links never 404.
+    Route::redirect('settings/appearance', '/settings/profile')->name('appearance.edit');
 });

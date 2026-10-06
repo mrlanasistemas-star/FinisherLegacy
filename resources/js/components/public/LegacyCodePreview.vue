@@ -34,12 +34,14 @@ const qrPattern = [
     <div class="flex flex-col items-center gap-6">
         <!-- Phone frame -->
         <div
-            class="relative w-full max-w-[220px] rounded-[2rem] border-4 border-white/15 bg-fl-graphite/70 p-3 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.6)]"
+            class="relative w-full max-w-[220px] rounded-[2rem] border-4 border-border bg-card/70 p-3 shadow-[0_20px_50px_-15px_rgba(23,23,20,0.28)]"
         >
-            <div class="mx-auto mb-2 h-1.5 w-10 rounded-full bg-white/15" />
+            <div
+                class="mx-auto mb-2 h-1.5 w-10 rounded-full bg-foreground/[0.07]"
+            />
 
             <div
-                class="relative flex aspect-[3/4] flex-col items-center justify-center gap-3 overflow-hidden rounded-[1.25rem] bg-fl-black px-4"
+                class="relative flex aspect-[3/4] flex-col items-center justify-center gap-3 overflow-hidden rounded-[1.25rem] bg-background px-4"
             >
                 <!-- Micro grid texture -->
                 <div
@@ -65,24 +67,26 @@ const qrPattern = [
                         v-for="(cell, index) in qrPattern.flat()"
                         :key="index"
                         class="aspect-square rounded-[1px]"
-                        :class="cell ? 'bg-fl-gold-soft' : 'bg-white/5'"
+                        :class="
+                            cell ? 'bg-fl-gold-soft' : 'bg-foreground/[0.03]'
+                        "
                     />
                 </div>
 
                 <span
-                    class="legacy-numeric rounded-md border border-white/15 bg-white/5 px-2 py-1 font-mono text-[11px] text-fl-gold-soft"
+                    class="legacy-numeric rounded-md border border-border bg-foreground/[0.03] px-2 py-1 font-mono text-[11px] text-fl-gold-ink"
                 >
                     {{ sampleCode }}
                 </span>
 
                 <div class="relative h-4 motion-reduce:hidden">
                     <span
-                        class="fl-status-scanning legacy-numeric absolute inset-x-0 text-[10px] font-semibold tracking-[0.15em] text-white/50 uppercase"
+                        class="fl-status-scanning legacy-numeric absolute inset-x-0 text-[10px] font-semibold tracking-[0.15em] text-muted-foreground uppercase"
                     >
                         Escaneando Legacy Code…
                     </span>
                     <span
-                        class="fl-status-found legacy-numeric absolute inset-x-0 text-[10px] font-semibold tracking-[0.15em] text-fl-gold-soft uppercase"
+                        class="fl-status-found legacy-numeric absolute inset-x-0 text-[10px] font-semibold tracking-[0.15em] text-fl-gold-ink uppercase"
                     >
                         Legacy encontrado
                     </span>
@@ -114,19 +118,19 @@ const qrPattern = [
 
         <!-- Result: the code resolving into a Legacy Profile -->
         <div
-            class="fl-scan-result flex items-center gap-3 rounded-full border border-fl-gold/30 bg-fl-graphite/50 py-2 pr-5 pl-2 motion-reduce:opacity-100"
+            class="fl-scan-result flex items-center gap-3 rounded-full border border-fl-gold/30 bg-card/50 py-2 pr-5 pl-2 motion-reduce:opacity-100"
         >
             <span
-                class="flex size-9 items-center justify-center rounded-full border border-fl-gold-soft/30 text-fl-gold-soft"
+                class="flex size-9 items-center justify-center rounded-full border border-fl-gold-soft/30 text-fl-gold-ink"
             >
                 <UserRound class="size-4" />
             </span>
-            <span class="text-sm font-medium text-white/85">
+            <span class="text-sm font-medium text-foreground">
                 Tu Legacy Profile
             </span>
         </div>
 
-        <p class="max-w-xs text-center text-sm text-white/50">
+        <p class="max-w-xs text-center text-sm text-muted-foreground">
             Escanea el Legacy Code de tu placa y llega directo a tu historia.
         </p>
     </div>

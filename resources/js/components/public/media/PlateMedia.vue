@@ -41,7 +41,7 @@ function handlePointerMove(event: PointerEvent) {
         <button
             ref="button"
             type="button"
-            class="fl-focus-glow relative aspect-[3/2] w-full cursor-none overflow-hidden rounded-xl border border-white/15 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] transition-transform duration-500"
+            class="fl-focus-glow relative aspect-[3/2] w-full cursor-none overflow-hidden rounded-xl border border-border shadow-[0_20px_60px_-15px_rgba(23,23,20,0.28)] transition-transform duration-500"
             :style="{
                 transformStyle: 'preserve-3d',
                 transform: showingBack ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -84,7 +84,7 @@ function handlePointerMove(event: PointerEvent) {
         </button>
 
         <p
-            class="mt-3 text-center text-xs tracking-wide text-white/40 uppercase"
+            class="mt-3 text-center text-xs tracking-wide text-muted-foreground/80 uppercase"
         >
             Toca la placa para ver el reverso
         </p>

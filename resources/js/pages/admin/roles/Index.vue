@@ -31,8 +31,10 @@ function duplicate(role: RoleRow) {
 
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-xl font-bold text-white">Roles y permisos</h1>
-                <p class="text-sm text-white/50">
+                <h1 class="text-xl font-bold text-foreground">
+                    Roles y permisos
+                </h1>
+                <p class="text-sm text-muted-foreground">
                     Cada rol agrupa un conjunto de permisos. Los roles del
                     sistema no se pueden eliminar.
                 </p>
@@ -52,32 +54,37 @@ function duplicate(role: RoleRow) {
             <div
                 v-for="role in roles"
                 :key="role.id"
-                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4"
+                class="rounded-xl border border-border bg-card/40 p-4"
             >
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <div class="min-w-0">
-                        <p class="truncate font-semibold text-white">
+                        <p class="truncate font-semibold text-foreground">
                             {{ role.label }}
                         </p>
-                        <p class="truncate font-mono text-xs text-white/30">
+                        <p
+                            class="truncate font-mono text-xs text-muted-foreground/80"
+                        >
                             {{ role.name }}
                         </p>
                     </div>
                     <Badge
                         v-if="role.is_system"
                         variant="outline"
-                        class="shrink-0 border-fl-gold/30 text-fl-gold"
+                        class="shrink-0 border-fl-gold/30 text-fl-gold-ink"
                     >
                         <ShieldCheck class="mr-1 size-3" />
                         Sistema
                     </Badge>
                 </div>
 
-                <p v-if="role.description" class="mb-3 text-sm text-white/50">
+                <p
+                    v-if="role.description"
+                    class="mb-3 text-sm text-muted-foreground"
+                >
                     {{ role.description }}
                 </p>
 
-                <div class="mb-4 flex gap-4 text-xs text-white/40">
+                <div class="mb-4 flex gap-4 text-xs text-muted-foreground/80">
                     <span
                         >{{ role.users_count }} usuario{{
                             role.users_count === 1 ? '' : 's'
@@ -95,7 +102,7 @@ function duplicate(role: RoleRow) {
                         as-child
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                     >
                         <Link :href="`/admin/roles/${role.id}/edit`">
                             <Pencil class="size-3.5" />
@@ -105,7 +112,7 @@ function duplicate(role: RoleRow) {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                         @click="duplicate(role)"
                     >
                         <Copy class="size-3.5" />

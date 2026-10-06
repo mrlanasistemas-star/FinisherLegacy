@@ -111,22 +111,22 @@ function submitClaim() {
 
         <template v-if="!available">
             <div
-                class="rounded-2xl border border-white/10 bg-fl-graphite/50 p-8 text-center"
+                class="rounded-2xl border border-border bg-card/50 p-8 text-center"
             >
                 <div
-                    class="mx-auto flex size-16 items-center justify-center rounded-full border border-white/15 bg-fl-black text-white/60"
+                    class="mx-auto flex size-16 items-center justify-center rounded-full border border-border bg-background text-muted-foreground"
                 >
                     <Lock class="size-7" />
                 </div>
                 <p
-                    class="mt-6 rounded-md border border-white/10 bg-fl-black px-3 py-1.5 font-mono text-sm text-white/60"
+                    class="mt-6 rounded-md border border-border bg-background px-3 py-1.5 font-mono text-sm text-muted-foreground"
                 >
                     {{ code }}
                 </p>
-                <h1 class="mt-6 text-2xl font-bold text-white">
+                <h1 class="mt-6 text-2xl font-bold text-foreground">
                     Este Legacy Code no está disponible
                 </h1>
-                <p class="mt-3 text-sm text-white/60">
+                <p class="mt-3 text-sm text-muted-foreground">
                     Si crees que esto es un error, contáctanos y con gusto lo
                     revisamos.
                 </p>
@@ -135,7 +135,7 @@ function submitClaim() {
 
         <template v-else-if="!plate">
             <div
-                class="rounded-2xl border border-white/10 bg-fl-graphite/50 p-8 text-center"
+                class="rounded-2xl border border-border bg-card/50 p-8 text-center"
             >
                 <div
                     class="mx-auto flex size-20 items-center justify-center rounded-xl border border-fl-gold/30 bg-white p-2"
@@ -148,14 +148,14 @@ function submitClaim() {
                     />
                 </div>
                 <p
-                    class="mt-6 rounded-md border border-white/10 bg-fl-black px-3 py-1.5 font-mono text-sm text-fl-gold-soft"
+                    class="mt-6 rounded-md border border-border bg-background px-3 py-1.5 font-mono text-sm text-fl-gold-ink"
                 >
                     {{ code }}
                 </p>
-                <h1 class="mt-6 text-2xl font-bold text-white">
+                <h1 class="mt-6 text-2xl font-bold text-foreground">
                     Este Legacy Code aún no tiene una placa asignada
                 </h1>
-                <p class="mt-3 text-sm text-white/60">
+                <p class="mt-3 text-sm text-muted-foreground">
                     Vuelve a intentarlo más tarde.
                 </p>
             </div>
@@ -164,20 +164,20 @@ function submitClaim() {
         <template v-else>
             <!-- Athlete card -->
             <div
-                class="flex items-center gap-4 rounded-2xl border border-white/10 bg-fl-graphite/50 p-5"
+                class="flex items-center gap-4 rounded-2xl border border-border bg-card/50 p-5"
             >
                 <div
-                    class="flex size-14 shrink-0 items-center justify-center rounded-full border-2 border-fl-gold/40 bg-fl-black text-base font-semibold text-fl-gold-soft"
+                    class="flex size-14 shrink-0 items-center justify-center rounded-full border-2 border-fl-gold/40 bg-background text-base font-semibold text-fl-gold-ink"
                 >
                     {{ initials }}
                 </div>
                 <div class="min-w-0">
-                    <p class="truncate text-lg font-semibold text-white">
+                    <p class="truncate text-lg font-semibold text-foreground">
                         {{ plate.athlete_name ?? 'Placa Finisher Legacy' }}
                     </p>
                     <p
                         v-if="athlete"
-                        class="flex items-center gap-1 text-sm text-white/50"
+                        class="flex items-center gap-1 text-sm text-muted-foreground"
                     >
                         <span v-if="athlete.sport">{{ athlete.sport }}</span>
                         <span v-if="athlete.sport && athlete.city">·</span>
@@ -193,24 +193,24 @@ function submitClaim() {
 
             <!-- Big gold result card -->
             <div
-                class="mt-4 rounded-2xl border-2 border-fl-gold/40 bg-gradient-to-b from-fl-gold/10 to-fl-graphite/40 p-6"
+                class="mt-4 rounded-2xl border-2 border-fl-gold/40 bg-gradient-to-b from-fl-gold/10 to-card/40 p-6"
             >
                 <p
                     v-if="plate.event_name"
-                    class="text-xl leading-tight font-bold text-white"
+                    class="text-xl leading-tight font-bold text-foreground"
                 >
                     {{ plate.event_name }}
                 </p>
                 <p
                     v-if="formattedDate"
-                    class="mt-1 text-sm text-white/50 capitalize"
+                    class="mt-1 text-sm text-muted-foreground capitalize"
                 >
                     {{ formattedDate }}
                 </p>
 
                 <p
                     v-if="plate.official_time"
-                    class="legacy-numeric mt-5 font-mono text-4xl font-bold text-fl-gold-soft"
+                    class="legacy-numeric mt-5 font-mono text-4xl font-bold text-fl-gold-ink"
                 >
                     {{ plate.official_time }}
                 </p>
@@ -218,13 +218,13 @@ function submitClaim() {
                 <div class="mt-4 flex flex-wrap gap-2">
                     <span
                         v-if="plate.race_name"
-                        class="rounded-full border border-white/15 bg-fl-black px-3 py-1 text-xs font-medium text-white/60"
+                        class="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground"
                     >
                         {{ plate.race_name }}
                     </span>
                     <span
                         v-if="plate.pace"
-                        class="rounded-full border border-white/15 bg-fl-black px-3 py-1 text-xs font-medium text-white/60"
+                        class="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground"
                     >
                         Ritmo {{ plate.pace }}
                     </span>
@@ -232,7 +232,7 @@ function submitClaim() {
             </div>
 
             <div
-                class="mt-4 rounded-xl border border-dashed border-white/15 p-5 text-center"
+                class="mt-4 rounded-xl border border-dashed border-border p-5 text-center"
             >
                 <template v-if="ownedByMe">
                     <FinisherMascot
@@ -240,22 +240,22 @@ function submitClaim() {
                         alt=""
                         class="fl-success-pulse mx-auto mb-1"
                     />
-                    <p class="text-base font-semibold text-white">
+                    <p class="text-base font-semibold text-foreground">
                         Esta historia ya es parte de tu Legacy.
                     </p>
-                    <p class="mt-1 text-sm text-white/60">
+                    <p class="mt-1 text-sm text-muted-foreground">
                         Podrás encontrarla en tu Legacy Profile en cualquier
                         momento.
                     </p>
                 </template>
                 <template v-else-if="linked">
-                    <Award class="mx-auto size-5 text-fl-gold-soft" />
-                    <p class="mt-2 text-sm text-white/70">
+                    <Award class="mx-auto size-5 text-fl-gold-ink" />
+                    <p class="mt-2 text-sm text-muted-foreground">
                         Esta placa ya forma parte de un Legacy Profile.
                     </p>
                 </template>
                 <template v-else-if="isAuthenticated">
-                    <p class="text-sm text-white/70">
+                    <p class="text-sm text-muted-foreground">
                         Esta placa está esperando formar parte de un Legacy.
                     </p>
                     <Button
@@ -266,14 +266,14 @@ function submitClaim() {
                     </Button>
                 </template>
                 <template v-else>
-                    <p class="text-sm text-white/70">
+                    <p class="text-sm text-muted-foreground">
                         Esta placa está esperando formar parte de un Legacy.
                     </p>
                     <div class="mt-4 flex flex-col gap-2 sm:flex-row">
                         <Button
                             as-child
                             variant="outline"
-                            class="fl-hover-lift w-full border-white/15 text-white hover:bg-white/5"
+                            class="fl-hover-lift w-full border-border text-foreground hover:bg-foreground/[0.03]"
                         >
                             <a
                                 :href="

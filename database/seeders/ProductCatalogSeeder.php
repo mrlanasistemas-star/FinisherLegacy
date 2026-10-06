@@ -72,7 +72,7 @@ class ProductCatalogSeeder extends Seeder
         $band = $this->seedProduct(
             name: 'CHILL BAND',
             slug: 'chill-band',
-            categoryId: $categories['accessories'],
+            categoryId: $categories['enfriamiento'],
             type: ProductType::Accessory,
             description: 'Banda de enfriamiento Finisher Legacy.',
             qrCapable: true,
@@ -95,11 +95,24 @@ class ProductCatalogSeeder extends Seeder
      */
     private function seedCategories(): array
     {
-        $names = ['Legacy' => 'legacy', 'Apparel' => 'apparel', 'Accessories' => 'accessories', 'Equipment' => 'equipment'];
+        // Slugs are stable identifiers (existing rows keep them); names and
+        // order are what the storefront shows. Admins can rename/reorder or
+        // add categories later from Administración → Categorías.
+        $categories = [
+            'legacy' => ['Placa Legacy', 'Tu historia, grabada y conectada por NFC.'],
+            'enfriamiento' => ['Enfriamiento', 'Recuperación y control de temperatura en carrera.'],
+            'apparel' => ['Textil', 'Tri suits, jerseys, playeras y calcetas técnicas.'],
+            'accessories' => ['Accesorios', 'Viseras, gorras, mochilas y llaveros NFC.'],
+            'equipment' => ['Equipo', 'Kits y equipo para el día de carrera.'],
+        ];
         $ids = [];
+        $order = 0;
 
-        foreach ($names as $name => $slug) {
-            $ids[$slug] = ProductCategory::query()->updateOrCreate(['slug' => $slug], ['name' => $name, 'active' => true])->id;
+        foreach ($categories as $slug => [$name, $description]) {
+            $ids[$slug] = ProductCategory::query()->updateOrCreate(
+                ['slug' => $slug],
+                ['name' => $name, 'description' => $description, 'sort_order' => $order++, 'active' => true],
+            )->id;
         }
 
         return $ids;

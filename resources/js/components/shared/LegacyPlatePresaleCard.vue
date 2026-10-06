@@ -44,9 +44,9 @@ function purchase() {
 
 <template>
     <div
-        class="space-y-4 rounded-2xl border border-fl-gold/20 bg-gradient-to-br from-fl-graphite to-fl-black p-6"
+        class="space-y-4 rounded-2xl border border-fl-gold/20 bg-gradient-to-br from-card to-background p-6"
     >
-        <div class="flex items-center gap-2 text-fl-gold-soft">
+        <div class="flex items-center gap-2 text-fl-gold-ink">
             <Ticket class="size-4" />
             <span class="text-xs font-semibold tracking-[0.2em] uppercase"
                 >Legacy Plate</span
@@ -55,7 +55,7 @@ function purchase() {
 
         <div
             v-if="presale.already_purchased"
-            class="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-400"
+            class="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-700"
         >
             <CheckCircle2 class="mt-0.5 size-4 shrink-0" />
             <div>
@@ -64,28 +64,33 @@ function purchase() {
                 </p>
                 <a
                     href="/dashboard/my-plates"
-                    class="mt-1 inline-block text-emerald-300 hover:underline"
+                    class="mt-1 inline-block text-emerald-700 hover:underline"
                     >Ver mis Legacy Plates →</a
                 >
             </div>
         </div>
 
         <template v-else>
-            <p class="text-2xl font-bold text-white">
+            <p class="text-2xl font-bold text-foreground">
                 <Money
                     :minor="presale.price_minor"
                     :currency="presale.currency"
                 />
             </p>
-            <p class="text-xs text-white/40">
+            <p class="text-xs text-muted-foreground/80">
                 Precio de preventa — sube en las siguientes ventanas.
             </p>
-            <p v-if="presale.presale_ends_at" class="text-xs text-white/40">
+            <p
+                v-if="presale.presale_ends_at"
+                class="text-xs text-muted-foreground/80"
+            >
                 Preventa termina el {{ presale.presale_ends_at }}
             </p>
 
             <div v-if="presale.models.length > 1" class="space-y-2">
-                <p class="text-xs tracking-wide text-white/50 uppercase">
+                <p
+                    class="text-xs tracking-wide text-muted-foreground uppercase"
+                >
                     Elige tu modelo
                 </p>
                 <div class="flex flex-wrap gap-2">
@@ -96,8 +101,8 @@ function purchase() {
                         class="rounded-lg border px-3 py-2 text-left text-sm transition"
                         :class="
                             selectedModelId === model.id
-                                ? 'border-fl-gold bg-fl-gold/10 text-fl-gold-soft'
-                                : 'border-white/15 text-white/70 hover:border-white/30'
+                                ? 'border-fl-gold bg-fl-gold/10 text-fl-gold-ink'
+                                : 'border-border text-muted-foreground hover:border-foreground/15'
                         "
                         @click="selectedModelId = model.id"
                     >
@@ -113,7 +118,7 @@ function purchase() {
             >
                 Comprar Legacy Plate en preventa
             </Button>
-            <p class="text-center text-[11px] text-white/30">
+            <p class="text-center text-[11px] text-muted-foreground/80">
                 No necesitas tu número de corredor todavía — se vincula
                 automáticamente cuando esté disponible.
             </p>

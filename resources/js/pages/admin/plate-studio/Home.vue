@@ -129,12 +129,12 @@ const statusLabel: Record<string, string> = {
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1
-                    class="flex items-center gap-2 text-xl font-bold text-white"
+                    class="flex items-center gap-2 text-xl font-bold text-foreground"
                 >
-                    <Palette class="size-5 text-fl-gold" />
+                    <Palette class="size-5 text-fl-gold-ink" />
                     Plate Studio
                 </h1>
-                <p class="text-sm text-white/50">
+                <p class="text-sm text-muted-foreground">
                     Diseña moldes de placa y genera placas reales a partir de
                     ellos.
                 </p>
@@ -142,7 +142,7 @@ const statusLabel: Record<string, string> = {
             <div class="flex items-center gap-2">
                 <Button
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     as-child
                 >
                     <a
@@ -156,7 +156,7 @@ const statusLabel: Record<string, string> = {
                 </Button>
                 <Button
                     variant="outline"
-                    class="border-white/15 text-white hover:bg-white/10"
+                    class="border-border text-foreground hover:bg-foreground/5"
                     as-child
                 >
                     <a
@@ -180,11 +180,13 @@ const statusLabel: Record<string, string> = {
 
         <div
             v-if="!templates.length"
-            class="rounded-xl border border-dashed border-white/15 p-16 text-center"
+            class="rounded-xl border border-dashed border-border p-16 text-center"
         >
-            <Layers class="mx-auto mb-3 size-8 text-white/20" />
-            <p class="text-white/70">Aún no has creado un molde de placa.</p>
-            <p class="mb-4 text-sm text-white/40">
+            <Layers class="mx-auto mb-3 size-8 text-muted-foreground/80" />
+            <p class="text-muted-foreground">
+                Aún no has creado un molde de placa.
+            </p>
+            <p class="mb-4 text-sm text-muted-foreground/80">
                 Un molde define cómo se verá la placa. Los datos del atleta
                 cambian, el diseño permanece.
             </p>
@@ -204,21 +206,21 @@ const statusLabel: Record<string, string> = {
             <div
                 v-for="template in templates"
                 :key="template.id"
-                class="rounded-xl border border-white/10 bg-fl-graphite/40 p-4 transition-colors hover:border-white/20"
+                class="rounded-xl border border-border bg-card/40 p-4 transition-colors hover:border-foreground/15"
             >
                 <div class="mb-2 flex items-start justify-between">
                     <div class="min-w-0">
-                        <p class="truncate font-semibold text-white">
+                        <p class="truncate font-semibold text-foreground">
                             {{ template.name }}
                         </p>
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-muted-foreground/80">
                             {{ template.width_mm }}×{{ template.height_mm }}mm
                         </p>
                     </div>
                     <Badge
                         v-if="!template.active"
                         variant="outline"
-                        class="border-white/20 text-white/40"
+                        class="border-foreground/15 text-muted-foreground/80"
                     >
                         Archivado
                     </Badge>
@@ -231,17 +233,17 @@ const statusLabel: Record<string, string> = {
                         variant="outline"
                         :class="
                             v.status === 'published'
-                                ? 'border-emerald-500/30 text-emerald-400'
+                                ? 'border-emerald-500/30 text-emerald-700'
                                 : v.status === 'archived'
-                                  ? 'border-white/20 text-white/40'
-                                  : 'border-amber-500/30 text-amber-400'
+                                  ? 'border-foreground/15 text-muted-foreground/80'
+                                  : 'border-amber-500/30 text-amber-700'
                         "
                     >
                         V{{ v.version }} · {{ statusLabel[v.status] }}
                     </Badge>
                 </div>
 
-                <p class="mb-3 text-xs text-white/40">
+                <p class="mb-3 text-xs text-muted-foreground/80">
                     {{ template.plates_count }} placa{{
                         template.plates_count === 1 ? '' : 's'
                     }}
@@ -252,7 +254,7 @@ const statusLabel: Record<string, string> = {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                         @click="openLatest(template)"
                     >
                         <Pencil class="size-3.5" />
@@ -263,7 +265,7 @@ const statusLabel: Record<string, string> = {
                             <Button
                                 size="icon"
                                 variant="outline"
-                                class="size-8 border-white/15 text-white hover:bg-white/10"
+                                class="size-8 border-border text-foreground hover:bg-foreground/5"
                                 @click="duplicate(template)"
                             >
                                 <Copy class="size-3.5" />
@@ -276,7 +278,7 @@ const statusLabel: Record<string, string> = {
                             <Button
                                 size="icon"
                                 variant="outline"
-                                class="size-8 border-white/15 text-white/60 hover:bg-white/10"
+                                class="size-8 border-border text-muted-foreground hover:bg-foreground/5"
                                 @click="archiveTarget = template"
                             >
                                 <Archive class="size-3.5" />
@@ -292,9 +294,7 @@ const statusLabel: Record<string, string> = {
         </div>
 
         <Dialog v-model:open="dialogOpen">
-            <DialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <DialogContent class="border-border bg-card text-foreground">
                 <DialogHeader>
                     <DialogTitle>Nuevo molde de placa</DialogTitle>
                 </DialogHeader>
@@ -304,13 +304,16 @@ const statusLabel: Record<string, string> = {
                         <Input
                             v-model="form.name"
                             required
-                            class="bg-fl-black"
+                            class="bg-background"
                             placeholder="Ironman Cozumel 2026 — Acero 60×40"
                         />
                     </div>
                     <div class="grid gap-2">
                         <Label>Descripción (opcional)</Label>
-                        <Input v-model="form.description" class="bg-fl-black" />
+                        <Input
+                            v-model="form.description"
+                            class="bg-background"
+                        />
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
@@ -320,7 +323,7 @@ const statusLabel: Record<string, string> = {
                                 type="number"
                                 step="0.1"
                                 required
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                         <div class="grid gap-2">
@@ -330,7 +333,7 @@ const statusLabel: Record<string, string> = {
                                 type="number"
                                 step="0.1"
                                 required
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
@@ -339,7 +342,7 @@ const statusLabel: Record<string, string> = {
                             <Label>Orientación</Label>
                             <Select v-model="form.orientation">
                                 <SelectTrigger
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 >
                                     <SelectValue />
                                 </SelectTrigger>
@@ -359,13 +362,13 @@ const statusLabel: Record<string, string> = {
                                 v-model.number="form.safe_margin_mm"
                                 type="number"
                                 step="0.1"
-                                class="bg-fl-black"
+                                class="bg-background"
                             />
                         </div>
                     </div>
                     <div class="grid gap-2">
                         <Label>Material (opcional)</Label>
-                        <Input v-model="form.material" class="bg-fl-black" />
+                        <Input v-model="form.material" class="bg-background" />
                     </div>
                     <DialogFooter>
                         <Button
@@ -389,22 +392,20 @@ const statusLabel: Record<string, string> = {
                 }
             "
         >
-            <AlertDialogContent
-                class="dark border-white/10 bg-fl-graphite text-white"
-            >
+            <AlertDialogContent class="border-border bg-card text-foreground">
                 <AlertDialogHeader>
                     <AlertDialogTitle
                         >¿Archivar "{{
                             archiveTarget?.name
                         }}"?</AlertDialogTitle
                     >
-                    <AlertDialogDescription class="text-white/60">
+                    <AlertDialogDescription class="text-muted-foreground">
                         Las placas ya generadas no se ven afectadas.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel
-                        class="border-white/10 bg-transparent text-white hover:bg-white/10"
+                        class="border-border bg-transparent text-foreground hover:bg-foreground/5"
                         @click="archiveTarget = null"
                         >Cancelar</AlertDialogCancel
                     >

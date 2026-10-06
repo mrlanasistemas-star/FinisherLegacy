@@ -276,7 +276,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 <template>
     <Head :title="`Plate Studio — ${template.name}`" />
 
-    <div class="flex h-svh flex-col bg-fl-black">
+    <div class="flex h-svh flex-col bg-background">
         <StudioTopbar
             :template-name="template.name"
             :version="version.version"
@@ -289,7 +289,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
             @new-version="newVersion"
         />
 
-        <div class="flex items-center gap-3 border-b border-white/10 px-4 py-2">
+        <div class="flex items-center gap-3 border-b border-border px-4 py-2">
             <Tabs v-model="face">
                 <TabsList>
                     <TabsTrigger value="front">Frente</TabsTrigger>
@@ -311,7 +311,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
                     template.back_transform !== 'none'
                 "
                 variant="outline"
-                class="border-fl-gold/30 text-fl-gold"
+                class="border-fl-gold/30 text-fl-gold-ink"
                 title="Orientación aplicada solo al archivo de producción — el diseño original no cambia"
             >
                 {{ backTransformLabels[template.back_transform] }}
@@ -319,7 +319,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
             <Badge
                 v-else-if="face === 'back'"
                 variant="outline"
-                class="border-white/15 text-white/40"
+                class="border-border text-muted-foreground/80"
             >
                 {{ mode === 'production' ? 'Normal' : 'Diseño original' }}
             </Badge>
@@ -329,7 +329,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
             <Badge
                 v-if="previewWarnings.length"
                 variant="outline"
-                class="ml-auto border-amber-500/30 text-amber-400"
+                class="ml-auto border-amber-500/30 text-amber-700"
             >
                 {{ previewWarnings.length }} advertencia{{
                     previewWarnings.length === 1 ? '' : 's'
@@ -338,13 +338,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
             <Badge
                 v-else
                 variant="outline"
-                class="ml-auto border-emerald-500/30 text-emerald-400"
+                class="ml-auto border-emerald-500/30 text-emerald-700"
             >
                 Listo para producción
             </Badge>
 
             <button
-                class="text-xs text-white/50 underline hover:text-white"
+                class="text-xs text-muted-foreground underline hover:text-foreground"
                 @click="downloadTestExport"
             >
                 Descargar prueba de grabado
@@ -352,7 +352,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
         </div>
 
         <div class="grid min-h-0 flex-1 grid-cols-[220px_1fr_260px]">
-            <aside class="overflow-y-auto border-r border-white/10">
+            <aside class="overflow-y-auto border-r border-border">
                 <ElementSidebar
                     :fields-catalog="fieldsCatalog"
                     :width-mm="template.width_mm"
@@ -378,7 +378,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 
                 <ul
                     v-if="previewWarnings.length"
-                    class="w-full max-w-md space-y-1 text-xs text-amber-400/90"
+                    class="w-full max-w-md space-y-1 text-xs text-amber-700"
                 >
                     <li v-for="(warning, i) in previewWarnings" :key="i">
                         • {{ warning }}
@@ -386,7 +386,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
                 </ul>
             </main>
 
-            <aside class="overflow-y-auto border-l border-white/10">
+            <aside class="overflow-y-auto border-l border-border">
                 <PropertiesPanel
                     :element="selectedElement"
                     :fields-catalog="fieldsCatalog"

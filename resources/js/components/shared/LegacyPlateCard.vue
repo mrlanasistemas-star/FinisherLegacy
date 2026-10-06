@@ -31,12 +31,12 @@ const labels: Record<string, string> = {
 };
 
 const classes: Record<string, string> = {
-    pending_payment: 'border-amber-500/30 text-amber-400',
-    paid: 'border-sky-500/30 text-sky-400',
-    linked: 'border-sky-500/30 text-sky-400',
-    queued: 'border-fl-gold/40 text-fl-gold-soft',
-    produced: 'border-emerald-500/30 text-emerald-400',
-    delivered: 'border-emerald-500/30 text-emerald-400',
+    pending_payment: 'border-amber-500/30 text-amber-700',
+    paid: 'border-sky-500/30 text-sky-700',
+    linked: 'border-sky-500/30 text-sky-700',
+    queued: 'border-fl-gold/40 text-fl-gold-ink',
+    produced: 'border-emerald-500/30 text-emerald-700',
+    delivered: 'border-emerald-500/30 text-emerald-700',
 };
 
 const helper: Record<string, string> = {
@@ -50,15 +50,17 @@ const label = computed(
     () => labels[props.presaleStatus] ?? props.presaleStatus,
 );
 const className = computed(
-    () => classes[props.presaleStatus] ?? 'border-white/20 text-white/50',
+    () =>
+        classes[props.presaleStatus] ??
+        'border-foreground/15 text-muted-foreground',
 );
 const helperText = computed(() => helper[props.presaleStatus] ?? null);
 </script>
 
 <template>
-    <div class="rounded-2xl border border-white/10 bg-fl-graphite/30 p-5">
+    <div class="rounded-2xl border border-border bg-card/30 p-5">
         <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-2 text-fl-gold-soft">
+            <div class="flex items-center gap-2 text-fl-gold-ink">
                 <Boxes class="size-5" />
                 <span class="text-xs tracking-[0.2em] uppercase">{{
                     modelName ?? 'Legacy Plate'
@@ -67,20 +69,20 @@ const helperText = computed(() => helper[props.presaleStatus] ?? null);
             <Badge variant="outline" :class="className">{{ label }}</Badge>
         </div>
 
-        <p class="mt-4 text-lg font-semibold text-white">
+        <p class="mt-4 text-lg font-semibold text-foreground">
             {{ engravingDisplayName ?? eventName ?? 'Evento por confirmar' }}
         </p>
-        <p class="text-sm text-white/50">
+        <p class="text-sm text-muted-foreground">
             {{ eventName ?? editionName ?? 'Evento no asignado'
             }}<span v-if="raceName"> · {{ raceName }}</span>
         </p>
-        <p v-if="helperText" class="mt-2 text-xs text-white/40">
+        <p v-if="helperText" class="mt-2 text-xs text-muted-foreground/80">
             {{ helperText }}
         </p>
 
         <div
             v-if="serialNumber || legacyCode"
-            class="mt-4 flex items-center justify-between text-xs text-white/40"
+            class="mt-4 flex items-center justify-between text-xs text-muted-foreground/80"
         >
             <span>{{ serialNumber ?? 'Sin folio' }}</span>
             <span v-if="legacyCode" class="flex items-center gap-1"

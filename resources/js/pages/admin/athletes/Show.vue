@@ -133,12 +133,12 @@ function sendNotification() {
         <div class="mb-6 flex items-start justify-between">
             <div>
                 <h1
-                    class="flex items-center gap-2 text-xl font-bold text-white"
+                    class="flex items-center gap-2 text-xl font-bold text-foreground"
                 >
-                    <UserCircle class="size-6 text-fl-gold" />
+                    <UserCircle class="size-6 text-fl-gold-ink" />
                     {{ athlete.full_name }}
                 </h1>
-                <p class="mt-1 text-sm text-white/50">
+                <p class="mt-1 text-sm text-muted-foreground">
                     {{
                         athlete.user
                             ? `Cuenta vinculada: ${athlete.user.email}`
@@ -148,7 +148,7 @@ function sendNotification() {
             </div>
             <Badge
                 variant="outline"
-                class="border-emerald-500/30 text-emerald-400"
+                class="border-emerald-500/30 text-emerald-700"
             >
                 {{ participations.length }} participacion{{
                     participations.length === 1 ? '' : 'es'
@@ -157,39 +157,41 @@ function sendNotification() {
         </div>
 
         <div
-            class="mb-6 grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-fl-graphite/30 p-4 text-sm md:grid-cols-4"
+            class="mb-6 grid grid-cols-2 gap-3 rounded-xl border border-border bg-card/30 p-4 text-sm md:grid-cols-4"
         >
             <div>
-                <p class="text-xs text-white/30 uppercase">Email</p>
-                <p class="text-white">{{ athlete.email ?? '—' }}</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">Email</p>
+                <p class="text-foreground">{{ athlete.email ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-xs text-white/30 uppercase">Teléfono</p>
-                <p class="text-white">{{ athlete.phone ?? '—' }}</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Teléfono
+                </p>
+                <p class="text-foreground">{{ athlete.phone ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-xs text-white/30 uppercase">
+                <p class="text-xs text-muted-foreground/80 uppercase">
                     Fecha de nacimiento
                 </p>
-                <p class="text-white">{{ athlete.birth_date ?? '—' }}</p>
+                <p class="text-foreground">{{ athlete.birth_date ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-xs text-white/30 uppercase">País</p>
-                <p class="text-white">{{ athlete.country ?? '—' }}</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">País</p>
+                <p class="text-foreground">{{ athlete.country ?? '—' }}</p>
             </div>
         </div>
 
         <section class="mb-6">
             <h2
-                class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-white/70"
+                class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
             >
                 <Trophy class="size-4" /> Participaciones por evento
             </h2>
-            <div class="overflow-x-auto rounded-xl border border-white/10">
+            <div class="overflow-x-auto rounded-xl border border-border">
                 <table class="w-full text-sm">
                     <thead>
                         <tr
-                            class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                            class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                         >
                             <th class="px-4 py-3 font-medium">Evento</th>
                             <th class="px-4 py-3 font-medium">Edición</th>
@@ -203,25 +205,25 @@ function sendNotification() {
                         <tr
                             v-for="p in participations"
                             :key="p.id"
-                            class="border-b border-white/5 text-white/80 last:border-0"
+                            class="border-b border-border text-foreground last:border-0"
                         >
                             <td class="px-4 py-3">{{ p.event ?? '—' }}</td>
                             <td class="px-4 py-3">{{ p.edition ?? '—' }}</td>
                             <td class="px-4 py-3">{{ p.race ?? '—' }}</td>
-                            <td class="px-4 py-3 font-mono text-fl-gold">
+                            <td class="px-4 py-3 font-mono text-fl-gold-ink">
                                 #{{ p.bib_number }}
                             </td>
                             <td class="px-4 py-3">
                                 {{ p.official_time ?? '—' }}
                             </td>
-                            <td class="px-4 py-3 text-white/40">
+                            <td class="px-4 py-3 text-muted-foreground/80">
                                 {{ p.source }}
                             </td>
                         </tr>
                         <tr v-if="!participations.length">
                             <td
                                 colspan="6"
-                                class="px-4 py-10 text-center text-white/30"
+                                class="px-4 py-10 text-center text-muted-foreground/80"
                             >
                                 Sin participaciones todavía.
                             </td>
@@ -234,7 +236,7 @@ function sendNotification() {
         <div class="grid gap-6 md:grid-cols-2">
             <section>
                 <h2
-                    class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-white/70"
+                    class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
                 >
                     <Boxes class="size-4" /> Placas
                 </h2>
@@ -242,10 +244,10 @@ function sendNotification() {
                     <div
                         v-for="plate in plates"
                         :key="plate.id"
-                        class="rounded-lg border border-white/10 bg-fl-black/40 p-3 text-sm"
+                        class="rounded-lg border border-border bg-background/40 p-3 text-sm"
                     >
                         <div class="flex items-center justify-between">
-                            <span class="font-mono text-white/70">{{
+                            <span class="font-mono text-muted-foreground">{{
                                 plate.serial_number
                             }}</span>
                             <Badge
@@ -256,18 +258,21 @@ function sendNotification() {
                                 }}</Badge
                             >
                         </div>
-                        <p class="mt-1 text-xs text-white/40">
+                        <p class="mt-1 text-xs text-muted-foreground/80">
                             {{ plate.event ?? '—' }} ·
                             <Link
                                 v-if="plate.legacy_code"
                                 :href="`/l/${plate.legacy_code}`"
-                                class="text-fl-gold hover:underline"
+                                class="text-fl-gold-ink hover:underline"
                             >
                                 {{ plate.legacy_code }}
                             </Link>
                         </p>
                     </div>
-                    <p v-if="!plates.length" class="text-sm text-white/30">
+                    <p
+                        v-if="!plates.length"
+                        class="text-sm text-muted-foreground/80"
+                    >
                         Sin placas.
                     </p>
                 </div>
@@ -275,7 +280,7 @@ function sendNotification() {
 
             <section>
                 <h2
-                    class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-white/70"
+                    class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
                 >
                     <Award class="size-4" /> Medallas
                 </h2>
@@ -283,15 +288,18 @@ function sendNotification() {
                     <div
                         v-for="medal in medals"
                         :key="medal.id"
-                        class="rounded-lg border border-white/10 bg-fl-black/40 p-3 text-sm"
+                        class="rounded-lg border border-border bg-background/40 p-3 text-sm"
                     >
-                        <p class="text-white/80">{{ medal.title }}</p>
-                        <p class="text-xs text-white/40">
+                        <p class="text-foreground">{{ medal.title }}</p>
+                        <p class="text-xs text-muted-foreground/80">
                             {{ medal.distance_label ?? '—' }} ·
                             {{ medal.event_date ?? '—' }}
                         </p>
                     </div>
-                    <p v-if="!medals.length" class="text-sm text-white/30">
+                    <p
+                        v-if="!medals.length"
+                        class="text-sm text-muted-foreground/80"
+                    >
                         Sin medallas.
                     </p>
                 </div>
@@ -301,7 +309,7 @@ function sendNotification() {
         <section class="mt-6">
             <div class="mb-2 flex items-center justify-between">
                 <h2
-                    class="flex items-center gap-1.5 text-sm font-semibold text-white/70"
+                    class="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
                 >
                     <Bell class="size-4" /> Comunicación
                 </h2>
@@ -318,7 +326,7 @@ function sendNotification() {
                         </Button>
                     </DialogTrigger>
                     <DialogContent
-                        class="dark border-white/10 bg-fl-graphite text-white"
+                        class="border-border bg-card text-foreground"
                     >
                         <DialogHeader>
                             <DialogTitle>Enviar notificación</DialogTitle>
@@ -328,7 +336,7 @@ function sendNotification() {
                                 <Label class="text-xs">Plantilla</Label>
                                 <Select v-model="notifyForm.type">
                                     <SelectTrigger
-                                        class="border-white/10 bg-fl-black text-white"
+                                        class="border-border bg-background text-foreground"
                                     >
                                         <SelectValue />
                                     </SelectTrigger>
@@ -352,7 +360,7 @@ function sendNotification() {
                                 <Label class="text-xs">Título</Label>
                                 <Input
                                     v-model="notifyForm.title"
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 />
                             </div>
                             <div class="grid gap-2">
@@ -360,7 +368,7 @@ function sendNotification() {
                                 <Textarea
                                     v-model="notifyForm.message"
                                     rows="4"
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 />
                             </div>
                             <div class="grid gap-2">
@@ -371,19 +379,19 @@ function sendNotification() {
                                 <Input
                                     v-model="notifyForm.action_url"
                                     placeholder="/dashboard/legado"
-                                    class="border-white/10 bg-fl-black text-white"
+                                    class="border-border bg-background text-foreground"
                                 />
                             </div>
                             <label
                                 v-if="pushEnabled && hasPushDevices"
-                                class="flex items-center gap-2 text-sm text-white/80"
+                                class="flex items-center gap-2 text-sm text-foreground"
                             >
                                 <Checkbox v-model="notifyForm.push" />
                                 Enviar también push
                             </label>
                             <p
                                 v-else-if="hasPushDevices"
-                                class="text-xs text-white/30"
+                                class="text-xs text-muted-foreground/80"
                             >
                                 Push no configurado todavía — solo se guardará
                                 como notificación en la app.
@@ -402,33 +410,31 @@ function sendNotification() {
                 </Dialog>
             </div>
 
-            <div
-                class="divide-y divide-white/5 rounded-xl border border-white/10"
-            >
+            <div class="divide-y divide-border rounded-xl border border-border">
                 <div
                     v-for="msg in comunicacion.slice(0, 10)"
                     :key="msg.id"
                     class="p-3 text-sm"
                 >
                     <div class="flex items-center justify-between">
-                        <p class="text-white">{{ msg.title }}</p>
-                        <span class="text-xs text-white/30">{{
+                        <p class="text-foreground">{{ msg.title }}</p>
+                        <span class="text-xs text-muted-foreground/80">{{
                             msg.created_at
                         }}</span>
                     </div>
-                    <p class="mt-0.5 text-xs text-white/50">
+                    <p class="mt-0.5 text-xs text-muted-foreground">
                         {{ msg.message }}
                     </p>
                     <p
                         v-if="msg.sent_by_name"
-                        class="mt-1 text-xs text-white/30"
+                        class="mt-1 text-xs text-muted-foreground/80"
                     >
                         Enviado por {{ msg.sent_by_name }}
                     </p>
                 </div>
                 <p
                     v-if="!comunicacion.length"
-                    class="p-4 text-center text-sm text-white/30"
+                    class="p-4 text-center text-sm text-muted-foreground/80"
                 >
                     Sin notificaciones enviadas todavía.
                 </p>

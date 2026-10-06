@@ -37,7 +37,7 @@ function onChange(value: AcceptableValue) {
         @update:model-value="onChange"
     >
         <SelectTrigger
-            class="w-full border-white/10 bg-fl-black text-white sm:w-80"
+            class="w-full border-border bg-background text-foreground sm:w-80"
         >
             <SelectValue placeholder="Selecciona un evento" />
         </SelectTrigger>

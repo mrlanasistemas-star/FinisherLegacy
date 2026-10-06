@@ -16,7 +16,7 @@ const passwordValue = ref('');
 
 defineOptions({
     layout: {
-        title: 'Crea tu Legacy ID',
+        title: 'Crea tu perfil',
         description:
             'Tu meta termina. Tu historia no. Regístrate para empezar.',
     },
@@ -106,21 +106,21 @@ defineOptions({
 
             <Button
                 type="submit"
-                class="mt-2 w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                class="mt-2 h-11 w-full rounded-full"
                 :tabindex="6"
                 :disabled="processing"
                 data-test="register-button"
             >
                 <Spinner v-if="processing" />
-                Crear mi Legacy
+                Crear mi perfil
             </Button>
 
-            <p class="text-center text-sm text-white/50">
+            <p class="text-center text-sm text-muted-foreground">
                 ¿Ya tienes cuenta?
                 <TextLink
                     :href="login()"
                     :tabindex="7"
-                    class="text-fl-gold decoration-fl-gold/40"
+                    class="text-fl-gold-ink decoration-fl-gold/40"
                     >Inicia sesión</TextLink
                 >
             </p>

@@ -50,16 +50,16 @@ const applySearch = useDebounceFn(() => {
             <Input
                 v-model="query"
                 placeholder="Buscar…"
-                class="max-w-sm border-white/10 bg-fl-graphite/60 text-white"
+                class="max-w-sm border-border bg-card/60 text-foreground"
                 @input="applySearch"
             />
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-white/10">
+        <div class="overflow-x-auto rounded-xl border border-border">
             <table class="w-full text-sm">
                 <thead>
                     <tr
-                        class="border-b border-white/10 bg-fl-graphite/40 text-left text-xs text-white/50 uppercase"
+                        class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
                     >
                         <th
                             v-for="column in columns"
@@ -74,7 +74,7 @@ const applySearch = useDebounceFn(() => {
                     <tr
                         v-for="(row, index) in rows.data"
                         :key="index"
-                        class="border-b border-white/5 text-white/80 last:border-0"
+                        class="border-b border-border text-foreground last:border-0"
                     >
                         <td
                             v-for="column in columns"
@@ -89,7 +89,7 @@ const applySearch = useDebounceFn(() => {
                     <tr v-if="!rows.data.length">
                         <td
                             :colspan="columns.length"
-                            class="px-4 py-10 text-center text-white/30"
+                            class="px-4 py-10 text-center text-muted-foreground/80"
                         >
                             Sin resultados.
                         </td>

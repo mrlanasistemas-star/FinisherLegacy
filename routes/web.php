@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\Admin\AthleteController as AdminAthleteController;
 use App\Http\Controllers\Admin\AthleteIdentityConflictController as AdminAthleteIdentityConflictController;
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
+use App\Http\Controllers\Admin\CommunityModerationController as AdminCommunityModerationController;
+use App\Http\Controllers\Admin\CompanyContentController as AdminCompanyContentController;
+use App\Http\Controllers\Admin\ContactMessageController as AdminContactMessageController;
 use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EditionController as AdminEditionController;
+use App\Http\Controllers\Admin\EventPhotoController as AdminEventPhotoController;
 use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\Integrations\ProviderConnectionController as AdminProviderConnectionController;
 use App\Http\Controllers\Admin\Integrations\SyncController as AdminSyncController;
@@ -20,6 +25,7 @@ use App\Http\Controllers\Admin\ParticipantController as AdminParticipantControll
 use App\Http\Controllers\Admin\PlateController as AdminPlateController;
 use App\Http\Controllers\Admin\PlateStudioController as AdminPlateStudioController;
 use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistrationController;
+use App\Http\Controllers\Admin\ProductCategoryController as AdminProductCategoryController;
 use App\Http\Controllers\Admin\ProductContentSectionController as AdminProductContentSectionController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductionDeviceController as AdminProductionDeviceController;
@@ -33,6 +39,8 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AthleteEventMediaFileController;
 use App\Http\Controllers\AthleteHistoryController;
 use App\Http\Controllers\AthleteProfileController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
@@ -41,9 +49,11 @@ use App\Http\Controllers\LegacyCodeController;
 use App\Http\Controllers\MedalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperatorController;
+use App\Http\Controllers\PhotosController;
 use App\Http\Controllers\PreregistrationController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\PublicProfileController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Store\CartController as StoreCartController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
@@ -58,7 +68,26 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::inertia('how-it-works', 'HowItWorks')->name('how-it-works');
 Route::inertia('privacy', 'Privacy')->name('privacy');
 Route::inertia('terms', 'Terms')->name('terms');
-Route::inertia('contact', 'Contact')->name('contact');
+Route::get('contact', [ContactController::class, 'show'])->name('contact');
+Route::post('contact', [ContactController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('contact.store');
+
+// "Nosotros" — company story, trajectory and location, all admin-editable.
+Route::get('nosotros', AboutController::class)->name('about');
+
+// Global search (athletes / events / products), guest-friendly.
+Route::get('buscar', SearchController::class)->middleware('throttle:60,1')->name('search');
+
+// "Fotos" — find event photos by event + bib (public photos only) and,
+// signed in, your own. Built on the existing AthleteEventMedia.
+Route::get('fotos', PhotosController::class)->middleware('throttle:60,1')->name('photos.index');
+
+// "Comunidad" — the web face of the social layer (Legacy Moments).
+// Reading is public (SocialVisibility decides what each viewer sees);
+// every write lives in the auth group below.
+Route::get('comunidad', [CommunityController::class, 'index'])->name('community.index');
+Route::get('comunidad/publicaciones/{moment}', [CommunityController::class, 'show'])->name('community.posts.show');
 
 Route::get('events', [EventController::class, 'index'])->name('events.index');
 Route::get('events/{event:slug}', [EventController::class, 'show'])->name('events.show');
@@ -100,6 +129,19 @@ Route::prefix('tienda')->name('store.products.')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('l/{code}/claim', [LegacyCodeController::class, 'claim'])->name('legacy-code.claim');
+
+    Route::prefix('comunidad')->name('community.')->group(function () {
+        Route::post('publicaciones', [CommunityController::class, 'store'])->middleware('throttle:social-write')->name('posts.store');
+        Route::patch('publicaciones/{moment}', [CommunityController::class, 'update'])->middleware('throttle:social-write')->name('posts.update');
+        Route::delete('publicaciones/{moment}', [CommunityController::class, 'destroy'])->name('posts.destroy');
+        Route::post('publicaciones/{moment}/celebrar', [CommunityController::class, 'celebrate'])->middleware('throttle:social-write')->name('posts.celebrate');
+        Route::delete('publicaciones/{moment}/celebrar', [CommunityController::class, 'uncelebrate'])->middleware('throttle:social-write')->name('posts.uncelebrate');
+        Route::post('publicaciones/{moment}/comentarios', [CommunityController::class, 'storeComment'])->middleware('throttle:social-comment')->name('posts.comments.store');
+        Route::delete('comentarios/{comment}', [CommunityController::class, 'destroyComment'])->name('comments.destroy');
+    });
+
+    Route::post('atletas/{athleteProfile:username}/seguir', [CommunityController::class, 'follow'])->middleware('throttle:social-write')->name('athletes.follow');
+    Route::delete('atletas/{athleteProfile:username}/seguir', [CommunityController::class, 'unfollow'])->middleware('throttle:social-write')->name('athletes.unfollow');
 
     Route::prefix('carrito')->name('store.cart.')->group(function () {
         Route::get('/', [StoreCartController::class, 'show'])->name('show');
@@ -398,12 +440,49 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('{product}/media', [AdminProductMediaController::class, 'store'])->name('media.store');
             Route::post('{product}/media/reorder', [AdminProductMediaController::class, 'reorder'])->name('media.reorder');
             Route::post('media/{media}/primary', [AdminProductMediaController::class, 'setPrimary'])->name('media.primary');
+            Route::patch('media/{media}', [AdminProductMediaController::class, 'update'])->name('media.update');
+            Route::post('media/{media}/replace', [AdminProductMediaController::class, 'replace'])->name('media.replace');
             Route::delete('media/{media}', [AdminProductMediaController::class, 'destroy'])->name('media.destroy');
 
             Route::post('{product}/content-sections', [AdminProductContentSectionController::class, 'store'])->name('content-sections.store');
             Route::patch('content-sections/{section}', [AdminProductContentSectionController::class, 'update'])->name('content-sections.update');
             Route::delete('content-sections/{section}', [AdminProductContentSectionController::class, 'destroy'])->name('content-sections.destroy');
         });
+
+        Route::middleware('can:products.manage')->prefix('product-categories')->name('product-categories.')->group(function () {
+            Route::get('/', [AdminProductCategoryController::class, 'index'])->name('index');
+            Route::post('/', [AdminProductCategoryController::class, 'store'])->name('store');
+            Route::patch('{category}', [AdminProductCategoryController::class, 'update'])->name('update');
+            Route::delete('{category}', [AdminProductCategoryController::class, 'destroy'])->name('destroy');
+        });
+
+        // Nosotros / Contacto content (company info, trajectory, gallery)
+        // and the contact-form inbox.
+        Route::middleware('can:content.manage')->group(function () {
+            Route::prefix('content')->name('content.')->group(function () {
+                Route::get('/', [AdminCompanyContentController::class, 'index'])->name('index');
+                Route::put('settings', [AdminCompanyContentController::class, 'updateSettings'])->name('settings.update');
+                Route::post('milestones', [AdminCompanyContentController::class, 'storeMilestone'])->name('milestones.store');
+                Route::post('milestones/reorder', [AdminCompanyContentController::class, 'reorderMilestones'])->name('milestones.reorder');
+                // POST (not PATCH): it carries an optional image upload.
+                Route::post('milestones/{milestone}', [AdminCompanyContentController::class, 'updateMilestone'])->name('milestones.update');
+                Route::delete('milestones/{milestone}', [AdminCompanyContentController::class, 'destroyMilestone'])->name('milestones.destroy');
+                Route::post('gallery', [AdminCompanyContentController::class, 'storeGalleryItems'])->name('gallery.store');
+                Route::patch('gallery/{item}', [AdminCompanyContentController::class, 'updateGalleryItem'])->name('gallery.update');
+                Route::delete('gallery/{item}', [AdminCompanyContentController::class, 'destroyGalleryItem'])->name('gallery.destroy');
+            });
+
+            Route::get('messages', [AdminContactMessageController::class, 'index'])->name('contact-messages.index');
+            Route::patch('messages/{message}', [AdminContactMessageController::class, 'update'])->name('contact-messages.update');
+        });
+
+        Route::middleware('can:community.moderate')->prefix('community')->name('community.')->group(function () {
+            Route::get('/', [AdminCommunityModerationController::class, 'index'])->name('index');
+            Route::patch('reports/{report}', [AdminCommunityModerationController::class, 'updateReport'])->name('reports.update');
+            Route::delete('moments/{moment}', [AdminCommunityModerationController::class, 'destroyMoment'])->name('moments.destroy');
+        });
+
+        Route::middleware('can:media.manage')->get('photos', [AdminEventPhotoController::class, 'index'])->name('photos.index');
 
         Route::middleware('can:inventory.manage')->prefix('inventory')->name('inventory.')->group(function () {
             Route::get('/', [AdminInventoryController::class, 'index'])->name('index');

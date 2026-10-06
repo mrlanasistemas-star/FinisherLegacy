@@ -40,21 +40,21 @@ defineProps<{
             <Badge
                 v-if="isDemo"
                 variant="outline"
-                class="border-fl-gold/30 text-fl-gold"
+                class="border-fl-gold/30 text-fl-gold-ink"
             >
                 Vista previa — QR demo
             </Badge>
         </div>
 
         <div
-            class="relative aspect-[3/2] w-full max-w-sm overflow-hidden rounded-xl border border-white/10 bg-white shadow-2xl [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
+            class="relative aspect-[3/2] w-full max-w-sm overflow-hidden rounded-xl border border-border bg-white shadow-2xl [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
         >
             <div v-if="svg" v-html="svg" />
             <div
                 v-if="loading"
                 class="absolute inset-0 flex items-center justify-center bg-black/30"
             >
-                <Spinner class="text-white" />
+                <Spinner class="text-foreground" />
             </div>
             <div
                 v-if="!svg && !loading"
@@ -64,13 +64,13 @@ defineProps<{
             </div>
         </div>
 
-        <p v-if="error" class="flex items-start gap-1.5 text-xs text-amber-400">
+        <p v-if="error" class="flex items-start gap-1.5 text-xs text-amber-700">
             <AlertTriangle class="mt-0.5 size-3.5 shrink-0" />
             {{ error }}
         </p>
         <ul
             v-else-if="warnings.length"
-            class="space-y-1 text-xs text-amber-400/90"
+            class="space-y-1 text-xs text-amber-700"
         >
             <li
                 v-for="(warning, i) in warnings"

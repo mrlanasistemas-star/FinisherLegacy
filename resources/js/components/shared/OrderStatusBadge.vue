@@ -12,15 +12,15 @@ const labels: Record<string, string> = {
 };
 
 const classes: Record<string, string> = {
-    pending: 'border-amber-500/30 text-amber-400',
-    confirmed: 'border-sky-500/30 text-sky-400',
-    cancelled: 'border-red-500/30 text-red-400',
-    completed: 'border-emerald-500/30 text-emerald-400',
+    pending: 'border-amber-500/30 text-amber-700',
+    confirmed: 'border-sky-500/30 text-sky-700',
+    cancelled: 'border-red-500/30 text-red-700',
+    completed: 'border-emerald-500/30 text-emerald-700',
 };
 
 const label = computed(() => labels[props.status] ?? props.status);
 const className = computed(
-    () => classes[props.status] ?? 'border-white/20 text-white/50',
+    () => classes[props.status] ?? 'border-foreground/15 text-muted-foreground',
 );
 </script>
 

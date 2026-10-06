@@ -175,70 +175,75 @@ function submit() {
         </div>
 
         <div class="text-center">
-            <Heart class="mx-auto size-8 text-fl-gold" />
-            <h1 class="mt-3 text-2xl font-bold text-white">
+            <Heart class="mx-auto size-8 text-fl-gold-ink" />
+            <h1 class="mt-3 text-2xl font-bold text-foreground">
                 {{ session.athlete_name }}
             </h1>
-            <p class="mt-1 text-sm text-white/60">
+            <p class="mt-1 text-sm text-muted-foreground">
                 {{ session.title
                 }}<span v-if="session.event"> · {{ session.event }}</span>
             </p>
-            <p v-if="session.description" class="mt-2 text-sm text-white/50">
+            <p
+                v-if="session.description"
+                class="mt-2 text-sm text-muted-foreground"
+            >
                 {{ session.description }}
             </p>
         </div>
 
         <div
             v-if="!session.accepting"
-            class="mt-8 rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-white/40"
+            class="mt-8 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground/80"
         >
             Esta sesión de apoyo ya no acepta mensajes.
         </div>
 
         <form
             v-else
-            class="mt-8 space-y-4 rounded-2xl border border-white/10 bg-fl-graphite/30 p-6"
+            class="mt-8 space-y-4 rounded-2xl border border-border bg-card/30 p-6"
             @submit.prevent="submit"
         >
             <div class="grid gap-2">
-                <label class="text-xs text-white/50">Tu nombre</label>
+                <label class="text-xs text-muted-foreground">Tu nombre</label>
                 <Input
                     v-model="form.display_name"
-                    class="border-white/10 bg-fl-black text-white"
+                    class="border-border bg-background text-foreground"
                     required
                 />
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="grid gap-2">
-                    <label class="text-xs text-white/50"
+                    <label class="text-xs text-muted-foreground"
                         >Relación (opcional)</label
                     >
                     <Input
                         v-model="form.relationship"
                         placeholder="Mamá, amigo…"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     />
                 </div>
                 <div class="grid gap-2">
-                    <label class="text-xs text-white/50"
+                    <label class="text-xs text-muted-foreground"
                         >Correo (opcional)</label
                     >
                     <Input
                         v-model="form.email"
                         type="email"
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     />
                 </div>
             </div>
 
             <div class="grid gap-2">
-                <label class="text-xs text-white/50">¿Cuándo debe sonar?</label>
+                <label class="text-xs text-muted-foreground"
+                    >¿Cuándo debe sonar?</label
+                >
                 <Select
                     :model-value="triggerPreset"
                     @update:model-value="(v) => applyTriggerPreset(String(v))"
                 >
                     <SelectTrigger
-                        class="border-white/10 bg-fl-black text-white"
+                        class="border-border bg-background text-foreground"
                     >
                         <SelectValue />
                     </SelectTrigger>
@@ -263,8 +268,8 @@ function submit() {
                     class="flex-1 rounded-md border px-3 py-1.5 text-sm"
                     :class="
                         messageType === 'text'
-                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-soft'
-                            : 'border-white/10 text-white/50'
+                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-ink'
+                            : 'border-border text-muted-foreground'
                     "
                     @click="messageType = 'text'"
                 >
@@ -275,8 +280,8 @@ function submit() {
                     class="flex-1 rounded-md border px-3 py-1.5 text-sm"
                     :class="
                         messageType === 'audio'
-                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-soft'
-                            : 'border-white/10 text-white/50'
+                            ? 'border-fl-gold/40 bg-fl-gold/10 text-fl-gold-ink'
+                            : 'border-border text-muted-foreground'
                     "
                     @click="messageType = 'audio'"
                 >
@@ -285,12 +290,12 @@ function submit() {
             </div>
 
             <div v-if="messageType === 'text'" class="grid gap-2">
-                <label class="text-xs text-white/50">Tu mensaje</label>
+                <label class="text-xs text-muted-foreground">Tu mensaje</label>
                 <Textarea
                     v-model="form.message_text"
                     rows="4"
                     maxlength="500"
-                    class="border-white/10 bg-fl-black text-white"
+                    class="border-border bg-background text-foreground"
                 />
             </div>
 
@@ -299,7 +304,7 @@ function submit() {
                     <Button
                         type="button"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                         @click="recording ? stopRecording() : startRecording()"
                     >
                         <Square v-if="recording" class="size-4" />
@@ -311,7 +316,7 @@ function submit() {
                         }}
                     </Button>
                     <label
-                        class="flex cursor-pointer items-center gap-1.5 text-xs text-white/50 hover:text-white"
+                        class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                     >
                         <Upload class="size-3.5" />
                         Subir archivo
@@ -329,12 +334,14 @@ function submit() {
                     controls
                     class="w-full"
                 />
-                <p class="text-[11px] text-white/30">
+                <p class="text-[11px] text-muted-foreground/80">
                     Máximo {{ audioMaxSeconds }} segundos.
                 </p>
             </div>
 
-            <label class="flex items-center gap-2 text-xs text-white/50">
+            <label
+                class="flex items-center gap-2 text-xs text-muted-foreground"
+            >
                 <input v-model="form.is_surprise" type="checkbox" />
                 Que sea sorpresa — {{ session.athlete_name }} no lo verá antes
                 de escucharlo

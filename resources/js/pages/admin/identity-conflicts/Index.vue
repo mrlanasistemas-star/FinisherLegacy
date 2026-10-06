@@ -61,9 +61,9 @@ function resolve(
 }
 
 const bandClass: Record<string, string> = {
-    Alta: 'border-emerald-500/30 text-emerald-400',
-    Media: 'border-amber-500/30 text-amber-400',
-    Baja: 'border-white/20 text-white/50',
+    Alta: 'border-emerald-500/30 text-emerald-700',
+    Media: 'border-amber-500/30 text-amber-700',
+    Baja: 'border-foreground/15 text-muted-foreground',
 };
 </script>
 
@@ -71,11 +71,13 @@ const bandClass: Record<string, string> = {
     <Head title="Conflictos de identidad" />
 
     <div class="p-4 md:p-8">
-        <h1 class="mb-1 flex items-center gap-1.5 text-xl font-bold text-white">
-            <ShieldQuestion class="size-5 text-fl-gold" />
+        <h1
+            class="mb-1 flex items-center gap-1.5 text-xl font-bold text-foreground"
+        >
+            <ShieldQuestion class="size-5 text-fl-gold-ink" />
             Conflictos de identidad
         </h1>
-        <p class="mb-6 text-sm text-white/50">
+        <p class="mb-6 text-sm text-muted-foreground">
             Coincidencias que el sistema no pudo vincular automáticamente —
             nunca se fusiona por nombre solamente. La confianza es una ayuda, no
             una certeza: revísalo antes de decidir.
@@ -89,11 +91,13 @@ const bandClass: Record<string, string> = {
             <div
                 v-for="conflict in conflicts.data"
                 :key="conflict.id"
-                class="rounded-xl border border-white/10 bg-fl-graphite/30 p-4"
+                class="rounded-xl border border-border bg-card/30 p-4"
                 :class="{ 'opacity-50': pendingIds.has(conflict.id) }"
             >
                 <div class="mb-3 flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-xs text-white/40">
+                    <div
+                        class="flex items-center gap-2 text-xs text-muted-foreground/80"
+                    >
                         <span>{{
                             conflict.event ?? conflict.source_type
                         }}</span>
@@ -111,18 +115,20 @@ const bandClass: Record<string, string> = {
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div
-                        class="rounded-lg border border-white/10 bg-fl-black/40 p-3"
+                        class="rounded-lg border border-border bg-background/40 p-3"
                     >
-                        <p class="mb-1 text-xs text-white/30 uppercase">
+                        <p
+                            class="mb-1 text-xs text-muted-foreground/80 uppercase"
+                        >
                             Datos importados
                         </p>
-                        <p class="text-white">
+                        <p class="text-foreground">
                             {{
                                 conflict.incoming.full_name ??
                                 `${conflict.incoming.first_name ?? ''} ${conflict.incoming.last_name ?? ''}`
                             }}
                         </p>
-                        <p class="text-xs text-white/50">
+                        <p class="text-xs text-muted-foreground">
                             {{ conflict.incoming.email ?? 'Sin email' }} ·
                             {{
                                 conflict.incoming.birth_date ??
@@ -131,19 +137,21 @@ const bandClass: Record<string, string> = {
                         </p>
                     </div>
                     <div
-                        class="rounded-lg border border-white/10 bg-fl-black/40 p-3"
+                        class="rounded-lg border border-border bg-background/40 p-3"
                     >
-                        <p class="mb-1 text-xs text-white/30 uppercase">
+                        <p
+                            class="mb-1 text-xs text-muted-foreground/80 uppercase"
+                        >
                             Posible atleta
                             <span v-if="conflict.candidates_count > 1">
                                 (+{{ conflict.candidates_count - 1 }} más)
                             </span>
                         </p>
                         <template v-if="conflict.candidate">
-                            <p class="text-white">
+                            <p class="text-foreground">
                                 {{ conflict.candidate.full_name }}
                             </p>
-                            <p class="text-xs text-white/50">
+                            <p class="text-xs text-muted-foreground">
                                 {{ conflict.candidate.email ?? 'Sin email' }} ·
                                 {{
                                     conflict.candidate.birth_date ??
@@ -151,7 +159,7 @@ const bandClass: Record<string, string> = {
                                 }}
                             </p>
                         </template>
-                        <p v-else class="text-sm text-white/30">
+                        <p v-else class="text-sm text-muted-foreground/80">
                             Sin candidato específico.
                         </p>
                     </div>
@@ -172,7 +180,7 @@ const bandClass: Record<string, string> = {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white hover:bg-white/10"
+                        class="border-border text-foreground hover:bg-foreground/5"
                         :disabled="pendingIds.has(conflict.id)"
                         @click="resolve(conflict, 'create_new')"
                     >
@@ -182,7 +190,7 @@ const bandClass: Record<string, string> = {
                     <Button
                         size="sm"
                         variant="outline"
-                        class="border-white/15 text-white/60 hover:bg-white/10"
+                        class="border-border text-muted-foreground hover:bg-foreground/5"
                         :disabled="pendingIds.has(conflict.id)"
                         @click="resolve(conflict, 'ignore')"
                     >
@@ -194,7 +202,7 @@ const bandClass: Record<string, string> = {
 
             <div
                 v-if="!conflicts.data.length"
-                class="rounded-xl border border-dashed border-white/15 p-10 text-center text-sm text-white/40"
+                class="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground/80"
             >
                 Sin conflictos pendientes.
             </div>

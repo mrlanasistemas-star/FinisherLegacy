@@ -147,7 +147,7 @@ useIntersectionObserver(
 
         <!-- Legibility overlay — only needed over real photo/video, the CSS
              scene is already tuned dark enough on its own. -->
-        <div v-if="stage !== 'css'" class="absolute inset-0 bg-fl-black/55" />
-        <div class="absolute inset-x-0 bottom-0 h-px bg-white/10" />
+        <div v-if="stage !== 'css'" class="absolute inset-0 bg-background/55" />
+        <div class="absolute inset-x-0 bottom-0 h-px bg-foreground/5" />
     </div>
 </template>

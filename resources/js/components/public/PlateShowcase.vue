@@ -148,18 +148,18 @@ const hotspots = [
                     class="fl-loop-pulse absolute top-1/2 -left-3 z-10 flex size-7 -translate-y-1/2 items-center justify-center sm:-left-3.5 sm:size-8"
                 >
                     <span
-                        class="absolute inset-0 rounded-full border-2 border-white/20"
+                        class="absolute inset-0 rounded-full border-2 border-foreground/15"
                         style="
                             background: linear-gradient(
                                 155deg,
-                                #4b4b4e 0%,
-                                #232326 55%,
-                                #141416 100%
+                                #fbfaf7 0%,
+                                #d6d3cb 55%,
+                                #aeaaa1 100%
                             );
                         "
                     />
                     <span
-                        class="relative size-2.5 rounded-full bg-fl-black ring-1 ring-black/60"
+                        class="relative size-2.5 rounded-full bg-background ring-1 ring-black/20"
                     />
                 </span>
                 <span
@@ -168,48 +168,48 @@ const hotspots = [
                     style="animation-delay: 220ms"
                 >
                     <span
-                        class="absolute inset-0 rounded-full border-2 border-white/20"
+                        class="absolute inset-0 rounded-full border-2 border-foreground/15"
                         style="
                             background: linear-gradient(
                                 155deg,
-                                #4b4b4e 0%,
-                                #232326 55%,
-                                #141416 100%
+                                #fbfaf7 0%,
+                                #d6d3cb 55%,
+                                #aeaaa1 100%
                             );
                         "
                     />
                     <span
-                        class="relative size-2.5 rounded-full bg-fl-black ring-1 ring-black/60"
+                        class="relative size-2.5 rounded-full bg-background ring-1 ring-black/20"
                     />
                 </span>
 
                 <!-- The engraved metal bar itself -->
                 <button
                     type="button"
-                    class="fl-shine relative aspect-[3/1] w-full overflow-hidden rounded-[8px] border border-white/15"
+                    class="fl-shine relative aspect-[3/1] w-full overflow-hidden rounded-[8px] border border-foreground/15"
                     style="
                         box-shadow:
-                            0 20px 50px -18px rgba(0, 0, 0, 0.75),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.22),
-                            inset 0 -1px 0 rgba(0, 0, 0, 0.55);
+                            0 22px 44px -22px rgba(23, 23, 20, 0.45),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                            inset 0 -1px 0 rgba(0, 0, 0, 0.18);
                         background:
                             repeating-linear-gradient(
                                 100deg,
-                                rgba(255, 255, 255, 0.05) 0px,
-                                rgba(255, 255, 255, 0.05) 1px,
+                                rgba(0, 0, 0, 0.035) 0px,
+                                rgba(0, 0, 0, 0.035) 1px,
                                 transparent 1px,
                                 transparent 3px
                             ),
                             radial-gradient(
                                 circle at var(--glare-x) var(--glare-y),
-                                rgba(255, 255, 255, 0.16),
+                                rgba(255, 255, 255, 0.7),
                                 transparent 45%
                             ),
                             linear-gradient(
                                 160deg,
-                                #3a3a3d 0%,
-                                #232326 55%,
-                                #17171a 100%
+                                #f6f5f1 0%,
+                                #dedbd4 55%,
+                                #bdb9b0 100%
                             );
                     "
                     :aria-label="
@@ -220,10 +220,10 @@ const hotspots = [
                     @click="showingBack = !showingBack"
                 >
                     <span
-                        class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent"
+                        class="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent"
                     />
                     <span
-                        class="pointer-events-none absolute inset-[3px] rounded-[5px] border border-white/[0.06]"
+                        class="pointer-events-none absolute inset-[3px] rounded-[5px] border border-foreground/10"
                     />
 
                     <!-- Front: engraved athlete data -->
@@ -237,24 +237,26 @@ const hotspots = [
                     >
                         <span class="min-w-0 text-left">
                             <span
-                                class="block text-[8px] font-semibold tracking-[0.32em] text-fl-gold-soft/80 uppercase sm:text-[9px]"
+                                class="block text-[8px] font-semibold tracking-[0.32em] text-fl-gold-ink uppercase sm:text-[9px]"
                             >
                                 Finisher · Legacy
                             </span>
                             <span
-                                class="mt-1 block truncate text-sm leading-tight font-bold tracking-tight text-white uppercase sm:text-base"
+                                class="mt-1 block truncate text-sm leading-tight font-bold tracking-tight text-foreground uppercase sm:text-base"
                             >
                                 {{ eventName }}
                             </span>
                             <span
-                                class="mt-1 flex items-baseline gap-2 text-xs text-white/55"
+                                class="mt-1 flex items-baseline gap-2 text-xs text-muted-foreground"
                             >
                                 <span class="truncate">{{ athleteName }}</span>
-                                <span aria-hidden="true" class="text-white/25"
+                                <span
+                                    aria-hidden="true"
+                                    class="text-muted-foreground/80"
                                     >·</span
                                 >
                                 <span
-                                    class="legacy-numeric shrink-0 text-sm font-semibold text-fl-gold-soft"
+                                    class="legacy-numeric shrink-0 text-sm font-semibold text-fl-gold-ink"
                                 >
                                     {{ time }}
                                 </span>
@@ -263,14 +265,14 @@ const hotspots = [
 
                         <span class="flex shrink-0 flex-col items-center gap-1">
                             <span
-                                class="flex size-8 items-center justify-center rounded-[4px] border border-fl-gold-soft/25 bg-black/30 sm:size-9"
+                                class="flex size-8 items-center justify-center rounded-[4px] border border-foreground/15 bg-white/50 sm:size-9"
                             >
                                 <QrCode
-                                    class="size-4 text-fl-gold-soft sm:size-5"
+                                    class="size-4 text-fl-gold-ink sm:size-5"
                                 />
                             </span>
                             <span
-                                class="legacy-numeric text-[7px] tracking-wide text-white/35 sm:text-[8px]"
+                                class="legacy-numeric text-[7px] tracking-wide text-muted-foreground/80 sm:text-[8px]"
                                 >{{ serial }}</span
                             >
                         </span>
@@ -286,12 +288,15 @@ const hotspots = [
                         "
                     >
                         <span
-                            class="text-lg font-black tracking-[0.2em] text-fl-gold-soft/90"
+                            class="text-lg font-black tracking-[0.2em] text-fl-gold-ink"
                             >FL</span
                         >
-                        <span class="h-6 w-px bg-white/15" aria-hidden="true" />
                         <span
-                            class="legacy-numeric text-[9px] tracking-[0.18em] text-white/40 uppercase sm:text-[10px]"
+                            class="h-6 w-px bg-foreground/[0.07]"
+                            aria-hidden="true"
+                        />
+                        <span
+                            class="legacy-numeric text-[9px] tracking-[0.18em] text-muted-foreground/80 uppercase sm:text-[10px]"
                         >
                             {{ serial }} · Acero inoxidable cepillado
                         </span>
@@ -313,14 +318,14 @@ const hotspots = [
                         @click.stop="toggleHotspot(hotspot.label)"
                     >
                         <span
-                            class="flex size-4 items-center justify-center rounded-full border border-fl-gold-soft/50 bg-fl-black/70 text-[10px] leading-none text-fl-gold-soft backdrop-blur-sm transition-transform duration-200 group-hover:scale-125"
+                            class="flex size-4 items-center justify-center rounded-full border border-fl-gold-soft/50 bg-background/70 text-[10px] leading-none text-fl-gold-ink backdrop-blur-sm transition-transform duration-200 group-hover:scale-125"
                             :class="{
                                 'scale-125': activeHotspot === hotspot.label,
                             }"
                             >+</span
                         >
                         <span
-                            class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 rounded-md border border-white/10 bg-fl-black px-2 py-1 text-[10px] font-medium tracking-wide whitespace-nowrap text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+                            class="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 rounded-md border border-border bg-background px-2 py-1 text-[10px] font-medium tracking-wide whitespace-nowrap text-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100"
                             :class="{
                                 'opacity-100': activeHotspot === hotspot.label,
                             }"
@@ -375,7 +380,7 @@ const hotspots = [
 
         <p
             v-if="showCaption"
-            class="mt-3 text-center text-xs tracking-wide text-white/40 uppercase"
+            class="mt-3 text-center text-xs tracking-wide text-muted-foreground/80 uppercase"
         >
             Se sujeta al listón de tu medalla · toca para ver el reverso
         </p>
