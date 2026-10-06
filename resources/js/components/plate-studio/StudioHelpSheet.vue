@@ -20,7 +20,7 @@ const items = [
     },
     {
         q: 'VISTA PRODUCTO vs VISTA GRABADO',
-        a: 'Producto muestra los colores configurados, como se vería la placa terminada. Grabado fuerza blanco y negro puro, sin gradientes — es el archivo que se envía a la máquina láser.',
+        a: 'Producto muestra los colores configurados, como se vería la placa terminada. Producción fuerza blanco y negro puro, sin gradientes — es el archivo que se envía al equipo de producción.',
     },
     {
         q: '¿Qué es el QR?',

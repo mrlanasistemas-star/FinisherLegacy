@@ -20,7 +20,11 @@ use Illuminate\Support\Carbon;
  * @property int|null $buyer_user_id
  * @property int $gross_minor
  * @property int $platform_fee_minor
- * @property int $processor_fee_minor
+ * @property int $processor_fee_minor Fee frozen in the split (estimate unless reconciled at sale time)
+ * @property bool $processor_fee_estimated
+ * @property int|null $processor_fee_actual_minor Real fee reported by the gateway, when known
+ * @property Carbon|null $processor_fee_reconciled_at
+ * @property string|null $payment_provider openpay | stripe | manual
  * @property int $photographer_net_minor
  * @property string $commission_percent
  * @property string $currency
@@ -33,6 +37,7 @@ use Illuminate\Support\Carbon;
     'uuid', 'event_photo_id', 'photographer_profile_id', 'order_id', 'order_item_id', 'buyer_user_id',
     'gross_minor', 'platform_fee_minor', 'processor_fee_minor', 'photographer_net_minor', 'commission_percent',
     'currency', 'payout_status', 'paid_out_at', 'download_count',
+    'payment_provider', 'processor_fee_estimated', 'processor_fee_actual_minor', 'processor_fee_reconciled_at',
 ])]
 class PhotoSale extends Model
 {
@@ -40,7 +45,28 @@ class PhotoSale extends Model
     {
         return [
             'paid_out_at' => 'datetime',
+            'processor_fee_estimated' => 'boolean',
+            'processor_fee_actual_minor' => 'integer',
+            'processor_fee_reconciled_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Records the gateway's real processing fee next to the estimate.
+     * Deliberately does NOT rewrite processor_fee_minor nor the
+     * photographer's net: the split the photographer was shown stays
+     * frozen. The difference (actual − estimate) is Finisher's to absorb
+     * or settle explicitly — it is returned so a report/admin action can
+     * surface it, never applied silently.
+     */
+    public function reconcileProcessorFee(int $actualFeeMinor): int
+    {
+        $this->update([
+            'processor_fee_actual_minor' => $actualFeeMinor,
+            'processor_fee_reconciled_at' => now(),
+        ]);
+
+        return $actualFeeMinor - $this->processor_fee_minor;
     }
 
     public function getRouteKeyName(): string

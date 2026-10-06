@@ -71,7 +71,7 @@ const form = ref({
     description: '',
     width_mm: 60,
     height_mm: 40,
-    material: 'Acero inoxidable cepillado',
+    material: 'Zamak niquelado',
     orientation: 'landscape',
     safe_margin_mm: 3,
 });
@@ -305,7 +305,7 @@ const statusLabel: Record<string, string> = {
                             v-model="form.name"
                             required
                             class="bg-background"
-                            placeholder="Ironman Cozumel 2026 — Acero 60×40"
+                            placeholder="Ironman Cozumel 2026 — Zamak 90×34"
                         />
                     </div>
                     <div class="grid gap-2">

@@ -44,10 +44,10 @@ const gridProducts = computed(() =>
 );
 
 const plateFeatures = [
-    'Personaliza con tu nombre',
-    'Graba tus logros',
-    'Conecta con tu perfil',
-    'Tecnología NFC',
+    'Zamak niquelado',
+    'Acabado en resina',
+    'Personalizada con tu carrera',
+    'NFC integrado',
 ];
 </script>
 
@@ -180,7 +180,7 @@ const plateFeatures = [
                 >
                     {{
                         featured.tagline ||
-                        'Grabado personalizado · Tecnología NFC'
+                        'Zamak niquelado · resina · NFC integrado'
                     }}
                 </p>
                 <p class="mt-6 font-serif text-2xl text-foreground">

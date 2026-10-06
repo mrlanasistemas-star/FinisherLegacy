@@ -34,8 +34,11 @@ export type LegacyPlateArea = {
     height: number;
 };
 
+export type LegacyPlateLayoutStyle = 'nucleo' | 'distancia' | 'trayecto';
+
 export type LegacyPlateModelData = {
     name: string;
+    layout_style?: LegacyPlateLayoutStyle;
     slug: string;
     width_mm: number;
     height_mm: number;

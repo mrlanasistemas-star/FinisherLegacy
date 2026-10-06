@@ -119,6 +119,7 @@ class ProductController extends Controller
                     'is_primary' => $m->is_primary,
                     'is_hover' => $m->is_hover,
                 ]),
+                'concept_gallery' => $product->media->isEmpty() && ! $product->image_path ? $product->conceptGallery() : [],
                 'contentSections' => $product->contentSections->map(fn (ProductContentSection $s) => [
                     'type' => $s->type->value,
                     'title' => $s->title,

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * Store product card — photo-led, never stock counts. Images come only
- * from Administración → Productos (gallery primary + hover image); with
- * none uploaded it shows the designed placeholder. "Próximamente" /
+ * Store product card — photo-led, never stock counts. Image priority is
+ * resolved server-side (Product::primaryImageUrl): uploaded gallery image
+ * → conceptual render for the slug → this card's designed placeholder. "Próximamente" /
  * "Concepto" products are labelled and never show a buy price.
  */
 import { Link } from '@inertiajs/vue3';
@@ -46,6 +46,8 @@ withDefaults(
                 <img
                     :src="imageUrl"
                     :alt="imageAlt || name"
+                    width="800"
+                    height="1000"
                     loading="lazy"
                     decoding="async"
                     class="size-full object-cover transition duration-700 ease-out group-hover:scale-[1.03]"
@@ -64,11 +66,7 @@ withDefaults(
             <ProductImagePlaceholder
                 v-else
                 :name="name"
-                :label="
-                    availability === 'concept'
-                        ? 'Render en desarrollo'
-                        : 'Fotografía próximamente'
-                "
+                label="Finisher Legacy"
             />
 
             <span

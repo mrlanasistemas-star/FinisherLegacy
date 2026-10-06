@@ -78,7 +78,7 @@ function copyCode() {
                 @click="downloadOpen = true"
             >
                 <Download class="size-4" />
-                Descargar para láser
+                Descargar archivo de producción
             </Button>
             <Button
                 as-child

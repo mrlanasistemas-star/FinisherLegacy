@@ -67,6 +67,8 @@ type Product = {
     image_url: string | null;
     variants: Variant[];
     gallery: GalleryItem[];
+    /** Product renders shown until a real photo is uploaded in admin. */
+    concept_gallery: { url: string; alt: string }[];
     contentSections: ContentSection[];
 };
 
@@ -85,24 +87,41 @@ const metaDescription = computed(
         `${props.product.name} — parte del ecosistema Finisher Legacy. Conoce precio, opciones y disponibilidad.`,
 );
 
-// Falls back to the legacy single `image_path` when no gallery has been
-// configured yet.
-const galleryItems = computed<GalleryItem[]>(() =>
-    props.product.gallery.length
-        ? props.product.gallery
-        : props.product.image_url
-          ? [
-                {
-                    id: 0,
-                    type: 'image',
-                    url: props.product.image_url,
-                    poster_url: null,
-                    alt_text: props.product.name,
-                    is_primary: true,
-                },
-            ]
-          : [],
+// Uploaded gallery → legacy single `image_path` → conceptual renders.
+const isConcept = computed(
+    () =>
+        !props.product.gallery.length &&
+        props.product.concept_gallery.length > 0,
 );
+const galleryItems = computed<GalleryItem[]>(() => {
+    if (props.product.gallery.length) {
+        return props.product.gallery;
+    }
+
+    if (isConcept.value) {
+        return props.product.concept_gallery.map((item, index) => ({
+            id: -1 - index,
+            type: 'image' as const,
+            url: item.url,
+            poster_url: null,
+            alt_text: item.alt,
+            is_primary: index === 0,
+        }));
+    }
+
+    return props.product.image_url
+        ? [
+              {
+                  id: 0,
+                  type: 'image',
+                  url: props.product.image_url,
+                  poster_url: null,
+                  alt_text: props.product.name,
+                  is_primary: true,
+              },
+          ]
+        : [];
+});
 
 const activeIndex = ref(0);
 const activeItem = computed(
@@ -176,24 +195,24 @@ const plateSteps = [
         body: 'La placa se personaliza con tu participación.',
     },
     {
-        title: 'Selecciona tu modelo',
-        body: 'Escoge el diseño disponible para ese evento.',
+        title: 'Selecciona tu layout',
+        body: 'Uno de los tres diseños de frente y reverso.',
     },
     {
-        title: 'Grabamos tu historia',
-        body: 'Nombre, evento, tiempo y tu Legacy Code.',
+        title: 'Personalizamos tu placa',
+        body: 'Tu nombre, evento, distancia y tiempo, impresos y protegidos con resina.',
     },
     {
-        title: 'Vincula con NFC',
-        body: 'Conecta la placa física con tu perfil.',
+        title: 'Acerca tu teléfono',
+        body: 'El NFC integrado abre tu Legacy.',
     },
 ];
 
 const plateFeatures = [
-    'Personaliza con tu nombre',
-    'Graba tus logros',
-    'Conecta con tu perfil',
-    'Tecnología NFC',
+    'Zamak niquelado',
+    'Acabado en resina',
+    'Personalizada con tu carrera',
+    'NFC integrado · sin QR impreso',
 ];
 </script>
 
@@ -234,6 +253,11 @@ const plateFeatures = [
                         class="size-full object-cover"
                         fetchpriority="high"
                     />
+                    <span
+                        v-if="isConcept && activeItem"
+                        class="absolute right-4 bottom-4 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-medium tracking-wide text-muted-foreground backdrop-blur"
+                        >Render de producto</span
+                    >
                     <div
                         v-else-if="isLegacyPlate"
                         class="flex size-full items-center justify-center bg-fl-cream p-10"
@@ -257,11 +281,7 @@ const plateFeatures = [
                         v-else
                         :name="product.name"
                         size="lg"
-                        :label="
-                            product.availability === 'concept'
-                                ? 'Render en desarrollo'
-                                : 'Fotografía próximamente'
-                        "
+                        label="Finisher Legacy"
                     />
 
                     <span
@@ -333,7 +353,7 @@ const plateFeatures = [
                     >
                         {{
                             product.tagline ||
-                            'Grabado personalizado · Tecnología NFC'
+                            'Zamak niquelado · resina · NFC integrado'
                         }}
                     </p>
                     <p

@@ -187,7 +187,7 @@ export const navigation: NavItem[] = [
         group: 'resumen',
     },
 
-    // Producción — a Legacy Plate from engraving to its NFC/Legacy Code link.
+    // Producción — a Legacy Plate from print (front/back) to its NFC link.
     {
         label: 'Personalización',
         icon: resolveIcon('Factory'),

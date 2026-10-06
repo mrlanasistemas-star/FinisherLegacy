@@ -191,8 +191,8 @@ function openEdit(photo: Photo) {
 
 function saveEdit() {
     if (!editing.value) {
-return;
-}
+        return;
+    }
 
     router.patch(
         `/fotografo/fotos/${editing.value.uuid}`,

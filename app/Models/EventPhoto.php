@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\EventPhotoStatus;
+use App\Enums\PhotographerStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,6 +61,19 @@ class EventPhoto extends Model
     public function thumbUrl(): string
     {
         return Storage::disk('public')->url($this->thumb_path);
+    }
+
+    /**
+     * Buyable right now: published AND its photographer is still approved
+     * (a suspended photographer's photos disappear from sale immediately).
+     *
+     * @param  Builder<EventPhoto>  $query
+     * @return Builder<EventPhoto>
+     */
+    public function scopeForSale(Builder $query): Builder
+    {
+        return $query->where('status', EventPhotoStatus::Published)
+            ->whereHas('photographer', fn ($q) => $q->where('status', PhotographerStatus::Approved));
     }
 
     /** @return BelongsTo<PhotographerProfile, $this> */

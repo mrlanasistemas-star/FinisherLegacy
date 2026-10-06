@@ -2,7 +2,6 @@
 
 namespace App\Actions\Photos;
 
-use App\Enums\EventPhotoStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
@@ -30,26 +29,53 @@ class CheckoutEventPhotos
      */
     public function handle(User $buyer, array $photoUuids): Order
     {
-        $photos = EventPhoto::query()
-            ->whereIn('uuid', array_values(array_unique($photoUuids)))
-            ->where('status', EventPhotoStatus::Published)
-            ->with('eventEdition.event')
-            ->get();
+        // Every requested uuid is accounted for: all must be buyable now,
+        // or nothing is charged and the buyer is told which ones changed
+        // (deleted, unpublished, photographer suspended, already bought).
+        // Never a silent partial order.
+        $requested = array_values(array_unique(array_filter($photoUuids, 'is_string')));
 
-        if ($photos->isEmpty()) {
+        if ($requested === []) {
             throw ValidationException::withMessages(['photos' => 'Selecciona al menos una fotografía disponible.']);
         }
 
-        $alreadyOwned = PhotoSale::query()
+        $validUuids = array_values(array_filter($requested, fn (string $uuid) => Str::isUuid($uuid)));
+
+        $photos = EventPhoto::query()
+            ->whereIn('uuid', $validUuids)
+            ->forSale()
+            ->with('eventEdition.event')
+            ->get();
+
+        $unavailable = array_values(array_diff($requested, $photos->pluck('uuid')->all()));
+
+        $owned = PhotoSale::query()
             ->where('buyer_user_id', $buyer->id)
             ->whereIn('event_photo_id', $photos->pluck('id'))
             ->pluck('event_photo_id')
             ->all();
+        $ownedUuids = $photos->filter(fn (EventPhoto $photo) => in_array($photo->id, $owned, true))->pluck('uuid')->all();
 
-        $photos = $photos->reject(fn (EventPhoto $photo) => in_array($photo->id, $alreadyOwned, true))->values();
+        if ($unavailable !== [] || $ownedUuids !== []) {
+            $messages = [];
 
-        if ($photos->isEmpty()) {
-            throw ValidationException::withMessages(['photos' => 'Ya compraste estas fotografías: están en Mis fotos.']);
+            if ($unavailable !== []) {
+                $messages[] = count($unavailable) === 1
+                    ? '1 fotografía de tu selección ya no está disponible.'
+                    : count($unavailable).' fotografías de tu selección ya no están disponibles.';
+            }
+
+            if ($ownedUuids !== []) {
+                $messages[] = count($ownedUuids) === 1
+                    ? '1 fotografía ya la compraste: está en Mis fotos.'
+                    : count($ownedUuids).' fotografías ya las compraste: están en Mis fotos.';
+            }
+
+            throw ValidationException::withMessages([
+                'photos' => implode(' ', $messages).' Las quitamos de tu selección; revisa y confirma de nuevo — no se cobró nada.',
+                // Machine-readable so the page can deselect exactly those.
+                'photos_removed' => implode(',', [...$unavailable, ...$ownedUuids]),
+            ]);
         }
 
         if ($photos->pluck('currency')->unique()->count() > 1) {

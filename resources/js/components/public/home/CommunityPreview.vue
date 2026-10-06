@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import PostPreview from '@/components/community/PostPreview.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
 import { Button } from '@/components/ui/button';
+import { MEDIA } from '@/config/media';
 import { register } from '@/routes';
 import { index as communityIndex } from '@/routes/community';
 import type { CommunityPost } from '@/types';
@@ -13,6 +14,7 @@ defineProps<{ posts: CommunityPost[] }>();
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
+const photo = MEDIA.photo.triumph;
 </script>
 
 <template>
@@ -44,29 +46,47 @@ const isGuest = computed(() => !page.props.auth.user);
 
             <div
                 v-else
-                class="mt-10 flex flex-col items-start gap-5 rounded-xl border border-dashed border-foreground/15 bg-background p-8 sm:flex-row sm:items-center sm:justify-between"
+                class="relative mt-10 grid overflow-hidden rounded-2xl bg-fl-black text-white md:grid-cols-2"
             >
-                <div class="flex items-start gap-4">
+                <img
+                    :src="photo.src"
+                    :srcset="photo.srcset"
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    :width="photo.width"
+                    :height="photo.height"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    class="h-64 w-full object-cover object-[60%_30%] md:h-full"
+                />
+                <div class="flex flex-col justify-center p-8 sm:p-12">
                     <span
-                        class="flex size-11 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
+                        class="flex size-11 items-center justify-center rounded-full bg-white/10 text-fl-gold"
                     >
                         <PartyPopper class="size-5" />
                     </span>
-                    <div>
-                        <p class="font-serif text-xl">
-                            Sé de los primeros en compartir tu logro.
-                        </p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Publica tu carrera, tu marca personal o tu medalla y
-                            deja que la comunidad lo celebre contigo.
-                        </p>
-                    </div>
+                    <p
+                        class="mt-6 font-serif text-3xl leading-tight sm:text-4xl"
+                    >
+                        Sé de los primeros en compartir tu logro.
+                    </p>
+                    <p class="mt-3 text-white/70">
+                        Publica tu carrera, tu marca personal o tu medalla y
+                        deja que la comunidad lo celebre contigo.
+                    </p>
+                    <Button
+                        as-child
+                        class="mt-8 w-fit rounded-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                    >
+                        <Link :href="isGuest ? register() : communityIndex()">
+                            {{
+                                isGuest
+                                    ? 'Crear mi perfil'
+                                    : 'Publicar un logro'
+                            }}
+                        </Link>
+                    </Button>
                 </div>
-                <Button as-child class="rounded-full">
-                    <Link :href="isGuest ? register() : communityIndex()">
-                        {{ isGuest ? 'Crear mi perfil' : 'Publicar un logro' }}
-                    </Link>
-                </Button>
             </div>
         </div>
     </section>

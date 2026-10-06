@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\Photos\CheckoutEventPhotos;
 use App\Enums\AthleteEventMediaType;
 use App\Enums\EditionStatus;
-use App\Enums\EventPhotoStatus;
 use App\Enums\EventStatus;
 use App\Models\AthleteEventMedia;
 use App\Models\EventEdition;
@@ -20,6 +19,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -71,12 +71,21 @@ class PhotosController extends Controller
         return to_route('store.orders.show', $order);
     }
 
-    public function download(Request $request, PhotoSale $sale): StreamedResponse
+    public function download(Request $request, PhotoSale $sale): StreamedResponse|RedirectResponse
     {
+        // Only the buyer — anyone else gets a 404 (never confirms it exists).
         abort_unless($sale->buyer_user_id === $request->user()->id, 404);
 
         $photo = $sale->photo;
-        abort_if($photo === null || ! Storage::disk('event_photo_originals')->exists($photo->original_path), 404);
+
+        if ($photo === null || ! Storage::disk('event_photo_originals')->exists($photo->original_path)) {
+            // Paid but the original is gone (storage incident): tell the
+            // buyer instead of a bare 404 and leave a trail for support.
+            report(new RuntimeException("Original missing for photo sale {$sale->uuid}"));
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'No pudimos encontrar el archivo original de esta foto. Escríbenos desde Contacto y lo resolvemos.']);
+
+            return back();
+        }
 
         $sale->increment('download_count');
         $extension = pathinfo($photo->original_path, PATHINFO_EXTENSION) ?: 'jpg';
@@ -113,7 +122,7 @@ class PhotosController extends Controller
     {
         return EventPhoto::query()
             ->where('event_edition_id', $editionId)
-            ->where('status', EventPhotoStatus::Published)
+            ->forSale()
             ->whereHas('bibs', fn ($q) => $q->where('bib_number', $bib))
             ->with(['photographer', 'eventEdition.event'])
             ->latest('id')

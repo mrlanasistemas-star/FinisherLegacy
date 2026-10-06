@@ -17,6 +17,8 @@ type Sale = {
     platform_fee_minor: number;
     net_minor: number;
     commission_percent: number;
+    processor_fee_estimated: boolean;
+    payment_method_label: string | null;
     payout_status: string;
     created_at: string;
 };
@@ -71,6 +73,9 @@ const money = (minor: number) =>
                     <p class="text-xs text-muted-foreground">
                         {{ shortDate(sale.created_at) }} · el cliente pagó
                         {{ money(sale.gross_minor) }}
+                        <template v-if="sale.payment_method_label">
+                            · {{ sale.payment_method_label }}</template
+                        >
                     </p>
                     <div class="mt-3 flex flex-wrap gap-2 text-xs">
                         <span
@@ -86,8 +91,12 @@ const money = (minor: number) =>
                         >
                         <span
                             class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-sky-800"
-                            ><CreditCard class="size-3.5" /> Stripe:
-                            {{ money(sale.processor_fee_minor) }}</span
+                            ><CreditCard class="size-3.5" />
+                            {{
+                                sale.processor_fee_estimated
+                                    ? 'Procesamiento (est.)'
+                                    : 'Procesamiento'
+                            }}: {{ money(sale.processor_fee_minor) }}</span
                         >
                     </div>
                 </div>

@@ -3,7 +3,7 @@
  * "Encuentra tu momento." — search an event + bib across photographers'
  * photos (watermarked preview, price) and athletes' public photos; pick
  * the ones you want and buy them (a regular Order paid with the existing
- * Stripe flow). Bought photos appear under "Compradas" with a
+ * online payment flow). Bought photos appear under "Compradas" with a
  * full-resolution download. Selfie search is a future, optional feature.
  */
 import { Link, router, usePage } from '@inertiajs/vue3';
@@ -22,6 +22,7 @@ import {
     UserRound,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
@@ -82,8 +83,8 @@ const eventOptions = computed(() =>
 
 function search() {
     if (!eventId.value || !bib.value.trim()) {
-return;
-}
+        return;
+    }
 
     searching.value = true;
     router.get(
@@ -112,8 +113,8 @@ const athletePhotos = computed(() =>
 const selected = ref<Set<string>>(new Set());
 function toggle(photo: Photo) {
     if (photo.kind !== 'pro' || photo.owned) {
-return;
-}
+        return;
+    }
 
     const next = new Set(selected.value);
 
@@ -135,14 +136,34 @@ const total = computed(() =>
 const buying = ref(false);
 function buy() {
     if (!selectedPhotos.value.length) {
-return;
-}
+        return;
+    }
 
     buying.value = true;
     router.post(
         '/fotos/comprar',
         { photos: [...selected.value] },
-        { onFinish: () => (buying.value = false) },
+        {
+            preserveScroll: true,
+            onError: (errors) => {
+                // The server never charges a partial selection: it names
+                // the photos that changed so we drop exactly those.
+                const removed = (errors.photos_removed ?? '')
+                    .split(',')
+                    .filter(Boolean);
+
+                if (removed.length) {
+                    const next = new Set(selected.value);
+                    removed.forEach((uuid) => next.delete(uuid));
+                    selected.value = next;
+                }
+
+                if (errors.photos) {
+                    toast.error(errors.photos);
+                }
+            },
+            onFinish: () => (buying.value = false),
+        },
     );
 }
 

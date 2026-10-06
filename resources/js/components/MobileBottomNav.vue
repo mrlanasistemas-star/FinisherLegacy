@@ -151,10 +151,11 @@ function openScanner() {
                     </div>
                     <div>
                         <p class="font-semibold text-foreground">
-                            Escanear el QR de mi placa
+                            Escanear un código Legacy
                         </p>
                         <p class="mt-0.5 text-xs text-muted-foreground">
-                            Carga el evento, tiempo y ritmo automáticamente.
+                            QR de prerregistro o Legacy Code. Con tu Legacy
+                            Plate basta acercar el teléfono (NFC).
                         </p>
                     </div>
                 </button>

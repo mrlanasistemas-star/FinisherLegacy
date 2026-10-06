@@ -47,7 +47,7 @@ const guideSteps = [
     'Aplica la transformación del reverso si el perfil de máquina la requiere (espejo/rotación).',
     'Ejecuta Frame otra vez.',
     'Graba el reverso.',
-    'Escanea el QR físicamente para validarlo.',
+    'Lee el NFC físicamente para validarlo.',
     'Marca la placa como lista.',
 ];
 
@@ -81,7 +81,7 @@ function download() {
     <Dialog v-model:open="open">
         <DialogContent class="border-border bg-card text-foreground">
             <DialogHeader>
-                <DialogTitle>Descargar archivos de grabado</DialogTitle>
+                <DialogTitle>Descargar archivos de producción</DialogTitle>
             </DialogHeader>
 
             <div class="space-y-4">
@@ -96,7 +96,7 @@ function download() {
                         <SelectContent>
                             <SelectItem value="svg"
                                 >SVG (vector, recomendado para
-                                láser)</SelectItem
+                                producción)</SelectItem
                             >
                             <SelectItem value="png">PNG (imagen)</SelectItem>
                             <SelectItem value="pdf"

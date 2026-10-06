@@ -3,16 +3,17 @@
 namespace Database\Seeders;
 
 use App\Models\LegacyPlateModel;
+use App\Support\LegacyPlateLayouts;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * The three Legacy Plate layouts (the product offers exactly three). Each
- * is printed front + back and carries an NFC chip — no laser, no printed
- * QR. Names are provisional and editable from Administración → Legacy
- * Plates → Layouts; positions are only a starting point for the visual
- * editor. Idempotent by slug, and never adds a fourth layout.
+ * The three Legacy Plate layouts (the product offers exactly three), each
+ * with its own composition — see App\Support\LegacyPlateLayouts. Printed
+ * front + back, NFC under the front FL panel; no laser, no printed QR.
+ * Idempotent by slug, never adds a fourth layout and never overwrites what
+ * an admin edited in the visual editor (only missing rows are created).
  */
 class LegacyPlateModelSeeder extends Seeder
 {
@@ -20,64 +21,56 @@ class LegacyPlateModelSeeder extends Seeder
 
     public function run(): void
     {
-        $this->seedModel(1, 'nucleo-reveal', 'Núcleo Reveal', 'LPM-NUCLEO-REVEAL', 'Nombre protagonista al frente; evento y fecha al reverso.', 90, 36);
-        $this->seedModel(2, 'dial-de-distancia', 'Dial de Distancia', 'LPM-DIAL-DISTANCIA', 'La distancia como protagonista, con tiempo y ritmo al frente.', 90, 40);
-        $this->seedModel(3, 'trayecto', 'Trayecto', 'LPM-TRAYECTO', 'Composición limpia: nombre y tiempo al frente, ficha completa del evento al reverso.', 90, 36);
+        foreach (LegacyPlateLayouts::definitions() as $slug => $definition) {
+            $this->seedModel($slug, $definition);
+        }
     }
 
-    private function seedModel(int $slot, string $slug, string $name, string $sku, string $description, float $w, float $h): void
+    /**
+     * @param  array<string, mixed>  $d
+     */
+    private function seedModel(string $slug, array $d): void
     {
         $existing = LegacyPlateModel::query()->where('slug', $slug)->first();
 
-        // Never create a fourth layout, even if someone renamed/replaced one.
         if ($existing === null && LegacyPlateModel::query()->count() >= LegacyPlateModel::MAX_LAYOUTS) {
             return;
         }
 
-        $slotTaken = LegacyPlateModel::query()->where('layout_slot', $slot)->when($existing, fn ($q) => $q->whereKeyNot($existing->id))->exists();
+        $slotTaken = LegacyPlateModel::query()->where('layout_slot', $d['slot'])->when($existing, fn ($q) => $q->whereKeyNot($existing->id))->exists();
+        [$w, $h] = [$d['width'], $d['height']];
 
-        $model = LegacyPlateModel::query()->updateOrCreate(
-            ['slug' => $slug],
-            [
-                'uuid' => $existing->uuid ?? (string) Str::uuid(),
-                'layout_slot' => $slotTaken ? $existing?->layout_slot : $slot,
-                'name' => $existing->name ?? $name,
-                'sku' => $existing->sku ?? $sku,
-                'description' => $existing->description ?? $description,
-                'width_mm' => $w,
-                'height_mm' => $h,
-                'engraving_area' => ['x' => 4, 'y' => 4, 'width' => $w - 8, 'height' => $h - 8],
-                'back_area' => ['x' => 4, 'y' => 4, 'width' => $w - 8, 'height' => $h - 8],
-                'active' => $existing->active ?? true,
-            ],
-        );
+        $model = $existing ?? LegacyPlateModel::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'slug' => $slug,
+            'layout_slot' => $slotTaken ? null : $d['slot'],
+            'layout_style' => $d['style'],
+            'name' => $d['name'],
+            'sku' => $d['sku'],
+            'description' => $d['description'],
+            'width_mm' => $w,
+            'height_mm' => $h,
+            'engraving_area' => ['x' => 3, 'y' => 3, 'width' => $w - 6, 'height' => $h - 6],
+            'back_area' => ['x' => 3, 'y' => 3, 'width' => $w - 6, 'height' => $h - 6],
+            'front_background' => $d['front_background'],
+            'front_text_color' => $d['front_text_color'],
+            'back_background' => $d['back_background'],
+            'back_text_color' => $d['back_text_color'],
+            'active' => true,
+        ]);
 
-        $half = ($w - 16) / 2;
-        $fields = [
-            // Front
-            ['athlete_name', 'front', 8, $h * 0.18, $w - 16, $h * 0.24, 5.5, 'center', true],
-            ['race_label', 'front', 8, $h * 0.5, $half, $h * 0.16, 3.2, 'left', true],
-            ['official_time', 'front', 8, $h * 0.68, $half, $h * 0.18, 4.2, 'left', true],
-            ['pace', 'front', 8 + $half, $h * 0.68, $half, $h * 0.18, 3.2, 'right', true],
-            // Back
-            ['event_name', 'back', 8, $h * 0.16, $w - 16, $h * 0.2, 4.5, 'center', true],
-            ['event_date', 'back', 8, $h * 0.4, $w - 16, $h * 0.14, 3.2, 'center', true],
-            ['distance', 'back', 8, $h * 0.58, $w - 16, $h * 0.16, 4, 'center', true],
-            ['overall_position', 'back', 8, $h * 0.78, $half, $h * 0.12, 3, 'left', false],
-            ['bib_number', 'back', 8 + $half, $h * 0.78, $half, $h * 0.12, 3, 'right', false],
-        ];
+        if ($model->layout_style === null) {
+            $model->update(['layout_style' => $d['style']]);
+        }
 
         $model->fields()->where('field_key', 'qr')->delete();
 
-        foreach ($fields as $sort => [$key, $face, $x, $y, $width, $height, $size, $align, $visible]) {
-            // Only create missing rows — an admin's edits in the visual
-            // editor are never overwritten by a re-seed.
+        foreach ($d['fields'] as $sort => [$key, $face, $x, $y, $width, $height, $size, $align, $visible]) {
             $model->fields()->firstOrCreate(
                 ['field_key' => $key],
                 [
                     'face' => $face,
-                    'x' => round($x, 2), 'y' => round($y, 2),
-                    'width' => round($width, 2), 'height' => round($height, 2),
+                    'x' => $x, 'y' => $y, 'width' => $width, 'height' => $height,
                     'font_size' => $size, 'alignment' => $align,
                     'max_chars' => $key === 'athlete_name' ? 26 : null,
                     'required' => $key === 'athlete_name',

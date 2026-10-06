@@ -59,10 +59,10 @@ const statusLabels: Record<string, string> = {
     queued: 'Pendiente',
     assigned: 'Asignada',
     preparing: 'Preparando',
-    engraving_front: 'Grabando frente',
+    engraving_front: 'Imprimiendo frente',
     awaiting_flip: 'VOLTEA LA PLACA',
-    engraving_back: 'Grabando reverso',
-    verifying_qr: 'Verificando QR',
+    engraving_back: 'Imprimiendo reverso',
+    verifying_qr: 'Verificando NFC',
     ready: 'Lista',
     delivered: 'Entregada',
     failed: 'Falló',
@@ -75,11 +75,11 @@ const actionMeta: Record<
 > = {
     prepare: { fn: prepare, label: 'Iniciar preparación' },
     start_front: { fn: frontStart, label: 'Iniciar frente' },
-    complete_front: { fn: frontComplete, label: 'Confirmar frente grabado' },
+    complete_front: { fn: frontComplete, label: 'Confirmar frente impreso' },
     confirm_flip: { fn: flipConfirm, label: 'Confirmar placa volteada' },
     start_back: { fn: backStart, label: 'Iniciar reverso' },
-    complete_back: { fn: backComplete, label: 'Confirmar reverso grabado' },
-    verify_qr: { fn: qrVerify, label: 'Verificar QR' },
+    complete_back: { fn: backComplete, label: 'Confirmar reverso impreso' },
+    verify_qr: { fn: qrVerify, label: 'Verificar NFC' },
     deliver: { fn: deliver, label: 'Marcar entregada' },
 };
 
@@ -176,8 +176,8 @@ function cancelJob(jobId: number) {
         >
             Producción
             <HelpPopover
-                title="Flujo físico de grabado"
-                text="Cada tarjeta es un trabajo de producción — Asignada → Preparando → Grabando frente → Voltea la placa → Grabando reverso → Verificando QR → Lista → Entregada. Una estación (Device API) o un operador manual pueden avanzarlo, con las mismas reglas."
+                title="Flujo físico de producción"
+                text="Cada tarjeta es un trabajo de producción — Asignada → Preparando → Imprimiendo frente → Voltea la placa → Imprimiendo reverso → Verificando NFC → Lista → Entregada. Una estación (Device API) o un operador manual pueden avanzarlo, con las mismas reglas."
             />
         </h1>
 
@@ -322,12 +322,13 @@ function cancelJob(jobId: number) {
         <Dialog v-model:open="qrDialogOpen">
             <DialogContent class="border-border bg-card text-foreground">
                 <DialogHeader>
-                    <DialogTitle>Verificar QR</DialogTitle>
+                    <DialogTitle>Verificar NFC</DialogTitle>
                 </DialogHeader>
                 <div class="space-y-2">
                     <p class="text-xs text-muted-foreground">
-                        Escanea o pega el valor leído del QR del reverso de
-                        {{ qrDialogCard?.serial_number }}.
+                        Lee el chip NFC de
+                        {{ qrDialogCard?.serial_number }} con un teléfono y pega
+                        la dirección que abre.
                     </p>
                     <Input
                         v-model="qrValue"

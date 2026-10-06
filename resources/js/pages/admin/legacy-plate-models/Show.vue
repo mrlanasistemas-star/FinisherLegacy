@@ -27,6 +27,7 @@ import {
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
 import PlatePrintFace from '@/components/plates/PlatePrintFace.vue';
 import { Button } from '@/components/ui/button';
@@ -88,6 +89,8 @@ const designForm = useForm({
     width_mm: props.model.width_mm,
     height_mm: props.model.height_mm,
     active: props.model.active,
+    layout_style: (props.model.layout_style ?? 'nucleo') as
+        string | number | null,
     front_background: props.model.front_background ?? '#F3F2EE',
     back_background: props.model.back_background ?? '#171714',
     front_text_color: props.model.front_text_color ?? '#171714',
@@ -107,6 +110,8 @@ const liveModel = computed<LegacyPlateModelData>(() => ({
     ...props.model,
     width_mm: Number(designForm.width_mm) || props.model.width_mm,
     height_mm: Number(designForm.height_mm) || props.model.height_mm,
+    layout_style: (designForm.layout_style ??
+        'nucleo') as LegacyPlateModelData['layout_style'],
     front_background: designForm.front_background,
     back_background: designForm.back_background,
     front_text_color: designForm.front_text_color,
@@ -124,8 +129,8 @@ function pickArtwork(target: 'front' | 'back', event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0] ?? null;
 
     if (!file) {
-return;
-}
+        return;
+    }
 
     if (target === 'front') {
         designForm.front_artwork = file;
@@ -202,8 +207,8 @@ function saveAll() {
 
 function patchSelected(patch: Partial<EditorField>) {
     if (!selected.value) {
-return;
-}
+        return;
+    }
 
     Object.assign(selected.value, patch);
     dirty.value = true;
@@ -246,14 +251,14 @@ function onFieldPointerDown(
     handle: 'move' | 'resize',
 ) {
     if (printView.value || !canvasRef.value) {
-return;
-}
+        return;
+    }
 
     const target = draft.value.find((f) => f.field_key === field.field_key);
 
     if (!target) {
-return;
-}
+        return;
+    }
 
     selectedKey.value = target.field_key;
     const rect = canvasRef.value.getBoundingClientRect();
@@ -276,8 +281,8 @@ return;
 
 function onPointerMove(event: PointerEvent) {
     if (!drag) {
-return;
-}
+        return;
+    }
 
     const dx = (event.clientX - drag.startX) * drag.scale;
     const dy = (event.clientY - drag.startY) * drag.scale;
@@ -311,8 +316,8 @@ function onKey(event: KeyboardEvent) {
         printView.value ||
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)
     ) {
-return;
-}
+        return;
+    }
 
     const step = event.shiftKey ? 2 : 0.5;
     const moves: Record<string, [number, number]> = {
@@ -324,8 +329,8 @@ return;
     const move = moves[event.key];
 
     if (!move) {
-return;
-}
+        return;
+    }
 
     event.preventDefault();
     patchSelected({
@@ -754,6 +759,34 @@ const sampleKeys = computed(() =>
                         <Label for="l-name">Nombre del layout</Label>
                         <Input id="l-name" v-model="designForm.name" />
                         <InputError :message="designForm.errors.name" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label>Composición</Label>
+                        <FancySelect
+                            v-model="designForm.layout_style"
+                            :options="[
+                                {
+                                    value: 'nucleo',
+                                    label: 'Núcleo',
+                                    description:
+                                        'Nombre protagonista, editorial',
+                                },
+                                {
+                                    value: 'distancia',
+                                    label: 'Distancia',
+                                    description: 'La distancia en grande',
+                                },
+                                {
+                                    value: 'trayecto',
+                                    label: 'Trayecto',
+                                    description: 'Ficha técnica en celdas',
+                                },
+                            ]"
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            Define el panel FL, la tipografía y los elementos
+                            base. Los campos se siguen moviendo libremente.
+                        </p>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="grid gap-1.5">

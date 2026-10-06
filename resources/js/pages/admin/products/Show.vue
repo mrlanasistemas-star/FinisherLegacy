@@ -238,7 +238,7 @@ const sectionTypeHelp: Record<string, string> = {
                 v-if="product.qr_capable"
                 variant="outline"
                 class="border-fl-gold/30 text-fl-gold-ink"
-                >Compatible con QR</Badge
+                >Conectable a Legacy</Badge
             >
             <a
                 :href="product.public_url"
@@ -272,7 +272,7 @@ const sectionTypeHelp: Record<string, string> = {
                     id="p-tagline"
                     v-model="detailsForm.tagline"
                     maxlength="160"
-                    placeholder="Ej. Acero inoxidable · Tecnología NFC"
+                    placeholder="Ej. Zamak niquelado · NFC integrado"
                 />
                 <InputError :message="detailsForm.errors.tagline" />
             </div>

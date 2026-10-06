@@ -42,7 +42,7 @@ const steps = [
     {
         icon: Upload,
         title: 'Sube las fotos del evento',
-        text: 'Elige el evento, pon tu precio y los números de corredor. Subir es gratis.',
+        text: 'Elige el evento, pon tu precio y los números de corredor. Publicar no tiene costo inicial.',
     },
     {
         icon: Hash,
@@ -78,7 +78,7 @@ const benefits = [
 <template>
     <SeoHead
         title="Fotógrafos"
-        description="Vende tus fotografías de carreras y eventos deportivos en Finisher Legacy. Subir es gratis, tú pones el precio y ves cada venta con su desglose."
+        description="Vende tus fotografías de carreras y eventos deportivos en Finisher Legacy. Publicar no tiene costo inicial, tú pones el precio y ves cada venta con su desglose."
     />
 
     <section

@@ -47,8 +47,8 @@ const transform = computed(
 
 function onPointerDown(event: PointerEvent) {
     if (!props.interactive) {
-return;
-}
+        return;
+    }
 
     stopSpin();
     dragStart = {
@@ -62,8 +62,8 @@ return;
 
 function onPointerMove(event: PointerEvent) {
     if (!dragStart) {
-return;
-}
+        return;
+    }
 
     tilt.value = {
         x: Math.max(
@@ -82,8 +82,8 @@ function stopSpin() {
     spinning.value = false;
 
     if (spinRaf !== null) {
-cancelAnimationFrame(spinRaf);
-}
+        cancelAnimationFrame(spinRaf);
+    }
 
     spinRaf = null;
 }

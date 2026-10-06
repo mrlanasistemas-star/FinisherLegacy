@@ -286,6 +286,13 @@ class PhotographerPortalController extends Controller
             'event' => $sale->photo?->eventEdition?->event?->name,
             'gross_minor' => $sale->gross_minor,
             'processor_fee_minor' => $sale->processor_fee_minor,
+            'processor_fee_estimated' => $sale->processor_fee_estimated,
+            'payment_method_label' => match ($sale->payment_provider) {
+                'openpay' => 'Tarjeta (Openpay)',
+                'stripe' => 'Tarjeta (Stripe)',
+                'manual' => 'Pago manual',
+                default => null,
+            },
             'platform_fee_minor' => $sale->platform_fee_minor,
             'net_minor' => $sale->photographer_net_minor,
             'commission_percent' => (float) $sale->commission_percent,

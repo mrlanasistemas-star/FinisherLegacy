@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
  * face define the print. See docs/architecture/legacy-plate-v2.md.
  */
 #[Fillable([
-    'uuid', 'name', 'slug', 'layout_slot', 'sku', 'description', 'width_mm', 'height_mm',
+    'uuid', 'name', 'slug', 'layout_slot', 'layout_style', 'sku', 'description', 'width_mm', 'height_mm',
     'engraving_area', 'back_area', 'active', 'preview_image_path', 'metadata',
     'front_artwork_path', 'back_artwork_path', 'front_background', 'back_background',
     'front_text_color', 'back_text_color',
@@ -82,6 +82,7 @@ class LegacyPlateModel extends Model
             'back_artwork_url' => $this->back_artwork_path ? Storage::disk('public')->url($this->back_artwork_path) : null,
             'front_background' => $this->front_background ?? '#F3F2EE',
             'back_background' => $this->back_background ?? '#171714',
+            'layout_style' => $this->layout_style ?? 'nucleo',
             'front_text_color' => $this->front_text_color ?? '#171714',
             'back_text_color' => $this->back_text_color ?? '#F4EEDF',
             'fields' => $this->fields->map(fn (LegacyPlateModelField $field) => [

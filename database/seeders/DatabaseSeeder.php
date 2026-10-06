@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             MachineProfileSeeder::class,
             LegacyPlateModelSeeder::class,
             ProductCatalogSeeder::class,
+            ConceptProductsSeeder::class,
         ]);
 
         // Demo users ship with a known password ("password") — never seed

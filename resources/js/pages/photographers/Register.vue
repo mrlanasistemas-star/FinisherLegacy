@@ -68,10 +68,10 @@ function submit() {
             Únete como fotógrafo
         </h1>
         <p class="mt-3 text-muted-foreground">
-            Subir es gratis. Finisher Legacy se queda con el
-            {{ fees.platform_commission_percent }}% de cada venta y la comisión
-            de Stripe se descuenta del cobro. Revisamos cada solicitud antes de
-            habilitar la subida de fotos.
+            Publicar tus fotos no tiene costo inicial. Finisher Legacy se queda
+            con el {{ fees.platform_commission_percent }}% de cada venta y el
+            costo de procesamiento del pago se descuenta del cobro. Revisamos
+            cada solicitud antes de habilitar la subida de fotos.
         </p>
 
         <form class="mt-10 space-y-8" @submit.prevent="submit">
@@ -228,9 +228,9 @@ function submit() {
                 />
                 <span>
                     Acepto que Finisher Legacy cobre a los compradores, retenga
-                    su comisión del {{ fees.platform_commission_percent }}% y la
-                    comisión de Stripe, y me transfiera el resto. Confirmo que
-                    soy autor de las fotos que subiré.
+                    su comisión del {{ fees.platform_commission_percent }}% y el
+                    costo de procesamiento del pago, y me transfiera el resto.
+                    Confirmo que soy autor de las fotos que subiré.
                 </span>
             </label>
             <InputError :message="form.errors.accept_terms" />

@@ -133,7 +133,7 @@ function submitQrTest() {
                     class="size-4 shrink-0 text-emerald-700"
                 />
                 <AlertTriangle v-else class="size-4 shrink-0 text-amber-700" />
-                <span class="text-sm text-foreground">QR probado</span>
+                <span class="text-sm text-foreground">NFC probado</span>
             </div>
         </div>
 
@@ -206,7 +206,7 @@ function submitQrTest() {
                         target="_blank"
                     >
                         <Printer class="size-3.5" />
-                        Prueba de grabado — frente
+                        Prueba de impresión — frente
                     </a>
                 </Button>
                 <Button
@@ -279,11 +279,11 @@ function submitQrTest() {
                 class="flex items-center gap-2 text-sm font-semibold text-foreground"
             >
                 <QrCode class="size-4" />
-                Prueba física de QR
+                Prueba física de NFC
             </h2>
             <p class="text-xs text-muted-foreground/80">
                 El software solo valida la estructura del código. Antes de
-                producir en volumen, graba una muestra y escanéala con un
+                producir en volumen, imprime una muestra y lee su NFC con un
                 teléfono real.
             </p>
 

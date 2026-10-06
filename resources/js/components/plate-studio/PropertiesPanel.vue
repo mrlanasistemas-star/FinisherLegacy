@@ -334,7 +334,7 @@ const elementTypeLabels: Record<string, string> = {
                     </Select>
                 </div>
                 <p class="text-xs text-amber-700">
-                    Valida este tamaño con una muestra de grabado antes de
+                    Valida este tamaño con una muestra impresa antes de
                     producción masiva. Respeta la zona de silencio: no coloques
                     texto pegado al QR.
                 </p>

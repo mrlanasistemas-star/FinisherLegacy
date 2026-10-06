@@ -2,16 +2,24 @@
 /**
  * "Nuestro camino" — milestones come only from Administración →
  * Contenido (company_milestones). With none published yet it renders
- * clearly-marked empty slots instead of invented years or events.
+ * an editorial photo band instead of invented years or events.
  */
 import { Link } from '@inertiajs/vue3';
-import { ImagePlus, MapPin } from '@lucide/vue';
+import { MapPin } from '@lucide/vue';
+import { MEDIA } from '@/config/media';
 import type { CompanyMilestone } from '@/types';
 
 defineProps<{
     milestones: CompanyMilestone[];
     canEdit: boolean;
 }>();
+
+const disciplines = [
+    { label: 'Pista', image: MEDIA.photo.start, position: '50% 70%' },
+    { label: 'Running', image: MEDIA.photo.runner, position: '35% center' },
+    { label: 'Triatlón', image: MEDIA.photo.cyclist, position: '60% center' },
+    { label: 'La meta', image: MEDIA.photo.triumph, position: 'center' },
+];
 </script>
 
 <template>
@@ -71,31 +79,43 @@ defineProps<{
         </li>
     </ol>
 
-    <div v-else class="grid gap-4 md:grid-cols-3">
-        <div
-            v-for="slot in 3"
-            :key="slot"
-            class="rounded-xl border border-dashed border-foreground/15 bg-card p-6"
-        >
-            <span
-                class="flex aspect-[4/3] items-center justify-center rounded-lg bg-fl-cream"
-                aria-hidden="true"
+    <div v-else>
+        <!-- No milestones published yet: an honest editorial band (no
+             invented years or events). -->
+        <ul class="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <li
+                v-for="item in disciplines"
+                :key="item.label"
+                class="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-fl-black"
             >
-                <ImagePlus class="size-6 text-fl-gold-ink/70" />
-            </span>
-            <p class="mt-5 font-serif text-3xl text-foreground/25">Año</p>
-            <p class="mt-2 text-sm font-medium text-foreground/40">
-                Hito por publicar
-            </p>
-        </div>
-        <p class="text-sm text-muted-foreground md:col-span-3">
-            Estamos documentando nuestra trayectoria: los eventos, carreras y
-            proyectos que han dado forma a Finisher Legacy.
+                <img
+                    :src="item.image.src"
+                    :srcset="item.image.srcset"
+                    sizes="(min-width: 768px) 25vw, 50vw"
+                    :width="item.image.width"
+                    :height="item.image.height"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    class="size-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                    :style="{ objectPosition: item.position }"
+                />
+                <span
+                    class="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent"
+                    aria-hidden="true"
+                />
+                <span
+                    class="absolute bottom-4 left-4 text-[11px] font-semibold tracking-[0.2em] text-white uppercase"
+                    >{{ item.label }}</span
+                >
+            </li>
+        </ul>
+        <p v-if="canEdit" class="mt-5 text-sm text-muted-foreground">
+            Aún no hay hitos publicados — se muestran estas imágenes.
             <Link
-                v-if="canEdit"
                 href="/admin/content"
                 class="font-medium text-foreground underline underline-offset-4"
-                >Agregar hitos desde Administración</Link
+                >Agregar hitos reales desde Administración</Link
             >
         </p>
     </div>

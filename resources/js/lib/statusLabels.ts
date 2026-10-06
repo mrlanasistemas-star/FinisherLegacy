@@ -101,7 +101,7 @@ export const productionJobStatus: StatusMap = {
         class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     engraving_front: {
-        label: 'Grabando frente',
+        label: 'Imprimiendo frente',
         class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     awaiting_flip: {
@@ -109,11 +109,11 @@ export const productionJobStatus: StatusMap = {
         class: 'border-amber-500/30 text-amber-700',
     },
     engraving_back: {
-        label: 'Grabando reverso',
+        label: 'Imprimiendo reverso',
         class: 'border-fl-gold/30 text-fl-gold-ink',
     },
     verifying_qr: {
-        label: 'Verificando QR',
+        label: 'Verificando NFC',
         class: 'border-amber-500/30 text-amber-700',
     },
     ready: {

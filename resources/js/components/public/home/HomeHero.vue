@@ -1,9 +1,17 @@
 <script setup lang="ts">
+/**
+ * Home hero — campaign composition: finish-line photograph + the Legacy
+ * Plate floating as the product. The overlay card shows a REAL public
+ * athlete when one exists; otherwise an editorial brand card (never an
+ * invented person).
+ */
 import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowRight, Camera, Nfc, Quote, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
+import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import { Button } from '@/components/ui/button';
+import { MEDIA } from '@/config/media';
 import { dashboard, register } from '@/routes';
 import { index as photosIndex } from '@/routes/photos';
 import type { HeroAthlete } from '@/types';
@@ -15,9 +23,7 @@ const props = defineProps<{
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 
-// A real public athlete when one exists; otherwise the illustrative card
-// from the brief, labelled as an example so it never reads as a member.
-const card = computed(() =>
+const athleteCard = computed(() =>
     props.athlete
         ? {
               name: props.athlete.name,
@@ -27,37 +33,36 @@ const card = computed(() =>
               quote: props.athlete.bio,
               photo: props.athlete.photo_url,
               href: `/@${props.athlete.username}`,
-              sample: false,
           }
-        : {
-              name: 'Sofía Martín',
-              meta: 'Running · Triatlón',
-              quote: 'Disciplina hoy.\nHistoria mañana.',
-              photo: null,
-              href: null,
-              sample: true,
-          },
+        : null,
 );
 
 const pillars = [
     { icon: Users, label: 'Comunidad de atletas' },
     { icon: Camera, label: 'Tus fotos de evento' },
-    { icon: Nfc, label: 'Legacy Plates NFC' },
+    { icon: Nfc, label: 'Legacy Plate con NFC' },
 ];
+
+const photo = MEDIA.photo.celebration;
+const plate = MEDIA.plate.float;
 </script>
 
 <template>
     <section class="relative overflow-hidden">
         <div
-            class="fl-container grid items-center gap-12 pt-10 pb-14 sm:pt-14 lg:grid-cols-12 lg:gap-10 lg:pt-16 lg:pb-20"
+            aria-hidden="true"
+            class="pointer-events-none absolute -top-40 right-0 h-[520px] w-[720px] rounded-full bg-fl-gold/10 blur-3xl"
+        />
+        <div
+            class="fl-container relative grid items-center gap-14 pt-10 pb-16 sm:pt-14 lg:grid-cols-12 lg:gap-8 lg:pt-16 lg:pb-24"
         >
-            <div class="lg:col-span-7">
+            <div class="lg:col-span-6 xl:col-span-6">
                 <p class="fl-eyebrow flex items-center gap-3">
                     <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
                     Ecosistema deportivo
                 </p>
                 <h1
-                    class="fl-display mt-6 text-[2.75rem] sm:text-6xl lg:text-[5.25rem]"
+                    class="fl-display mt-6 text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-[5rem] xl:text-[5.5rem]"
                 >
                     Tu esfuerzo merece
                     <span class="text-fl-gold-ink italic">una historia.</span>
@@ -66,7 +71,7 @@ const pillars = [
                     class="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
                 >
                     Conecta con otros atletas. Guarda tus logros. Revive tus
-                    momentos. Comparte tu legado.
+                    momentos. Lleva tu legado en una pieza que puedes tocar.
                 </p>
 
                 <div class="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -111,74 +116,109 @@ const pillars = [
                 </ul>
             </div>
 
-            <div class="relative lg:col-span-5">
+            <!-- Campaign visual -->
+            <div class="relative lg:col-span-6 xl:col-span-6">
                 <div
-                    class="relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-2xl bg-fl-black lg:ml-auto lg:max-w-none"
+                    class="relative mx-auto aspect-[4/5] w-full max-w-[520px] overflow-hidden rounded-[28px] bg-fl-black shadow-[0_50px_100px_-50px_rgb(23_23_20/0.6)] lg:mr-0 lg:ml-auto"
                 >
                     <img
-                        src="/media/home/story/medal-closeup-640.webp"
-                        srcset="
-                            /media/home/story/medal-closeup-640.webp 640w,
-                            /media/home/story/medal-closeup-667.webp 667w
-                        "
-                        sizes="(min-width: 1024px) 40vw, 90vw"
-                        width="667"
-                        height="1000"
-                        alt="Atleta celebrando con su medalla al cruzar la meta"
+                        :src="photo.src"
+                        :srcset="photo.srcset"
+                        sizes="(min-width: 1024px) 520px, 92vw"
+                        :width="photo.width"
+                        :height="photo.height"
+                        :alt="photo.alt"
                         fetchpriority="high"
-                        class="size-full object-cover"
+                        decoding="async"
+                        class="size-full object-cover object-[50%_30%]"
                     />
-                    <span
-                        class="absolute top-4 right-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-foreground shadow-sm"
+                    <div
+                        aria-hidden="true"
+                        class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20"
+                    />
+
+                    <!-- Brand / real athlete card -->
+                    <component
+                        :is="athleteCard ? Link : 'div'"
+                        :href="athleteCard?.href"
+                        class="absolute top-4 left-4 max-w-[78%] rounded-2xl border border-white/15 bg-black/45 p-4 text-white backdrop-blur-md sm:top-6 sm:left-6 sm:p-5"
                     >
-                        <span class="size-1.5 rounded-full bg-fl-gold" />
-                        Finisher Legacy
+                        <template v-if="athleteCard">
+                            <div class="flex items-center gap-3">
+                                <AthleteAvatar
+                                    :name="athleteCard.name"
+                                    :photo-url="athleteCard.photo"
+                                    size="sm"
+                                />
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold">
+                                        {{ athleteCard.name }}
+                                    </p>
+                                    <p
+                                        v-if="athleteCard.meta"
+                                        class="truncate text-xs text-white/70"
+                                    >
+                                        {{ athleteCard.meta }}
+                                    </p>
+                                </div>
+                            </div>
+                            <p
+                                v-if="athleteCard.quote"
+                                class="mt-3 flex gap-2 font-serif text-base leading-snug"
+                            >
+                                <Quote
+                                    class="mt-1 size-3.5 shrink-0 text-fl-gold"
+                                    aria-hidden="true"
+                                />
+                                <span class="line-clamp-2">{{
+                                    athleteCard.quote
+                                }}</span>
+                            </p>
+                        </template>
+                        <template v-else>
+                            <p class="flex items-center gap-2.5">
+                                <FinisherLegacyLogo
+                                    variant="mark"
+                                    tone="gold"
+                                    size="xs"
+                                />
+                                <span
+                                    class="text-[10px] font-semibold tracking-[0.28em] text-white uppercase"
+                                    >Finisher Legacy</span
+                                >
+                            </p>
+                            <p
+                                class="mt-3 font-serif text-lg leading-snug sm:text-xl"
+                            >
+                                Cada meta deja algo más que un tiempo.
+                            </p>
+                            <p
+                                class="mt-2 text-[11px] tracking-[0.16em] text-white/70 uppercase"
+                            >
+                                Running · Ciclismo · Triatlón · Trail
+                            </p>
+                        </template>
+                    </component>
+
+                    <span
+                        class="absolute right-4 bottom-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-foreground shadow-sm sm:right-6 sm:bottom-6"
+                    >
+                        <Nfc class="size-3.5 text-fl-gold-ink" />
+                        NFC integrado
                     </span>
                 </div>
 
-                <!-- Floating athlete card -->
-                <component
-                    :is="card.href ? Link : 'div'"
-                    :href="card.href ?? undefined"
-                    class="relative mx-auto -mt-20 w-[88%] max-w-sm rounded-xl border border-border bg-card p-5 shadow-[0_24px_48px_-28px_rgb(23_23_20/0.45)] sm:-mt-24 lg:absolute lg:bottom-10 lg:-left-16 lg:mx-0 lg:mt-0 lg:w-72"
-                >
-                    <div class="flex items-center gap-3">
-                        <AthleteAvatar
-                            :name="card.name"
-                            :photo-url="card.photo"
-                            size="sm"
-                        />
-                        <div class="min-w-0">
-                            <p
-                                class="truncate text-sm font-semibold text-foreground"
-                            >
-                                {{ card.name }}
-                            </p>
-                            <p
-                                v-if="card.meta"
-                                class="truncate text-xs text-muted-foreground"
-                            >
-                                {{ card.meta }}
-                            </p>
-                        </div>
-                    </div>
-                    <p
-                        v-if="card.quote"
-                        class="mt-4 flex gap-2 font-serif text-lg leading-snug whitespace-pre-line text-foreground"
-                    >
-                        <Quote
-                            class="mt-1 size-4 shrink-0 text-fl-gold"
-                            aria-hidden="true"
-                        />
-                        <span class="line-clamp-3">{{ card.quote }}</span>
-                    </p>
-                    <p
-                        v-if="card.sample"
-                        class="mt-3 text-[10px] font-medium tracking-[0.16em] text-muted-foreground uppercase"
-                    >
-                        Perfil de ejemplo
-                    </p>
-                </component>
+                <!-- Floating product -->
+                <img
+                    :src="plate.src"
+                    :srcset="plate.srcset"
+                    sizes="(min-width: 1024px) 420px, 70vw"
+                    :width="plate.width"
+                    :height="plate.height"
+                    :alt="plate.alt"
+                    decoding="async"
+                    class="pointer-events-none absolute -bottom-10 left-0 w-[72%] max-w-[440px] drop-shadow-[0_30px_30px_rgb(0_0_0/0.35)] sm:-bottom-14 lg:-left-16 lg:w-[62%]"
+                />
             </div>
         </div>
     </section>

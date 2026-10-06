@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from '@lucide/vue';
 import { computed } from 'vue';
-import PlateShowcase from '@/components/public/PlateShowcase.vue';
+import { MEDIA } from '@/config/media';
 import { index as communityIndex } from '@/routes/community';
 import { index as photosIndex } from '@/routes/photos';
 import {
@@ -20,6 +20,8 @@ const plateHref = computed(() =>
         ? productShow(props.legacyPlateSlug).url
         : storeIndex({ query: { category: 'legacy' } }).url,
 );
+
+const macro = MEDIA.plate.portrait;
 </script>
 
 <template>
@@ -74,52 +76,42 @@ const plateHref = computed(() =>
                 </span>
             </Link>
 
-            <!-- B · Legacy Plates NFC -->
+            <!-- B · Legacy Plate -->
             <Link
                 :href="plateHref"
-                class="group relative flex aspect-[4/5] flex-col justify-between overflow-hidden rounded-2xl border border-border bg-fl-cream p-6 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:p-8 md:aspect-auto md:min-h-[560px]"
+                class="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl bg-fl-black p-6 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:p-8 md:aspect-auto md:min-h-[560px]"
             >
+                <img
+                    :src="macro.src"
+                    :srcset="macro.srcset"
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    :width="macro.width"
+                    :height="macro.height"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    class="absolute inset-0 size-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
+                />
                 <span
-                    class="pointer-events-none absolute inset-0"
+                    class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"
                     aria-hidden="true"
-                    style="
-                        background: radial-gradient(
-                            circle at 50% 42%,
-                            rgb(255 255 255 / 0.95),
-                            transparent 62%
-                        );
-                    "
                 />
                 <span class="relative">
-                    <span class="fl-eyebrow">Legacy Plate · NFC</span>
-                </span>
-                <span
-                    class="relative flex flex-1 items-center justify-center py-6 transition-transform duration-700 group-hover:-translate-y-1"
-                    aria-hidden="true"
-                >
-                    <span class="w-full max-w-[260px] -rotate-6">
-                        <PlateShowcase
-                            size="sm"
-                            :show-hotspots="false"
-                            :show-caption="false"
-                            event-name="Tu evento"
-                            athlete-name="Tu nombre"
-                            time="03:42:18"
-                        />
-                    </span>
-                </span>
-                <span class="relative">
                     <span
-                        class="block font-serif text-3xl leading-tight text-foreground sm:text-[2.1rem]"
-                        >Placas NFC Legacy</span
-                    >
-                    <span class="mt-3 block text-sm text-muted-foreground"
-                        >Tu esfuerzo, en una placa para siempre.</span
+                        class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold uppercase"
+                        >Legacy Plate · NFC</span
                     >
                     <span
-                        class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground"
+                        class="mt-3 block font-serif text-3xl leading-tight text-white sm:text-[2.1rem]"
+                        >Tu esfuerzo, en metal.</span
                     >
-                        Descubrir placas
+                    <span class="mt-3 block text-sm text-white/80"
+                        >Zamak niquelado, resina y NFC integrado.</span
+                    >
+                    <span
+                        class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white"
+                    >
+                        Descubrir Legacy Plate
                         <ArrowRight
                             class="size-4 transition-transform group-hover:translate-x-1"
                         />

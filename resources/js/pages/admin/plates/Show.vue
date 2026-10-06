@@ -274,7 +274,7 @@ function submitReprint() {
                             <p
                                 class="text-xs text-muted-foreground/80 uppercase"
                             >
-                                Grabado en la placa
+                                Impreso en la placa
                             </p>
                             <p class="font-mono text-foreground">
                                 {{ resultComparison.original.official_time }} ·
@@ -294,7 +294,7 @@ function submitReprint() {
                         </div>
                     </div>
                     <p class="mt-2 text-xs text-muted-foreground">
-                        Lo grabado en la placa no se altera automáticamente. Si
+                        Lo impreso en la placa no se altera automáticamente. Si
                         reimprimes, puedes elegir mantener los datos originales
                         o actualizar con el resultado actual.
                     </p>
@@ -426,7 +426,7 @@ function submitReprint() {
                     <h2
                         class="mb-3 self-start text-sm font-semibold text-muted-foreground"
                     >
-                        Grabado real (export de producción)
+                        Impresión real (export de producción)
                     </h2>
                     <PlatePreviewCard
                         v-model:face="face"
@@ -461,7 +461,7 @@ function submitReprint() {
                             @update:model-value="(v) => (useOriginal = !!v)"
                         />
                         <Label class="text-sm text-foreground"
-                            >Mantener los datos originales grabados</Label
+                            >Mantener los datos originales impresos</Label
                         >
                     </div>
                     <p class="text-xs text-muted-foreground/80">

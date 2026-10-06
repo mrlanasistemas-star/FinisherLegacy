@@ -8,6 +8,7 @@
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, MapPin } from '@lucide/vue';
 import { computed } from 'vue';
+import { MEDIA } from '@/config/media';
 import { show as eventShow } from '@/routes/events';
 import type { EventEditionCard, EventPhase } from '@/types';
 
@@ -30,6 +31,25 @@ const phaseCopy: Record<EventPhase, { label: string; class: string }> = {
         class: 'bg-white/85 text-muted-foreground',
     },
 };
+
+// Discipline → atmosphere photograph for events without a cover.
+const fallback = computed(() => {
+    const slug = edition.event.sport.slug;
+
+    if (/tri|cicl|bike|duat/.test(slug)) {
+        return MEDIA.photo.cyclist;
+    }
+
+    if (/trail|ultra|montan/.test(slug)) {
+        return MEDIA.photo.dawn;
+    }
+
+    if (/run|carrera|marat|10k|21k/.test(slug)) {
+        return MEDIA.photo.runner;
+    }
+
+    return MEDIA.photo.start;
+});
 
 const eventDate = computed(() => new Date(`${edition.event_date}T00:00:00`));
 
@@ -67,32 +87,34 @@ const location = computed(() =>
                 decoding="async"
                 class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
             />
-            <div
-                v-else
-                class="flex size-full flex-col items-start justify-end p-5"
-                style="
-                    background-image:
-                        radial-gradient(
-                            circle at 85% 15%,
-                            rgb(201 164 92 / 0.22),
-                            transparent 55%
-                        ),
-                        repeating-linear-gradient(
-                            115deg,
-                            rgb(23 23 20 / 0.035) 0px,
-                            rgb(23 23 20 / 0.035) 1px,
-                            transparent 1px,
-                            transparent 6px
-                        );
-                "
-                aria-hidden="true"
-            >
-                <span class="fl-eyebrow">{{ edition.event.sport.name }}</span>
-                <span
-                    class="mt-1 font-serif text-2xl leading-tight text-foreground/80"
-                    >{{ edition.event.name }}</span
+            <template v-else>
+                <!-- Atmosphere photo for the discipline (decorative); an
+                     uploaded cover replaces it automatically. -->
+                <img
+                    :src="fallback.src"
+                    :srcset="fallback.srcset"
+                    sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+                    :width="fallback.width"
+                    :height="fallback.height"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                />
+                <div
+                    class="absolute inset-0 flex flex-col items-start justify-end bg-gradient-to-t from-black/80 via-black/25 to-transparent p-5"
+                    aria-hidden="true"
                 >
-            </div>
+                    <span
+                        class="text-[10px] font-semibold tracking-[0.2em] text-fl-gold uppercase"
+                        >{{ edition.event.sport.name }}</span
+                    >
+                    <span
+                        class="mt-1 font-serif text-2xl leading-tight text-white"
+                        >{{ edition.event.name }}</span
+                    >
+                </div>
+            </template>
 
             <span
                 class="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.14em] uppercase shadow-sm"

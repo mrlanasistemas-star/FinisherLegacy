@@ -456,8 +456,8 @@ function submitQuickPlate() {
                 <p class="mt-1.5 mb-6 text-xs text-muted-foreground/80">
                     Para corredores sin cuenta o sin resultado en el sistema
                     todavía. La placa se genera igual, con su propio Legacy Code
-                    permanente — la persona puede reclamarla después escaneando
-                    el QR.
+                    permanente — la persona puede reclamarla después acercando
+                    su teléfono a la placa (NFC).
                 </p>
 
                 <div

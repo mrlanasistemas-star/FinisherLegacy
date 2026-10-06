@@ -34,7 +34,7 @@ defineProps<{
             <Tabs v-model="mode">
                 <TabsList>
                     <TabsTrigger value="product">Producto</TabsTrigger>
-                    <TabsTrigger value="production">Grabado</TabsTrigger>
+                    <TabsTrigger value="production">Producción</TabsTrigger>
                 </TabsList>
             </Tabs>
             <Badge

@@ -256,9 +256,7 @@ function confirmDestroy() {
                     >Todo el carrito</span
                 >
                 <span v-else
-                    >{{
-                        (row.product_names as unknown as string[]).length
-                    }}
+                    >{{ (row.product_names as unknown as string[]).length }}
                     productos:
                     {{
                         (row.product_names as unknown as string[])

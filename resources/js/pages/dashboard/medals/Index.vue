@@ -70,10 +70,11 @@ function formatDate(value: string | null): string | null {
                 </div>
                 <div>
                     <p class="font-semibold text-foreground">
-                        Escanear el QR de mi placa
+                        Escanear un código Legacy
                     </p>
                     <p class="mt-0.5 text-xs text-muted-foreground">
-                        Más rápido — el evento, tiempo y ritmo se cargan solos.
+                        El evento, tiempo y ritmo se cargan solos. Con tu Legacy
+                        Plate basta acercar el teléfono (NFC).
                     </p>
                 </div>
             </button>
@@ -101,7 +102,7 @@ function formatDate(value: string | null): string | null {
         <MascotEmptyState
             v-if="medals.length === 0"
             title="Tu colección comienza con una meta."
-            description="Escanea el QR de tu placa o registra tu primera medalla a mano."
+            description="Acerca tu teléfono a tu Legacy Plate, escanea un código Legacy o registra tu primera medalla a mano."
         >
             <Button
                 as-child

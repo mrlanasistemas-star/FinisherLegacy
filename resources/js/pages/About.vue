@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import {
-    ArrowRight,
-    Cpu,
-    Flame,
-    Images,
-    Medal,
-    Shirt,
-    UsersRound,
-} from '@lucide/vue';
+import { ArrowRight } from '@lucide/vue';
 import { computed } from 'vue';
 import AboutGallery from '@/components/about/AboutGallery.vue';
 import AboutLocation from '@/components/about/AboutLocation.vue';
@@ -16,8 +8,10 @@ import AboutTimeline from '@/components/about/AboutTimeline.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
+import { MEDIA } from '@/config/media';
 import { contact } from '@/routes';
 import { index as communityIndex } from '@/routes/community';
+import { index as storeIndex } from '@/routes/store/products';
 import type {
     CompanyChannels,
     CompanyGalleryItem,
@@ -50,35 +44,36 @@ const canEdit = computed(() =>
 // product, not a claim about the company's past.
 const pillars = [
     {
-        icon: Flame,
         title: 'Esfuerzo',
         text: 'Cada kilómetro y cada entrenamiento merecen quedar registrados.',
     },
     {
-        icon: Images,
         title: 'Recuerdos',
         text: 'Fotografías, resultados y momentos reunidos en un solo lugar.',
     },
     {
-        icon: UsersRound,
         title: 'Comunidad',
         text: 'Atletas que se inspiran, se siguen y celebran juntos.',
     },
     {
-        icon: Cpu,
         title: 'Tecnología',
-        text: 'NFC y Legacy Code conectan lo físico con tu perfil digital.',
+        text: 'El NFC de la Legacy Plate conecta lo físico con tu perfil digital.',
     },
     {
-        icon: Shirt,
         title: 'Productos físicos',
         text: 'Placas y equipo diseñados para acompañar cada meta.',
     },
     {
-        icon: Medal,
         title: 'Identidad deportiva',
         text: 'Tu trayectoria convertida en una historia que te representa.',
     },
+];
+
+const products = [
+    { key: 'chill-band', label: 'Chill Band' },
+    { key: 'trisuit', label: 'Tri Suit' },
+    { key: 'cap', label: 'Gorra' },
+    { key: 'nfc-keychain', label: 'Llavero NFC' },
 ];
 
 const story = computed(() =>
@@ -155,35 +150,53 @@ const story = computed(() =>
         </div>
     </section>
 
-    <!-- Más que tecnología -->
+    <!-- Desde el deporte -->
     <section class="border-y border-border bg-card py-16 sm:py-24">
-        <div class="fl-container grid gap-12 lg:grid-cols-12">
+        <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <div class="lg:col-span-5">
+                <div
+                    class="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-fl-black"
+                >
+                    <img
+                        :src="MEDIA.photo.celebration.src"
+                        :srcset="MEDIA.photo.celebration.srcset"
+                        sizes="(min-width: 1024px) 40vw, 100vw"
+                        :width="MEDIA.photo.celebration.width"
+                        :height="MEDIA.photo.celebration.height"
+                        :alt="MEDIA.photo.celebration.alt"
+                        loading="lazy"
+                        decoding="async"
+                        class="size-full object-cover"
+                    />
+                </div>
+            </div>
+            <div class="lg:col-span-7">
                 <SectionHeading
                     eyebrow="Quiénes somos"
-                    title="Más que tecnología, vivimos el deporte."
-                    description="Finisher Legacy busca preservar y conectar todo lo que rodea a un atleta: lo que siente al cruzar la meta, lo que guarda después y la comunidad con la que lo comparte."
+                    title="Construimos Finisher Legacy desde el deporte."
+                    description="Buscamos preservar y conectar todo lo que rodea a un atleta: lo que siente al cruzar la meta, lo que guarda después y la comunidad con la que lo comparte."
                 />
+                <ol class="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2">
+                    <li
+                        v-for="(pillar, index) in pillars"
+                        :key="pillar.title"
+                        class="border-t border-border pt-4"
+                    >
+                        <p class="flex items-baseline gap-3">
+                            <span
+                                class="font-serif text-sm text-fl-gold-ink italic"
+                                >{{ String(index + 1).padStart(2, '0') }}</span
+                            >
+                            <span class="text-lg font-semibold">{{
+                                pillar.title
+                            }}</span>
+                        </p>
+                        <p class="mt-1.5 text-[15px] text-muted-foreground">
+                            {{ pillar.text }}
+                        </p>
+                    </li>
+                </ol>
             </div>
-            <ul class="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:col-span-7">
-                <li
-                    v-for="pillar in pillars"
-                    :key="pillar.title"
-                    class="border-t border-border pt-5"
-                >
-                    <component
-                        :is="pillar.icon"
-                        class="size-5 text-fl-gold-ink"
-                        aria-hidden="true"
-                    />
-                    <h3 class="mt-4 text-lg font-semibold">
-                        {{ pillar.title }}
-                    </h3>
-                    <p class="mt-1.5 text-[15px] text-muted-foreground">
-                        {{ pillar.text }}
-                    </p>
-                </li>
-            </ul>
         </div>
     </section>
 
@@ -213,6 +226,68 @@ const story = computed(() =>
             />
             <div class="mt-14">
                 <AboutTimeline :milestones="milestones" :can-edit="canEdit" />
+            </div>
+        </div>
+    </section>
+
+    <!-- Del deporte al producto -->
+    <section
+        class="relative overflow-hidden bg-[#141311] py-16 text-white sm:py-24"
+    >
+        <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
+            <div class="lg:col-span-5">
+                <p
+                    class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold uppercase"
+                >
+                    Producto
+                </p>
+                <h2 class="mt-4 font-serif text-4xl leading-tight sm:text-5xl">
+                    Del deporte a algo que puedes tocar.
+                </h2>
+                <p class="mt-5 max-w-md text-white/70">
+                    La Legacy Plate y la línea Finisher Legacy nacen para
+                    acompañar cada meta: metal, textil técnico y NFC que conecta
+                    con tu historia.
+                </p>
+                <Button
+                    as-child
+                    class="mt-8 h-11 rounded-full bg-fl-gold px-6 text-fl-black hover:bg-fl-gold-soft"
+                >
+                    <Link :href="storeIndex()">
+                        Ver la tienda
+                        <ArrowRight class="size-4" />
+                    </Link>
+                </Button>
+            </div>
+            <div class="grid gap-3 lg:col-span-7">
+                <img
+                    :src="MEDIA.plate.hero.src"
+                    :srcset="MEDIA.plate.hero.srcset"
+                    sizes="(min-width: 1024px) 55vw, 100vw"
+                    :width="MEDIA.plate.hero.width"
+                    :height="MEDIA.plate.hero.height"
+                    :alt="MEDIA.plate.hero.alt"
+                    loading="lazy"
+                    decoding="async"
+                    class="w-full rounded-[20px]"
+                />
+                <ul class="grid grid-cols-4 gap-3">
+                    <li
+                        v-for="product in products"
+                        :key="product.key"
+                        class="overflow-hidden rounded-xl bg-fl-cream"
+                    >
+                        <img
+                            :src="`/media/products/concepts/${product.key}-480.webp`"
+                            width="480"
+                            height="600"
+                            :alt="product.label"
+                            loading="lazy"
+                            decoding="async"
+                            class="aspect-[4/5] w-full object-cover"
+                        />
+                    </li>
+                </ul>
             </div>
         </div>
     </section>

@@ -78,7 +78,9 @@ const pct = (part: number) =>
             >
                 <CreditCard class="size-4 shrink-0 text-sky-700" />
                 <div class="min-w-0">
-                    <dt class="text-[11px] text-sky-800">Comisión de Stripe</dt>
+                    <dt class="text-[11px] text-sky-800">
+                        Procesamiento de pago (est.)
+                    </dt>
                     <dd class="legacy-numeric font-semibold text-sky-900">
                         {{ money(split.processor) }}
                     </dd>
@@ -86,12 +88,14 @@ const pct = (part: number) =>
             </div>
         </dl>
         <p v-if="!compact" class="text-xs text-muted-foreground">
-            Stripe cobra {{ rules.processor_fee_percent }}% +
+            El procesamiento de pago es una estimación:
+            {{ rules.processor_fee_percent }}% +
             {{ money(rules.processor_fee_fixed_minor) }} por pago, más IVA ({{
                 rules.processor_fee_vat_percent
-            }}%); el cargo fijo se reparte entre las fotos del mismo pedido, así
-            que en compras de varias fotos recibes un poco más. Subir fotos es
-            gratis.
+            }}%). El cargo real depende de la pasarela con la que pague el
+            cliente (tarjeta o pago manual) y queda registrado en cada venta. El
+            cargo fijo se reparte entre las fotos del mismo pedido. Publicar tus
+            fotos no tiene costo inicial.
         </p>
     </div>
 </template>

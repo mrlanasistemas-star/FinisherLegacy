@@ -3,6 +3,7 @@
 namespace App\Actions\Photos;
 
 use App\Enums\FulfillmentStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PhotoSale;
@@ -31,6 +32,12 @@ class RecordPhotoSales
         }
 
         $itemsInOrder = $order->items->count();
+        // Which gateway actually captured the money decides the estimated
+        // processing fee (a manual cash/transfer payment has none).
+        $provider = $order->payments()
+            ->where('status', PaymentStatus::Paid)
+            ->latest('id')
+            ->first()?->provider?->value;
 
         foreach ($photoItems as $item) {
             $photo = $item->eventPhoto;
@@ -39,7 +46,7 @@ class RecordPhotoSales
                 continue;
             }
 
-            $split = $this->fees->split((int) $item->line_total_minor, $itemsInOrder);
+            $split = $this->fees->split((int) $item->line_total_minor, $itemsInOrder, $provider);
 
             try {
                 PhotoSale::create([
@@ -52,6 +59,8 @@ class RecordPhotoSales
                     'gross_minor' => $split['gross_minor'],
                     'platform_fee_minor' => $split['platform_fee_minor'],
                     'processor_fee_minor' => $split['processor_fee_minor'],
+                    'processor_fee_estimated' => $split['processor_fee_estimated'],
+                    'payment_provider' => $split['payment_provider'],
                     'photographer_net_minor' => $split['photographer_net_minor'],
                     'commission_percent' => $split['commission_percent'],
                     'currency' => $item->currency,

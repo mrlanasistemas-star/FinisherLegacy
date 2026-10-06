@@ -30,7 +30,8 @@ import { Button } from '@/components/ui/button';
                     class="mt-6 grid gap-3 text-sm text-white/80 sm:grid-cols-3"
                 >
                     <li class="flex items-center gap-2">
-                        <Upload class="size-4 text-fl-gold" /> Subir es gratis
+                        <Upload class="size-4 text-fl-gold" /> Publicar sin
+                        costo inicial
                     </li>
                     <li class="flex items-center gap-2">
                         <CircleDollarSign class="size-4 text-fl-gold" /> Tú

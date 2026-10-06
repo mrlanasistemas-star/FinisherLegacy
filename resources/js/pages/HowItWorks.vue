@@ -205,7 +205,7 @@ const afterPlate = [
                         'Escanea después',
                         'Vincula a tu Legacy',
                     ]"
-                    description="Si el evento no comparte sus datos, tu placa puede entregarse igualmente. Después podrás escanear su Legacy Code y vincularla desde casa, a tu propio ritmo."
+                    description="Si el evento no comparte sus datos, tu placa puede entregarse igualmente. Después podrás acercar tu teléfono a la placa (NFC) y vincularla desde casa, a tu propio ritmo."
                 />
             </div>
         </div>

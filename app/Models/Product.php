@@ -95,7 +95,56 @@ class Product extends Model
             }
         }
 
-        return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;
+        return $this->image_path ? Storage::disk('public')->url($this->image_path) : $this->conceptImageUrl();
+    }
+
+    /**
+     * 'upload' when an admin-uploaded image is in use, 'concept' when the
+     * store falls back to the conceptual render, null when neither exists.
+     */
+    public function imageSource(): ?string
+    {
+        $hasUpload = ($this->relationLoaded('media') && $this->media->where('type', 'image')->isNotEmpty())
+            || $this->image_path;
+
+        return $hasUpload ? 'upload' : ($this->conceptImageUrl() !== null ? 'concept' : null);
+    }
+
+    /** Conceptual render for this slug (config finisher.product_concepts), if any. */
+    public function conceptImageUrl(int $width = 800): ?string
+    {
+        $concept = config("finisher.product_concepts.{$this->slug}");
+
+        return $concept === null ? null : asset("media/products/concepts/{$concept['key']}-{$width}.webp");
+    }
+
+    /**
+     * Conceptual gallery shown while no real photo has been uploaded. The
+     * Legacy Plate gets its full set of product renders.
+     *
+     * @return list<array{url: string, alt: string}>
+     */
+    public function conceptGallery(): array
+    {
+        if ($this->slug === 'legacy-plate') {
+            return collect([
+                ['hero-1200', 'Legacy Plate de Zamak niquelado sobre piedra oscura'],
+                ['front-1600', 'Frente de la Legacy Plate: datos del atleta en resina y panel negro con monograma FL'],
+                ['back-1600', 'Reverso de la Legacy Plate: datos del evento impresos sobre fondo negro'],
+                ['macro-1400', 'Detalle del borde metálico y el acabado en resina'],
+                ['nfc-1400', 'La Legacy Plate acercándose a un teléfono para abrir el Legacy por NFC'],
+                ['exploded-1800', 'Vista explotada: resina, inlay NFC, ferrita anti-metal y cuerpo de Zamak'],
+            ])->map(fn (array $r) => ['url' => asset("media/brand/plate/legacy-plate-{$r[0]}.webp"), 'alt' => $r[1]])->all();
+        }
+
+        $url = $this->conceptImageUrl(1200);
+
+        return $url === null ? [] : [['url' => $url, 'alt' => (string) $this->conceptImageAlt()]];
+    }
+
+    public function conceptImageAlt(): ?string
+    {
+        return config("finisher.product_concepts.{$this->slug}.alt");
     }
 
     /**

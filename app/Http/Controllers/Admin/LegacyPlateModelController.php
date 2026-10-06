@@ -6,6 +6,7 @@ use App\Enums\LegacyPlateFieldKey;
 use App\Http\Controllers\Controller;
 use App\Models\LegacyPlateModel;
 use App\Models\LegacyPlateModelField;
+use App\Support\LegacyPlateLayouts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -101,6 +102,7 @@ class LegacyPlateModelController extends Controller
         $data['layout_slot'] = collect(range(1, LegacyPlateModel::MAX_LAYOUTS))
             ->diff(LegacyPlateModel::query()->pluck('layout_slot')->filter())
             ->first();
+        $data['layout_style'] ??= LegacyPlateLayouts::STYLES[($data['layout_slot'] ?? 1) - 1] ?? 'nucleo';
 
         $model = LegacyPlateModel::create($data);
         $this->ensureFields($model);
@@ -237,6 +239,7 @@ class LegacyPlateModelController extends Controller
             'engraving_width' => ['nullable', 'numeric', 'min:1'],
             'engraving_height' => ['nullable', 'numeric', 'min:1'],
             'active' => ['boolean'],
+            'layout_style' => ['nullable', Rule::in(LegacyPlateLayouts::STYLES)],
             'front_background' => $color,
             'back_background' => $color,
             'front_text_color' => $color,
@@ -264,6 +267,10 @@ class LegacyPlateModelController extends Controller
             'back_area' => $model?->back_area ?? ['x' => 4, 'y' => 4, 'width' => $width - 8, 'height' => $height - 8],
             'active' => $data['active'] ?? true,
         ];
+
+        if (! empty($data['layout_style'])) {
+            $attributes['layout_style'] = $data['layout_style'];
+        }
 
         foreach (['front_background', 'back_background', 'front_text_color', 'back_text_color'] as $key) {
             if (! empty($data[$key])) {

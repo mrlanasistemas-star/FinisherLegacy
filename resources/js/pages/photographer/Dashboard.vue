@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Portal del fotógrafo — panel. What sold, what Stripe and Finisher
+ * Portal del fotógrafo — panel. What sold, what payment processing and Finisher
  * Legacy kept, what the photographer earns and what is still pending
  * payout; plus profile and bank (CLABE) data for transfers.
  */
@@ -295,7 +295,7 @@ function save() {
                         </li>
                         <li class="flex items-center gap-3">
                             <CreditCard class="size-4 text-sky-700" />
-                            <span class="flex-1">Stripe</span>
+                            <span class="flex-1">Procesamiento de pago</span>
                             <span class="legacy-numeric">{{
                                 money(stats.processor_fee_minor)
                             }}</span>

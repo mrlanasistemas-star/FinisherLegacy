@@ -36,7 +36,7 @@ class ProductCatalogSeeder extends Seeder
             slug: 'legacy-plate',
             categoryId: $categories['legacy'],
             type: ProductType::LegacyPlate,
-            description: 'La pieza física que conecta tu logro con tu Legacy Profile — grabado dinámico sobre un modelo pre-manufacturado.',
+            description: 'Placa de Zamak niquelado con acabado en resina, personalizada con los datos de tu carrera y NFC integrado que abre tu Legacy desde el teléfono.',
             qrCapable: true,
             requiresShipping: false,
             tracksInventory: false,
