@@ -2,6 +2,7 @@
 
 use App\Enums\MomentReactionType;
 use App\Enums\MomentVisibility;
+use App\Enums\ProfileVisibility;
 use App\Models\AthleteFollow;
 use App\Models\AthleteProfile;
 use App\Models\LegacyMoment;
@@ -223,4 +224,35 @@ test('search finds public athletes but never private ones', function () {
             ->has('athletes', 1)
             ->where('athletes.0.username', 'corredora')
         );
+});
+
+test('Mis conexiones lists who I follow and who follows me, public profiles only', function () {
+    $me = AthleteProfile::factory()->create();
+    $friend = AthleteProfile::factory()->create();
+    $fan = AthleteProfile::factory()->create();
+    $private = AthleteProfile::factory()->create(['profile_visibility' => ProfileVisibility::Private]);
+
+    $this->actingAs($me->user)->post("/atletas/{$friend->username}/seguir")->assertRedirect();
+    $this->actingAs($fan->user)->post("/atletas/{$me->username}/seguir")->assertRedirect();
+    AthleteFollow::create(['follower_id' => $me->user_id, 'following_id' => $private->user_id]);
+
+    $this->actingAs($me->user)->get('/comunidad/conexiones')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('community/Connections')
+            ->where('tab', 'siguiendo')
+            ->has('athletes.data', 1)
+            ->where('athletes.data.0.username', $friend->username)
+            ->where('athletes.data.0.is_following', true)
+            ->where('counts.seguidores', 1)
+        );
+
+    $this->actingAs($me->user)->get('/comunidad/conexiones?tab=seguidores')
+        ->assertInertia(fn ($page) => $page
+            ->where('athletes.data.0.username', $fan->username)
+            ->where('athletes.data.0.is_following', false)
+        );
+
+    auth()->logout();
+    $this->get('/comunidad/conexiones')->assertRedirect('/login');
 });

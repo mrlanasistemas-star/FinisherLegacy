@@ -196,7 +196,7 @@ function confirmDestroy() {
 <template>
     <Head title="Cupones" />
 
-    <div class="w-full max-w-[1600px] px-4 py-4 sm:px-6 md:py-8 xl:px-8">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-8 xl:px-8">
         <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
 
         <div class="mb-6 flex items-center justify-between">

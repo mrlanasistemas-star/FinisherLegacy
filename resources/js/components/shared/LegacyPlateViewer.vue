@@ -1,13 +1,15 @@
 <script setup lang="ts">
 /**
- * Interactive Legacy Plate viewer — drag to tilt, flip between the
- * printed FRONT and BACK, spin, reset. Both faces are drawn by
- * PlatePrintFace in real millimetres (the same geometry as the print),
- * with the athlete's real data. The plate carries an NFC chip (no printed
- * QR), shown as a badge, never as part of the print.
+ * Interactive Legacy Plate viewer — drag to tilt, flip between the FRONT
+ * (the printed design, PlatePrintFace, real millimetres, the athlete's
+ * real data) and the BROCHE (the stainless money clip on the unprinted
+ * back, PlateClipBack), spin, reset. The NFC chip is shown as a badge,
+ * never as part of the print. Historical v2 snapshots (printed back) still
+ * flip to their printed back.
  */
 import { Nfc, RefreshCw, RotateCcw } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
+import PlateClipBack from '@/components/plates/PlateClipBack.vue';
 import PlatePrintFace from '@/components/plates/PlatePrintFace.vue';
 import type {
     LegacyPlateModelData as PlateModelData,
@@ -111,6 +113,9 @@ function reset() {
 
 onBeforeUnmount(stopSpin);
 
+/** Only historical v2 snapshots had a printed back. */
+const printedBack = computed(() => props.model?.spec_version === 'v2');
+
 const aspect = computed(() =>
     props.model
         ? `${props.model.width_mm} / ${props.model.height_mm}`
@@ -159,10 +164,12 @@ const aspect = computed(() =>
                             "
                         >
                             <PlatePrintFace
+                                v-if="printedBack"
                                 :model="model"
                                 face="back"
                                 :personalization="personalization"
                             />
+                            <PlateClipBack v-else :model="model" />
                         </div>
                     </div>
                 </div>
@@ -186,7 +193,7 @@ const aspect = computed(() =>
                             :aria-pressed="!showingBack"
                             @click="showingBack = false"
                         >
-                            Frente
+                            {{ printedBack ? 'Frente' : 'Ver frente' }}
                         </button>
                         <button
                             type="button"
@@ -199,7 +206,7 @@ const aspect = computed(() =>
                             :aria-pressed="showingBack"
                             @click="showingBack = true"
                         >
-                            Reverso
+                            {{ printedBack ? 'Reverso' : 'Ver broche' }}
                         </button>
                     </div>
                     <button
@@ -238,14 +245,20 @@ const aspect = computed(() =>
                     <span v-if="personalization.nfc_code" class="font-mono">{{
                         personalization.nfc_code
                     }}</span>
-                    <span v-else>Acerca tu teléfono para abrir tu legado</span>
+                    <span v-else
+                        >Acerca el teléfono al frente de la placa para abrir tu
+                        Legacy</span
+                    >
                 </p>
                 <p
                     v-if="interactive"
                     class="mt-2 text-center text-[11px] text-muted-foreground/80"
                 >
                     Arrastra para inclinar · {{ model.name }} ·
-                    {{ model.width_mm }}×{{ model.height_mm }} mm
+                    {{ model.width_mm }} × {{ model.height_mm }} mm
+                    <template v-if="!printedBack">
+                        · clip de acero inoxidable en el reverso</template
+                    >
                 </p>
             </template>
             <p v-else class="py-10 text-center text-sm text-muted-foreground">

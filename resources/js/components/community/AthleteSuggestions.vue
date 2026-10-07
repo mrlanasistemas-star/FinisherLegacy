@@ -1,36 +1,30 @@
 <script setup lang="ts">
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { UserPlus } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
-import { login } from '@/routes';
-import { follow } from '@/routes/athletes';
+import FollowButton from '@/components/community/FollowButton.vue';
 import type { CommunityAthlete } from '@/types';
 
 /** "Atletas sugeridos" — follow goes through FollowAthlete server-side. */
 defineProps<{ athletes: CommunityAthlete[] }>();
 
 const page = usePage();
-const isGuest = computed(() => !page.props.auth.user);
-const followed = ref<Set<string>>(new Set());
-
-function followAthlete(username: string) {
-    followed.value = new Set([...followed.value, username]);
-    router.visit(follow(username), {
-        preserveScroll: true,
-        only: [],
-        onError: () => {
-            const next = new Set(followed.value);
-            next.delete(username);
-            followed.value = next;
-        },
-    });
-}
+const isSignedIn = computed(() => !!page.props.auth.user);
 </script>
 
 <template>
     <section class="fl-card p-5" aria-labelledby="sugeridos-title">
-        <h2 id="sugeridos-title" class="font-semibold">Atletas sugeridos</h2>
+        <div class="flex items-center justify-between gap-2">
+            <h2 id="sugeridos-title" class="font-semibold">
+                Atletas sugeridos
+            </h2>
+            <Link
+                v-if="isSignedIn"
+                href="/comunidad/conexiones"
+                class="text-xs font-medium text-muted-foreground hover:text-foreground"
+                >Mis conexiones →</Link
+            >
+        </div>
         <ul v-if="athletes.length" class="mt-4 space-y-4">
             <li
                 v-for="athlete in athletes"
@@ -60,34 +54,13 @@ function followAthlete(username: string) {
                         >
                     </span>
                 </Link>
-                <Link
-                    v-if="isGuest"
-                    :href="login()"
-                    class="shrink-0 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:border-foreground/30"
-                    >Seguir</Link
-                >
-                <button
-                    v-else
-                    type="button"
-                    class="inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
-                    :class="
-                        followed.has(athlete.username ?? '')
-                            ? 'bg-muted text-muted-foreground'
-                            : 'bg-foreground text-background hover:bg-fl-graphite'
-                    "
-                    :disabled="followed.has(athlete.username ?? '')"
-                    @click="athlete.username && followAthlete(athlete.username)"
-                >
-                    <UserPlus
-                        v-if="!followed.has(athlete.username ?? '')"
-                        class="size-3"
-                    />
-                    {{
-                        followed.has(athlete.username ?? '')
-                            ? 'Siguiendo'
-                            : 'Seguir'
-                    }}
-                </button>
+                <FollowButton
+                    v-if="athlete.username"
+                    :username="athlete.username"
+                    :name="athlete.name"
+                    :following="athlete.is_following ?? false"
+                    size="sm"
+                />
             </li>
         </ul>
         <p v-else class="mt-3 text-sm text-muted-foreground">

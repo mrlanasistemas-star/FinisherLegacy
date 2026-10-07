@@ -10,6 +10,7 @@ use App\Actions\Social\ReactToMoment;
 use App\Enums\MomentReactionType;
 use App\Enums\MomentType;
 use App\Enums\MomentVisibility;
+use App\Enums\ProfileVisibility;
 use App\Exceptions\MomentReferenceInvalidException;
 use App\Exceptions\SocialActionNotAllowedException;
 use App\Http\Requests\Api\StoreMomentRequest;
@@ -97,6 +98,46 @@ class CommunityController extends Controller
             'limits' => [
                 'caption_max' => (int) config('finisher.social.moment_caption_max'),
                 'max_photos' => (int) config('finisher.social.moment_max_photos'),
+            ],
+        ]);
+    }
+
+    /**
+     * "Siguiendo" / "Seguidores" of the signed-in athlete — same privacy
+     * rules as the API lists (public profiles only, blocked users hidden).
+     */
+    public function connections(Request $request): Response
+    {
+        $viewer = $request->user();
+        $tab = $request->query('tab') === 'seguidores' ? 'seguidores' : 'siguiendo';
+        $ids = $tab === 'siguiendo'
+            ? AthleteFollow::query()->where('follower_id', $viewer->id)->select('following_id')
+            : AthleteFollow::query()->where('following_id', $viewer->id)->select('follower_id');
+        $hidden = $this->visibility->hiddenUserIds($viewer);
+        $following = $this->visibility->followingIds($viewer);
+
+        $page = User::query()
+            ->whereIn('users.id', $ids)
+            ->whereHas('athleteProfile', fn ($p) => $p->where('profile_visibility', ProfileVisibility::Public))
+            ->when($hidden !== [], fn ($q) => $q->whereNotIn('users.id', $hidden))
+            ->with('athleteProfile.mainSport')
+            ->orderBy('first_name')
+            ->orderBy('id')
+            ->paginate(30)
+            ->withQueryString();
+
+        $page->getCollection()->each(fn (User $user) => $user->setAttribute('is_following', in_array($user->id, $following, true)));
+
+        return Inertia::render('community/Connections', [
+            'tab' => $tab,
+            'athletes' => [
+                'data' => AthleteResource::collection($page->getCollection())->resolve($request),
+                'links' => $page->linkCollection()->toArray(),
+                'total' => $page->total(),
+            ],
+            'counts' => [
+                'siguiendo' => AthleteFollow::query()->where('follower_id', $viewer->id)->count(),
+                'seguidores' => AthleteFollow::query()->where('following_id', $viewer->id)->count(),
             ],
         ]);
     }

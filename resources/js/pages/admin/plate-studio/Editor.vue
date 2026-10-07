@@ -9,6 +9,7 @@ import {
     testExport as testExportAction,
     updateVersion as updateVersionAction,
 } from '@/actions/App/Http/Controllers/Admin/PlateStudioController';
+import HistoricalPipelineNotice from '@/components/admin/HistoricalPipelineNotice.vue';
 import ElementSidebar from '@/components/plate-studio/ElementSidebar.vue';
 import PropertiesPanel from '@/components/plate-studio/PropertiesPanel.vue';
 import StudioCanvas from '@/components/plate-studio/StudioCanvas.vue';
@@ -277,6 +278,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
     <Head :title="`Plate Studio — ${template.name}`" />
 
     <div class="flex h-svh flex-col bg-background">
+        <HistoricalPipelineNotice compact class="m-2 mb-0" />
         <StudioTopbar
             :template-name="template.name"
             :version="version.version"

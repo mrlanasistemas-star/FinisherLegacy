@@ -4,10 +4,11 @@
  * Legado, showing only what this viewer may see (the controller already
  * filtered medals, posts and photos by their visibility).
  */
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Award, PenLine, Share2, UserCheck, UserPlus } from '@lucide/vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { Award, PenLine, Share2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import FollowButton from '@/components/community/FollowButton.vue';
 import PostCard from '@/components/community/PostCard.vue';
 import LegacyTimelineList from '@/components/profile/LegacyTimelineList.vue';
 import type { TimelineEntry } from '@/components/profile/LegacyTimelineList.vue';
@@ -16,8 +17,6 @@ import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 import { shortDate } from '@/lib/datetime';
-import { login } from '@/routes';
-import { follow, unfollow } from '@/routes/athletes';
 import { edit as editProfile } from '@/routes/dashboard/profile';
 import type {
     CommunityPost,
@@ -47,8 +46,6 @@ const props = defineProps<{
     photos: { uuid: string; url: string; event: string | null }[];
 }>();
 
-const page = usePage();
-const isGuest = computed(() => !page.props.auth.user);
 const canonicalUrl = useCanonicalUrl();
 
 type Tab = 'historia' | 'logros' | 'fotos' | 'publicaciones';
@@ -78,6 +75,7 @@ const headerStats = computed(() => [
     { label: 'Eventos', value: props.stats.events },
     { label: 'Medallas', value: props.stats.medals },
     { label: 'Seguidores', value: props.social.followers },
+    { label: 'Siguiendo', value: props.social.following },
 ]);
 
 const timeline = computed<TimelineEntry[]>(() =>
@@ -92,21 +90,6 @@ const timeline = computed<TimelineEntry[]>(() =>
         href: event.event_slug ? `/events/${event.event_slug}` : null,
     })),
 );
-
-const followBusy = ref(false);
-
-function toggleFollow() {
-    followBusy.value = true;
-    const route = props.social.is_following
-        ? unfollow(props.profile.username)
-        : follow(props.profile.username);
-
-    router.visit(route, {
-        preserveScroll: true,
-        only: ['social'],
-        onFinish: () => (followBusy.value = false),
-    });
-}
 
 async function share() {
     const url = canonicalUrl ?? window.location.href;
@@ -204,24 +187,12 @@ const profileJsonLd = computed(() => {
                     </Link>
                 </Button>
                 <template v-else>
-                    <Button v-if="isGuest" as-child class="rounded-full">
-                        <Link :href="login()">
-                            <UserPlus class="size-4" />
-                            Seguir
-                        </Link>
-                    </Button>
-                    <Button
-                        v-else
-                        class="rounded-full"
-                        :variant="social.is_following ? 'outline' : 'default'"
-                        :disabled="followBusy"
-                        :aria-pressed="social.is_following"
-                        @click="toggleFollow"
-                    >
-                        <UserCheck v-if="social.is_following" class="size-4" />
-                        <UserPlus v-else class="size-4" />
-                        {{ social.is_following ? 'Siguiendo' : 'Seguir' }}
-                    </Button>
+                    <FollowButton
+                        :username="profile.username"
+                        :name="profile.name"
+                        :following="social.is_following"
+                        :only="['social']"
+                    />
                 </template>
                 <Button
                     variant="ghost"

@@ -244,7 +244,7 @@ async function deleteGallery(item: GalleryItem) {
 <template>
     <Head title="Nosotros y trayectoria" />
 
-    <div class="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 md:py-8">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-8">
         <SecondaryNav :items="CONTENT_AREA_NAV" />
 
         <div class="mb-8 flex flex-wrap items-center justify-between gap-4">

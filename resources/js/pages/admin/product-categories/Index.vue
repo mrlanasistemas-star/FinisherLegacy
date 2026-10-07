@@ -89,7 +89,7 @@ async function remove(category: Category) {
 <template>
     <Head title="Categorías" />
 
-    <div class="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6 md:py-8">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-8">
         <SecondaryNav :items="CATALOG_AREA_NAV" />
 
         <div class="mb-6 flex items-center justify-between gap-4">

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
  * Legacy Plate production as a kanban board — Por pagar → Lista para
- * imprimir → En impresión → Impresa → Entregada. Plates are printed front
- * and back (no laser) and get their NFC chip programmed with the Legacy
- * Code. "Enviar a impresión" always goes through GenerateLegacyPlate, the
+ * imprimir → En impresión → Impresa · NFC · clip → Entregada. Legacy Plate
+ * V3: the FRONT is printed and resin-coated (no laser), the NFC chip is
+ * programmed with the Legacy Code and the stainless money clip is
+ * assembled on the unprinted back. "Enviar a impresión" always goes through GenerateLegacyPlate, the
  * same eligibility rules as the API.
  */
 import { Head, router } from '@inertiajs/vue3';
@@ -94,7 +95,7 @@ const laneMeta: Record<
         accent: 'bg-violet-100 text-violet-700',
     },
     printed: {
-        title: 'Impresa · NFC',
+        title: 'Impresa · NFC · clip',
         icon: Nfc,
         accent: 'bg-fl-cream text-fl-gold-ink',
     },
@@ -166,8 +167,8 @@ const readyCount = computed(
                 <div>
                     <h1 class="text-xl font-semibold">Producción</h1>
                     <p class="text-sm text-muted-foreground">
-                        Impresión frente y reverso + chip NFC programado con el
-                        Legacy Code.
+                        Impresión del frente + chip NFC programado con el Legacy
+                        Code + clip de acero inoxidable en el reverso.
                         <span
                             v-if="readyCount"
                             class="font-medium text-foreground"

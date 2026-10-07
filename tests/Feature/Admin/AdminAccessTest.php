@@ -24,8 +24,9 @@ test('an admin can see the dashboard with real metrics', function () {
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->component('admin/Dashboard')
-        ->has('stats.athletes')
-        ->has('stats.open_incidents')
+        ->has('general.athletes')
+        ->has('general.open_incidents')
+        ->has('kpis.pending_orders')
     );
 });
 

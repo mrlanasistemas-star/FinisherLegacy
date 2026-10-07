@@ -4,10 +4,10 @@ namespace App\Enums;
 
 /**
  * The whitelist of dynamic fields a Legacy Plate layout may print — no
- * arbitrary decoration. A plate is printed on its FRONT and BACK (no laser
- * engraving) and carries an NFC chip, so there is no printed QR anymore:
- * `Qr` only survives so historical Plate snapshots still deserialize; it
- * is never offered by the layout editor (see selectable()).
+ * arbitrary decoration. Legacy Plate V3 prints on the FRONT only (the back
+ * carries the money clip) and carries an NFC chip, so there is no printed
+ * QR: `Qr` only survives so historical Plate snapshots still deserialize;
+ * it is never offered by the layout editor (see selectable()).
  */
 enum LegacyPlateFieldKey: string
 {
@@ -39,13 +39,14 @@ enum LegacyPlateFieldKey: string
         };
     }
 
-    /** Which face a field lives on by default. */
+    /**
+     * Which face a field lives on. Always the front since V3 — the back is
+     * the clip. Historical v2 plates keep their back fields in their own
+     * layout_snapshot.
+     */
     public function defaultFace(): string
     {
-        return match ($this) {
-            self::AthleteName, self::RaceLabel, self::OfficialTime, self::Pace => 'front',
-            default => 'back',
-        };
+        return 'front';
     }
 
     /**

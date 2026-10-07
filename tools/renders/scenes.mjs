@@ -1,9 +1,10 @@
-import { flMark, nfcGlyph, PLATE, plateDefs, plateFront, plateSvg } from './plate.mjs';
+import { clipBack, plateBackBody, DEFAULT_SPEC, flMark, nfcGlyph, PLATE, plateDefs, plateFront, plateOnRibbonSvg, plateProfileSvg, plateSvg } from './plate.mjs';
 
 /*
  * Conceptual product renders (not photographs). Every scene lists the
  * WebP widths it is exported at; resources/js/config/media.ts points at
- * these files.
+ * these files. Legacy Plate V3: 70 × 45 mm Zamak niquelado, front design +
+ * NFC under the FL panel, stainless money clip on the unprinted back.
  */
 
 const { w: PW, h: PH, r: PR } = PLATE;
@@ -30,19 +31,35 @@ const plate3dCss = `.plate3d{position:absolute;transform-style:preserve-3d}.plat
 
 const studio = `background:radial-gradient(ellipse at 50% 35%,#fbf9f4 0%,#f0ebe1 55%,#e3dbcc 100%)`;
 
+/* 1 / 3 — Orthographic front and back (back = clean metal + money clip). */
 const plateOrtho = (face) => ({
     name: `plate-${face}`,
     width: 1600,
-    height: 800,
+    height: 1100,
     sizes: [1600, 800],
     out: `public/media/brand/plate/legacy-plate-${face}-{w}.webp`,
     css: `body{${studio}}
           .wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-          .wrap svg{width:1180px;height:auto;filter:drop-shadow(0 38px 38px rgba(40,32,20,.28)) drop-shadow(0 6px 8px rgba(40,32,20,.25))}`,
+          .wrap svg{width:1060px;height:auto;filter:drop-shadow(0 38px 38px rgba(40,32,20,.28)) drop-shadow(0 6px 8px rgba(40,32,20,.25))}`,
     html: `<div class="wrap">${plateSvg(face, face)}</div>`,
 });
 
-/* 1 — Hero product shot on dark stone, soft side light. */
+/* 2 — 3/4 perspective: thickness, brushed edge and resin. */
+const perspective = {
+    name: 'plate-perspective',
+    width: 1600,
+    height: 1100,
+    sizes: [1600, 1000, 600],
+    out: 'public/media/brand/plate/legacy-plate-perspective-{w}.webp',
+    quality: 84,
+    css: `${plate3dCss}body{${studio}}
+        .scene{position:absolute;inset:0;perspective:2000px}
+        .rig{position:absolute;left:50%;top:50%;transform-style:preserve-3d;transform:rotateX(46deg) rotateY(-18deg) rotateZ(-14deg)}
+        .grain{position:absolute;inset:0;background:${grain};mix-blend-mode:multiply;opacity:.6}`,
+    html: `<div class="scene"><div class="rig">${plate3d({ id: 'pv', width: 940, thickness: 22, shadow: 'rgba(60,45,20,.42)', shadowOffset: [40, 60] })}</div></div><div class="grain"></div>`,
+};
+
+/* 1b — Hero product shot on dark stone, soft side light. */
 const hero = {
     name: 'plate-hero',
     width: 1800,
@@ -55,15 +72,14 @@ const hero = {
         .stone{position:absolute;inset:0;background:${stone('dark')},radial-gradient(ellipse at 18% 20%,#4a453d 0%,#24221f 45%,#121110 100%);background-size:900px 900px,cover;background-blend-mode:overlay}
         .light{position:absolute;inset:0;background:radial-gradient(ellipse 60% 70% at 12% 30%,rgba(255,236,200,.28),transparent 60%),radial-gradient(ellipse at 100% 100%,rgba(0,0,0,.6),transparent 60%)}
         .scene{position:absolute;inset:0;perspective:2200px;perspective-origin:50% 20%}
-        .rig{position:absolute;left:50%;top:52%;transform-style:preserve-3d;transform:rotateX(56deg) rotateZ(-17deg)}
-        .shadow{position:absolute;inset:-10px;border-radius:40px;background:rgba(0,0,0,.85);filter:blur(28px);transform:translate3d(46px,40px,-16px)}
+        .rig{position:absolute;left:50%;top:52%;transform-style:preserve-3d;transform:rotateX(52deg) rotateZ(-17deg)}
         .grain{position:absolute;inset:0;background:${grain};mix-blend-mode:overlay}`,
     html: `<div class="stone"></div><div class="light"></div>
-        <div class="scene"><div class="rig">${plate3d({ id: 'h', width: 980, thickness: 10 })}</div></div>
+        <div class="scene"><div class="rig">${plate3d({ id: 'h', width: 1040, thickness: 22 })}</div></div>
         <div class="grain"></div>`,
 };
 
-/* 2 — Macro: metal edge, resin depth, FL panel. */
+/* Detail macro: metal edge, resin depth, FL panel. */
 const macro = {
     name: 'plate-macro',
     width: 1400,
@@ -75,13 +91,84 @@ const macro = {
         body{background:#1a1917}
         .bg{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 20%,#5a5246 0%,#23211e 50%,#0f0e0d 100%)}
         .scene{position:absolute;inset:0;perspective:1400px}
-        .rig{position:absolute;left:46%;top:58%;transform-style:preserve-3d;transform:rotateX(38deg) rotateY(-14deg) rotateZ(-22deg)}
+        .rig{position:absolute;left:40%;top:56%;transform-style:preserve-3d;transform:rotateX(38deg) rotateY(-14deg) rotateZ(-22deg)}
         .blur{position:absolute;inset:0;backdrop-filter:blur(7px);-webkit-mask:linear-gradient(115deg,#000 0%,transparent 34%,transparent 70%,#000 100%);mask:linear-gradient(115deg,#000 0%,transparent 34%,transparent 70%,#000 100%)}
         .grain{position:absolute;inset:0;background:${grain};mix-blend-mode:overlay}`,
-    html: `<div class="bg"></div><div class="scene"><div class="rig">${plate3d({ id: 'm', width: 2300, thickness: 14 })}</div></div><div class="blur"></div><div class="grain"></div>`,
+    html: `<div class="bg"></div><div class="scene"><div class="rig">${plate3d({ id: 'm', width: 1900, thickness: 26 })}</div></div><div class="blur"></div><div class="grain"></div>`,
 };
 
-/* 3 — NFC: the plate approaching a phone, discreet waves. */
+/* 4 — Clip macro: the stamped stainless money clip, close and angled. */
+const clipMacro = {
+    name: 'plate-clip-macro',
+    width: 1400,
+    height: 1400,
+    sizes: [1400, 900, 600],
+    out: 'public/media/brand/plate/legacy-plate-clip-macro-{w}.webp',
+    quality: 84,
+    css: `${plate3dCss}body{${studio}}
+        .scene{position:absolute;inset:0;perspective:1500px}
+        .rig{position:absolute;left:50%;top:50%;transform-style:preserve-3d;transform:rotateX(30deg) rotateY(12deg) rotateZ(14deg)}
+        .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(60,45,20,.18) 100%)}
+        .grain{position:absolute;inset:0;background:${grain};mix-blend-mode:multiply;opacity:.6}`,
+    html: `<div class="scene"><div class="rig">${plate3d({ id: 'cm', face: 'back', width: 1500, thickness: 26, shadow: 'rgba(60,45,20,.4)', shadowOffset: [50, 70] })}</div></div><div class="vig"></div><div class="grain"></div>`,
+};
+
+/* 5 — Side profile: body + clip waves ≈ 6 mm in total. */
+const profile = {
+    name: 'plate-profile',
+    width: 1600,
+    height: 900,
+    sizes: [1600, 800],
+    out: 'public/media/brand/plate/legacy-plate-profile-{w}.webp',
+    css: `body{${studio}}
+        .wrap{position:absolute;left:120px;right:120px;top:250px}
+        .wrap svg{width:100%;height:auto;filter:drop-shadow(0 18px 18px rgba(40,32,20,.18))}
+        .cap{position:absolute;left:120px;top:110px;font-family:'Instrument Sans',sans-serif}
+        .k{font:600 15px 'Instrument Sans';letter-spacing:.24em;color:#85662b;text-transform:uppercase}
+        .t{font:500 44px Fraunces,serif;color:#171714;margin-top:10px}
+        .legend{position:absolute;left:120px;bottom:90px;display:flex;gap:46px;font:500 19px 'Instrument Sans';color:#57534b}
+        .legend b{color:#171714;font-weight:600}`,
+    html: `<div class="cap"><div class="k">Perfil lateral</div><div class="t">Delgada, firme y lista para el listón.</div></div>
+        <div class="wrap">${plateProfileSvg('pf', 'none', DEFAULT_SPEC, true)}</div>
+        <div class="legend"><span><b>Cuerpo</b> · Zamak niquelado + resina</span><span><b>Clip</b> · acero inoxidable, 3 puntos de presión</span><span><b>Grosor total</b> · ≈ ${DEFAULT_SPEC.total_depth_mm} mm</span></div>`,
+};
+
+/* 6 — Ribbon inserting: back view, the ribbon slides under the clip. */
+const ribbonBand = (x, y, w, h, id) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${id}-ribbon)"/><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#000" opacity=".06"/>`;
+const ribbonInsert = {
+    name: 'plate-ribbon-insert',
+    width: 1400,
+    height: 1400,
+    sizes: [1400, 900, 600],
+    out: 'public/media/brand/plate/legacy-plate-ribbon-insert-{w}.webp',
+    quality: 84,
+    css: `body{${studio}}.wrap{position:absolute;left:0;right:0;top:140px;height:820px;display:flex;align-items:center;justify-content:center}.wrap svg{width:1100px;height:100%}
+        .inset{position:absolute;left:110px;right:110px;bottom:70px;background:rgba(255,255,255,.8);border-radius:28px;padding:22px 30px;box-shadow:0 10px 30px rgba(40,32,20,.08)}
+        .inset svg{width:100%;height:auto}
+        .k{position:absolute;left:110px;top:90px;font:600 15px 'Instrument Sans';letter-spacing:.24em;color:#85662b;text-transform:uppercase}`,
+    html: `<div class="k">Inserta el listón</div><div class="wrap"><svg viewBox="-60 -170 820 790" preserveAspectRatio="xMidYMid meet"><defs>${plateDefs('ri')}<marker id="ri-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#171714"/></marker></defs>
+        <g filter="url(#ri-drop)">${plateBackBody('ri')}</g>
+        ${ribbonBand(530, -170, 150, 790, 'ri')}
+        <g>${clipBack('ri')}</g>
+        <path d="M760 540 L560 540" stroke="#171714" stroke-width="7" marker-end="url(#ri-ar)"/>
+        </svg></div>
+        <div class="inset">${plateProfileSvg('rip', 'inserting', DEFAULT_SPEC, false)}</div>`,
+};
+
+/* 7 — Ribbon held: the plate worn on the medal ribbon. */
+const ribbonHeld = {
+    name: 'plate-ribbon-held',
+    width: 1200,
+    height: 1500,
+    sizes: [1200, 800, 480],
+    out: 'public/media/brand/plate/legacy-plate-ribbon-held-{w}.webp',
+    quality: 84,
+    css: `body{${studio}}.wrap{position:absolute;inset:60px 120px;display:flex;align-items:center;justify-content:center}.wrap svg{height:100%;width:auto;filter:drop-shadow(0 30px 30px rgba(40,32,20,.22))}
+        .grain{position:absolute;inset:0;background:${grain};mix-blend-mode:multiply;opacity:.5}`,
+    html: `<div class="wrap">${plateOnRibbonSvg('rh')}</div><div class="grain"></div>`,
+};
+
+/* 8 — NFC: the phone approaches the FRONT of the plate. */
 const nfc = {
     name: 'plate-nfc',
     width: 1400,
@@ -92,59 +179,62 @@ const nfc = {
     css: `${plate3dCss}
         body{${studio}}
         .scene{position:absolute;inset:0;perspective:2000px}
-        .phone{position:absolute;left:50%;top:58%;width:430px;height:880px;border-radius:64px;background:linear-gradient(140deg,#3a3936,#121211 40%,#1d1c1a);transform:translate(-50%,-50%) rotateX(48deg) rotateZ(24deg);box-shadow:0 0 0 3px #4d4b46 inset, 60px 80px 90px rgba(40,30,15,.35)}
-        .screen{position:absolute;inset:16px;border-radius:50px;background:radial-gradient(circle at 50% 38%,#2b2924 0%,#0b0b0a 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px}
-        .ring{width:190px;height:190px;border-radius:50%;border:2px solid rgba(201,164,92,.55);display:flex;align-items:center;justify-content:center;box-shadow:0 0 60px rgba(201,164,92,.25)}
-        .bar{width:150px;height:8px;border-radius:8px;background:rgba(255,255,255,.12)}
-        .bar.s{width:100px}
-        .rig{position:absolute;left:50%;top:27%;transform-style:preserve-3d;transform:rotateX(40deg) rotateZ(14deg) translateZ(140px)}
-        .shadow{position:absolute;inset:0;border-radius:30px;background:rgba(40,30,15,.35);filter:blur(30px);transform:translate3d(30px,160px,-160px)}
-        .waves{position:absolute;left:50%;top:27%;transform:translate(-50%,-50%) rotate(8deg)}`,
+        .rig{position:absolute;left:46%;top:62%;transform-style:preserve-3d;transform:rotateX(50deg) rotateZ(-12deg)}
+        .phone{position:absolute;left:62%;top:30%;width:380px;height:780px;border-radius:58px;background:linear-gradient(140deg,#3a3936,#121211 40%,#1d1c1a);transform:translate(-50%,-50%) rotateX(36deg) rotateZ(28deg);box-shadow:0 0 0 3px #4d4b46 inset, 60px 90px 90px rgba(40,30,15,.32)}
+        .screen{position:absolute;inset:14px;border-radius:46px;background:radial-gradient(circle at 50% 38%,#2b2924 0%,#0b0b0a 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px}
+        .ring{width:170px;height:170px;border-radius:50%;border:2px solid rgba(201,164,92,.55);display:flex;align-items:center;justify-content:center;box-shadow:0 0 60px rgba(201,164,92,.25)}
+        .bar{width:140px;height:8px;border-radius:8px;background:rgba(255,255,255,.12)}
+        .bar.s{width:96px}
+        .waves{position:absolute;left:66%;top:52%;transform:translate(-50%,-50%) rotate(-24deg)}`,
     html: `<div class="scene">
-        <div class="phone"><div class="screen"><div class="ring"><svg width="96" height="46" viewBox="0 0 1400 671"><path d="${'M52 618 L205 268 C252 160 300 66 452 52 L915 52 L863 167 L532 168 C470 172 442 196 418 244 L397 294 L752 294 C722 372 676 410 620 411 L348 412 L258 618 Z M956 52 L1157 52 L971 482 L1347 482 C1312 576 1270 612 1190 618 L707 618 Z'}" fill="#c9a45c"/></svg></div><div class="bar"></div><div class="bar s"></div></div></div>
-        <svg class="waves" width="520" height="360" viewBox="0 0 520 360" fill="none" stroke="#c9a45c" stroke-linecap="round">
-            <path d="M190 250 Q260 300 330 250" stroke-width="4" opacity=".9"/>
-            <path d="M150 268 Q260 350 370 268" stroke-width="3.5" opacity=".6"/>
-            <path d="M110 286 Q260 400 410 286" stroke-width="3" opacity=".35"/>
+        <div class="rig">${plate3d({ id: 'n', width: 760, thickness: 18, shadow: 'rgba(60,45,20,.35)', shadowOffset: [30, 50] })}</div>
+        <svg class="waves" width="420" height="300" viewBox="0 0 420 300" fill="none" stroke="#c9a45c" stroke-linecap="round">
+            <path d="M150 210 Q210 250 270 210" stroke-width="5" opacity=".9"/>
+            <path d="M115 228 Q210 300 305 228" stroke-width="4" opacity=".6"/>
+            <path d="M80 246 Q210 350 340 246" stroke-width="3.5" opacity=".35"/>
         </svg>
-        <div class="rig">${plate3d({ id: 'n', width: 620, thickness: 9, shadow: 'rgba(60,45,20,.35)', shadowOffset: [40, 230] })}</div>
+        <div class="phone"><div class="screen"><div class="ring"><svg width="86" height="42" viewBox="0 0 1400 671">${flMark(0, 0, 1400, '#c9a45c')}</svg></div><div class="bar"></div><div class="bar s"></div></div></div>
     </div>`,
 };
 
-/* 6 — Exploded view: resin / NFC inlay / ferrite / Zamak body. */
-const layerSvg = (inner, w = PW, h = PH) => `<svg viewBox="0 0 ${w} ${h}" width="${w * 1.5}" height="${h * 1.5}">${inner}</svg>`;
-const coil = Array.from({ length: 7 }, (_, i) => `<rect x="${384 + i * 6}" y="${46 + i * 6}" width="${128 - i * 12}" height="${114 - i * 12}" rx="${18 - i * 2}" fill="none" stroke="#c07a3a" stroke-width="2.2"/>`).join('');
+/* 9 — Exploded view: resin/graphic · NFC inlay · ferrite · Zamak body · stainless clip. */
+const layerSvg = (inner, w = PW, h = PH) => `<svg viewBox="-20 -20 ${w + 40} ${h + 40}" width="${(w + 40) * 1.2}" height="${(h + 40) * 1.2}">${inner}</svg>`;
+const panelX = 30 + (PW - 60 - Math.round(PW * 0.2) - 18) + 18;
+const panelW = Math.round(PW * 0.2);
+const coil = Array.from({ length: 7 }, (_, i) => `<rect x="${panelX + 14 + i * 7}" y="${70 + i * 7}" width="${panelW - 28 - i * 14}" height="${PH - 200 - i * 14}" rx="${20 - i * 2}" fill="none" stroke="#c07a3a" stroke-width="2.6"/>`).join('');
 const exploded = {
     name: 'plate-exploded',
     width: 1800,
-    height: 1500,
+    height: 1700,
     sizes: [1800, 1200, 800],
     out: 'public/media/brand/plate/legacy-plate-exploded-{w}.webp',
     css: `body{background:linear-gradient(180deg,#fbfaf6,#f1ece2)}
-        .scene{position:absolute;left:0;top:0;width:1150px;height:1500px;perspective:3000px}
-        .rig{position:absolute;left:50%;top:69%;transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(-32deg)}
+        .scene{position:absolute;left:0;top:0;width:1100px;height:1700px;perspective:3000px}
+        .rig{position:absolute;left:47%;top:84%;transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(-28deg)}
         .l{position:absolute;left:0;top:0;transform-style:preserve-3d}
         .l svg{display:block;filter:drop-shadow(0 18px 14px rgba(60,45,20,.18))}
-        .labels{position:absolute;right:80px;top:0;bottom:0;width:560px;font-family:'Instrument Sans',sans-serif}
+        .labels{position:absolute;right:70px;top:0;bottom:0;width:600px;font-family:'Instrument Sans',sans-serif}
         .lab{position:absolute;left:0;display:flex;gap:22px;align-items:flex-start}
         .n{font:600 15px 'Instrument Sans';color:#85662b;letter-spacing:.2em;border:1.5px solid #c9a45c;border-radius:999px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
         .t{font:500 34px Fraunces,serif;color:#171714;line-height:1.1}
-        .d{font:400 18px 'Instrument Sans';color:#6b675f;margin-top:8px;line-height:1.45;max-width:420px}
-        .lead{position:absolute;height:1.5px;background:#c9a45c;opacity:.7}`,
+        .m{display:inline-block;margin-top:8px;font:600 13px 'Instrument Sans';letter-spacing:.14em;text-transform:uppercase;color:#fff;background:#171714;border-radius:999px;padding:5px 12px}
+        .m.s{background:#5f676d}
+        .d{font:400 18px 'Instrument Sans';color:#6b675f;margin-top:8px;line-height:1.45;max-width:440px}`,
     html: `<div class="scene"><div class="rig">
-        <div class="l" style="transform:translate(-420px,-157px) translateZ(690px)">${layerSvg(`<defs>${plateDefs('x1')}</defs><rect width="${PW}" height="${PH}" rx="${PR}" fill="#fff" fill-opacity=".35" stroke="#e8dcc4"/><g opacity=".92">${plateFront('x1').replace(/<rect width="560"[^>]*\/>/, '')}</g><rect width="${PW}" height="${PH}" rx="${PR}" fill="url(#x1-gloss)"/>`)}</div>
-        <div class="l" style="transform:translate(-420px,-157px) translateZ(460px)">${layerSvg(`<rect x="370" y="32" width="156" height="142" rx="18" fill="#f4efe4" fill-opacity=".9" stroke="#d8cdb6"/>${coil}<rect x="440" y="96" width="16" height="16" rx="3" fill="#2a2926"/>`)}</div>
-        <div class="l" style="transform:translate(-420px,-157px) translateZ(230px)">${layerSvg(`<rect x="364" y="26" width="168" height="154" rx="20" fill="#3b3a37"/><rect x="364" y="26" width="168" height="154" rx="20" fill="url(#fe)"/><defs><linearGradient id="fe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs>`)}</div>
-        <div class="l" style="transform:translate(-420px,-157px) translateZ(0)">${layerSvg(`<defs>${plateDefs('x4')}</defs><rect width="${PW}" height="${PH}" rx="${PR}" fill="url(#x4-edge)"/><rect x="5" y="4" width="${PW - 10}" height="${PH - 11}" rx="${PR - 4}" fill="url(#x4-face)"/><rect x="24" y="24" width="322" height="158" rx="13" fill="#b9a479"/><rect x="24" y="24" width="322" height="158" rx="13" fill="#000" filter="url(#x4-inset)"/><rect x="360" y="24" width="176" height="158" rx="13" fill="#a8946b"/><rect x="360" y="24" width="176" height="158" rx="13" fill="#000" filter="url(#x4-inset)"/><rect x="5" y="4" width="${PW - 10}" height="${PH - 11}" rx="${PR - 4}" fill="url(#x4-sheen)" opacity=".5"/>`)}</div>
+        <div class="l" style="transform:translate(-440px,-290px) translateZ(1180px)">${layerSvg(`<defs>${plateDefs('x1')}</defs><rect width="${PW}" height="${PH}" rx="${PR}" fill="#fff" fill-opacity=".3" stroke="#e8dcc4"/><g opacity=".93">${plateFront('x1').replace(/<rect width="700"[^>]*\/>/, '')}</g><rect width="${PW}" height="${PH}" rx="${PR}" fill="url(#x1-gloss)"/>`)}</div>
+        <div class="l" style="transform:translate(-440px,-290px) translateZ(900px)">${layerSvg(`<rect x="${panelX}" y="40" width="${panelW}" height="${PH - 80}" rx="22" fill="#f4efe4" fill-opacity=".92" stroke="#d8cdb6"/>${coil}<rect x="${panelX + panelW / 2 - 12}" y="${PH / 2 - 12}" width="24" height="24" rx="4" fill="#2a2926"/>`)}</div>
+        <div class="l" style="transform:translate(-440px,-290px) translateZ(660px)">${layerSvg(`<defs><linearGradient id="fe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs><rect x="${panelX - 6}" y="34" width="${panelW + 12}" height="${PH - 68}" rx="24" fill="#3b3a37"/><rect x="${panelX - 6}" y="34" width="${panelW + 12}" height="${PH - 68}" rx="24" fill="url(#fe)"/>`)}</div>
+        <div class="l" style="transform:translate(-440px,-290px) translateZ(380px)">${layerSvg(`<defs>${plateDefs('x4')}</defs><rect width="${PW}" height="${PH}" rx="${PR}" fill="url(#x4-edge)"/><rect x="6" y="5" width="${PW - 12}" height="${PH - 13}" rx="${PR - 5}" fill="url(#x4-face)"/><rect x="6" y="5" width="${PW - 12}" height="${PH - 13}" rx="${PR - 5}" fill="#000" filter="url(#x4-brush)"/><rect x="30" y="30" width="${panelX - 48}" height="${PH - 66}" rx="20" fill="#000" opacity=".12" filter="url(#x4-inset)"/><rect x="${panelX}" y="30" width="${panelW}" height="${PH - 66}" rx="20" fill="#000" opacity=".16" filter="url(#x4-inset)"/>`)}</div>
+        <div class="l" style="transform:translate(-440px,-290px) translateZ(0)">${layerSvg(`<defs>${plateDefs('x5')}</defs>${clipBack('x5')}`)}</div>
     </div></div>
     <div class="labels">
-        <div class="lab" style="top:300px"><span class="n">01</span><div><div class="t">Resina y gráfica</div><div class="d">Acabado transparente de brillo controlado que protege la impresión de tus datos.</div></div></div>
-        <div class="lab" style="top:520px"><span class="n">02</span><div><div class="t">Inlay NFC</div><div class="d">Antena pasiva integrada: abre tu Legacy al acercar un teléfono compatible.</div></div></div>
-        <div class="lab" style="top:740px"><span class="n">03</span><div><div class="t">Ferrita anti-metal</div><div class="d">Separa la antena del metal para que la lectura NFC funcione.</div></div></div>
-        <div class="lab" style="top:1000px"><span class="n">04</span><div><div class="t">Zamak niquelado</div><div class="d">Cuerpo metálico con peso real y acabado premium.</div></div></div>
+        <div class="lab" style="top:150px"><span class="n">01</span><div><div class="t">Resina y diseño frontal</div><div class="d">Tu nombre, tiempo, distancia y ritmo, protegidos con resina de brillo controlado.</div></div></div>
+        <div class="lab" style="top:430px"><span class="n">02</span><div><div class="t">Inlay NFC</div><div class="d">Antena pasiva bajo el panel FL del frente: abre tu Legacy al acercar el teléfono.</div></div></div>
+        <div class="lab" style="top:680px"><span class="n">03</span><div><div class="t">Ferrita anti-metal</div><div class="d">Aísla la antena del metal para que la lectura funcione.</div></div></div>
+        <div class="lab" style="top:930px"><span class="n">04</span><div><div class="t">Cuerpo</div><span class="m">Zamak niquelado</span><div class="d">Pieza metálica de ${DEFAULT_SPEC.width_mm} × ${DEFAULT_SPEC.height_mm} mm con peso real y acabado ligeramente cepillado.</div></div></div>
+        <div class="lab" style="top:1260px"><span class="n">05</span><div><div class="t">Clip posterior</div><span class="m s">Acero inoxidable</span><div class="d">Money clip estampado (${DEFAULT_SPEC.clip_length_mm} × ${DEFAULT_SPEC.clip_height_mm} mm) que sujeta la placa al listón de la medalla. Sin diseño atrás.</div></div></div>
     </div>`,
 };
-
 /* ---------- Store concept renders (4:5) ---------- */
 
 const productScene = (name, svgInner, extraDefs = '') => ({
@@ -302,17 +392,16 @@ const plateProduct = {
     ...productScene('legacy-plate', ''),
     css: `${plate3dCss}body{${studio}}
         .scene{position:absolute;inset:0;perspective:2400px}
-        .rig{position:absolute;left:45%;top:50%;transform-style:preserve-3d;transform:rotateX(52deg) rotateZ(-20deg)}
-        .shadow{position:absolute;inset:0;border-radius:40px;background:rgba(60,45,20,.5);filter:blur(30px);transform:translate3d(30px,46px,-14px)}
+        .rig{position:absolute;left:48%;top:50%;transform-style:preserve-3d;transform:rotateX(50deg) rotateZ(-20deg)}
         .grain{position:absolute;inset:0;background:${grain};mix-blend-mode:multiply;opacity:.6}`,
-    html: `<div class="scene"><div class="rig">${plate3d({ id: 'pp', width: 840, thickness: 10, shadow: 'rgba(60,45,20,.45)', shadowOffset: [26, 40] })}</div></div><div class="grain"></div>`,
+    html: `<div class="scene"><div class="rig">${plate3d({ id: 'pp', width: 900, thickness: 22, shadow: 'rgba(60,45,20,.45)', shadowOffset: [26, 40] })}</div></div><div class="grain"></div>`,
 };
 
 /* Floating plate on transparent background (overlays photography). */
 const plateFloat = {
     name: 'plate-float',
     width: 1200,
-    height: 700,
+    height: 900,
     transparent: true,
     sizes: [1200, 700],
     out: 'public/media/brand/plate/legacy-plate-float-{w}.webp',
@@ -320,7 +409,7 @@ const plateFloat = {
     css: `${plate3dCss}body{background:transparent}
         .scene{position:absolute;inset:0;perspective:2200px}
         .rig{position:absolute;left:50%;top:48%;transform-style:preserve-3d;transform:rotateX(34deg) rotateY(-12deg) rotateZ(-9deg)}`,
-    html: `<div class="scene"><div class="rig">${plate3d({ id: 'f', width: 900, thickness: 11, shadow: 'rgba(0,0,0,.55)', shadowOffset: [30, 60] })}</div></div>`,
+    html: `<div class="scene"><div class="rig">${plate3d({ id: 'f', width: 800, thickness: 20, shadow: 'rgba(0,0,0,.55)', shadowOffset: [30, 60] })}</div></div>`,
 };
 
 /* Portrait card crop: plate diagonal on dark stone, room for copy below. */
@@ -331,8 +420,10 @@ const portrait = {
     height: 1400,
     sizes: [1000, 640],
     out: 'public/media/brand/plate/legacy-plate-portrait-{w}.webp',
-    css: hero.css.replace('.rig{position:absolute;left:50%;top:52%;transform-style:preserve-3d;transform:rotateX(56deg) rotateZ(-17deg)}', '.rig{position:absolute;left:52%;top:27%;transform-style:preserve-3d;transform:rotateX(48deg) rotateZ(-30deg)}'),
-    html: hero.html.replace("width: 980, thickness: 10", "width: 760, thickness: 10"),
+    css: hero.css.replace('.rig{position:absolute;left:50%;top:52%;transform-style:preserve-3d;transform:rotateX(52deg) rotateZ(-17deg)}', '.rig{position:absolute;left:52%;top:30%;transform-style:preserve-3d;transform:rotateX(48deg) rotateZ(-30deg)}'),
+    html: `<div class="stone"></div><div class="light"></div>
+        <div class="scene"><div class="rig">${plate3d({ id: 'po', width: 660, thickness: 20 })}</div></div>
+        <div class="grain"></div>`,
 };
 
 export const scenes = [
@@ -340,8 +431,13 @@ export const scenes = [
     plateFloat,
     plateOrtho('front'),
     plateOrtho('back'),
+    perspective,
     hero,
     macro,
+    clipMacro,
+    profile,
+    ribbonInsert,
+    ribbonHeld,
     nfc,
     exploded,
     plateProduct,

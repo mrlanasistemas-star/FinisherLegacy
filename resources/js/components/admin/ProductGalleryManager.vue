@@ -3,7 +3,9 @@
  * Product photos, managed entirely from admin (ProductMedia on the
  * product_media disk — never base64, never hardcoded in the storefront):
  * drag & drop with previews before uploading, primary + hover image,
- * alt text, replace, reorder and delete. The storefront picks these up
+ * alt text, replace, drag-to-reorder (arrows as keyboard fallback), a
+ * large preview and delete. While no photo exists and the store shows a
+ * conceptual render, it says so here (admin only — never to customers). The storefront picks these up
  * automatically (primary → card/hero, hover → card hover, the rest →
  * gallery).
  */
@@ -11,7 +13,9 @@ import { router, useForm } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     ArrowRight,
+    GripVertical,
     ImagePlus,
+    Maximize2,
     MousePointer2,
     RefreshCw,
     Star,
@@ -21,6 +25,7 @@ import {
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { confirmAction } from '@/lib/swal';
 
@@ -37,11 +42,16 @@ export type AdminProductMedia = {
     size?: number | null;
 };
 
-const props = defineProps<{
-    productId: number;
-    productName: string;
-    media: AdminProductMedia[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        productId: number;
+        productName: string;
+        media: AdminProductMedia[];
+        /** Conceptual renders the store shows while there is no photo. */
+        conceptGallery?: { url: string; alt: string }[];
+    }>(),
+    { conceptGallery: () => [] },
+);
 
 const MAX_FILES = 10;
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -179,6 +189,14 @@ function replace(item: AdminProductMedia, event: Event) {
     );
 }
 
+function saveOrder(ids: number[]) {
+    router.post(
+        `/admin/products/${props.productId}/media/reorder`,
+        { order: ids },
+        { preserveScroll: true },
+    );
+}
+
 function move(item: AdminProductMedia, direction: -1 | 1) {
     const ids = ordered.value.map((m) => m.id);
     const index = ids.indexOf(item.id);
@@ -189,12 +207,45 @@ function move(item: AdminProductMedia, direction: -1 | 1) {
     }
 
     [ids[index], ids[target]] = [ids[target], ids[index]];
-    router.post(
-        `/admin/products/${props.productId}/media/reorder`,
-        { order: ids },
-        { preserveScroll: true },
-    );
+    saveOrder(ids);
 }
+
+// Drag to reorder: drop a card on another to take its place.
+const draggingId = ref<number | null>(null);
+const overId = ref<number | null>(null);
+
+function onCardDragStart(item: AdminProductMedia, event: DragEvent) {
+    draggingId.value = item.id;
+    event.dataTransfer?.setData('text/plain', String(item.id));
+
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+    }
+}
+
+function onCardDrop(target: AdminProductMedia) {
+    const from = draggingId.value;
+    draggingId.value = null;
+    overId.value = null;
+
+    if (from === null || from === target.id) {
+        return;
+    }
+
+    const ids = ordered.value.map((m) => m.id).filter((id) => id !== from);
+    ids.splice(
+        ids.indexOf(target.id) +
+            (orderIndex(from) < orderIndex(target.id) ? 1 : 0),
+        0,
+        from,
+    );
+    saveOrder(ids);
+}
+
+const orderIndex = (id: number) => ordered.value.findIndex((m) => m.id === id);
+
+// Large preview
+const previewItem = ref<AdminProductMedia | null>(null);
 
 async function remove(item: AdminProductMedia) {
     const confirmed = await confirmAction({
@@ -342,7 +393,42 @@ function formatSize(bytes?: number | null) {
             </p>
         </div>
 
+        <!-- Conceptual render in use (admin only) -->
+        <div
+            v-if="!ordered.length && conceptGallery.length"
+            class="flex flex-col gap-4 rounded-xl border border-violet-200 bg-violet-50/60 p-4 sm:flex-row sm:items-center"
+        >
+            <div class="flex shrink-0 gap-2">
+                <img
+                    v-for="concept in conceptGallery.slice(0, 3)"
+                    :key="concept.url"
+                    :src="concept.url"
+                    :alt="concept.alt"
+                    loading="lazy"
+                    class="size-16 rounded-lg border border-white object-cover shadow-sm"
+                />
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-violet-800">
+                    Imagen conceptual
+                </p>
+                <p class="text-sm text-violet-900/80">
+                    Sube una fotografía real para reemplazarla. Mientras tanto
+                    la tienda muestra {{ conceptGallery.length }}
+                    {{ conceptGallery.length === 1 ? 'render' : 'renders' }} de
+                    producto.
+                </p>
+            </div>
+        </div>
+
         <!-- Gallery -->
+        <p
+            v-if="ordered.length > 1"
+            class="flex items-center gap-1.5 text-xs text-muted-foreground"
+        >
+            <GripVertical class="size-3.5" /> Arrastra las tarjetas para ordenar
+            la galería. La primera imagen marcada como principal es la portada.
+        </p>
         <div
             v-if="ordered.length"
             class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -350,10 +436,24 @@ function formatSize(bytes?: number | null) {
             <article
                 v-for="(item, index) in ordered"
                 :key="item.id"
-                class="overflow-hidden rounded-xl border bg-card"
-                :class="item.is_primary ? 'border-fl-gold' : 'border-border'"
+                class="overflow-hidden rounded-xl border bg-card transition-[opacity,box-shadow,transform]"
+                :class="[
+                    item.is_primary ? 'border-fl-gold' : 'border-border',
+                    draggingId === item.id ? 'opacity-40' : '',
+                    overId === item.id && draggingId !== item.id
+                        ? 'ring-2 ring-fl-gold ring-offset-2'
+                        : '',
+                ]"
+                draggable="true"
+                @dragstart="onCardDragStart(item, $event)"
+                @dragend="
+                    draggingId = null;
+                    overId = null;
+                "
+                @dragover.prevent="overId = item.id"
+                @drop.prevent="onCardDrop(item)"
             >
-                <div class="relative aspect-square bg-muted">
+                <div class="group relative aspect-square cursor-grab bg-muted">
                     <img
                         v-if="item.type === 'image'"
                         :src="item.url"
@@ -389,6 +489,14 @@ function formatSize(bytes?: number | null) {
                         class="legacy-numeric absolute right-2 bottom-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium"
                         >#{{ index + 1 }}</span
                     >
+                    <button
+                        type="button"
+                        class="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-white/95 opacity-100 shadow-sm transition-opacity focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                        aria-label="Ver en grande"
+                        @click="previewItem = item"
+                    >
+                        <Maximize2 class="size-3.5" />
+                    </button>
                 </div>
 
                 <div class="space-y-3 p-3">
@@ -491,11 +599,40 @@ function formatSize(bytes?: number | null) {
             </article>
         </div>
         <p
-            v-else
+            v-else-if="!conceptGallery.length"
             class="rounded-xl border border-dashed border-border px-4 py-6 text-sm text-muted-foreground"
         >
             Sin fotografías todavía — la tienda muestra un placeholder de marca
             hasta que subas la primera.
         </p>
+
+        <Dialog
+            :open="previewItem !== null"
+            @update:open="(v) => !v && (previewItem = null)"
+        >
+            <DialogContent class="max-w-4xl p-2 sm:p-3">
+                <DialogTitle class="sr-only">Vista previa</DialogTitle>
+                <template v-if="previewItem">
+                    <img
+                        v-if="previewItem.type === 'image'"
+                        :src="previewItem.url"
+                        :alt="previewItem.alt_text ?? productName"
+                        class="max-h-[80vh] w-full rounded-lg object-contain"
+                    />
+                    <video
+                        v-else
+                        :src="previewItem.url"
+                        controls
+                        class="max-h-[80vh] w-full rounded-lg"
+                    />
+                    <p class="px-2 pt-2 text-xs text-muted-foreground">
+                        {{ previewItem.alt_text || 'Sin texto alternativo' }}
+                        <template v-if="previewItem.size">
+                            · {{ formatSize(previewItem.size) }}</template
+                        >
+                    </p>
+                </template>
+            </DialogContent>
+        </Dialog>
     </section>
 </template>

@@ -91,10 +91,12 @@ onBeforeUnmount(stop);
     <Dialog v-model:open="open">
         <DialogContent class="sm:max-w-sm">
             <DialogHeader>
-                <DialogTitle>Escanea el código de tu placa</DialogTitle>
+                <DialogTitle>Escanea tu Legacy Code</DialogTitle>
                 <DialogDescription>
-                    Apunta la cámara al QR de tu placa Finisher Legacy.
-                    Cargaremos el evento, el tiempo y el ritmo por ti.
+                    Apunta la cámara a un QR de Legacy Code (placas anteriores o
+                    tarjetas impresas). Cargaremos el evento, el tiempo y el
+                    ritmo por ti. Con la Legacy Plate actual basta acercar el
+                    teléfono al frente (NFC).
                 </DialogDescription>
             </DialogHeader>
 

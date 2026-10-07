@@ -1,14 +1,18 @@
 <script setup lang="ts">
 /**
- * One printed face of a Legacy Plate, drawn as SVG in the layout's real
+ * The printed FRONT of a Legacy Plate, drawn as SVG in the layout's real
  * millimetres — the same geometry the print uses, so what you see is what
- * gets printed. Plates are printed (front + back) and resin-coated, never
- * laser-engraved. Each layout has its own composition (`layout_style`):
- *   nucleo    — editorial: serif name, black FL panel, gold rule
+ * gets printed (resin-coated, never laser-engraved). Legacy Plate V3 is
+ * front-only: the back is the stainless money clip (see PlateClipBack).
+ * Each layout has its own composition (`layout_style`):
+ *   nucleo    — editorial: two-line serif name, big time, black FL panel
  *   distancia — the distance as a giant numeral, champagne FL strip
  *   trayecto  — technical cells with labels and hairlines
- * The NFC inlay sits under the FRONT FL panel (on ferrite); with
- * `showGuides` it is hinted there — it is never part of the print.
+ * The NFC inlay sits under the FL panel (on ferrite); with `showGuides`
+ * it is hinted there — it is never part of the print.
+ *
+ * face="back" is only drawn for HISTORICAL v2 snapshots (spec_version
+ * 'v2', 90 × 34 mm), which really had a printed back.
  */
 import { computed } from 'vue';
 import type {
@@ -47,15 +51,20 @@ const emit = defineEmits<{
 }>();
 
 const sampleValues: Record<string, string> = {
-    athlete_name: 'ALEX RIVERA',
+    athlete_name: 'JOSÉ ALBERTO CARLOS BUENO',
     race_label: '21K',
-    official_time: '1:42:18',
-    pace: '4:51 /km',
+    official_time: '01:44:51',
+    pace: '4:58 min/km',
     event_name: 'MEDIO MARATÓN',
-    event_date: '12/04/2026',
-    distance: '21.0975 km',
+    event_date: '22 MAY 2026',
+    distance: '21.1 km',
     overall_position: '#128',
     bib_number: '#482',
+};
+
+const v3Labels: Record<string, string> = {
+    distance: 'DISTANCE',
+    pace: 'PACE',
 };
 
 const labels: Record<string, string> = {
@@ -74,6 +83,8 @@ const FL_PATH =
     'M52 618 L205 268 C252 160 300 66 452 52 L915 52 L863 167 L532 168 C470 172 442 196 418 244 L397 294 L752 294 C722 372 676 410 620 411 L348 412 L258 618 Z M956 52 L1157 52 L971 482 L1347 482 C1312 576 1270 612 1190 618 L707 618 Z';
 
 const style = computed(() => props.model.layout_style ?? 'nucleo');
+/** Historical v2 snapshot (printed back, 90 × 34). Everything else is V3. */
+const legacy = computed(() => props.model.spec_version === 'v2');
 const W = computed(() => props.model.width_mm);
 const H = computed(() => props.model.height_mm);
 
@@ -107,6 +118,24 @@ const artwork = computed(() =>
 
 /** Where the FL panel (and the NFC inlay under it) sits on the front. */
 const panel = computed(() => {
+    if (!legacy.value) {
+        if (style.value === 'distancia') {
+            return { x: W.value - 13, y: 0, width: 13, height: H.value, rx: 0 };
+        }
+
+        if (style.value === 'trayecto') {
+            return {
+                x: W.value - 20,
+                y: H.value - 22,
+                width: 16.5,
+                height: 19,
+                rx: 2,
+            };
+        }
+
+        return { x: W.value - 16, y: 3, width: 13, height: H.value - 6, rx: 2 };
+    }
+
     if (style.value === 'distancia') {
         return { x: W.value - 14, y: 0, width: 14, height: H.value, rx: 0 };
     }
@@ -124,14 +153,107 @@ function flTransform(cx: number, cy: number, width: number) {
     return `translate(${cx - width / 2} ${cy - (671 * scale) / 2}) scale(${scale})`;
 }
 
+/** "21.0975 km" → "21.1 km": a plate shows one decimal at most. */
+function plateDistance(value: string): string {
+    const match = value.match(/^\s*(\d+(?:[.,]\d+)?)\s*(.*)$/);
+
+    if (!match) {
+        return value;
+    }
+
+    const n = Number(match[1].replace(',', '.'));
+    const shown = Number.isInteger(n) ? String(n) : n.toFixed(1);
+
+    return `${shown} ${match[2] || 'km'}`.trim();
+}
+
 function valueFor(field: LegacyPlateModelField): string {
     const real = props.personalization[field.field_key];
-
-    return (
+    const value =
         (real as string | null | undefined) ||
         sampleValues[field.field_key] ||
-        ''
-    );
+        '';
+
+    return !legacy.value && field.field_key === 'distance'
+        ? plateDistance(value)
+        : value;
+}
+
+/** V3 names may take two balanced lines when the box is tall enough. */
+function linesFor(field: LegacyPlateModelField): string[] {
+    const value = valueFor(field).toUpperCase();
+
+    if (
+        legacy.value ||
+        field.field_key !== 'athlete_name' ||
+        field.height < (field.font_size ?? 0) * 1.9
+    ) {
+        return [value];
+    }
+
+    const words = value.split(/\s+/).filter(Boolean);
+
+    if (words.length < 2 || charWidth(field) * value.length <= field.width) {
+        return [value];
+    }
+
+    let best = 1;
+    let bestDiff = Infinity;
+
+    for (let i = 1; i < words.length; i++) {
+        const diff = Math.abs(
+            words.slice(0, i).join(' ').length -
+                words.slice(i).join(' ').length,
+        );
+
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            best = i;
+        }
+    }
+
+    return [words.slice(0, best).join(' '), words.slice(best).join(' ')];
+}
+
+/** Rough uppercase advance per character at the field's font size. */
+function charWidth(field: LegacyPlateModelField, size = fontSize(field)) {
+    const mono = fontFamily(field).startsWith('ui-monospace');
+
+    return size * (mono ? 0.62 : isSerif(field) ? 0.7 : 0.64);
+}
+
+/** Never overflow the box: shrink the font to the longest line. */
+function fittedSize(field: LegacyPlateModelField, lines: string[]) {
+    const base =
+        lines.length > 1
+            ? Math.min(fontSize(field), field.height / 2.15)
+            : fontSize(field);
+
+    if (legacy.value) {
+        return base;
+    }
+
+    const longest = Math.max(...lines.map((l) => l.length), 1);
+    const fit = field.width / (longest * (charWidth(field, base) / base));
+
+    return Math.min(base, fit);
+}
+
+const isSerif = (field: LegacyPlateModelField) =>
+    style.value === 'nucleo' && field.field_key === 'athlete_name';
+
+/** Distancia V3: the distance numeral is the hero; its unit sits below. */
+const isV3HeroDistance = (field: LegacyPlateModelField) =>
+    !legacy.value &&
+    style.value === 'distancia' &&
+    field.field_key === 'distance';
+
+function heroParts(field: LegacyPlateModelField) {
+    const match = valueFor(field).match(/^\s*([\d.,]+)\s*(.*)$/);
+
+    return match
+        ? { number: match[1], unit: (match[2] || 'KM').toUpperCase() }
+        : { number: valueFor(field), unit: '' };
 }
 
 function anchor(field: LegacyPlateModelField) {
@@ -161,7 +283,9 @@ const isName = (field: LegacyPlateModelField) =>
     ['athlete_name', 'event_name'].includes(field.field_key);
 
 const isHeroDistance = (field: LegacyPlateModelField) =>
-    style.value === 'distancia' && field.field_key === 'race_label';
+    legacy.value &&
+    style.value === 'distancia' &&
+    field.field_key === 'race_label';
 
 /** Small caption above a value: every cell in Trayecto, a few elsewhere. */
 function showLabel(field: LegacyPlateModelField) {
@@ -169,9 +293,25 @@ function showLabel(field: LegacyPlateModelField) {
         return field.field_key !== 'athlete_name';
     }
 
+    if (!legacy.value) {
+        return (
+            ['distance', 'pace'].includes(field.field_key) &&
+            !isV3HeroDistance(field)
+        );
+    }
+
     return (
         props.face === 'back' &&
         ['overall_position', 'bib_number'].includes(field.field_key)
+    );
+}
+
+function labelFor(field: LegacyPlateModelField) {
+    return (
+        (!legacy.value &&
+            style.value !== 'trayecto' &&
+            v3Labels[field.field_key]) ||
+        labels[field.field_key]
     );
 }
 
@@ -212,7 +352,10 @@ function fill(field: LegacyPlateModelField) {
         return '#C9A45C';
     }
 
-    if (style.value === 'nucleo' && field.field_key === 'event_name') {
+    if (
+        style.value === 'nucleo' &&
+        ['event_name', 'event_date'].includes(field.field_key)
+    ) {
         return '#85662B';
     }
 
@@ -274,13 +417,53 @@ const radius = computed(() => Math.min(props.model.height_mm * 0.12, 4));
                             flTransform(
                                 panel.x + panel.width / 2,
                                 panel.y + panel.height / 2,
-                                style === 'distancia' ? 9 : panel.width * 0.56,
+                                style === 'distancia'
+                                    ? legacy
+                                        ? 9
+                                        : 8.5
+                                    : panel.width * (legacy ? 0.56 : 0.62),
                             )
                         "
                         :fill="style === 'distancia' ? '#141413' : '#C9A45C'"
                     />
+                    <!-- V3 decorations (70 × 45) -->
+                    <template v-if="!legacy">
+                        <line
+                            v-if="style === 'nucleo'"
+                            x1="4"
+                            y1="18.4"
+                            x2="12"
+                            y2="18.4"
+                            stroke="#C9A45C"
+                            stroke-width="0.5"
+                        />
+                        <line
+                            v-if="style === 'distancia'"
+                            x1="4"
+                            y1="34.6"
+                            :x2="W - 16"
+                            y2="34.6"
+                            :stroke="textColor"
+                            stroke-opacity="0.25"
+                            stroke-width="0.2"
+                        />
+                        <g
+                            v-if="style === 'trayecto'"
+                            :stroke="textColor"
+                            stroke-opacity="0.22"
+                            stroke-width="0.2"
+                        >
+                            <line x1="4" y1="11.6" :x2="W - 4" y2="11.6" />
+                            <line x1="4" y1="21.4" :x2="W - 4" y2="21.4" />
+                            <line x1="48.6" y1="11.6" x2="48.6" y2="21.4" />
+                            <line x1="26.6" y1="21.4" x2="26.6" y2="32.6" />
+                            <line x1="4" y1="32.6" x2="47.2" y2="32.6" />
+                            <line x1="17.3" y1="32.6" x2="17.3" :y2="H - 3" />
+                            <line x1="32.3" y1="32.6" x2="32.3" :y2="H - 3" />
+                        </g>
+                    </template>
                     <line
-                        v-if="style === 'nucleo'"
+                        v-if="legacy && style === 'nucleo'"
                         x1="6"
                         y1="21.4"
                         x2="14"
@@ -289,7 +472,7 @@ const radius = computed(() => Math.min(props.model.height_mm * 0.12, 4));
                         stroke-width="0.5"
                     />
                     <line
-                        v-if="style === 'distancia'"
+                        v-if="legacy && style === 'distancia'"
                         x1="41"
                         y1="6"
                         x2="41"
@@ -299,7 +482,7 @@ const radius = computed(() => Math.min(props.model.height_mm * 0.12, 4));
                         stroke-width="0.25"
                     />
                     <g
-                        v-if="style === 'trayecto'"
+                        v-if="legacy && style === 'trayecto'"
                         :stroke="textColor"
                         stroke-opacity="0.22"
                         stroke-width="0.2"
@@ -353,14 +536,52 @@ const radius = computed(() => Math.min(props.model.height_mm * 0.12, 4));
                     fill-opacity="0.55"
                     font-family="Instrument Sans, ui-sans-serif, system-ui, sans-serif"
                 >
-                    {{ labels[field.field_key] }}
+                    {{ labelFor(field) }}
                 </text>
+                <!-- Distancia V3: giant numeral + unit underneath -->
+                <template v-if="isV3HeroDistance(field)">
+                    <text
+                        :x="textX(field)"
+                        :y="field.y + fontSize(field) * 0.82"
+                        :text-anchor="anchor(field)"
+                        :font-size="fontSize(field)"
+                        font-weight="800"
+                        letter-spacing="-0.6"
+                        :fill="textColor"
+                        font-family="Instrument Sans, ui-sans-serif, system-ui, sans-serif"
+                        class="legacy-numeric"
+                    >
+                        {{ heroParts(field).number }}
+                    </text>
+                    <text
+                        :x="textX(field) + 0.4"
+                        :y="field.y + field.height - 0.6"
+                        :text-anchor="anchor(field)"
+                        :font-size="Math.max(fontSize(field) * 0.24, 2)"
+                        font-weight="700"
+                        letter-spacing="0.8"
+                        fill="#C9A45C"
+                        font-family="Instrument Sans, ui-sans-serif, system-ui, sans-serif"
+                    >
+                        {{ heroParts(field).unit }}
+                    </text>
+                </template>
                 <text
+                    v-for="(line, i) in isV3HeroDistance(field)
+                        ? []
+                        : linesFor(field)"
+                    :key="i"
                     :x="textX(field)"
-                    :y="field.y + field.height / 2"
+                    :y="
+                        field.y +
+                        field.height / 2 +
+                        (i - (linesFor(field).length - 1) / 2) *
+                            fittedSize(field, linesFor(field)) *
+                            1.08
+                    "
                     :text-anchor="anchor(field)"
                     dominant-baseline="central"
-                    :font-size="fontSize(field)"
+                    :font-size="fittedSize(field, linesFor(field))"
                     :font-weight="fontWeight(field)"
                     :letter-spacing="letterSpacing(field)"
                     :fill="fill(field)"
@@ -368,7 +589,7 @@ const radius = computed(() => Math.min(props.model.height_mm * 0.12, 4));
                     class="legacy-numeric"
                     style="text-transform: uppercase"
                 >
-                    {{ valueFor(field) }}
+                    {{ line }}
                 </text>
             </g>
         </g>

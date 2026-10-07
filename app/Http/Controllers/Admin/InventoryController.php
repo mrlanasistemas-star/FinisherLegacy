@@ -21,20 +21,34 @@ use Inertia\Response;
  */
 class InventoryController extends Controller
 {
+    /** Available units at or below this count read as "stock bajo". */
+    private const LOW_STOCK = 5;
+
     public function index(Request $request): Response
     {
+        $state = in_array($request->string('estado')->toString(), ['low', 'out'], true) ? $request->string('estado')->toString() : null;
+
         $levels = InventoryLevel::query()
-            ->with(['productVariant.product', 'inventoryLocation'])
+            ->with(['productVariant.product.media', 'inventoryLocation'])
             ->when($request->string('q')->toString(), fn ($q, $search) => $q->whereHas(
                 'productVariant',
-                fn ($vq) => $vq->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%"),
+                fn ($vq) => $vq->where('sku', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhereHas('product', fn ($pq) => $pq->where('name', 'like', "%{$search}%")),
             ))
+            ->when($state === 'low', fn ($q) => $q->whereRaw('quantity_on_hand - quantity_reserved between 1 and ?', [self::LOW_STOCK]))
+            ->when($state === 'out', fn ($q) => $q->whereRaw('quantity_on_hand - quantity_reserved <= 0'))
+            ->orderByRaw('quantity_on_hand - quantity_reserved asc')
             ->paginate(30)
             ->withQueryString();
 
         $levels->through(fn (InventoryLevel $level) => [
             'id' => $level->id,
+            'product_id' => $level->productVariant->product->id,
+            'product_variant_id' => $level->product_variant_id,
+            'inventory_location_id' => $level->inventory_location_id,
             'product' => $level->productVariant->product->name,
+            'image_url' => $level->productVariant->product->primaryImageUrl(),
             'variant' => $level->productVariant->name,
             'sku' => $level->productVariant->sku,
             'location' => $level->inventoryLocation->name,
@@ -43,9 +57,23 @@ class InventoryController extends Controller
             'available' => $level->availableQuantity(),
         ]);
 
+        $totals = InventoryLevel::query()->selectRaw(
+            'coalesce(sum(quantity_on_hand), 0) as on_hand, coalesce(sum(quantity_reserved), 0) as reserved,
+             sum(case when quantity_on_hand - quantity_reserved <= 0 then 1 else 0 end) as out_count,
+             sum(case when quantity_on_hand - quantity_reserved between 1 and ? then 1 else 0 end) as low_count',
+            [self::LOW_STOCK],
+        )->first();
+
         return Inertia::render('admin/inventory/Index', [
             'levels' => $levels,
-            'filters' => ['q' => $request->string('q')->toString()],
+            'filters' => ['q' => $request->string('q')->toString(), 'estado' => $state],
+            'totals' => [
+                'on_hand' => (int) ($totals->on_hand ?? 0),
+                'reserved' => (int) ($totals->reserved ?? 0),
+                'low' => (int) ($totals->low_count ?? 0),
+                'out' => (int) ($totals->out_count ?? 0),
+            ],
+            'lowThreshold' => self::LOW_STOCK,
             'variants' => ProductVariant::query()->with('product')->orderBy('sku')->get()
                 ->map(fn (ProductVariant $v) => ['id' => $v->id, 'label' => "{$v->product->name} — {$v->name} ({$v->sku})"]),
             'locations' => InventoryLocation::query()->orderBy('name')->get(['id', 'name']),

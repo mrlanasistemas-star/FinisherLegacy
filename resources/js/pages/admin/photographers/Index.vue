@@ -1,26 +1,30 @@
 <script setup lang="ts">
 /**
- * Administración → Fotógrafos: applicants first, then active
- * photographers, each with their numbers and pending payout.
+ * Administración → Fotógrafos: applicants first, then active and
+ * suspended photographers. Table on desktop, cards on mobile — the main
+ * actions (Aprobar / Suspender / Reactivar / Ver) are always visible,
+ * never hidden in a menu. Payouts are registered from the detail page.
  */
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
-    AtSign,
     BadgeCheck,
-    Building2,
     Camera,
-    Clock,
-    Globe,
+    ChevronRight,
     Hourglass,
-    Link2,
     Landmark,
     MapPin,
     Pause,
-    Phone,
+    Play,
+    Search,
     Wallet,
 } from '@lucide/vue';
+import { ref } from 'vue';
 import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import Pagination from '@/components/public/Pagination.vue';
+import type { PaginationLink } from '@/components/public/Pagination.vue';
+import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { CONTENT_AREA_NAV } from '@/config/areaNav';
 import { confirmAction } from '@/lib/swal';
 
@@ -31,25 +35,22 @@ type Photographer = {
     name: string | null;
     email: string | null;
     city: string | null;
-    phone: string | null;
-    instagram_url: string | null;
-    portfolio_url: string | null;
-    bio: string | null;
     status: 'pending' | 'approved' | 'suspended';
     status_label: string;
+    created_at: string | null;
+    photos_count: number;
     published_count: number;
     review_count: number;
     sales_count: number;
     gross_minor: number;
-    platform_fee_minor: number;
     pending_minor: number;
-    payout_holder: string | null;
-    payout_bank: string | null;
-    payout_clabe_masked: string | null;
+    has_payout_data: boolean;
 };
 
-defineProps<{
-    photographers: Photographer[];
+const props = defineProps<{
+    photographers: { data: Photographer[]; links: PaginationLink[] };
+    filters: { status: string | null; q: string | null };
+    counts: Record<string, number>;
     totals: {
         pending_applicants: number;
         gross_minor: number;
@@ -59,12 +60,14 @@ defineProps<{
     commissionPercent: number;
 }>();
 
-const money = (minor: number) =>
-    new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN',
-        maximumFractionDigits: 0,
-    }).format(minor / 100);
+const q = ref(props.filters.q ?? '');
+
+const tabs = [
+    { key: null, label: 'Todos' },
+    { key: 'pending', label: 'Por aprobar' },
+    { key: 'approved', label: 'Aprobados' },
+    { key: 'suspended', label: 'Suspendidos' },
+] as const;
 
 const statusChip: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-800',
@@ -72,7 +75,32 @@ const statusChip: Record<string, string> = {
     suspended: 'bg-red-100 text-red-800',
 };
 
-function setStatus(p: Photographer, status: Photographer['status']) {
+function visit(params: Record<string, string | null>) {
+    router.get(
+        '/admin/photographers',
+        Object.fromEntries(
+            Object.entries({
+                status: props.filters.status,
+                q: q.value || null,
+                ...params,
+            }).filter(([, v]) => v),
+        ),
+        { preserveState: true, preserveScroll: true, replace: true },
+    );
+}
+
+async function setStatus(p: Photographer, status: Photographer['status']) {
+    if (
+        status === 'suspended' &&
+        !(await confirmAction({
+            title: `¿Suspender a ${p.display_name}?`,
+            text: 'Sus fotos dejan de venderse mientras esté suspendido. Sus ventas y saldo se conservan.',
+            confirmButtonText: 'Suspender',
+        }))
+    ) {
+        return;
+    }
+
     router.patch(
         `/admin/photographers/${p.uuid}/status`,
         { status },
@@ -80,35 +108,28 @@ function setStatus(p: Photographer, status: Photographer['status']) {
     );
 }
 
-async function payout(p: Photographer) {
-    if (
-        await confirmAction({
-            title: `¿Registrar pago a ${p.display_name}?`,
-            text: `Marca ${money(p.pending_minor)} pendientes como transferidos. Hazlo después de enviar la transferencia.`,
-            confirmButtonText: 'Sí, ya transferí',
-        })
-    ) {
-        router.post(
-            `/admin/photographers/${p.uuid}/payouts`,
-            {},
-            { preserveScroll: true },
-        );
-    }
-}
+const shortDate = (iso: string | null) =>
+    iso
+        ? new Date(iso).toLocaleDateString('es-MX', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+          })
+        : '—';
 </script>
 
 <template>
     <Head title="Fotógrafos" />
 
-    <div class="mx-auto w-full max-w-[1400px] p-4 md:p-8">
+    <div class="w-full space-y-6 p-4 md:p-8">
         <SecondaryNav :items="CONTENT_AREA_NAV" />
 
-        <div class="mb-6 flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
             <span
                 class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
                 ><Camera class="size-5"
             /></span>
-            <div>
+            <div class="min-w-0 flex-1">
                 <h1 class="text-xl font-semibold">Fotógrafos</h1>
                 <p class="text-sm text-muted-foreground">
                     Comisión de Finisher Legacy: {{ commissionPercent }}% por
@@ -117,182 +138,310 @@ async function payout(p: Photographer) {
             </div>
         </div>
 
-        <div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <div class="fl-card p-4">
-                <Clock class="size-4 text-amber-700" />
-                <p class="legacy-numeric mt-2 text-2xl font-semibold">
+                <p
+                    class="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                    <Hourglass class="size-3.5" /> Por aprobar
+                </p>
+                <p class="legacy-numeric mt-1 text-2xl font-semibold">
                     {{ totals.pending_applicants }}
                 </p>
-                <p class="text-xs text-muted-foreground">
-                    Solicitudes por revisar
+            </div>
+            <div class="fl-card p-4">
+                <p class="text-xs text-muted-foreground">Ventas brutas</p>
+                <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                    <Money :minor="totals.gross_minor" />
                 </p>
             </div>
             <div class="fl-card p-4">
-                <Wallet class="size-4 text-sky-700" />
-                <p class="legacy-numeric mt-2 text-2xl font-semibold">
-                    {{ money(totals.gross_minor) }}
-                </p>
-                <p class="text-xs text-muted-foreground">Ventas totales</p>
-            </div>
-            <div class="fl-card p-4">
-                <Building2 class="size-4 text-fl-gold-ink" />
-                <p class="legacy-numeric mt-2 text-2xl font-semibold">
-                    {{ money(totals.platform_fee_minor) }}
-                </p>
                 <p class="text-xs text-muted-foreground">Comisión Finisher</p>
+                <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                    <Money :minor="totals.platform_fee_minor" />
+                </p>
             </div>
             <div class="fl-card p-4">
-                <Hourglass class="size-4 text-red-700" />
-                <p class="legacy-numeric mt-2 text-2xl font-semibold">
-                    {{ money(totals.pending_payout_minor) }}
+                <p
+                    class="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                    <Wallet class="size-3.5" /> Saldo pendiente
                 </p>
-                <p class="text-xs text-muted-foreground">
-                    Por pagar a fotógrafos
+                <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                    <Money :minor="totals.pending_payout_minor" />
                 </p>
             </div>
         </div>
 
-        <div
-            v-if="photographers.length"
-            class="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
-        >
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div
+                class="flex gap-1 overflow-x-auto rounded-full border border-border bg-card p-1"
+            >
+                <button
+                    v-for="tab in tabs"
+                    :key="tab.label"
+                    type="button"
+                    class="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
+                    :class="
+                        filters.status === tab.key
+                            ? 'bg-foreground text-background'
+                            : 'text-muted-foreground hover:text-foreground'
+                    "
+                    @click="visit({ status: tab.key, page: null })"
+                >
+                    {{ tab.label }}
+                    <span
+                        v-if="tab.key && counts[tab.key]"
+                        class="legacy-numeric ml-1 text-xs opacity-70"
+                        >{{ counts[tab.key] }}</span
+                    >
+                </button>
+            </div>
+            <form
+                class="relative lg:ml-auto lg:w-80"
+                @submit.prevent="visit({ page: null })"
+            >
+                <Search
+                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                    v-model="q"
+                    class="pl-9"
+                    placeholder="Nombre, ciudad o correo"
+                    aria-label="Buscar fotógrafo"
+                />
+            </form>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="fl-card hidden overflow-x-auto lg:block">
+            <table class="w-full text-sm">
+                <thead
+                    class="border-b border-border text-left text-xs text-muted-foreground"
+                >
+                    <tr>
+                        <th class="px-4 py-3 font-medium">Fotógrafo</th>
+                        <th class="px-4 py-3 font-medium">Ciudad</th>
+                        <th class="px-4 py-3 font-medium">Estado</th>
+                        <th class="px-4 py-3 text-right font-medium">Fotos</th>
+                        <th class="px-4 py-3 text-right font-medium">Ventas</th>
+                        <th class="px-4 py-3 text-right font-medium">
+                            Saldo pendiente
+                        </th>
+                        <th class="px-4 py-3 font-medium">Registro</th>
+                        <th class="px-4 py-3 text-right font-medium">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    <tr
+                        v-for="p in photographers.data"
+                        :key="p.id"
+                        class="hover:bg-muted/40"
+                    >
+                        <td class="px-4 py-3">
+                            <Link
+                                :href="`/admin/photographers/${p.uuid}`"
+                                class="flex items-center gap-3"
+                            >
+                                <span
+                                    class="flex size-9 shrink-0 items-center justify-center rounded-full bg-fl-cream font-serif text-fl-gold-ink"
+                                    >{{ p.display_name.charAt(0) }}</span
+                                >
+                                <span class="min-w-0">
+                                    <span
+                                        class="block truncate font-medium hover:underline"
+                                        >{{ p.display_name }}</span
+                                    >
+                                    <span
+                                        class="block truncate text-xs text-muted-foreground"
+                                        >{{ p.email }}</span
+                                    >
+                                </span>
+                            </Link>
+                        </td>
+                        <td class="px-4 py-3 text-muted-foreground">
+                            {{ p.city ?? '—' }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span
+                                class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                                :class="statusChip[p.status]"
+                                >{{ p.status_label }}</span
+                            >
+                        </td>
+                        <td class="legacy-numeric px-4 py-3 text-right">
+                            {{ p.published_count }}
+                            <span class="text-xs text-muted-foreground"
+                                >/ {{ p.photos_count }}</span
+                            >
+                        </td>
+                        <td class="legacy-numeric px-4 py-3 text-right">
+                            {{ p.sales_count }}
+                        </td>
+                        <td
+                            class="legacy-numeric px-4 py-3 text-right font-semibold"
+                        >
+                            <Money :minor="p.pending_minor" />
+                        </td>
+                        <td class="px-4 py-3 text-muted-foreground">
+                            {{ shortDate(p.created_at) }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex justify-end gap-1.5">
+                                <Button
+                                    v-if="p.status === 'pending'"
+                                    size="sm"
+                                    class="rounded-full"
+                                    @click="setStatus(p, 'approved')"
+                                >
+                                    <BadgeCheck class="size-3.5" /> Aprobar
+                                </Button>
+                                <Button
+                                    v-if="p.status === 'approved'"
+                                    size="sm"
+                                    variant="outline"
+                                    class="rounded-full text-red-700"
+                                    @click="setStatus(p, 'suspended')"
+                                >
+                                    <Pause class="size-3.5" /> Suspender
+                                </Button>
+                                <Button
+                                    v-if="p.status === 'suspended'"
+                                    size="sm"
+                                    variant="outline"
+                                    class="rounded-full"
+                                    @click="setStatus(p, 'approved')"
+                                >
+                                    <Play class="size-3.5" /> Reactivar
+                                </Button>
+                                <Button
+                                    as-child
+                                    size="sm"
+                                    variant="ghost"
+                                    class="rounded-full"
+                                >
+                                    <Link
+                                        :href="`/admin/photographers/${p.uuid}`"
+                                        >Ver <ChevronRight class="size-3.5"
+                                    /></Link>
+                                </Button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
             <article
-                v-for="p in photographers"
+                v-for="p in photographers.data"
                 :key="p.id"
-                class="fl-card flex flex-col p-5"
+                class="fl-card p-4"
             >
                 <div class="flex items-start gap-3">
                     <span
-                        class="flex size-11 shrink-0 items-center justify-center rounded-full bg-foreground font-semibold text-background"
-                        >{{ p.display_name.slice(0, 1) }}</span
+                        class="flex size-10 shrink-0 items-center justify-center rounded-full bg-fl-cream font-serif text-fl-gold-ink"
+                        >{{ p.display_name.charAt(0) }}</span
                     >
                     <div class="min-w-0 flex-1">
-                        <p class="truncate font-semibold">
-                            {{ p.display_name }}
-                        </p>
-                        <p class="truncate text-xs text-muted-foreground">
-                            {{ p.name }}
+                        <Link
+                            :href="`/admin/photographers/${p.uuid}`"
+                            class="block truncate font-semibold"
+                            >{{ p.display_name }}</Link
+                        >
+                        <p
+                            class="flex items-center gap-1 text-xs text-muted-foreground"
+                        >
+                            <MapPin class="size-3" />
+                            {{ p.city ?? 'Sin ciudad' }} ·
+                            {{ shortDate(p.created_at) }}
                         </p>
                     </div>
                     <span
-                        class="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                        class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
                         :class="statusChip[p.status]"
                         >{{ p.status_label }}</span
                     >
                 </div>
-                <ul class="mt-4 space-y-1.5 text-sm text-muted-foreground">
-                    <li v-if="p.email" class="flex items-center gap-2">
-                        <AtSign class="size-3.5" /> {{ p.email }}
-                    </li>
-                    <li v-if="p.city" class="flex items-center gap-2">
-                        <MapPin class="size-3.5" /> {{ p.city }}
-                    </li>
-                    <li v-if="p.phone" class="flex items-center gap-2">
-                        <Phone class="size-3.5" /> {{ p.phone }}
-                    </li>
-                    <li v-if="p.instagram_url" class="flex items-center gap-2">
-                        <Link2 class="size-3.5" />
-                        <a
-                            :href="p.instagram_url"
-                            target="_blank"
-                            rel="noopener"
-                            class="truncate hover:text-foreground"
-                            >{{ p.instagram_url }}</a
-                        >
-                    </li>
-                    <li v-if="p.portfolio_url" class="flex items-center gap-2">
-                        <Globe class="size-3.5" />
-                        <a
-                            :href="p.portfolio_url"
-                            target="_blank"
-                            rel="noopener"
-                            class="truncate hover:text-foreground"
-                            >{{ p.portfolio_url }}</a
-                        >
-                    </li>
-                    <li
-                        v-if="p.payout_clabe_masked"
-                        class="flex items-center gap-2"
-                    >
-                        <Landmark class="size-3.5" /> {{ p.payout_bank }} ·
-                        {{ p.payout_clabe_masked }}
-                    </li>
-                </ul>
-                <p v-if="p.bio" class="mt-3 line-clamp-3 text-sm">
-                    {{ p.bio }}
-                </p>
-                <dl
-                    class="mt-4 grid grid-cols-4 gap-2 border-t border-border pt-4 text-center"
-                >
-                    <div>
-                        <dt class="text-[10px] text-muted-foreground uppercase">
-                            Publicadas
-                        </dt>
+                <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
+                    <div class="rounded-lg bg-muted/60 p-2">
+                        <dt class="text-[10px] text-muted-foreground">Fotos</dt>
                         <dd class="legacy-numeric font-semibold">
                             {{ p.published_count }}
                         </dd>
                     </div>
-                    <div>
-                        <dt class="text-[10px] text-muted-foreground uppercase">
-                            Revisión
-                        </dt>
-                        <dd class="legacy-numeric font-semibold">
-                            {{ p.review_count }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-[10px] text-muted-foreground uppercase">
+                    <div class="rounded-lg bg-muted/60 p-2">
+                        <dt class="text-[10px] text-muted-foreground">
                             Ventas
                         </dt>
                         <dd class="legacy-numeric font-semibold">
                             {{ p.sales_count }}
                         </dd>
                     </div>
-                    <div>
-                        <dt class="text-[10px] text-muted-foreground uppercase">
-                            Por pagar
-                        </dt>
-                        <dd class="legacy-numeric font-semibold text-red-700">
-                            {{ money(p.pending_minor) }}
+                    <div class="rounded-lg bg-muted/60 p-2">
+                        <dt class="text-[10px] text-muted-foreground">Saldo</dt>
+                        <dd class="legacy-numeric text-sm font-semibold">
+                            <Money :minor="p.pending_minor" />
                         </dd>
                     </div>
                 </dl>
-                <div class="mt-auto flex flex-wrap gap-2 pt-5">
+                <p
+                    v-if="!p.has_payout_data"
+                    class="mt-3 flex items-center gap-1.5 text-xs text-amber-700"
+                >
+                    <Landmark class="size-3.5" /> Sin datos bancarios
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2">
                     <Button
-                        v-if="p.status !== 'approved'"
+                        v-if="p.status === 'pending'"
                         size="sm"
-                        class="rounded-full"
+                        class="flex-1 rounded-full"
                         @click="setStatus(p, 'approved')"
-                        ><BadgeCheck class="size-3.5" /> Aprobar</Button
                     >
+                        <BadgeCheck class="size-3.5" /> Aprobar
+                    </Button>
                     <Button
                         v-if="p.status === 'approved'"
                         size="sm"
                         variant="outline"
-                        class="rounded-full"
+                        class="flex-1 rounded-full text-red-700"
                         @click="setStatus(p, 'suspended')"
-                        ><Pause class="size-3.5" /> Suspender</Button
                     >
+                        <Pause class="size-3.5" /> Suspender
+                    </Button>
                     <Button
-                        v-if="p.pending_minor > 0"
+                        v-if="p.status === 'suspended'"
                         size="sm"
                         variant="outline"
-                        class="rounded-full"
-                        @click="payout(p)"
-                        ><Landmark class="size-3.5" /> Registrar pago</Button
+                        class="flex-1 rounded-full"
+                        @click="setStatus(p, 'approved')"
                     >
+                        <Play class="size-3.5" /> Reactivar
+                    </Button>
+                    <Button
+                        as-child
+                        size="sm"
+                        variant="outline"
+                        class="flex-1 rounded-full"
+                    >
+                        <Link :href="`/admin/photographers/${p.uuid}`"
+                            >Ver detalle</Link
+                        >
+                    </Button>
                 </div>
             </article>
         </div>
-        <div
-            v-else
-            class="fl-card flex flex-col items-center gap-3 p-12 text-center"
+
+        <p
+            v-if="!photographers.data.length"
+            class="fl-card px-6 py-12 text-center text-sm text-muted-foreground"
         >
-            <Camera class="size-8 text-fl-gold-ink" />
-            <p class="font-semibold">Aún no hay fotógrafos</p>
-            <p class="text-sm text-muted-foreground">
-                Comparte la página /fotografos para recibir solicitudes.
-            </p>
-        </div>
+            No hay fotógrafos con estos filtros.
+        </p>
+
+        <Pagination :links="photographers.links" />
     </div>
 </template>

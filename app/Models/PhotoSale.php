@@ -36,7 +36,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'uuid', 'event_photo_id', 'photographer_profile_id', 'order_id', 'order_item_id', 'buyer_user_id',
     'gross_minor', 'platform_fee_minor', 'processor_fee_minor', 'photographer_net_minor', 'commission_percent',
-    'currency', 'payout_status', 'paid_out_at', 'download_count',
+    'currency', 'payout_status', 'paid_out_at', 'photographer_payout_id', 'download_count',
     'payment_provider', 'processor_fee_estimated', 'processor_fee_actual_minor', 'processor_fee_reconciled_at',
 ])]
 class PhotoSale extends Model

@@ -118,7 +118,7 @@ class PlateController extends Controller
                 ] : null,
                 'can_reprint' => in_array($plate->status, [PlateStatus::Ready, PlateStatus::Delivered], true),
             ],
-            'legacyPlateModel' => $plate->legacyPlateModel?->toViewerArray(),
+            'legacyPlateModel' => $plate->layoutViewer(),
             'personalization' => [
                 'athlete_name' => $plate->engraving_display_name,
                 'race_label' => $plate->race_name,

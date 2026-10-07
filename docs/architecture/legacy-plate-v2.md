@@ -1,5 +1,9 @@
 # Legacy Plate v2 — grabado dinámico sobre pieza pre-manufacturada
 
+> **Histórico.** La especificación vigente es [Legacy Plate V3](legacy-plate-v3.md)
+> (70 × 45 mm, diseño solo al frente, clip money clip atrás). Este documento
+> describe el modelo de datos v2, que sigue vigente salvo donde V3 lo corrige.
+
 Ver `docs/plate-production.md` para el pipeline histórico (PlateTemplate,
 molde completo diseñado en Plate Studio). Este documento cubre **solo lo
 nuevo**: el rediseño de producto donde la placa física llega ya fabricada

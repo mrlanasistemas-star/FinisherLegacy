@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * Visual print editor for one of the three Legacy Plate layouts. Both
- * faces (front/back) are printed — no laser — and the plate carries an
- * NFC chip instead of a printed QR. Drag fields to move them, the corner
- * handle to resize, arrow keys to nudge 0.5 mm; "Vista de impresión"
- * hides every guide to show exactly what gets printed.
+ * Visual print editor for one of the three Legacy Plate V3 layouts. Only
+ * the FRONT is designed (resin-protected print, NFC under the FL panel);
+ * the back carries the stainless money clip, so the second view —
+ * "Broche / Vista posterior" — is a read-only physical reference and never
+ * accepts fields. Drag fields to move them, the corner handle to resize,
+ * arrow keys to nudge 0.5 mm; "Vista de impresión" hides every guide.
  */
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
@@ -14,8 +15,8 @@ import {
     ArrowLeft,
     Eye,
     EyeOff,
-    FlipHorizontal2,
     ImagePlus,
+    Paperclip,
     Layers,
     Nfc,
     Palette,
@@ -29,6 +30,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
+import PlateClipBack from '@/components/plates/PlateClipBack.vue';
 import PlatePrintFace from '@/components/plates/PlatePrintFace.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -37,7 +39,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 import type {
-    LegacyPlateFace,
     LegacyPlateModelData,
     LegacyPlateModelField,
     LegacyPlatePersonalization,
@@ -68,7 +69,8 @@ watch(
     },
 );
 
-const face = ref<LegacyPlateFace>('front');
+/** 'front' = the editable design; 'clip' = the read-only back reference. */
+const face = ref<'front' | 'clip'>('front');
 const selectedKey = ref<string | null>(null);
 const printView = ref(false);
 const zoom = ref(1);
@@ -92,19 +94,14 @@ const designForm = useForm({
     layout_style: (props.model.layout_style ?? 'nucleo') as
         string | number | null,
     front_background: props.model.front_background ?? '#F3F2EE',
-    back_background: props.model.back_background ?? '#171714',
     front_text_color: props.model.front_text_color ?? '#171714',
-    back_text_color: props.model.back_text_color ?? '#F4EEDF',
     front_artwork: null as File | null,
-    back_artwork: null as File | null,
     remove_front_artwork: false,
-    remove_back_artwork: false,
 });
 
 const frontArtPreview = ref<string | null>(
     props.model.front_artwork_url ?? null,
 );
-const backArtPreview = ref<string | null>(props.model.back_artwork_url ?? null);
 
 const liveModel = computed<LegacyPlateModelData>(() => ({
     ...props.model,
@@ -113,44 +110,28 @@ const liveModel = computed<LegacyPlateModelData>(() => ({
     layout_style: (designForm.layout_style ??
         'nucleo') as LegacyPlateModelData['layout_style'],
     front_background: designForm.front_background,
-    back_background: designForm.back_background,
     front_text_color: designForm.front_text_color,
-    back_text_color: designForm.back_text_color,
     front_artwork_url: designForm.remove_front_artwork
         ? null
         : frontArtPreview.value,
-    back_artwork_url: designForm.remove_back_artwork
-        ? null
-        : backArtPreview.value,
     fields: draft.value,
 }));
 
-function pickArtwork(target: 'front' | 'back', event: Event) {
+function pickArtwork(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0] ?? null;
 
     if (!file) {
         return;
     }
 
-    if (target === 'front') {
-        designForm.front_artwork = file;
-        designForm.remove_front_artwork = false;
-        frontArtPreview.value = URL.createObjectURL(file);
-    } else {
-        designForm.back_artwork = file;
-        designForm.remove_back_artwork = false;
-        backArtPreview.value = URL.createObjectURL(file);
-    }
+    designForm.front_artwork = file;
+    designForm.remove_front_artwork = false;
+    frontArtPreview.value = URL.createObjectURL(file);
 }
 
-function removeArtwork(target: 'front' | 'back') {
-    if (target === 'front') {
-        designForm.front_artwork = null;
-        designForm.remove_front_artwork = true;
-    } else {
-        designForm.back_artwork = null;
-        designForm.remove_back_artwork = true;
-    }
+function removeArtwork() {
+    designForm.front_artwork = null;
+    designForm.remove_front_artwork = true;
 }
 
 function saveDesign() {
@@ -159,7 +140,6 @@ function saveDesign() {
             ...data,
             active: data.active ? 1 : 0,
             remove_front_artwork: data.remove_front_artwork ? 1 : 0,
-            remove_back_artwork: data.remove_back_artwork ? 1 : 0,
         }))
         .post(`/admin/legacy-plate-models/${props.model.id}`, {
             preserveScroll: true,
@@ -178,7 +158,7 @@ function saveFields() {
         {
             fields: draft.value.map((f) => ({
                 id: f.id,
-                face: f.face ?? 'front',
+                face: 'front',
                 x: round(f.x),
                 y: round(f.y),
                 width: round(f.width),
@@ -219,14 +199,14 @@ function toggleVisible(field: EditorField) {
     dirty.value = true;
 
     if (field.visible) {
-        face.value = field.face ?? 'front';
+        face.value = 'front';
         selectedKey.value = field.field_key;
     }
 }
 
 function selectField(field: EditorField) {
     selectedKey.value = field.field_key;
-    face.value = field.face ?? 'front';
+    face.value = 'front';
 }
 
 const round = (n: number) => Math.round(n * 2) / 2;
@@ -353,8 +333,9 @@ onBeforeUnmount(() => {
     window.removeEventListener('pointermove', onPointerMove);
 });
 
-const fieldsOnFace = (target: LegacyPlateFace) =>
-    draft.value.filter((f) => (f.face ?? 'front') === target);
+const visibleCount = computed(
+    () => draft.value.filter((f) => f.visible !== false).length,
+);
 
 const sampleKeys = computed(() =>
     draft.value.filter((f) => f.visible !== false),
@@ -364,7 +345,7 @@ const sampleKeys = computed(() =>
 <template>
     <Head :title="`Layout · ${model.name}`" />
 
-    <div class="mx-auto w-full max-w-[1500px] p-4 md:p-8">
+    <div class="w-full p-4 md:p-8">
         <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
 
         <!-- Top bar -->
@@ -381,8 +362,8 @@ const sampleKeys = computed(() =>
                 </Link>
                 <div>
                     <p class="fl-eyebrow">
-                        Layout {{ model.layout_slot ?? '—' }} de 3 · impresión
-                        frente y reverso
+                        Layout {{ model.layout_slot ?? '—' }} de 3 · diseño
+                        frontal
                     </p>
                     <h1 class="font-serif text-2xl">{{ designForm.name }}</h1>
                 </div>
@@ -427,31 +408,42 @@ const sampleKeys = computed(() =>
                     <div
                         class="inline-flex rounded-full border border-border bg-muted p-1"
                         role="tablist"
-                        aria-label="Cara"
+                        aria-label="Vista"
                     >
                         <button
-                            v-for="option in [
-                                { key: 'front', label: 'Frente' },
-                                { key: 'back', label: 'Reverso' },
-                            ] as const"
-                            :key="option.key"
                             type="button"
                             role="tab"
-                            :aria-selected="face === option.key"
-                            class="rounded-full px-5 py-1.5 text-sm font-semibold transition-colors"
+                            :aria-selected="face === 'front'"
+                            class="rounded-full px-4 py-1.5 text-sm font-semibold transition-colors sm:px-5"
                             :class="
-                                face === option.key
+                                face === 'front'
                                     ? 'bg-card shadow-sm'
                                     : 'text-muted-foreground'
                             "
-                            @click="face = option.key"
+                            @click="face = 'front'"
                         >
-                            {{ option.label }}
+                            Diseño frontal
                             <span class="ml-1 text-xs text-muted-foreground">{{
-                                fieldsOnFace(option.key).filter(
-                                    (f) => f.visible !== false,
-                                ).length
+                                visibleCount
                             }}</span>
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            :aria-selected="face === 'clip'"
+                            class="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors sm:px-5"
+                            :class="
+                                face === 'clip'
+                                    ? 'bg-card shadow-sm'
+                                    : 'text-muted-foreground'
+                            "
+                            @click="
+                                face = 'clip';
+                                selectedKey = null;
+                            "
+                        >
+                            <Paperclip class="size-3.5" />
+                            Broche / Vista posterior
                         </button>
                     </div>
                     <label
@@ -483,9 +475,38 @@ const sampleKeys = computed(() =>
                         class="w-full max-w-3xl transition-[width]"
                         :style="{ width: `${zoom * 100}%` }"
                     >
+                        <div v-if="face === 'clip'" class="space-y-4">
+                            <PlateClipBack :model="liveModel" with-profile />
+                            <p
+                                class="rounded-xl border border-border bg-card px-4 py-3 text-xs leading-relaxed text-muted-foreground"
+                            >
+                                <span class="font-semibold text-foreground"
+                                    >Vista de referencia del producto
+                                    físico.</span
+                                >
+                                El reverso no se imprime ni acepta campos: lleva
+                                el clip tipo money clip de
+                                {{
+                                    (
+                                        liveModel.spec?.clip_material ??
+                                        'acero inoxidable estampado'
+                                    ).toLowerCase()
+                                }}
+                                ({{ liveModel.spec?.clip_length_mm ?? 52 }} ×
+                                {{ liveModel.spec?.clip_height_mm ?? 20 }} mm)
+                                que sujeta la placa al listón de la medalla. Las
+                                medidas se ajustan en
+                                <Link
+                                    href="/admin/legacy-plate-models"
+                                    class="font-medium text-foreground underline underline-offset-2"
+                                    >Layouts → Especificación física</Link
+                                >.
+                            </p>
+                        </div>
                         <PlatePrintFace
+                            v-else
                             :model="liveModel"
-                            :face="face"
+                            face="front"
                             :fields="draft"
                             :personalization="sample"
                             :show-guides="!printView"
@@ -519,7 +540,7 @@ const sampleKeys = computed(() =>
 
                 <!-- Selected field quick bar -->
                 <div
-                    v-if="selected && !printView"
+                    v-if="selected && !printView && face === 'front'"
                     class="flex flex-wrap items-center gap-3 border-t border-border bg-card px-4 py-3"
                 >
                     <span
@@ -576,21 +597,6 @@ const sampleKeys = computed(() =>
                             (selected.font_size ?? 3.5).toFixed(1)
                         }}</span>
                     </label>
-                    <button
-                        type="button"
-                        class="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:border-foreground/25"
-                        @click="
-                            patchSelected({
-                                face:
-                                    selected.face === 'back' ? 'front' : 'back',
-                            });
-                            face = selected.face ?? 'front';
-                        "
-                    >
-                        <FlipHorizontal2 class="size-3.5" />
-                        Mover al
-                        {{ selected.face === 'back' ? 'frente' : 'reverso' }}
-                    </button>
                 </div>
             </section>
 
@@ -632,16 +638,11 @@ const sampleKeys = computed(() =>
                     v-if="panel === 'campos'"
                     class="space-y-5 overflow-y-auto p-4"
                 >
-                    <div
-                        v-for="target in ['front', 'back'] as const"
-                        :key="target"
-                    >
-                        <p class="fl-eyebrow mb-2">
-                            {{ target === 'front' ? 'Frente' : 'Reverso' }}
-                        </p>
+                    <div>
+                        <p class="fl-eyebrow mb-2">Campos del frente</p>
                         <ul class="space-y-1.5">
                             <li
-                                v-for="field in fieldsOnFace(target)"
+                                v-for="field in draft"
                                 :key="field.field_key"
                                 class="flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors"
                                 :class="
@@ -788,34 +789,30 @@ const sampleKeys = computed(() =>
                             base. Los campos se siguen moviendo libremente.
                         </p>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="grid gap-1.5">
-                            <Label for="l-w">Ancho (mm)</Label>
-                            <Input
-                                id="l-w"
-                                v-model.number="designForm.width_mm"
-                                type="number"
-                                step="0.5"
-                            />
-                        </div>
-                        <div class="grid gap-1.5">
-                            <Label for="l-h">Alto (mm)</Label>
-                            <Input
-                                id="l-h"
-                                v-model.number="designForm.height_mm"
-                                type="number"
-                                step="0.5"
-                            />
-                        </div>
-                    </div>
+                    <p
+                        class="rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground"
+                    >
+                        Placa de
+                        <span
+                            class="legacy-numeric font-semibold text-foreground"
+                            >{{ designForm.width_mm }} ×
+                            {{ designForm.height_mm }} mm</span
+                        >. Las medidas, el clip y los materiales son los mismos
+                        para los tres layouts: se editan en
+                        <Link
+                            href="/admin/legacy-plate-models"
+                            class="font-medium text-foreground underline underline-offset-2"
+                            >Especificación física</Link
+                        >.
+                    </p>
 
                     <div
-                        v-for="target in ['front', 'back'] as const"
+                        v-for="target in ['front'] as const"
                         :key="target"
                         class="space-y-3 rounded-xl border border-border p-3"
                     >
                         <p class="text-sm font-semibold">
-                            {{ target === 'front' ? 'Frente' : 'Reverso' }}
+                            Frente (único lado impreso)
                         </p>
                         <div class="grid grid-cols-2 gap-3">
                             <label
@@ -864,16 +861,10 @@ const sampleKeys = computed(() =>
                         >
                             <img
                                 v-if="
-                                    (target === 'front'
-                                        ? frontArtPreview
-                                        : backArtPreview) &&
-                                    !designForm[`remove_${target}_artwork`]
+                                    frontArtPreview &&
+                                    !designForm.remove_front_artwork
                                 "
-                                :src="
-                                    (target === 'front'
-                                        ? frontArtPreview
-                                        : backArtPreview) ?? ''
-                                "
+                                :src="frontArtPreview ?? ''"
                                 alt=""
                                 class="h-10 w-16 rounded object-cover"
                             />
@@ -890,18 +881,14 @@ const sampleKeys = computed(() =>
                                 type="file"
                                 accept="image/png,image/jpeg,image/webp"
                                 class="sr-only"
-                                @change="pickArtwork(target, $event)"
+                                @change="pickArtwork($event)"
                             />
                         </label>
                         <button
-                            v-if="
-                                target === 'front'
-                                    ? frontArtPreview
-                                    : backArtPreview
-                            "
+                            v-if="frontArtPreview"
                             type="button"
                             class="text-xs text-red-700 hover:underline"
-                            @click="removeArtwork(target)"
+                            @click="removeArtwork()"
                         >
                             Quitar arte
                         </button>

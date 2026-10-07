@@ -6,7 +6,9 @@ use App\Enums\AthleteEventMediaType;
 use App\Enums\EventPhotoStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AthleteEventMedia;
+use App\Models\EventEdition;
 use App\Models\EventPhoto;
+use App\Models\PhotographerProfile;
 use App\Models\PhotoSale;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,42 +17,83 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Administración → Fotografías: the photographers' review board (Por
- * revisar → Publicadas / Rechazadas) plus sales figures and the athletes'
- * own event media overview.
+ * Administración → Fotografías: the photographers' review grid — status
+ * tabs, filters (event, photographer, date, bib), pagination and bulk
+ * approve / reject of up to 200 selected photos — plus sales figures and
+ * the athletes' own event media overview.
  */
 class EventPhotoController extends Controller
 {
-    public function index(): Response
+    private const PER_PAGE = [24, 50, 100];
+
+    /**
+     * Paginated, filterable review grid — never loads every photo at once.
+     * Filters: status, event, photographer, upload date range and bib.
+     */
+    public function index(Request $request): Response
     {
-        $lane = fn (EventPhotoStatus $status) => [
-            'key' => $status->value,
-            'count' => EventPhoto::query()->where('status', $status)->count(),
-            'items' => EventPhoto::query()
-                ->where('status', $status)
-                ->with(['photographer', 'eventEdition.event'])
-                ->latest('id')
-                ->limit(60)
-                ->get()
-                ->map(fn (EventPhoto $photo) => [
-                    'uuid' => $photo->uuid,
-                    'thumb_url' => $photo->thumbUrl(),
-                    'preview_url' => $photo->previewUrl(),
-                    'photographer' => $photo->photographer?->display_name,
-                    'event' => $photo->eventEdition?->event?->name,
-                    'price_minor' => $photo->price_minor,
-                    'currency' => $photo->currency,
-                    'bib_numbers' => $photo->bib_numbers ?? [],
-                    'rejection_reason' => $photo->rejection_reason,
-                ]),
-        ];
+        $filters = $request->validate([
+            'status' => ['nullable', Rule::in(array_column(EventPhotoStatus::cases(), 'value'))],
+            'event_edition_id' => ['nullable', 'integer'],
+            'photographer_id' => ['nullable', 'integer'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+            'bib' => ['nullable', 'string', 'max:20'],
+            'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE)],
+        ]);
+        $status = $filters['status'] ?? EventPhotoStatus::Review->value;
+        $perPage = (int) ($filters['per_page'] ?? 50);
+
+        $base = EventPhoto::query()
+            ->when($filters['event_edition_id'] ?? null, fn ($q, $id) => $q->where('event_edition_id', $id))
+            ->when($filters['photographer_id'] ?? null, fn ($q, $id) => $q->where('photographer_profile_id', $id))
+            ->when($filters['from'] ?? null, fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
+            ->when($filters['to'] ?? null, fn ($q, $d) => $q->whereDate('created_at', '<=', $d))
+            ->when(trim((string) ($filters['bib'] ?? '')), fn ($q, $bib) => $q->whereHas('bibs', fn ($b) => $b->where('bib_number', $bib)));
+
+        $counts = (clone $base)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        $photos = (clone $base)
+            ->where('status', $status)
+            ->with(['photographer', 'eventEdition.event'])
+            ->latest('id')
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (EventPhoto $photo) => [
+                'uuid' => $photo->uuid,
+                'thumb_url' => $photo->thumbUrl(),
+                'preview_url' => $photo->previewUrl(),
+                'photographer' => $photo->photographer?->display_name,
+                'photographer_status' => $photo->photographer?->status->value,
+                'event' => $photo->eventEdition?->event?->name,
+                'price_minor' => $photo->price_minor,
+                'currency' => $photo->currency,
+                'bib_numbers' => $photo->bib_numbers ?? [],
+                'rejection_reason' => $photo->rejection_reason,
+                'uploaded_at' => $photo->created_at?->toIso8601String(),
+            ]);
 
         return Inertia::render('admin/photos/Index', [
-            'board' => [
-                $lane(EventPhotoStatus::Review),
-                $lane(EventPhotoStatus::Published),
-                $lane(EventPhotoStatus::Rejected),
+            'photos' => $photos,
+            'status' => $status,
+            'counts' => collect(EventPhotoStatus::cases())->mapWithKeys(fn (EventPhotoStatus $s) => [$s->value => (int) ($counts[$s->value] ?? 0)]),
+            'filters' => [
+                'event_edition_id' => isset($filters['event_edition_id']) ? (int) $filters['event_edition_id'] : null,
+                'photographer_id' => isset($filters['photographer_id']) ? (int) $filters['photographer_id'] : null,
+                'from' => $filters['from'] ?? null,
+                'to' => $filters['to'] ?? null,
+                'bib' => $filters['bib'] ?? null,
+                'per_page' => $perPage,
             ],
+            'perPageOptions' => self::PER_PAGE,
+            'events' => EventEdition::query()
+                ->whereIn('id', EventPhoto::query()->select('event_edition_id')->distinct())
+                ->with('event:id,name')
+                ->orderByDesc('event_date')
+                ->get(['id', 'event_id', 'name', 'event_date'])
+                ->map(fn (EventEdition $e) => ['id' => $e->id, 'name' => trim($e->event->name.' · '.$e->name, ' ·')]),
+            'photographers' => PhotographerProfile::query()->orderBy('display_name')->get(['id', 'display_name'])
+                ->map(fn (PhotographerProfile $p) => ['id' => $p->id, 'name' => $p->display_name]),
             'sales' => [
                 'count' => PhotoSale::query()->count(),
                 'gross_minor' => (int) PhotoSale::query()->sum('gross_minor'),

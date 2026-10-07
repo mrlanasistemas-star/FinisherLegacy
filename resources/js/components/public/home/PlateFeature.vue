@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * Home — the Legacy Plate as protagonist. Product renders (Zamak
- * niquelado, resin, black FL panel, NFC; no QR, no rings) with a subtle
- * front/back switch, plus the exploded construction view.
+ * Home — the Legacy Plate V3 as protagonist. Product renders (70 × 45 mm
+ * Zamak niquelado, resin, black FL panel with the NFC under it, stainless
+ * money clip on the unprinted back) with a Frente / Perspectiva / Broche /
+ * NFC switch, the exploded construction view and "Cómo se sujeta".
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import PlateClipSteps from '@/components/public/PlateClipSteps.vue';
 import { MEDIA } from '@/config/media';
 import {
     index as storeIndex,
@@ -22,31 +24,61 @@ const plateHref = computed(() =>
 );
 
 const views = [
-    { key: 'hero', label: 'Producto', image: MEDIA.plate.hero },
-    { key: 'front', label: 'Frente', image: MEDIA.plate.front },
-    { key: 'back', label: 'Reverso', image: MEDIA.plate.back },
-    { key: 'nfc', label: 'NFC', image: MEDIA.plate.nfc },
+    {
+        key: 'front',
+        label: 'Frente',
+        caption: 'Diseño',
+        image: MEDIA.plate.front,
+    },
+    {
+        key: 'perspective',
+        label: 'Perspectiva',
+        caption: 'Grosor y acabado',
+        image: MEDIA.plate.perspective,
+    },
+    {
+        key: 'back',
+        label: 'Broche',
+        caption: 'Sujeción',
+        image: MEDIA.plate.back,
+    },
+    { key: 'nfc', label: 'NFC', caption: 'Conexión', image: MEDIA.plate.nfc },
 ] as const;
-const active = ref<(typeof views)[number]['key']>('hero');
+const active = ref<(typeof views)[number]['key']>('front');
 
 const features = [
     {
         n: '01',
         title: 'Zamak niquelado',
-        text: 'Cuerpo metálico con peso real y acabado premium.',
+        text: 'Cuerpo metálico de 70 × 45 mm con peso real y acabado premium.',
     },
     {
         n: '02',
-        title: 'NFC integrado',
-        text: 'Acerca tu teléfono y se abre tu Legacy. Sin QR impreso.',
+        title: 'Acabado en resina',
+        text: 'Protege el diseño frontal con brillo controlado y profundidad.',
     },
     {
         n: '03',
         title: 'Personalización deportiva',
-        text: 'Tu nombre, evento, distancia y tiempo, protegidos con resina.',
+        text: 'Tu nombre, fecha, tiempo, distancia y ritmo en el frente.',
     },
     {
         n: '04',
+        title: 'NFC integrado',
+        text: 'Acerca el teléfono al frente y se abre tu Legacy. Sin batería.',
+    },
+    {
+        n: '05',
+        title: 'Clip trasero de acero inoxidable',
+        text: 'Un broche tipo money clip en el reverso. Sin impresión atrás.',
+    },
+    {
+        n: '06',
+        title: 'Sujeción firme al listón',
+        text: 'Introduces el listón de tu medalla y el clip lo mantiene presionado.',
+    },
+    {
+        n: '07',
         title: 'Conecta con tu Legacy',
         text: 'Tu perfil, tus fotos y tus logros detrás de la placa.',
     },
@@ -81,7 +113,7 @@ const features = [
             <!-- Visual -->
             <div class="lg:col-span-7">
                 <div
-                    class="relative aspect-[3/2] overflow-hidden rounded-[24px] bg-[#1b1a18] ring-1 ring-white/10"
+                    class="relative aspect-[16/11] overflow-hidden rounded-[24px] bg-[#f0ebe1] ring-1 ring-white/10"
                     style="perspective: 1600px"
                 >
                     <template v-for="view in views" :key="view.key">
@@ -89,6 +121,7 @@ const features = [
                             :src="view.image.src"
                             :srcset="view.image.srcset"
                             sizes="(min-width: 1024px) 58vw, 100vw"
+                            :data-view="view.key"
                             :width="view.image.width"
                             :height="view.image.height"
                             :alt="view.image.alt"
@@ -103,6 +136,12 @@ const features = [
                             :aria-hidden="active !== view.key"
                         />
                     </template>
+                    <span
+                        class="absolute bottom-4 left-4 rounded-full bg-fl-black/80 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-white uppercase backdrop-blur"
+                        aria-live="polite"
+                    >
+                        {{ views.find((v) => v.key === active)?.caption }}
+                    </span>
                 </div>
                 <div
                     class="mt-4 inline-flex flex-wrap gap-1 rounded-full bg-white/5 p-1 ring-1 ring-white/10"
@@ -144,11 +183,13 @@ const features = [
                     >
                 </h2>
                 <p class="mt-6 max-w-md text-lg leading-relaxed text-white/70">
-                    Una pieza metálica compacta con los datos de tu carrera y un
-                    chip NFC que abre tu Legacy desde el teléfono.
+                    Una pieza metálica de 70 × 45 mm con tu historia al frente,
+                    un chip NFC que abre tu Legacy desde el teléfono y un clip
+                    de acero inoxidable atrás que la sujeta al listón de tu
+                    medalla.
                 </p>
 
-                <dl class="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2">
+                <dl class="mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2">
                     <div
                         v-for="feature in features"
                         :key="feature.n"
@@ -203,10 +244,11 @@ const features = [
                     Lo que no se ve también está pensado.
                 </h3>
                 <p class="mt-4 text-white/65">
-                    Bajo el panel negro, el inlay NFC descansa sobre una lámina
-                    de ferrita que lo separa del metal. Es pasivo: sin batería,
-                    sin GPS, sin ubicación. Solo abre tu Legacy cuando acercas
-                    un teléfono compatible.
+                    Bajo el panel negro del frente, el inlay NFC descansa sobre
+                    una lámina de ferrita que lo separa del cuerpo de Zamak. Es
+                    pasivo: sin batería, sin GPS, sin ubicación. Atrás, un clip
+                    estampado de acero inoxidable — una sola pieza, sin
+                    mecanismos — sujeta la placa al listón.
                 </p>
             </div>
             <div class="overflow-hidden rounded-[24px] lg:col-span-8">
@@ -221,6 +263,23 @@ const features = [
                     decoding="async"
                     class="w-full"
                 />
+            </div>
+        </div>
+
+        <!-- How it attaches -->
+        <div class="fl-container relative mt-20">
+            <div
+                class="rounded-[28px] bg-background p-5 text-foreground sm:p-8 lg:p-10"
+            >
+                <div class="mb-8 max-w-2xl">
+                    <p class="fl-eyebrow">Cómo se sujeta</p>
+                    <h3
+                        class="mt-3 font-serif text-3xl leading-tight sm:text-4xl"
+                    >
+                        Se coloca en segundos sobre el listón de tu medalla.
+                    </h3>
+                </div>
+                <PlateClipSteps />
             </div>
         </div>
     </section>

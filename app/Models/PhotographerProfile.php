@@ -73,4 +73,10 @@ class PhotographerProfile extends Model
     {
         return $this->hasMany(PhotoSale::class);
     }
+
+    /** @return HasMany<PhotographerPayout, $this> */
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(PhotographerPayout::class);
+    }
 }

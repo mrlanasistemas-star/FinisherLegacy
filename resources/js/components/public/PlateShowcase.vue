@@ -1,22 +1,23 @@
 <script setup lang="ts">
 /**
- * The Legacy Plate drawn as the real product — the interactive fallback
- * wherever a product photograph isn't available, and the same geometry as
- * the renders in public/media/brand/plate (tools/renders/plate.mjs):
+ * The Legacy Plate V3 drawn as the real product — the interactive
+ * fallback wherever a product photograph isn't available. The drawing is
+ * resources/js/lib/plate-art.ts, the same module the renders use:
  *
- *  - compact horizontal plate, ~2.67:1, softly rounded corners
- *    (not a bank card, not a licence plate, no side rings, no ribbon)
- *  - ZAMAK niquelado body (warm champagne/nickel)
- *  - left: resin window with the athlete's printed data
- *  - right: black resin panel with the FL monogram + a discreet NFC mark
- *  - back: printed event data and the NFC zone (no QR, no laser)
+ *  - 70 × 45 mm, Zamak niquelado (lightly brushed), resin on the front
+ *  - FRONT: the sports design + black FL panel; the NFC inlay sits under
+ *    that panel on a ferrite layer
+ *  - BACK: clean metal and a stamped stainless-steel money clip that holds
+ *    the medal ribbon — no print, no QR, no data on the back
  *
  * Interaction: tilt + glare follow the pointer (off under reduced motion),
- * a Frente/Reverso switch (buttons, keyboard-friendly, works on touch) and
- * hotspots that open on click/tap — never hover-only.
+ * a "Ver frente / Ver broche" switch (buttons, keyboard-friendly, works on
+ * touch) and hotspots that open on click/tap — never hover-only.
  */
 import { computed, ref, useId, useTemplateRef } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { DEFAULT_SPEC, plateSvg } from '@/lib/plate-art';
+import type { PlateSpec } from '@/lib/plate-art';
 
 const props = withDefaults(
     defineProps<{
@@ -24,39 +25,60 @@ const props = withDefaults(
         athleteName?: string;
         distance?: string;
         time?: string;
-        serial?: string;
+        date?: string;
+        pace?: string;
         /** Off inside compact/decorative placements (e.g. the Hero). */
         showHotspots?: boolean;
         showCaption?: boolean;
         size?: 'sm' | 'md' | 'lg';
-        /** Start on the back face. */
+        /** Start showing the clip side. */
         initialFace?: 'front' | 'back';
+        spec?: Partial<PlateSpec>;
     }>(),
     {
         eventName: 'Tu evento',
         athleteName: 'Tu nombre',
-        distance: '42 km',
-        time: '00:00:00',
-        serial: 'FL · 000000',
+        distance: '21.1 km',
+        time: '01:44:51',
+        date: '22 May 2026',
+        pace: '4:58 min/km',
         showHotspots: true,
         showCaption: true,
         size: 'md',
         initialFace: 'front',
+        spec: () => ({}),
     },
 );
 
 const uid = useId().replace(/[^a-zA-Z0-9-]/g, '');
-const id = (name: string) => `${uid}-${name}`;
-const url = (name: string) => `url(#${id(name)})`;
+const fullSpec = computed(() => ({ ...DEFAULT_SPEC, ...props.spec }));
 
-const FL_PATH =
-    'M52 618 L205 268 C252 160 300 66 452 52 L915 52 L863 167 L532 168 C470 172 442 196 418 244 L397 294 L752 294 C722 372 676 410 620 411 L348 412 L258 618 Z M956 52 L1157 52 L971 482 L1347 482 C1312 576 1270 612 1190 618 L707 618 Z';
-
-const name = computed(() => props.athleteName.toUpperCase());
-const event = computed(() => props.eventName.toUpperCase());
-// Long names shrink to stay inside the resin window (~280 units wide).
-const nameSize = computed(() =>
-    Math.min(38, Math.round(280 / Math.max(name.value.length * 0.72, 1))),
+const frontSvg = computed(() =>
+    plateSvg(
+        'front',
+        `${uid}f`,
+        {
+            name: props.athleteName,
+            event: props.eventName,
+            date: props.date,
+            time: props.time,
+            distance: props.distance,
+            pace: props.pace,
+        },
+        fullSpec.value,
+        '',
+        'class="block size-full" aria-hidden="true"',
+    ),
+);
+const backSvg = computed(() =>
+    plateSvg(
+        'back',
+        `${uid}b`,
+        {},
+        fullSpec.value,
+        '',
+        'class="block size-full" aria-hidden="true"',
+    ),
 );
 
 const prefersReducedMotion = useReducedMotion();
@@ -99,42 +121,74 @@ const hotspots: Hotspot[] = [
     {
         key: 'zamak',
         label: 'Zamak niquelado',
-        text: 'Cuerpo metálico de Zamak con acabado niquelado: peso real y sensación de pieza premium.',
+        text: 'Cuerpo metálico de Zamak con acabado niquelado ligeramente cepillado: peso real y sensación de pieza premium.',
         face: 'front',
-        top: '6%',
+        top: '4%',
+        left: '30%',
+    },
+    {
+        key: 'custom',
+        label: 'Personalización deportiva',
+        text: 'Tu nombre, fecha, tiempo, distancia y ritmo en uno de los tres diseños frontales.',
+        face: 'front',
+        top: '24%',
         left: '22%',
     },
     {
         key: 'resin',
         label: 'Acabado en resina',
-        text: 'Una capa de resina transparente protege la gráfica con brillo controlado y profundidad.',
+        text: 'Una capa de resina protege el diseño frontal con brillo controlado y profundidad.',
         face: 'front',
-        top: '30%',
+        top: '62%',
         left: '58%',
-    },
-    {
-        key: 'custom',
-        label: 'Personalización',
-        text: 'Tu nombre, evento, distancia y tiempo, impresos en uno de los tres layouts.',
-        face: 'front',
-        top: '72%',
-        left: '30%',
     },
     {
         key: 'nfc',
         label: 'NFC integrado',
-        text: 'Antena NFC pasiva bajo el panel: acerca un teléfono compatible y se abre tu Legacy. Sin batería, sin QR impreso.',
+        text: 'Antena NFC pasiva bajo el panel negro: acerca un teléfono compatible al frente y se abre tu Legacy. Sin batería, sin QR.',
         face: 'front',
         top: '80%',
-        left: '91%',
+        left: '85%',
     },
     {
         key: 'ferrite',
         label: 'Ferrita anti-metal',
-        text: 'Bajo el panel negro, una lámina de ferrita separa la antena del metal para que la lectura NFC funcione.',
+        text: 'Debajo del inlay NFC, una lámina de ferrita lo aísla del metal para que la lectura funcione.',
         face: 'front',
-        top: '22%',
-        left: '78%',
+        top: '30%',
+        left: '85%',
+    },
+    {
+        key: 'clip',
+        label: 'Clip de acero inoxidable',
+        text: 'Broche estampado tipo money clip, de una sola pieza: menos partes, sin mecanismos.',
+        face: 'back',
+        top: '50%',
+        left: '52%',
+    },
+    {
+        key: 'waves',
+        label: 'Puntos de presión',
+        text: 'Ondulaciones suaves generan presión sobre el listón de la medalla para que la placa quede firme.',
+        face: 'back',
+        top: '34%',
+        left: '70%',
+    },
+    {
+        key: 'fixed',
+        label: 'Extremo fijo',
+        text: 'El clip va fijado al cuerpo en un extremo; el otro queda libre para introducir el listón.',
+        face: 'back',
+        top: '50%',
+        left: '19%',
+    },
+    {
+        key: 'clean',
+        label: 'Reverso limpio',
+        text: 'El reverso es funcional: metal limpio, sin impresión, sin datos y sin QR.',
+        face: 'back',
+        top: '10%',
+        left: '50%',
     },
 ];
 
@@ -151,7 +205,10 @@ function flip(back: boolean) {
     activeHotspot.value = null;
 }
 
-const widths = { sm: 'max-w-[300px]', md: 'max-w-xl', lg: 'max-w-2xl' };
+const widths = { sm: 'max-w-[320px]', md: 'max-w-lg', lg: 'max-w-xl' };
+const ratio = computed(
+    () => `${fullSpec.value.width_mm} / ${fullSpec.value.height_mm}`,
+);
 </script>
 
 <template>
@@ -166,457 +223,40 @@ const widths = { sm: 'max-w-[300px]', md: 'max-w-xl', lg: 'max-w-2xl' };
             <!-- contact shadow -->
             <div
                 aria-hidden="true"
-                class="absolute inset-x-[8%] -bottom-[6%] h-[22%] rounded-[50%] bg-[rgb(40_32_20/0.32)] blur-xl"
+                class="absolute inset-x-[8%] -bottom-[5%] h-[18%] rounded-[50%] bg-[rgb(30_30_26/0.3)] blur-xl"
             />
             <div
-                class="relative transition-transform duration-500 ease-out"
+                class="relative transition-transform duration-700 ease-out motion-reduce:transition-none"
+                role="img"
+                :aria-label="
+                    showingBack
+                        ? 'Reverso de la Legacy Plate: metal limpio con clip de acero inoxidable tipo money clip para sujetarla al listón de la medalla'
+                        : `Frente de la Legacy Plate: ${athleteName}, ${distance} en ${time}, con panel negro FL y NFC integrado`
+                "
                 :style="{
-                    aspectRatio: '560 / 210',
+                    aspectRatio: ratio,
                     transformStyle: 'preserve-3d',
                     transform: `rotateX(var(--tilt-x)) rotateY(calc(var(--tilt-y) + ${showingBack ? 180 : 0}deg))`,
                 }"
             >
-                <!-- FRONT -->
-                <svg
-                    viewBox="0 0 560 210"
-                    class="absolute inset-0 size-full"
+                <div
+                    class="absolute inset-0"
                     style="backface-visibility: hidden"
-                    role="img"
-                    :aria-label="`Frente de la Legacy Plate: ${athleteName}, ${eventName}, ${distance} en ${time}`"
-                    :aria-hidden="showingBack"
-                >
-                    <defs>
-                        <linearGradient
-                            :id="id('edge')"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                        >
-                            <stop offset="0" stop-color="#f6eedc" />
-                            <stop offset=".18" stop-color="#cbb791" />
-                            <stop offset=".55" stop-color="#8e7a56" />
-                            <stop offset=".85" stop-color="#5f5038" />
-                            <stop offset="1" stop-color="#3b3122" />
-                        </linearGradient>
-                        <linearGradient
-                            :id="id('face')"
-                            x1="0"
-                            y1="0"
-                            x2="1"
-                            y2=".55"
-                        >
-                            <stop offset="0" stop-color="#efe3c8" />
-                            <stop offset=".2" stop-color="#d6c39d" />
-                            <stop offset=".38" stop-color="#f7efdd" />
-                            <stop offset=".56" stop-color="#c9b48c" />
-                            <stop offset=".78" stop-color="#e9dcbf" />
-                            <stop offset="1" stop-color="#b59f76" />
-                        </linearGradient>
-                        <linearGradient
-                            :id="id('bevel')"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                        >
-                            <stop
-                                offset="0"
-                                stop-color="#fffaf0"
-                                stop-opacity=".95"
-                            />
-                            <stop
-                                offset=".5"
-                                stop-color="#fffaf0"
-                                stop-opacity="0"
-                            />
-                            <stop
-                                offset="1"
-                                stop-color="#4a3d29"
-                                stop-opacity=".55"
-                            />
-                        </linearGradient>
-                        <linearGradient
-                            :id="id('resin')"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                        >
-                            <stop offset="0" stop-color="#fbf7ee" />
-                            <stop offset="1" stop-color="#efe6d3" />
-                        </linearGradient>
-                        <linearGradient
-                            :id="id('black')"
-                            x1="0"
-                            y1="0"
-                            x2="1"
-                            y2="1"
-                        >
-                            <stop offset="0" stop-color="#262522" />
-                            <stop offset=".45" stop-color="#0d0d0c" />
-                            <stop offset="1" stop-color="#1b1a18" />
-                        </linearGradient>
-                        <linearGradient
-                            :id="id('gold')"
-                            x1="0"
-                            y1="0"
-                            x2="1"
-                            y2="1"
-                        >
-                            <stop offset="0" stop-color="#f3dfa6" />
-                            <stop offset=".45" stop-color="#c9a45c" />
-                            <stop offset="1" stop-color="#8f6f33" />
-                        </linearGradient>
-                        <linearGradient
-                            :id="id('gloss')"
-                            x1="0"
-                            y1="0"
-                            x2="1"
-                            y2="1"
-                        >
-                            <stop
-                                offset="0"
-                                stop-color="#fff"
-                                stop-opacity=".55"
-                            />
-                            <stop
-                                offset=".32"
-                                stop-color="#fff"
-                                stop-opacity=".08"
-                            />
-                            <stop
-                                offset=".33"
-                                stop-color="#fff"
-                                stop-opacity="0"
-                            />
-                        </linearGradient>
-                    </defs>
-                    <rect
-                        width="560"
-                        height="210"
-                        rx="26"
-                        :fill="url('edge')"
-                    />
-                    <rect
-                        x="5"
-                        y="4"
-                        width="550"
-                        height="199"
-                        rx="22"
-                        :fill="url('face')"
-                    />
-                    <rect
-                        x="5"
-                        y="4"
-                        width="550"
-                        height="199"
-                        rx="22"
-                        fill="none"
-                        :stroke="url('bevel')"
-                        stroke-width="3"
-                    />
-
-                    <rect
-                        x="24"
-                        y="24"
-                        width="322"
-                        height="158"
-                        rx="13"
-                        :fill="url('resin')"
-                    />
-                    <rect
-                        x="24"
-                        y="24"
-                        width="322"
-                        height="158"
-                        rx="13"
-                        fill="none"
-                        stroke="#9d8762"
-                        stroke-opacity=".55"
-                        stroke-width="1.2"
-                    />
-                    <text
-                        x="48"
-                        y="64"
-                        font-family="Instrument Sans, sans-serif"
-                        font-size="11"
-                        letter-spacing="3.2"
-                        font-weight="600"
-                        fill="#85662b"
-                    >
-                        {{ event }}
-                    </text>
-                    <text
-                        x="46"
-                        y="112"
-                        font-family="Fraunces, Georgia, serif"
-                        :font-size="nameSize"
-                        font-weight="500"
-                        fill="#171714"
-                    >
-                        {{ name }}
-                    </text>
-                    <line
-                        x1="48"
-                        y1="132"
-                        x2="96"
-                        y2="132"
-                        stroke="#c9a45c"
-                        stroke-width="2"
-                    />
-                    <text
-                        x="48"
-                        y="160"
-                        font-family="Instrument Sans, sans-serif"
-                        font-size="17"
-                        font-weight="600"
-                        letter-spacing="1.4"
-                        fill="#171714"
-                    >
-                        {{ distance.toUpperCase() }} · {{ time }}
-                    </text>
-                    <rect
-                        x="24"
-                        y="24"
-                        width="322"
-                        height="158"
-                        rx="13"
-                        :fill="url('gloss')"
-                        opacity=".75"
-                    />
-
-                    <rect
-                        x="360"
-                        y="24"
-                        width="176"
-                        height="158"
-                        rx="13"
-                        :fill="url('black')"
-                    />
-                    <g transform="translate(392 70) scale(0.08)">
-                        <path :d="FL_PATH" :fill="url('gold')" />
-                    </g>
-                    <g
-                        transform="translate(506 152) scale(0.75)"
-                        fill="none"
-                        stroke="#c9a45c"
-                        stroke-width="1.6"
-                        stroke-linecap="round"
-                        opacity=".7"
-                    >
-                        <path d="M6 8.3a6 6 0 0 1 0 7.4" />
-                        <path d="M9.6 6a10 10 0 0 1 0 12" />
-                        <path d="M13.2 3.6a14 14 0 0 1 0 16.8" />
-                        <circle
-                            cx="3.2"
-                            cy="12"
-                            r="1.2"
-                            fill="#c9a45c"
-                            stroke="none"
-                        />
-                    </g>
-                    <rect
-                        x="360"
-                        y="24"
-                        width="176"
-                        height="158"
-                        rx="13"
-                        :fill="url('gloss')"
-                        opacity=".55"
-                    />
-                </svg>
-
-                <!-- BACK -->
-                <svg
-                    viewBox="0 0 560 210"
-                    class="absolute inset-0 size-full"
+                    v-html="frontSvg"
+                />
+                <div
+                    class="absolute inset-0"
                     style="
                         backface-visibility: hidden;
                         transform: rotateY(180deg);
                     "
-                    role="img"
-                    aria-label="Reverso de la Legacy Plate: datos del evento"
-                    :aria-hidden="!showingBack"
-                >
-                    <rect
-                        width="560"
-                        height="210"
-                        rx="26"
-                        :fill="url('edge')"
-                    />
-                    <rect
-                        x="5"
-                        y="4"
-                        width="550"
-                        height="199"
-                        rx="22"
-                        :fill="url('face')"
-                    />
-                    <rect
-                        x="5"
-                        y="4"
-                        width="550"
-                        height="199"
-                        rx="22"
-                        fill="none"
-                        :stroke="url('bevel')"
-                        stroke-width="3"
-                    />
-                    <rect
-                        x="24"
-                        y="24"
-                        width="512"
-                        height="158"
-                        rx="13"
-                        fill="#141413"
-                    />
-                    <g transform="translate(48 44) scale(0.03)">
-                        <path :d="FL_PATH" :fill="url('gold')" />
-                    </g>
-                    <text
-                        x="100"
-                        y="60"
-                        font-family="Instrument Sans, sans-serif"
-                        font-size="10"
-                        letter-spacing="3"
-                        font-weight="600"
-                        fill="#c9a45c"
-                    >
-                        FINISHER LEGACY
-                    </text>
-                    <g font-family="Instrument Sans, sans-serif">
-                        <text
-                            x="48"
-                            y="96"
-                            font-size="8.5"
-                            letter-spacing="2"
-                            fill="#8b867c"
-                        >
-                            EVENTO
-                        </text>
-                        <text
-                            x="132"
-                            y="96"
-                            font-size="11"
-                            font-weight="600"
-                            letter-spacing="1"
-                            fill="#f3efe6"
-                        >
-                            {{ event }}
-                        </text>
-                        <text
-                            x="48"
-                            y="114"
-                            font-size="8.5"
-                            letter-spacing="2"
-                            fill="#8b867c"
-                        >
-                            DISTANCIA
-                        </text>
-                        <text
-                            x="132"
-                            y="114"
-                            font-size="11"
-                            font-weight="600"
-                            letter-spacing="1"
-                            fill="#f3efe6"
-                        >
-                            {{ distance.toUpperCase() }}
-                        </text>
-                        <text
-                            x="48"
-                            y="132"
-                            font-size="8.5"
-                            letter-spacing="2"
-                            fill="#8b867c"
-                        >
-                            TIEMPO
-                        </text>
-                        <text
-                            x="132"
-                            y="132"
-                            font-size="11"
-                            font-weight="600"
-                            letter-spacing="1"
-                            fill="#f3efe6"
-                        >
-                            {{ time }}
-                        </text>
-                        <text
-                            x="48"
-                            y="150"
-                            font-size="8.5"
-                            letter-spacing="2"
-                            fill="#8b867c"
-                        >
-                            ATLETA
-                        </text>
-                        <text
-                            x="132"
-                            y="150"
-                            font-size="11"
-                            font-weight="600"
-                            letter-spacing="1"
-                            fill="#f3efe6"
-                        >
-                            {{ name }}
-                        </text>
-                    </g>
-                    <path
-                        d="M340 150 C372 118 392 160 420 128 S470 88 512 112"
-                        fill="none"
-                        stroke="#c9a45c"
-                        stroke-opacity=".55"
-                        stroke-width="1.4"
-                        stroke-dasharray="3 4"
-                    />
-                    <circle cx="340" cy="150" r="3" fill="#c9a45c" />
-                    <circle
-                        cx="512"
-                        cy="112"
-                        r="3"
-                        fill="none"
-                        stroke="#c9a45c"
-                        stroke-width="1.4"
-                    />
-                    <text
-                        x="512"
-                        y="166"
-                        text-anchor="end"
-                        font-family="Instrument Sans, sans-serif"
-                        font-size="8"
-                        letter-spacing="2.4"
-                        fill="#8b867c"
-                    >
-                        TU ESFUERZO · TU HISTORIA
-                    </text>
-                    <text
-                        x="520"
-                        y="56"
-                        text-anchor="end"
-                        font-family="Instrument Sans, sans-serif"
-                        font-size="8"
-                        letter-spacing="1.6"
-                        fill="#6f6a60"
-                    >
-                        {{ serial }}
-                    </text>
-                    <rect
-                        x="24"
-                        y="24"
-                        width="512"
-                        height="158"
-                        rx="13"
-                        :fill="url('gloss')"
-                        opacity=".45"
-                    />
-                </svg>
+                    v-html="backSvg"
+                />
 
                 <!-- moving glare -->
                 <div
                     aria-hidden="true"
-                    class="pointer-events-none absolute inset-0 rounded-[4.6%/12%] opacity-60 mix-blend-soft-light motion-reduce:hidden"
+                    class="pointer-events-none absolute inset-0 rounded-[6.5%/10%] opacity-50 mix-blend-soft-light motion-reduce:hidden"
                     style="
                         background: radial-gradient(
                             circle at var(--glare-x, 30%) var(--glare-y, 20%),
@@ -665,7 +305,7 @@ const widths = { sm: 'max-w-[300px]', md: 'max-w-xl', lg: 'max-w-2xl' };
             <div
                 class="inline-flex rounded-full border border-border bg-card p-1"
                 role="group"
-                aria-label="Cara de la placa"
+                aria-label="Vista de la placa"
             >
                 <button
                     type="button"
@@ -678,7 +318,7 @@ const widths = { sm: 'max-w-[300px]', md: 'max-w-xl', lg: 'max-w-2xl' };
                     :aria-pressed="!showingBack"
                     @click="flip(false)"
                 >
-                    Frente
+                    Ver frente
                 </button>
                 <button
                     type="button"
@@ -691,7 +331,7 @@ const widths = { sm: 'max-w-[300px]', md: 'max-w-xl', lg: 'max-w-2xl' };
                     :aria-pressed="showingBack"
                     @click="flip(true)"
                 >
-                    Reverso
+                    Ver broche
                 </button>
             </div>
             <p
@@ -706,7 +346,13 @@ const widths = { sm: 'max-w-[300px]', md: 'max-w-xl', lg: 'max-w-2xl' };
                 v-else-if="showCaption"
                 class="text-xs tracking-wide text-muted-foreground"
             >
-                Zamak niquelado · acabado en resina · NFC integrado
+                <template v-if="showingBack">
+                    Clip de acero inoxidable · sujeción firme al listón
+                </template>
+                <template v-else>
+                    Zamak niquelado · resina · NFC integrado ·
+                    {{ fullSpec.width_mm }} × {{ fullSpec.height_mm }} mm
+                </template>
                 <template v-if="showHotspots">
                     — toca los puntos para conocer cada detalle</template
                 >

@@ -64,6 +64,7 @@ const props = defineProps<{
         requires_shipping: boolean;
         tracks_inventory: boolean;
         active: boolean;
+        concept_gallery?: { url: string; alt: string; srcset?: string }[];
     };
     variants: Variant[];
     categories: { id: number; name: string }[];
@@ -462,6 +463,7 @@ const sectionTypeHelp: Record<string, string> = {
         <ProductGalleryManager
             :product-id="product.id"
             :product-name="product.name"
+            :concept-gallery="product.concept_gallery ?? []"
             :media="media"
         />
 

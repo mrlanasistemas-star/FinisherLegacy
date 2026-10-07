@@ -62,9 +62,28 @@ de publicaciones ni de trayectoria: esa información debe ser real.
 
 ## Pendiente (sin backend todavía — la UI lo indica explícitamente)
 
-- Carga de fotos por fotógrafos, etiquetado por número y venta de fotos.
+- ~~Carga de fotos por fotógrafos, etiquetado por número y venta de fotos.~~ (hecho: marketplace de fotógrafos)
 - Búsqueda por selfie / reconocimiento facial (opcional, requiere consentimiento).
 - Visibilidad "Familia / equipo de apoyo" para publicaciones (hoy existe
   sólo dentro de "Mi equipo de apoyo" por evento).
 - Videos subidos directamente en publicaciones (el pipeline de
   `CreateMoment` sólo procesa fotos).
+
+## Incremento 2026-10-09 (Legacy Plate V3 + cierre de admin)
+
+Ver `legacy-plate-v3.md` para la placa. Además:
+
+| Ruta | Notas |
+|---|---|
+| `/admin` | Resumen con KPIs reales por periodo (7/30/90 días), ventas pagadas por día (moneda por defecto; otras monedas nunca se suman), etapas de producción como etiquetas sobre los estados internos, pedidos recientes, ofertas activas, stock bajo con imagen, panel de fotos |
+| `/admin/photos` | Paginado (24/50/100), filtros evento · fotógrafo · fechas · dorsal, selección múltiple (página / primeras 10·50·100) y aprobación/rechazo masivo |
+| `/admin/photographers`, `/admin/photographers/{uuid}` | Listado con filtros; detalle Perfil / Fotografías / Ventas / Pagos; CLABE siempre enmascarada |
+| `POST /admin/photographers/{uuid}/payouts` | Registra una transferencia (`photographer_payouts`) y liga las ventas liquidadas (`photo_sales.photographer_payout_id`) |
+| `PATCH /admin/legacy-plate-models/spec` | Especificación física compartida por los tres layouts |
+| `/admin/inventory` | Tarjetas con foto del producto, barra de stock, filtros stock bajo / agotado, "Ajustar" por renglón |
+| `/comunidad/conexiones` | Siguiendo / Seguidores del atleta (solo perfiles públicos, bloqueos respetados) |
+
+Todas las pantallas de administración usan el ancho completo. Mis Fotos
+("Encuentra tu momento.") y el portal del fotógrafo se pulieron; la búsqueda
+por selfie sigue marcada como **Próximamente** (no se envía ninguna imagen a
+ningún servicio).

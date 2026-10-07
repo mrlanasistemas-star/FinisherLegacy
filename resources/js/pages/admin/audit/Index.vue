@@ -178,7 +178,7 @@ const time = (iso: string) =>
 <template>
     <Head title="Auditoría" />
 
-    <div class="mx-auto w-full max-w-5xl p-4 md:p-8">
+    <div class="w-full p-4 md:p-8">
         <SecondaryNav :items="SYSTEM_AREA_NAV" />
 
         <div class="mb-6 flex items-center gap-3">

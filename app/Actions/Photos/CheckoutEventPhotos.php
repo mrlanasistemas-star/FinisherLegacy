@@ -56,6 +56,28 @@ class CheckoutEventPhotos
             ->all();
         $ownedUuids = $photos->filter(fn (EventPhoto $photo) => in_array($photo->id, $owned, true))->pluck('uuid')->all();
 
+        // Already inside one of this buyer's orders still waiting for
+        // payment: point them to it instead of creating a second charge.
+        $pendingOrder = Order::query()
+            ->where('user_id', $buyer->id)
+            ->where('status', OrderStatus::Pending)
+            ->where('payment_status', OrderPaymentStatus::Pending)
+            ->whereHas('items', fn ($q) => $q->whereIn('event_photo_id', $photos->pluck('id')))
+            ->with('items:id,order_id,event_photo_id')
+            ->latest('id')
+            ->first();
+        $pendingUuids = $pendingOrder === null ? [] : $photos
+            ->filter(fn (EventPhoto $photo) => $pendingOrder->items->contains('event_photo_id', $photo->id))
+            ->pluck('uuid')->values()->all();
+
+        if ($pendingUuids !== []) {
+            throw ValidationException::withMessages([
+                'photos' => (count($pendingUuids) === 1 ? '1 fotografía ya está' : count($pendingUuids).' fotografías ya están')
+                    ." en tu pedido {$pendingOrder->order_number}, pendiente de pago. Complétalo desde Mis pedidos — no se cobró nada.",
+                'pending_order' => $pendingOrder->uuid,
+            ]);
+        }
+
         if ($unavailable !== [] || $ownedUuids !== []) {
             $messages = [];
 

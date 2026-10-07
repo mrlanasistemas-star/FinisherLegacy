@@ -10,8 +10,9 @@ use Illuminate\Support\Str;
 
 /**
  * The three Legacy Plate layouts (the product offers exactly three), each
- * with its own composition — see App\Support\LegacyPlateLayouts. Printed
- * front + back, NFC under the front FL panel; no laser, no printed QR.
+ * with its own FRONT composition — see App\Support\LegacyPlateLayouts::v3().
+ * Legacy Plate V3: 70 × 45 mm, design on the front only, NFC under the
+ * front FL panel, stainless money clip on the (unprinted) back.
  * Idempotent by slug, never adds a fourth layout and never overwrites what
  * an admin edited in the visual editor (only missing rows are created).
  */
@@ -21,7 +22,7 @@ class LegacyPlateModelSeeder extends Seeder
 
     public function run(): void
     {
-        foreach (LegacyPlateLayouts::definitions() as $slug => $definition) {
+        foreach (LegacyPlateLayouts::v3() as $slug => $definition) {
             $this->seedModel($slug, $definition);
         }
     }
@@ -51,11 +52,13 @@ class LegacyPlateModelSeeder extends Seeder
             'width_mm' => $w,
             'height_mm' => $h,
             'engraving_area' => ['x' => 3, 'y' => 3, 'width' => $w - 6, 'height' => $h - 6],
-            'back_area' => ['x' => 3, 'y' => 3, 'width' => $w - 6, 'height' => $h - 6],
             'front_background' => $d['front_background'],
             'front_text_color' => $d['front_text_color'],
-            'back_background' => $d['back_background'],
-            'back_text_color' => $d['back_text_color'],
+            'spec_version' => LegacyPlateLayouts::SPEC_VERSION,
+            'clip_length_mm' => LegacyPlateLayouts::SPEC['clip_length_mm'],
+            'clip_height_mm' => LegacyPlateLayouts::SPEC['clip_height_mm'],
+            'clip_thickness_mm' => LegacyPlateLayouts::SPEC['clip_thickness_mm'],
+            'total_depth_mm' => LegacyPlateLayouts::SPEC['total_depth_mm'],
             'active' => true,
         ]);
 

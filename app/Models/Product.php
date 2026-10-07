@@ -119,27 +119,41 @@ class Product extends Model
     }
 
     /**
-     * Conceptual gallery shown while no real photo has been uploaded. The
-     * Legacy Plate gets its full set of product renders.
+     * Conceptual gallery shown while no real photo has been uploaded — a
+     * real ProductMedia always replaces it. The Legacy Plate (V3) gets its
+     * full set of product renders, in the order the product page tells the
+     * story: front, perspective, detail, clip, NFC, how it attaches.
      *
-     * @return list<array{url: string, alt: string}>
+     * @return list<array{url: string, alt: string, srcset: string}>
      */
     public function conceptGallery(): array
     {
         if ($this->slug === 'legacy-plate') {
-            return collect([
-                ['hero-1200', 'Legacy Plate de Zamak niquelado sobre piedra oscura'],
-                ['front-1600', 'Frente de la Legacy Plate: datos del atleta en resina y panel negro con monograma FL'],
-                ['back-1600', 'Reverso de la Legacy Plate: datos del evento impresos sobre fondo negro'],
-                ['macro-1400', 'Detalle del borde metálico y el acabado en resina'],
-                ['nfc-1400', 'La Legacy Plate acercándose a un teléfono para abrir el Legacy por NFC'],
-                ['exploded-1800', 'Vista explotada: resina, inlay NFC, ferrita anti-metal y cuerpo de Zamak'],
-            ])->map(fn (array $r) => ['url' => asset("media/brand/plate/legacy-plate-{$r[0]}.webp"), 'alt' => $r[1]])->all();
+            return array_values(collect([
+                ['front', [800, 1600], 'Frente de la Legacy Plate: nombre, fecha, tiempo, distancia y ritmo bajo resina, con panel negro FL y NFC integrado'],
+                ['perspective', [600, 1000, 1600], 'Legacy Plate en perspectiva: grosor del cuerpo de Zamak niquelado y acabado en resina'],
+                ['macro', [600, 900, 1400], 'Detalle del borde de Zamak niquelado y la profundidad del acabado en resina'],
+                ['back', [800, 1600], 'Reverso de la Legacy Plate: metal limpio con clip de acero inoxidable tipo money clip'],
+                ['nfc', [600, 900, 1400], 'Un teléfono acercándose al frente de la Legacy Plate para abrir el Legacy por NFC'],
+                ['ribbon-held', [480, 800, 1200], 'Cómo se sujeta: la Legacy Plate instalada sobre el listón de la medalla'],
+                ['ribbon-insert', [600, 900, 1400], 'El listón de la medalla entrando entre la placa y el clip'],
+                ['clip-macro', [600, 900, 1400], 'Acercamiento al clip de acero inoxidable estampado'],
+                ['profile', [800, 1600], 'Perfil lateral: cuerpo y clip, unos 6 mm de grosor total'],
+                ['exploded', [800, 1200, 1800], 'Vista explotada: resina, inlay NFC, ferrita, cuerpo de Zamak niquelado y clip de acero inoxidable'],
+            ])->map(fn (array $r) => [
+                'url' => asset("media/brand/plate/legacy-plate-{$r[0]}-".max($r[1]).'.webp'),
+                'srcset' => collect($r[1])->map(fn (int $w) => asset("media/brand/plate/legacy-plate-{$r[0]}-{$w}.webp")." {$w}w")->implode(', '),
+                'alt' => $r[2],
+            ])->all());
         }
 
         $url = $this->conceptImageUrl(1200);
 
-        return $url === null ? [] : [['url' => $url, 'alt' => (string) $this->conceptImageAlt()]];
+        return $url === null ? [] : [[
+            'url' => $url,
+            'srcset' => collect([480, 800, 1200])->map(fn (int $w) => $this->conceptImageUrl($w)." {$w}w")->implode(', '),
+            'alt' => (string) $this->conceptImageAlt(),
+        ]];
     }
 
     public function conceptImageAlt(): ?string

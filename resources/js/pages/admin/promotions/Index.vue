@@ -153,7 +153,7 @@ const discountLabel = (p: Promo) =>
 <template>
     <Head title="Ofertas" />
 
-    <div class="mx-auto w-full max-w-[1400px] p-4 md:p-8">
+    <div class="w-full p-4 md:p-8">
         <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
 
         <div

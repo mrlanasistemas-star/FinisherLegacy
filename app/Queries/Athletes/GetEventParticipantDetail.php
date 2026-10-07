@@ -106,7 +106,7 @@ class GetEventParticipantDetail
                 'status' => $plate?->status->value ?? $entitlementRecord?->status->value,
                 'serial_number' => $plate?->serial_number,
                 'legacy_code' => $plate?->legacyCode?->code,
-                'model' => $plateModel?->toViewerArray(),
+                'model' => $plate !== null ? $plate->layoutViewer() : $plateModel?->toViewerArray(),
                 // Same reasoning as $plateModel above: $plate is read
                 // through an if/null check instead of ?? so PHPStan doesn't
                 // cross-link its nullability with $entitlementRecord's.

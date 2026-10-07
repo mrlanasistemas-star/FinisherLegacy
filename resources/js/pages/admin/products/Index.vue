@@ -55,6 +55,7 @@ type ProductRow = {
     variants_count: number;
     gallery: { id: number; url: string; is_primary: boolean }[];
     media_count: number;
+    concept_image_url: string | null;
     from_price_minor: number | null;
     currency: string;
     stock: number | null;
@@ -147,7 +148,7 @@ const typeOptions = [
 <template>
     <Head title="Productos" />
 
-    <div class="mx-auto w-full max-w-[1500px] p-4 md:p-8">
+    <div class="w-full p-4 md:p-8">
         <SecondaryNav :items="CATALOG_AREA_NAV" />
 
         <div
@@ -205,6 +206,25 @@ const typeOptions = [
                         loading="lazy"
                         class="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     />
+                    <template v-else-if="product.concept_image_url">
+                        <img
+                            :src="product.concept_image_url"
+                            :alt="product.name"
+                            loading="lazy"
+                            class="size-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-[1.04]"
+                        />
+                        <span
+                            class="absolute inset-x-3 bottom-3 rounded-lg bg-white/95 px-2.5 py-1.5 text-[11px] leading-tight shadow-sm"
+                        >
+                            <span class="block font-semibold text-violet-700"
+                                >Imagen conceptual</span
+                            >
+                            <span class="text-muted-foreground"
+                                >Sube una fotografía real para
+                                reemplazarla.</span
+                            >
+                        </span>
+                    </template>
                     <ProductImagePlaceholder
                         v-else
                         :name="product.name"

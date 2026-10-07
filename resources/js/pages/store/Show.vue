@@ -20,6 +20,7 @@ import {
     Truck,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import PlateClipSteps from '@/components/public/PlateClipSteps.vue';
 import PlateShowcase from '@/components/public/PlateShowcase.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import LinkPlateDialog from '@/components/shared/LinkPlateDialog.vue';
@@ -42,6 +43,7 @@ type GalleryItem = {
     poster_url: string | null;
     alt_text: string | null;
     is_primary: boolean;
+    srcset?: string;
 };
 
 type ContentSection = {
@@ -68,7 +70,7 @@ type Product = {
     variants: Variant[];
     gallery: GalleryItem[];
     /** Product renders shown until a real photo is uploaded in admin. */
-    concept_gallery: { url: string; alt: string }[];
+    concept_gallery: { url: string; alt: string; srcset?: string }[];
     contentSections: ContentSection[];
 };
 
@@ -103,6 +105,7 @@ const galleryItems = computed<GalleryItem[]>(() => {
             id: -1 - index,
             type: 'image' as const,
             url: item.url,
+            srcset: item.srcset,
             poster_url: null,
             alt_text: item.alt,
             is_primary: index === 0,
@@ -195,24 +198,26 @@ const plateSteps = [
         body: 'La placa se personaliza con tu participación.',
     },
     {
-        title: 'Selecciona tu layout',
-        body: 'Uno de los tres diseños de frente y reverso.',
+        title: 'Elige tu diseño frontal',
+        body: 'Núcleo, Distancia o Trayecto.',
     },
     {
         title: 'Personalizamos tu placa',
-        body: 'Tu nombre, evento, distancia y tiempo, impresos y protegidos con resina.',
+        body: 'Tu nombre, fecha, tiempo, distancia y ritmo al frente, protegidos con resina.',
     },
     {
-        title: 'Acerca tu teléfono',
-        body: 'El NFC integrado abre tu Legacy.',
+        title: 'Colócala y conéctala',
+        body: 'El clip la sujeta al listón; acerca el teléfono al frente y se abre tu Legacy.',
     },
 ];
 
-const plateFeatures = [
-    'Zamak niquelado',
-    'Acabado en resina',
-    'Personalizada con tu carrera',
-    'NFC integrado · sin QR impreso',
+const plateSpec = [
+    { label: 'Material', value: 'Zamak niquelado' },
+    { label: 'Acabado', value: 'Resina protectora' },
+    { label: 'Tecnología', value: 'NFC' },
+    { label: 'Sujeción', value: 'Clip posterior tipo money clip' },
+    { label: 'Personalización', value: 'Diseño frontal' },
+    { label: 'Medidas', value: '70 × 45 mm' },
 ];
 </script>
 
@@ -235,7 +240,7 @@ const plateFeatures = [
 
         <div class="mt-6 grid gap-10 lg:grid-cols-12 lg:gap-14">
             <!-- Gallery -->
-            <div class="lg:col-span-7">
+            <div class="min-w-0 lg:col-span-7">
                 <div
                     class="relative aspect-square overflow-hidden rounded-2xl border border-border bg-card"
                 >
@@ -249,9 +254,12 @@ const plateFeatures = [
                     <img
                         v-else-if="activeItem"
                         :src="activeItem.url"
+                        :srcset="activeItem.srcset"
+                        sizes="(min-width: 1024px) 56vw, 100vw"
                         :alt="activeItem.alt_text ?? product.name"
                         class="size-full object-cover"
                         fetchpriority="high"
+                        decoding="async"
                     />
                     <span
                         v-if="isConcept && activeItem"
@@ -320,8 +328,11 @@ const plateFeatures = [
                         <img
                             v-if="item.type === 'image'"
                             :src="item.url"
+                            :srcset="item.srcset"
+                            sizes="80px"
                             alt=""
                             loading="lazy"
+                            decoding="async"
                             class="size-full object-cover"
                         />
                         <video
@@ -336,7 +347,7 @@ const plateFeatures = [
             </div>
 
             <!-- Purchase panel -->
-            <div class="lg:col-span-5">
+            <div class="min-w-0 lg:col-span-5">
                 <div class="lg:sticky lg:top-24">
                     <p v-if="product.category" class="fl-eyebrow">
                         {{ product.category }}
@@ -353,7 +364,7 @@ const plateFeatures = [
                     >
                         {{
                             product.tagline ||
-                            'Zamak niquelado · resina · NFC integrado'
+                            'Tu carrera. Tu tiempo. Tu historia.'
                         }}
                     </p>
                     <p
@@ -371,20 +382,29 @@ const plateFeatures = [
 
                     <!-- Legacy Plate: personalize through an event -->
                     <template v-if="isLegacyPlate">
-                        <ul class="mt-6 grid gap-2.5 sm:grid-cols-2">
-                            <li
-                                v-for="feature in plateFeatures"
-                                :key="feature"
-                                class="flex items-center gap-2.5 text-sm"
+                        <dl
+                            class="mt-6 grid grid-cols-1 divide-y divide-border rounded-xl border border-border bg-card text-sm sm:grid-cols-2 sm:divide-y-0"
+                        >
+                            <div
+                                v-for="(row, i) in plateSpec"
+                                :key="row.label"
+                                class="flex items-baseline justify-between gap-3 px-4 py-3 sm:block"
+                                :class="
+                                    i >= 2 ? 'sm:border-t sm:border-border' : ''
+                                "
                             >
-                                <span
-                                    class="flex size-5 items-center justify-center rounded-full bg-fl-gold/15 text-fl-gold-ink"
+                                <dt
+                                    class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
                                 >
-                                    <Check class="size-3" />
-                                </span>
-                                {{ feature }}
-                            </li>
-                        </ul>
+                                    {{ row.label }}
+                                </dt>
+                                <dd
+                                    class="text-right font-medium sm:mt-0.5 sm:text-left"
+                                >
+                                    {{ row.value }}
+                                </dd>
+                            </div>
+                        </dl>
 
                         <p
                             v-if="selectedVariant"
@@ -426,7 +446,7 @@ const plateFeatures = [
                             <Button
                                 as-child
                                 size="lg"
-                                class="h-12 flex-1 rounded-full"
+                                class="h-12 rounded-full sm:flex-1"
                             >
                                 <Link :href="eventsIndex()">
                                     Personalizar mi placa
@@ -565,6 +585,19 @@ const plateFeatures = [
                 </div>
             </div>
         </div>
+
+        <!-- Legacy Plate: how the clip holds it -->
+        <section
+            v-if="isLegacyPlate"
+            id="como-se-sujeta"
+            class="mt-20 border-t border-border pt-14"
+        >
+            <p class="fl-eyebrow">Cómo se sujeta</p>
+            <h2 class="mt-3 mb-8 font-serif text-3xl text-foreground">
+                El reverso es funcional: un clip que la mantiene firme.
+            </h2>
+            <PlateClipSteps />
+        </section>
 
         <!-- Content sections -->
         <div

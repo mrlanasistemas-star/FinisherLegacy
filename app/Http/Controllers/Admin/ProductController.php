@@ -59,6 +59,9 @@ class ProductController extends Controller
                 ->values()
                 ->map(fn (ProductMedia $m) => ['id' => $m->id, 'url' => $m->url(), 'is_primary' => $m->is_primary]),
             'media_count' => $product->media->count(),
+            // Admin-only: the store is showing a conceptual render because
+            // no real photo has been uploaded yet.
+            'concept_image_url' => $product->imageSource() === 'concept' ? $product->conceptImageUrl(480) : null,
             'from_price_minor' => $product->variants->min('base_price_minor'),
             'currency' => $product->variants->first()?->currency ?? 'MXN',
             'stock' => $product->tracks_inventory
@@ -115,6 +118,7 @@ class ProductController extends Controller
                 'tracks_inventory' => $product->tracks_inventory,
                 'active' => $product->active,
                 'image_url' => $product->image_path ? Storage::disk('public')->url($product->image_path) : null,
+                'concept_gallery' => $product->imageSource() === 'concept' ? $product->conceptGallery() : [],
             ],
             'variants' => $product->variants->map(fn (ProductVariant $variant) => [
                 'id' => $variant->id,

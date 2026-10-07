@@ -1,12 +1,15 @@
 <?php
 
 use App\Enums\MomentVisibility;
+use App\Enums\OrderPaymentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\ReportStatus;
 use App\Models\CompanyGalleryItem;
 use App\Models\CompanyMilestone;
 use App\Models\CompanySetting;
 use App\Models\ContactMessage;
 use App\Models\LegacyMoment;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductMedia;
@@ -45,14 +48,17 @@ test('the new admin screens are permission-gated server side', function (string 
     '/admin/product-categories',
 ]);
 
-test('admin dashboard exposes real plate inventory and the order workflow', function () {
-    $this->actingAs(redesignAdmin())->get('/admin')
+test('admin dashboard exposes real KPIs, the production pipeline and commerce panels', function () {
+    $this->actingAs(redesignAdmin())->get('/admin?period=7')
         ->assertInertia(fn ($page) => $page
             ->component('admin/Dashboard')
-            ->has('plateInventory.available')
-            ->has('plateInventory.in_personalization')
-            ->has('workflow', 4)
-            ->has('inventory')
+            ->where('period', 7)
+            ->has('salesSeries', 7)
+            ->has('production.stages', 6)
+            ->has('kpis.photos_pending')
+            ->has('lowStock')
+            ->has('activeOffers')
+            ->has('photos.recent_pending')
         );
 });
 
@@ -186,4 +192,21 @@ test('moderators resolve reports and remove posts', function () {
 
     $this->actingAs($admin)->delete("/admin/community/moments/{$moment->uuid}")->assertRedirect();
     expect(LegacyMoment::query()->count())->toBe(0);
+});
+
+test('dashboard sales come from paid orders only and never mix currencies', function () {
+    Order::factory()->create(['payment_status' => OrderPaymentStatus::Paid, 'status' => OrderStatus::Confirmed, 'total_minor' => 80000]);
+    Order::factory()->create(['payment_status' => OrderPaymentStatus::Paid, 'status' => OrderStatus::Completed, 'total_minor' => 5000, 'currency' => 'USD']);
+    Order::factory()->create(['payment_status' => OrderPaymentStatus::Pending, 'total_minor' => 99999]);
+    Order::factory()->create(['payment_status' => OrderPaymentStatus::Paid, 'total_minor' => 70000, 'created_at' => now()->subDays(40)]);
+
+    $this->actingAs(redesignAdmin())->get('/admin?period=30')
+        ->assertInertia(fn ($page) => $page
+            ->where('kpis.sales.0.currency', 'MXN')
+            ->where('kpis.sales.0.total_minor', 80000)
+            ->where('kpis.sales.1.currency', 'USD')
+            ->where('kpis.sales_previous.0.total_minor', 70000)
+            ->where('kpis.pending_orders', 3)
+            ->where('salesSeries.29.total_minor', 80000)
+        );
 });

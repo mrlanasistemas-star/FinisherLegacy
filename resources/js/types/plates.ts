@@ -36,8 +36,28 @@ export type LegacyPlateArea = {
 
 export type LegacyPlateLayoutStyle = 'nucleo' | 'distancia' | 'trayecto';
 
+export type LegacyPlateSpec = {
+    spec_version?: string;
+    width_mm: number;
+    height_mm: number;
+    clip_length_mm: number;
+    clip_height_mm: number;
+    clip_thickness_mm: number;
+    total_depth_mm: number;
+    body_material?: string;
+    clip_material?: string;
+};
+
+/**
+ * A layout as drawn by PlatePrintFace. `spec_version` 'v3' (current) is
+ * front-only — the back is the money clip. 'v2' only appears inside the
+ * frozen layout_snapshot of historical plates, which had a printed back
+ * (the back_* keys).
+ */
 export type LegacyPlateModelData = {
     name: string;
+    spec_version?: string;
+    spec?: LegacyPlateSpec;
     layout_style?: LegacyPlateLayoutStyle;
     slug: string;
     width_mm: number;

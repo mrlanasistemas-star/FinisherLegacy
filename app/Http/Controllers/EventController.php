@@ -187,11 +187,21 @@ class EventController extends Controller
             'currency' => $price->currency,
             'price_type' => $price->priceType->value,
             'presale_ends_at' => $schedule?->ends_at?->toDateString(),
-            'models' => LegacyPlateModel::query()->where('active', true)->orderBy('name')->get(['id', 'name', 'description'])->map(fn (LegacyPlateModel $model) => [
-                'id' => $model->id,
-                'name' => $model->name,
-                'description' => $model->description,
-            ]),
+            // Front-only previews (Legacy Plate V3) so the athlete sees the
+            // three designs before choosing — the back is the clip.
+            'models' => LegacyPlateModel::query()->where('active', true)->with('fields')
+                ->orderByRaw('layout_slot is null, layout_slot')->orderBy('name')->get()
+                ->map(fn (LegacyPlateModel $model) => [
+                    'id' => $model->id,
+                    'name' => $model->name,
+                    'description' => $model->description,
+                    'viewer' => $model->toViewerArray(),
+                ]),
+            'preview' => [
+                'athlete_name' => $request->user()?->name,
+                'event_name' => $edition->event?->name,
+                'event_date' => $edition->event_date->translatedFormat('d M Y'),
+            ],
             'already_purchased' => $existingEntitlement,
         ];
     }

@@ -5,6 +5,7 @@ import {
     exportMethod as exportFace,
     exportPackage,
 } from '@/actions/App/Http/Controllers/Admin/PlateController';
+import HistoricalPipelineNotice from '@/components/admin/HistoricalPipelineNotice.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -85,6 +86,7 @@ function download() {
             </DialogHeader>
 
             <div class="space-y-4">
+                <HistoricalPipelineNotice compact />
                 <div class="grid gap-2">
                     <Label>Formato</Label>
                     <Select v-model="format">

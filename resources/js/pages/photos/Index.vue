@@ -273,6 +273,41 @@ function toggleFromLightbox() {
     <section class="fl-container pb-20">
         <div class="grid gap-8 lg:grid-cols-12">
             <div class="min-w-0 space-y-12 lg:col-span-8">
+                <!-- Before searching: how it works -->
+                <ol
+                    v-if="!searched"
+                    class="grid gap-3 sm:grid-cols-3"
+                    aria-label="Cómo encontrar tus fotos"
+                >
+                    <li
+                        v-for="(step, i) in [
+                            {
+                                t: 'Elige tu evento',
+                                d: 'Todos los eventos con fotos publicadas por fotógrafos.',
+                            },
+                            {
+                                t: 'Escribe tu número',
+                                d: 'El número de participante que llevabas en tu dorsal.',
+                            },
+                            {
+                                t: 'Selecciona y descarga',
+                                d: 'Marca tus fotos, paga una sola vez y descarga en alta resolución.',
+                            },
+                        ]"
+                        :key="step.t"
+                        class="fl-card p-5"
+                    >
+                        <span
+                            class="flex size-8 items-center justify-center rounded-full bg-fl-cream font-serif text-fl-gold-ink"
+                            >{{ i + 1 }}</span
+                        >
+                        <p class="mt-3 font-semibold">{{ step.t }}</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{ step.d }}
+                        </p>
+                    </li>
+                </ol>
+
                 <template v-if="searched">
                     <div>
                         <h2 class="flex items-center gap-2 font-serif text-2xl">
@@ -428,7 +463,7 @@ function toggleFromLightbox() {
                     </div>
                 </div>
 
-                <div v-if="mine !== null" id="mis-fotos">
+                <div v-if="mine !== null && mine.length" id="mis-fotos">
                     <h2 class="font-serif text-2xl">
                         Mis fotos subidas
                         <span class="text-base text-muted-foreground">{{

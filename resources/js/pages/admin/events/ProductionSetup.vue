@@ -7,6 +7,7 @@ import {
     assignTemplate,
     markQrTested,
 } from '@/actions/App/Http/Controllers/Admin/ProductionSetupController';
+import HistoricalPipelineNotice from '@/components/admin/HistoricalPipelineNotice.vue';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -95,6 +96,7 @@ function submitQrTest() {
     <Head :title="`Producción — ${edition.name}`" />
 
     <div class="space-y-6 p-4 md:p-8">
+        <HistoricalPipelineNotice />
         <div>
             <p class="text-xs tracking-wide text-muted-foreground/80 uppercase">
                 Preparar evento para producción

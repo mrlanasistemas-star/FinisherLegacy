@@ -158,6 +158,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('fotos/descargar/{sale}', [PhotosController::class, 'download'])->name('photos.download');
 
     Route::prefix('comunidad')->name('community.')->group(function () {
+        Route::get('conexiones', [CommunityController::class, 'connections'])->name('connections');
         Route::post('publicaciones', [CommunityController::class, 'store'])->middleware('throttle:social-write')->name('posts.store');
         Route::patch('publicaciones/{moment}', [CommunityController::class, 'update'])->middleware('throttle:social-write')->name('posts.update');
         Route::delete('publicaciones/{moment}', [CommunityController::class, 'destroy'])->name('posts.destroy');
@@ -362,6 +363,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::middleware('can:legacyplates.manage')->prefix('legacy-plate-models')->name('legacy-plate-models.')->group(function () {
             Route::get('/', [AdminLegacyPlateModelController::class, 'index'])->name('index');
+            Route::patch('spec', [AdminLegacyPlateModelController::class, 'updateSpec'])->name('spec.update');
             Route::get('{legacyPlateModel}', [AdminLegacyPlateModelController::class, 'show'])->name('show');
             Route::post('/', [AdminLegacyPlateModelController::class, 'store'])->name('store');
             Route::patch('{legacyPlateModel}', [AdminLegacyPlateModelController::class, 'update'])->name('update');
@@ -513,6 +515,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('photos', [AdminEventPhotoController::class, 'index'])->name('photos.index');
             Route::post('photos/review', [AdminEventPhotoController::class, 'review'])->name('photos.review');
             Route::get('photographers', [AdminPhotographerController::class, 'index'])->name('photographers.index');
+            Route::get('photographers/{photographer}', [AdminPhotographerController::class, 'show'])->name('photographers.show');
             Route::patch('photographers/{photographer}/status', [AdminPhotographerController::class, 'updateStatus'])->name('photographers.status');
             Route::post('photographers/{photographer}/payouts', [AdminPhotographerController::class, 'markPaid'])->name('photographers.payouts');
         });

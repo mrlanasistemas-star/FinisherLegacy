@@ -1,3 +1,5 @@
+import type { LegacyPlateModelData } from '@/types/plates';
+
 export type EventPhase = 'upcoming' | 'ongoing' | 'finished';
 
 export type EventEditionCard = {
@@ -49,6 +51,8 @@ export type LegacyPlateModelOption = {
     id: number;
     name: string;
     description: string | null;
+    /** Front-only layout to preview (Legacy Plate V3). */
+    viewer?: LegacyPlateModelData;
 };
 
 export type EventLegacyPlatePresale = {
@@ -58,6 +62,12 @@ export type EventLegacyPlatePresale = {
     price_type: string;
     presale_ends_at: string | null;
     models: LegacyPlateModelOption[];
+    /** Known data to prefill the front preview; results arrive later. */
+    preview?: {
+        athlete_name: string | null;
+        event_name: string | null;
+        event_date: string | null;
+    };
     already_purchased: boolean;
 };
 

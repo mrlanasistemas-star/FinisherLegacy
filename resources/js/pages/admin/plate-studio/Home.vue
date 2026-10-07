@@ -16,6 +16,7 @@ import {
     edit as editRoute,
     store as storeTemplate,
 } from '@/actions/App/Http/Controllers/Admin/PlateStudioController';
+import HistoricalPipelineNotice from '@/components/admin/HistoricalPipelineNotice.vue';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -69,8 +70,8 @@ const submitting = ref(false);
 const form = ref({
     name: '',
     description: '',
-    width_mm: 60,
-    height_mm: 40,
+    width_mm: 70,
+    height_mm: 45,
     material: 'Zamak niquelado',
     orientation: 'landscape',
     safe_margin_mm: 3,
@@ -126,7 +127,8 @@ const statusLabel: Record<string, string> = {
     <Head title="Plate Studio" />
 
     <div class="p-4 md:p-8">
-        <div class="mb-6 flex items-center justify-between">
+        <HistoricalPipelineNotice class="mb-6" />
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1
                     class="flex items-center gap-2 text-xl font-bold text-foreground"
@@ -135,8 +137,7 @@ const statusLabel: Record<string, string> = {
                     Plate Studio
                 </h1>
                 <p class="text-sm text-muted-foreground">
-                    Diseña moldes de placa y genera placas reales a partir de
-                    ellos.
+                    Moldes del pipeline histórico de placas grabadas.
                 </p>
             </div>
             <div class="flex items-center gap-2">
@@ -305,7 +306,7 @@ const statusLabel: Record<string, string> = {
                             v-model="form.name"
                             required
                             class="bg-background"
-                            placeholder="Ironman Cozumel 2026 — Zamak 90×34"
+                            placeholder="Ironman Cozumel 2026"
                         />
                     </div>
                     <div class="grid gap-2">

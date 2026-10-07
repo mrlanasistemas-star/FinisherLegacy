@@ -11,6 +11,7 @@ use App\Models\EventEdition;
 use App\Models\EventPhoto;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\PhotographerPayout;
 use App\Models\PhotographerProfile;
 use App\Models\PhotoSale;
 use App\Models\User;
@@ -237,4 +238,92 @@ test('marking a payout only settles that photographer pending sales', function (
 
     expect(PhotoSale::query()->where('photographer_profile_id', $mine->id)->value('payout_status'))->toBe('paid')
         ->and(PhotoSale::query()->where('photographer_profile_id', $theirs->id)->value('payout_status'))->toBe('pending');
+});
+
+test('a payout is recorded with what it covered and the CLABE is never shown in full', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    $mine = marketPhotographer();
+    $mine->update(['payout_clabe' => '012180001234567897', 'payout_holder' => 'Ana', 'payout_bank' => 'BBVA']);
+    marketPay(app(CheckoutEventPhotos::class)->handle(User::factory()->create(), [marketPhoto($mine)->uuid]), 'openpay');
+    marketPay(app(CheckoutEventPhotos::class)->handle(User::factory()->create(), [marketPhoto($mine)->uuid]), 'openpay');
+    $net = (int) PhotoSale::query()->where('photographer_profile_id', $mine->id)->sum('photographer_net_minor');
+
+    $this->actingAs($admin)
+        ->post("/admin/photographers/{$mine->uuid}/payouts", ['reference' => 'SPEI 77', 'paid_at' => now()->toDateString()])
+        ->assertRedirect();
+
+    $payout = PhotographerPayout::query()->where('photographer_profile_id', $mine->id)->firstOrFail();
+    expect($payout->amount_minor)->toBe($net)
+        ->and($payout->sales_count)->toBe(2)
+        ->and($payout->reference)->toBe('SPEI 77')
+        ->and(PhotoSale::query()->where('photographer_payout_id', $payout->id)->count())->toBe(2);
+
+    // A second registration with nothing pending records nothing.
+    $this->actingAs($admin)->post("/admin/photographers/{$mine->uuid}/payouts")->assertRedirect();
+    expect(PhotographerPayout::query()->count())->toBe(1);
+
+    $this->actingAs($admin)->get("/admin/photographers/{$mine->uuid}")
+        ->assertOk()
+        ->assertDontSee('012180001234567897')
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/photographers/Show')
+            ->where('photographer.payout_clabe_masked', '•••• 7897')
+            ->has('payouts', 1)
+            ->has('sales', 2)
+        );
+});
+
+test('admin photo review is paginated and filterable by photographer, status and bib', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    $a = marketPhotographer();
+    $b = marketPhotographer();
+    foreach (range(1, 30) as $i) {
+        marketPhoto($a, ['status' => EventPhotoStatus::Review, 'published_at' => null]);
+    }
+    $tagged = marketPhoto($b, ['status' => EventPhotoStatus::Review, 'published_at' => null]);
+    $tagged->syncBibs(['482']);
+    marketPhoto($b);
+
+    $this->actingAs($admin)->get('/admin/photos?per_page=24')
+        ->assertInertia(fn ($page) => $page
+            ->where('status', 'review')
+            ->has('photos.data', 24)
+            ->where('photos.total', 31)
+            ->where('counts.review', 31)
+            ->where('counts.published', 1)
+        );
+
+    $this->actingAs($admin)->get("/admin/photos?photographer_id={$b->id}&bib=482")
+        ->assertInertia(fn ($page) => $page
+            ->where('photos.total', 1)
+            ->where('photos.data.0.uuid', $tagged->uuid)
+        );
+
+    // Bulk approve a selection.
+    $uuids = EventPhoto::query()->where('photographer_profile_id', $a->id)->limit(10)->pluck('uuid')->all();
+    $this->actingAs($admin)->post('/admin/photos/review', ['uuids' => $uuids, 'action' => 'publish'])->assertRedirect();
+    expect(EventPhoto::query()->whereIn('uuid', $uuids)->where('status', EventPhotoStatus::Published)->count())->toBe(10);
+});
+
+test('a photo already in the buyer unpaid order is not ordered twice', function () {
+    $buyer = User::factory()->create();
+    $photo = marketPhoto();
+    $first = app(CheckoutEventPhotos::class)->handle($buyer, [$photo->uuid]);
+
+    expect(fn () => app(CheckoutEventPhotos::class)->handle($buyer, [$photo->uuid, marketPhoto()->uuid]))
+        ->toThrow(ValidationException::class, $first->order_number);
+    expect(Order::query()->where('user_id', $buyer->id)->count())->toBe(1);
+
+    // Another buyer is not affected by someone else's pending order.
+    expect(app(CheckoutEventPhotos::class)->handle(User::factory()->create(), [$photo->uuid]))->toBeInstanceOf(Order::class);
+});
+
+test('duplicated uuids in one selection are charged once', function () {
+    $photo = marketPhoto();
+    $order = app(CheckoutEventPhotos::class)->handle(User::factory()->create(), [$photo->uuid, $photo->uuid, $photo->uuid]);
+
+    expect($order->items()->count())->toBe(1)
+        ->and($order->total_minor)->toBe($photo->price_minor);
 });

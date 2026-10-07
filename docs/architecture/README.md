@@ -18,6 +18,7 @@ el código", no el "por qué se decidió así".
 | `docs/api/client-integration-guide.md` | Cómo un cliente externo futuro (Desktop, Mobile) se conecta |
 | `docs/api/openapi.yaml` | Especificación OpenAPI de Fase 1, generada a mano a partir de las rutas reales |
 | `docs/desktop/technology-decision.md` | Comparación .NET/Tauri/Electron para un futuro Desktop — documentación únicamente, sin código |
+| `docs/architecture/legacy-plate-v3.md` | **Vigente**: Legacy Plate V3 — 70 × 45 mm, diseño solo al frente, NFC con ferrita, clip money clip de acero inoxidable atrás, snapshots históricos |
 | `docs/architecture/legacy-plate-v2.md` | Legacy Plate pre-manufacturada + grabado dinámico, name fitting, entitlement de producción |
 | `docs/architecture/commerce.md` | Catálogo, inventario, precio por ventana, carrito/checkout/orders, pagos online/manuales |
 | `docs/architecture/social.md` | Legacy Moments: follows, momentos, reacciones, mensajes de apoyo, bloqueos, reportes, feed/explorar/búsqueda, privacidad |

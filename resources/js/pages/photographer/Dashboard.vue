@@ -74,13 +74,13 @@ const cards = computed(() =>
     props.stats
         ? [
               {
-                  label: 'Ganancia neta',
+                  label: 'Ingresos (neto)',
                   value: money(props.stats.net_minor),
                   icon: Wallet,
                   tone: 'bg-emerald-100 text-emerald-700',
               },
               {
-                  label: 'Pendiente de pago',
+                  label: 'Saldo pendiente',
                   value: money(props.stats.pending_payout_minor),
                   icon: Hourglass,
                   tone: 'bg-amber-100 text-amber-700',
@@ -92,13 +92,49 @@ const cards = computed(() =>
                   tone: 'bg-sky-100 text-sky-700',
               },
               {
-                  label: 'Publicadas',
+                  label: 'Fotos publicadas',
                   value: String(props.stats.published),
                   icon: Camera,
                   tone: 'bg-fl-cream text-fl-gold-ink',
               },
           ]
         : [],
+);
+
+/** Getting-started checklist — every item from real profile/stat data. */
+const steps = computed(() =>
+    props.profile && props.stats
+        ? [
+              {
+                  label: 'Perfil aprobado',
+                  done: props.profile.status === 'approved',
+                  href: null,
+              },
+              {
+                  label: 'Datos bancarios para tus pagos',
+                  done: !!props.profile.payout_clabe_masked,
+                  href: '#perfil',
+              },
+              {
+                  label: 'Primeras fotos subidas',
+                  done:
+                      props.stats.published +
+                          props.stats.review +
+                          props.stats.rejected >
+                      0,
+                  href: '/fotografo/fotos',
+              },
+              {
+                  label: 'Primera venta',
+                  done: props.stats.sales > 0,
+                  href: null,
+              },
+          ]
+        : [],
+);
+const stepsDone = computed(() => steps.value.filter((s) => s.done).length);
+const hasMonthly = computed(() =>
+    (props.monthly ?? []).some((m) => m.net_minor > 0),
 );
 
 const maxMonth = computed(() =>
@@ -240,11 +276,69 @@ function save() {
                 </div>
             </div>
 
-            <div v-if="stats" class="grid gap-6 lg:grid-cols-5">
+            <!-- Getting started -->
+            <section
+                v-if="steps.length && stepsDone < steps.length"
+                class="fl-card p-5"
+            >
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-sm font-semibold">Primeros pasos</h2>
+                    <span class="legacy-numeric text-xs text-muted-foreground"
+                        >{{ stepsDone }} de {{ steps.length }}</span
+                    >
+                </div>
+                <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                        class="h-full rounded-full bg-fl-gold transition-[width] duration-700"
+                        :style="{
+                            width: `${(stepsDone / steps.length) * 100}%`,
+                        }"
+                    />
+                </div>
+                <ol class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    <li v-for="(step, i) in steps" :key="step.label">
+                        <component
+                            :is="step.href && !step.done ? 'a' : 'div'"
+                            :href="
+                                step.href && !step.done ? step.href : undefined
+                            "
+                            class="flex h-full items-center gap-3 rounded-xl border px-3 py-2.5 text-sm"
+                            :class="
+                                step.done
+                                    ? 'border-emerald-200 bg-emerald-50/60 text-emerald-900'
+                                    : 'border-border hover:border-foreground/25'
+                            "
+                        >
+                            <span
+                                class="flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                                :class="
+                                    step.done
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'border border-border text-muted-foreground'
+                                "
+                                >{{ step.done ? '✓' : i + 1 }}</span
+                            >
+                            {{ step.label }}
+                        </component>
+                    </li>
+                </ol>
+            </section>
+
+            <div v-if="stats" class="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 <!-- Monthly chart -->
-                <section class="fl-card p-5 lg:col-span-3">
-                    <h2 class="text-sm font-semibold">Ganancia neta por mes</h2>
-                    <div class="mt-6 flex h-48 items-end gap-3">
+                <section class="fl-card relative p-5 lg:col-span-3">
+                    <h2 class="text-sm font-semibold">
+                        Ingresos netos por mes
+                    </h2>
+                    <p
+                        v-if="!hasMonthly"
+                        class="absolute inset-x-5 top-1/2 text-center text-sm text-muted-foreground"
+                    >
+                        Tus ingresos aparecerán aquí con tu primera venta.
+                    </p>
+                    <div
+                        class="mt-6 flex h-48 items-end gap-3 border-b border-border"
+                    >
                         <div
                             v-for="m in monthly"
                             :key="m.month"
@@ -355,7 +449,7 @@ function save() {
                 </div>
                 <div
                     v-if="recentSales.length"
-                    class="grid gap-3 sm:grid-cols-2"
+                    class="grid grid-cols-1 gap-3 sm:grid-cols-2"
                 >
                     <article
                         v-for="sale in recentSales"
@@ -410,7 +504,8 @@ function save() {
 
             <!-- Profile + payout -->
             <form
-                class="fl-card grid gap-5 p-6 md:grid-cols-2"
+                id="perfil"
+                class="fl-card grid scroll-mt-24 gap-5 p-6 md:grid-cols-2"
                 @submit.prevent="save"
             >
                 <h2 class="text-sm font-semibold md:col-span-2">

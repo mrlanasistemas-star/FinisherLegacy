@@ -17,6 +17,7 @@ use App\Models\Plate;
 use App\Models\PlateTemplateVersion;
 use App\Models\ProductionJob;
 use App\Support\CodeGenerator;
+use App\Support\LegacyPlateLayouts;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -136,7 +137,7 @@ class PlateGenerationService
         EventParticipant $participant,
         LegacyPlateModel $model,
         ?string $engravingDisplayName = null,
-        string $layoutVersion = 'v1',
+        string $layoutVersion = LegacyPlateLayouts::SPEC_VERSION,
     ): Plate {
         if (Plate::where('event_participant_id', $participant->id)->exists()) {
             throw new PlateAlreadyExistsException;
@@ -169,6 +170,8 @@ class PlateGenerationService
                 'dynamic_fields' => $dynamicFields,
                 'layout_type' => PlateLayoutType::ManufacturedDynamic,
                 'layout_version' => $layoutVersion,
+                // Frozen copy: later layout edits never change this order.
+                'layout_snapshot' => $model->loadMissing('fields')->toSnapshotArray(),
                 'status' => PlateStatus::Draft,
                 'linked_at' => $participant->user_id ? now() : null,
             ]);

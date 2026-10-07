@@ -1,8 +1,11 @@
 <script setup lang="ts">
 /**
  * Public "Fotógrafos" zone — why and how to sell event photos on Finisher
- * Legacy: free upload, your price, transparent commission (live
- * calculator with the real formula), athletes find their photos by bib.
+ * Legacy: photographic hero, publish with no upfront cost (never "free
+ * forever"), your price, transparent commission (live calculator with the
+ * real formula), athletes find their photos by event and bib.
+ * The hero uses a project photograph until the dedicated one in
+ * PROMPTS-IMAGES.md exists.
  */
 import { Link, usePage } from '@inertiajs/vue3';
 import {
@@ -12,6 +15,7 @@ import {
     CircleDollarSign,
     Hash,
     LineChart,
+    Send,
     ShieldCheck,
     Upload,
     Users,
@@ -20,6 +24,7 @@ import { computed, ref } from 'vue';
 import FeeBreakdown from '@/components/photos/FeeBreakdown.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
+import { MEDIA } from '@/config/media';
 import type { PhotoFeeRules } from '@/lib/photoFees';
 
 const props = defineProps<{
@@ -33,26 +38,33 @@ const user = computed(() => page.props.auth.user);
 const price = ref(props.fees.default_price_minor / 100);
 const priceMinor = computed(() => Math.round((Number(price.value) || 0) * 100));
 
+const hero = MEDIA.photo.runner;
+
 const steps = [
     {
         icon: BadgeCheck,
-        title: 'Regístrate como fotógrafo',
-        text: 'Crea tu perfil en minutos. Revisamos tu portafolio y te damos acceso.',
+        title: 'Crea tu perfil',
+        text: 'Regístrate en minutos. Revisamos tu portafolio y te damos acceso.',
     },
     {
         icon: Upload,
-        title: 'Sube las fotos del evento',
-        text: 'Elige el evento, pon tu precio y los números de corredor. Publicar no tiene costo inicial.',
+        title: 'Sube tus fotos',
+        text: 'Hasta 30 por carga, en alta resolución. Los originales quedan protegidos.',
     },
     {
         icon: Hash,
-        title: 'Los atletas encuentran sus fotos',
-        text: 'Buscan por evento y número, ven tu foto con marca de agua y la compran.',
+        title: 'Asigna evento y dorsal',
+        text: 'Elige el evento y escribe los números de participante que aparecen.',
+    },
+    {
+        icon: Send,
+        title: 'Publica',
+        text: 'Tras una revisión rápida tus fotos aparecen en Mis Fotos con marca de agua.',
     },
     {
         icon: CircleDollarSign,
-        title: 'Cobras por cada venta',
-        text: 'Ves cada venta con su desglose y te pagamos a tu cuenta bancaria.',
+        title: 'Vende',
+        text: 'Cada atleta compra su momento; ves el desglose y te pagamos a tu cuenta.',
     },
 ];
 
@@ -81,27 +93,49 @@ const benefits = [
         description="Vende tus fotografías de carreras y eventos deportivos en Finisher Legacy. Publicar no tiene costo inicial, tú pones el precio y ves cada venta con su desglose."
     />
 
-    <section
-        class="fl-container grid items-center gap-12 pt-12 pb-16 sm:pt-16 lg:grid-cols-12"
-    >
-        <div class="lg:col-span-7">
-            <p class="fl-eyebrow flex items-center gap-3">
+    <!-- Photographic hero -->
+    <section class="relative isolate overflow-hidden bg-fl-black text-white">
+        <img
+            :src="hero.src"
+            :srcset="hero.srcset"
+            sizes="100vw"
+            :width="hero.width"
+            :height="hero.height"
+            alt="Corredora en plena zancada fotografiada durante una carrera"
+            class="absolute inset-0 -z-10 size-full object-cover object-[70%_center]"
+            fetchpriority="high"
+            decoding="async"
+        />
+        <div
+            aria-hidden="true"
+            class="absolute inset-0 -z-10 bg-gradient-to-r from-black/85 via-black/55 to-black/10"
+        />
+        <div class="fl-container py-20 sm:py-28 lg:py-36">
+            <p
+                class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+            >
                 <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
                 Para fotógrafos deportivos
             </p>
-            <h1 class="fl-display mt-5 text-[2.6rem] sm:text-6xl lg:text-7xl">
-                Tus fotos de carrera,
-                <span class="text-fl-gold-ink italic"
-                    >vendidas a quien las vive.</span
+            <h1
+                class="mt-5 max-w-3xl font-serif text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-7xl"
+            >
+                Tu cámara captura la meta.
+                <span class="text-fl-gold italic"
+                    >Finisher Legacy te ayuda a venderla.</span
                 >
             </h1>
-            <p class="mt-6 max-w-xl text-lg text-muted-foreground">
-                Sube tus fotos sin costo, pon tu precio y deja que cada atleta
-                encuentre su momento por número de corredor. Nosotros cobramos,
-                tú vendes.
+            <p class="mt-6 max-w-xl text-lg text-white/75">
+                Publicar sin costo inicial. Tú pones el precio, cada atleta
+                encuentra su foto por evento y número de participante, y ves
+                cada venta con su desglose.
             </p>
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button as-child size="lg" class="h-12 rounded-full px-7">
+                <Button
+                    as-child
+                    size="lg"
+                    class="h-12 rounded-full bg-fl-gold px-7 text-fl-black hover:bg-fl-gold-soft"
+                >
                     <Link href="/fotografos/registro">
                         <Camera class="size-4" />
                         Quiero vender mis fotos
@@ -112,33 +146,49 @@ const benefits = [
                     as-child
                     size="lg"
                     variant="outline"
-                    class="h-12 rounded-full border-foreground/20 px-7"
+                    class="h-12 rounded-full border-white/40 bg-transparent px-7 text-white hover:bg-white/10 hover:text-white"
                 >
                     <Link href="/fotografo">Ir a mi portal</Link>
                 </Button>
             </div>
-            <dl class="mt-10 flex gap-10 border-t border-border pt-6">
+            <dl
+                v-if="stats.photographers > 0 && stats.photos > 0"
+                class="mt-10 flex gap-10 border-t border-white/15 pt-6"
+            >
                 <div>
-                    <dt class="text-xs text-muted-foreground">
-                        Fotógrafos activos
-                    </dt>
+                    <dt class="text-xs text-white/60">Fotógrafos activos</dt>
                     <dd class="legacy-numeric mt-1 text-3xl font-semibold">
                         {{ stats.photographers }}
                     </dd>
                 </div>
                 <div>
-                    <dt class="text-xs text-muted-foreground">
-                        Fotos publicadas
-                    </dt>
+                    <dt class="text-xs text-white/60">Fotos publicadas</dt>
                     <dd class="legacy-numeric mt-1 text-3xl font-semibold">
                         {{ stats.photos }}
                     </dd>
                 </div>
             </dl>
         </div>
+    </section>
 
+    <!-- Calculator -->
+    <section
+        class="fl-container grid items-center gap-10 py-16 sm:py-20 lg:grid-cols-12"
+    >
+        <div class="lg:col-span-6">
+            <p class="fl-eyebrow">Tus números, claros</p>
+            <h2 class="fl-display mt-3 text-3xl sm:text-4xl">
+                Sabes cuánto ganas antes de subir una sola foto.
+            </h2>
+            <p class="mt-4 text-muted-foreground">
+                Finisher Legacy cobra una comisión por foto vendida y el
+                procesamiento de pago se descuenta como estimado (el real
+                depende de la pasarela del cliente y queda registrado en cada
+                venta). No hay cuota de alta ni mensualidad.
+            </p>
+        </div>
         <!-- Calculator -->
-        <div class="lg:col-span-5">
+        <div class="lg:col-span-5 lg:col-start-8">
             <div
                 class="fl-card p-6 shadow-[0_24px_48px_-32px_rgb(23_23_20/0.4)] sm:p-7"
             >
@@ -175,7 +225,7 @@ const benefits = [
     <section class="border-y border-border bg-card py-16 sm:py-20">
         <div class="fl-container">
             <h2 class="fl-display text-3xl sm:text-4xl">Así funciona</h2>
-            <ol class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <ol class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
                 <li
                     v-for="(step, index) in steps"
                     :key="step.title"

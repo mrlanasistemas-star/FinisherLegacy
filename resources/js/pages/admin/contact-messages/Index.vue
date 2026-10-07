@@ -61,7 +61,7 @@ function setStatus(message: Message, status: Message['status']) {
 <template>
     <Head title="Mensajes de contacto" />
 
-    <div class="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6 md:py-8">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-8">
         <SecondaryNav :items="CONTENT_AREA_NAV" />
 
         <div class="mb-6">

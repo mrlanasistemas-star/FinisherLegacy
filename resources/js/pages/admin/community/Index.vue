@@ -94,7 +94,7 @@ async function removeMoment(uuid: string) {
 <template>
     <Head title="Comunidad · Moderación" />
 
-    <div class="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 md:py-8">
+    <div class="w-full px-4 py-4 sm:px-6 md:py-8">
         <SecondaryNav :items="CONTENT_AREA_NAV" />
 
         <h1 class="mb-6 flex items-center gap-2 text-xl font-semibold">

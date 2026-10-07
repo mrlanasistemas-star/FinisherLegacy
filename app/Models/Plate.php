@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -19,7 +20,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'user_id', 'athlete_id', 'medal_id', 'event_edition_id', 'event_participant_id', 'plate_template_id',
     'plate_template_version_id', 'legacy_plate_model_id', 'legacy_code_id', 'serial_number', 'generation_mode',
     'athlete_name', 'engraving_display_name', 'bib_number', 'event_name', 'race_name', 'official_time', 'pace',
-    'event_date', 'dynamic_fields', 'layout_type', 'layout_version', 'status', 'linked_at', 'produced_at', 'delivered_at',
+    'event_date', 'dynamic_fields', 'layout_type', 'layout_version', 'layout_snapshot', 'status', 'linked_at', 'produced_at', 'delivered_at',
 ])]
 class Plate extends Model
 {
@@ -34,10 +35,44 @@ class Plate extends Model
             'layout_type' => PlateLayoutType::class,
             'event_date' => 'date',
             'dynamic_fields' => 'array',
+            'layout_snapshot' => 'array',
             'linked_at' => 'datetime',
             'produced_at' => 'datetime',
             'delivered_at' => 'datetime',
         ];
+    }
+
+    /**
+     * What LegacyPlateViewer draws for THIS plate: the layout frozen when
+     * it was produced (layout_snapshot — historical v2 plates keep their
+     * printed back here) or, for plates without one, the live layout.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function layoutViewer(): ?array
+    {
+        $snapshot = $this->layout_snapshot;
+
+        if (is_array($snapshot) && $snapshot !== []) {
+            $disk = Storage::disk('public');
+
+            return [
+                ...$snapshot,
+                'preview_image_url' => null,
+                'front_artwork_url' => ! empty($snapshot['front_artwork_path']) ? $disk->url($snapshot['front_artwork_path']) : null,
+                'back_artwork_url' => ! empty($snapshot['back_artwork_path']) ? $disk->url($snapshot['back_artwork_path']) : null,
+            ];
+        }
+
+        $model = $this->legacyPlateModel;
+
+        if ($model === null) {
+            return null;
+        }
+
+        $model->loadMissing('fields');
+
+        return $model->toViewerArray();
     }
 
     /** @return BelongsTo<User, $this> */
@@ -132,6 +167,6 @@ class Plate extends Model
 
     public function getActivitylogOptions(): LogOptions
     {
-        return LogOptions::defaults()->logFillable()->logOnlyDirty()->dontLogEmptyChanges();
+        return LogOptions::defaults()->logFillable()->logExcept(['layout_snapshot'])->logOnlyDirty()->dontLogEmptyChanges();
     }
 }
