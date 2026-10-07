@@ -420,6 +420,7 @@ async function remove(photo: Photo) {
             </div>
             <FancySelect
                 :model-value="filters.evento"
+                placeholder="Todos los eventos"
                 :options="[
                     { value: null, label: 'Todos los eventos', icon: Flag },
                     ...eventOptions,

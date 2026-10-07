@@ -9,7 +9,6 @@
 import { Link, router, usePage } from '@inertiajs/vue3';
 import {
     Camera,
-    Check,
     Download,
     Flag,
     ImageOff,
@@ -24,6 +23,7 @@ import {
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import FancySelect from '@/components/forms/FancySelect.vue';
+import PhotoPickCard from '@/components/photos/PhotoPickCard.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,15 @@ const props = defineProps<{
     events: { id: number; label: string; date: string | null }[];
     filters: { evento: number | null; numero: string };
     searched: boolean;
+    /** Signed-in athlete: their events (with their bib) and the photos found. */
+    myEvents: {
+        edition_id: number;
+        event: string;
+        race: string | null;
+        date: string | null;
+        bib: string;
+        photos: Photo[];
+    }[];
     results: Photo[];
     purchased: Purchased[] | null;
     mine: Photo[] | null;
@@ -106,6 +115,31 @@ const money = (minor: number) =>
     }).format(minor / 100);
 
 const forSale = computed(() => props.results.filter((p) => p.kind === 'pro'));
+const fmtDate = (iso: string) =>
+    new Date(`${iso}T12:00:00`).toLocaleDateString('es-MX', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+const myPhotoCount = computed(() =>
+    props.myEvents.reduce((n, e) => n + e.photos.length, 0),
+);
+// Everything buyable on the page (own events + a manual search), once.
+const buyable = computed(() => {
+    const map = new Map<string, Photo>();
+    [...props.myEvents.flatMap((e) => e.photos), ...forSale.value].forEach(
+        (photo) => map.set(photo.uuid, photo),
+    );
+
+    return [...map.values()];
+});
+const showSearch = ref(props.searched || props.myEvents.length === 0);
+
+function selectAll(photos: Photo[]) {
+    const next = new Set(selected.value);
+    photos.filter((p) => !p.owned).forEach((p) => next.add(p.uuid));
+    selected.value = next;
+}
 const athletePhotos = computed(() =>
     props.results.filter((p) => p.kind === 'athlete'),
 );
@@ -127,7 +161,7 @@ function toggle(photo: Photo) {
     selected.value = next;
 }
 const selectedPhotos = computed(() =>
-    forSale.value.filter((p) => selected.value.has(p.uuid)),
+    buyable.value.filter((p) => selected.value.has(p.uuid)),
 );
 const total = computed(() =>
     selectedPhotos.value.reduce((sum, p) => sum + (p.price_minor ?? 0), 0),
@@ -197,7 +231,11 @@ function toggleFromLightbox() {
                     Encuentra tu momento.
                 </h1>
                 <p class="mt-4 max-w-xl text-lg text-muted-foreground">
-                    Busca tus fotografías y revive la emoción de cada evento.
+                    {{
+                        myEvents.length
+                            ? 'Ya sabemos en qué eventos corriste y con qué número: aquí están tus fotos. Solo elige cuáles quieres.'
+                            : 'Busca tus fotografías y revive la emoción de cada evento.'
+                    }}
                 </p>
             </div>
             <Link
@@ -209,7 +247,16 @@ function toggleFromLightbox() {
             </Link>
         </div>
 
-        <div class="mt-10 grid gap-4 lg:grid-cols-12">
+        <button
+            v-if="!showSearch"
+            type="button"
+            class="mt-8 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            @click="showSearch = true"
+        >
+            <Search class="size-4" />
+            ¿Buscas fotos de otro evento o de otro número?
+        </button>
+        <div v-if="showSearch" class="mt-10 grid gap-4 lg:grid-cols-12">
             <form
                 class="fl-card grid gap-4 p-5 sm:grid-cols-[1fr_180px_auto] sm:items-end sm:p-6 lg:col-span-8"
                 role="search"
@@ -273,9 +320,84 @@ function toggleFromLightbox() {
     <section class="fl-container pb-20">
         <div class="grid gap-8 lg:grid-cols-12">
             <div class="min-w-0 space-y-12 lg:col-span-8">
+                <!-- Signed-in athlete: their own events, photos already found -->
+                <div v-if="myEvents.length" class="space-y-10">
+                    <section
+                        v-for="ev in myEvents"
+                        :key="ev.edition_id"
+                        :aria-label="`Tus fotos de ${ev.event}`"
+                    >
+                        <div
+                            class="flex flex-wrap items-end justify-between gap-3"
+                        >
+                            <div>
+                                <h2 class="font-serif text-2xl">
+                                    {{ ev.event }}
+                                </h2>
+                                <p class="text-sm text-muted-foreground">
+                                    <template v-if="ev.race"
+                                        >{{ ev.race }} ·
+                                    </template>
+                                    <template v-if="ev.date"
+                                        >{{ fmtDate(ev.date) }} ·
+                                    </template>
+                                    Tu número
+                                    <span
+                                        class="legacy-numeric font-semibold text-foreground"
+                                        >#{{ ev.bib }}</span
+                                    >
+                                    · {{ ev.photos.length }}
+                                    {{
+                                        ev.photos.length === 1
+                                            ? 'foto'
+                                            : 'fotos'
+                                    }}
+                                </p>
+                            </div>
+                            <button
+                                v-if="ev.photos.some((p) => !p.owned)"
+                                type="button"
+                                class="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:border-foreground/25"
+                                @click="selectAll(ev.photos)"
+                            >
+                                Seleccionar todas
+                            </button>
+                        </div>
+                        <div
+                            v-if="ev.photos.length"
+                            class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"
+                        >
+                            <PhotoPickCard
+                                v-for="photo in ev.photos"
+                                :key="photo.uuid"
+                                :photo="photo"
+                                :selected="selected.has(photo.uuid)"
+                                :price="money(photo.price_minor ?? 0)"
+                                @toggle="toggle(photo)"
+                                @open="lightbox = photo"
+                            />
+                        </div>
+                        <p
+                            v-else
+                            class="mt-3 flex items-start gap-3 rounded-xl border border-dashed border-foreground/15 bg-card p-4 text-sm text-muted-foreground"
+                        >
+                            <ImageOff class="size-5 shrink-0" />
+                            Aún no hay fotos de fotógrafos con tu número en este
+                            evento. Se publican después de la carrera.
+                        </p>
+                    </section>
+                    <p
+                        v-if="myPhotoCount === 0"
+                        class="text-sm text-muted-foreground"
+                    >
+                        Te avisaremos aquí en cuanto un fotógrafo publique fotos
+                        con tu número.
+                    </p>
+                </div>
+
                 <!-- Before searching: how it works -->
                 <ol
-                    v-if="!searched"
+                    v-if="!searched && !myEvents.length"
                     class="grid gap-3 sm:grid-cols-3"
                     aria-label="Cómo encontrar tus fotos"
                 >
@@ -312,7 +434,7 @@ function toggleFromLightbox() {
                     <div>
                         <h2 class="flex items-center gap-2 font-serif text-2xl">
                             <Camera class="size-5 text-fl-gold-ink" />
-                            Fotos profesionales
+                            Resultado de tu búsqueda
                             <span class="text-base text-muted-foreground">{{
                                 forSale.length
                             }}</span>
@@ -321,81 +443,15 @@ function toggleFromLightbox() {
                             v-if="forSale.length"
                             class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3"
                         >
-                            <article
+                            <PhotoPickCard
                                 v-for="photo in forSale"
                                 :key="photo.uuid"
-                                class="group relative overflow-hidden rounded-xl border-2 bg-card transition-colors"
-                                :class="
-                                    selected.has(photo.uuid)
-                                        ? 'border-foreground'
-                                        : 'border-transparent'
-                                "
-                            >
-                                <button
-                                    type="button"
-                                    class="block w-full"
-                                    :aria-label="`Ver foto de ${photo.source}`"
-                                    @click="lightbox = photo"
-                                >
-                                    <img
-                                        :src="photo.thumb_url"
-                                        :alt="`Foto de ${photo.event ?? 'evento'} por ${photo.source}`"
-                                        loading="lazy"
-                                        decoding="async"
-                                        class="aspect-[4/5] w-full bg-muted object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                                    />
-                                </button>
-                                <button
-                                    v-if="!photo.owned"
-                                    type="button"
-                                    class="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full border-2 border-white shadow transition-colors"
-                                    :class="
-                                        selected.has(photo.uuid)
-                                            ? 'bg-foreground text-background'
-                                            : 'bg-black/30 text-white hover:bg-black/50'
-                                    "
-                                    :aria-pressed="selected.has(photo.uuid)"
-                                    :aria-label="
-                                        selected.has(photo.uuid)
-                                            ? 'Quitar de la selección'
-                                            : 'Agregar a la selección'
-                                    "
-                                    @click="toggle(photo)"
-                                >
-                                    <Check
-                                        v-if="selected.has(photo.uuid)"
-                                        class="size-4"
-                                    />
-                                    <ShoppingBag v-else class="size-3.5" />
-                                </button>
-                                <span
-                                    v-else
-                                    class="absolute top-2 right-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white"
-                                    >Ya es tuya</span
-                                >
-                                <div
-                                    class="flex items-center justify-between gap-2 px-3 py-2.5"
-                                >
-                                    <span class="min-w-0">
-                                        <span
-                                            class="flex items-center gap-1 truncate text-xs font-semibold"
-                                            ><Camera
-                                                class="size-3 shrink-0 text-muted-foreground"
-                                            />{{ photo.source }}</span
-                                        >
-                                        <span
-                                            class="block truncate text-[11px] text-muted-foreground"
-                                            >{{ photo.event }}</span
-                                        >
-                                    </span>
-                                    <span
-                                        class="shrink-0 text-sm font-semibold"
-                                        >{{
-                                            money(photo.price_minor ?? 0)
-                                        }}</span
-                                    >
-                                </div>
-                            </article>
+                                :photo="photo"
+                                :selected="selected.has(photo.uuid)"
+                                :price="money(photo.price_minor ?? 0)"
+                                @toggle="toggle(photo)"
+                                @open="lightbox = photo"
+                            />
                         </div>
                         <p
                             v-else

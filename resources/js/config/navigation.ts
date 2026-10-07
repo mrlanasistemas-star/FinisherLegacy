@@ -354,6 +354,14 @@ export const navigation: NavItem[] = [
     },
 ];
 
+/**
+ * Groups that belong to the "Personal" side of the sidebar: everything
+ * that is MINE (Mi Legado, Mis fotos, Mis pedidos…) — including a
+ * photographer's own portal (Mi panel, Mis fotos en venta, Ventas y
+ * pagos). "Trabajo" is only staff work over other people's data.
+ */
+export const PERSONAL_GROUPS: NavGroup[] = ['legacy', 'fotografo'];
+
 export function visibleNavigation(permissions: string[]): NavItem[] {
     const set = new Set(permissions);
 

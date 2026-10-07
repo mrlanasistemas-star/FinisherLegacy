@@ -24,6 +24,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * "Fotos" — the photo marketplace for athletes:
+ *  - signed in: the athlete's own participations (event + their bib) are
+ *    already known, so their photographers' photos appear automatically,
+ *    grouped by event — they only choose which ones to buy;
  *  - search an event + bib number across PHOTOGRAPHERS' published photos
  *    (watermarked preview, price, buy) and athletes' own public photos;
  *  - buy a selection (a regular Order paid through the existing payment
@@ -47,6 +50,7 @@ class PhotosController extends Controller
             'events' => $this->eventOptions(),
             'filters' => ['evento' => $editionId, 'numero' => $bib],
             'searched' => $searched,
+            'myEvents' => $viewer === null ? [] : $this->myEvents($viewer, $owned),
             'results' => $searched ? [
                 ...$this->photographerResults($editionId, $bib, $owned),
                 ...$this->athleteResults($editionId, $bib, $viewer, $visibility),
@@ -91,6 +95,42 @@ class PhotosController extends Controller
         $extension = pathinfo($photo->original_path, PATHINFO_EXTENSION) ?: 'jpg';
 
         return Storage::disk('event_photo_originals')->download($photo->original_path, "finisher-legacy-{$photo->uuid}.{$extension}");
+    }
+
+    /**
+     * Every participation of the viewer that has a bib (as user or as the
+     * claimed athlete), newest first, with the photographers' photos tagged
+     * with that bib in that event. One entry per event edition.
+     *
+     * @param  list<int>  $owned
+     * @return list<array<string, mixed>>
+     */
+    private function myEvents(User $viewer, array $owned): array
+    {
+        $athleteId = $viewer->athlete?->id;
+
+        return array_values(EventParticipant::query()
+            ->where(fn ($q) => $q->where('user_id', $viewer->id)
+                ->when($athleteId, fn ($w, $id) => $w->orWhere('athlete_id', $id)))
+            ->whereNotNull('bib_number')
+            ->where('bib_number', '!=', '')
+            ->with(['eventEdition.event', 'eventRace'])
+            ->latest('id')
+            ->limit(30)
+            ->get()
+            ->unique('event_edition_id')
+            ->filter(fn (EventParticipant $p) => $p->eventEdition !== null)
+            ->map(fn (EventParticipant $p) => [
+                'edition_id' => $p->event_edition_id,
+                'event' => $p->eventEdition->event->name,
+                'race' => $p->eventRace?->name,
+                'date' => $p->eventEdition->event_date?->toDateString(),
+                'bib' => ltrim((string) $p->bib_number, '#'),
+                'photos' => $this->photographerResults($p->event_edition_id, ltrim((string) $p->bib_number, '#'), $owned),
+            ])
+            ->sortByDesc(fn (array $e) => [count($e['photos']) > 0, $e['date']])
+            ->values()
+            ->all());
     }
 
     /**

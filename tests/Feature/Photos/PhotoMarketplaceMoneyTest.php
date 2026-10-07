@@ -327,3 +327,26 @@ test('duplicated uuids in one selection are charged once', function () {
     expect($order->items()->count())->toBe(1)
         ->and($order->total_minor)->toBe($photo->price_minor);
 });
+
+test('a signed-in athlete sees the photos of their own bib automatically, no search', function () {
+    $runner = User::factory()->create();
+    $mine = marketPhoto();
+    $mine->syncBibs(['482']);
+    $someoneElse = marketPhoto(attributes: ['event_edition_id' => $mine->event_edition_id]);
+    $someoneElse->syncBibs(['900']);
+    \App\Models\EventParticipant::factory()->create([
+        'event_edition_id' => $mine->event_edition_id,
+        'user_id' => $runner->id,
+        'bib_number' => '482',
+    ]);
+
+    $this->actingAs($runner)->get('/fotos')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('searched', false)
+            ->has('myEvents', 1)
+            ->where('myEvents.0.bib', '482')
+            ->has('myEvents.0.photos', 1)
+            ->where('myEvents.0.photos.0.uuid', $mine->uuid)
+        );
+});

@@ -59,9 +59,14 @@ class PhotographerPortalController extends Controller
         ]);
     }
 
-    public function photos(Request $request): Response
+    public function photos(Request $request): Response|RedirectResponse
     {
-        $profile = $this->requireProfile($request);
+        $profile = $this->profile($request);
+
+        if ($profile === null) {
+            return $this->toProfileRequest();
+        }
+
         $editionId = $request->integer('evento') ?: null;
         $status = EventPhotoStatus::tryFrom($request->string('estado')->toString());
 
@@ -172,9 +177,13 @@ class PhotographerPortalController extends Controller
         return back();
     }
 
-    public function sales(Request $request): Response
+    public function sales(Request $request): Response|RedirectResponse
     {
-        $profile = $this->requireProfile($request);
+        $profile = $this->profile($request);
+
+        if ($profile === null) {
+            return $this->toProfileRequest();
+        }
 
         return Inertia::render('photographer/Sales', [
             'profile' => $this->profilePayload($profile),
@@ -207,6 +216,18 @@ class PhotographerPortalController extends Controller
     private function profile(Request $request): ?PhotographerProfile
     {
         return $request->user()->photographerProfile()->first();
+    }
+
+    /**
+     * An account can hold the photographer role (e.g. assigned from Admin →
+     * Usuarios) before it has a PhotographerProfile. The portal pages send
+     * it to the panel, which offers "Solicitar perfil", instead of a 404.
+     */
+    private function toProfileRequest(): RedirectResponse
+    {
+        Inertia::flash('toast', ['type' => 'info', 'message' => 'Primero completa tu perfil de fotógrafo para subir y vender fotos.']);
+
+        return to_route('photographer.dashboard');
     }
 
     private function requireProfile(Request $request): PhotographerProfile

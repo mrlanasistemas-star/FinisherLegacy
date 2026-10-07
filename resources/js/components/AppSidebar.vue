@@ -17,17 +17,17 @@ import {
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useSidebarMode } from '@/composables/useSidebarMode';
-import { groupedNavigation } from '@/config/navigation';
+import { groupedNavigation, PERSONAL_GROUPS } from '@/config/navigation';
 
 const page = usePage();
 const permissions = computed(() => page.props.auth?.permissions ?? []);
 const groups = computed(() => groupedNavigation(permissions.value));
 
 const personalGroups = computed(() =>
-    groups.value.filter((group) => group.group === 'legacy'),
+    groups.value.filter((group) => PERSONAL_GROUPS.includes(group.group)),
 );
 const trabajoGroups = computed(() =>
-    groups.value.filter((group) => group.group !== 'legacy'),
+    groups.value.filter((group) => !PERSONAL_GROUPS.includes(group.group)),
 );
 
 // Only worth a selector if the account actually has both — a pure

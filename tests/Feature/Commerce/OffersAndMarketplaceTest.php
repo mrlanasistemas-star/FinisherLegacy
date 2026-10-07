@@ -173,3 +173,12 @@ test('there are never more than three Legacy Plate layouts', function () {
 
     expect(LegacyPlateModel::query()->count())->toBe(3);
 });
+
+test('a photographer account without a profile is sent to the portal panel, never a 404', function () {
+    $user = User::factory()->create();
+    $user->assignRole('photographer');
+
+    $this->actingAs($user)->get('/fotografo/fotos')->assertRedirect('/fotografo');
+    $this->actingAs($user)->get('/fotografo/ventas')->assertRedirect('/fotografo');
+    $this->actingAs($user)->get('/fotografo')->assertOk();
+});

@@ -24,8 +24,9 @@ const STORAGE_KEY = 'fl_sidebar_mode';
 // Unambiguous areas (consolidation brief §29) — an unambiguous URL always
 // wins over the stored/local preference, which only resolves a page that
 // is neither (events, support, the marketing pages...).
-const TRABAJO_URL = /^\/(admin|operator|production|imports|fotografo)(\/|$)/;
-const PERSONAL_URL = /^\/(dashboard|mis-pedidos)(\/|$)/;
+// The photographer portal and Mis fotos are the user's OWN things → Personal.
+const TRABAJO_URL = /^\/(admin|operator|production|imports)(\/|$)/;
+const PERSONAL_URL = /^\/(dashboard|mis-pedidos|fotografo|fotos)(\/|$)/;
 
 function readStored(): SidebarMode | null {
     if (typeof window === 'undefined') {
