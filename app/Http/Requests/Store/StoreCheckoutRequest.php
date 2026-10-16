@@ -11,6 +11,8 @@ use Illuminate\Validation\Rule;
  */
 class StoreCheckoutRequest extends FormRequest
 {
+    private const PHONE_PATTERN = '/^[0-9 +()\-]+$/';
+
     public function authorize(): bool
     {
         return $this->user() !== null;
@@ -27,9 +29,21 @@ class StoreCheckoutRequest extends FormRequest
         $this->merge([
             'name' => $this->filled('name') ? $this->input('name') : $user?->name,
             'email' => $this->filled('email') ? $this->input('email') : $user?->email,
-            'phone' => $this->filled('phone') ? $this->input('phone') : $user?->phone,
+            // Only reuse the profile phone when it is already valid here: an
+            // old free-form profile number must never block checkout with an
+            // error on a field the buyer did not type.
+            'phone' => $this->filled('phone') ? $this->input('phone') : $this->usableProfilePhone($user?->phone),
             'delivery_method' => $this->input('delivery_method', 'pickup'),
         ]);
+    }
+
+    private function usableProfilePhone(?string $phone): ?string
+    {
+        $phone = $phone !== null ? trim($phone) : null;
+
+        return $phone !== null && mb_strlen($phone) >= 8 && mb_strlen($phone) <= 30 && preg_match(self::PHONE_PATTERN, $phone) === 1
+            ? $phone
+            : null;
     }
 
     /**
@@ -42,7 +56,7 @@ class StoreCheckoutRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:180'],
-            'phone' => [Rule::requiredIf($shipping), 'nullable', 'string', 'min:8', 'max:30', 'regex:/^[0-9 +()\-]+$/'],
+            'phone' => [Rule::requiredIf($shipping), 'nullable', 'string', 'min:8', 'max:30', 'regex:'.self::PHONE_PATTERN],
             'delivery_method' => ['required', Rule::in(['pickup', 'shipping'])],
             'address_line' => [Rule::requiredIf($shipping), 'nullable', 'string', 'max:200'],
             'address_neighborhood' => ['nullable', 'string', 'max:120'],

@@ -105,6 +105,8 @@ class ImageVariantGenerator
 
     private function driver(): DriverInterface
     {
-        return $this->driver ??= extension_loaded('imagick') ? new ImagickDriver : new GdDriver;
+        return $this->driver ??= config('finisher.image.driver') === 'imagick' && extension_loaded('imagick')
+            ? new ImagickDriver
+            : new GdDriver;
     }
 }

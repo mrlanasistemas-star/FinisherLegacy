@@ -19,6 +19,11 @@ return [
         'thumbnail_size' => 400,
         'display_max_width' => 1800,
 
+        // Intervention driver for the media pipeline: gd | imagick. GD is
+        // the default everywhere (dev, CI, prod) so variants are identical;
+        // opt into Imagick only where it is installed and wanted.
+        'driver' => env('FINISHER_IMAGE_DRIVER', 'gd'),
+
         // Decompression-bomb guard (App\Services\ImageProcessingService):
         // checked from the file header BEFORE decoding — a tiny PNG can
         // declare 50000x50000 px and exhaust memory once decoded.

@@ -39,7 +39,7 @@ test('a $1000 product with a 20% offer is charged $800 in the cart and the order
         ->where('total_minor', 80000)
     );
 
-    $this->actingAs($user)->post('/checkout')->assertRedirect();
+    $this->actingAs($user)->post('/checkout')->assertSessionHasNoErrors()->assertRedirect();
     $order = Order::query()->where('user_id', $user->id)->firstOrFail();
 
     expect($order->total_minor)->toBe(80000)
@@ -68,9 +68,19 @@ test('a 10% coupon scoped to product A never discounts product B, in cart and at
         ->where('total_minor', 97000)
     );
 
-    $this->actingAs($user)->post('/checkout')->assertRedirect();
+    $this->actingAs($user)->post('/checkout')->assertSessionHasNoErrors()->assertRedirect();
     $order = Order::query()->where('user_id', $user->id)->firstOrFail();
 
     expect($order->discount_minor)->toBe(3000)
         ->and($order->total_minor)->toBe(97000);
+});
+
+test('a free-form phone saved on the profile never blocks a pickup checkout', function () {
+    $user = User::factory()->create(['phone' => '1-555-123-4567 x890']);
+    $variant = e2eVariant(30000);
+
+    $this->actingAs($user)->post('/carrito/items', ['product_variant_id' => $variant->id, 'quantity' => 1]);
+    $this->actingAs($user)->post('/checkout')->assertSessionHasNoErrors()->assertRedirect();
+
+    expect(Order::query()->where('user_id', $user->id)->exists())->toBeTrue();
 });
