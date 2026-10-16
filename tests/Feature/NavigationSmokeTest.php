@@ -49,7 +49,7 @@ test('public navigation destinations respond for guests', function (string $url)
     $this->get($url)->assertOk();
 })->with([
     '/', '/comunidad', '/events', '/fotos', '/tienda', '/nosotros', '/contact',
-    '/buscar', '/buscar?q=ma', '/how-it-works', '/privacy', '/terms', '/login', '/register',
+    '/buscar', '/buscar?q=ma', '/como-funciona', '/tienda/catalogo', '/privacy', '/terms', '/login', '/register',
 ]);
 
 test('Mi espacio and account menu destinations respond for a signed in athlete', function (string $url) {

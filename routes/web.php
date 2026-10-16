@@ -61,7 +61,6 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Store\CartController as StoreCartController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
-use App\Http\Controllers\Store\ProductController as StoreProductController;
 use App\Http\Controllers\SupportAudioController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SupportSessionController;
@@ -70,7 +69,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::inertia('how-it-works', 'HowItWorks')->name('how-it-works');
 Route::inertia('privacy', 'Privacy')->name('privacy');
 Route::inertia('terms', 'Terms')->name('terms');
 Route::get('contact', [ContactController::class, 'show'])->name('contact');
@@ -145,11 +143,6 @@ Route::get('support-messages/{message}/audio', [SupportAudioController::class, '
 Route::get('media/{media:uuid}/file', [AthleteEventMediaFileController::class, 'show'])->name('athlete-media.show');
 
 Route::get('/@{athleteProfile:username}', [PublicProfileController::class, 'show'])->name('profile.public');
-
-Route::prefix('tienda')->name('store.products.')->group(function () {
-    Route::get('/', [StoreProductController::class, 'index'])->name('index');
-    Route::get('{product:slug}', [StoreProductController::class, 'show'])->name('show');
-});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('l/{code}/claim', [LegacyCodeController::class, 'claim'])->name('legacy-code.claim');
@@ -561,3 +554,4 @@ require __DIR__.'/web/admin-workspace.php';
 require __DIR__.'/web/platform.php';
 require __DIR__.'/web/community.php';
 require __DIR__.'/web/nfc.php';
+require __DIR__.'/web/public.php';

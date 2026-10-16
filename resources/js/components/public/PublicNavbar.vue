@@ -21,6 +21,7 @@ import {
     Sheet,
     SheetClose,
     SheetContent,
+    SheetDescription,
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
@@ -28,9 +29,9 @@ import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
 import {
-    about,
     dashboard,
     home,
+    howItWorks,
     login,
     logout,
     register,
@@ -56,13 +57,14 @@ const firstName = computed(
 
 const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
 
+// Owner spec §6: five destinations, nothing more. Fotos, Nosotros and the
+// rest live in the footer.
 const navLinks = [
     { label: 'Inicio', href: home(), exact: true },
-    { label: 'Comunidad', href: communityIndex() },
     { label: 'Eventos', href: eventsIndex() },
-    { label: 'Fotos', href: photosIndex() },
     { label: 'Tienda', href: storeIndex() },
-    { label: 'Nosotros', href: about() },
+    { label: 'Comunidad', href: communityIndex() },
+    { label: 'Cómo funciona', href: howItWorks() },
 ];
 
 function isActive(link: (typeof navLinks)[number]): boolean {
@@ -197,6 +199,14 @@ const accountLinks = computed(() => {
                         >
                     </Link>
 
+                    <Button
+                        as-child
+                        size="sm"
+                        class="ml-1 hidden h-9 rounded-full px-4 text-[13px] md:inline-flex"
+                    >
+                        <Link :href="dashboard()">Mi legado</Link>
+                    </Button>
+
                     <DropdownMenu>
                         <DropdownMenuTrigger as-child>
                             <button
@@ -247,7 +257,7 @@ const accountLinks = computed(() => {
                         size="sm"
                         class="hidden h-9 rounded-full px-4 text-[13px] sm:inline-flex"
                     >
-                        <Link :href="register()">Crear mi perfil</Link>
+                        <Link :href="register()">Crear cuenta</Link>
                     </Button>
                 </template>
 
@@ -267,6 +277,9 @@ const accountLinks = computed(() => {
                         class="w-[86vw] max-w-sm gap-0 bg-background p-0"
                     >
                         <SheetTitle class="sr-only">Menú</SheetTitle>
+                        <SheetDescription class="sr-only"
+                            >Navegación principal y tu cuenta.</SheetDescription
+                        >
                         <div class="border-b border-border px-5 py-4">
                             <FinisherLegacyLogo variant="wordmark" size="sm" />
                         </div>
@@ -311,14 +324,22 @@ const accountLinks = computed(() => {
                             >
                                 <Link
                                     :href="link.href"
-                                    class="rounded-lg px-3 py-3 text-[15px] font-medium transition-colors hover:bg-muted"
+                                    class="flex items-center justify-between rounded-xl px-3 py-2.5 font-serif text-[1.65rem] leading-tight transition-colors hover:bg-muted"
                                     :class="
                                         isActive(link)
                                             ? 'text-foreground'
-                                            : 'text-muted-foreground'
+                                            : 'text-foreground/55'
+                                    "
+                                    :aria-current="
+                                        isActive(link) ? 'page' : undefined
                                     "
                                 >
                                     {{ link.label }}
+                                    <span
+                                        v-if="isActive(link)"
+                                        class="size-1.5 rounded-full bg-fl-gold"
+                                        aria-hidden="true"
+                                    />
                                 </Link>
                             </SheetClose>
                         </nav>
@@ -361,7 +382,7 @@ const accountLinks = computed(() => {
                                     <SheetClose as-child>
                                         <Button as-child class="rounded-full">
                                             <Link :href="register()"
-                                                >Crear mi perfil</Link
+                                                >Crear cuenta</Link
                                             >
                                         </Button>
                                     </SheetClose>
