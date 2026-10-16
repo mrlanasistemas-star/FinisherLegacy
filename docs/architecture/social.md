@@ -78,8 +78,18 @@ La app **ofrece** "Compartir como Legacy Moment" después de: ver/terminar una c
 
 ## Web (Comunidad)
 
-`/comunidad` (feed Para ti / Siguiendo / Mis deportes), `/comunidad/publicaciones/{uuid}` (detalle + mensajes de apoyo) y seguir/dejar de seguir desde `/@username` — todo en `App\Http\Controllers\CommunityController`, que reutiliza las mismas Actions, `MomentQuery`, `SocialVisibility` y policies que la API. "Celebrar" es la reacción `cheer`.
+`/comunidad` (feed Para ti / Siguiendo / Eventos), `/comunidad/publicaciones/{uuid}` (detalle + mensajes de apoyo) y seguir/dejar de seguir desde `/@username` — todo en `App\Http\Controllers\CommunityController`, que reutiliza las mismas Actions, `MomentQuery`/`FeedQuery`, `SocialVisibility` y policies que la API. Una sola reacción visible: "Celebrar" (`cheer`); quitarla borra cualquier reacción propia (también un `like` del app).
+
+## Comunidad v1 (2026-10, spec §52–59)
+
+- **Tipos**: `MomentType` suma `photo`, `legacy_plate`, `text`. La UI muestra 6 familias (`PostKind`: moment, race_result, photo, gear, legacy_plate, text) derivadas del tipo — `MomentResource.kind` / `kind_label`. Sin polimorfismo.
+- **Evento relacionado**: `legacy_moments.event_edition_id` (se deriva de la participación si no se envía) → `MomentResource.event`.
+- **Feed** (`App\Queries\Social\FeedQuery`): `following` (default API), `discover`, `for_you` (día más reciente primero; dentro del día: tú + a quien sigues +2, eventos en los que corriste +1) y `events` (solo con evento). Cursor estable (`meta.next_cursor`). Web usa `Inertia::scroll()` + `<InfiniteScroll>`.
+- **Perfil "Solo seguidores"** (`ProfileVisibility::Followers`): contenido solo para seguidores; con sesión se ve el encabezado y se puede seguir (`restricted: true` en web y en `GET /athletes/{username}`); nunca aparece en búsqueda/explorar.
+- **Web**: reportar (`POST /comunidad/reportes`), bloquear/desbloquear (`/atletas/{username}/bloquear`), listas `/@{username}/seguidores|siguiendo`, bloqueados en `/comunidad/conexiones?tab=bloqueados`.
+- **Realtime**: `community.post.created` en canal público `community.feed` (solo publicaciones públicas de perfiles públicos, sin contenido) y `community.comment.created` en `private-App.Models.User.{autor}`.
+- **API nueva**: `GET /api/v1/community/meta`; `reactions.total` en reacciones. Video en publicaciones: no (solo fotos).
 
 ## Moderación
 
-Sin panel todavía: los reportes quedan en `reports` con estado `open`. Un admin puede revisarlos por base de datos / Tinker hasta que exista la vista (campos `reviewed_by`, `reviewed_at`, `resolution_notes` ya existen).
+Admin → Comunidad (`/admin/community?tab=reportes|contenido|bloqueos`). `hidden_at/hidden_by` en publicaciones y comentarios: oculto = solo lo ve su autor; restaurable. Ocultar/restaurar/resolver/eliminar se registra en `activity_log` (`log_name=community`) vía `App\Actions\Social\ModerateContent`; ocultar cierra los reportes abiertos de ese objetivo.

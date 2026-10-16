@@ -61,7 +61,7 @@ const subtitle = computed(() =>
                 activity.pace ||
                 activity.overall_position
             "
-            class="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-3"
+            class="mt-4 grid grid-cols-[1.4fr_1fr_1fr] gap-3 border-t border-border pt-3"
         >
             <div>
                 <dt
@@ -70,7 +70,7 @@ const subtitle = computed(() =>
                     Tiempo
                 </dt>
                 <dd
-                    class="legacy-numeric mt-0.5 font-serif text-2xl leading-none font-medium text-foreground sm:text-3xl"
+                    class="legacy-numeric mt-0.5 font-serif text-xl leading-none font-medium whitespace-nowrap text-foreground sm:text-3xl"
                 >
                     {{ activity.official_time ?? '—' }}
                 </dd>

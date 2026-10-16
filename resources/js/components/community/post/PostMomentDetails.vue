@@ -37,7 +37,9 @@ defineProps<{
                     >
                         Distancia
                     </dt>
-                    <dd class="legacy-numeric mt-0.5 font-serif text-xl">
+                    <dd
+                        class="legacy-numeric mt-0.5 font-serif text-base whitespace-nowrap sm:text-xl"
+                    >
                         {{
                             metrics.distance_km
                                 ? `${metrics.distance_km} km`
@@ -51,7 +53,9 @@ defineProps<{
                     >
                         Tiempo
                     </dt>
-                    <dd class="legacy-numeric mt-0.5 font-serif text-xl">
+                    <dd
+                        class="legacy-numeric mt-0.5 font-serif text-base whitespace-nowrap sm:text-xl"
+                    >
                         {{ formatDuration(metrics.duration_seconds) || '—' }}
                     </dd>
                 </div>
@@ -61,7 +65,9 @@ defineProps<{
                     >
                         Ritmo
                     </dt>
-                    <dd class="legacy-numeric mt-0.5 font-serif text-xl">
+                    <dd
+                        class="legacy-numeric mt-0.5 font-serif text-base whitespace-nowrap sm:text-xl"
+                    >
                         {{ metrics.pace || '—' }}
                     </dd>
                 </div>

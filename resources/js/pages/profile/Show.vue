@@ -261,11 +261,14 @@ const profileJsonLd = computed(() => {
             :cover-url="restricted ? null : profile.cover_url"
             :stats="
                 restricted
-                    ? headerStats.filter(
-                          (s) =>
-                              s.label === 'Seguidores' ||
-                              s.label === 'Siguiendo',
-                      )
+                    ? [
+                          { label: 'Publicaciones', value: '—' },
+                          ...headerStats.filter(
+                              (s) =>
+                                  s.label === 'Seguidores' ||
+                                  s.label === 'Siguiendo',
+                          ),
+                      ]
                     : headerStats
             "
         >
