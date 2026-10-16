@@ -81,8 +81,16 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
+        // Baseline for EVERY /api route (bootstrap/app.php throttleApi()) —
+        // the named per-action limiters below stack on top of it. Payment
+        // webhooks get a generous per-IP bucket of their own (providers
+        // retry in bursts from few IPs; Openpay triggers an outbound call).
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            if ($request->is('api/webhooks/*')) {
+                return Limit::perMinute(600)->by('webhooks:'.$request->ip());
+            }
+
+            return Limit::perMinute(120)->by('api:'.($request->user('sanctum')?->id ?: $request->ip()));
         });
 
         RateLimiter::for('api-register', function (Request $request) {

@@ -40,6 +40,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Correlation id on every request (web + api) — docs/ARCHITECTURE.md §Observability.
         $middleware->prepend(AssignRequestId::class);
 
+        // Baseline throttle for every /api route (limiter `api`,
+        // AppServiceProvider) — security audit A1: before this the `api`
+        // limiter existed but was never applied.
+        $middleware->throttleApi();
+
         // Device API (docs/adr/0002) — kept as aliases rather than global
         // middleware since only the device/production routes in
         // routes/api.php opt into them.

@@ -12,5 +12,5 @@ use Illuminate\Support\Facades\Broadcast;
 */
 Broadcast::routes([
     'prefix' => 'v1',
-    'middleware' => ['auth:sanctum', 'user.token', 'throttle:api'],
+    'middleware' => ['auth:sanctum', 'user.token'],
 ]);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'uuid', 'user_id', 'platform', 'provider', 'token', 'device_name', 'last_seen_at', 'active',
 ])]
+#[Hidden(['token', 'token_hash'])]
 class PushDevice extends Model
 {
     protected static function booted(): void
