@@ -175,6 +175,10 @@ return [
         // abandoned, never-paid checkout stops holding a coupon hostage
         // without needing a cleanup scheduler (consolidation brief §37).
         'coupon_reservation_minutes' => env('FINISHER_COUPON_RESERVATION_MINUTES', 60),
+
+        // Restock threshold when neither the variant nor its product sets
+        // `minimum_stock` (spec §15).
+        'default_minimum_stock' => env('FINISHER_DEFAULT_MINIMUM_STOCK', 5),
     ],
 
     /*
@@ -188,11 +192,11 @@ return [
     | secret (brief §71: "no inventar credenciales"), so both stay
     | NotConfigured stubs in dev/test/CI until real keys are set via env.
     | `default_gateway` is which one CreateOnlinePayment uses when the
-    | caller doesn't pick one — OpenPay is the primary gateway (brief §49),
-    | Stripe stays available and fully wired for accounts that need it.
+    | caller doesn't pick one — Stripe (Payment Element) is the primary web
+    | gateway (spec §24-§26); OpenPay stays an additional configurable one.
     */
     'payments' => [
-        'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'openpay'),
+        'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'stripe'),
 
         // Gateway for `POST /api/v1/orders/{uuid}/payments/online` when the
         // client doesn't name one. Stripe: its official React Native SDK
@@ -327,6 +331,8 @@ return [
     */
     'product_media' => [
         'disk' => env('FINISHER_PRODUCT_MEDIA_DISK', 'product_media'),
+        // GLB/GLTF upload limit (spec §22: never a 15 MB model on Home).
+        'max_model_kb' => env('FINISHER_PRODUCT_MODEL_MAX_KB', 30 * 1024),
     ],
 
     /*

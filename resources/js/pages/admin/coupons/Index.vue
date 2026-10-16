@@ -5,7 +5,7 @@ import { ref } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
 import ProductPicker from '@/components/admin/ProductPicker.vue';
 import type { PickerProduct } from '@/components/admin/ProductPicker.vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import CommerceSubTabs from '@/components/commerce/CommerceSubTabs.vue';
 import DatePicker from '@/components/DatePicker.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
@@ -32,7 +32,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { COMMERCE_ORDERS_AREA_NAV } from '@/config/areaNav';
 
 type CouponRow = {
     id: number;
@@ -197,7 +196,7 @@ function confirmDestroy() {
     <Head title="Cupones" />
 
     <div class="w-full px-4 py-4 sm:px-6 md:py-8 xl:px-8">
-        <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
+        <CommerceSubTabs group="coupons" />
 
         <div class="mb-6 flex items-center justify-between">
             <h1

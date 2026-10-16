@@ -59,7 +59,7 @@ test('an athlete can buy a Legacy Plate presale online with no event_participant
     $response = $this->actingAs($user)->post('/checkout');
 
     $order = Order::query()->where('user_id', $user->id)->firstOrFail();
-    $response->assertRedirect("/mis-pedidos/{$order->uuid}");
+    $response->assertRedirect("/checkout/{$order->uuid}");
 
     $entitlement = LegacyPlateEntitlement::query()->where('order_item_id', $order->items->first()->id)->firstOrFail();
     expect($entitlement->event_participant_id)->toBeNull()

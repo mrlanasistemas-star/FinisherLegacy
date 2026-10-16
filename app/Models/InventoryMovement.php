@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'product_variant_id', 'inventory_location_id', 'type', 'quantity',
-    'reference_type', 'reference_id', 'actor_id', 'notes',
+    'reference_type', 'reference_id', 'actor_id', 'notes', 'reason',
 ])]
 class InventoryMovement extends Model
 {

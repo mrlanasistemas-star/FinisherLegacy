@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Store;
 
 use App\Actions\Commerce\FulfillOrderItem;
+use App\Actions\Commerce\ReturnOrderItem;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
@@ -99,6 +100,13 @@ class OrderController extends Controller
                 'total_minor' => $order->total_minor,
                 'currency' => $order->currency,
                 'created_at' => $order->created_at->toDateTimeString(),
+                // Contact + delivery the customer gave at checkout (spec §28).
+                'contact' => [
+                    'name' => $order->customer_snapshot['name'] ?? null,
+                    'email' => $order->customer_snapshot['email'] ?? null,
+                    'phone' => $order->customer_snapshot['phone'] ?? null,
+                ],
+                'delivery' => $order->customer_snapshot['delivery'] ?? null,
             ],
             'items' => $order->items->map(fn (OrderItem $item) => [
                 'id' => $item->id,
@@ -109,6 +117,7 @@ class OrderController extends Controller
                 'line_total_minor' => $item->line_total_minor,
                 'fulfilled' => $item->isFulfilled(),
                 'owned_asset_code' => $item->ownedProduct?->asset_code,
+                'returned_quantity' => (int) ($item->metadata['returned_quantity'] ?? 0),
             ]),
             'payments' => $order->payments->map(fn ($payment) => [
                 'id' => $payment->id,
@@ -134,6 +143,24 @@ class OrderController extends Controller
         $fulfill->handle($item, $location);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Artículo surtido.']);
+
+        return back();
+    }
+
+    /**
+     * Delivered units that came back → back on hand through
+     * App\Actions\Commerce\ReturnOrderItem (inverse movement, audited).
+     */
+    public function returnItem(Request $request, OrderItem $item, ReturnOrderItem $return): RedirectResponse
+    {
+        $data = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $return->handle($item, (int) $data['quantity'], $request->user(), $data['notes'] ?? null);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Devolución registrada; el stock volvió al inventario.']);
 
         return back();
     }

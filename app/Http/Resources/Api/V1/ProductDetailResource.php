@@ -3,6 +3,8 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\Product;
+use App\Models\ProductContentSection;
+use App\Models\ProductMedia;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -41,6 +43,18 @@ class ProductDetailResource extends JsonResource
                 'is_primary' => $m->is_primary,
             ])),
             'variants' => ProductVariantResource::collection($this->variants->where('active', true)->values()),
+            // Additive (mobile store, spec §20-§23).
+            'short_description' => $this->tagline,
+            'nfc_enabled' => (bool) $this->qr_capable,
+            'is_featured' => (bool) $this->is_featured,
+            'is_new' => $this->created_at !== null && $this->created_at->gt(now()->subDays(30)),
+            'media' => $this->whenLoaded('media', fn () => $this->media->map(fn (ProductMedia $m) => $m->toMediaArray())->values()->all()),
+            'content_sections' => $this->whenLoaded('contentSections', fn () => $this->contentSections->map(fn (ProductContentSection $s) => [
+                'type' => $s->type->value,
+                'title' => $s->title,
+                'content' => $s->content,
+                'position' => (int) $s->sort_order,
+            ])->values()),
         ];
     }
 }

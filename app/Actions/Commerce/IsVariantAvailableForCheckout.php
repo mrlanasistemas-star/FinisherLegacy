@@ -27,8 +27,22 @@ class IsVariantAvailableForCheckout
             return false;
         }
 
+        $available = $this->availableQuantity($variant);
+
+        return $available === null || $available > 0;
+    }
+
+    /**
+     * Units checkout could still reserve right now at the checkout
+     * location; null when the product doesn't track inventory (no limit).
+     * Used for the cart's quantity stepper limit — never shown as a count.
+     */
+    public function availableQuantity(ProductVariant $variant): ?int
+    {
+        $variant->loadMissing('product');
+
         if (! $variant->product->tracks_inventory) {
-            return true;
+            return null;
         }
 
         $location = $this->inventory->defaultLocation();
@@ -37,6 +51,6 @@ class IsVariantAvailableForCheckout
             ? $variant->inventoryLevels->firstWhere('inventory_location_id', $location->id)
             : $variant->inventoryLevels()->where('inventory_location_id', $location->id)->first();
 
-        return $level !== null && $level->availableQuantity() > 0;
+        return max(0, $level?->availableQuantity() ?? 0);
     }
 }

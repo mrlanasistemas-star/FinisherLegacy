@@ -57,6 +57,6 @@ class ProductController extends Controller
     {
         abort_unless($product->active && $product->status->value === 'active', 404);
 
-        return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'variants.inventoryLevels', 'media'])));
+        return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'variants.inventoryLevels', 'media', 'contentSections'])));
     }
 }

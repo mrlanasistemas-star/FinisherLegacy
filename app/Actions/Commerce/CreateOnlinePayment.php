@@ -2,6 +2,7 @@
 
 namespace App\Actions\Commerce;
 
+use App\Contracts\Commerce\PaymentGateway;
 use App\Contracts\Commerce\ResumablePaymentGateway;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentProvider;
@@ -43,6 +44,7 @@ class CreateOnlinePayment
     public function __construct(
         private readonly PaymentGatewayRegistry $gateways,
         private readonly ExpirePendingOrder $expireOrder,
+        private readonly ProcessPaymentWebhook $processWebhook,
     ) {}
 
     /**
@@ -50,7 +52,7 @@ class CreateOnlinePayment
      */
     public function handle(Order $order, ?string $provider = null, array $paymentData = []): OnlinePaymentIntent
     {
-        $provider ??= (string) config('finisher.payments.default_gateway', 'openpay');
+        $provider ??= (string) config('finisher.payments.default_gateway', 'stripe');
         $gateway = $this->gateways->get($provider);
 
         /** @var array{0: Order, 1: Payment, 2: bool} $reservation */
@@ -93,6 +95,25 @@ class CreateOnlinePayment
                 return [$locked, $activeAttempt, true];
             }
 
+            // A declined card leaves a Stripe PaymentIntent reusable
+            // (`requires_payment_method`). Retrying it — instead of minting
+            // a second intent — means a late success on the first one can
+            // never become a second charge for the same Order.
+            $declinedAttempt = $gateway instanceof ResumablePaymentGateway
+                ? Payment::query()
+                    ->where('order_id', $locked->id)
+                    ->where('provider', $provider)
+                    ->where('status', PaymentStatus::Failed)
+                    ->whereNotNull('provider_reference')
+                    ->where('amount_minor', $locked->total_minor)
+                    ->latest('id')
+                    ->first()
+                : null;
+
+            if ($declinedAttempt !== null) {
+                return [$locked, $declinedAttempt, true];
+            }
+
             $payment = Payment::create([
                 'uuid' => (string) Str::uuid(),
                 'order_id' => $locked->id,
@@ -112,6 +133,28 @@ class CreateOnlinePayment
             /** @var ResumablePaymentGateway $gateway */
             $intent = $gateway->resumePayment($payment);
 
+            if ($intent !== null && $payment->status === PaymentStatus::Failed) {
+                // The same intent is live again — the attempt is pending.
+                $payment->update(['status' => PaymentStatus::Pending]);
+
+                return $intent;
+            }
+
+            if ($intent === null && $payment->status === PaymentStatus::Failed) {
+                // Provider-side terminal. First settle what really happened
+                // (it may have succeeded after all) — only then start a
+                // clean attempt.
+                $this->processWebhook->handle($gateway->fetchOutcome($payment));
+
+                if ($order->fresh()->payment_status->value === 'paid') {
+                    throw new PaymentAlreadyRecordedException;
+                }
+
+                $payment->update(['status' => PaymentStatus::Cancelled]);
+
+                return $this->startFreshAttempt($order, $provider, $gateway, $paymentData);
+            }
+
             if ($intent === null) {
                 // Provider-side attempt is terminal (e.g. canceled) — never
                 // silently stack a new charge on top; the status sync or
@@ -122,6 +165,32 @@ class CreateOnlinePayment
             return $intent;
         }
 
+        return $this->callGateway($gateway, $order, $payment, $paymentData);
+    }
+
+    /**
+     * @param  array<string, mixed>  $paymentData
+     */
+    private function startFreshAttempt(Order $order, string $provider, PaymentGateway $gateway, array $paymentData): OnlinePaymentIntent
+    {
+        $payment = Payment::create([
+            'uuid' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'provider' => PaymentProvider::from($provider),
+            'method' => PaymentMethod::OnlineCard,
+            'status' => PaymentStatus::Pending,
+            'amount_minor' => $order->total_minor,
+            'currency' => $order->currency,
+        ]);
+
+        return $this->callGateway($gateway, $order, $payment, $paymentData);
+    }
+
+    /**
+     * @param  array<string, mixed>  $paymentData
+     */
+    private function callGateway(PaymentGateway $gateway, Order $order, Payment $payment, array $paymentData): OnlinePaymentIntent
+    {
         try {
             $intent = $gateway->createPayment($order, [...$paymentData, 'payment_uuid' => $payment->uuid]);
         } catch (Throwable $e) {

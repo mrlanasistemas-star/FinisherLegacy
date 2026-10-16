@@ -8,6 +8,7 @@ use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\RemoveCartItem;
 use App\Actions\Commerce\RemoveCouponFromCart;
 use App\Actions\Commerce\UpdateCartItem;
+use App\Exceptions\Api\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\EventEdition;
@@ -33,19 +34,7 @@ class CartController extends Controller
         $summary = $getSummary->handle($cart);
 
         return Inertia::render('store/Cart', [
-            'items' => $summary->items->map(fn (CartSummaryItem $item) => [
-                'id' => $item->cartItemId,
-                'quantity' => $item->quantity,
-                'product_name' => $item->productName,
-                'variant_name' => $item->variantName,
-                'unit_price_minor' => $item->unitPriceMinor,
-                'line_total_minor' => $item->lineTotalMinor,
-                'currency' => $item->currency,
-                'price_available' => $item->priceAvailable,
-                'image_url' => $item->imageUrl,
-                'in_stock' => $item->inStock,
-                'event_edition_name' => $item->eventEditionName,
-            ]),
+            'items' => $summary->items->map(fn (CartSummaryItem $item) => $item->toPageArray())->values(),
             'currency' => $summary->currency,
             'subtotal_minor' => $summary->subtotalMinor,
             'discount_minor' => $summary->discountMinor,
@@ -116,7 +105,12 @@ class CartController extends Controller
         abort_unless($item->cart->user_id === $request->user()->id, 403);
 
         $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:20']]);
-        $updateItem->handle($item, $data['quantity']);
+
+        try {
+            $updateItem->handle($item, $data['quantity']);
+        } catch (ApiException $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+        }
 
         return back();
     }

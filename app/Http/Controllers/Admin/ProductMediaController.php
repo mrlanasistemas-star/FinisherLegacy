@@ -8,8 +8,10 @@ use App\Models\Product;
 use App\Models\ProductMedia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 /**
@@ -32,35 +34,130 @@ class ProductMediaController extends Controller
             'file' => ['nullable', 'file', 'mimes:jpeg,png,webp,mp4,webm', 'max:51200'],
             'files' => ['nullable', 'array', 'max:'.self::MAX_FILES_PER_UPLOAD],
             'files.*' => ['file', 'mimes:jpeg,png,webp,mp4,webm', 'max:51200'],
+            'model' => ['nullable', 'file', 'max:'.$this->maxModelKilobytes(), $this->modelExtensionRule()],
+            'poster' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
             'alt_text' => ['nullable', 'string', 'max:150'],
         ]);
 
         $files = array_filter([$request->file('file'), ...($request->file('files') ?? [])]);
-        abort_if($files === [], 422, 'Selecciona al menos un archivo.');
+        $model = $request->file('model');
+        abort_if($files === [] && $model === null, 422, 'Selecciona al menos un archivo.');
 
-        $disk = (string) config('finisher.product_media.disk', 'product_media');
+        $disk = $this->disk();
         $nextSortOrder = ($product->media()->max('sort_order') ?? -1) + 1;
         $hasPrimary = $product->media()->where('is_primary', true)->exists();
 
         foreach (array_values($files) as $index => $file) {
-            $isVideo = str_starts_with((string) $file->getMimeType(), 'video/');
-            $path = $file->store('products/'.$product->id, $disk);
+            $type = str_starts_with((string) $file->getMimeType(), 'video/') ? ProductMediaType::Video : ProductMediaType::Image;
 
             $product->media()->create([
-                'type' => $isVideo ? ProductMediaType::Video : ProductMediaType::Image,
+                'type' => $type,
                 'disk' => $disk,
-                'path' => $path,
+                'path' => $file->store($this->folder($product, $type), $disk),
                 'mime' => $file->getMimeType(),
                 'size' => $file->getSize(),
                 'sort_order' => $nextSortOrder + $index,
-                'is_primary' => ! $hasPrimary && $index === 0,
+                'is_primary' => ! $hasPrimary && $index === 0 && $type === ProductMediaType::Image,
                 'alt_text' => $data['alt_text'] ?? null,
             ]);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => count($files) > 1 ? count($files).' archivos agregados a la galería.' : 'Archivo agregado a la galería.']);
+        if ($model instanceof UploadedFile) {
+            $extension = strtolower($model->getClientOriginalExtension());
+
+            $product->media()->create([
+                'type' => ProductMediaType::Model3d,
+                'disk' => $disk,
+                'path' => $model->storeAs($this->folder($product, ProductMediaType::Model3d), Str::uuid().'.'.$extension, $disk),
+                'mime' => $extension === 'glb' ? 'model/gltf-binary' : 'model/gltf+json',
+                'size' => $model->getSize(),
+                'sort_order' => $nextSortOrder + count($files),
+                'is_primary' => false,
+                'alt_text' => $data['alt_text'] ?? null,
+                'poster_path' => $request->hasFile('poster')
+                    ? $request->file('poster')->store($this->folder($product, ProductMediaType::Image), $disk)
+                    : null,
+            ]);
+        }
+
+        $count = count($files) + ($model !== null ? 1 : 0);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $count > 1 ? $count.' archivos agregados a la galería.' : 'Archivo agregado a la galería.']);
 
         return back();
+    }
+
+    /**
+     * Poster (still frame) for a video or 3D model — what the store shows
+     * before the heavy file loads (spec §22).
+     */
+    public function poster(Request $request, ProductMedia $media): RedirectResponse
+    {
+        $request->validate(['poster' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:4096']]);
+        abort_if($media->type === ProductMediaType::Image, 422, 'Las imágenes no llevan póster.');
+
+        $old = $media->poster_path;
+        $media->update([
+            'poster_path' => $request->file('poster')->store($this->folder($media->product, ProductMediaType::Image), $media->disk),
+        ]);
+
+        if ($old !== null) {
+            Storage::disk($media->disk)->delete($old);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Póster actualizado.']);
+
+        return back();
+    }
+
+    private function disk(): string
+    {
+        return (string) config('finisher.product_media.disk', 'product_media');
+    }
+
+    /**
+     * `products/{product_uuid}/images|videos|models3d` (spec §65) — the
+     * uuid is the identity; old rows keep whatever path they had.
+     */
+    private function folder(Product $product, ProductMediaType $type): string
+    {
+        return 'products/'.($product->uuid ?? $product->id).'/'.$type->folder();
+    }
+
+    private function maxModelKilobytes(): int
+    {
+        return (int) config('finisher.product_media.max_model_kb', 30 * 1024);
+    }
+
+    /**
+     * GLB/GLTF have no reliable server-side MIME (often
+     * application/octet-stream), so the extension is checked explicitly;
+     * a GLB must also start with the binary glTF magic bytes.
+     */
+    private function modelExtensionRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            if (! $value instanceof UploadedFile) {
+                return;
+            }
+
+            $extension = strtolower($value->getClientOriginalExtension());
+
+            if (! in_array($extension, ['glb', 'gltf'], true)) {
+                $fail('El modelo 3D debe ser un archivo .glb o .gltf.');
+
+                return;
+            }
+
+            $head = (string) @file_get_contents($value->getRealPath(), false, null, 0, 4);
+
+            if ($extension === 'glb' && $head !== 'glTF') {
+                $fail('El archivo .glb no es un modelo glTF válido.');
+            }
+
+            if ($extension === 'gltf' && json_decode((string) file_get_contents($value->getRealPath()), true) === null) {
+                $fail('El archivo .gltf no es un JSON válido.');
+            }
+        };
     }
 
     public function reorder(Request $request, Product $product): RedirectResponse
@@ -130,7 +227,7 @@ class ProductMediaController extends Controller
 
         $media->update([
             'type' => $isVideo ? ProductMediaType::Video : ProductMediaType::Image,
-            'path' => $file->store('products/'.$media->product_id, $media->disk),
+            'path' => $file->store($this->folder($media->product, $isVideo ? ProductMediaType::Video : ProductMediaType::Image), $media->disk),
             'poster_path' => null,
             'mime' => $file->getMimeType(),
             'size' => $file->getSize(),

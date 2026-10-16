@@ -273,36 +273,33 @@ export const adminSections: AdminSection[] = [
                 label: 'Productos',
                 href: '/admin/products',
                 permission: 'products.manage',
+                // Categorías is a sub-pill inside Productos (A2).
+                match: ['/admin/product-categories'],
             },
             {
                 label: 'Inventario',
-                href: '/admin/inventory',
+                href: '/admin/comercio/inventario', // A2
                 permission: 'inventory.manage',
+                match: ['/admin/inventory'],
             },
             {
                 label: 'Pedidos',
                 href: '/admin/orders',
                 permission: 'orders.view',
+                // Pagos is a sub-pill inside Pedidos (A2, spec §10).
+                match: ['/admin/payments'],
             },
             {
                 label: 'Ventas',
-                href: '/admin/payments',
-                permission: 'payments.view',
+                href: '/admin/comercio/ventas', // A2
+                permission: 'orders.view',
             },
             {
                 label: 'Cupones',
                 href: '/admin/coupons',
                 permission: 'coupons.manage',
-            },
-            {
-                label: 'Ofertas',
-                href: '/admin/promotions',
-                permission: 'coupons.manage',
-            },
-            {
-                label: 'Categorías',
-                href: '/admin/product-categories',
-                permission: 'products.manage',
+                // Ofertas is a sub-pill inside Cupones (A2, spec §10).
+                match: ['/admin/promotions'],
             },
         ],
         mobile: true,

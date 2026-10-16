@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\InventoryMovementType;
+use App\Actions\Commerce\Inventory\AdjustStock;
+use App\Enums\InventoryAdjustmentReason;
 use App\Http\Controllers\Controller;
-use App\Models\InventoryLevel;
 use App\Models\InventoryLocation;
+use App\Models\InventoryMovement;
 use App\Models\ProductVariant;
-use App\Services\Commerce\InventoryService;
+use App\Queries\Commerce\InventoryStock;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,92 +17,108 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Stock per SKU/variant (brief §19/§37-§38) — every mutation goes through
- * App\Services\Commerce\InventoryService, never a direct column write, so
- * the movement ledger always stays truthful.
+ * Comercio → Inventario (spec §12-§15). The table answers PRODUCTO,
+ * VARIANTE, TALLA, COLOR, STOCK, RESERVADO, DISPONIBLE, VENDIDO, ALERTA
+ * without opening products one by one; the matrix shows apparel as
+ * colour × size. Every change goes through App\Actions\Commerce\Inventory\
+ * AdjustStock (row lock + audited movement with user and reason) — this
+ * controller never writes a quantity.
+ *
+ * Served at /admin/comercio/inventario and, unchanged, /admin/inventory.
  */
 class InventoryController extends Controller
 {
-    /** Available units at or below this count read as "stock bajo". */
-    private const LOW_STOCK = 5;
-
-    public function index(Request $request): Response
+    public function index(Request $request, InventoryStock $stock): Response
     {
-        $state = in_array($request->string('estado')->toString(), ['low', 'out'], true) ? $request->string('estado')->toString() : null;
+        $state = in_array($request->string('estado')->toString(), ['low', 'out', 'attention', 'ok'], true)
+            ? $request->string('estado')->toString()
+            : null;
+        $view = $request->string('vista')->toString() === 'matriz' ? 'matrix' : 'table';
+        $search = trim($request->string('q')->toString());
 
-        $levels = InventoryLevel::query()
-            ->with(['productVariant.product.media', 'inventoryLocation'])
-            ->when($request->string('q')->toString(), fn ($q, $search) => $q->whereHas(
-                'productVariant',
-                fn ($vq) => $vq->where('sku', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%")
-                    ->orWhereHas('product', fn ($pq) => $pq->where('name', 'like', "%{$search}%")),
-            ))
-            ->when($state === 'low', fn ($q) => $q->whereRaw('quantity_on_hand - quantity_reserved between 1 and ?', [self::LOW_STOCK]))
-            ->when($state === 'out', fn ($q) => $q->whereRaw('quantity_on_hand - quantity_reserved <= 0'))
-            ->orderByRaw('quantity_on_hand - quantity_reserved asc')
-            ->paginate(30)
-            ->withQueryString();
-
-        $levels->through(fn (InventoryLevel $level) => [
-            'id' => $level->id,
-            'product_id' => $level->productVariant->product->id,
-            'product_variant_id' => $level->product_variant_id,
-            'inventory_location_id' => $level->inventory_location_id,
-            'product' => $level->productVariant->product->name,
-            'image_url' => $level->productVariant->product->primaryImageUrl(),
-            'variant' => $level->productVariant->name,
-            'sku' => $level->productVariant->sku,
-            'location' => $level->inventoryLocation->name,
-            'quantity_on_hand' => $level->quantity_on_hand,
-            'quantity_reserved' => $level->quantity_reserved,
-            'available' => $level->availableQuantity(),
-        ]);
-
-        $totals = InventoryLevel::query()->selectRaw(
-            'coalesce(sum(quantity_on_hand), 0) as on_hand, coalesce(sum(quantity_reserved), 0) as reserved,
-             sum(case when quantity_on_hand - quantity_reserved <= 0 then 1 else 0 end) as out_count,
-             sum(case when quantity_on_hand - quantity_reserved between 1 and ? then 1 else 0 end) as low_count',
-            [self::LOW_STOCK],
-        )->first();
-
-        return Inertia::render('admin/inventory/Index', [
-            'levels' => $levels,
-            'filters' => ['q' => $request->string('q')->toString(), 'estado' => $state],
-            'totals' => [
-                'on_hand' => (int) ($totals->on_hand ?? 0),
-                'reserved' => (int) ($totals->reserved ?? 0),
-                'low' => (int) ($totals->low_count ?? 0),
-                'out' => (int) ($totals->out_count ?? 0),
-            ],
-            'lowThreshold' => self::LOW_STOCK,
-            'variants' => ProductVariant::query()->with('product')->orderBy('sku')->get()
-                ->map(fn (ProductVariant $v) => ['id' => $v->id, 'label' => "{$v->product->name} — {$v->name} ({$v->sku})"]),
-            'locations' => InventoryLocation::query()->orderBy('name')->get(['id', 'name']),
+        return Inertia::render('admin/commerce/Inventory', [
+            'view' => $view,
+            'filters' => ['q' => $search, 'estado' => $state],
+            'counts' => $stock->counts(),
+            'rows' => $view === 'table' ? $stock->table($search, $state) : null,
+            'matrix' => $view === 'matrix' ? $stock->matrix($search) : null,
+            'reasons' => InventoryAdjustmentReason::options(),
+            'defaultMinimum' => (int) config('finisher.commerce.default_minimum_stock', 5),
         ]);
     }
 
-    public function adjust(Request $request, InventoryService $inventory): RedirectResponse
+    public function adjust(Request $request, AdjustStock $adjust): RedirectResponse
     {
         $data = $request->validate([
             'product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
-            'inventory_location_id' => ['required', 'integer', 'exists:inventory_locations,id'],
-            'type' => ['required', 'string', Rule::in(['receive', 'adjustment'])],
-            'quantity' => ['required', 'integer'],
+            'inventory_location_id' => ['nullable', 'integer', 'exists:inventory_locations,id'],
+            // `type` is the original field name (receive|adjustment); `mode`
+            // adds the physical count.
+            'mode' => ['nullable', 'string', Rule::in(AdjustStock::MODES)],
+            'type' => ['nullable', 'string', Rule::in(['receive', 'adjustment'])],
+            'quantity' => ['required', 'integer', 'between:-100000,100000'],
+            'reason' => ['nullable', 'string', Rule::enum(InventoryAdjustmentReason::class)],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $variant = ProductVariant::query()->whereKey($data['product_variant_id'])->firstOrFail();
-        $location = InventoryLocation::query()->whereKey($data['inventory_location_id'])->firstOrFail();
-        $quantity = (int) $data['quantity'];
+        $mode = $data['mode'] ?? (($data['type'] ?? 'adjustment') === 'receive' ? 'receive' : 'adjust');
+        $reason = isset($data['reason'])
+            ? InventoryAdjustmentReason::from($data['reason'])
+            : match ($mode) {
+                'receive' => InventoryAdjustmentReason::Receipt,
+                'count' => InventoryAdjustmentReason::Count,
+                default => InventoryAdjustmentReason::Correction,
+            };
 
-        if (InventoryMovementType::from($data['type']) === InventoryMovementType::Receive) {
-            $inventory->receive($variant, $location, abs($quantity), $data['notes'] ?? null, $request->user());
-        } else {
-            $inventory->adjust($variant, $location, $quantity, $data['notes'] ?? null, $request->user());
+        if ($mode === 'adjust' && (int) $data['quantity'] === 0) {
+            return back()->withErrors(['quantity' => 'Indica cuántas unidades sumar o restar.']);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Inventario actualizado.']);
+        $level = $adjust->handle(
+            ProductVariant::query()->whereKey((int) $data['product_variant_id'])->firstOrFail(),
+            isset($data['inventory_location_id']) ? InventoryLocation::query()->whereKey((int) $data['inventory_location_id'])->firstOrFail() : null,
+            $mode,
+            (int) $data['quantity'],
+            $request->user(),
+            $reason,
+            $data['notes'] ?? null,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Inventario actualizado: '.$level->availableQuantity().' disponibles.']);
+
+        return back();
+    }
+
+    /**
+     * Last movements of one variant, for the adjust drawer's history.
+     */
+    public function movements(ProductVariant $variant): JsonResponse
+    {
+        $movements = InventoryMovement::query()
+            ->where('product_variant_id', $variant->id)
+            ->with('actor:id,first_name,last_name')
+            ->latest('id')
+            ->limit(15)
+            ->get()
+            ->map(fn (InventoryMovement $m) => [
+                'id' => $m->id,
+                'type' => $m->type->value,
+                'reason' => $m->reason !== null ? (InventoryAdjustmentReason::tryFrom($m->reason)?->label() ?? $m->reason) : null,
+                'quantity' => $m->quantity,
+                'notes' => $m->notes,
+                'actor' => $m->actor?->name,
+                'created_at' => $m->created_at->toIso8601String(),
+            ]);
+
+        return response()->json(['data' => $movements]);
+    }
+
+    public function updateMinimum(Request $request, ProductVariant $variant): RedirectResponse
+    {
+        $data = $request->validate(['minimum_stock' => ['nullable', 'integer', 'min:0', 'max:100000']]);
+        $variant->update(['minimum_stock' => $data['minimum_stock']]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Mínimo de reposición actualizado.']);
 
         return back();
     }

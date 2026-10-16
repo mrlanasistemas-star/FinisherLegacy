@@ -24,7 +24,7 @@ class OrderController extends Controller
     {
         $orders = Order::query()
             ->where('user_id', $this->sanctumUser($request)->id)
-            ->with(['items', 'latestPayment'])
+            ->with(['items.productVariant', 'items.product.media', 'latestPayment'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -35,6 +35,6 @@ class OrderController extends Controller
     {
         abort_unless($order->user_id === $this->sanctumUser($request)->id, 403);
 
-        return $this->respond(new OrderResource($order->loadMissing(['items', 'latestPayment'])));
+        return $this->respond(new OrderResource($order->loadMissing(['items.productVariant', 'items.product.media', 'latestPayment'])));
     }
 }

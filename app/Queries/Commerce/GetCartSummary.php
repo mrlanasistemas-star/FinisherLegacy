@@ -2,11 +2,14 @@
 
 namespace App\Queries\Commerce;
 
+use App\Actions\Commerce\IsVariantAvailableForCheckout;
 use App\Actions\Commerce\ResolveCartDiscount;
 use App\Actions\Commerce\ResolveProductPrice;
+use App\Enums\ProductType;
 use App\Exceptions\Api\ApiException;
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\ProductVariant;
 use App\Support\Commerce\CartSummary;
 use App\Support\Commerce\CartSummaryItem;
 
@@ -26,7 +29,27 @@ class GetCartSummary
     public function __construct(
         private readonly ResolveProductPrice $resolvePrice,
         private readonly ResolveCartDiscount $resolveDiscount,
+        private readonly IsVariantAvailableForCheckout $availability,
     ) {}
+
+    /**
+     * Size/color and the quantity stepper limit (max 20 per line, the
+     * cart's own validation bound). `low` flags "últimas piezas" without
+     * ever printing a stock count.
+     *
+     * @return array{size: ?string, color: ?string, max: int, low: bool}
+     */
+    private function lineExtras(ProductVariant $variant): array
+    {
+        $available = $this->availability->availableQuantity($variant);
+        $isPlate = $variant->product->type === ProductType::LegacyPlate;
+
+        return [
+            ...$variant->sizeAndColor(),
+            'max' => $isPlate ? 1 : min(20, $available ?? 20),
+            'low' => $available !== null && $available > 0 && $available <= 3,
+        ];
+    }
 
     public function handle(Cart $cart): CartSummary
     {
@@ -43,6 +66,7 @@ class GetCartSummary
         $items = $cart->items->map(function (CartItem $item) use ($cart, &$subtotal, &$lineTotalsByProduct) {
             $variant = $item->productVariant;
             $product = $variant->product;
+            $extras = $this->lineExtras($variant);
 
             try {
                 $price = $this->resolvePrice->handle($product, $variant, $item->eventEdition);
@@ -65,6 +89,13 @@ class GetCartSummary
                     inStock: $variant->isAvailable(),
                     imageUrl: $product->primaryImageUrl(),
                     eventEditionName: $item->eventEdition?->name,
+                    size: $extras['size'],
+                    color: $extras['color'],
+                    maxQuantity: $extras['max'],
+                    connected: $product->qr_capable,
+                    productType: $product->type->value,
+                    requiresShipping: (bool) $product->requires_shipping,
+                    lowStock: $extras['low'],
                 );
             }
 
@@ -86,6 +117,13 @@ class GetCartSummary
                 inStock: $variant->isAvailable(),
                 imageUrl: $product->primaryImageUrl(),
                 eventEditionName: $item->eventEdition?->name,
+                size: $extras['size'],
+                color: $extras['color'],
+                maxQuantity: $extras['max'],
+                connected: $product->qr_capable,
+                productType: $product->type->value,
+                requiresShipping: (bool) $product->requires_shipping,
+                lowStock: $extras['low'],
             );
         });
 

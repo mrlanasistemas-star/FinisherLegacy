@@ -4,9 +4,9 @@ namespace App\Http\Resources\Api\V1;
 
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
-use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\Commerce\OrderPaymentState;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -57,24 +57,14 @@ class OrderResource extends JsonResource
                 'paid_at' => $latest->paid_at?->toIso8601String(),
                 'failed_at' => $latest->failed_at?->toIso8601String(),
             ],
+            'delivery' => $this->customer_snapshot['delivery'] ?? null,
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
         ];
     }
 
     private function paymentState(?Payment $latest): string
     {
-        return match (true) {
-            $this->payment_status === OrderPaymentStatus::Paid => 'paid',
-            in_array($this->payment_status, [OrderPaymentStatus::Refunded, OrderPaymentStatus::PartiallyRefunded], true) => 'refunded',
-            $this->status === OrderStatus::Cancelled => 'cancelled',
-            $this->payment_status === OrderPaymentStatus::Failed => 'failed',
-            $latest === null => 'pending',
-            $latest->status === PaymentStatus::Failed => 'failed',
-            $latest->status === PaymentStatus::Cancelled => 'failed',
-            ($latest->metadata['provider_status'] ?? null) === 'processing' => 'processing',
-            $latest->status === PaymentStatus::Authorized => 'processing',
-            default => 'pending',
-        };
+        return OrderPaymentState::for($this->resource, $latest);
     }
 
     private function isPayable(mixed $expiresAt): bool

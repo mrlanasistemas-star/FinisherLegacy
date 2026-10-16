@@ -37,6 +37,12 @@ class CartResource extends JsonResource
                 'in_stock' => $item->inStock,
                 'image_url' => $item->imageUrl,
                 'event_edition_name' => $item->eventEditionName,
+                // Additive (mobile store).
+                'max_quantity' => $item->maxQuantity,
+                'size' => $item->size,
+                'color' => $item->color,
+                'nfc_enabled' => $item->connected,
+                'low_stock' => $item->lowStock,
             ])->values(),
             'subtotal_minor' => $summary->subtotalMinor,
             'discount_minor' => $summary->discountMinor,

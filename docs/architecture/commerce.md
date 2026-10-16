@@ -190,6 +190,81 @@ brief §70/§178).
 `auth:sanctum` — el proveedor llama directo, autenticado solo por su
 firma (ver `docs/api/v1.md`).
 
+## Consolidación 2026-10-16 (Comercio, Stripe Payment Element, inventario)
+
+### Flujo web de pago (spec §24-§28)
+
+`/carrito` → `/checkout` (datos + entrega; `StoreCheckoutRequest` congela
+contacto y entrega en `Order.customer_snapshot`) → `CheckoutCart` (precios
+del servidor, stock reservado) → `/checkout/{order}` (misma página, paso de
+pago) → `POST /checkout/{order}/online-payment` crea/reanuda el
+PaymentIntent con monto/moneda de la Order (`idempotency_key`, metadata
+`order_uuid`) → Payment Element (`@stripe/stripe-js`, import dinámico solo en
+checkout) → `confirmPayment({return_url, redirect: 'if_required'})` →
+`/checkout/{order}/confirmacion` muestra **solo** el estado del servidor
+(`OrderPaymentState`) y consulta `/checkout/{order}/estado` ~1 min. Nunca se
+marca pagado desde el redirect: lo hace el webhook firmado.
+
+- Proveedor visible: `WebCheckoutPayment` — Stripe si tiene `STRIPE_KEY` +
+  `STRIPE_SECRET` + `STRIPE_WEBHOOK_SECRET`; OpenPay si es el
+  `FINISHER_PAYMENT_GATEWAY` configurado (o Stripe no está listo). Misma
+  lógica (`CreateOnlinePayment` / `ProcessPaymentWebhook`) para ambos.
+- Webhook Stripe: `payment_intent.succeeded|payment_failed|canceled|processing`
+  y `charge.refunded`. Firma inválida → 400. Evento no manejado o
+  PaymentIntent desconocido → 200 sin cambios. Si el webhook llega antes de
+  guardar `provider_reference`, se resuelve por `metadata.order_uuid`.
+  `failed` ya no es terminal (un `succeeded` posterior del mismo intent sí
+  cuenta); reintentar tras un rechazo reutiliza el mismo PaymentIntent.
+  Reembolso total de una Order con piezas sin entregar → se cancela y libera
+  la reserva. Configurar en Stripe esos 5 eventos hacia `/api/webhooks/stripe`.
+
+### Inventario automático (spec §14-§15)
+
+| Evento | Movimiento |
+|---|---|
+| Entrada (admin) | `receive` +on_hand |
+| Checkout | `reserve` +reserved |
+| Pago | la reserva se conserva (una Order pagada nunca expira) |
+| Expiración / cancelación | `release` −reserved (`finisher:expire-pending-orders`, cada 5 min) |
+| Entrega (`FulfillOrderItem`) | `sale` −on_hand y −reserved |
+| Devolución (`ReturnOrderItem`) | `return` +on_hand, máximo lo entregado |
+| Ajuste / conteo (`Inventory\AdjustStock`) | `adjustment` con `actor_id` + `reason` |
+
+Todo pasa por `InventoryService` con `lockForUpdate()`. Umbral de reposición:
+`product_variants.minimum_stock` → `products.minimum_stock` →
+`FINISHER_DEFAULT_MINIMUM_STOCK` (5). Lectura admin: `Queries\Commerce\InventoryStock`
+(stock en la ubicación de checkout, vendido = unidades en pedidos pagados).
+
+### Admin Comercio
+
+`/admin/comercio` (Resumen, `admin.commerce.index`: requiere
+`dashboard.admin.view` + cualquiera de `orders.view`, `products.manage`,
+`inventory.manage`, `coupons.manage`, `payments.view`; cada bloque se muestra
+según su permiso), `/admin/comercio/inventario` (`inventory.manage`; también
+sigue en `/admin/inventory`), `/admin/comercio/ventas` (`orders.view`).
+Las pestañas de primer nivel las dibuja el shell de admin; dentro de cada
+pestaña hay sub-pills: Pedidos | Pagos, Cupones | Ofertas, Productos |
+Categorías (las URLs no cambian). Producto: pestañas Información, Media,
+Variantes y stock, Ventas, Pedidos recientes.
+
+### Media de producto
+
+`ProductMedia.type` = `image | video | model_3d` (GLB/GLTF validado por
+extensión, firma `glTF` en GLB, ≤ `FINISHER_PRODUCT_MODEL_MAX_KB`), con
+`poster_path` para video/3D, `uuid` público y forma única
+`toMediaArray()` = `{uuid,type,url,poster_url,alt,is_primary,position}`.
+Rutas: `products/{product_uuid}/images|videos|models3d/` en el disco
+`finisher.product_media.disk`.
+
+### Realtime
+
+`order.updated` / `payment.updated` los emite `CommerceBroadcastObserver`
+(plataforma) en `App.Models.User.{id}` y `admin.commerce`;
+`inventory.updated` (`App\Events\Realtime\InventoryUpdated`) lo emite
+`InventoryService` tras cada movimiento, solo en `admin.commerce`. Todos
+respetan `Realtime::enabled()`. La página de confirmación escucha
+`.order.updated` y, sin realtime, consulta el estado por polling.
+
 ## Memory Packs (base)
 
 `media_entitlements` (user, participación, order_item opcional, `extra_images`, `extra_videos`, `revoked_at`) suma cupo sobre el plan gratis en `ResolveMediaEntitlement` sólo con `FINISHER_MEMORY_PACKS_ENABLED=true`. Sin producto ni precio todavía (nada inventado).
