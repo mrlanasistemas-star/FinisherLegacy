@@ -25,6 +25,11 @@ use Illuminate\Support\Facades\DB;
  */
 class InventoryStock
 {
+    private const string AVAILABLE_SQL = 'coalesce(lv.on_hand, 0) - coalesce(lv.reserved, 0)';
+
+    /** One `?` binding: the configured default minimum. */
+    private const string MINIMUM_SQL = 'coalesce(product_variants.minimum_stock, products.minimum_stock, ?)';
+
     public const array SIZE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', 'XXXL', '3XL', 'CH', 'MED', 'G', 'EG', 'U', 'UNI', 'UNITALLA'];
 
     public function __construct(private readonly InventoryService $inventory) {}
@@ -65,8 +70,8 @@ class InventoryStock
                 DB::raw('coalesce(lv.reserved, 0) as stock_reserved'),
                 DB::raw('coalesce(lv.on_hand, 0) - coalesce(lv.reserved, 0) as stock_available'),
                 DB::raw('coalesce(sd.sold, 0) as stock_sold'),
-                DB::raw("coalesce(product_variants.minimum_stock, products.minimum_stock, {$default}) as stock_minimum"),
-            ]);
+            ])
+            ->selectRaw(self::MINIMUM_SQL.' as stock_minimum', [$default]);
     }
 
     /**
@@ -75,9 +80,7 @@ class InventoryStock
      */
     public function filter(Builder $query, ?string $search, ?string $state, ?int $productId = null): Builder
     {
-        $default = (int) config('finisher.commerce.default_minimum_stock', 5);
-        $available = 'coalesce(lv.on_hand, 0) - coalesce(lv.reserved, 0)';
-        $minimum = "coalesce(product_variants.minimum_stock, products.minimum_stock, {$default})";
+        $default = [(int) config('finisher.commerce.default_minimum_stock', 5)];
 
         return $query
             ->when($search !== null && $search !== '', function (Builder $q) use ($search) {
@@ -88,10 +91,10 @@ class InventoryStock
                     ->orWhere('product_variants.sku', 'like', $like));
             })
             ->when($productId !== null, fn (Builder $q) => $q->where('products.id', $productId))
-            ->when($state === 'out', fn (Builder $q) => $q->whereRaw("{$available} <= 0"))
-            ->when($state === 'low', fn (Builder $q) => $q->whereRaw("{$available} > 0")->whereRaw("{$available} <= {$minimum}"))
-            ->when($state === 'attention', fn (Builder $q) => $q->whereRaw("{$available} <= {$minimum}"))
-            ->when($state === 'ok', fn (Builder $q) => $q->whereRaw("{$available} > {$minimum}"));
+            ->when($state === 'out', fn (Builder $q) => $q->whereRaw(self::AVAILABLE_SQL.' <= 0'))
+            ->when($state === 'low', fn (Builder $q) => $q->whereRaw(self::AVAILABLE_SQL.' > 0')->whereRaw(self::AVAILABLE_SQL.' <= '.self::MINIMUM_SQL, $default))
+            ->when($state === 'attention', fn (Builder $q) => $q->whereRaw(self::AVAILABLE_SQL.' <= '.self::MINIMUM_SQL, $default))
+            ->when($state === 'ok', fn (Builder $q) => $q->whereRaw(self::AVAILABLE_SQL.' > '.self::MINIMUM_SQL, $default));
     }
 
     /**
@@ -155,9 +158,9 @@ class InventoryStock
      * Apparel matrix (spec §13): one card per product, rows = colour,
      * columns = size, each cell the available units + its alert level.
      *
-     * @return LengthAwarePaginator<int, array<string, mixed>>
+     * @return \Illuminate\Pagination\LengthAwarePaginator<int, mixed>
      */
-    public function matrix(?string $search, int $perPage = 8): LengthAwarePaginator
+    public function matrix(?string $search, int $perPage = 8): \Illuminate\Pagination\LengthAwarePaginator
     {
         $products = Product::query()
             ->where('tracks_inventory', true)
@@ -177,24 +180,7 @@ class InventoryStock
 
         return $products->through(function (Product $product) use ($variants) {
             $rows = ($variants->get($product->id) ?? collect())->map(fn (ProductVariant $v) => $this->row($v));
-            $sizes = $this->sortSizes($rows->pluck('size')->map(fn ($s) => $s ?? '—')->unique()->values()->all());
-            $colors = $rows->pluck('color')->map(fn ($c) => $c ?? 'Único')->unique()->values()->all();
-
-            $cells = [];
-            foreach ($colors as $color) {
-                foreach ($sizes as $size) {
-                    $match = $rows->first(fn ($r) => ($r['color'] ?? 'Único') === $color && ($r['size'] ?? '—') === $size);
-                    $cells[$color][$size] = $match === null ? null : [
-                        'variant_id' => $match['variant_id'],
-                        'available' => $match['available'],
-                        'reserved' => $match['reserved'],
-                        'minimum' => $match['minimum'],
-                        'alert' => $match['alert'],
-                        'sku' => $match['sku'],
-                        'label' => $match['label'],
-                    ];
-                }
-            }
+            ['sizes' => $sizes, 'colors' => $colors, 'cells' => $cells] = $this->grid($rows);
 
             return [
                 'product_id' => $product->id,
@@ -207,6 +193,31 @@ class InventoryStock
                 'available' => (int) $rows->sum('available'),
             ];
         });
+    }
+
+    /**
+     * Colour × size grid from rows built by row().
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return array{sizes: list<string>, colors: list<string>, cells: array<string, array<string, array<string, mixed>|null>>}
+     */
+    public function grid(Collection $rows): array
+    {
+        $sizes = $this->sortSizes(array_values(array_unique($rows->map(fn (array $r): string => (string) ($r['size'] ?? '—'))->all())));
+        $colors = array_values(array_unique($rows->map(fn (array $r): string => (string) ($r['color'] ?? 'Único'))->all()));
+        $cells = [];
+
+        foreach ($colors as $color) {
+            foreach ($sizes as $size) {
+                $match = $rows->first(fn (array $r) => ($r['color'] ?? 'Único') === $color && ($r['size'] ?? '—') === $size);
+                $cells[$color][$size] = $match === null ? null : array_intersect_key(
+                    $match,
+                    array_flip(['variant_id', 'available', 'reserved', 'minimum', 'alert', 'sku', 'label']),
+                );
+            }
+        }
+
+        return ['sizes' => $sizes, 'colors' => $colors, 'cells' => $cells];
     }
 
     /**
@@ -263,6 +274,6 @@ class InventoryStock
             };
         });
 
-        return array_values($sizes);
+        return $sizes;
     }
 }

@@ -8,6 +8,7 @@ use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\RemoveCartItem;
 use App\Actions\Commerce\RemoveCouponFromCart;
 use App\Actions\Commerce\UpdateCartItem;
+use App\Exceptions\Api\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\EventEdition;
@@ -104,7 +105,12 @@ class CartController extends Controller
         abort_unless($item->cart->user_id === $request->user()->id, 403);
 
         $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:20']]);
-        $updateItem->handle($item, $data['quantity']);
+
+        try {
+            $updateItem->handle($item, $data['quantity']);
+        } catch (ApiException $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+        }
 
         return back();
     }

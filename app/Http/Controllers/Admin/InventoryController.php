@@ -75,8 +75,8 @@ class InventoryController extends Controller
         }
 
         $level = $adjust->handle(
-            ProductVariant::query()->findOrFail($data['product_variant_id']),
-            isset($data['inventory_location_id']) ? InventoryLocation::query()->findOrFail($data['inventory_location_id']) : null,
+            ProductVariant::query()->whereKey((int) $data['product_variant_id'])->firstOrFail(),
+            isset($data['inventory_location_id']) ? InventoryLocation::query()->whereKey((int) $data['inventory_location_id'])->firstOrFail() : null,
             $mode,
             (int) $data['quantity'],
             $request->user(),
@@ -107,7 +107,7 @@ class InventoryController extends Controller
                 'quantity' => $m->quantity,
                 'notes' => $m->notes,
                 'actor' => $m->actor?->name,
-                'created_at' => $m->created_at?->toIso8601String(),
+                'created_at' => $m->created_at->toIso8601String(),
             ]);
 
         return response()->json(['data' => $movements]);

@@ -43,7 +43,7 @@ class ProductSummaryResource extends JsonResource
             'nfc_enabled' => (bool) $this->qr_capable,
             'is_featured' => (bool) $this->is_featured,
             'is_new' => $this->created_at !== null && $this->created_at->gt(now()->subDays(30)),
-            'media' => $this->whenLoaded('media', fn () => $this->media->map(fn (ProductMedia $m) => $m->toMediaArray())->values()),
+            'media' => $this->whenLoaded('media', fn () => $this->media->map(fn (ProductMedia $m) => $m->toMediaArray())->values()->all()),
         ];
     }
 }

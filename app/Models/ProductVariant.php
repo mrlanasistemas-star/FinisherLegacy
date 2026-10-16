@@ -84,7 +84,7 @@ class ProductVariant extends Model
     public function minimumStock(): int
     {
         return (int) ($this->minimum_stock
-            ?? $this->product?->minimum_stock
+            ?? $this->product->minimum_stock
             ?? config('finisher.commerce.default_minimum_stock', 5));
     }
 

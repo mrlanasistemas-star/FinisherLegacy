@@ -20,7 +20,7 @@ import {
 } from '@lucide/vue';
 import { useDebounceFn } from '@vueuse/core';
 import { ref } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import CommerceSubTabs from '@/components/commerce/CommerceSubTabs.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
 import Pagination from '@/components/public/Pagination.vue';
@@ -37,7 +37,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CATALOG_AREA_NAV } from '@/config/areaNav';
 import { productStatus, statusLabel } from '@/lib/statusLabels';
 
 type ProductRow = {
@@ -149,7 +148,7 @@ const typeOptions = [
     <Head title="Productos" />
 
     <div class="w-full p-4 md:p-8">
-        <SecondaryNav :items="CATALOG_AREA_NAV" />
+        <CommerceSubTabs group="catalog" />
 
         <div
             class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"

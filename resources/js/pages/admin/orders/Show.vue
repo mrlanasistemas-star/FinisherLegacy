@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { CreditCard, Package2, ShoppingCart } from '@lucide/vue';
+import { CreditCard, Package2, ShoppingCart, Undo2 } from '@lucide/vue';
 import { ref } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import OrderStatusBadge from '@/components/shared/OrderStatusBadge.vue';
@@ -39,7 +39,19 @@ type Item = {
     line_total_minor: number;
     fulfilled: boolean;
     owned_asset_code: string | null;
+    returned_quantity: number;
 };
+
+type Delivery = {
+    method: 'pickup' | 'shipping';
+    address: {
+        line: string | null;
+        neighborhood: string | null;
+        city: string | null;
+        state: string | null;
+        postal_code: string | null;
+    } | null;
+} | null;
 
 type PaymentRow = {
     id: number;
@@ -66,6 +78,12 @@ const props = defineProps<{
         total_minor: number;
         currency: string;
         created_at: string;
+        contact?: {
+            name: string | null;
+            email: string | null;
+            phone: string | null;
+        };
+        delivery?: Delivery;
     };
     items: Item[];
     payments: PaymentRow[];
@@ -95,6 +113,41 @@ function fulfill(itemId: number, locationId: number) {
         { preserveScroll: true },
     );
 }
+
+// Return of delivered units → inverse inventory movement (audited).
+const returning = ref<Item | null>(null);
+const returnForm = useForm({ quantity: 1, notes: '' });
+
+function openReturn(item: Item) {
+    returning.value = item;
+    returnForm.quantity = 1;
+    returnForm.notes = '';
+    returnForm.clearErrors();
+}
+
+function submitReturn() {
+    if (!returning.value) {
+        return;
+    }
+
+    returnForm.post(`/admin/orders/items/${returning.value.id}/return`, {
+        preserveScroll: true,
+        onSuccess: () => (returning.value = null),
+    });
+}
+
+const addressLine = (delivery: Delivery) =>
+    delivery?.address
+        ? [
+              delivery.address.line,
+              delivery.address.neighborhood,
+              delivery.address.city,
+              delivery.address.state,
+              delivery.address.postal_code,
+          ]
+              .filter(Boolean)
+              .join(', ')
+        : null;
 </script>
 
 <template>
@@ -149,93 +202,142 @@ function fulfill(itemId: number, locationId: number) {
             </div>
         </div>
 
+        <section
+            v-if="order.contact || order.delivery"
+            class="mb-6 grid gap-4 rounded-xl border border-border bg-card p-5 text-sm sm:grid-cols-2"
+        >
+            <div v-if="order.contact">
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Contacto
+                </p>
+                <p class="text-foreground">{{ order.contact.name ?? '—' }}</p>
+                <p v-if="order.contact.email" class="text-muted-foreground">
+                    {{ order.contact.email }}
+                </p>
+                <a
+                    v-if="order.contact.phone"
+                    :href="`tel:${order.contact.phone}`"
+                    class="text-fl-gold-ink underline-offset-4 hover:underline"
+                    >{{ order.contact.phone }}</a
+                >
+            </div>
+            <div v-if="order.delivery">
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    Entrega
+                </p>
+                <p class="text-foreground">
+                    {{
+                        order.delivery.method === 'shipping'
+                            ? 'Envío a domicilio'
+                            : 'Entrega en mano / recoger'
+                    }}
+                </p>
+                <p
+                    v-if="addressLine(order.delivery)"
+                    class="text-muted-foreground"
+                >
+                    {{ addressLine(order.delivery) }}
+                </p>
+            </div>
+        </section>
+
         <section class="mb-6">
             <h2
                 class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
             >
                 <Package2 class="size-4" /> Artículos
             </h2>
-            <div class="overflow-x-auto rounded-xl border border-border">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr
-                            class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
+            <ul class="space-y-2">
+                <li
+                    v-for="item in items"
+                    :key="item.id"
+                    class="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-card p-4 text-sm"
+                >
+                    <div class="min-w-0 flex-1 basis-48">
+                        <p class="font-medium text-foreground">
+                            {{ item.name }}
+                        </p>
+                        <p class="text-xs text-muted-foreground/80">
+                            {{ item.sku }} · {{ item.quantity }} ×
+                            <Money
+                                :minor="item.unit_price_minor"
+                                :currency="order.currency"
+                            />
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <Badge
+                            v-if="item.fulfilled"
+                            variant="outline"
+                            class="border-emerald-500/30 text-emerald-700"
+                            >Entregado</Badge
                         >
-                            <th class="px-4 py-3 font-medium">Producto</th>
-                            <th class="px-4 py-3 font-medium">Cant.</th>
-                            <th class="px-4 py-3 font-medium">Subtotal</th>
-                            <th class="px-4 py-3 font-medium">Estado</th>
-                            <th class="px-4 py-3 font-medium"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="item in items"
-                            :key="item.id"
-                            class="border-b border-border text-foreground last:border-0"
+                        <Badge
+                            v-else
+                            variant="outline"
+                            class="border-amber-500/30 text-amber-700"
+                            >Por entregar</Badge
                         >
-                            <td class="px-4 py-3">
-                                {{ item.name }}
-                                <span
-                                    class="block text-xs text-muted-foreground/80"
-                                    >{{ item.sku }}</span
+                        <Badge
+                            v-if="item.returned_quantity > 0"
+                            variant="outline"
+                            class="border-foreground/15 text-muted-foreground"
+                            >{{ item.returned_quantity }} devuelto{{
+                                item.returned_quantity === 1 ? '' : 's'
+                            }}</Badge
+                        >
+                        <span
+                            v-if="item.owned_asset_code"
+                            class="font-mono text-xs text-fl-gold-ink"
+                            >{{ item.owned_asset_code }}</span
+                        >
+                    </div>
+                    <Money
+                        class="legacy-numeric font-semibold"
+                        :minor="item.line_total_minor"
+                        :currency="order.currency"
+                    />
+                    <div class="flex w-full justify-end gap-2 sm:w-auto">
+                        <Select
+                            v-if="
+                                !item.fulfilled && order.status !== 'cancelled'
+                            "
+                            @update:model-value="
+                                (v) => fulfill(item.id, Number(v))
+                            "
+                        >
+                            <SelectTrigger
+                                class="h-10 w-44 border-border bg-background text-xs text-foreground"
+                                aria-label="Marcar entregado desde almacén"
+                            >
+                                <SelectValue placeholder="Entregar desde…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="location in inventoryLocations"
+                                    :key="location.id"
+                                    :value="location.id"
                                 >
-                            </td>
-                            <td class="px-4 py-3">{{ item.quantity }}</td>
-                            <td class="px-4 py-3">
-                                <Money
-                                    :minor="item.line_total_minor"
-                                    :currency="order.currency"
-                                />
-                            </td>
-                            <td class="px-4 py-3">
-                                <Badge
-                                    v-if="item.fulfilled"
-                                    variant="outline"
-                                    class="border-emerald-500/30 text-emerald-700"
-                                    >Surtido</Badge
-                                >
-                                <Badge
-                                    v-else
-                                    variant="outline"
-                                    class="border-amber-500/30 text-amber-700"
-                                    >Pendiente</Badge
-                                >
-                                <span
-                                    v-if="item.owned_asset_code"
-                                    class="ml-2 font-mono text-xs text-fl-gold-ink"
-                                    >{{ item.owned_asset_code }}</span
-                                >
-                            </td>
-                            <td class="px-4 py-3 text-right">
-                                <Select
-                                    v-if="!item.fulfilled"
-                                    @update:model-value="
-                                        (v) => fulfill(item.id, Number(v))
-                                    "
-                                >
-                                    <SelectTrigger
-                                        class="h-8 w-40 border-border bg-background text-xs text-foreground"
-                                    >
-                                        <SelectValue
-                                            placeholder="Surtir desde…"
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem
-                                            v-for="location in inventoryLocations"
-                                            :key="location.id"
-                                            :value="location.id"
-                                        >
-                                            {{ location.name }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                                    {{ location.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            v-if="
+                                item.fulfilled &&
+                                item.returned_quantity < item.quantity
+                            "
+                            variant="outline"
+                            size="sm"
+                            class="h-10 rounded-full"
+                            @click="openReturn(item)"
+                        >
+                            <Undo2 class="size-3.5" />
+                            Devolución
+                        </Button>
+                    </div>
+                </li>
+            </ul>
         </section>
 
         <section>
@@ -283,6 +385,63 @@ function fulfill(itemId: number, locationId: number) {
                 </p>
             </div>
         </section>
+
+        <Dialog
+            :open="returning !== null"
+            @update:open="(v) => !v && (returning = null)"
+        >
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Registrar devolución</DialogTitle>
+                </DialogHeader>
+                <form class="space-y-4" @submit.prevent="submitReturn">
+                    <p class="text-sm text-muted-foreground">
+                        {{ returning?.name }} — las unidades vuelven al
+                        inventario. El reembolso del dinero se hace aparte.
+                    </p>
+                    <div class="grid gap-2">
+                        <Label for="return-qty">Unidades devueltas</Label>
+                        <Input
+                            id="return-qty"
+                            v-model.number="returnForm.quantity"
+                            type="number"
+                            min="1"
+                            :max="
+                                returning
+                                    ? returning.quantity -
+                                      returning.returned_quantity
+                                    : 1
+                            "
+                            class="h-11"
+                            required
+                        />
+                        <p
+                            v-if="returnForm.errors.quantity"
+                            class="text-xs text-red-700"
+                        >
+                            {{ returnForm.errors.quantity }}
+                        </p>
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="return-notes">Motivo (opcional)</Label>
+                        <Input
+                            id="return-notes"
+                            v-model="returnForm.notes"
+                            maxlength="255"
+                            placeholder="Ej. talla equivocada"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="submit"
+                            class="w-full rounded-full sm:w-auto"
+                            :disabled="returnForm.processing"
+                            >Registrar devolución</Button
+                        >
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
 
         <Dialog v-model:open="paymentDialogOpen">
             <DialogContent

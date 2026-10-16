@@ -22,9 +22,8 @@ import { useDebounceFn } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import KanbanBoard from '@/components/admin/KanbanBoard.vue';
 import type { KanbanLane } from '@/components/admin/KanbanBoard.vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import CommerceSubTabs from '@/components/commerce/CommerceSubTabs.vue';
 import Money from '@/components/shared/Money.vue';
-import { COMMERCE_ORDERS_AREA_NAV } from '@/config/areaNav';
 import { timeAgo } from '@/lib/datetime';
 
 type OrderCard = {
@@ -116,7 +115,7 @@ const search = useDebounceFn(() => {
     <Head title="Pedidos" />
 
     <div class="w-full p-4 md:p-8">
-        <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
+        <CommerceSubTabs group="orders" />
 
         <div
             class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"

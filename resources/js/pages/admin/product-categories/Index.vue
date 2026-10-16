@@ -2,7 +2,7 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Tags, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import CommerceSubTabs from '@/components/commerce/CommerceSubTabs.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CATALOG_AREA_NAV } from '@/config/areaNav';
 import { confirmAction } from '@/lib/swal';
 
 type Category = {
@@ -90,7 +89,7 @@ async function remove(category: Category) {
     <Head title="Categorías" />
 
     <div class="w-full px-4 py-4 sm:px-6 md:py-8">
-        <SecondaryNav :items="CATALOG_AREA_NAV" />
+        <CommerceSubTabs group="catalog" />
 
         <div class="mb-6 flex items-center justify-between gap-4">
             <div>

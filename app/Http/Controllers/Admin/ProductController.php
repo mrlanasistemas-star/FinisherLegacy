@@ -278,18 +278,7 @@ class ProductController extends Controller
             return null;
         }
 
-        $sizes = $stock->sortSizes($rows->pluck('size')->map(fn ($s) => $s ?? '—')->unique()->values()->all());
-        $colors = $rows->pluck('color')->map(fn ($c) => $c ?? 'Único')->unique()->values()->all();
-        $cells = [];
-
-        foreach ($colors as $color) {
-            foreach ($sizes as $size) {
-                $match = $rows->first(fn ($r) => ($r['color'] ?? 'Único') === $color && ($r['size'] ?? '—') === $size);
-                $cells[$color][$size] = $match === null ? null : collect($match)->only(['variant_id', 'available', 'reserved', 'minimum', 'alert', 'sku', 'label'])->all();
-            }
-        }
-
-        return ['sizes' => $sizes, 'colors' => $colors, 'cells' => $cells];
+        return $stock->grid($rows);
     }
 
     /**

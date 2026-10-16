@@ -19,7 +19,7 @@ import {
 import { computed, ref } from 'vue';
 import ProductPicker from '@/components/admin/ProductPicker.vue';
 import type { PickerProduct } from '@/components/admin/ProductPicker.vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import CommerceSubTabs from '@/components/commerce/CommerceSubTabs.vue';
 import DatePicker from '@/components/DatePicker.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
@@ -36,7 +36,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { COMMERCE_ORDERS_AREA_NAV } from '@/config/areaNav';
 import { shortDate } from '@/lib/datetime';
 import { confirmAction } from '@/lib/swal';
 
@@ -154,7 +153,7 @@ const discountLabel = (p: Promo) =>
     <Head title="Ofertas" />
 
     <div class="w-full p-4 md:p-8">
-        <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
+        <CommerceSubTabs group="coupons" />
 
         <div
             class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"

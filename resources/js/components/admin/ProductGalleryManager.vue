@@ -13,6 +13,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     ArrowRight,
+    Box,
     GripVertical,
     ImagePlus,
     Maximize2,
@@ -31,7 +32,7 @@ import { confirmAction } from '@/lib/swal';
 
 export type AdminProductMedia = {
     id: number;
-    type: 'image' | 'video';
+    type: 'image' | 'video' | 'model_3d';
     url: string;
     poster_url: string | null;
     is_primary: boolean;
@@ -261,6 +262,76 @@ async function remove(item: AdminProductMedia) {
     }
 }
 
+// --- 3D model (GLB/GLTF) + posters (spec §22-§23) ---------------------------
+
+const MAX_MODEL_BYTES = 30 * 1024 * 1024;
+const modelForm = useForm<{
+    model: File | null;
+    poster: File | null;
+    alt_text: string;
+}>({
+    model: null,
+    poster: null,
+    alt_text: '',
+});
+const modelError = ref<string | null>(null);
+
+function onModelPick(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    modelError.value = null;
+
+    if (!file) {
+        return;
+    }
+
+    if (!/\.(glb|gltf)$/i.test(file.name)) {
+        modelError.value = 'El modelo debe ser .glb o .gltf.';
+
+        return;
+    }
+
+    if (file.size > MAX_MODEL_BYTES) {
+        modelError.value =
+            'El modelo supera 30 MB; optimízalo antes de subirlo.';
+
+        return;
+    }
+
+    modelForm.model = file;
+}
+
+function onModelPosterPick(event: Event) {
+    const input = event.target as HTMLInputElement;
+    modelForm.poster = input.files?.[0] ?? null;
+    input.value = '';
+}
+
+function uploadModel() {
+    modelForm.post(`/admin/products/${props.productId}/media`, {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => modelForm.reset(),
+    });
+}
+
+function setPoster(item: AdminProductMedia, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+
+    if (!file) {
+        return;
+    }
+
+    router.post(
+        `/admin/products/media/${item.id}/poster`,
+        { poster: file },
+        { preserveScroll: true, forceFormData: true },
+    );
+}
+
 function formatSize(bytes?: number | null) {
     if (!bytes) {
         return '';
@@ -319,6 +390,73 @@ function formatSize(bytes?: number | null) {
         >
             <li v-for="message in rejected" :key="message">{{ message }}</li>
         </ul>
+
+        <!-- 3D model -->
+        <div
+            class="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center"
+        >
+            <Box class="size-6 shrink-0 text-fl-gold-ink" />
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium">Modelo 3D</p>
+                <p class="text-xs text-muted-foreground">
+                    GLB o GLTF, hasta 30 MB (ideal &lt; 5 MB). Agrega un póster:
+                    es lo que se ve mientras el modelo carga.
+                </p>
+                <p v-if="modelForm.model" class="mt-1 truncate text-xs">
+                    {{ modelForm.model.name }} ·
+                    {{ formatSize(modelForm.model.size) }}
+                    <template v-if="modelForm.poster">
+                        · póster: {{ modelForm.poster.name }}</template
+                    >
+                </p>
+                <p v-if="modelError" class="mt-1 text-xs text-red-700">
+                    {{ modelError }}
+                </p>
+                <p
+                    v-if="Object.keys(modelForm.errors).length"
+                    class="mt-1 text-xs text-red-700"
+                >
+                    {{ Object.values(modelForm.errors)[0] }}
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <label
+                    class="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium hover:bg-muted"
+                >
+                    Elegir modelo
+                    <input
+                        type="file"
+                        accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+                        class="sr-only"
+                        @change="onModelPick"
+                    />
+                </label>
+                <label
+                    v-if="modelForm.model"
+                    class="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium hover:bg-muted"
+                >
+                    Póster
+                    <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        class="sr-only"
+                        @change="onModelPosterPick"
+                    />
+                </label>
+                <Button
+                    v-if="modelForm.model"
+                    class="h-10 rounded-full"
+                    :disabled="modelForm.processing"
+                    @click="uploadModel"
+                >
+                    {{
+                        modelForm.processing
+                            ? `Subiendo… ${modelForm.progress?.percentage ?? 0}%`
+                            : 'Subir modelo'
+                    }}
+                </Button>
+            </div>
+        </div>
 
         <!-- Previews before upload -->
         <div
@@ -461,9 +599,26 @@ function formatSize(bytes?: number | null) {
                         loading="lazy"
                         class="size-full object-cover"
                     />
+                    <template v-else-if="item.type === 'model_3d'">
+                        <img
+                            v-if="item.poster_url"
+                            :src="item.poster_url"
+                            :alt="item.alt_text ?? ''"
+                            loading="lazy"
+                            class="size-full object-cover"
+                        />
+                        <div
+                            v-else
+                            class="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground"
+                        >
+                            <Box class="size-10" />
+                            <span class="text-xs">Sin póster</span>
+                        </div>
+                    </template>
                     <video
                         v-else
                         :src="item.url"
+                        :poster="item.poster_url ?? undefined"
                         muted
                         preload="metadata"
                         class="size-full object-cover"
@@ -483,6 +638,11 @@ function formatSize(bytes?: number | null) {
                             v-if="item.type === 'video'"
                             class="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-semibold"
                             >Video</span
+                        >
+                        <span
+                            v-if="item.type === 'model_3d'"
+                            class="rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-semibold"
+                            >3D</span
                         >
                     </div>
                     <span
@@ -555,6 +715,20 @@ function formatSize(bytes?: number | null) {
                             {{ item.is_hover ? 'Quitar hover' : 'Hover' }}
                         </Button>
                         <label
+                            v-if="item.type !== 'image'"
+                            class="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-border px-2 text-xs font-medium hover:bg-muted"
+                        >
+                            <ImagePlus class="size-3" />
+                            Póster
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                class="sr-only"
+                                @change="setPoster(item, $event)"
+                            />
+                        </label>
+                        <label
+                            v-if="item.type !== 'model_3d'"
                             class="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-border px-2 text-xs font-medium hover:bg-muted"
                         >
                             <RefreshCw class="size-3" />
@@ -619,9 +793,27 @@ function formatSize(bytes?: number | null) {
                         :alt="previewItem.alt_text ?? productName"
                         class="max-h-[80vh] w-full rounded-lg object-contain"
                     />
+                    <div
+                        v-else-if="previewItem.type === 'model_3d'"
+                        class="flex flex-col items-center gap-3 p-4"
+                    >
+                        <img
+                            v-if="previewItem.poster_url"
+                            :src="previewItem.poster_url"
+                            :alt="previewItem.alt_text ?? productName"
+                            class="max-h-[60vh] rounded-lg object-contain"
+                        />
+                        <a
+                            :href="previewItem.url"
+                            download
+                            class="text-sm font-medium text-fl-gold-ink underline-offset-4 hover:underline"
+                            >Descargar modelo 3D</a
+                        >
+                    </div>
                     <video
                         v-else
                         :src="previewItem.url"
+                        :poster="previewItem.poster_url ?? undefined"
                         controls
                         class="max-h-[80vh] w-full rounded-lg"
                     />

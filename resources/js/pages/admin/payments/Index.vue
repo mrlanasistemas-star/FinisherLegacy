@@ -2,12 +2,11 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { CreditCard } from '@lucide/vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import CommerceSubTabs from '@/components/commerce/CommerceSubTabs.vue';
 import Money from '@/components/shared/Money.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { COMMERCE_ORDERS_AREA_NAV } from '@/config/areaNav';
 
 type PaymentRow = {
     id: number;
@@ -44,7 +43,7 @@ const columns = [
     <Head title="Pagos" />
 
     <div class="p-4 md:p-8">
-        <SecondaryNav :items="COMMERCE_ORDERS_AREA_NAV" />
+        <CommerceSubTabs group="orders" />
 
         <h1
             class="mb-6 flex items-center gap-2 text-xl font-bold text-foreground"
