@@ -17,14 +17,12 @@ use App\Models\AthleteEventMedia;
 use App\Models\AthleteOwnedProduct;
 use App\Models\EventGearSelection;
 use App\Models\EventParticipant;
-use App\Models\EventResultSplit;
 use App\Models\LegacyPlateEntitlement;
-use App\Models\Medal;
-use App\Models\Plate;
-use App\Queries\Athletes\GetAthleteHistory;
+use App\Queries\Athletes\GetAthleteLegado;
 use App\Queries\Athletes\GetEventParticipantDetail;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
 use App\Services\Media\ResolveMediaEntitlement;
+use App\Support\RaceDistanceFormatter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -49,88 +47,34 @@ class AthleteHistoryController extends Controller
      * shape (brief §27-§28) without adding pagination UI to a page nobody
      * reaches from navigation anymore.
      */
-    public function myEvents(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteHistory $history): Response
+    /**
+     * "Mis eventos" (spec §7/§134): what's ahead — registrations and
+     * pre-registrations — and every race already run, one page at a time.
+     */
+    public function myEvents(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteLegado $legado): Response
     {
         $athlete = $ensureAthlete->handle($request->user(), 'dashboard_my_events');
-        $participations = $history->handle($athlete, perPage: 100);
 
         return Inertia::render('dashboard/MyEvents', [
-            'participations' => collect($participations->items())->map(function (EventParticipant $p) {
-                $summary = GetAthleteHistory::summarize($p);
-
-                return [
-                    'id' => $summary['id'],
-                    'event' => $summary['event'],
-                    'edition' => $summary['edition'],
-                    'race' => $summary['race'],
-                    'bib_number' => $summary['bib_number'],
-                    'event_date' => $summary['event_date'],
-                    'official_time' => $summary['result']['official_time'] ?? null,
-                    'pace' => $summary['result']['pace'] ?? null,
-                    'position' => $summary['result']['overall_position'] ?? null,
-                    'has_plate' => $summary['legacy_plate_status'] !== null,
-                    'has_medal' => $summary['medal_count'] > 0,
-                    'media_count' => $summary['media_count'],
-                ];
-            })->values(),
+            'upcoming' => [
+                ...$legado->upcoming($athlete),
+                ...$legado->preregistrations($request->user()),
+            ],
+            'past' => $legado->past($athlete),
+            'totals' => $legado->totals($athlete),
         ]);
     }
 
-    public function myEventShow(Request $request, EventParticipant $participant, EnsureAthleteForUser $ensureAthlete, ResolveMediaEntitlement $entitlement): Response
+    /**
+     * The old per-event page is now the event story at
+     * /dashboard/legado/{participant}; bookmarks keep working.
+     */
+    public function myEventShow(Request $request, EventParticipant $participant, EnsureAthleteForUser $ensureAthlete): RedirectResponse
     {
         $athlete = $ensureAthlete->handle($request->user(), 'dashboard_my_event_show');
         abort_unless($participant->athlete_id === $athlete->id, 403);
 
-        $participant->loadMissing([
-            'eventEdition.event', 'eventRace', 'result.splits', 'medals', 'plates.legacyCode', 'media',
-        ]);
-
-        return Inertia::render('dashboard/MyEventShow', [
-            'participant' => [
-                'id' => $participant->id,
-                'event' => $participant->eventEdition?->event?->name,
-                'edition' => $participant->eventEdition?->name,
-                'race' => $participant->eventRace?->name,
-                'bib_number' => $participant->bib_number,
-                'event_date' => $participant->eventEdition?->event_date?->toDateString(),
-            ],
-            'result' => $participant->result ? [
-                'official_time' => $participant->result->official_time,
-                'chip_time' => $participant->result->chip_time,
-                'pace' => $participant->result->pace,
-                'overall_position' => $participant->result->overall_position,
-                'gender_position' => $participant->result->gender_position,
-                'category_position' => $participant->result->category_position,
-                'splits' => $participant->result->splits->map(fn (EventResultSplit $split) => [
-                    'label' => $split->label,
-                    'distance_value' => $split->distance_value,
-                    'distance_unit' => $split->distance_unit,
-                    'segment_time' => $split->segment_time,
-                    'elapsed_time' => $split->elapsed_time,
-                    'pace' => $split->pace,
-                ])->values(),
-            ] : null,
-            'medals' => $participant->medals->map(fn (Medal $medal) => [
-                'id' => $medal->id,
-                'title' => $medal->title,
-                'story' => $medal->story,
-            ])->values(),
-            'plates' => $participant->plates->map(fn (Plate $plate) => [
-                'id' => $plate->id,
-                'serial_number' => $plate->serial_number,
-                'status' => $plate->status->value,
-                'legacy_code' => $plate->legacyCode?->code,
-                'engraving_display_name' => $plate->engraving_display_name,
-            ])->values(),
-            'media' => $participant->media->map(fn (AthleteEventMedia $media) => [
-                'uuid' => $media->uuid,
-                'type' => $media->type->value,
-                'url' => $media->url(),
-                'is_public' => $media->is_public,
-            ])->values(),
-            'mediaLimits' => $entitlement->limits($participant),
-            'mediaRemaining' => $entitlement->remaining($participant),
-        ]);
+        return to_route('dashboard.legado.show', $participant, 301);
     }
 
     /**
@@ -160,8 +104,22 @@ class AthleteHistoryController extends Controller
         $availableGear = $ownedProducts->handle($athlete)
             ->reject(fn (AthleteOwnedProduct $owned) => $assignedOwnedProductIds->contains($owned->id));
 
+        $edition = $participant->eventEdition;
+
         return Inertia::render('dashboard/LegadoShow', [
             ...$payload,
+            // Context for the "event story" header — the race in its place
+            // and time, not just a row of numbers.
+            'story' => [
+                'event_slug' => $edition?->event?->slug,
+                'distance' => RaceDistanceFormatter::format($participant->eventRace),
+                'city' => $edition?->city,
+                'state' => $edition?->state,
+                'year' => $edition?->event_date?->year,
+                'upcoming' => $edition?->event_date?->isFuture() ?? false,
+                'cover_url' => $edition?->event?->cover_path ? asset('storage/'.$edition->event->cover_path) : null,
+                'category' => $participant->category,
+            ],
             'mediaLimits' => $entitlement->limits($participant),
             'mediaRemaining' => $entitlement->remaining($participant),
             'availableGear' => $availableGear->map(fn (AthleteOwnedProduct $owned) => [

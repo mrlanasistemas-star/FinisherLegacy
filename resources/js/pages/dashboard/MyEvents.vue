@@ -1,67 +1,137 @@
 <script setup lang="ts">
+/**
+ * "Mis eventos" (spec §7/§134): the races ahead — registrations and
+ * pre-registrations — and every race already run, newest first, a page at
+ * a time. Each past race opens its event story.
+ */
 import { Head, Link } from '@inertiajs/vue3';
-import { Trophy } from '@lucide/vue';
-import AppContainer from '@/components/shared/AppContainer.vue';
-import EventResultCard from '@/components/shared/EventResultCard.vue';
+import { ArrowRight, Flag } from '@lucide/vue';
+import EventStoryCard from '@/components/legado/EventStoryCard.vue';
+import UpcomingEventCard from '@/components/legado/UpcomingEventCard.vue';
+import Reveal from '@/components/motion/Reveal.vue';
+import Pagination from '@/components/public/Pagination.vue';
+import type { PaginationLink } from '@/components/public/Pagination.vue';
+import { Button } from '@/components/ui/button';
+import { dashboard } from '@/routes';
+import { myEvents } from '@/routes/dashboard';
+import { index as eventsIndex } from '@/routes/events';
+import type { LegadoEntry, LegadoTotals, UpcomingEntry } from '@/types/legado';
 
-type Participation = {
-    id: number;
-    event: string | null;
-    edition: string | null;
-    race: string | null;
-    bib_number: string | null;
-    event_date: string | null;
-    official_time: string | null;
-    pace: string | null;
-    position: number | null;
-    has_plate: boolean;
-    has_medal: boolean;
-    media_count: number;
-};
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Mi legado', href: dashboard() },
+            { title: 'Mis eventos', href: myEvents() },
+        ],
+    },
+});
 
-defineProps<{ participations: Participation[] }>();
+defineProps<{
+    upcoming: UpcomingEntry[];
+    past: {
+        data: LegadoEntry[];
+        links: PaginationLink[];
+        total: number;
+        current_page: number;
+    };
+    totals: LegadoTotals;
+}>();
 </script>
 
 <template>
     <Head title="Mis eventos" />
 
-    <AppContainer class="py-4 md:py-6">
-        <h1 class="text-xl font-bold text-foreground">Mis eventos</h1>
-        <p class="mt-1 text-sm text-muted-foreground">
-            Cada meta que cruzaste, en un solo lugar.
-        </p>
+    <div class="fl-container py-6 md:py-10">
+        <header>
+            <p class="fl-eyebrow">Mi espacio</p>
+            <h1 class="fl-display mt-2 text-4xl sm:text-5xl">Mis eventos</h1>
+            <p class="mt-3 max-w-xl text-muted-foreground">
+                Lo que viene y todo lo que ya corriste.
+                <template v-if="totals.races">
+                    {{ totals.races }}
+                    {{ totals.races === 1 ? 'carrera' : 'carreras' }}
+                    <template v-if="totals.km"
+                        >y {{ totals.km.toLocaleString('es-MX') }} km</template
+                    >
+                    en tu historia.
+                </template>
+            </p>
+        </header>
 
-        <div
-            v-if="participations.length"
-            class="mt-8 grid gap-3 lg:grid-cols-2"
-        >
-            <EventResultCard
-                v-for="p in participations"
-                :key="p.id"
-                :id="p.id"
-                :event="p.event"
-                :edition="p.edition"
-                :race="p.race"
-                :bib-number="p.bib_number"
-                :event-date="p.event_date"
-                :official-time="p.official_time"
-                :pace="p.pace"
-                :position="p.position"
-                :has-plate="p.has_plate"
-                :has-medal="p.has_medal"
-                :media-count="p.media_count"
-            />
-        </div>
-
-        <div
-            v-else
-            class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-muted-foreground/80"
-        >
-            <Trophy class="size-10" />
-            <p>Todavía no tienes eventos registrados.</p>
-            <Link href="/events" class="text-fl-gold-ink hover:underline"
-                >Explorar eventos</Link
+        <!-- Upcoming -->
+        <section class="mt-10" aria-labelledby="upcoming-title">
+            <h2
+                id="upcoming-title"
+                class="font-serif text-2xl font-medium sm:text-3xl"
             >
-        </div>
-    </AppContainer>
+                Próximos
+            </h2>
+            <div
+                v-if="upcoming.length"
+                class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+            >
+                <UpcomingEventCard
+                    v-for="(entry, index) in upcoming"
+                    :key="`${entry.kind}-${entry.id ?? index}-${entry.event_slug}`"
+                    :entry="entry"
+                />
+            </div>
+            <div
+                v-else
+                class="mt-5 flex flex-col gap-4 rounded-2xl border border-dashed border-foreground/15 bg-card p-6 sm:flex-row sm:items-center sm:justify-between"
+            >
+                <p class="text-sm text-muted-foreground">
+                    No tienes carreras próximas. Encuentra tu siguiente reto.
+                </p>
+                <Button as-child class="w-fit rounded-full">
+                    <Link :href="eventsIndex()">
+                        Explorar eventos
+                        <ArrowRight class="size-4" />
+                    </Link>
+                </Button>
+            </div>
+        </section>
+
+        <!-- Past -->
+        <section class="mt-14" aria-labelledby="past-title">
+            <div class="flex items-end justify-between gap-3">
+                <h2
+                    id="past-title"
+                    class="font-serif text-2xl font-medium sm:text-3xl"
+                >
+                    Carreras corridas
+                </h2>
+                <span v-if="past.total" class="text-sm text-muted-foreground"
+                    >{{ past.total }} en total</span
+                >
+            </div>
+
+            <ol v-if="past.data.length" class="mt-5 grid gap-4 xl:grid-cols-2">
+                <li v-for="(entry, index) in past.data" :key="entry.id">
+                    <Reveal :delay-ms="Math.min(index, 3) * 50" class="h-full">
+                        <EventStoryCard :entry="entry" class="h-full" />
+                    </Reveal>
+                </li>
+            </ol>
+            <div
+                v-else
+                class="mt-5 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-foreground/15 bg-card px-6 py-14 text-center"
+            >
+                <Flag class="size-8 text-fl-gold-ink" />
+                <p class="font-serif text-2xl">
+                    Tu primera meta te está esperando.
+                </p>
+                <p class="max-w-md text-sm text-muted-foreground">
+                    Cuando termines un evento, tu resultado, fotos y medalla
+                    quedarán guardados aquí.
+                </p>
+            </div>
+
+            <Pagination
+                v-if="past.data.length"
+                :links="past.links"
+                class="mt-8"
+            />
+        </section>
+    </div>
 </template>
