@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Webhooks;
 
 use App\Actions\Commerce\ProcessPaymentWebhook;
+use App\Exceptions\UnhandledPaymentWebhookEventException;
 use App\Http\Controllers\Controller;
 use App\Services\Commerce\PaymentGatewayRegistry;
 use Illuminate\Http\Request;
@@ -37,8 +38,14 @@ class OpenPayWebhookController extends Controller
             return response()->noContent();
         }
 
-        $outcome = $gateways->get('openpay')->handleWebhook($request);
-        $process->handle($outcome);
+        try {
+            $outcome = $gateways->get('openpay')->handleWebhook($request);
+            $process->handle($outcome);
+        } catch (UnhandledPaymentWebhookEventException $e) {
+            Log::info('Openpay webhook acknowledged without changes', ['reason' => $e->getMessage()]);
+
+            return response('', 200);
+        }
 
         return response()->noContent();
     }

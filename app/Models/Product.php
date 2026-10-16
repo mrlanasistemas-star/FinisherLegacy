@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable([
     'uuid', 'name', 'slug', 'description', 'tagline', 'type', 'category_id', 'brand', 'image_path', 'status',
     'availability', 'sort_order',
-    'taxable', 'requires_shipping', 'qr_capable', 'tracks_inventory', 'active',
+    'taxable', 'requires_shipping', 'qr_capable', 'tracks_inventory', 'active', 'minimum_stock',
 ])]
 class Product extends Model
 {

@@ -6,15 +6,18 @@ use App\Contracts\Commerce\ResumablePaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Exceptions\InvalidPaymentWebhookSignatureException;
 use App\Exceptions\PaymentGatewayNotConfiguredException;
+use App\Exceptions\UnhandledPaymentWebhookEventException;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Support\Commerce\OnlinePaymentIntent;
 use App\Support\Commerce\PaymentWebhookOutcome;
 use Illuminate\Http\Request;
+use Stripe\Charge;
 use Stripe\Event;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
+use Stripe\StripeObject;
 use Stripe\Webhook;
 use UnexpectedValueException;
 
@@ -129,7 +132,18 @@ class StripePaymentGateway implements ResumablePaymentGateway
             amountMinor: $status === PaymentStatus::Paid ? $intent->amount_received : $intent->amount,
             currency: strtoupper($intent->currency),
             rawPayload: ['provider_status' => $intent->status],
+            providerStatus: $intent->status,
+            orderUuid: $this->orderUuidFrom($intent),
         );
+    }
+
+    /**
+     * Web Payment Element needs the publishable key and a secret key; the
+     * webhook secret is what makes "paid" possible at all.
+     */
+    public function isReadyForCheckout(): bool
+    {
+        return filled(config('finisher.payments.stripe.key')) && $this->isConfigured();
     }
 
     private function intentPayload(PaymentIntent $intent): OnlinePaymentIntent
@@ -145,17 +159,30 @@ class StripePaymentGateway implements ResumablePaymentGateway
         );
     }
 
+    /**
+     * The events this app subscribes to (spec §25 / Stripe's Payment
+     * Element guide): succeeded, processing, payment_failed, canceled and
+     * charge.refunded. Anything else is acknowledged and ignored.
+     */
     private function mapEvent(Event $event): PaymentWebhookOutcome
     {
-        /** @var PaymentIntent $intent */
-        $intent = $event->data->object;
+        if ($event->type === 'charge.refunded') {
+            return $this->mapRefund($event);
+        }
 
         $status = match ($event->type) {
             'payment_intent.succeeded' => PaymentStatus::Paid,
             'payment_intent.payment_failed' => PaymentStatus::Failed,
             'payment_intent.canceled' => PaymentStatus::Cancelled,
-            default => PaymentStatus::Pending,
+            'payment_intent.processing' => PaymentStatus::Pending,
+            default => null,
         };
+
+        $intent = $event->data->object;
+
+        if ($status === null || ! $intent instanceof PaymentIntent) {
+            throw new UnhandledPaymentWebhookEventException("Evento de Stripe ignorado: {$event->type}");
+        }
 
         // amount_received reflects what Stripe actually captured; for a
         // failed/pending event that's 0, so fall back to `amount` (what
@@ -168,10 +195,53 @@ class StripePaymentGateway implements ResumablePaymentGateway
             eventId: $event->id,
             providerReference: $intent->id,
             status: $status,
-            amountMinor: $amountMinor,
+            amountMinor: (int) $amountMinor,
             currency: strtoupper($intent->currency),
             rawPayload: $event->toArray(),
+            providerStatus: $event->type === 'payment_intent.processing' ? 'processing' : $intent->status,
+            orderUuid: $this->orderUuidFrom($intent),
         );
+    }
+
+    /**
+     * `charge.refunded` carries a Charge: compared against the Payment by
+     * the charge's original `amount`; full vs partial by `refunded`.
+     */
+    private function mapRefund(Event $event): PaymentWebhookOutcome
+    {
+        $charge = $event->data->object;
+
+        $intentRef = $charge instanceof Charge ? ($charge->toArray()['payment_intent'] ?? null) : null;
+        $intentId = is_array($intentRef) ? ($intentRef['id'] ?? null) : $intentRef;
+
+        if (! $charge instanceof Charge || ! is_string($intentId) || $intentId === '') {
+            throw new UnhandledPaymentWebhookEventException('Reembolso de Stripe sin PaymentIntent.');
+        }
+
+        return new PaymentWebhookOutcome(
+            provider: 'stripe',
+            eventId: $event->id,
+            providerReference: $intentId,
+            status: $charge->refunded ? PaymentStatus::Refunded : PaymentStatus::PartiallyRefunded,
+            amountMinor: (int) $charge->amount,
+            currency: strtoupper($charge->currency),
+            rawPayload: $event->toArray(),
+            providerStatus: $charge->refunded ? 'refunded' : 'partially_refunded',
+            orderUuid: $this->orderUuidFrom($charge),
+            refundedMinor: (int) $charge->amount_refunded,
+        );
+    }
+
+    /**
+     * Read through toArray(): a missing key on a StripeObject would
+     * otherwise emit an "undefined property" notice.
+     */
+    private function orderUuidFrom(StripeObject $object): ?string
+    {
+        $metadata = $object->toArray()['metadata'] ?? null;
+        $uuid = is_array($metadata) ? ($metadata['order_uuid'] ?? null) : null;
+
+        return is_string($uuid) && $uuid !== '' ? $uuid : null;
     }
 
     /**
