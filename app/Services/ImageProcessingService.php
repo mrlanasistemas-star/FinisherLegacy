@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\ImageManager;
@@ -41,6 +42,8 @@ class ImageProcessingService
 
         /** @var array{mimes: array<int, string>, max_original_kb: int, thumbnail_size: int, display_max_width: int, keep_original: bool} $config */
         $config = config('finisher.image');
+
+        $this->assertDecodable($file, $config);
 
         $originalPath = null;
 
@@ -84,6 +87,31 @@ class ImageProcessingService
             'mime_type' => $file->getMimeType() ?? $file->getClientMimeType(),
             'file_size' => $file->getSize(),
         ];
+    }
+
+    /**
+     * Reads only the header (getimagesize), so an image declaring absurd
+     * dimensions is rejected before GD allocates width x height x 4 bytes.
+     *
+     * @param  array<string, mixed>  $config
+     *
+     * @throws ValidationException
+     */
+    private function assertDecodable(UploadedFile $file, array $config): void
+    {
+        $size = @getimagesize((string) $file->getRealPath());
+        $maxPixels = (int) ($config['max_pixels'] ?? 40_000_000);
+        $maxDimension = (int) ($config['max_dimension'] ?? 12_000);
+
+        if ($size === false || $size[0] < 1 || $size[1] < 1) {
+            throw ValidationException::withMessages(['image' => 'No pudimos leer la imagen. Prueba con un JPG, PNG o WebP.']);
+        }
+
+        if ($size[0] > $maxDimension || $size[1] > $maxDimension || $size[0] * $size[1] > $maxPixels) {
+            throw ValidationException::withMessages([
+                'image' => 'La imagen es demasiado grande (máximo '.intdiv($maxPixels, 1_000_000).' megapíxeles). Redúcela e inténtalo de nuevo.',
+            ]);
+        }
     }
 
     /**

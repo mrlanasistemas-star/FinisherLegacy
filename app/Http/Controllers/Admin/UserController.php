@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -171,6 +172,21 @@ class UserController extends Controller
 
         $previousStatus = $user->status;
         $user->status = $newStatus;
+
+        if (! $newStatus->canSignIn()) {
+            // Cut every way back in: API tokens, "remember me" cookies and,
+            // with the database session driver, live web sessions.
+            $user->tokens()->delete();
+            $user->setRememberToken(Str::random(60));
+
+            if (config('session.driver') === 'database') {
+                DB::connection(config('session.connection'))
+                    ->table(config('session.table', 'sessions'))
+                    ->where('user_id', $user->id)
+                    ->delete();
+            }
+        }
+
         $user->save();
 
         activity()

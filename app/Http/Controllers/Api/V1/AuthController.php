@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Fortify\CreateNewUser;
+use App\Exceptions\AccountSuspendedException;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +32,11 @@ class AuthController extends Controller
     {
         $user = $this->creator->create($request->all());
 
-        $token = $user->createToken('api')->plainTextToken;
+        // Same event Fortify fires for the web form — sends the
+        // verification email that unlocks linking an imported history.
+        event(new Registered($user));
+
+        $token = $user->issueApiToken();
 
         return $this->respond([
             'user' => new UserResource($user),
@@ -56,7 +62,13 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('api')->plainTextToken;
+        // Checked only after the password matched, so an account's status
+        // never leaks to someone guessing emails.
+        if (! $user->status->canSignIn()) {
+            throw new AccountSuspendedException($user->status);
+        }
+
+        $token = $user->issueApiToken();
 
         return $this->respond([
             'user' => new UserResource($user),

@@ -312,6 +312,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->middleware('throttle:api-register')
         ->name('events.preregister');
     Route::get('preregistrations/{token}', [PreregistrationController::class, 'show'])
+        ->middleware('throttle:api-legacy-lookup')
         ->name('preregistrations.show');
 
     Route::get('legacy-codes/{code}', [LegacyCodeController::class, 'show'])

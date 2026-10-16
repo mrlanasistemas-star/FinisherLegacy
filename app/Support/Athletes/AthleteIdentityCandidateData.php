@@ -100,6 +100,20 @@ final class AthleteIdentityCandidateData
     }
 
     /**
+     * A User whose email (and phone) nobody has verified yet — only the
+     * name, which never auto-links on its own. Used for the placeholder
+     * Athlete of an unverified account so an attacker-typed email can't
+     * become a match key for future imports either.
+     */
+    public static function fromUserWithoutEmail(User $user): self
+    {
+        return self::fromArray([
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+        ]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array

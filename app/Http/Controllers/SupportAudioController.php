@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AthleteSupportMessage;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Audio is never served from a public disk URL (product UX consolidation
@@ -23,8 +23,11 @@ class SupportAudioController extends Controller
         $disk = Storage::disk($message->audio_disk);
         abort_unless($disk->exists($message->audio_path), 404);
 
-        return response($disk->get($message->audio_path), 200, [
+        // Streamed, never loaded whole into memory; nosniff so the browser
+        // never second-guesses the stored mime.
+        return $disk->response($message->audio_path, null, [
             'Content-Type' => $message->audio_mime ?? 'application/octet-stream',
+            'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, max-age=3600',
         ]);
     }

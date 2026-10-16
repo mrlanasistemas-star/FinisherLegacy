@@ -15,3 +15,9 @@ Artisan::command('inspire', function () {
 Schedule::command(ExpirePendingOrders::class)
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+// Expired person API tokens (SANCTUM_EXPIRATION_MINUTES, see
+// config/sanctum.php) are rejected already; this just deletes the rows.
+Schedule::command('sanctum:prune-expired --hours=24')
+    ->daily()
+    ->withoutOverlapping();

@@ -50,7 +50,16 @@ return [
     |
     */
 
+    // Kept null on purpose: this global value would also expire the
+    // ProductionDevice tokens of the production line. Person (mobile app)
+    // tokens get their own `expires_at` from `user_token_expiration` below
+    // (App\Models\User::issueApiToken()); expired rows are deleted daily by
+    // `sanctum:prune-expired` (routes/console.php).
     'expiration' => null,
+
+    // Minutes an athlete/staff API token lives (default 60 days, so the
+    // mobile app asks for a new sign-in at most every two months).
+    'user_token_expiration' => (int) env('SANCTUM_EXPIRATION_MINUTES', 60 * 24 * 60),
 
     /*
     |--------------------------------------------------------------------------

@@ -8,6 +8,7 @@ use App\Models\AthleteSupportSession;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The public, no-account side of "MI EQUIPO DE APOYO" (product UX
@@ -124,7 +125,10 @@ test('audio is never reachable from a public disk URL, only a signed route', fun
     $message = $session->messages()->firstOrFail();
 
     $this->get("/support-messages/{$message->id}/audio")->assertStatus(403);
-    $this->get($message->signedAudioUrl())->assertOk();
+    $response = $this->get($message->signedAudioUrl())->assertOk()
+        ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+    expect($response->baseResponse)->toBeInstanceOf(StreamedResponse::class);
 });
 
 test('the public message form is rate limited', function () {

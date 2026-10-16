@@ -39,7 +39,8 @@ class UploadEventPhotos
         foreach ($files as $file) {
             $uuid = (string) Str::uuid();
             $dir = "event-photos/{$edition->id}/{$photographer->id}";
-            $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+            // From the sniffed mime, never the client's file name.
+            $extension = $file->extension() ?: 'jpg';
             $originalPath = Storage::disk('event_photo_originals')->putFileAs($dir, $file, "{$uuid}.{$extension}");
 
             try {

@@ -8,8 +8,10 @@ use App\Http\Requests\StorePreregistrationRequest;
 use App\Models\EventEdition;
 use App\Models\EventPreregistration;
 use App\Models\EventRace;
+use App\Models\User;
 use App\Services\PreregistrationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PreregistrationController extends Controller
 {
@@ -43,19 +45,23 @@ class PreregistrationController extends Controller
         ], 'Prerregistro confirmado.', status: 201);
     }
 
-    public function show(string $token): JsonResponse
+    public function show(Request $request, string $token): JsonResponse
     {
         $preregistration = EventPreregistration::query()
             ->where('token', $token)
             ->with(['eventEdition.event', 'eventRace'])
             ->firstOrFail();
 
+        $viewer = $request->user('sanctum');
+        $identity = $this->preregistrations->identityFor($preregistration, $viewer instanceof User ? $viewer : null);
+
         return $this->respond([
             'token' => $preregistration->token,
             'status' => $preregistration->status->value,
-            'first_name' => $preregistration->first_name,
-            'last_name' => $preregistration->last_name,
-            'bib_number' => $preregistration->bib_number,
+            'first_name' => $identity['first_name'],
+            'last_name' => $identity['last_name'],
+            'bib_number' => $identity['bib_number'],
+            'masked' => $identity['masked'],
             'event' => $preregistration->eventEdition->event->name,
             'edition' => $preregistration->eventEdition->name,
             'race' => $preregistration->eventRace->name,

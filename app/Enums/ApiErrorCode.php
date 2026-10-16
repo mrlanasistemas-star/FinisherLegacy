@@ -61,6 +61,7 @@ enum ApiErrorCode: string
     // Account.
     case SocialAuthUnavailable = 'SOCIAL_AUTH_UNAVAILABLE';
     case SocialAuthInvalidToken = 'SOCIAL_AUTH_INVALID_TOKEN';
+    case AccountSuspended = 'ACCOUNT_SUSPENDED';
 
     // NFC (docs/NFC.md).
     case NfcAlreadyClaimed = 'NFC_ALREADY_CLAIMED';
