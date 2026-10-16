@@ -25,7 +25,7 @@ use Illuminate\Support\Str;
 test('my-events only ever shows the signed-in athlete\'s own participations', function () {
     $user = User::factory()->create();
     $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
-    $edition = EventEdition::factory()->create();
+    $edition = EventEdition::factory()->create(['event_date' => now()->subMonth()]);
     EventParticipant::factory()->create(['athlete_id' => $athlete->id, 'event_edition_id' => $edition->id]);
 
     $otherAthlete = Athlete::factory()->create();
@@ -34,7 +34,10 @@ test('my-events only ever shows the signed-in athlete\'s own participations', fu
     $response = $this->actingAs($user)->get('/dashboard/my-events');
 
     $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->component('dashboard/MyEvents')->has('participations', 1));
+    $response->assertInertia(fn ($page) => $page
+        ->component('dashboard/MyEvents')
+        ->has('past.data', 1)
+        ->has('upcoming', 0));
 });
 
 test('a participant belonging to another athlete cannot be opened through the URL', function () {
