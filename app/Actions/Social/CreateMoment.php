@@ -11,10 +11,10 @@ use App\Models\EventParticipant;
 use App\Models\LegacyMoment;
 use App\Models\Medal;
 use App\Models\User;
-use App\Services\ImageProcessingService;
+use App\Services\Media\MediaStorage;
+use App\Services\Media\MediaUploadRules;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -26,7 +26,7 @@ use Throwable;
  */
 class CreateMoment
 {
-    public function __construct(private readonly ImageProcessingService $images) {}
+    public function __construct(private readonly MediaStorage $media) {}
 
     /**
      * @param  array<string, mixed>  $data  Validated StoreMomentRequest input: type, visibility, caption?,
@@ -78,19 +78,20 @@ class CreateMoment
             throw ValidationException::withMessages(['caption' => 'Escribe algo o agrega una foto o actividad.']);
         }
 
-        // Process uploads before the transaction (no DB lock held during
-        // image work); clean them up if the insert fails.
+        // Validate + park uploads before the transaction (no DB lock held);
+        // variants render in the queue (media pipeline, docs/SYNOLOGY.md).
         $stored = [];
         foreach ($photos as $photo) {
-            $processed = $this->images->process($photo, "moments/{$author->id}", withThumbnail: false);
-            if ($processed['original_path']) {
-                Storage::disk('public')->delete($processed['original_path']);
-            }
-            $stored[] = $processed;
+            $stored[] = $this->media->accept(
+                $photo,
+                $this->media->paths()->forUser($author, 'posts'),
+                MediaUploadRules::images((int) config('finisher.social.moment_photo_max_kb') * 1024),
+                $author,
+            );
         }
 
         try {
-            return DB::transaction(function () use ($author, $type, $visibility, $caption, $participant, $medal, $gear, $metrics, $mediaUuids, $eventMedia, $stored) {
+            $moment = DB::transaction(function () use ($author, $type, $visibility, $caption, $participant, $medal, $gear, $metrics, $mediaUuids, $eventMedia, $stored) {
                 $moment = LegacyMoment::create([
                     'user_id' => $author->id,
                     'type' => $type,
@@ -115,10 +116,8 @@ class CreateMoment
                 foreach ($stored as $photo) {
                     $moment->media()->create([
                         'type' => 'image',
-                        'disk' => 'public',
-                        'path' => $photo['display_path'],
-                        'width' => $photo['width'],
-                        'height' => $photo['height'],
+                        'width' => $photo->width,
+                        'height' => $photo->height,
                         'sort_order' => $sort++,
                     ]);
                 }
@@ -127,11 +126,18 @@ class CreateMoment
             });
         } catch (Throwable $e) {
             foreach ($stored as $photo) {
-                Storage::disk('public')->delete($photo['display_path']);
+                $this->media->delete($photo);
             }
 
             throw $e;
         }
+
+        $rows = $moment->media()->whereNull('athlete_event_media_id')->get()->values();
+        foreach ($stored as $index => $photo) {
+            $this->media->process($photo, $rows[$index] ?? null);
+        }
+
+        return $moment;
     }
 
     /**

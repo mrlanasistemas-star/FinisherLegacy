@@ -13,6 +13,7 @@ use App\Models\LegacyPlateModel;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -48,6 +49,8 @@ test('a participant belonging to another athlete cannot be opened through the UR
 
 test('media upload is blocked once the free-tier limit is reached, matching the badge the UI shows', function () {
     config(['finisher.event_media.free_images_per_participation' => 1]);
+    Storage::fake(config('finisher.media_disk'));
+    Storage::fake('media_tmp');
 
     $user = User::factory()->create();
     $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');

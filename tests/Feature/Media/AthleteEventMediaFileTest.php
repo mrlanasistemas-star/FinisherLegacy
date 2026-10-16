@@ -5,12 +5,14 @@ use App\Models\AthleteEventMedia;
 use App\Models\EventParticipant;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 
 /**
  * No event photo/video is ever served from a direct disk URL (product
  * consolidation brief §62) — public media is served unconditionally by
  * App\Http\Controllers\AthleteEventMediaFileController, private media
- * only behind a valid Laravel signed-URL signature.
+ * only behind a valid Laravel signed-URL signature. (Legacy rows without
+ * a MediaFile — pipeline media is covered by MediaDeliveryTest.)
  */
 function makeEventMedia(bool $isPublic): AthleteEventMedia
 {
@@ -34,10 +36,17 @@ function makeEventMedia(bool $isPublic): AthleteEventMedia
     ]);
 }
 
+function legacyMediaBody(TestResponse $response): string
+{
+    return (string) file_get_contents($response->baseResponse->getFile()->getPathname());
+}
+
 test('public media is served unconditionally, with no signature needed', function () {
     $media = makeEventMedia(isPublic: true);
 
-    $this->get($media->url())->assertOk()->assertSee('fake-image-bytes');
+    $response = $this->get($media->url())->assertOk();
+
+    expect(legacyMediaBody($response))->toBe('fake-image-bytes');
 });
 
 test('private media requires a valid signature', function () {
@@ -49,5 +58,16 @@ test('private media requires a valid signature', function () {
 test('private media is served when the signature is valid', function () {
     $media = makeEventMedia(isPublic: false);
 
-    $this->get($media->url())->assertOk()->assertSee('fake-image-bytes');
+    $response = $this->get($media->url())->assertOk();
+
+    expect(legacyMediaBody($response))->toBe('fake-image-bytes')
+        ->and($response->headers->get('Cache-Control'))->toContain('private');
+});
+
+test('legacy media supports range requests for seeking', function () {
+    $media = makeEventMedia(isPublic: true);
+
+    $this->get($media->url(), ['Range' => 'bytes=0-3'])
+        ->assertStatus(206)
+        ->assertHeader('Content-Range', 'bytes 0-3/16');
 });
