@@ -6,11 +6,14 @@ use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\PreregistrationStatus;
 use App\Http\Controllers\Controller;
+use App\Models\EventEdition;
 use App\Models\EventPreregistration;
 use App\Models\LegacyPlateEntitlement;
 use App\Models\Payment;
+use App\Queries\Admin\GetEventWorkspaceHeader;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +29,33 @@ use Inertia\Response;
  */
 class PreregistrationController extends Controller
 {
-    public function index(Request $request): Response
+    /**
+     * The cross-event list stays reachable by URL (not in the menu); an
+     * event-scoped request moves to that event's workspace tab (spec §9/§136).
+     */
+    public function index(Request $request): Response|RedirectResponse
+    {
+        $eventEditionId = $request->integer('event_edition_id') ?: null;
+
+        if ($eventEditionId !== null && EventEdition::query()->whereKey($eventEditionId)->exists()) {
+            return redirect()->route('admin.events.preregistrations', [
+                'eventEdition' => $eventEditionId,
+                ...$request->except(['event_edition_id', 'page']),
+            ], 301);
+        }
+
+        return $this->listing($request, null);
+    }
+
+    /**
+     * "Prerregistros" tab of the event workspace.
+     */
+    public function forEvent(Request $request, EventEdition $eventEdition, GetEventWorkspaceHeader $header): Response
+    {
+        return $this->listing($request, $eventEdition)->with('workspace', $header->handle($eventEdition));
+    }
+
+    private function listing(Request $request, ?EventEdition $edition): Response
     {
         // Every filter below runs in SQL before paginate() — never on the
         // already-paginated ->data collection. Filtering the paged
@@ -48,7 +77,7 @@ class PreregistrationController extends Controller
                     ->orWhere('bib_number', 'like', "%{$search}%");
             }))
             ->when($status !== '' && PreregistrationStatus::tryFrom($status) !== null, fn ($q) => $q->where('status', $status))
-            ->when($request->integer('event_edition_id') ?: null, fn ($q, $editionId) => $q->where('event_edition_id', $editionId));
+            ->when($edition?->id, fn ($q, $editionId) => $q->where('event_edition_id', $editionId));
 
         // Counters always reflect search/status/event filters only, never
         // the legacy_plate view filter below (unchanged behavior).

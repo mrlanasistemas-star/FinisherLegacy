@@ -37,9 +37,9 @@ test('an admin can create a manual event through the Create form and lands on it
     ]);
 
     $edition = EventEdition::query()->where('name', 'Edición 2026')->firstOrFail();
-    $response->assertRedirect("/admin/editions/{$edition->id}");
+    $response->assertRedirect("/admin/events/{$edition->id}");
 
-    $this->actingAs($this->admin)->get("/admin/editions/{$edition->id}")
+    $this->actingAs($this->admin)->get("/admin/events/{$edition->id}")
         ->assertOk()
         ->assertInertia(fn ($page) => $page->component('admin/editions/Show')
             ->where('edition.name', 'Edición 2026')

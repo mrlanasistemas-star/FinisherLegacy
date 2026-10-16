@@ -1,100 +1,20 @@
 /**
- * The secondary nav items for admin areas whose pages no longer each get
- * a top-level sidebar slot (consolidation brief §90-§91/§121) — kept here
- * once so every page in an area (Producción/Placas/Modelos/Preventas;
- * Pedidos/Pagos/Cupones) renders the exact same tab bar instead of each
- * page hand-rolling its own copy.
+ * @deprecated Workspace tabs now come from `adminSections` in
+ * resources/js/config/navigation.ts and are rendered once by the admin
+ * shell (components/admin/WorkspaceTabs.vue) for every admin URL. These
+ * exports stay so pages that still import them keep compiling; the
+ * SecondaryNav component they feed no longer renders anything.
  */
-export const LEGACY_PLATE_AREA_NAV = [
-    {
-        label: 'Producción',
-        href: '/admin/legacy-plates/production',
-        permission: 'legacyplates.produce',
-    },
-    { label: 'Placas', href: '/admin/plates', permission: 'plates.view' },
-    {
-        label: 'Layouts (3)',
-        href: '/admin/legacy-plate-models',
-        permission: 'legacyplates.manage',
-    },
-    {
-        label: 'Preventas',
-        href: '/admin/legacy-plates/presales',
-        permission: 'legacyplates.manage',
-    },
-];
+import { adminSections } from '@/config/navigation';
+import type { WorkspaceTab } from '@/config/navigation';
 
-export const COMMERCE_ORDERS_AREA_NAV = [
-    { label: 'Pedidos', href: '/admin/orders', permission: 'orders.view' },
-    { label: 'Pagos', href: '/admin/payments', permission: 'payments.view' },
-    {
-        label: 'Cupones',
-        href: '/admin/coupons',
-        permission: 'coupons.manage',
-    },
-    {
-        label: 'Ofertas',
-        href: '/admin/promotions',
-        permission: 'coupons.manage',
-    },
-];
+function tabsOf(key: string): WorkspaceTab[] {
+    return adminSections.find((section) => section.key === key)?.tabs ?? [];
+}
 
-export const SYSTEM_AREA_NAV = [
-    {
-        label: 'Configuración',
-        href: '/admin/settings',
-        permission: 'dashboard.admin.view',
-    },
-    {
-        label: 'Roles y permisos',
-        href: '/admin/roles',
-        permission: 'roles.manage',
-    },
-    { label: 'Auditoría', href: '/admin/audit', permission: 'audit.view' },
-];
-
-export const CATALOG_AREA_NAV = [
-    {
-        label: 'Productos',
-        href: '/admin/products',
-        permission: 'products.manage',
-    },
-    {
-        label: 'Categorías',
-        href: '/admin/product-categories',
-        permission: 'products.manage',
-    },
-    {
-        label: 'Inventario',
-        href: '/admin/inventory',
-        permission: 'inventory.manage',
-    },
-];
-
-export const CONTENT_AREA_NAV = [
-    {
-        label: 'Nosotros y trayectoria',
-        href: '/admin/content',
-        permission: 'content.manage',
-    },
-    {
-        label: 'Mensajes de contacto',
-        href: '/admin/messages',
-        permission: 'content.manage',
-    },
-    {
-        label: 'Comunidad',
-        href: '/admin/community',
-        permission: 'community.moderate',
-    },
-    {
-        label: 'Fotografías',
-        href: '/admin/photos',
-        permission: 'photos.manage',
-    },
-    {
-        label: 'Fotógrafos',
-        href: '/admin/photographers',
-        permission: 'photos.manage',
-    },
-];
+export const LEGACY_PLATE_AREA_NAV = tabsOf('legacy');
+export const COMMERCE_ORDERS_AREA_NAV = tabsOf('comercio');
+export const CATALOG_AREA_NAV = tabsOf('comercio');
+export const SYSTEM_AREA_NAV = tabsOf('configuracion');
+export const CONTENT_AREA_NAV = tabsOf('configuracion');
+export const PEOPLE_AREA_NAV = tabsOf('personas');

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import type { AcceptableValue } from 'reka-ui';
+import { computed } from 'vue';
 import AdminTable from '@/components/admin/AdminTable.vue';
+import EventWorkspaceHeader from '@/components/admin/events/EventWorkspaceHeader.vue';
+import type { EventWorkspaceData } from '@/components/admin/events/types';
 import Money from '@/components/shared/Money.vue';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -40,6 +43,8 @@ type PreregistrationRow = {
 };
 
 const props = defineProps<{
+    /** Present when rendered as the event workspace's "Prerregistros" tab. */
+    workspace?: EventWorkspaceData;
     preregistrations: {
         data: PreregistrationRow[];
         links: { url: string | null; label: string; active: boolean }[];
@@ -55,16 +60,24 @@ const props = defineProps<{
     };
 }>();
 
-const columns = [
-    { key: 'name', label: 'Nombre' },
-    { key: 'event', label: 'Evento' },
-    { key: 'race', label: 'Carrera' },
-    { key: 'created_at', label: 'Prerregistro' },
-    { key: 'legacy_plate_status', label: 'Legacy Plate' },
-    { key: 'legacy_plate_model', label: 'Modelo' },
-    { key: 'legacy_plate_paid_at', label: 'Pago' },
-    { key: 'participant_linked', label: 'Vinculado' },
-];
+const listUrl = computed(() =>
+    props.workspace
+        ? `${props.workspace.base_url}/preregistrations`
+        : '/admin/preregistrations',
+);
+
+const columns = computed(() =>
+    [
+        { key: 'name', label: 'Nombre' },
+        { key: 'event', label: 'Evento' },
+        { key: 'race', label: 'Carrera' },
+        { key: 'created_at', label: 'Prerregistro' },
+        { key: 'legacy_plate_status', label: 'Legacy Plate' },
+        { key: 'legacy_plate_model', label: 'Modelo' },
+        { key: 'legacy_plate_paid_at', label: 'Pago' },
+        { key: 'participant_linked', label: 'Vinculado' },
+    ].filter((column) => !(props.workspace && column.key === 'event')),
+);
 
 // A status change navigates without a `page` param, same as the search
 // box — it always lands back on page 1 for the new, possibly smaller,
@@ -72,7 +85,7 @@ const columns = [
 // anymore (product UX consolidation brief §80).
 function onStatusChange(value: AcceptableValue) {
     router.get(
-        '/admin/preregistrations',
+        listUrl.value,
         {
             q: props.filters.q || undefined,
             status: typeof value === 'string' ? value : undefined,
@@ -93,7 +106,7 @@ const filterOptions = [
 
 function applyFilter(value: string) {
     router.get(
-        '/admin/preregistrations',
+        listUrl.value,
         {
             legacy_plate: value,
             q: props.filters.q || undefined,
@@ -105,10 +118,21 @@ function applyFilter(value: string) {
 </script>
 
 <template>
-    <Head title="Prerregistros" />
+    <Head
+        :title="
+            workspace ? `Prerregistros — ${workspace.name}` : 'Prerregistros'
+        "
+    />
 
-    <div class="p-4 md:p-8">
-        <h1 class="mb-1 text-xl font-bold text-foreground">Prerregistros</h1>
+    <div class="w-full px-4 py-5 sm:px-6 md:py-7 lg:px-8 xl:px-10">
+        <EventWorkspaceHeader
+            v-if="workspace"
+            :workspace="workspace"
+            active="preregistrations"
+        />
+        <h1 v-else class="mb-1 text-xl font-bold text-foreground">
+            Prerregistros
+        </h1>
         <p class="mb-6 text-sm text-muted-foreground">
             Prerregistro al evento y preventa de Legacy Plate, vistos juntos —
             siguen siendo cosas distintas.

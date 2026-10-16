@@ -65,7 +65,7 @@ test('the Create Event form never offers a mock connection as a data source in p
     createProviderConnection('mock', 'Mock Event Provider');
     app()->detectEnvironment(fn () => 'production');
 
-    $response = $this->actingAs($this->admin)->get('/admin/editions/create');
+    $response = $this->actingAs($this->admin)->get('/admin/events/create');
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->where('providerConnections', []));

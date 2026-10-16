@@ -43,9 +43,9 @@ test('an admin can list plates and legacy codes', function () {
 
     $this->actingAs($admin)->get('/admin/plates')->assertOk();
     $this->actingAs($admin)->get('/admin/legacy-codes')->assertOk();
-    $this->actingAs($admin)->get('/admin/participants')->assertOk();
+    $this->actingAs($admin)->get('/admin/participants')->assertRedirect('/admin/events');
     $this->actingAs($admin)->get('/admin/preregistrations')->assertOk();
-    $this->actingAs($admin)->get('/admin/editions')->assertOk();
+    $this->actingAs($admin)->get('/admin/events')->assertOk();
 });
 
 test('an admin can resolve an open incident but not resolve it twice', function () {
