@@ -180,6 +180,9 @@ const previewProfile = computed(() => ({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="public">Público</SelectItem>
+                            <SelectItem value="followers"
+                                >Solo seguidores</SelectItem
+                            >
                             <SelectItem value="private">Privado</SelectItem>
                         </SelectContent>
                     </Select>

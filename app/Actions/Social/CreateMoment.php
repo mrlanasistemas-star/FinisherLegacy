@@ -4,6 +4,7 @@ namespace App\Actions\Social;
 
 use App\Enums\MomentType;
 use App\Enums\MomentVisibility;
+use App\Events\Community\CommunityPostCreated;
 use App\Exceptions\MomentReferenceInvalidException;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteOwnedProduct;
@@ -70,6 +71,12 @@ class CreateMoment
             throw new MomentReferenceInvalidException('event_media_uuids');
         }
 
+        // Related event: explicit (any event — e.g. cheering at a race) or
+        // derived from the linked participation.
+        $editionId = ! empty($data['event_edition_id']) && is_numeric($data['event_edition_id'])
+            ? (int) $data['event_edition_id']
+            : $participant?->event_edition_id;
+
         $metrics = $this->normalizeMetrics(is_array($data['metrics'] ?? null) ? $data['metrics'] : null);
         $caption = isset($data['caption']) && is_string($data['caption']) ? trim($data['caption']) : null;
 
@@ -91,13 +98,14 @@ class CreateMoment
         }
 
         try {
-            $moment = DB::transaction(function () use ($author, $type, $visibility, $caption, $participant, $medal, $gear, $metrics, $mediaUuids, $eventMedia, $stored) {
+            $moment = DB::transaction(function () use ($author, $type, $visibility, $caption, $participant, $editionId, $medal, $gear, $metrics, $mediaUuids, $eventMedia, $stored) {
                 $moment = LegacyMoment::create([
                     'user_id' => $author->id,
                     'type' => $type,
                     'caption' => $caption === '' ? null : $caption,
                     'visibility' => $visibility,
                     'event_participant_id' => $participant?->id,
+                    'event_edition_id' => $editionId,
                     'medal_id' => $medal?->id,
                     'athlete_owned_product_id' => $gear?->id,
                     'metrics' => $metrics,
@@ -135,6 +143,10 @@ class CreateMoment
         $rows = $moment->media()->whereNull('athlete_event_media_id')->get()->values();
         foreach ($stored as $index => $photo) {
             $this->media->process($photo, $rows[$index] ?? null);
+        }
+
+        if (CommunityPostCreated::shouldAnnounce($moment)) {
+            CommunityPostCreated::dispatch($moment);
         }
 
         return $moment;

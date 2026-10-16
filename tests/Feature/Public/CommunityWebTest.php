@@ -207,8 +207,8 @@ test('the public profile only lists posts the viewer may see', function () {
     $this->get('/@ana')
         ->assertInertia(fn ($page) => $page
             ->component('profile/Show')
-            ->has('posts', 1)
-            ->where('posts.0.caption', 'Visible')
+            ->has('posts.data', 1)
+            ->where('posts.data.0.caption', 'Visible')
         );
 });
 

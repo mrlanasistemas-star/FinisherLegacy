@@ -1,55 +1,110 @@
 <script setup lang="ts">
 /**
- * Comunidad → Conexiones: the athletes I follow and the ones who follow
- * me, each with the same animated Seguir / Siguiendo button. Privacy is
- * enforced server-side (public profiles only, blocked users hidden).
+ * Conexiones — who follows whom. Two modes:
+ *  - mine (`owner` null, /comunidad/conexiones): Siguiendo · Seguidores ·
+ *    Bloqueados (with Desbloquear).
+ *  - an athlete's (/@username/seguidores|siguiendo).
+ * Privacy is enforced server-side (SocialVisibility::scopeListableUsers).
  */
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, Users } from '@lucide/vue';
+import { computed } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import FollowButton from '@/components/community/FollowButton.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
+import { Button } from '@/components/ui/button';
+import { unblock } from '@/routes/athletes';
 import type { CommunityAthlete } from '@/types';
 
-defineProps<{
-    tab: 'siguiendo' | 'seguidores';
+type Tab = 'siguiendo' | 'seguidores' | 'bloqueados';
+
+const props = defineProps<{
+    tab: Tab;
+    owner: { username: string; name: string } | null;
     athletes: {
         data: CommunityAthlete[];
         links: PaginationLink[];
         total: number;
     };
-    counts: { siguiendo: number; seguidores: number };
+    counts: { siguiendo: number; seguidores: number; bloqueados?: number };
 }>();
+
+const page = usePage();
+const me = computed(() => page.props.auth.profile?.username ?? null);
+
+const tabs = computed(() => {
+    const base = [
+        { key: 'siguiendo' as Tab, label: 'Siguiendo' },
+        { key: 'seguidores' as Tab, label: 'Seguidores' },
+    ];
+
+    return props.owner
+        ? base
+        : [...base, { key: 'bloqueados' as Tab, label: 'Bloqueados' }];
+});
+
+function tabHref(key: Tab): string {
+    return props.owner
+        ? `/@${props.owner.username}/${key}`
+        : `/comunidad/conexiones?tab=${key}`;
+}
+
+const title = computed(() =>
+    props.owner ? props.owner.name : 'Mis conexiones',
+);
+
+function doUnblock(username: string) {
+    router.visit(unblock(username), { preserveScroll: true });
+}
+
+const emptyTitle = computed(() => {
+    if (props.tab === 'bloqueados') {
+        return 'No has bloqueado a nadie.';
+    }
+
+    if (props.owner) {
+        return props.tab === 'siguiendo'
+            ? 'Aún no sigue a nadie visible para ti.'
+            : 'Aún no tiene seguidores visibles para ti.';
+    }
+
+    return props.tab === 'siguiendo'
+        ? 'Todavía no sigues a nadie.'
+        : 'Aún no tienes seguidores.';
+});
 </script>
 
 <template>
-    <Head title="Mis conexiones" />
+    <Head
+        :title="
+            owner
+                ? `${owner.name} · ${tab === 'seguidores' ? 'Seguidores' : 'Siguiendo'}`
+                : 'Mis conexiones'
+        "
+    />
 
     <div class="fl-container max-w-3xl py-8 sm:py-12">
         <Link
-            href="/comunidad"
-            class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            :href="owner ? `/@${owner.username}` : '/comunidad'"
+            class="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
-            <ArrowLeft class="size-4" /> Comunidad
+            <ArrowLeft class="size-4" />
+            {{ owner ? `@${owner.username}` : 'Comunidad' }}
         </Link>
-        <h1 class="fl-display mt-4 text-3xl sm:text-4xl">Mis conexiones</h1>
+        <h1 class="fl-display mt-2 text-3xl sm:text-4xl">{{ title }}</h1>
 
-        <div
-            class="mt-6 inline-flex rounded-full border border-border bg-card p-1"
-            role="tablist"
+        <nav
+            class="mt-6 inline-flex flex-wrap rounded-full border border-border bg-card p-1"
+            aria-label="Listas"
         >
             <Link
-                v-for="t in [
-                    { key: 'siguiendo', label: 'Siguiendo' },
-                    { key: 'seguidores', label: 'Seguidores' },
-                ] as const"
+                v-for="t in tabs"
                 :key="t.key"
-                :href="`/comunidad/conexiones?tab=${t.key}`"
+                :href="tabHref(t.key)"
                 preserve-scroll
-                role="tab"
-                :aria-selected="tab === t.key"
-                class="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+                :aria-current="tab === t.key ? 'page' : undefined"
+                class="inline-flex min-h-10 items-center rounded-full px-4 text-sm font-semibold transition-colors"
                 :class="
                     tab === t.key
                         ? 'bg-foreground text-background'
@@ -58,10 +113,10 @@ defineProps<{
             >
                 {{ t.label }}
                 <span class="legacy-numeric ml-1 opacity-70">{{
-                    counts[t.key]
+                    counts[t.key] ?? 0
                 }}</span>
             </Link>
-        </div>
+        </nav>
 
         <ul v-if="athletes.data.length" class="mt-6 divide-y divide-border">
             <li
@@ -91,8 +146,17 @@ defineProps<{
                         >
                     </span>
                 </Link>
+                <Button
+                    v-if="tab === 'bloqueados' && athlete.username"
+                    variant="outline"
+                    size="sm"
+                    class="rounded-full"
+                    @click="doUnblock(athlete.username)"
+                >
+                    Desbloquear
+                </Button>
                 <FollowButton
-                    v-if="athlete.username"
+                    v-else-if="athlete.username && athlete.username !== me"
                     :username="athlete.username"
                     :name="athlete.name"
                     :following="athlete.is_following ?? false"
@@ -105,21 +169,9 @@ defineProps<{
             class="fl-card mt-6 flex flex-col items-center gap-3 px-6 py-14 text-center"
         >
             <Users class="size-8 text-muted-foreground" />
-            <p class="font-medium">
-                {{
-                    tab === 'siguiendo'
-                        ? 'Todavía no sigues a nadie.'
-                        : 'Aún no tienes seguidores.'
-                }}
-            </p>
-            <p class="max-w-sm text-sm text-muted-foreground">
-                {{
-                    tab === 'siguiendo'
-                        ? 'Encuentra atletas en la comunidad y sigue sus historias.'
-                        : 'Publica tus momentos y celebra a otros: así te encuentran.'
-                }}
-            </p>
+            <p class="font-medium">{{ emptyTitle }}</p>
             <Link
+                v-if="!owner && tab !== 'bloqueados'"
                 href="/comunidad"
                 class="mt-2 rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background"
                 >Ir a la comunidad</Link

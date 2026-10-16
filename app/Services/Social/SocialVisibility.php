@@ -14,12 +14,14 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * THE privacy rules of the social layer — feed, profile, search, explore,
  * direct moment access and comments all ask this class, never re-derive
- * it (docs/SOCIAL_ARCHITECTURE.md §Privacidad):
+ * it (docs/architecture/social.md §Privacidad):
  *
- *  - A private profile is visible only to its owner (its moments too).
  *  - A block, in either direction, hides both people from each other.
+ *  - Profile: public → anyone; followers → only people who follow the
+ *    athlete (others signed in see a "shell" to follow); private → owner.
  *  - Moment visibility on top: public → anyone who can see the profile;
  *    followers → only people who follow the author; private → author only.
+ *  - Content hidden by moderation is visible to its author only.
  *
  * Registered as a scoped singleton so the block/follow id lists are read
  * once per request.
@@ -78,13 +80,45 @@ class SocialVisibility
         return $viewer !== null && in_array($otherUserId, $this->hiddenUserIds($viewer), true);
     }
 
+    public function follows(?User $viewer, int $otherUserId): bool
+    {
+        return $viewer !== null && in_array($otherUserId, $this->followingIds($viewer), true);
+    }
+
+    /**
+     * Full access to the profile's content (posts, medals, races, photos,
+     * follower lists).
+     */
     public function canViewProfile(AthleteProfile $profile, ?User $viewer): bool
     {
         if ($viewer !== null && $viewer->id === $profile->user_id) {
             return true;
         }
 
-        return $profile->profile_visibility === ProfileVisibility::Public
+        if ($this->isHiddenBetween($viewer, $profile->user_id)) {
+            return false;
+        }
+
+        return match ($profile->profile_visibility) {
+            ProfileVisibility::Public => true,
+            ProfileVisibility::Followers => $this->follows($viewer, $profile->user_id),
+            ProfileVisibility::Private => false,
+        };
+    }
+
+    /**
+     * The profile "shell" (name, avatar, counts, Seguir) without content:
+     * a followers-only profile shows it to signed-in, non-blocked people so
+     * they can follow. Anonymous visitors only get public profiles.
+     */
+    public function canSeeProfileShell(AthleteProfile $profile, ?User $viewer): bool
+    {
+        if ($this->canViewProfile($profile, $viewer)) {
+            return true;
+        }
+
+        return $viewer !== null
+            && $profile->profile_visibility === ProfileVisibility::Followers
             && ! $this->isHiddenBetween($viewer, $profile->user_id);
     }
 
@@ -92,6 +126,11 @@ class SocialVisibility
     {
         if ($viewer !== null && $viewer->id === $moment->user_id) {
             return true;
+        }
+
+        // Hidden by moderation: only its author still sees it.
+        if ($moment->hidden_at !== null) {
+            return false;
         }
 
         $profile = $moment->author?->athleteProfile;
@@ -102,7 +141,7 @@ class SocialVisibility
 
         return match ($moment->visibility) {
             MomentVisibility::Public => true,
-            MomentVisibility::Followers => in_array($moment->user_id, $this->followingIds($viewer), true),
+            MomentVisibility::Followers => $this->follows($viewer, $moment->user_id),
             MomentVisibility::Private => false,
         };
     }
@@ -127,7 +166,18 @@ class SocialVisibility
                 }
 
                 $q->orWhere(function (Builder $shared) use ($following) {
-                    $shared->whereHas('author.athleteProfile', fn (Builder $p) => $p->where('profile_visibility', ProfileVisibility::Public))
+                    $shared->whereNull('legacy_moments.hidden_at')
+                        ->whereHas('author.athleteProfile', function (Builder $p) use ($following) {
+                            $p->where(function (Builder $pv) use ($following) {
+                                $pv->where('profile_visibility', ProfileVisibility::Public);
+
+                                if ($following !== []) {
+                                    $pv->orWhere(fn (Builder $f) => $f
+                                        ->where('profile_visibility', ProfileVisibility::Followers)
+                                        ->whereIn('athlete_profiles.user_id', $following));
+                                }
+                            });
+                        })
                         ->where(function (Builder $v) use ($following) {
                             $v->where('legacy_moments.visibility', MomentVisibility::Public);
 
@@ -143,6 +193,7 @@ class SocialVisibility
 
     /**
      * Public profiles a viewer may discover (search / explore / lists).
+     * Followers-only and private profiles are never listed.
      *
      * @param  Builder<AthleteProfile>  $query
      * @return Builder<AthleteProfile>
@@ -155,5 +206,38 @@ class SocialVisibility
             ->where('profile_visibility', ProfileVisibility::Public)
             ->whereHas('user')
             ->when($hidden !== [], fn (Builder $q) => $q->whereNotIn('athlete_profiles.user_id', $hidden));
+    }
+
+    /**
+     * Restricts a users query to people whose identity the viewer may see
+     * in a list (followers/following): themselves, public profiles, and
+     * followers-only profiles they follow. Blocks excluded.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeListableUsers(Builder $query, ?User $viewer): Builder
+    {
+        $hidden = $this->hiddenUserIds($viewer);
+        $following = $this->followingIds($viewer);
+
+        return $query
+            ->whereHas('athleteProfile')
+            ->where(function (Builder $q) use ($viewer, $following) {
+                if ($viewer !== null) {
+                    $q->where('users.id', $viewer->id);
+                }
+
+                $q->orWhereHas('athleteProfile', function (Builder $p) use ($following) {
+                    $p->where('profile_visibility', ProfileVisibility::Public);
+
+                    if ($following !== []) {
+                        $p->orWhere(fn (Builder $f) => $f
+                            ->where('profile_visibility', ProfileVisibility::Followers)
+                            ->whereIn('athlete_profiles.user_id', $following));
+                    }
+                });
+            })
+            ->when($hidden !== [], fn (Builder $q) => $q->whereNotIn('users.id', $hidden));
     }
 }

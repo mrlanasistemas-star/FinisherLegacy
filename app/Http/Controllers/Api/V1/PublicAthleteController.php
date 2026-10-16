@@ -45,10 +45,35 @@ class PublicAthleteController extends Controller
         $viewer = $request->user('sanctum') ?? $request->user();
         $viewer = $viewer instanceof User ? $viewer : null;
 
-        abort_unless($this->profiles->isVisibleTo($athleteProfile, $viewer), 404);
-
         $ownerId = $athleteProfile->user_id;
         $isOwn = $viewer?->id === $ownerId;
+
+        if (! $this->profiles->isVisibleTo($athleteProfile, $viewer)) {
+            // Followers-only profile seen by a signed-in non-follower: the
+            // header + follow state only (`restricted: true`), no content.
+            abort_unless($this->visibility->canSeeProfileShell($athleteProfile, $viewer), 404);
+
+            return $this->respond([
+                'restricted' => true,
+                'profile' => $this->profiles->profilePayload($athleteProfile),
+                'stats' => [
+                    'medals' => 0,
+                    'events' => 0,
+                    'followers' => AthleteFollow::query()->where('following_id', $ownerId)->count(),
+                    'following' => AthleteFollow::query()->where('follower_id', $ownerId)->count(),
+                    'moments' => 0,
+                ],
+                'viewer' => [
+                    'is_own' => false,
+                    'is_following' => false,
+                    'is_blocked' => false,
+                    'can_follow' => true,
+                ],
+                'medals' => [],
+                'recent_moments' => [],
+                'recent_events' => [],
+            ]);
+        }
         $medals = $this->profiles->publicMedals($athleteProfile);
 
         $recentMoments = $moments->visibleTo($viewer)
@@ -58,6 +83,7 @@ class PublicAthleteController extends Controller
             ->get();
 
         return $this->respond([
+            'restricted' => false,
             'profile' => $this->profiles->profilePayload($athleteProfile),
             'stats' => [
                 ...$this->profiles->statsPayload($athleteProfile, $medals),

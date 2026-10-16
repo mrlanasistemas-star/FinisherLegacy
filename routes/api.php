@@ -430,3 +430,4 @@ Route::post('webhooks/openpay', OpenPayWebhookController::class)->name('api.webh
 
 require __DIR__.'/api/tracking.php';
 require __DIR__.'/api/platform.php';
+require __DIR__.'/api/community.php';

@@ -559,3 +559,4 @@ require __DIR__.'/web/media.php';
 require __DIR__.'/web/tracking.php';
 require __DIR__.'/web/admin-workspace.php';
 require __DIR__.'/web/platform.php';
+require __DIR__.'/web/community.php';
