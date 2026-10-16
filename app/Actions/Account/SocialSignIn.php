@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\UserSocialAccount;
 use App\Services\Auth\IdTokenVerifier;
 use App\Services\LegacyIdService;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -76,6 +77,16 @@ class SocialSignIn
 
             if ($created) {
                 $user = $this->createUser($email, $emailVerified, $claims, $profile, $provider, $subject);
+            } elseif (! $user->hasVerifiedEmail()) {
+                // Nobody ever proved this mailbox, so the existing account may
+                // have been pre-registered by someone else with this email.
+                // The provider just proved ownership: drop whatever password
+                // and sessions were set before, then mark the email verified
+                // (which also links the athlete history, see LinkVerifiedUserToAthlete).
+                $user->password = Str::random(64);
+                $user->revokeAllAccess();
+                $user->markEmailAsVerified();
+                event(new Verified($user));
             }
 
             $user->socialAccounts()->create([

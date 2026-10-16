@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -84,6 +86,23 @@ class User extends Authenticatable implements ProductionActor
         $minutes = (int) config('sanctum.user_token_expiration');
 
         return $this->createToken($name, ['*'], $minutes > 0 ? now()->addMinutes($minutes) : null)->plainTextToken;
+    }
+
+    /**
+     * Cut every way back in: API tokens, "remember me" cookies and, with the
+     * database session driver, live web sessions. The caller saves the model.
+     */
+    public function revokeAllAccess(): void
+    {
+        $this->tokens()->delete();
+        $this->setRememberToken(Str::random(60));
+
+        if (config('session.driver') === 'database') {
+            DB::connection(config('session.connection'))
+                ->table(config('session.table', 'sessions'))
+                ->where('user_id', $this->id)
+                ->delete();
+        }
     }
 
     /** @return HasOne<AthleteProfile, $this> */

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserSocialAccount;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -141,6 +142,32 @@ test('Google sign-in verifies the ID token, creates the account and issues a San
         ->assertOk()->assertJsonPath('data.created', false);
 
     expect(User::query()->where('email', 'ana@example.com')->count())->toBe(1);
+});
+
+test('Google sign-in into an unverified pre-registered account drops the old password and sessions', function () {
+    config(['finisher.social_auth.google.client_ids' => ['google-client-id']]);
+    [$privatePem, $jwk] = testRsaKey('g1');
+    Http::fake(['www.googleapis.com/*' => Http::response(['keys' => [$jwk]])]);
+
+    // Someone registered first with this email and never verified it.
+    $squatter = User::factory()->unverified()->create(['email' => 'victim@example.com', 'password' => 'squatter-pass-123']);
+    $squatter->createToken('api');
+
+    $token = signedIdToken($privatePem, 'g1', [
+        'iss' => 'https://accounts.google.com', 'aud' => 'google-client-id', 'sub' => 'google-sub-victim',
+        'email' => 'victim@example.com', 'email_verified' => true,
+        'iat' => time(), 'exp' => time() + 3600,
+    ]);
+
+    $this->postJson('/api/v1/auth/social/google', ['id_token' => $token])->assertOk();
+
+    $user = $squatter->fresh();
+    expect($user->hasVerifiedEmail())->toBeTrue()
+        ->and(Hash::check('squatter-pass-123', $user->password))->toBeFalse()
+        ->and($user->tokens()->count())->toBe(1); // only the token just issued to the real owner
+
+    $this->postJson('/api/v1/auth/login', ['email' => 'victim@example.com', 'password' => 'squatter-pass-123', 'device_name' => 'x'])
+        ->assertStatus(422);
 });
 
 test('Apple sign-in without an email still creates a working account', function () {
