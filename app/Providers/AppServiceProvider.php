@@ -3,16 +3,23 @@
 namespace App\Providers;
 
 use App\Contracts\Notifications\PushNotificationGateway;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Observers\CommerceBroadcastObserver;
 use App\Services\Commerce\InventoryService;
 use App\Services\Commerce\PromotionResolver;
+use App\Services\Notifications\ExpoPushNotificationGateway;
 use App\Services\Notifications\NullPushNotificationGateway;
 use App\Services\Social\SocialVisibility;
+use App\Support\Observability\OperationalLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
@@ -25,10 +32,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // No real provider (Expo/FCM/APNs) exists yet (brief §50-§52) —
-        // swap this binding for a real gateway once one is chosen, no
-        // caller (App\Jobs\SendPushNotificationJob) needs to change.
-        $this->app->bind(PushNotificationGateway::class, NullPushNotificationGateway::class);
+        // PUSH_PROVIDER=expo → Expo Push Service (the Expo mobile app);
+        // anything else → Null gateway (never fails, reports not_configured).
+        // Callers (SendPushNotificationJob, admin "Enviar también push")
+        // only ever see the contract.
+        $this->app->bind(
+            PushNotificationGateway::class,
+            fn ($app) => $app->make(config('services.push.provider') === 'expo'
+                ? ExpoPushNotificationGateway::class
+                : NullPushNotificationGateway::class),
+        );
 
         // Scoped (per request / per queued job) so a viewer's block and
         // follow id lists are read once, never leaked across requests.
@@ -48,6 +61,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiting();
+        $this->configureObservability();
+        $this->configureRealtime();
         Schema::defaultStringLength(191);
 
         Gate::before(fn ($user) => $user->hasRole('super_admin') ? true : null);
@@ -66,8 +81,16 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
+        // Baseline for EVERY /api route (bootstrap/app.php throttleApi()) —
+        // the named per-action limiters below stack on top of it. Payment
+        // webhooks get a generous per-IP bucket of their own (providers
+        // retry in bursts from few IPs; Openpay triggers an outbound call).
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            if ($request->is('api/webhooks/*')) {
+                return Limit::perMinute(600)->by('webhooks:'.$request->ip());
+            }
+
+            return Limit::perMinute(120)->by('api:'.($request->user('sanctum')?->id ?: $request->ip()));
         });
 
         RateLimiter::for('api-register', function (Request $request) {
@@ -132,6 +155,82 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('social-auth', function (Request $request) {
             return Limit::perMinute(10)->by('social-auth:'.$request->ip());
         });
+
+        // ── Platform limiters (A1) for the public / ingest surfaces. Names
+        // are a contract other domains use via `throttle:<name>` —
+        // docs/ARCHITECTURE.md §Rate limits.
+
+        // GET /n/{token} and /api/v1/nfc/{token}: public. Generous for a
+        // person tapping; makes enumerating 160-bit tokens pointless.
+        RateLimiter::for('nfc-resolve', function (Request $request) {
+            return [
+                Limit::perMinute(30)->by('nfc-resolve:'.$request->ip()),
+                Limit::perHour(300)->by('nfc-resolve-h:'.$request->ip()),
+            ];
+        });
+
+        // POST tracking points: the app sends a batch every ~5–15 s per
+        // session; 1/s sustained per session leaves room for retries after
+        // offline buffering. Keyed by session (route param) + user.
+        RateLimiter::for('tracking-ingest', function (Request $request) {
+            $session = $request->route('session');
+            $sessionKey = is_object($session) ? (string) ($session->uuid ?? $session->getKey()) : (string) $session;
+            $actor = $request->user('sanctum')?->id ?: $request->ip();
+
+            return [
+                Limit::perMinute(60)->by('tracking-ingest:'.$sessionKey.'|'.$actor),
+                Limit::perMinute(240)->by('tracking-ingest-u:'.$actor),
+            ];
+        });
+
+        // Public live viewer snapshot (/live/{token}, /api/v1/live/{token}).
+        // Fallback polling ~every 10–15 s; many viewers may share one IP (a
+        // family on the finish-line Wi-Fi), so the key is IP + token.
+        RateLimiter::for('live-view', function (Request $request) {
+            return Limit::perMinute(30)->by('live-view:'.$request->ip().'|'.(string) ($request->route('token') ?? ''));
+        });
+
+        // Community writes (posts, comments, reactions, follows, reports)
+        // from the web session or the app token — per user, fallback IP.
+        RateLimiter::for('community-write', function (Request $request) {
+            $key = $request->user()?->id ?: ($request->user('sanctum')?->id ?: $request->ip());
+
+            return [
+                Limit::perMinute(20)->by('community-write:'.$key),
+                Limit::perHour(300)->by('community-write-h:'.$key),
+            ];
+        });
+
+        // Any media upload endpoint (moments, avatars, product media,
+        // event photos) — disk/CPU heavy, tight per user.
+        RateLimiter::for('uploads', function (Request $request) {
+            $key = $request->user()?->id ?: ($request->user('sanctum')?->id ?: $request->ip());
+
+            return [
+                Limit::perMinute(20)->by('uploads:'.$key),
+                Limit::perHour(200)->by('uploads-h:'.$key),
+            ];
+        });
+    }
+
+    /**
+     * Failed jobs get one structured log line (request_id travels with the
+     * job via Context) — docs/ARCHITECTURE.md §Observability.
+     */
+    private function configureObservability(): void
+    {
+        Queue::failing(fn (JobFailed $event) => OperationalLog::jobFailed($event));
+    }
+
+    /**
+     * Order/Payment transitions → order.updated / payment.updated hints
+     * (docs/ARCHITECTURE.md §Realtime). An observer instead of edits to the
+     * commerce Actions, so every transition path is covered.
+     */
+    private function configureRealtime(): void
+    {
+        Order::observe(CommerceBroadcastObserver::class);
+        Payment::observe(CommerceBroadcastObserver::class);
     }
 
     /**

@@ -73,6 +73,18 @@ return [
             'after_commit' => false,
         ],
 
+        // Long-running work (video transcode, Synology transfers): its
+        // retry_after must exceed the worker timeout (Horizon
+        // `supervisor-media`), or a slow job gets picked up twice.
+        'redis-long' => [
+            'driver' => 'redis',
+            'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
+            'queue' => env('QUEUE_MEDIA', 'media'),
+            'retry_after' => (int) env('REDIS_LONG_QUEUE_RETRY_AFTER', 960),
+            'block_for' => null,
+            'after_commit' => false,
+        ],
+
         'deferred' => [
             'driver' => 'deferred',
         ],
@@ -101,6 +113,17 @@ return [
     | connection and table which has been defined by your application.
     |
     */
+
+    /*
+    | Logical queue names (docs/ARCHITECTURE.md §Queues). They all default to
+    | `default`, so local dev with one `queue:listen` worker runs everything;
+    | production sets QUEUE_REALTIME=realtime / QUEUE_MEDIA=media and Horizon
+    | runs a supervisor per queue.
+    */
+    'names' => [
+        'realtime' => env('QUEUE_REALTIME', 'default'), // broadcasts, push
+        'media' => env('QUEUE_MEDIA', 'default'),       // image variants, ffmpeg, Synology
+    ],
 
     'batching' => [
         'database' => env('DB_CONNECTION', 'sqlite'),

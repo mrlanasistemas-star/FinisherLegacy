@@ -429,3 +429,4 @@ Route::post('webhooks/stripe', StripeWebhookController::class)->name('api.webhoo
 Route::post('webhooks/openpay', OpenPayWebhookController::class)->name('api.webhooks.openpay');
 
 require __DIR__.'/api/tracking.php';
+require __DIR__.'/api/platform.php';

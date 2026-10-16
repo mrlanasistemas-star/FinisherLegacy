@@ -15,6 +15,15 @@ class RegisterPushDevice
 {
     public function handle(User $user, string $platform, string $provider, string $token, ?string $deviceName = null): PushDevice
     {
+        // A physical device belongs to whoever is signed in on it now: the
+        // same token registered under a previous account must stop
+        // receiving that account's pushes (security audit, A1).
+        PushDevice::query()
+            ->where('token_hash', hash('sha256', $token))
+            ->where('user_id', '!=', $user->id)
+            ->where('active', true)
+            ->update(['active' => false]);
+
         // `token` is encrypted at rest, so the lookup goes through its
         // plain SHA-256 digest instead — see App\Models\PushDevice.
         $device = PushDevice::query()

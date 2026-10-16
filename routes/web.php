@@ -558,3 +558,4 @@ require __DIR__.'/settings.php';
 require __DIR__.'/web/media.php';
 require __DIR__.'/web/tracking.php';
 require __DIR__.'/web/admin-workspace.php';
+require __DIR__.'/web/platform.php';
