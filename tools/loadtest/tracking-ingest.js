@@ -1,9 +1,9 @@
 // Tracking ingestion (contract in AGENT_BRIEF / docs/ARCHITECTURE.md):
 // each VU = one runner whose phone posts a batch of GPS points every ~10 s.
 // Needs seeded users with an event participation (LoadTestSeeder does it).
-import http from 'k6/http';
 import { check, sleep } from 'k6';
 import exec from 'k6/execution';
+import http from 'k6/http';
 import { API, jsonHeaders, loginUsers, ok, optionsFor, tokenForVu } from './lib/common.js';
 
 export const options = optionsFor('tracking_ingest');

@@ -139,7 +139,10 @@ function refresh(): void {
 
 const { pause, resume } = useIntervalFn(
     () => {
-        if (visibility.value !== 'visible' || live.value?.status === 'stopped') {
+        if (
+            visibility.value !== 'visible' ||
+            live.value?.status === 'stopped'
+        ) {
             return;
         }
 
@@ -193,9 +196,7 @@ const mapConfig = computed<TrackingMapConfig>(
 <template>
     <Head
         :title="
-            live
-                ? `Sigue a ${firstName} en vivo`
-                : 'Seguimiento no disponible'
+            live ? `Sigue a ${firstName} en vivo` : 'Seguimiento no disponible'
         "
     >
         <meta name="robots" content="noindex, nofollow" />
@@ -203,9 +204,7 @@ const mapConfig = computed<TrackingMapConfig>(
     </Head>
 
     <div class="min-h-dvh bg-fl-paper text-foreground">
-        <header
-            class="fl-container flex h-14 items-center justify-between"
-        >
+        <header class="fl-container flex h-14 items-center justify-between">
             <FinisherLegacyLogo variant="wordmark" size="sm" />
             <span
                 v-if="live"
@@ -238,9 +237,9 @@ const mapConfig = computed<TrackingMapConfig>(
                     Este enlace ya no está activo
                 </h1>
                 <p class="mt-4 text-muted-foreground">
-                    Puede que haya vencido o que tu atleta lo haya
-                    desactivado. Pídele que te comparta uno nuevo desde su
-                    evento en Finisher Legacy.
+                    Puede que haya vencido o que tu atleta lo haya desactivado.
+                    Pídele que te comparta uno nuevo desde su evento en Finisher
+                    Legacy.
                 </p>
                 <Link
                     href="/"
@@ -316,13 +315,17 @@ const mapConfig = computed<TrackingMapConfig>(
             </section>
 
             <!-- Numbers -->
-            <section class="fl-container mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <section
+                class="fl-container mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
+            >
                 <div class="fl-card col-span-2 p-4 sm:col-span-2">
                     <p class="text-xs text-muted-foreground">Recorrido</p>
                     <p class="mt-1 font-serif text-4xl tabular-nums">
                         {{ formatKm(live.distance_m) }}
                     </p>
-                    <template v-if="progressPct !== null && live.race_distance_m">
+                    <template
+                        v-if="progressPct !== null && live.race_distance_m"
+                    >
                         <div
                             class="mt-3 h-2 overflow-hidden rounded-full bg-fl-cream"
                             role="progressbar"
@@ -349,10 +352,7 @@ const mapConfig = computed<TrackingMapConfig>(
                     <p class="mt-1 text-lg font-medium">
                         {{ lastUpdate ?? 'Todavía no' }}
                     </p>
-                    <p
-                        v-if="isStale"
-                        class="mt-1 text-xs text-amber-700"
-                    >
+                    <p v-if="isStale" class="mt-1 text-xs text-amber-700">
                         Puede estar en una zona sin señal.
                     </p>
                 </div>
@@ -396,7 +396,10 @@ const mapConfig = computed<TrackingMapConfig>(
                             class="grid size-9 shrink-0 place-items-center rounded-full bg-fl-cream text-fl-gold-ink"
                             aria-hidden="true"
                         >
-                            <Mic v-if="message.type === 'audio'" class="size-4" />
+                            <Mic
+                                v-if="message.type === 'audio'"
+                                class="size-4"
+                            />
                             <Heart v-else class="size-4" />
                         </div>
                         <div class="min-w-0">
@@ -414,15 +417,18 @@ const mapConfig = computed<TrackingMapConfig>(
                             >
                                 “{{ message.text }}”
                             </p>
-                            <p v-else class="mt-0.5 text-sm text-muted-foreground">
+                            <p
+                                v-else
+                                class="mt-0.5 text-sm text-muted-foreground"
+                            >
                                 Le mandó un mensaje de voz.
                             </p>
                         </div>
                     </li>
                 </ul>
                 <p v-else class="mt-4 text-sm text-muted-foreground">
-                    Todavía no hay mensajes. Sé la primera persona en
-                    mandarle ánimo.
+                    Todavía no hay mensajes. Sé la primera persona en mandarle
+                    ánimo.
                 </p>
 
                 <a
@@ -436,8 +442,8 @@ const mapConfig = computed<TrackingMapConfig>(
             </section>
 
             <footer class="fl-container mt-12 text-xs text-muted-foreground">
-                Solo quien tiene este enlace puede ver el seguimiento.
-                Finisher Legacy · Tu historia. Tu legado.
+                Solo quien tiene este enlace puede ver el seguimiento. Finisher
+                Legacy · Tu historia. Tu legado.
             </footer>
         </main>
     </div>

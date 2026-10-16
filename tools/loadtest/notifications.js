@@ -1,7 +1,7 @@
 // Notifications: the app polling its inbox + marking read (what the bell
 // fallback poll costs when Reverb is down).
-import http from 'k6/http';
 import { sleep } from 'k6';
+import http from 'k6/http';
 import { API, jsonHeaders, loginUsers, ok, optionsFor, tokenForVu } from './lib/common.js';
 
 export const options = optionsFor('notifications');
@@ -17,6 +17,7 @@ export default function (data) {
     ok(list, 'inbox');
 
     const unread = (list.status === 200 ? list.json('data') || [] : []).find((n) => !n.read_at);
+
     if (unread) {
         ok(
             http.post(`${API}/me/notifications/${unread.id}/read`, '{}', {

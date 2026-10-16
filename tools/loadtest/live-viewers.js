@@ -3,10 +3,10 @@
 // to the public channel live.{token} when REVERB_APP_KEY is given.
 //   LIVE_TOKENS=tok1,tok2   (share tokens from a seeded tracking session)
 //   REVERB_WS=ws://127.0.0.1:8080  REVERB_APP_KEY=...
-import http from 'k6/http';
-import ws from 'k6/ws';
 import { check, fail, sleep } from 'k6';
+import http from 'k6/http';
 import { Counter } from 'k6/metrics';
+import ws from 'k6/ws';
 import { API, BASE_URL, jsonHeaders, ok, optionsFor, pick } from './lib/common.js';
 
 export const options = optionsFor('live_viewers');

@@ -43,13 +43,16 @@ const LiveTrackingMap = defineAsyncComponent(
 const now = ref(Date.now());
 const visibility = useDocumentVisibility();
 
-useIntervalFn(() => {
-    now.value = Date.now();
+useIntervalFn(
+    () => {
+        now.value = Date.now();
 
-    if (visibility.value === 'visible' && props.stats.active > 0) {
-        router.reload({ only: ['stats', 'sessions'] });
-    }
-}, Math.max(15, props.pollSeconds) * 1000);
+        if (visibility.value === 'visible' && props.stats.active > 0) {
+            router.reload({ only: ['stats', 'sessions'] });
+        }
+    },
+    Math.max(15, props.pollSeconds) * 1000,
+);
 
 const markers = computed(() =>
     props.sessions.data
@@ -86,7 +89,9 @@ function ago(iso: string | null): string {
 
         <div class="grid grid-cols-3 gap-3">
             <div class="fl-card p-4">
-                <p class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <p
+                    class="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
                     <Radio class="size-3.5" /> En vivo ahora
                 </p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums">
@@ -94,7 +99,9 @@ function ago(iso: string | null): string {
                 </p>
             </div>
             <div class="fl-card p-4">
-                <p class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <p
+                    class="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
                     <MapPin class="size-3.5" /> Seguimientos
                 </p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums">
@@ -102,7 +109,9 @@ function ago(iso: string | null): string {
                 </p>
             </div>
             <div class="fl-card p-4">
-                <p class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <p
+                    class="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
                     <Link2 class="size-3.5" /> Enlaces activos
                 </p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums">
@@ -134,14 +143,20 @@ function ago(iso: string | null): string {
 
         <template v-else>
             <!-- Desktop table -->
-            <div class="hidden overflow-hidden rounded-xl border border-border md:block">
+            <div
+                class="hidden overflow-hidden rounded-xl border border-border md:block"
+            >
                 <table class="w-full text-sm">
-                    <thead class="bg-muted/40 text-left text-xs text-muted-foreground">
+                    <thead
+                        class="bg-muted/40 text-left text-xs text-muted-foreground"
+                    >
                         <tr>
                             <th class="px-4 py-2 font-medium">Participante</th>
                             <th class="px-4 py-2 font-medium">Distancia</th>
                             <th class="px-4 py-2 font-medium">Estado</th>
-                            <th class="px-4 py-2 font-medium">Última actualización</th>
+                            <th class="px-4 py-2 font-medium">
+                                Última actualización
+                            </th>
                             <th class="px-4 py-2 font-medium">Batería</th>
                             <th class="px-4 py-2 font-medium">Fuente</th>
                         </tr>
@@ -153,8 +168,12 @@ function ago(iso: string | null): string {
                                     {{ row.participant }}
                                 </p>
                                 <p class="text-xs text-muted-foreground">
-                                    <span v-if="row.bib_number">#{{ row.bib_number }}</span>
-                                    <span v-if="row.race"> · {{ row.race }}</span>
+                                    <span v-if="row.bib_number"
+                                        >#{{ row.bib_number }}</span
+                                    >
+                                    <span v-if="row.race">
+                                        · {{ row.race }}</span
+                                    >
                                 </p>
                             </td>
                             <td class="px-4 py-2.5 tabular-nums">
@@ -169,7 +188,11 @@ function ago(iso: string | null): string {
                                             : 'bg-muted text-muted-foreground'
                                     "
                                 >
-                                    {{ row.status === 'active' ? 'En vivo' : 'Terminado' }}
+                                    {{
+                                        row.status === 'active'
+                                            ? 'En vivo'
+                                            : 'Terminado'
+                                    }}
                                 </span>
                             </td>
                             <td class="px-4 py-2.5 text-muted-foreground">
@@ -179,15 +202,28 @@ function ago(iso: string | null): string {
                                 <span
                                     v-if="row.battery !== null"
                                     class="inline-flex items-center gap-1"
-                                    :class="row.battery <= 20 ? 'text-amber-700' : ''"
+                                    :class="
+                                        row.battery <= 20
+                                            ? 'text-amber-700'
+                                            : ''
+                                    "
                                 >
-                                    <BatteryLow v-if="row.battery <= 20" class="size-4" />
+                                    <BatteryLow
+                                        v-if="row.battery <= 20"
+                                        class="size-4"
+                                    />
                                     {{ row.battery }}%
                                 </span>
-                                <span v-else class="text-muted-foreground">—</span>
+                                <span v-else class="text-muted-foreground"
+                                    >—</span
+                                >
                             </td>
                             <td class="px-4 py-2.5 text-muted-foreground">
-                                {{ row.source === 'gps_band' ? 'Dispositivo' : 'Teléfono' }}
+                                {{
+                                    row.source === 'gps_band'
+                                        ? 'Dispositivo'
+                                        : 'Teléfono'
+                                }}
                             </td>
                         </tr>
                     </tbody>
@@ -203,11 +239,18 @@ function ago(iso: string | null): string {
                 >
                     <div class="min-w-0">
                         <p class="truncate text-sm font-medium">
-                            <span v-if="row.bib_number" class="text-muted-foreground">#{{ row.bib_number }} </span>{{ row.participant }}
+                            <span
+                                v-if="row.bib_number"
+                                class="text-muted-foreground"
+                                >#{{ row.bib_number }} </span
+                            >{{ row.participant }}
                         </p>
                         <p class="text-xs text-muted-foreground">
-                            {{ formatKm(row.distance_m) }} · {{ ago(row.last_point_at) }}
-                            <template v-if="row.battery !== null"> · {{ row.battery }}%</template>
+                            {{ formatKm(row.distance_m) }} ·
+                            {{ ago(row.last_point_at) }}
+                            <template v-if="row.battery !== null">
+                                · {{ row.battery }}%</template
+                            >
                         </p>
                     </div>
                     <span
@@ -223,7 +266,10 @@ function ago(iso: string | null): string {
                 </li>
             </ul>
 
-            <Pagination v-if="sessions.links.length > 3" :links="sessions.links" />
+            <Pagination
+                v-if="sessions.links.length > 3"
+                :links="sessions.links"
+            />
         </template>
     </div>
 </template>

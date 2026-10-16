@@ -36,9 +36,7 @@ const props = defineProps<{
 }>();
 
 const newLink = ref<{ url: string; expires_at: string } | null>(null);
-const pairing = ref<{ code: string; expires_at: string | null } | null>(
-    null,
-);
+const pairing = ref<{ code: string; expires_at: string | null } | null>(null);
 const copied = ref(false);
 const busy = ref(false);
 const canNativeShare =
@@ -71,8 +69,7 @@ function createShare(): void {
             preserveScroll: true,
             onFlash: (flash) => {
                 const data = flash.trackingShare as
-                    | { url: string; expires_at: string }
-                    | undefined;
+                    { url: string; expires_at: string } | undefined;
 
                 if (data) {
                     newLink.value = data;
@@ -123,8 +120,7 @@ function pairDevice(): void {
             preserveScroll: true,
             onFlash: (flash) => {
                 const data = flash.trackingPairing as
-                    | { code: string; expires_at: string | null }
-                    | undefined;
+                    { code: string; expires_at: string | null } | undefined;
 
                 if (data) {
                     pairing.value = data;
@@ -169,13 +165,15 @@ function disconnect(uuid: string): void {
                     >
                         Último seguimiento · {{ summary }}
                     </p>
-                    <p class="mt-1 flex items-start gap-2 text-sm text-muted-foreground">
+                    <p
+                        class="mt-1 flex items-start gap-2 text-sm text-muted-foreground"
+                    >
                         <Smartphone class="mt-0.5 size-4 shrink-0" />
                         <span>
                             El seguimiento se inicia desde la app Finisher
                             Legacy, solo cuando tú lo decides. Comparte el
-                            enlace y tu familia te verá avanzar en el mapa,
-                            sin crear cuenta.
+                            enlace y tu familia te verá avanzar en el mapa, sin
+                            crear cuenta.
                         </span>
                     </p>
                 </div>
@@ -251,7 +249,8 @@ function disconnect(uuid: string): void {
                                 v-if="share.last_viewed_at"
                                 class="text-muted-foreground"
                             >
-                                · visto {{ timeAgo(share.last_viewed_at) }}</span
+                                · visto
+                                {{ timeAgo(share.last_viewed_at) }}</span
                             >
                         </span>
                     </div>
@@ -284,7 +283,11 @@ function disconnect(uuid: string): void {
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
                         Escríbelo en tu dispositivo. Vence
-                        {{ pairing.expires_at ? timeAgo(pairing.expires_at) : 'pronto' }}.
+                        {{
+                            pairing.expires_at
+                                ? timeAgo(pairing.expires_at)
+                                : 'pronto'
+                        }}.
                     </p>
                 </div>
 

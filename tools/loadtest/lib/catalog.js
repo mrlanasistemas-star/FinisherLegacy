@@ -1,5 +1,5 @@
-import http from 'k6/http';
 import { fail } from 'k6';
+import http from 'k6/http';
 import { API, jsonHeaders } from './common.js';
 
 /** UUIDs of active variants of purchasable products (setup-time only). */
@@ -13,6 +13,7 @@ export function purchasableVariants(limit = 20) {
         }
 
         const detail = http.get(`${API}/store/products/${product.slug}`, { headers: jsonHeaders() });
+
         for (const variant of detail.json('data.variants') || []) {
             if (variant.uuid && variant.in_stock !== false) {
                 variants.push(variant.uuid);

@@ -1,10 +1,10 @@
 // Checkout up to ORDER CREATION only — never calls /payments/online, never
 // touches Stripe/OpenPay. Creates real pending orders and reserves stock:
 // run only on a disposable database (README).
-import http from 'k6/http';
 import { sleep } from 'k6';
-import { API, jsonHeaders, loginUsers, ok, optionsFor, pick, tokenForVu } from './lib/common.js';
+import http from 'k6/http';
 import { purchasableVariants } from './lib/catalog.js';
+import { API, jsonHeaders, loginUsers, ok, optionsFor, pick, tokenForVu } from './lib/common.js';
 
 export const options = optionsFor('checkout');
 
@@ -28,6 +28,7 @@ export default function (data) {
     ok(order, 'checkout → order');
 
     const uuid = order.status === 201 ? order.json('data.uuid') : null;
+
     if (uuid) {
         sleep(1);
         ok(http.get(`${API}/orders/${uuid}`, { headers, tags: { name: 'api:/orders/{uuid}' } }), 'order detail');

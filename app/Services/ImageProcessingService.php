@@ -107,7 +107,7 @@ class ImageProcessingService
             throw ValidationException::withMessages(['image' => 'No pudimos leer la imagen. Prueba con un JPG, PNG o WebP.']);
         }
 
-        if ($size[0] > $maxDimension || $size[1] > $maxDimension || $size[0] * $size[1] > $maxPixels) {
+        if ($size[0] > $maxDimension || $size[1] > $maxDimension || $maxPixels < $size[0] * $size[1]) {
             throw ValidationException::withMessages([
                 'image' => 'La imagen es demasiado grande (máximo '.intdiv($maxPixels, 1_000_000).' megapíxeles). Redúcela e inténtalo de nuevo.',
             ]);

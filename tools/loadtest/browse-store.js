@@ -1,6 +1,6 @@
 // Anonymous store browsing: web pages (Inertia HTML) + the mobile API catalog.
-import http from 'k6/http';
 import { sleep } from 'k6';
+import http from 'k6/http';
 import { API, BASE_URL, jsonHeaders, ok, optionsFor, pick } from './lib/common.js';
 
 export const options = optionsFor('browse_store');

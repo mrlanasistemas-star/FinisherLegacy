@@ -1,8 +1,8 @@
 // Cart: add → update → read → remove (no order is created).
-import http from 'k6/http';
 import { sleep } from 'k6';
-import { API, jsonHeaders, loginUsers, ok, optionsFor, pick, tokenForVu } from './lib/common.js';
+import http from 'k6/http';
 import { purchasableVariants } from './lib/catalog.js';
+import { API, jsonHeaders, loginUsers, ok, optionsFor, pick, tokenForVu } from './lib/common.js';
 
 export const options = optionsFor('cart');
 

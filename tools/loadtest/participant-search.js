@@ -1,7 +1,7 @@
 // Event participant search (race day: everyone looks up a runner by name/bib).
 // Public web search + API search. SEARCH_TERMS="garcia,ana,1024" to match your data.
-import http from 'k6/http';
 import { sleep } from 'k6';
+import http from 'k6/http';
 import { API, BASE_URL, jsonHeaders, ok, optionsFor, pick } from './lib/common.js';
 
 export const options = optionsFor('participant_search');

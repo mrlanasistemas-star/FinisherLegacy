@@ -1,8 +1,8 @@
 // Shared config/helpers for the Finisher Legacy k6 scenarios.
 // NEVER point this at production (see ../README.md).
-import http from 'k6/http';
 import { check, fail } from 'k6';
 import exec from 'k6/execution';
+import http from 'k6/http';
 
 export const BASE_URL = (__ENV.BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
 export const API = `${BASE_URL}/api/v1`;
@@ -41,6 +41,7 @@ export function stagesFor(profile = __ENV.PROFILE || 'smoke') {
     }
 
     const vus = parseInt(profile, 10);
+
     if (!Number.isFinite(vus)) {
         fail(`Unknown PROFILE "${profile}"`);
     }
