@@ -2,9 +2,9 @@
 
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
+use App\Providers\TrackingServiceProvider;
 use App\Providers\HorizonServiceProvider;
 use App\Providers\NfcServiceProvider;
-use App\Providers\TrackingServiceProvider;
 
 return [
     AppServiceProvider::class,
