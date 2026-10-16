@@ -118,6 +118,9 @@ class PreparationController extends Controller
 
         return response()->streamDownload(function () use ($plates) {
             $out = fopen('php://output', 'w');
+            if ($out === false) {
+                return;
+            }
             fputcsv($out, ['serial', 'layout', 'nombre', 'evento', 'distancia', 'fecha', 'tiempo', 'ritmo', 'dorsal', 'posicion']);
 
             foreach ($plates as $plate) {

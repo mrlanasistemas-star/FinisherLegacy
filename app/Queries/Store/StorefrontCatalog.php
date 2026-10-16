@@ -145,6 +145,7 @@ class StorefrontCatalog
      * The filterable listing behind /tienda/catalogo and each category.
      *
      * @param  array{category?: ?ProductCategory, tipo?: ?string, talla?: ?string, nfc?: bool, disponibles?: bool, orden?: ?string}  $filters
+     * @return LengthAwarePaginator<int, array<string, mixed>>
      */
     public function paginate(array $filters): LengthAwarePaginator
     {
@@ -212,7 +213,7 @@ class StorefrontCatalog
      */
     public function categories(): array
     {
-        return ProductCategory::query()
+        return array_values(ProductCategory::query()
             ->where('active', true)
             ->withCount(['products' => fn (Builder $q) => $q->where('active', true)->where('status', 'active')->where('type', '!=', ProductType::DigitalPhoto->value)])
             ->orderBy('sort_order')
@@ -224,7 +225,7 @@ class StorefrontCatalog
                 'description' => $category->description,
                 'products_count' => $category->products_count,
             ])
-            ->all();
+            ->all());
     }
 
     /**
@@ -233,6 +234,6 @@ class StorefrontCatalog
      */
     public function cards(Collection $products): array
     {
-        return $products->map(fn (Product $product) => GetFeaturedProducts::summarize($product))->values()->all();
+        return array_values($products->map(fn (Product $product) => GetFeaturedProducts::summarize($product))->all());
     }
 }

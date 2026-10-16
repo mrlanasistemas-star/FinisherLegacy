@@ -57,7 +57,7 @@ class CommunityPostCreated implements ShouldBroadcast, ShouldDispatchAfterCommit
         return [
             'uuid' => $this->moment->uuid,
             'author_username' => $this->moment->author?->athleteProfile?->username,
-            'created_at' => $this->moment->created_at?->toIso8601String(),
+            'created_at' => $this->moment->created_at->toIso8601String(),
         ];
     }
 }

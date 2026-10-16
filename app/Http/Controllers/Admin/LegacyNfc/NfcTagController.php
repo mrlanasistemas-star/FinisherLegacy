@@ -84,6 +84,9 @@ class NfcTagController extends Controller
 
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
+            if ($out === false) {
+                return;
+            }
             fputcsv($out, ['id', 'url', 'lote', 'estado']);
 
             $query->chunkById(500, function ($tags) use ($out) {

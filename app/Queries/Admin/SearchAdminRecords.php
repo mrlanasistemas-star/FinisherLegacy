@@ -41,7 +41,7 @@ class SearchAdminRecords
         $groups = [];
 
         if ($viewer->can('events.view')) {
-            $groups[] = ['type' => 'event', 'label' => 'Eventos', 'items' => EventEdition::query()
+            $groups[] = ['type' => 'event', 'label' => 'Eventos', 'items' => array_values(EventEdition::query()
                 ->with('event:id,name')
                 ->whereHas('event', fn ($q) => $q->where('name', 'like', $like))
                 ->orderByDesc('event_date')
@@ -52,11 +52,11 @@ class SearchAdminRecords
                     'title' => $edition->event->name,
                     'subtitle' => trim($edition->name.' · '.$edition->event_date->format('d/m/Y').' · '.$edition->city, ' ·'),
                     'url' => "/admin/events/{$edition->id}",
-                ])->all()];
+                ])->all())];
         }
 
         if ($viewer->can('athletes.view')) {
-            $groups[] = ['type' => 'athlete', 'label' => 'Atletas', 'items' => Athlete::query()
+            $groups[] = ['type' => 'athlete', 'label' => 'Atletas', 'items' => array_values(Athlete::query()
                 ->whereNull('merged_into_athlete_id')
                 ->where(fn ($q) => $q->where('full_name', 'like', $like)->orWhere('email', 'like', $prefix))
                 ->orderBy('full_name')
@@ -67,11 +67,11 @@ class SearchAdminRecords
                     'title' => (string) $athlete->full_name,
                     'subtitle' => $athlete->email ? Str::mask($athlete->email, '*', 3, max(0, strpos($athlete->email, '@') - 3)) : $athlete->country,
                     'url' => "/admin/athletes/{$athlete->id}",
-                ])->all()];
+                ])->all())];
         }
 
         if ($viewer->can('participants.view')) {
-            $groups[] = ['type' => 'participant', 'label' => 'Participantes', 'items' => EventParticipant::query()
+            $groups[] = ['type' => 'participant', 'label' => 'Participantes', 'items' => array_values(EventParticipant::query()
                 ->with('eventEdition:id,event_id,name', 'eventEdition.event:id,name')
                 ->where(fn ($q) => $q->where('full_name', 'like', $like)->orWhere('bib_number', $term))
                 ->latest('id')
@@ -80,13 +80,13 @@ class SearchAdminRecords
                 ->map(fn (EventParticipant $participant) => [
                     'id' => $participant->id,
                     'title' => (string) $participant->full_name,
-                    'subtitle' => trim(($participant->bib_number ? "#{$participant->bib_number} · " : '').($participant->eventEdition?->event?->name ?? '')),
+                    'subtitle' => trim(($participant->bib_number ? "#{$participant->bib_number} · " : '').($participant->eventEdition?->event->name ?? '')),
                     'url' => "/admin/participants/{$participant->id}",
-                ])->all()];
+                ])->all())];
         }
 
         if ($viewer->can('orders.view')) {
-            $groups[] = ['type' => 'order', 'label' => 'Pedidos', 'items' => Order::query()
+            $groups[] = ['type' => 'order', 'label' => 'Pedidos', 'items' => array_values(Order::query()
                 ->where(fn ($q) => $q->where('order_number', 'like', $prefix)->orWhere('uuid', $term))
                 ->latest('id')
                 ->limit(self::PER_TYPE)
@@ -96,11 +96,11 @@ class SearchAdminRecords
                     'title' => (string) $order->order_number,
                     'subtitle' => $order->customer_snapshot['name'] ?? null,
                     'url' => "/admin/orders/{$order->uuid}",
-                ])->all()];
+                ])->all())];
         }
 
         if ($viewer->can('products.manage')) {
-            $groups[] = ['type' => 'product', 'label' => 'Productos', 'items' => Product::query()
+            $groups[] = ['type' => 'product', 'label' => 'Productos', 'items' => array_values(Product::query()
                 ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('slug', 'like', $prefix))
                 ->orderBy('name')
                 ->limit(self::PER_TYPE)
@@ -110,7 +110,7 @@ class SearchAdminRecords
                     'title' => $product->name,
                     'subtitle' => null,
                     'url' => "/admin/products/{$product->id}",
-                ])->all()];
+                ])->all())];
         }
 
         return array_values(array_filter($groups, fn (array $group) => $group['items'] !== []));

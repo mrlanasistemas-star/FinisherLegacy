@@ -8,6 +8,7 @@ use App\Models\CompanySetting;
 use App\Models\ContactMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -51,7 +52,7 @@ class ContactController extends Controller
         ]);
 
         ContactMessage::create([
-            ...collect($data)->except('website')->all(),
+            ...Arr::except($data, 'website'),
             'user_id' => $request->user()?->id,
             'status' => ContactMessageStatus::New,
         ]);

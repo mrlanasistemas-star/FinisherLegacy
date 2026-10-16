@@ -219,9 +219,9 @@ class CheckoutController extends Controller
         return [
             'id' => $item->id,
             'quantity' => $item->quantity,
-            'product_name' => $item->product?->name ?? $item->name,
+            'product_name' => $item->product->name ?? $item->name,
             'product_slug' => $item->product?->slug,
-            'variant_name' => $variant?->name ?? '',
+            'variant_name' => $variant->name ?? '',
             ...($variant?->sizeAndColor() ?? ['size' => null, 'color' => null]),
             'unit_price_minor' => $item->unit_price_minor,
             'line_total_minor' => $item->line_total_minor,

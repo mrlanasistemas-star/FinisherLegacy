@@ -104,7 +104,7 @@ class FeedQuery
 
         $athleteId = $viewer->athlete()->value('id');
 
-        return EventParticipant::query()
+        return array_values(EventParticipant::query()
             ->where(fn ($q) => $athleteId !== null
                 ? $q->where('athlete_id', $athleteId)->orWhere('user_id', $viewer->id)
                 : $q->where('user_id', $viewer->id))
@@ -113,13 +113,13 @@ class FeedQuery
             ->pluck('event_edition_id')
             ->map(fn ($id) => (int) $id)
             ->unique()
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
      * @param  list<int>  $ids
-     * @return array{0: string, 1: list<int>}
+     * @param  literal-string  $column
+     * @return array{0: literal-string, 1: list<int>}
      */
     private function inClause(string $column, array $ids): array
     {
@@ -127,6 +127,6 @@ class FeedQuery
             return ['1 = 0', []];
         }
 
-        return [$column.' IN ('.implode(', ', array_fill(0, count($ids), '?')).')', array_values($ids)];
+        return [$column.' IN ('.implode(', ', array_fill(0, count($ids), '?')).')', $ids];
     }
 }

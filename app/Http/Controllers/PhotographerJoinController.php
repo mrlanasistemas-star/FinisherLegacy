@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Photos\RegisterPhotographer;
 use App\Enums\EventPhotoStatus;
 use App\Enums\PhotographerStatus;
@@ -14,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 /**
  * Public "Fotógrafos" zone: what it means to sell on Finisher Legacy
@@ -46,7 +46,7 @@ class PhotographerJoinController extends Controller
         ]);
     }
 
-    public function store(Request $request, CreatesNewUsers $createUser, RegisterPhotographer $register): RedirectResponse
+    public function store(Request $request, CreateNewUser $createUser, RegisterPhotographer $register): RedirectResponse
     {
         $profileData = $request->validate([
             'display_name' => ['required', 'string', 'max:120'],

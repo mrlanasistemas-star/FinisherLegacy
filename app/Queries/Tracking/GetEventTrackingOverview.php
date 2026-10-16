@@ -37,20 +37,28 @@ class GetEventTrackingOverview
             ->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString()
-            ->through(fn (TrackingSession $s) => [
-                'uuid' => $s->uuid,
-                'participant' => trim((string) ($s->eventParticipant->full_name ?: $s->eventParticipant->first_name.' '.$s->eventParticipant->last_name)),
-                'bib_number' => $s->eventParticipant->bib_number,
-                'race' => $s->eventParticipant->eventRace?->name,
-                'status' => $s->status->value,
-                'source' => $s->source->value,
-                'distance_m' => $s->distance_m,
-                'battery' => $s->last_battery,
-                'started_at' => $s->started_at->toIso8601String(),
-                'last_point_at' => $s->last_point_at?->toIso8601String(),
-                'position' => $s->last_lat !== null && $s->last_lng !== null ? [round($s->last_lat, 5), round($s->last_lng, 5)] : null,
-            ]);
+            ->through(fn (TrackingSession $s) => $this->row($s));
 
         return ['stats' => $stats, 'sessions' => $sessions];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function row(TrackingSession $s): array
+    {
+        return [
+            'uuid' => $s->uuid,
+            'participant' => trim((string) ($s->eventParticipant->full_name ?: $s->eventParticipant->first_name.' '.$s->eventParticipant->last_name)),
+            'bib_number' => $s->eventParticipant->bib_number,
+            'race' => $s->eventParticipant->eventRace?->name,
+            'status' => $s->status->value,
+            'source' => $s->source->value,
+            'distance_m' => $s->distance_m,
+            'battery' => $s->last_battery,
+            'started_at' => $s->started_at->toIso8601String(),
+            'last_point_at' => $s->last_point_at?->toIso8601String(),
+            'position' => $s->last_lat !== null && $s->last_lng !== null ? [round($s->last_lat, 5), round($s->last_lng, 5)] : null,
+        ];
     }
 }

@@ -78,7 +78,9 @@ class UploadEventPhotos
 
                 $created[] = $photo;
             } catch (Throwable $e) {
-                Storage::disk('event_photo_originals')->delete($originalPath);
+                if ($originalPath !== false) {
+                    Storage::disk('event_photo_originals')->delete($originalPath);
+                }
 
                 throw $e;
             }

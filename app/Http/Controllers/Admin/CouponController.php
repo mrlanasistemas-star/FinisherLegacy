@@ -139,7 +139,7 @@ class CouponController extends Controller
      */
     private function pullProductIds(array &$data): array
     {
-        $ids = array_map('intval', $data['product_ids'] ?? []);
+        $ids = array_values(array_map('intval', $data['product_ids'] ?? []));
         unset($data['product_ids']);
         $data['applies_to'] ??= 'all';
 

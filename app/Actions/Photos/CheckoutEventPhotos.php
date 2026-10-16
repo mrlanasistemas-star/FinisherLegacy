@@ -128,7 +128,7 @@ class CheckoutEventPhotos
                     'uuid' => (string) Str::uuid(),
                     'product_id' => $product->id,
                     'event_photo_id' => $photo->id,
-                    'name' => 'Fotografía · '.($photo->eventEdition?->event?->name ?? 'Evento'),
+                    'name' => 'Fotografía · '.($photo->eventEdition?->event->name ?? 'Evento'),
                     'sku' => 'PHOTO-'.Str::upper(Str::substr($photo->uuid, 0, 8)),
                     'quantity' => 1,
                     'unit_price_minor' => $photo->price_minor,

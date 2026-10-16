@@ -14,6 +14,7 @@ use App\Services\Social\SocialVisibility;
 use App\Support\Observability\OperationalLog;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Date;
@@ -174,7 +175,7 @@ class AppServiceProvider extends ServiceProvider
         // offline buffering. Keyed by session (route param) + user.
         RateLimiter::for('tracking-ingest', function (Request $request) {
             $session = $request->route('session');
-            $sessionKey = is_object($session) ? (string) ($session->uuid ?? $session->getKey()) : (string) $session;
+            $sessionKey = $session instanceof Model ? (string) ($session->getAttribute('uuid') ?? $session->getKey()) : (string) $session;
             $actor = $request->user('sanctum')?->id ?: $request->ip();
 
             return [

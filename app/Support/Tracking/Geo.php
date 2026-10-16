@@ -19,7 +19,11 @@ class Geo
         return 2 * self::EARTH_RADIUS_M * asin(min(1.0, sqrt($a)));
     }
 
-    /** An EventRace's distance in meters, or null when unknown. */
+    /**
+     * An EventRace's distance in meters, or null when unknown.
+     *
+     * @return int<0, max>|null
+     */
     public static function raceDistanceMeters(?EventRace $race): ?int
     {
         if ($race === null || $race->distance_value === null || (float) $race->distance_value <= 0) {
@@ -32,6 +36,6 @@ class Geo
             default => 1000.0,
         };
 
-        return (int) round((float) $race->distance_value * $factor);
+        return max(0, (int) round((float) $race->distance_value * $factor));
     }
 }

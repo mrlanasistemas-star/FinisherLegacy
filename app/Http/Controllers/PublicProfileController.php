@@ -8,6 +8,7 @@ use App\Http\Resources\Api\V1\MomentResource;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteFollow;
 use App\Models\AthleteProfile;
+use App\Models\Medal;
 use App\Queries\Social\MomentQuery;
 use App\Services\PublicAthleteProfileService;
 use App\Services\Social\SocialVisibility;
@@ -51,7 +52,7 @@ class PublicProfileController extends Controller
         }
 
         $ownerId = $athleteProfile->user_id;
-        $medals = $canView ? $this->profiles->publicMedals($athleteProfile) : collect();
+        $medals = $canView ? $this->profiles->publicMedals($athleteProfile) : (new Medal)->newCollection();
         $athleteId = $canView ? $athleteProfile->user->athlete()->value('id') : null;
 
         return Inertia::render('profile/Show', [

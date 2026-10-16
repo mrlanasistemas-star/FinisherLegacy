@@ -107,7 +107,7 @@ class ResolveNfcTag
             })(),
             NfcTargetType::Product => [
                 'type' => NfcTargetType::Product->value,
-                'title' => $assignment->product?->name ?? 'Producto Finisher Legacy',
+                'title' => $assignment->product->name ?? 'Producto Finisher Legacy',
                 'subtitle' => $assignment->productVariant?->name,
                 'image_url' => $assignment->product?->primaryImageUrl(),
                 'web_url' => match (true) {
@@ -134,7 +134,7 @@ class ResolveNfcTag
             ],
             NfcTargetType::Event => [
                 'type' => NfcTargetType::Event->value,
-                'title' => $assignment->event?->name ?? 'Evento',
+                'title' => $assignment->event->name ?? 'Evento',
                 'subtitle' => null,
                 'image_url' => $assignment->event?->cover_path ? Storage::disk('public')->url($assignment->event->cover_path) : null,
                 'web_url' => $assignment->event ? route('events.show', $assignment->event->slug) : $fallbackUrl,

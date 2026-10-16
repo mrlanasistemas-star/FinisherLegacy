@@ -125,7 +125,7 @@ class PhotographerPortalController extends Controller
             'price_minor.min' => 'El precio mínimo por foto es de $'.number_format($rules['min_price_minor'] / 100, 2).'.',
         ]);
 
-        $edition = EventEdition::query()->findOrFail($data['event_edition_id']);
+        $edition = EventEdition::query()->findOrFail((int) $data['event_edition_id']);
         $bibs = preg_split('/[\s,;]+/', (string) ($data['bibs'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         $created = $upload->handle($profile, $edition, array_values($request->file('files')), (int) $data['price_minor'], $bibs);
@@ -324,11 +324,11 @@ class PhotographerPortalController extends Controller
     }
 
     /**
-     * @return list<array{id: int, label: string, date: string|null}>
+     * @return list<array{id: int, label: string, date: string}>
      */
     private function eventOptions(): array
     {
-        return EventEdition::query()
+        return array_values(EventEdition::query()
             ->where('status', EditionStatus::Published)
             ->with('event:id,name')
             ->orderByDesc('event_date')
@@ -336,10 +336,9 @@ class PhotographerPortalController extends Controller
             ->get()
             ->map(fn (EventEdition $edition) => [
                 'id' => $edition->id,
-                'label' => trim(($edition->event?->name ?? 'Evento').' — '.$edition->name),
-                'date' => $edition->event_date?->toDateString(),
+                'label' => trim(($edition->event->name ?? 'Evento').' — '.$edition->name),
+                'date' => $edition->event_date->toDateString(),
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 }

@@ -110,7 +110,7 @@ class PromotionController extends Controller
             'active' => ['boolean'],
         ], ['product_ids.required_if' => 'Selecciona al menos un producto.']);
 
-        $productIds = array_map('intval', $data['product_ids'] ?? []);
+        $productIds = array_values(array_map('intval', $data['product_ids'] ?? []));
         unset($data['product_ids']);
         $data['starts_at'] = isset($data['starts_at']) ? now()->parse($data['starts_at'])->startOfDay() : null;
         $data['ends_at'] = isset($data['ends_at']) ? now()->parse($data['ends_at'])->endOfDay() : null;
@@ -142,7 +142,7 @@ class PromotionController extends Controller
      */
     public static function productOptions(): array
     {
-        return Product::query()
+        return array_values(Product::query()
             ->where('type', '!=', ProductType::DigitalPhoto)
             ->with('media')
             ->orderBy('name')
@@ -153,7 +153,6 @@ class PromotionController extends Controller
                 'image_url' => $p->primaryImageUrl(),
                 'active' => $p->active,
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 }

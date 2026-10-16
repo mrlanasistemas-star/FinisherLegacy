@@ -250,7 +250,7 @@ class CommunityModerationController extends Controller
             'author' => $moment->author?->name,
             'username' => $moment->author?->athleteProfile?->username,
             'is_hidden' => $moment->hidden_at !== null,
-            'created_at' => $moment->created_at?->toIso8601String(),
+            'created_at' => $moment->created_at->toIso8601String(),
         ];
     }
 
@@ -266,7 +266,7 @@ class CommunityModerationController extends Controller
             'author' => $comment->author?->name,
             'username' => $comment->author?->athleteProfile?->username,
             'is_hidden' => $comment->hidden_at !== null,
-            'created_at' => $comment->created_at?->toIso8601String(),
+            'created_at' => $comment->created_at->toIso8601String(),
         ];
     }
 }
