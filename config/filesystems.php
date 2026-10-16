@@ -114,6 +114,56 @@ return [
             'report' => false,
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Synology media (spec §60-§68, docs/SYNOLOGY.md)
+        |----------------------------------------------------------------------
+        |
+        | Configured ONLY by env — never a NAS IP, Tailscale address or
+        | /volume1 path in the repo. Default (and recommended) driver is
+        | `local` on FINISHER_MEDIA_ROOT, an OS-level NFS/SMB mount of the
+        | Synology share made over Tailscale. FINISHER_MEDIA_DRIVER=sftp
+        | is supported only once `league/flysystem-sftp-v3` is installed.
+        | No 'url': files are only ever served through the signed
+        | App\Http\Controllers\MediaFileController (the NAS is never public).
+        |
+        */
+        'synology_media' => env('FINISHER_MEDIA_DRIVER', 'local') === 'sftp' ? [
+            'driver' => 'sftp',
+            'host' => env('FINISHER_MEDIA_SFTP_HOST'),
+            'port' => (int) env('FINISHER_MEDIA_SFTP_PORT', 22),
+            'username' => env('FINISHER_MEDIA_SFTP_USERNAME'),
+            'privateKey' => env('FINISHER_MEDIA_SFTP_PRIVATE_KEY'),
+            'passphrase' => env('FINISHER_MEDIA_SFTP_PASSPHRASE'),
+            'root' => env('FINISHER_MEDIA_ROOT', ''),
+            'timeout' => (int) env('FINISHER_MEDIA_SFTP_TIMEOUT', 30),
+            'visibility' => 'private',
+            'directory_visibility' => 'private',
+            'throw' => true,
+            'report' => true,
+        ] : [
+            'driver' => 'local',
+            'root' => env('FINISHER_MEDIA_ROOT', storage_path('app/private/synology-media')),
+            'visibility' => 'private',
+            'directory_visibility' => 'private',
+            'permissions' => [
+                'file' => ['public' => 0644, 'private' => 0640],
+                'dir' => ['public' => 0755, 'private' => 0750],
+            ],
+            'throw' => true,
+            'report' => true,
+        ],
+
+        // Where an upload waits (and its variants are rendered) before the
+        // queue moves it to the media disk. Must be LOCAL to the web host
+        // and the media queue worker — see docs/SYNOLOGY.md §Colas.
+        'media_tmp' => [
+            'driver' => 'local',
+            'root' => env('FINISHER_MEDIA_TMP_ROOT', storage_path('app/private/media-tmp')),
+            'throw' => true,
+            'report' => true,
+        ],
+
     ],
 
     /*

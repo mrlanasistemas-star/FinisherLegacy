@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Storage::fake('public');
+    Storage::fake(config('finisher.media_disk'));
+    Storage::fake('media_tmp');
 });
 
 function momentAthlete(string $username, array $profile = []): User
