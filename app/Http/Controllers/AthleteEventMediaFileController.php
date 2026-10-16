@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AthleteEventMedia;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * No event photo/video is ever served from a direct disk URL (product
@@ -25,8 +25,11 @@ class AthleteEventMediaFileController extends Controller
         $disk = Storage::disk($media->disk);
         abort_unless($disk->exists($media->path), 404);
 
-        return response($disk->get($media->path), 200, [
+        // Streamed (videos can be large — never loaded whole into memory);
+        // nosniff so a mislabeled upload is never re-interpreted as HTML.
+        return $disk->response($media->path, null, [
             'Content-Type' => $media->mime,
+            'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => $media->is_public ? 'public, max-age=3600' : 'private, max-age=3600',
         ]);
     }

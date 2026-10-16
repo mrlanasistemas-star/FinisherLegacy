@@ -119,12 +119,15 @@ Route::post('events/{event:slug}/preregister', [EventController::class, 'storePr
     ->middleware('throttle:api-register')
     ->name('preregistrations.store');
 
-Route::get('preregistrations/{token}', [PreregistrationController::class, 'show'])->name('preregistrations.show');
-Route::get('preregistrations/{token}/qr.svg', [PreregistrationController::class, 'qr'])->name('preregistrations.qr');
+// Public token/code lookups — throttled by IP so nobody can enumerate them.
+Route::middleware('throttle:api-legacy-lookup')->group(function () {
+    Route::get('preregistrations/{token}', [PreregistrationController::class, 'show'])->name('preregistrations.show');
+    Route::get('preregistrations/{token}/qr.svg', [PreregistrationController::class, 'qr'])->name('preregistrations.qr');
 
-Route::get('l/{code}', [LegacyCodeController::class, 'show'])->name('legacy-code.show');
-Route::get('l/{code}/qr.svg', [LegacyCodeController::class, 'qr'])->name('legacy-code.qr');
-Route::get('l/{code}/continue/{provider}', [LegacyCodeController::class, 'continueTo'])->name('legacy-code.continue');
+    Route::get('l/{code}', [LegacyCodeController::class, 'show'])->name('legacy-code.show');
+    Route::get('l/{code}/qr.svg', [LegacyCodeController::class, 'qr'])->name('legacy-code.qr');
+    Route::get('l/{code}/continue/{provider}', [LegacyCodeController::class, 'continueTo'])->name('legacy-code.continue');
+});
 
 // "MI EQUIPO DE APOYO" public side (product UX consolidation brief §32-§35)
 // — no account required, reached only through the impredecible public_code.
@@ -151,7 +154,9 @@ Route::prefix('tienda')->name('store.products.')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::post('l/{code}/claim', [LegacyCodeController::class, 'claim'])->name('legacy-code.claim');
+    Route::post('l/{code}/claim', [LegacyCodeController::class, 'claim'])
+        ->middleware('throttle:api-claim')
+        ->name('legacy-code.claim');
 
     // Buying photographers' event photos (regular Order + payment flow).
     Route::post('fotos/comprar', [PhotosController::class, 'checkout'])->middleware('throttle:20,1')->name('photos.checkout');

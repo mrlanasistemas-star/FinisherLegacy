@@ -19,6 +19,12 @@ return [
         'thumbnail_size' => 400,
         'display_max_width' => 1800,
 
+        // Decompression-bomb guard (App\Services\ImageProcessingService):
+        // checked from the file header BEFORE decoding — a tiny PNG can
+        // declare 50000x50000 px and exhaust memory once decoded.
+        'max_pixels' => 40_000_000,
+        'max_dimension' => 12_000,
+
         // El piloto no necesita conservar el original gigante una vez que
         // existe una versión optimizada de alta calidad. Cambiar a false
         // para dejar de guardarlos y ahorrar almacenamiento; ya guardados

@@ -4,6 +4,7 @@ use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureApiIdempotencyKey;
 use App\Http\Middleware\EnsureIdempotencyKey;
 use App\Http\Middleware\EnsureProductionDeviceToken;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserToken;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -33,9 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            EnsureUserIsActive::class,
         ]);
 
-        $middleware->api(prepend: [AssignRequestId::class]);
+        $middleware->api(prepend: [AssignRequestId::class], append: [EnsureUserIsActive::class]);
 
         // Device API (docs/adr/0002) — kept as aliases rather than global
         // middleware since only the device/production routes in

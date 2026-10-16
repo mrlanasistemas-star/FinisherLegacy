@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\Account\DeleteAccount;
 use App\Actions\Account\SocialSignIn;
 use App\Concerns\PasswordValidationRules;
+use App\Exceptions\AccountSuspendedException;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
@@ -86,11 +87,15 @@ class AccountController extends Controller
             $data['nonce'] ?? null,
         );
 
+        if (! $user->status->canSignIn()) {
+            throw new AccountSuspendedException($user->status);
+        }
+
         $user->loadMissing(['legacyId', 'athlete']);
 
         return $this->respond([
             'user' => new UserResource($user),
-            'token' => $user->createToken('api')->plainTextToken,
+            'token' => $user->issueApiToken(),
             'created' => $created,
         ], $created ? 'Tu Legacy comienza aquí.' : null, status: $created ? 201 : 200);
     }

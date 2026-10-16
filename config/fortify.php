@@ -116,6 +116,9 @@ return [
 
     'limiters' => [
         'login' => 'login',
+        // Not read by Fortify itself (it has no register limiter) —
+        // App\Providers\FortifyServiceProvider attaches it to `register.store`.
+        'register' => 'register',
     ],
 
     /*

@@ -75,6 +75,17 @@ class User extends Authenticatable implements ProductionActor
         );
     }
 
+    /**
+     * A person's `/api/v1` bearer token, expiring after
+     * `sanctum.user_token_expiration` minutes (SANCTUM_EXPIRATION_MINUTES).
+     */
+    public function issueApiToken(string $name = 'api'): string
+    {
+        $minutes = (int) config('sanctum.user_token_expiration');
+
+        return $this->createToken($name, ['*'], $minutes > 0 ? now()->addMinutes($minutes) : null)->plainTextToken;
+    }
+
     /** @return HasOne<AthleteProfile, $this> */
     /** @return HasOne<PhotographerProfile, $this> */
     public function photographerProfile(): HasOne

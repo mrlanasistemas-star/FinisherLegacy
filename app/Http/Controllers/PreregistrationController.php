@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\EventPreregistration;
 use App\Services\PreregistrationService;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,19 +13,21 @@ class PreregistrationController extends Controller
 {
     public function __construct(private readonly PreregistrationService $preregistrations) {}
 
-    public function show(string $token): Response
+    public function show(Request $request, string $token): Response
     {
         $preregistration = EventPreregistration::query()
             ->where('token', $token)
             ->with(['eventEdition.event', 'eventRace'])
             ->firstOrFail();
 
+        $identity = $this->preregistrations->identityFor($preregistration, $request->user());
+
         return Inertia::render('preregistrations/Show', [
             'token' => $preregistration->token,
             'status' => $preregistration->status->value,
-            'firstName' => $preregistration->first_name,
-            'lastName' => $preregistration->last_name,
-            'bibNumber' => $preregistration->bib_number,
+            'firstName' => $identity['first_name'],
+            'lastName' => $identity['last_name'],
+            'bibNumber' => $identity['bib_number'],
             'event' => [
                 'name' => $preregistration->eventEdition->event->name,
                 'slug' => $preregistration->eventEdition->event->slug,

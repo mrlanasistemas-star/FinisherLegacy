@@ -59,7 +59,8 @@ class UploadAthleteEventMedia
         $disk = (string) config('finisher.event_media.disk', 'public');
         $checksum = (string) hash_file('sha256', $file->getRealPath());
         $basename = (string) Str::uuid();
-        $extension = $file->getClientOriginalExtension() ?: ($file->extension() ?: 'bin');
+        // From the sniffed mime, never the client's file name.
+        $extension = $file->extension() ?: 'bin';
         $path = $file->storeAs("event-media/{$participant->id}", "{$basename}.{$extension}", $disk);
 
         [$width, $height] = $type === AthleteEventMediaType::Image ? $this->imageDimensions($file) : [null, null];
