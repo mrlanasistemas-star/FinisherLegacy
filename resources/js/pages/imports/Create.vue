@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { Plus, Trash2, Upload } from '@lucide/vue';
 import { ref } from 'vue';
 import HelpPopover from '@/components/HelpPopover.vue';
@@ -25,7 +25,12 @@ type Header = { index: number; label: string };
 const step = ref<'upload' | 'map'>('upload');
 const uploading = ref(false);
 const submitting = ref(false);
-const eventEditionId = ref('');
+// Preselected when opened from an event's "Datos" tab (?event_edition_id=).
+const eventEditionId = ref(
+    new URLSearchParams(usePage().url.split('?')[1] ?? '').get(
+        'event_edition_id',
+    ) ?? '',
+);
 const tempPath = ref('');
 const originalFilename = ref('');
 const headers = ref<Header[]>([]);

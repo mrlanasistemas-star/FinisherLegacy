@@ -30,14 +30,10 @@ beforeEach(function () {
     $this->edition = EventEdition::factory()->create();
 });
 
-test('without an event selected, no participant list or metrics are returned', function () {
-    $response = $this->actingAs($this->admin)->get('/admin/participants');
-
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->component('admin/participants/Index')
-        ->where('participants', null)
-        ->where('metrics', null));
+test('without an event selected, the retired global list sends you to the events list', function () {
+    $this->actingAs($this->admin)->get('/admin/participants')
+        ->assertStatus(301)
+        ->assertRedirect('/admin/events');
 });
 
 test('the legacy_plate filter is applied in SQL before paginate, never on the paged collection', function () {
@@ -54,7 +50,7 @@ test('the legacy_plate filter is applied in SQL before paginate, never on the pa
         ]);
     }
 
-    $response = $this->actingAs($this->admin)->get("/admin/participants?event_edition_id={$this->edition->id}&legacy_plate=paid");
+    $response = $this->actingAs($this->admin)->get("/admin/events/{$this->edition->id}/participants?legacy_plate=paid");
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -87,7 +83,7 @@ test('the product filter only matches participants whose athlete actually bought
         'currency' => 'MXN',
     ]);
 
-    $response = $this->actingAs($this->admin)->get("/admin/participants?event_edition_id={$this->edition->id}&product=trisuit");
+    $response = $this->actingAs($this->admin)->get("/admin/events/{$this->edition->id}/participants?product=trisuit");
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -113,7 +109,7 @@ test('metrics count units and revenue from paid Orders only, never from unpaid o
         'unit_price_minor' => 29000, 'line_total_minor' => 290000, 'currency' => 'MXN',
     ]);
 
-    $response = $this->actingAs($this->admin)->get("/admin/participants?event_edition_id={$this->edition->id}");
+    $response = $this->actingAs($this->admin)->get("/admin/events/{$this->edition->id}/participants");
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -131,7 +127,7 @@ test('the finishers metric only counts finished/verified results', function () {
 
     EventParticipant::factory()->create(['event_edition_id' => $this->edition->id]);
 
-    $response = $this->actingAs($this->admin)->get("/admin/participants?event_edition_id={$this->edition->id}");
+    $response = $this->actingAs($this->admin)->get("/admin/events/{$this->edition->id}/participants");
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page

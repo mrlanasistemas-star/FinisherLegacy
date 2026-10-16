@@ -1,220 +1,216 @@
 <script setup lang="ts">
 /**
- * Bottom tab bar shown only below `lg` — one nav for every authenticated
- * user, athlete and staff alike, driven by the same permission-filtered
- * config as the desktop sidebar (see config/navigation.ts). The "+" FAB stays
- * athlete-specific (scan a plate QR / add a medal by hand) since that shortcut
- * is useful no matter which other modules a given account can also reach.
+ * Bottom tab bar below `lg` (spec §49/§50), same config as the sidebar:
+ * - Administración: Inicio · Eventos · Comercio · Personas · Más — "Más"
+ *   opens a sheet with the remaining sections, search and the account.
+ * - Mi espacio: Legado · Eventos · Tienda · Pedidos · Perfil. Mi equipo,
+ *   Comunidad… stay one tap away in the sidebar (topbar menu button).
+ * No QR scanner here anymore: NFC opens the right page by itself (§29).
  */
 import { Link, usePage } from '@inertiajs/vue3';
-import {
-    Award,
-    LogOut,
-    MoreHorizontal,
-    Plus,
-    QrCode,
-    Settings,
-} from '@lucide/vue';
-import { computed, ref } from 'vue';
-import QrScannerDialog from '@/components/qr/QrScannerDialog.vue';
+import { LogOut, MoreHorizontal, Search, Settings, User } from '@lucide/vue';
+import { computed, ref, watchEffect } from 'vue';
 import {
     Sheet,
-    SheetClose,
     SheetContent,
+    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import { visibleNavigation } from '@/config/navigation';
+import { useSidebarMode } from '@/composables/useSidebarMode';
+import type { NavItem } from '@/config/navigation';
+import {
+    athleteMobileTabs,
+    isAdminSectionActive,
+    staffNav,
+    visibleAdminSections,
+    visibleItems,
+} from '@/config/navigation';
+import { openCommandMenu } from '@/lib/commandMenu';
 import { logout } from '@/routes';
-import { create as createMedal } from '@/routes/dashboard/medals';
 import { edit as editSettingsProfile } from '@/routes/profile';
 
 const page = usePage();
 const permissions = computed(() => page.props.auth?.permissions ?? []);
-const visible = computed(() => visibleNavigation(permissions.value));
-
-const home = computed(() =>
-    visible.value.find((item) => item.href === '/dashboard'),
+const sections = computed(() => visibleAdminSections(permissions.value));
+const staff = computed(() =>
+    sections.value.length ? [] : visibleItems(staffNav, permissions.value),
 );
-const priorityTabs = computed(() =>
-    visible.value.filter(
-        (item) => item.mobilePriority && item.href !== '/dashboard',
+
+const { mode, detectFromUrl } = useSidebarMode();
+const { currentUrl, isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
+
+watchEffect(() => detectFromUrl(currentUrl.value));
+
+const adminMode = computed(
+    () => mode.value === 'trabajo' && sections.value.length > 0,
+);
+
+const adminTabs = computed(() =>
+    sections.value.filter((section) => section.mobile).slice(0, 4),
+);
+const moreSections = computed(() =>
+    sections.value.filter(
+        (section) => !adminTabs.value.some((tab) => tab.key === section.key),
     ),
 );
-const moreItems = computed(() =>
-    visible.value.filter(
-        (item) => item.href !== '/dashboard' && !item.mobilePriority,
-    ),
-);
 
-const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
-
-function isActive(item: { href: string; exact?: boolean }): boolean {
+function isItemActive(item: NavItem): boolean {
     return item.exact
         ? isCurrentUrl(item.href)
         : isCurrentOrParentUrl(item.href);
 }
 
-const sheetOpen = ref(false);
-const scannerOpen = ref(false);
+const moreActive = computed(() =>
+    moreSections.value.some((section) =>
+        isAdminSectionActive(section, currentUrl.value),
+    ),
+);
 
-function openScanner() {
+const sheetOpen = ref(false);
+
+function search() {
     sheetOpen.value = false;
-    scannerOpen.value = true;
+    openCommandMenu();
 }
+
+const tabClass =
+    'flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-fl-gold';
 </script>
 
 <template>
-    <QrScannerDialog v-model:open="scannerOpen" />
-
     <nav
-        class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden"
+        aria-label="Navegación principal"
+        class="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden"
     >
-        <Link
-            v-if="home"
-            :href="home.href"
-            class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] transition-colors"
-            :class="
-                isActive(home) ? 'text-fl-gold-ink' : 'text-muted-foreground/80'
-            "
-        >
-            <component :is="home.icon" class="size-5" />
-            {{ home.label }}
-        </Link>
+        <template v-if="adminMode">
+            <Link
+                v-for="section in adminTabs"
+                :key="section.key"
+                :href="section.resolvedHref"
+                :class="[
+                    tabClass,
+                    isAdminSectionActive(section, currentUrl)
+                        ? 'text-fl-gold-ink'
+                        : 'text-muted-foreground/80',
+                ]"
+                :aria-current="
+                    isAdminSectionActive(section, currentUrl)
+                        ? 'page'
+                        : undefined
+                "
+            >
+                <component :is="section.icon" class="size-5" />
+                {{ section.label }}
+            </Link>
+            <button
+                type="button"
+                :class="[
+                    tabClass,
+                    moreActive
+                        ? 'text-fl-gold-ink'
+                        : 'text-muted-foreground/80',
+                ]"
+                aria-haspopup="dialog"
+                @click="sheetOpen = true"
+            >
+                <MoreHorizontal class="size-5" />
+                Más
+            </button>
+        </template>
 
-        <Link
-            v-for="item in priorityTabs.slice(0, 1)"
-            :key="item.href"
-            :href="item.href"
-            class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] transition-colors"
-            :class="
-                isActive(item) ? 'text-fl-gold-ink' : 'text-muted-foreground/80'
-            "
-        >
-            <component :is="item.icon" class="size-5" />
-            {{ item.label }}
-        </Link>
-
-        <button
-            type="button"
-            class="fl-hover-glow -mt-6 flex size-14 shrink-0 items-center justify-center rounded-full border-4 border-fl-black bg-fl-gold text-fl-black shadow-lg transition-transform active:scale-95"
-            aria-label="Agregar"
-            @click="sheetOpen = true"
-        >
-            <Plus class="size-6" />
-        </button>
-
-        <Link
-            v-for="item in priorityTabs.slice(1, 2)"
-            :key="item.href"
-            :href="item.href"
-            class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] transition-colors"
-            :class="
-                isActive(item) ? 'text-fl-gold-ink' : 'text-muted-foreground/80'
-            "
-        >
-            <component :is="item.icon" class="size-5" />
-            {{ item.label }}
-        </Link>
-
-        <button
-            type="button"
-            class="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] text-muted-foreground/80 transition-colors"
-            @click="sheetOpen = true"
-        >
-            <MoreHorizontal class="size-5" />
-            Más
-        </button>
+        <template v-else>
+            <Link
+                v-for="item in athleteMobileTabs"
+                :key="item.href"
+                :href="item.href"
+                :class="[
+                    tabClass,
+                    isItemActive(item)
+                        ? 'text-fl-gold-ink'
+                        : 'text-muted-foreground/80',
+                ]"
+                :aria-current="isItemActive(item) ? 'page' : undefined"
+            >
+                <component :is="item.icon" class="size-5" />
+                {{ item.label }}
+            </Link>
+        </template>
     </nav>
 
     <Sheet v-model:open="sheetOpen">
         <SheetContent
             side="bottom"
-            class="max-h-[80svh] overflow-y-auto border-border bg-card"
+            class="max-h-[85svh] overflow-y-auto rounded-t-2xl border-border bg-card"
         >
             <SheetHeader>
-                <SheetTitle class="text-foreground"
-                    >¿Qué quieres hacer?</SheetTitle
-                >
+                <SheetTitle class="text-foreground">Más</SheetTitle>
+                <SheetDescription class="sr-only">
+                    Otras secciones de administración y tu cuenta.
+                </SheetDescription>
             </SheetHeader>
-            <div class="grid gap-3 p-4 pt-0">
+            <div class="grid gap-1 p-4 pt-0">
                 <button
                     type="button"
-                    class="fl-hover-glow flex items-center gap-4 rounded-xl border border-fl-gold/30 bg-background/60 p-4 text-left transition-colors"
-                    @click="openScanner"
+                    class="flex min-h-11 items-center gap-3 rounded-lg border border-border px-3 text-left text-sm text-muted-foreground"
+                    @click="search"
                 >
-                    <div
-                        class="flex size-11 shrink-0 items-center justify-center rounded-full bg-fl-gold/10 text-fl-gold-ink"
-                    >
-                        <QrCode class="size-5" />
-                    </div>
-                    <div>
-                        <p class="font-semibold text-foreground">
-                            Escanear un código Legacy
-                        </p>
-                        <p class="mt-0.5 text-xs text-muted-foreground">
-                            QR de prerregistro o Legacy Code. Con tu Legacy
-                            Plate basta acercar el teléfono (NFC).
-                        </p>
-                    </div>
+                    <Search class="size-4" />
+                    Buscar evento, atleta, pedido…
                 </button>
 
-                <SheetClose as-child>
-                    <Link
-                        :href="createMedal()"
-                        class="flex items-center gap-4 rounded-xl border border-border bg-background/40 p-4 transition-colors hover:border-foreground/15"
-                        @click="sheetOpen = false"
-                    >
-                        <div
-                            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-foreground/[0.03] text-muted-foreground"
-                        >
-                            <Award class="size-5" />
-                        </div>
-                        <div>
-                            <p class="font-semibold text-foreground">
-                                Agregar medalla manualmente
-                            </p>
-                            <p class="mt-0.5 text-xs text-muted-foreground">
-                                Busca tu evento o captura los datos tú mismo.
-                            </p>
-                        </div>
-                    </Link>
-                </SheetClose>
-
-                <div class="my-1 border-t border-border" />
+                <div class="my-2 border-t border-border" />
 
                 <Link
-                    v-for="item in moreItems"
+                    v-for="section in moreSections"
+                    :key="section.key"
+                    :href="section.resolvedHref"
+                    class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors"
+                    :class="
+                        isAdminSectionActive(section, currentUrl)
+                            ? 'bg-fl-gold/10 text-fl-gold-ink'
+                            : 'text-foreground hover:bg-foreground/[0.03]'
+                    "
+                    @click="sheetOpen = false"
+                >
+                    <component :is="section.icon" class="size-4" />
+                    {{ section.label }}
+                </Link>
+                <Link
+                    v-for="item in staff"
                     :key="item.href"
                     :href="item.href"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors"
-                    :class="
-                        isActive(item)
-                            ? 'bg-fl-gold/10 text-fl-gold-ink'
-                            : 'text-muted-foreground hover:bg-foreground/[0.03]'
-                    "
+                    class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm text-foreground hover:bg-foreground/[0.03]"
                     @click="sheetOpen = false"
                 >
                     <component :is="item.icon" class="size-4" />
                     {{ item.label }}
                 </Link>
 
-                <div class="my-1 border-t border-border" />
+                <div class="my-2 border-t border-border" />
 
                 <Link
+                    href="/dashboard"
+                    class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm text-muted-foreground hover:bg-foreground/[0.03]"
+                    @click="sheetOpen = false"
+                >
+                    <User class="size-4" />
+                    Mi espacio
+                </Link>
+                <Link
                     :href="editSettingsProfile()"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-foreground/[0.03]"
+                    class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm text-muted-foreground hover:bg-foreground/[0.03]"
                     @click="sheetOpen = false"
                 >
                     <Settings class="size-4" />
-                    Configuración
+                    Mi cuenta
                 </Link>
                 <Link
                     :href="logout()"
                     method="post"
                     as="button"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-foreground/[0.03]"
+                    class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm text-muted-foreground hover:bg-foreground/[0.03]"
                 >
                     <LogOut class="size-4" />
                     Cerrar sesión

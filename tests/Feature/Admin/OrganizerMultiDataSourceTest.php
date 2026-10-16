@@ -81,8 +81,8 @@ test('an event edition can select a specific organizer data source per purpose',
 
     expect($edition->fresh()->results_data_source_id)->toBe($resultsSource->id);
 
-    $response = $this->actingAs($this->admin)->get("/admin/editions/{$edition->id}");
-    $response->assertInertia(fn ($page) => $page->where('edition.data_source.resolved_results.type', 'api'));
+    $response = $this->actingAs($this->admin)->get("/admin/events/{$edition->id}/data");
+    $response->assertInertia(fn ($page) => $page->where('dataSource.resolved_results.type', 'api'));
 });
 
 test('a Generic REST data source connection can be created from the web, not just Mock', function () {

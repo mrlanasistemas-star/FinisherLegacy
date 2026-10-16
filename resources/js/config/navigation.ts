@@ -1,395 +1,558 @@
 /**
- * Single source of truth for the ENTIRE app's navigation — one sidebar for
- * every authenticated user, athlete and staff alike. The desktop sidebar, the
- * mobile bottom nav + "Más" sheet, and the Ctrl/Cmd+K command menu all read
- * this same list instead of keeping separate item arrays in sync.
+ * Single source of truth for the app's navigation (docs/MODULES.md,
+ * docs/product/module-audit.md). Read by the desktop sidebar, the workspace
+ * tab bar under the topbar, the mobile bottom nav + "Más" sheet and the ⌘K
+ * command menu — no component keeps its own copy of these lists.
  *
- * `permission` is a string from the shared `auth.permissions` prop
- * (App\Support\PermissionCatalog — see HandleInertiaRequests::share()). `null`
- * means "visible to any authenticated user" (the Mi Legacy items, which every
- * account — athlete or staff — can reach). Every href below points at a route
- * that exists today — nothing here is a dead link waiting for a future module.
+ * Two sides:
+ * - "Mi espacio" (personal): Mi legado, Mis eventos, Mi equipo, Mis pedidos,
+ *   Mi perfil (spec §7/§134) + an "Explorar" group of public pages and the
+ *   photographer's own portal.
+ * - Administración: EXACTLY seven first-level sections (spec §8/§133).
+ *   Every former module lives as a workspace tab inside one of them; a
+ *   section is shown when the account can open at least one of its tabs.
  *
- * Ecosystem navigation redesign: Identity Conflicts, Event OS, standalone
- * Legacy Codes, Estaciones, the old Plate Studio, and standalone Incidents
- * were deliberately removed from this list (not deleted — their
- * controllers/routes/permissions still exist, reachable by direct URL for
- * whoever still needs them) because they don't serve the new product
- * story. See docs/architecture/README.md for what's hidden vs removed.
+ * `permission` strings come from the shared `auth.permissions` prop
+ * (App\Support\PermissionCatalog). Real protection is always server-side
+ * (`can:` middleware) — this only decides what to render.
  *
- * UX consolidation pass: "Mis eventos" / "Mis medallas" / "Mis Legacy
- * Plates" were three separate places to see the same story (one medal +
- * one Legacy Plate belong to one participation/event, not three menus).
- * They're consolidated into "Mi Legado" (/dashboard, DashboardController) —
- * a card per participation, each opening the full event experience at
- * /dashboard/legado/{participant}. Those three routes/controllers/pages
- * still exist and still work by direct URL; they're just not in this list
- * anymore. "Fuentes de datos" is gone from here too — it's reachable from
- * an Organizer's "Datos" tab, doesn't need a permanent top-level slot.
- *
- * Personal/Trabajo consolidation (brief §2-§11/§119-§121): a sidebar item
- * earns its top-level slot only if someone reaches for it often —
- * everything else moves to an area's SecondaryNav tab bar
- * (resources/js/config/areaNav.ts) instead of disappearing. That's why
- * Importaciones, Modelos, Preventas, Pagos and Cupones aren't in this list
- * even though their routes/pages are very much alive — Importaciones lives
- * inside its Event context, the rest live in the Legacy Plate / Comercio
- * area tab bars (resources/js/config/areaNav.ts).
- *
- * Light redesign (2026-10): groups now read Resumen / Producción / Eventos /
- * Contenido / Personas / Sistema. "Contenido" holds the new admin screens
- * (Fotografías, Comunidad, Nosotros y trayectoria, Mensajes); Roles y
- * permisos and Auditoría got a top-level slot in Sistema. Same rule as
- * always: every entry is a real route guarded by the same `can:` key.
+ * Hidden on purpose (URLs still work, see the audit): /operator,
+ * /production, /admin/legacy-codes, /admin/plate-studio,
+ * /admin/machine-profiles, /admin/production-devices, /admin/incidents,
+ * /imports, /dashboard/medals, /dashboard/my-plates.
  */
 import type { LucideIcon } from '@lucide/vue';
-import { resolveIcon } from '@/lib/iconMap';
-
-export type NavGroup =
-    | 'legacy'
-    | 'fotografo'
-    | 'resumen'
-    | 'eventos'
-    | 'legacyplates'
-    | 'contenido'
-    | 'atletas'
-    | 'sistema';
+import {
+    Calendar,
+    Camera,
+    Compass,
+    House,
+    LayoutGrid,
+    MessagesSquare,
+    Nfc,
+    Package,
+    Receipt,
+    Settings,
+    ShoppingBag,
+    Store,
+    UserCircle,
+    Users,
+    Wallet,
+} from '@lucide/vue';
 
 export interface NavItem {
     label: string;
     icon: LucideIcon;
     href: string;
     permission: string | null;
-    group: NavGroup;
-    mobilePriority?: boolean;
-    /** This href is also a literal prefix of other routes (e.g. "/admin" is a
-     * prefix of "/admin/users"), so it needs an exact match to be "active" —
-     * everything else correctly wants prefix matching. */
+    /** `href` is a literal prefix of sibling routes ("/dashboard"), so it
+     * is only "active" on an exact match. */
     exact?: boolean;
 }
 
-export const navGroupLabels: Record<NavGroup, string> = {
-    legacy: 'Personal',
-    fotografo: 'Fotógrafo',
-    resumen: 'Resumen',
-    eventos: 'Eventos',
-    legacyplates: 'Producción',
-    contenido: 'Contenido',
-    atletas: 'Personas',
-    sistema: 'Sistema',
-};
+export interface WorkspaceTab {
+    label: string;
+    href: string;
+    permission: string | null;
+    /** Extra URL prefixes that also mark this tab active. */
+    match?: string[];
+    exact?: boolean;
+}
 
-export const navigation: NavItem[] = [
+export type AdminSectionKey =
+    | 'inicio'
+    | 'eventos'
+    | 'comercio'
+    | 'legacy'
+    | 'comunidad'
+    | 'personas'
+    | 'configuracion';
+
+export interface AdminSection {
+    key: AdminSectionKey;
+    label: string;
+    icon: LucideIcon;
+    /** Landing URL of the section. Used only when the viewer holds
+     * `hrefPermission`; otherwise the first tab they can open. */
+    href: string;
+    hrefPermission: string | null;
+    /** URL prefixes that belong to this section (sidebar highlight + tabs). */
+    match: string[];
+    exact?: boolean;
+    tabs: WorkspaceTab[];
+    /** Paths where the page renders its own workspace tabs (event detail). */
+    hideTabsOn?: RegExp;
+    /** Shown directly in the admin mobile bottom bar (max 4 + "Más"). */
+    mobile?: boolean;
+}
+
+export interface ResolvedSection extends AdminSection {
+    resolvedHref: string;
+    visibleTabs: WorkspaceTab[];
+}
+
+// ── Mi espacio ───────────────────────────────────────────────────────────
+
+export const personalNav: NavItem[] = [
     {
-        label: 'Mi Legado',
-        icon: resolveIcon('LayoutGrid'),
+        label: 'Mi legado',
+        icon: LayoutGrid,
         href: '/dashboard',
         permission: null,
-        group: 'legacy',
         exact: true,
-        mobilePriority: true,
     },
     {
-        label: 'Mi perfil',
-        icon: resolveIcon('UserCircle'),
-        href: '/dashboard/profile',
+        label: 'Mis eventos',
+        icon: Calendar,
+        href: '/dashboard/my-events',
         permission: null,
-        group: 'legacy',
-    },
-    {
-        label: 'Comunidad',
-        icon: resolveIcon('MessagesSquare'),
-        href: '/comunidad',
-        permission: null,
-        group: 'legacy',
-        mobilePriority: true,
-    },
-    {
-        label: 'Mis fotos',
-        icon: resolveIcon('Camera'),
-        href: '/fotos',
-        permission: null,
-        group: 'legacy',
     },
     {
         label: 'Mi equipo',
-        icon: resolveIcon('Package'),
+        icon: Package,
         href: '/dashboard/my-gear',
         permission: null,
-        group: 'legacy',
     },
     {
         label: 'Mis pedidos',
-        icon: resolveIcon('Receipt'),
+        icon: Receipt,
         href: '/mis-pedidos',
         permission: null,
-        group: 'legacy',
     },
     {
-        label: 'Explorar eventos',
-        icon: resolveIcon('Compass'),
-        href: '/events',
+        label: 'Mi perfil',
+        icon: UserCircle,
+        href: '/dashboard/profile',
         permission: null,
-        group: 'legacy',
     },
+];
+
+/** Public pages a signed-in athlete reaches for — not modules. */
+export const exploreNav: NavItem[] = [
     {
-        label: 'Tienda',
-        icon: resolveIcon('ShoppingBag'),
-        href: '/tienda',
+        label: 'Comunidad',
+        icon: MessagesSquare,
+        href: '/comunidad',
         permission: null,
-        group: 'legacy',
-        mobilePriority: true,
     },
+    { label: 'Eventos', icon: Compass, href: '/events', permission: null },
+    { label: 'Tienda', icon: ShoppingBag, href: '/tienda', permission: null },
+    { label: 'Fotos', icon: Camera, href: '/fotos', permission: null },
+];
 
-    // Resumen — the business at a glance, plus commerce.
-    {
-        label: 'Inicio',
-        icon: resolveIcon('LayoutGrid'),
-        href: '/admin',
-        permission: 'dashboard.admin.view',
-        group: 'resumen',
-        exact: true,
-    },
-    {
-        label: 'Pedidos',
-        icon: resolveIcon('ShoppingCart'),
-        href: '/admin/orders',
-        permission: 'orders.view',
-        group: 'resumen',
-        mobilePriority: true,
-    },
-    {
-        label: 'Productos',
-        icon: resolveIcon('Package'),
-        href: '/admin/products',
-        permission: 'products.manage',
-        group: 'resumen',
-    },
-    {
-        label: 'Categorías',
-        icon: resolveIcon('Tags'),
-        href: '/admin/product-categories',
-        permission: 'products.manage',
-        group: 'resumen',
-    },
-    {
-        label: 'Inventario',
-        icon: resolveIcon('Warehouse'),
-        href: '/admin/inventory',
-        permission: 'inventory.manage',
-        group: 'resumen',
-    },
-    {
-        label: 'Ofertas',
-        icon: resolveIcon('Tag'),
-        href: '/admin/promotions',
-        permission: 'coupons.manage',
-        group: 'resumen',
-    },
-
-    // Producción — a Legacy Plate from print (front/back) to its NFC link.
-    {
-        label: 'Personalización',
-        icon: resolveIcon('Factory'),
-        href: '/admin/legacy-plates/production',
-        permission: 'legacyplates.produce',
-        group: 'legacyplates',
-        mobilePriority: true,
-    },
-    {
-        label: 'Legacy Plates',
-        icon: resolveIcon('Boxes'),
-        href: '/admin/plates',
-        permission: 'plates.view',
-        group: 'legacyplates',
-    },
-    {
-        label: 'Vinculación NFC',
-        icon: resolveIcon('Nfc'),
-        href: '/admin/legacy-codes',
-        permission: 'legacycodes.view',
-        group: 'legacyplates',
-    },
-    {
-        label: 'Layouts de impresión',
-        icon: resolveIcon('Printer'),
-        href: '/admin/legacy-plate-models',
-        permission: 'legacyplates.manage',
-        group: 'legacyplates',
-    },
-
-    // Portal del fotógrafo.
+export const photographerNav: NavItem[] = [
     {
         label: 'Mi panel',
-        icon: resolveIcon('LayoutGrid'),
+        icon: LayoutGrid,
         href: '/fotografo',
         permission: 'photographer.portal',
-        group: 'fotografo',
         exact: true,
     },
     {
         label: 'Mis fotos en venta',
-        icon: resolveIcon('Camera'),
+        icon: Camera,
         href: '/fotografo/fotos',
         permission: 'photographer.portal',
-        group: 'fotografo',
     },
     {
         label: 'Ventas y pagos',
-        icon: resolveIcon('Wallet'),
+        icon: Wallet,
         href: '/fotografo/ventas',
         permission: 'photographer.portal',
-        group: 'fotografo',
     },
+];
 
+/** Athlete mobile bottom bar (spec §50): Legado, Eventos, Tienda, Pedidos, Perfil. */
+export const athleteMobileTabs: NavItem[] = [
+    {
+        label: 'Legado',
+        icon: LayoutGrid,
+        href: '/dashboard',
+        permission: null,
+        exact: true,
+    },
     {
         label: 'Eventos',
-        icon: resolveIcon('Calendar'),
-        href: '/admin/editions',
-        permission: 'events.view',
-        group: 'eventos',
-        mobilePriority: true,
+        icon: Calendar,
+        href: '/dashboard/my-events',
+        permission: null,
     },
+    { label: 'Tienda', icon: ShoppingBag, href: '/tienda', permission: null },
+    { label: 'Pedidos', icon: Receipt, href: '/mis-pedidos', permission: null },
     {
-        label: 'Participantes',
-        icon: resolveIcon('UserCheck'),
-        href: '/admin/participants',
-        permission: 'participants.view',
-        group: 'eventos',
+        label: 'Perfil',
+        icon: UserCircle,
+        href: '/dashboard/profile',
+        permission: null,
     },
-    {
-        label: 'Prerregistros',
-        icon: resolveIcon('ClipboardList'),
-        href: '/admin/preregistrations',
-        permission: 'preregistrations.view',
-        group: 'eventos',
-    },
-    {
-        label: 'Organizadores',
-        icon: resolveIcon('Building2'),
-        href: '/admin/organizers',
-        permission: 'organizers.view',
-        group: 'eventos',
-    },
-    {
-        label: 'Operación del evento',
-        icon: resolveIcon('Radio'),
-        href: '/operator',
-        permission: 'operator.access',
-        group: 'eventos',
-    },
+];
 
-    // Contenido — what the public site shows.
+// ── Administración ───────────────────────────────────────────────────────
+
+export const adminSections: AdminSection[] = [
     {
-        label: 'Fotografías',
-        icon: resolveIcon('Image'),
-        href: '/admin/photos',
-        permission: 'photos.manage',
-        group: 'contenido',
+        key: 'inicio',
+        label: 'Inicio',
+        icon: House,
+        href: '/admin',
+        hrefPermission: 'dashboard.admin.view',
+        match: ['/admin'],
+        exact: true,
+        tabs: [
+            {
+                label: 'Inicio',
+                href: '/admin',
+                permission: 'dashboard.admin.view',
+                exact: true,
+            },
+        ],
+        mobile: true,
     },
     {
-        label: 'Fotógrafos',
-        icon: resolveIcon('Camera'),
-        href: '/admin/photographers',
-        permission: 'photos.manage',
-        group: 'contenido',
+        key: 'eventos',
+        label: 'Eventos',
+        icon: Calendar,
+        href: '/admin/events',
+        hrefPermission: 'events.view',
+        match: [
+            '/admin/events',
+            '/admin/editions',
+            '/admin/participants',
+            '/admin/preregistrations',
+            '/admin/photos',
+            '/admin/incidents',
+            '/imports',
+            '/operator',
+        ],
+        hideTabsOn: /^\/admin\/events\/\d+(\/|$)/,
+        tabs: [
+            {
+                label: 'Eventos',
+                href: '/admin/events',
+                permission: 'events.view',
+                match: [
+                    '/admin/editions',
+                    '/admin/participants',
+                    '/admin/preregistrations',
+                    '/imports',
+                ],
+            },
+            {
+                label: 'Fotos por revisar',
+                href: '/admin/photos',
+                permission: 'photos.manage',
+            },
+        ],
+        mobile: true,
     },
     {
+        key: 'comercio',
+        label: 'Comercio',
+        icon: Store,
+        // cross-agent: /admin/comercio is built by A2 (Comercio workspace).
+        href: '/admin/comercio',
+        hrefPermission: 'orders.view',
+        match: [
+            '/admin/comercio',
+            '/admin/products',
+            '/admin/product-categories',
+            '/admin/inventory',
+            '/admin/orders',
+            '/admin/payments',
+            '/admin/coupons',
+            '/admin/promotions',
+        ],
+        tabs: [
+            {
+                label: 'Resumen',
+                href: '/admin/comercio', // cross-agent (A2)
+                permission: 'orders.view',
+                exact: true,
+            },
+            {
+                label: 'Productos',
+                href: '/admin/products',
+                permission: 'products.manage',
+            },
+            {
+                label: 'Inventario',
+                href: '/admin/inventory',
+                permission: 'inventory.manage',
+            },
+            {
+                label: 'Pedidos',
+                href: '/admin/orders',
+                permission: 'orders.view',
+            },
+            {
+                label: 'Ventas',
+                href: '/admin/payments',
+                permission: 'payments.view',
+            },
+            {
+                label: 'Cupones',
+                href: '/admin/coupons',
+                permission: 'coupons.manage',
+            },
+            {
+                label: 'Ofertas',
+                href: '/admin/promotions',
+                permission: 'coupons.manage',
+            },
+            {
+                label: 'Categorías',
+                href: '/admin/product-categories',
+                permission: 'products.manage',
+            },
+        ],
+        mobile: true,
+    },
+    {
+        key: 'legacy',
+        label: 'Legacy + NFC',
+        icon: Nfc,
+        // cross-agent: /admin/legacy-nfc is built by A6 (Legacy + NFC workspace).
+        href: '/admin/legacy-nfc',
+        hrefPermission: 'legacyplates.manage',
+        match: [
+            '/admin/legacy-nfc',
+            '/admin/legacy-plates',
+            '/admin/plates',
+            '/admin/legacy-plate-models',
+            '/admin/legacy-codes',
+            '/admin/plate-studio',
+            '/admin/machine-profiles',
+            '/admin/production-devices',
+            '/production',
+        ],
+        tabs: [
+            {
+                label: 'Resumen',
+                href: '/admin/legacy-nfc', // cross-agent (A6)
+                permission: 'legacyplates.manage',
+                exact: true,
+            },
+            {
+                label: 'Preparación y entrega',
+                href: '/admin/legacy-plates/production',
+                permission: 'legacyplates.produce',
+                match: ['/production'],
+            },
+            {
+                label: 'Legacy Plates',
+                href: '/admin/plates',
+                permission: 'plates.view',
+            },
+            {
+                label: 'Preventas',
+                href: '/admin/legacy-plates/presales',
+                permission: 'legacyplates.manage',
+            },
+            {
+                label: 'Diseños',
+                href: '/admin/legacy-plate-models',
+                permission: 'legacyplates.manage',
+            },
+        ],
+    },
+    {
+        key: 'comunidad',
         label: 'Comunidad',
-        icon: resolveIcon('MessagesSquare'),
+        icon: MessagesSquare,
         href: '/admin/community',
-        permission: 'community.moderate',
-        group: 'contenido',
+        hrefPermission: 'community.moderate',
+        match: ['/admin/community'],
+        tabs: [
+            {
+                label: 'Moderación',
+                href: '/admin/community',
+                permission: 'community.moderate',
+            },
+        ],
     },
     {
-        label: 'Nosotros y trayectoria',
-        icon: resolveIcon('Newspaper'),
-        href: '/admin/content',
-        permission: 'content.manage',
-        group: 'contenido',
-    },
-    {
-        label: 'Mensajes de contacto',
-        icon: resolveIcon('Inbox'),
-        href: '/admin/messages',
-        permission: 'content.manage',
-        group: 'contenido',
-    },
-
-    {
-        label: 'Atletas',
-        icon: resolveIcon('UserCircle'),
-        href: '/admin/athletes',
-        permission: 'athletes.view',
-        group: 'atletas',
-    },
-    {
-        label: 'Usuarios',
-        icon: resolveIcon('Users'),
+        key: 'personas',
+        label: 'Personas',
+        icon: Users,
         href: '/admin/users',
-        permission: 'users.view',
-        group: 'atletas',
+        hrefPermission: 'users.view',
+        match: [
+            '/admin/users',
+            '/admin/athletes',
+            '/admin/photographers',
+            '/admin/roles',
+            '/admin/identity-conflicts',
+            '/admin/messages',
+        ],
+        tabs: [
+            {
+                label: 'Usuarios',
+                href: '/admin/users',
+                permission: 'users.view',
+            },
+            {
+                label: 'Atletas',
+                href: '/admin/athletes',
+                permission: 'athletes.view',
+            },
+            {
+                label: 'Fotógrafos',
+                href: '/admin/photographers',
+                permission: 'photos.manage',
+            },
+            {
+                label: 'Duplicados',
+                href: '/admin/identity-conflicts',
+                permission: 'athletes.manage',
+            },
+            {
+                label: 'Mensajes',
+                href: '/admin/messages',
+                permission: 'content.manage',
+            },
+            {
+                label: 'Roles',
+                href: '/admin/roles',
+                permission: 'roles.manage',
+            },
+        ],
+        mobile: true,
     },
-
     {
+        key: 'configuracion',
         label: 'Configuración',
-        icon: resolveIcon('Settings'),
+        icon: Settings,
         href: '/admin/settings',
-        permission: 'dashboard.admin.view',
-        group: 'sistema',
-    },
-    {
-        label: 'Roles y permisos',
-        icon: resolveIcon('ShieldCheck'),
-        href: '/admin/roles',
-        permission: 'roles.manage',
-        group: 'sistema',
-    },
-    {
-        label: 'Auditoría',
-        icon: resolveIcon('History'),
-        href: '/admin/audit',
-        permission: 'audit.view',
-        group: 'sistema',
+        hrefPermission: 'dashboard.admin.view',
+        match: [
+            '/admin/settings',
+            '/admin/content',
+            '/admin/organizers',
+            '/admin/data-sources',
+            '/admin/integrations',
+            '/admin/audit',
+        ],
+        tabs: [
+            {
+                label: 'Ajustes',
+                href: '/admin/settings',
+                permission: 'dashboard.admin.view',
+            },
+            {
+                label: 'Contenido del sitio',
+                href: '/admin/content',
+                permission: 'content.manage',
+            },
+            {
+                label: 'Organizadores',
+                href: '/admin/organizers',
+                permission: 'organizers.view',
+            },
+            {
+                label: 'Fuentes de datos',
+                href: '/admin/data-sources',
+                permission: 'eventdata.manage',
+            },
+            {
+                label: 'Conexiones',
+                href: '/admin/integrations',
+                permission: 'integrations.view',
+            },
+            {
+                label: 'Auditoría',
+                href: '/admin/audit',
+                permission: 'audit.view',
+            },
+        ],
     },
 ];
 
 /**
- * Groups that belong to the "Personal" side of the sidebar: everything
- * that is MINE (Mi Legado, Mis fotos, Mis pedidos…) — including a
- * photographer's own portal (Mi panel, Mis fotos en venta, Ventas y
- * pagos). "Trabajo" is only staff work over other people's data.
+ * Staff without the admin panel (seeded `production_operator`) still need
+ * their one work screen. A6 turns /production into "Preparación y entrega".
  */
-export const PERSONAL_GROUPS: NavGroup[] = ['legacy', 'fotografo'];
+export const staffNav: NavItem[] = [
+    {
+        label: 'Preparación y entrega',
+        icon: Package,
+        href: '/production',
+        permission: 'production.access',
+    },
+];
 
-export function visibleNavigation(permissions: string[]): NavItem[] {
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function allowed(permission: string | null, set: Set<string>): boolean {
+    return permission === null || set.has(permission);
+}
+
+export function visibleItems(items: NavItem[], permissions: string[]) {
     const set = new Set(permissions);
 
-    return navigation.filter(
-        (item) => item.permission === null || set.has(item.permission),
+    return items.filter((item) => allowed(item.permission, set));
+}
+
+/** Admin sections the viewer can enter, each with its visible tabs and the
+ * URL its sidebar link should open. */
+export function visibleAdminSections(permissions: string[]): ResolvedSection[] {
+    const set = new Set(permissions);
+
+    // Every /admin route sits behind `can:dashboard.admin.view`.
+    if (!set.has('dashboard.admin.view')) {
+        return [];
+    }
+
+    return adminSections
+        .map((section) => {
+            const visibleTabs = section.tabs.filter((tab) =>
+                allowed(tab.permission, set),
+            );
+            const resolvedHref =
+                section.hrefPermission === null ||
+                set.has(section.hrefPermission)
+                    ? section.href
+                    : (visibleTabs[0]?.href ?? section.href);
+
+            return { ...section, visibleTabs, resolvedHref };
+        })
+        .filter((section) => section.visibleTabs.length > 0);
+}
+
+export function pathMatches(path: string, prefix: string, exact = false) {
+    if (exact) {
+        return path === prefix;
+    }
+
+    return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+export function isAdminSectionActive(section: AdminSection, path: string) {
+    if (section.exact) {
+        return path === section.href;
+    }
+
+    return section.match.some((prefix) => pathMatches(path, prefix));
+}
+
+export function adminSectionForPath(
+    path: string,
+    permissions: string[],
+): ResolvedSection | null {
+    return (
+        visibleAdminSections(permissions).find((section) =>
+            isAdminSectionActive(section, path),
+        ) ?? null
     );
 }
 
-export function groupedNavigation(
-    permissions: string[],
-): { group: NavGroup; label: string; items: NavItem[] }[] {
-    const visible = visibleNavigation(permissions);
-    const groups: NavGroup[] = [
-        'legacy',
-        'fotografo',
-        'resumen',
-        'legacyplates',
-        'eventos',
-        'contenido',
-        'atletas',
-        'sistema',
-    ];
+export function isTabActive(tab: WorkspaceTab, path: string) {
+    return (
+        pathMatches(path, tab.href, tab.exact) ||
+        (tab.match ?? []).some((prefix) => pathMatches(path, prefix))
+    );
+}
 
-    return groups
-        .map((group) => ({
-            group,
-            label: navGroupLabels[group],
-            items: visible.filter((item) => item.group === group),
-        }))
-        .filter((entry) => entry.items.length > 0);
+/** True for every URL that belongs to the staff side of the app. */
+export function isAdminPath(path: string): boolean {
+    return /^\/(admin|operator|production|imports)(\/|$)/.test(path);
 }

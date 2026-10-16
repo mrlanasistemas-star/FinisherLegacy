@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { Settings } from '@lucide/vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import { Head, usePage } from '@inertiajs/vue3';
+import { ExternalLink, Settings } from '@lucide/vue';
+import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
-import { SYSTEM_AREA_NAV } from '@/config/areaNav';
+
+const page = usePage();
+const isSuperAdmin = computed(() => page.props.auth?.isSuperAdmin === true);
 
 defineProps<{
     commerce: {
@@ -31,18 +33,15 @@ function mb(bytes: number): string {
     <Head title="Configuración" />
 
     <div class="p-4 md:p-8">
-        <SecondaryNav :items="SYSTEM_AREA_NAV" />
-
         <h1
             class="mb-1 flex items-center gap-2 text-xl font-bold text-foreground"
         >
             <Settings class="size-5 text-fl-gold-ink" />
-            Configuración del sistema
+            Ajustes
         </h1>
         <p class="mb-6 text-sm text-muted-foreground">
-            Vista de solo lectura — estos valores viven en
-            <code class="text-muted-foreground">config/finisher.php</code> y se
-            cambian por variables de entorno.
+            Solo lectura — estos valores se cambian en la configuración del
+            servidor.
         </p>
 
         <div class="grid gap-6 md:grid-cols-2">
@@ -164,12 +163,24 @@ function mb(bytes: number): string {
                 <h2
                     class="mb-3 text-sm font-semibold text-muted-foreground uppercase"
                 >
-                    API
+                    Técnico
                 </h2>
                 <div class="flex justify-between text-sm">
-                    <span class="text-muted-foreground">Versión</span
+                    <span class="text-muted-foreground"
+                        >Versión para la app móvil</span
                     ><span class="text-foreground">{{ apiVersion }}</span>
                 </div>
+                <!-- cross-agent: /horizon is configured by A1 (queue dashboard). -->
+                <a
+                    v-if="isSuperAdmin"
+                    href="/horizon"
+                    target="_blank"
+                    rel="noopener"
+                    class="mt-3 inline-flex min-h-9 items-center gap-1.5 text-sm font-medium text-fl-gold-ink hover:underline"
+                >
+                    Estado de las colas de trabajo
+                    <ExternalLink class="size-3.5" />
+                </a>
             </section>
         </div>
     </div>

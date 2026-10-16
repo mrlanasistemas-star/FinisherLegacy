@@ -65,6 +65,7 @@ use App\Http\Controllers\Store\ProductController as StoreProductController;
 use App\Http\Controllers\SupportAudioController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SupportSessionController;
+use Illuminate\Routing\RedirectController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -296,17 +297,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('can:dashboard.admin.view')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        Route::middleware('can:events.view')->get('editions', [AdminEditionController::class, 'index'])->name('editions.index');
+        // Retired GET URLs → the events workspace (spec §9/§136, routes/web/admin-workspace.php).
+        Route::get('editions', RedirectController::class)->defaults('destination', '/admin/events')->defaults('status', 301)->name('editions.index');
         Route::middleware('can:events.manage')->group(function () {
             // Registered before the {eventEdition} wildcard route below —
             // Laravel matches in registration order, so "create" would
             // otherwise be swallowed as an eventEdition route parameter.
-            Route::get('editions/create', [AdminEditionController::class, 'create'])->name('editions.create');
+            Route::get('editions/create', RedirectController::class)->defaults('destination', '/admin/events/create')->defaults('status', 301)->name('editions.create');
             Route::post('editions', [AdminEditionController::class, 'store'])->name('editions.store');
             Route::post('editions/{eventEdition}/price-schedules', [AdminEditionController::class, 'storePriceSchedule'])->name('editions.price-schedules.store');
         });
         Route::middleware('can:eventdata.manage')->put('editions/{eventEdition}/data-sources', [AdminEditionController::class, 'updateDataSources'])->name('editions.data-sources.update');
-        Route::middleware('can:events.view')->get('editions/{eventEdition}', [AdminEditionController::class, 'show'])->name('editions.show');
+        Route::get('editions/{eventEdition}', RedirectController::class)->whereNumber('eventEdition')->defaults('destination', '/admin/events/{eventEdition}')->defaults('status', 301)->name('editions.show');
 
         Route::middleware('can:editions.manage')->prefix('events/{eventEdition}/production-setup')->name('editions.production-setup.')->group(function () {
             Route::get('/', [AdminProductionSetupController::class, 'show'])->name('show');
@@ -552,3 +554,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+require __DIR__.'/web/admin-workspace.php';

@@ -18,7 +18,8 @@ import {
 import { useDebounceFn } from '@vueuse/core';
 import type { AcceptableValue } from 'reka-ui';
 import { computed, ref, watch } from 'vue';
-import EventEditionSelector from '@/components/admin/EventEditionSelector.vue';
+import EventWorkspaceHeader from '@/components/admin/events/EventWorkspaceHeader.vue';
+import type { EventWorkspaceData } from '@/components/admin/events/types';
 import Pagination from '@/components/public/Pagination.vue';
 import Money from '@/components/shared/Money.vue';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +48,7 @@ type ParticipantRow = {
 };
 
 const props = defineProps<{
+    workspace: EventWorkspaceData;
     events: { id: number; name: string }[];
     selectedEventEditionId: number | null;
     races: { id: number; name: string }[];
@@ -115,9 +117,8 @@ function applyFilters(
     overrides: Record<string, string | number | null | undefined> = {},
 ) {
     router.get(
-        '/admin/participants',
+        `${props.workspace.base_url}/participants`,
         {
-            event_edition_id: props.selectedEventEditionId,
             q: q.value || undefined,
             event_race_id: props.filters.event_race_id ?? undefined,
             result: props.filters.result ?? undefined,
@@ -188,21 +189,10 @@ function exportUrl() {
 </script>
 
 <template>
-    <Head title="Participantes" />
+    <Head :title="`Participantes — ${workspace.name}`" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-bold text-foreground">Participantes</h1>
-                <p class="text-sm text-muted-foreground">
-                    Los corredores reales del evento — filtra, mide, exporta.
-                </p>
-            </div>
-            <EventEditionSelector
-                :events="events"
-                :model-value="selectedEventEditionId"
-            />
-        </div>
+    <div class="w-full px-4 py-5 sm:px-6 md:py-7 lg:px-8 xl:px-10">
+        <EventWorkspaceHeader :workspace="workspace" active="participants" />
 
         <div
             v-if="!selectedEventEditionId"
@@ -333,7 +323,7 @@ function exportUrl() {
 
                 <Link
                     v-if="canImport"
-                    href="/imports"
+                    :href="`${workspace.base_url}/data`"
                     class="ml-auto flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
                 >
                     <Upload class="size-4" />
