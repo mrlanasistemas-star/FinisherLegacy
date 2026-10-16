@@ -89,7 +89,7 @@ onMounted(() => {
         <div class="ml-auto flex items-center gap-2">
             <button
                 type="button"
-                class="flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-2 focus-visible:outline-fl-gold md:w-64"
+                class="flex h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-2 focus-visible:outline-fl-gold md:h-9 md:w-64 md:justify-start"
                 :aria-label="
                     isAdmin
                         ? 'Buscar eventos, atletas, pedidos o productos'
@@ -98,9 +98,12 @@ onMounted(() => {
                 @click="openCommandMenu()"
             >
                 <Search class="size-4 shrink-0" />
-                <span class="hidden flex-1 text-left md:inline">{{
-                    isAdmin ? 'Buscar evento, atleta, pedido…' : 'Ir a…'
-                }}</span>
+                <span
+                    class="hidden flex-1 truncate text-left whitespace-nowrap md:inline"
+                    >{{
+                        isAdmin ? 'Buscar evento, atleta, pedido…' : 'Ir a…'
+                    }}</span
+                >
                 <kbd
                     class="hidden rounded border border-border bg-background px-1.5 font-sans text-[10px] font-medium md:inline"
                     >{{ shortcut }}</kbd
