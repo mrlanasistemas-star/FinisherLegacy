@@ -44,7 +44,7 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         Role::findOrCreate('production_operator')->syncPermissions([
-            'plates.view', 'production.manage', 'production.access', 'incidents.manage',
+            'plates.view', 'production.manage', 'production.access', 'incidents.manage', 'nfc.view',
         ]);
 
         Role::findOrCreate('athlete');

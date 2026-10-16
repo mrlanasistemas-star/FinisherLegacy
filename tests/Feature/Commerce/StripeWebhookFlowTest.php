@@ -5,8 +5,8 @@ use App\Actions\Commerce\GetOrCreateCart;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
-use App\Events\Commerce\OrderUpdated;
-use App\Events\Commerce\PaymentUpdated;
+use App\Events\Realtime\OrderUpdated;
+use App\Events\Realtime\PaymentUpdated;
 use App\Models\InventoryLevel;
 use App\Models\InventoryLocation;
 use App\Models\Order;
@@ -79,6 +79,7 @@ function a2PendingStripeOrder(int $stock = 5, int $quantity = 1): array
 }
 
 test('payment_intent.succeeded marks the order paid, keeps the stock reserved and broadcasts', function () {
+    config(['broadcasting.default' => 'log']);
     Event::fake([OrderUpdated::class, PaymentUpdated::class]);
     [$order, $payment, $variant] = a2PendingStripeOrder();
 
@@ -92,7 +93,7 @@ test('payment_intent.succeeded marks the order paid, keeps the stock reserved an
     $level = InventoryLevel::query()->where('product_variant_id', $variant->id)->first();
     expect($level->quantity_on_hand)->toBe(5)->and($level->quantity_reserved)->toBe(1);
 
-    Event::assertDispatched(OrderUpdated::class, fn ($e) => $e->order->is($order) && $e->broadcastAs() === 'order.updated');
+    Event::assertDispatched(OrderUpdated::class, fn ($e) => $e->payload['uuid'] === $order->uuid && $e->broadcastAs() === 'order.updated');
     Event::assertDispatched(PaymentUpdated::class);
 });
 

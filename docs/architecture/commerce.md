@@ -258,10 +258,12 @@ Rutas: `products/{product_uuid}/images|videos|models3d/` en el disco
 
 ### Realtime
 
-`order.updated` / `payment.updated` (canal privado `App.Models.User.{id}` y
-`commerce.admin`) e `inventory.updated` (`commerce.admin`). El canal
-`commerce.admin` necesita autorización en `routes/channels.php`
-(permiso `orders.view` o `inventory.manage`).
+`order.updated` / `payment.updated` los emite `CommerceBroadcastObserver`
+(plataforma) en `App.Models.User.{id}` y `admin.commerce`;
+`inventory.updated` (`App\Events\Realtime\InventoryUpdated`) lo emite
+`InventoryService` tras cada movimiento, solo en `admin.commerce`. Todos
+respetan `Realtime::enabled()`. La página de confirmación escucha
+`.order.updated` y, sin realtime, consulta el estado por polling.
 
 ## Memory Packs (base)
 

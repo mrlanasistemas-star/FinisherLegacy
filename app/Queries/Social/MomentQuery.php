@@ -38,6 +38,7 @@ class MomentQuery
                 'author.athleteProfile.mainSport',
                 'media.eventMedia',
                 'eventParticipant.eventEdition.event',
+                'eventEdition.event',
                 'eventParticipant.eventRace',
                 'eventParticipant.result',
                 'medal.images',
@@ -47,7 +48,7 @@ class MomentQuery
             ->withCount([
                 'reactions as likes_count' => fn ($q) => $q->where('type', MomentReactionType::Like),
                 'reactions as cheers_count' => fn ($q) => $q->where('type', MomentReactionType::Cheer),
-                'comments',
+                'comments' => fn ($q) => $q->whereNull('hidden_at'),
             ]);
     }
 

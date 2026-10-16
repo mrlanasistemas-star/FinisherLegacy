@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -62,6 +63,16 @@ class AthleteOwnedProduct extends Model
     public function gearSelections(): HasMany
     {
         return $this->hasMany(EventGearSelection::class);
+    }
+
+    /**
+     * The NFC tag that makes this a "Producto conectado" (docs/NFC.md).
+     *
+     * @return HasOne<NfcAssignment, $this>
+     */
+    public function activeNfcAssignment(): HasOne
+    {
+        return $this->hasOne(NfcAssignment::class)->whereNull('ended_at')->latestOfMany();
     }
 
     public function getActivitylogOptions(): LogOptions

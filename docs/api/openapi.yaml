@@ -692,10 +692,48 @@ paths:
         "200":
           description: OK
 
+  /nfc/{token}:
+    get:
+      tags: [Gear]
+      summary: Resolver una etiqueta NFC (público, throttle nfc-resolve; Bearer opcional) — docs/NFC.md §4
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[A-Za-z0-9]{24,64}$" }
+      responses:
+        "200":
+          description: "{data:{status: unclaimed|claimed|disabled, owned_by_me, can_claim, target:{type: legacy_plate|product|profile|event, title, subtitle, image_url, web_url, profile_username, event_slug}|null}}"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          description: TOO_MANY_REQUESTS
+
+  /nfc/{token}/claim:
+    post:
+      tags: [Gear]
+      summary: Conectar la etiqueta al Legacy del usuario — 200 {data:<gear item como /me/gear>}
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK — gear item (kind, connected, connection_label "Producto conectado", story_url…)
+        "401":
+          description: UNAUTHENTICATED
+        "409":
+          description: NFC_ALREADY_CLAIMED (otra persona ya la conectó)
+        "422":
+          description: NFC_NOT_CLAIMABLE (desactivada, sin asignar o etiqueta de evento)
+
   /gear/{code}:
     get:
       tags: [Gear]
-      summary: Lookup público de un producto por asset_code — nunca PII del dueño
+      summary: "DEPRECADO (usar /nfc/{token}): lookup público por asset_code QR — nunca PII del dueño"
+      deprecated: true
       security: []
       parameters:
         - name: code
@@ -711,7 +749,7 @@ paths:
   /me/gear:
     get:
       tags: [Gear]
-      summary: Digital Closet del Athlete autenticado
+      summary: "Mi equipo: productos + Legacy Plates conectadas. Campos aditivos kind, connected, connection_label (\"Producto conectado\"), connected_at, image_url, story_url, event"
       responses:
         "200":
           description: OK
@@ -719,7 +757,8 @@ paths:
   /gear/{code}/claim:
     post:
       tags: [Gear]
-      summary: Reclamar un producto sin dueño — idempotente vía Cache::lock + lockForUpdate
+      summary: "DEPRECADO (usar /nfc/{token}/claim): reclamar un producto sin dueño — Cache::lock + lockForUpdate"
+      deprecated: true
       parameters:
         - name: code
           in: path

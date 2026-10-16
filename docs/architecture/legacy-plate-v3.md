@@ -75,9 +75,15 @@ acero), más `hero`, `portrait`, `float`, `macro`. Referenciados desde
 `resources/js/config/media.ts` y `Product::conceptGallery()`; una
 `ProductMedia` real siempre los sustituye.
 
-## Producción
+## Producción → Preparación y entrega
 
-Tablero `/admin/legacy-plates/production`: Por pagar → Lista para imprimir →
-En impresión → Impresa · NFC · clip → Entregada. El Dashboard admin presenta
-las etapas Pedido / Personalización / Impresión / NFC + clip / Control de
-calidad / Envío sobre los estados internos existentes (sin renombrarlos).
+Mensaje de producto: **"Una pieza física que conecta tu medalla con tu
+historia digital."** Sin QR.
+
+Tablero Admin → Legacy + NFC → **Preparación y entrega**
+(`/admin/legacy-nfc/preparacion`): Pendiente → Preparando → Personalizada →
+NFC asignado → Lista → Entregada. Cada placa nueva recibe su etiqueta NFC en
+el paso "NFC asignado" (requisito para "Lista"). La máquina personaliza; la
+web solo registra etapas y entrega los datos de personalización. Detalle,
+mapeo de estados y contrato con la máquina en `docs/NFC.md` §7.
+`/admin/legacy-plates/production` y `/production` redirigen ahí.

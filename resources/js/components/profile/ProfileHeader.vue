@@ -6,6 +6,7 @@
  * follow, share…) come in through the `actions` slot so each page decides
  * what the viewer may do.
  */
+import { Link } from '@inertiajs/vue3';
 import { MapPin } from '@lucide/vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 
@@ -17,7 +18,8 @@ defineProps<{
     sports?: string[];
     photoUrl?: string | null;
     coverUrl?: string | null;
-    stats: { label: string; value: number | string }[];
+    /** `href` turns a stat into a link (e.g. Seguidores → list). */
+    stats: { label: string; value: number | string; href?: string | null }[];
 }>();
 </script>
 
@@ -119,7 +121,12 @@ defineProps<{
                     <div
                         v-for="stat in stats"
                         :key="stat.label"
-                        class="bg-card px-4 py-3"
+                        class="relative bg-card px-4 py-3"
+                        :class="
+                            stat.href
+                                ? 'transition-colors hover:bg-fl-paper'
+                                : ''
+                        "
                     >
                         <dt
                             class="text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase"
@@ -129,7 +136,14 @@ defineProps<{
                         <dd
                             class="legacy-numeric mt-1 text-2xl font-semibold text-foreground"
                         >
-                            {{ stat.value }}
+                            <Link
+                                v-if="stat.href"
+                                :href="stat.href"
+                                class="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
+                                :aria-label="`${stat.value} ${stat.label}`"
+                                >{{ stat.value }}</Link
+                            >
+                            <template v-else>{{ stat.value }}</template>
                         </dd>
                     </div>
                 </dl>

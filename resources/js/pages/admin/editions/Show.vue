@@ -1,27 +1,29 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ExternalLink, Plus } from '@lucide/vue';
+/**
+ * Event workspace › Resumen (spec §9): the event at a glance — counts per
+ * tab, general data, races, Legacy Plate for this event and its price
+ * windows. Data sources live in the "Datos" tab now.
+ */
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import {
+    Camera,
+    ClipboardList,
+    Flag,
+    Plus,
+    Trophy,
+    UserCheck,
+} from '@lucide/vue';
 import { computed } from 'vue';
+import EventWorkspace from '@/components/admin/events/EventWorkspace.vue';
+import type { EventWorkspaceData } from '@/components/admin/events/types';
 import DatePicker from '@/components/DatePicker.vue';
+import FancySelect from '@/components/forms/FancySelect.vue';
 import Money from '@/components/shared/Money.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-    editionStatus,
-    eventEditionPhase,
-    statusClass,
-    statusLabel,
-} from '@/lib/statusLabels';
+import { editionStatus, statusLabel } from '@/lib/statusLabels';
 
 type Edition = {
     id: number;
@@ -41,31 +43,6 @@ type Edition = {
         distance_value: number | null;
         distance_unit: string | null;
     }[];
-    sync_mapping: { id: number; provider_connection: string } | null;
-    data_source: {
-        type: string | null;
-        provider_connection: string | null;
-        inherited: boolean;
-        participants_data_source_id: number | null;
-        results_data_source_id: number | null;
-        organizer_sources: {
-            id: number;
-            name: string | null;
-            type: string;
-            purpose: string;
-            is_default: boolean;
-        }[];
-        resolved_participants: {
-            type: string;
-            provider_connection: string | null;
-            is_override: boolean;
-        } | null;
-        resolved_results: {
-            type: string;
-            provider_connection: string | null;
-            is_override: boolean;
-        } | null;
-    };
 };
 
 type PriceSchedule = {
@@ -80,10 +57,10 @@ type PriceSchedule = {
 };
 
 const props = defineProps<{
+    workspace: EventWorkspaceData;
     edition: Edition;
     priceSchedules: PriceSchedule[];
     legacyPlateModels: { id: number; name: string; slug: string }[];
-    dataSourceTypes: string[];
     products: { id: number; name: string; type: string }[];
 }>();
 
@@ -94,52 +71,46 @@ const priceTypeLabels: Record<string, string> = {
     standard: 'Estándar',
 };
 
-const typeLabels: Record<string, string> = {
-    manual: 'Manual',
-    file: 'Archivo',
-    api: 'API',
-};
+const kpis = computed(() => [
+    {
+        label: 'Participantes',
+        value: props.workspace.counts.participants,
+        icon: UserCheck,
+        href: `${props.workspace.base_url}/participants`,
+    },
+    {
+        label: 'Con resultado',
+        value: props.workspace.counts.results,
+        icon: Trophy,
+        href: `${props.workspace.base_url}/results`,
+    },
+    {
+        label: 'Prerregistros',
+        value: props.workspace.counts.preregistrations,
+        icon: ClipboardList,
+        href: `${props.workspace.base_url}/preregistrations`,
+    },
+    {
+        label: 'Fotos',
+        value: props.workspace.counts.media,
+        icon: Camera,
+        href: `${props.workspace.base_url}/media`,
+    },
+]);
 
-const participantSources = computed(() =>
-    props.edition.data_source.organizer_sources.filter(
-        (s) => s.purpose === 'participants' || s.purpose === 'both',
-    ),
+const productOptions = computed(() =>
+    props.products.map((product) => ({
+        value: product.id,
+        label: product.name,
+    })),
 );
-const resultSources = computed(() =>
-    props.edition.data_source.organizer_sources.filter(
-        (s) => s.purpose === 'results' || s.purpose === 'both',
-    ),
+const priceTypeOptions = Object.entries(priceTypeLabels).map(
+    ([value, label]) => ({ value, label }),
 );
-
-const sourcesForm = useForm({
-    participants_data_source_id:
-        props.edition.data_source.participants_data_source_id ??
-        ('' as number | ''),
-    results_data_source_id:
-        props.edition.data_source.results_data_source_id ?? ('' as number | ''),
-});
-
-function saveSources() {
-    sourcesForm.put(`/admin/editions/${props.edition.id}/data-sources`, {
-        preserveScroll: true,
-    });
-}
-
-function syncNow() {
-    if (!props.edition.sync_mapping) {
-        return;
-    }
-
-    router.post(
-        `/admin/integrations/mappings/${props.edition.sync_mapping.id}/sync`,
-        {},
-        { preserveScroll: true },
-    );
-}
 
 const priceForm = useForm({
-    product_id: '' as number | '',
-    price_type: 'early_presale',
+    product_id: null as number | null,
+    price_type: 'early_presale' as string | null,
     amount_minor: 0,
     starts_at: '',
     ends_at: '',
@@ -156,328 +127,146 @@ function submitPrice() {
 <template>
     <Head :title="`${edition.event.name} — ${edition.name}`" />
 
-    <div class="p-4 md:p-8">
-        <div class="mb-6 flex items-start justify-between">
-            <div>
-                <p
-                    class="text-xs tracking-wide text-muted-foreground/80 uppercase"
-                >
-                    {{ edition.event.organizer ?? 'Sin organizador' }}
-                </p>
-                <h1 class="text-xl font-bold text-foreground">
-                    {{ edition.event.name }} — {{ edition.name }}
-                </h1>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    {{ edition.city
-                    }}<span v-if="edition.state">, {{ edition.state }}</span
-                    >, {{ edition.country }} · {{ edition.event_date }}
-                </p>
-            </div>
-            <Badge
-                variant="outline"
-                :class="statusClass(eventEditionPhase, edition.phase)"
-                >{{ statusLabel(eventEditionPhase, edition.phase) }}</Badge
+    <EventWorkspace :workspace="workspace" active="summary">
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Link
+                v-for="kpi in kpis"
+                :key="kpi.label"
+                :href="kpi.href"
+                class="fl-card group flex items-center gap-3 p-4 transition-colors hover:border-foreground/20"
             >
+                <span
+                    class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-fl-gold/10 text-fl-gold-ink"
+                >
+                    <component :is="kpi.icon" class="size-5" />
+                </span>
+                <span>
+                    <span
+                        class="block text-2xl font-semibold text-foreground tabular-nums"
+                        >{{ kpi.value.toLocaleString('es-MX') }}</span
+                    >
+                    <span class="text-xs text-muted-foreground">{{
+                        kpi.label
+                    }}</span>
+                </span>
+            </Link>
         </div>
 
-        <Tabs default-value="general">
-            <TabsList class="flex-wrap">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="races">Carreras</TabsTrigger>
-                <TabsTrigger value="data">Datos</TabsTrigger>
-                <TabsTrigger value="legacyplate">Legacy Plate</TabsTrigger>
-                <TabsTrigger value="prices">Precios</TabsTrigger>
-                <TabsTrigger value="sales">Ventas</TabsTrigger>
-                <TabsTrigger value="production">Producción</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="general" class="mt-6">
-                <div
-                    class="grid grid-cols-2 gap-4 rounded-xl border border-border bg-card/30 p-5 text-sm sm:grid-cols-4"
-                >
+        <div class="mt-6 grid gap-6 xl:grid-cols-3">
+            <section class="fl-card p-5 xl:col-span-1">
+                <h2 class="text-sm font-semibold text-foreground">General</h2>
+                <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <p class="text-xs text-muted-foreground/80 uppercase">
-                            Estado
-                        </p>
-                        <p class="text-foreground">
+                        <dt class="text-xs text-muted-foreground">Estado</dt>
+                        <dd class="text-foreground">
                             {{ statusLabel(editionStatus, edition.status) }}
-                        </p>
+                        </dd>
                     </div>
                     <div>
-                        <p class="text-xs text-muted-foreground/80 uppercase">
+                        <dt class="text-xs text-muted-foreground">Año</dt>
+                        <dd class="text-foreground">{{ edition.year }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
                             Zona horaria
-                        </p>
-                        <p class="text-foreground">{{ edition.timezone }}</p>
+                        </dt>
+                        <dd class="text-foreground">{{ edition.timezone }}</dd>
                     </div>
                     <div>
-                        <p class="text-xs text-muted-foreground/80 uppercase">
-                            Año
-                        </p>
-                        <p class="text-foreground">{{ edition.year }}</p>
+                        <dt class="text-xs text-muted-foreground">País</dt>
+                        <dd class="text-foreground">{{ edition.country }}</dd>
                     </div>
+                </dl>
+
+                <h3
+                    class="mt-6 flex items-center gap-2 text-sm font-semibold text-foreground"
+                >
+                    <Flag class="size-4 text-fl-gold-ink" />
+                    Carreras
+                </h3>
+                <ul class="mt-3 divide-y divide-border text-sm">
+                    <li
+                        v-for="race in edition.races"
+                        :key="race.id"
+                        class="flex justify-between py-2"
+                    >
+                        <span class="text-foreground">{{ race.name }}</span>
+                        <span class="text-muted-foreground">{{
+                            race.distance_value
+                                ? `${race.distance_value} ${race.distance_unit}`
+                                : '—'
+                        }}</span>
+                    </li>
+                    <li
+                        v-if="!edition.races.length"
+                        class="py-2 text-muted-foreground"
+                    >
+                        Sin carreras.
+                    </li>
+                </ul>
+            </section>
+
+            <section class="fl-card p-5 xl:col-span-2">
+                <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs text-muted-foreground/80 uppercase">
-                            Página pública
+                        <h2 class="text-sm font-semibold text-foreground">
+                            Legacy Plate de este evento
+                        </h2>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Diseños disponibles, preventas y su preparación.
                         </p>
-                        <Link
-                            :href="`/events/${edition.event.slug}`"
-                            class="inline-flex items-center gap-1 text-fl-gold-ink hover:underline"
-                        >
-                            Ver <ExternalLink class="size-3" />
-                        </Link>
                     </div>
-                </div>
-            </TabsContent>
-
-            <TabsContent value="races" class="mt-6">
-                <div class="overflow-x-auto rounded-xl border border-border">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr
-                                class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
-                            >
-                                <th class="px-4 py-3 font-medium">Nombre</th>
-                                <th class="px-4 py-3 font-medium">Distancia</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="race in edition.races"
-                                :key="race.id"
-                                class="border-b border-border text-foreground last:border-0"
-                            >
-                                <td class="px-4 py-3">{{ race.name }}</td>
-                                <td class="px-4 py-3">
-                                    {{
-                                        race.distance_value
-                                            ? `${race.distance_value} ${race.distance_unit}`
-                                            : '—'
-                                    }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </TabsContent>
-
-            <TabsContent value="data" class="mt-6 space-y-4">
-                <div
-                    class="rounded-xl border border-border bg-card/30 p-5 text-sm"
-                >
-                    <p
-                        class="mb-4 text-xs font-semibold text-muted-foreground uppercase"
-                    >
-                        Organizador:
-                        {{ edition.event.organizer ?? 'Sin organizador' }}
-                    </p>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label class="text-xs text-muted-foreground"
-                                >Fuente de participantes</Label
-                            >
-                            <Select
-                                v-model="
-                                    sourcesForm.participants_data_source_id
-                                "
-                            >
-                                <SelectTrigger
-                                    class="border-border bg-background text-foreground"
-                                >
-                                    <SelectValue
-                                        placeholder="Heredar del organizador"
-                                    />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem
-                                        v-for="source in participantSources"
-                                        :key="source.id"
-                                        :value="source.id"
-                                    >
-                                        {{
-                                            source.name ??
-                                            typeLabels[source.type]
-                                        }}<span v-if="source.is_default">
-                                            (default)</span
-                                        >
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p
-                                v-if="edition.data_source.resolved_participants"
-                                class="text-xs text-muted-foreground/80"
-                            >
-                                Resuelto:
-                                {{
-                                    typeLabels[
-                                        edition.data_source
-                                            .resolved_participants.type
-                                    ]
-                                }}
-                                <span
-                                    v-if="
-                                        edition.data_source
-                                            .resolved_participants
-                                            .provider_connection
-                                    "
-                                >
-                                    ·
-                                    {{
-                                        edition.data_source
-                                            .resolved_participants
-                                            .provider_connection
-                                    }}</span
-                                >
-                            </p>
-                        </div>
-                        <div class="grid gap-2">
-                            <Label class="text-xs text-muted-foreground"
-                                >Fuente de resultados</Label
-                            >
-                            <Select
-                                v-model="sourcesForm.results_data_source_id"
-                            >
-                                <SelectTrigger
-                                    class="border-border bg-background text-foreground"
-                                >
-                                    <SelectValue
-                                        placeholder="Heredar del organizador"
-                                    />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem
-                                        v-for="source in resultSources"
-                                        :key="source.id"
-                                        :value="source.id"
-                                    >
-                                        {{
-                                            source.name ??
-                                            typeLabels[source.type]
-                                        }}<span v-if="source.is_default">
-                                            (default)</span
-                                        >
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p
-                                v-if="edition.data_source.resolved_results"
-                                class="text-xs text-muted-foreground/80"
-                            >
-                                Resuelto:
-                                {{
-                                    typeLabels[
-                                        edition.data_source.resolved_results
-                                            .type
-                                    ]
-                                }}
-                                <span
-                                    v-if="
-                                        edition.data_source.resolved_results
-                                            .provider_connection
-                                    "
-                                >
-                                    ·
-                                    {{
-                                        edition.data_source.resolved_results
-                                            .provider_connection
-                                    }}</span
-                                >
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 flex items-center gap-3">
-                        <Button
-                            class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                            :disabled="sourcesForm.processing"
-                            @click="saveSources"
-                        >
-                            Guardar fuentes
-                        </Button>
-                        <Button
-                            v-if="edition.sync_mapping"
-                            variant="outline"
-                            class="border-border text-foreground hover:bg-foreground/5"
-                            @click="syncNow"
-                        >
-                            Sincronizar ahora
-                        </Button>
-                    </div>
-                    <p
-                        v-if="!edition.sync_mapping"
-                        class="mt-2 text-xs text-muted-foreground/80"
-                    >
-                        Este evento no tiene una conexión API vinculada todavía
-                        —
-                        <Link
-                            href="/admin/integrations"
-                            class="text-fl-gold-ink hover:underline"
-                            >vincúlalo desde Integraciones</Link
-                        >
-                        para poder sincronizar.
-                    </p>
-
-                    <p
-                        v-if="!edition.data_source.organizer_sources.length"
-                        class="mt-4 text-xs text-muted-foreground/80"
-                    >
-                        No hay fuentes disponibles para este organizador todavía
-                        —
-                        <Link
-                            href="/admin/organizers"
-                            class="text-fl-gold-ink hover:underline"
-                            >agrégalas desde Organizadores</Link
-                        >.
-                    </p>
-                </div>
-            </TabsContent>
-
-            <TabsContent value="legacyplate" class="mt-6">
-                <div
-                    class="rounded-xl border border-border bg-card/30 p-5 text-sm"
-                >
-                    <p class="mb-3 text-xs text-muted-foreground/80 uppercase">
-                        Modelos disponibles
-                    </p>
                     <div class="flex flex-wrap gap-2">
-                        <Badge
-                            v-for="model in legacyPlateModels"
-                            :key="model.id"
-                            variant="outline"
-                            class="border-fl-gold/30 text-fl-gold-ink"
-                        >
-                            {{ model.name }}
-                        </Badge>
-                        <p
-                            v-if="!legacyPlateModels.length"
-                            class="text-muted-foreground/80"
-                        >
-                            Sin modelos activos.
-                        </p>
+                        <Button as-child size="sm" variant="outline">
+                            <Link
+                                :href="`/admin/legacy-plates/presales?event_edition_id=${edition.id}`"
+                                >Preventas</Link
+                            >
+                        </Button>
+                        <Button as-child size="sm" variant="outline">
+                            <Link
+                                :href="`/admin/legacy-plates/production?event_edition_id=${edition.id}`"
+                                >Preparación y entrega</Link
+                            >
+                        </Button>
                     </div>
-                    <p class="mt-4 text-xs text-muted-foreground/80">
-                        La preventa se vincula a un modelo específico al momento
-                        de agregarla al carrito —
-                        <Link
-                            href="/admin/legacy-plate-models"
-                            class="text-fl-gold-ink hover:underline"
-                            >ver catálogo de modelos</Link
-                        >.
+                </div>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <Badge
+                        v-for="model in legacyPlateModels"
+                        :key="model.id"
+                        variant="outline"
+                        class="border-fl-gold/30 text-fl-gold-ink"
+                    >
+                        {{ model.name }}
+                    </Badge>
+                    <p
+                        v-if="!legacyPlateModels.length"
+                        class="text-sm text-muted-foreground"
+                    >
+                        Sin diseños activos.
                     </p>
                 </div>
-            </TabsContent>
 
-            <TabsContent value="prices" class="mt-6 space-y-6">
-                <div class="overflow-x-auto rounded-xl border border-border">
+                <h3 class="mt-6 text-sm font-semibold text-foreground">
+                    Precios por ventana
+                </h3>
+                <div
+                    class="mt-3 overflow-x-auto rounded-lg border border-border"
+                >
                     <table class="w-full text-sm">
                         <thead>
                             <tr
-                                class="border-b border-border bg-card/40 text-left text-xs text-muted-foreground uppercase"
+                                class="border-b border-border bg-muted/40 text-left text-xs text-muted-foreground"
                             >
-                                <th class="px-4 py-3 font-medium">Producto</th>
-                                <th class="px-4 py-3 font-medium">Ventana</th>
-                                <th class="px-4 py-3 font-medium">Precio</th>
-                                <th class="px-4 py-3 font-medium">Vigencia</th>
+                                <th class="px-4 py-2.5 font-medium">
+                                    Producto
+                                </th>
+                                <th class="px-4 py-2.5 font-medium">Ventana</th>
+                                <th class="px-4 py-2.5 font-medium">Precio</th>
+                                <th class="px-4 py-2.5 font-medium">
+                                    Vigencia
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -486,23 +275,23 @@ function submitPrice() {
                                 :key="schedule.id"
                                 class="border-b border-border text-foreground last:border-0"
                             >
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2.5">
                                     {{ schedule.product }}
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2.5">
                                     {{
                                         priceTypeLabels[schedule.price_type] ??
                                         schedule.price_type
                                     }}
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2.5">
                                     <Money
                                         :minor="schedule.amount_minor"
                                         :currency="schedule.currency"
                                     />
                                 </td>
                                 <td
-                                    class="px-4 py-3 text-xs text-muted-foreground/80"
+                                    class="px-4 py-2.5 text-xs text-muted-foreground"
                                 >
                                     {{ schedule.starts_at ?? 'sin inicio' }} —
                                     {{ schedule.ends_at ?? 'sin fin' }}
@@ -511,7 +300,7 @@ function submitPrice() {
                             <tr v-if="!priceSchedules.length">
                                 <td
                                     colspan="4"
-                                    class="px-4 py-10 text-center text-muted-foreground/80"
+                                    class="px-4 py-8 text-center text-muted-foreground"
                                 >
                                     Sin precios configurados.
                                 </td>
@@ -521,68 +310,43 @@ function submitPrice() {
                 </div>
 
                 <form
-                    class="rounded-xl border border-border bg-card/30 p-5"
+                    class="mt-4 rounded-lg border border-dashed border-border p-4"
                     @submit.prevent="submitPrice"
                 >
-                    <h3
-                        class="mb-4 text-sm font-semibold text-muted-foreground uppercase"
-                    >
+                    <p class="mb-3 text-xs font-semibold text-muted-foreground">
                         Agregar precio
-                    </h3>
-                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                        <div class="grid gap-2">
+                    </p>
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="grid gap-1.5">
                             <Label class="text-xs">Producto</Label>
-                            <Select v-model="priceForm.product_id">
-                                <SelectTrigger
-                                    class="border-border bg-background text-foreground"
-                                >
-                                    <SelectValue placeholder="Producto" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem
-                                        v-for="product in products"
-                                        :key="product.id"
-                                        :value="product.id"
-                                    >
-                                        {{ product.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <FancySelect
+                                v-model="priceForm.product_id"
+                                :options="productOptions"
+                                placeholder="Producto"
+                                aria-label="Producto"
+                            />
                         </div>
-                        <div class="grid gap-2">
+                        <div class="grid gap-1.5">
                             <Label class="text-xs">Ventana</Label>
-                            <Select v-model="priceForm.price_type">
-                                <SelectTrigger
-                                    class="border-border bg-background text-foreground"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="early_presale"
-                                        >Preventa</SelectItem
-                                    >
-                                    <SelectItem value="kit_pickup"
-                                        >Entrega de kits</SelectItem
-                                    >
-                                    <SelectItem value="event_day"
-                                        >Día del evento</SelectItem
-                                    >
-                                    <SelectItem value="standard"
-                                        >Estándar</SelectItem
-                                    >
-                                </SelectContent>
-                            </Select>
+                            <FancySelect
+                                v-model="priceForm.price_type"
+                                :options="priceTypeOptions"
+                                aria-label="Ventana"
+                            />
                         </div>
-                        <div class="grid gap-2">
-                            <Label class="text-xs">Precio (MXN)</Label>
+                        <div class="grid gap-1.5">
+                            <Label class="text-xs" for="price-amount"
+                                >Precio (centavos)</Label
+                            >
                             <Input
+                                id="price-amount"
                                 v-model.number="priceForm.amount_minor"
                                 type="number"
                                 class="bg-background"
                                 placeholder="90000 = $900.00"
                             />
                         </div>
-                        <div class="grid gap-2">
+                        <div class="grid gap-1.5">
                             <Label class="text-xs">Inicio</Label>
                             <div class="grid grid-cols-[1fr_auto] gap-2">
                                 <DatePicker
@@ -599,8 +363,8 @@ function submitPrice() {
                                 />
                                 <Input
                                     type="time"
-                                    aria-label="Hora"
-                                    class="w-28"
+                                    aria-label="Hora de inicio"
+                                    class="w-24"
                                     :disabled="!priceForm.starts_at"
                                     :model-value="
                                         priceForm.starts_at.slice(11, 16)
@@ -612,7 +376,7 @@ function submitPrice() {
                                 />
                             </div>
                         </div>
-                        <div class="grid gap-2">
+                        <div class="grid gap-1.5">
                             <Label class="text-xs">Fin</Label>
                             <div class="grid grid-cols-[1fr_auto] gap-2">
                                 <DatePicker
@@ -629,8 +393,8 @@ function submitPrice() {
                                 />
                                 <Input
                                     type="time"
-                                    aria-label="Hora"
-                                    class="w-28"
+                                    aria-label="Hora de fin"
+                                    class="w-24"
                                     :disabled="!priceForm.ends_at"
                                     :model-value="
                                         priceForm.ends_at.slice(11, 16)
@@ -643,52 +407,23 @@ function submitPrice() {
                             </div>
                         </div>
                     </div>
+                    <p
+                        v-if="Object.keys(priceForm.errors).length"
+                        class="mt-2 text-xs text-destructive"
+                    >
+                        {{ Object.values(priceForm.errors)[0] }}
+                    </p>
                     <Button
                         type="submit"
-                        class="mt-4 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                        size="sm"
+                        class="mt-3 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
                         :disabled="priceForm.processing"
                     >
                         <Plus class="size-4" />
                         Agregar precio
                     </Button>
                 </form>
-            </TabsContent>
-
-            <TabsContent value="sales" class="mt-6">
-                <div
-                    class="rounded-xl border border-border bg-card/30 p-5 text-sm text-muted-foreground"
-                >
-                    <p>Preventas de Legacy Plate para este evento:</p>
-                    <Button
-                        as-child
-                        class="mt-3 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                    >
-                        <Link
-                            :href="`/admin/legacy-plates/presales?event_edition_id=${edition.id}`"
-                        >
-                            Ver preventas
-                        </Link>
-                    </Button>
-                </div>
-            </TabsContent>
-
-            <TabsContent value="production" class="mt-6">
-                <div
-                    class="rounded-xl border border-border bg-card/30 p-5 text-sm text-muted-foreground"
-                >
-                    <p>Cola de producción de Legacy Plate para este evento:</p>
-                    <Button
-                        as-child
-                        class="mt-3 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-                    >
-                        <Link
-                            :href="`/admin/legacy-plates/production?event_edition_id=${edition.id}`"
-                        >
-                            Ir a producción
-                        </Link>
-                    </Button>
-                </div>
-            </TabsContent>
-        </Tabs>
-    </div>
+            </section>
+        </div>
+    </EventWorkspace>
 </template>

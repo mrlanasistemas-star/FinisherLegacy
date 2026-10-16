@@ -29,20 +29,20 @@ const year = new Date().getFullYear();
 
 const columns = [
     {
-        title: 'Plataforma',
+        title: 'Explora',
         links: [
-            { label: 'Comunidad', href: communityIndex() },
             { label: 'Eventos', href: eventsIndex() },
-            { label: 'Fotos', href: photosIndex() },
-            { label: 'Fotógrafos', href: '/fotografos' },
             { label: 'Tienda', href: storeIndex() },
+            { label: 'Comunidad', href: communityIndex() },
+            { label: 'Fotos de evento', href: photosIndex() },
+            { label: 'Cómo funciona', href: howItWorks() },
         ],
     },
     {
         title: 'Finisher Legacy',
         links: [
             { label: 'Nosotros', href: about() },
-            { label: 'Cómo funciona', href: howItWorks() },
+            { label: 'Fotógrafos', href: '/fotografos' },
             { label: 'Contacto', href: contact() },
         ],
     },
@@ -86,13 +86,13 @@ const location = computed(() =>
                     <p
                         class="mt-6 max-w-sm font-serif text-2xl leading-snug text-foreground"
                     >
-                        Tu esfuerzo merece una historia.
+                        Tu historia. Tu legado.
                     </p>
                     <p
                         class="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground"
                     >
-                        Conecta con otros atletas, guarda tus logros, revive tus
-                        momentos y comparte tu legado.
+                        Tus carreras, tus recuerdos, tu equipo y tu comunidad,
+                        conectados en un solo lugar.
                     </p>
 
                     <ul

@@ -9,7 +9,7 @@ export type DashboardStats = {
 
 export type DashboardProfileSummary = {
     username: string;
-    profile_visibility: 'public' | 'private';
+    profile_visibility: 'public' | 'followers' | 'private';
     completion: number;
 };
 
@@ -25,7 +25,7 @@ export type AthleteProfileFormData = {
     state: string | null;
     country: string | null;
     main_sport_id: number | null;
-    profile_visibility: 'public' | 'private';
+    profile_visibility: 'public' | 'followers' | 'private';
     profile_photo_url: string | null;
     cover_photo_url: string | null;
 };

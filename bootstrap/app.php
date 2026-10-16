@@ -9,6 +9,7 @@ use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Support\Api\ApiExceptionRenderer;
 use App\Support\Devices\DeviceExceptionRenderer;
+use App\Support\Observability\OperationalLog;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -35,7 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->api(prepend: [AssignRequestId::class]);
+        // Correlation id on every request (web + api) — docs/ARCHITECTURE.md §Observability.
+        $middleware->prepend(AssignRequestId::class);
+
+        // Baseline throttle for every /api route (limiter `api`,
+        // AppServiceProvider) — security audit A1: before this the `api`
+        // limiter existed but was never applied.
+        $middleware->throttleApi();
 
         // Device API (docs/adr/0002) — kept as aliases rather than global
         // middleware since only the device/production routes in
@@ -50,6 +58,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Payment incidents → `payments` log channel (default reporting continues).
+        $exceptions->report(function (Throwable $e) {
+            OperationalLog::reportPaymentIncident($e, app()->bound('request') ? request() : null);
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

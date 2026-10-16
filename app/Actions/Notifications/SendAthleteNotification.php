@@ -6,7 +6,9 @@ use App\Enums\NotificationType;
 use App\Jobs\SendPushNotificationJob;
 use App\Models\User;
 use App\Notifications\AthleteAlert;
+use App\Support\Notifications\NotificationTarget;
 use App\Support\Notifications\PushNotificationPayload;
+use Illuminate\Support\Str;
 
 /**
  * The one Action Central "send a user a notification" goes through
@@ -33,7 +35,13 @@ class SendAthleteNotification
         ?User $sentBy = null,
         bool $push = false,
     ): void {
-        $recipient->notify(new AthleteAlert($title, $message, $type, $actionUrl, $metadata, $sentBy));
+        $alert = new AthleteAlert($title, $message, $type, $actionUrl, $metadata, $sentBy);
+        // Fixed id up front: the database row, the realtime event and the
+        // push `data.notification_id` must all carry the same one (a queued
+        // notification otherwise only gets its id on an internal clone).
+        $alert->id = (string) Str::uuid();
+
+        $recipient->notify($alert);
 
         // An admin-sent notification is audited here once, regardless of
         // whether the caller was Web or API (consolidation brief §42) —
@@ -51,7 +59,15 @@ class SendAthleteNotification
             return;
         }
 
-        $payload = new PushNotificationPayload($title, $message, $actionUrl);
+        // Mobile push-tap routing contract: exactly
+        // {notification_id, type, target, action_url} — target is
+        // {type, id|uuid, slug?, event_slug?} (NotificationTarget).
+        $payload = new PushNotificationPayload($title, $message, $actionUrl, [
+            'notification_id' => $alert->id,
+            'type' => $type->value,
+            'target' => NotificationTarget::fromMetadata($metadata),
+            'action_url' => $actionUrl,
+        ]);
 
         foreach ($recipient->pushDevices()->where('active', true)->get() as $device) {
             SendPushNotificationJob::dispatch($device, $payload);

@@ -145,7 +145,7 @@ const hotspots: Hotspot[] = [
     {
         key: 'nfc',
         label: 'NFC integrado',
-        text: 'Antena NFC pasiva bajo el panel negro: acerca un teléfono compatible al frente y se abre tu Legacy. Sin batería, sin QR.',
+        text: 'Antena NFC pasiva bajo el panel negro: acerca un teléfono compatible al frente y se abre tu Legacy. Sin batería y sin descargar nada.',
         face: 'front',
         top: '80%',
         left: '85%',
@@ -185,7 +185,7 @@ const hotspots: Hotspot[] = [
     {
         key: 'clean',
         label: 'Reverso limpio',
-        text: 'El reverso es funcional: metal limpio, sin impresión, sin datos y sin QR.',
+        text: 'El reverso es funcional: metal limpio, sin impresión y sin datos.',
         face: 'back',
         top: '10%',
         left: '50%',

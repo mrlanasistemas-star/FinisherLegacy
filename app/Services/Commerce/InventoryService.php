@@ -3,12 +3,13 @@
 namespace App\Services\Commerce;
 
 use App\Enums\InventoryMovementType;
-use App\Events\Commerce\InventoryUpdated;
+use App\Events\Realtime\InventoryUpdated;
 use App\Exceptions\ProductOutOfStockException;
 use App\Models\InventoryLevel;
 use App\Models\InventoryLocation;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\Realtime;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -201,6 +202,10 @@ class InventoryService
         ]);
 
         $fresh = $level->fresh();
+
+        if (! Realtime::enabled()) {
+            return $fresh;
+        }
 
         InventoryUpdated::dispatch(
             $variant->id,

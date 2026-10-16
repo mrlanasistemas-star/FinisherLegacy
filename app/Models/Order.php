@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
-use App\Events\Commerce\OrderUpdated;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,17 +31,6 @@ class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
     use HasFactory, LogsActivity;
-
-    protected static function booted(): void
-    {
-        // `order.updated` broadcast (spec §72) — one hook for every Action
-        // that moves an Order (pay, cancel, expire, fulfill, complete).
-        static::updated(function (Order $order) {
-            if ($order->wasChanged(['status', 'payment_status', 'fulfillment_status'])) {
-                OrderUpdated::dispatch($order);
-            }
-        });
-    }
 
     protected function casts(): array
     {

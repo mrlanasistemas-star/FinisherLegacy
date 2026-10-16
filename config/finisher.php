@@ -244,6 +244,74 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Media storage + pipeline (spec §60-§68, docs/SYNOLOGY.md)
+    |--------------------------------------------------------------------------
+    |
+    | `media_disk` is where processed media lives. With FINISHER_MEDIA_ROOT
+    | set (the Synology mount) it defaults to `synology_media`; in dev it
+    | falls back to the private `local` disk. FINISHER_MEDIA_STORAGE_DISK
+    | overrides both. `media_cdn_url` stays null until a CDN fronts the
+    | signed media routes (unused by default).
+    */
+    'media_disk' => env('FINISHER_MEDIA_STORAGE_DISK') ?: (env('FINISHER_MEDIA_ROOT') ? 'synology_media' : 'local'),
+
+    'media_cdn_url' => env('FINISHER_MEDIA_CDN_URL'),
+
+    'media' => [
+        'tmp_disk' => env('FINISHER_MEDIA_TMP_DISK', 'media_tmp'),
+        'queue' => env('FINISHER_MEDIA_QUEUE', 'default'),
+        'connection' => env('FINISHER_MEDIA_QUEUE_CONNECTION'),
+
+        'max_image_bytes' => (int) env('FINISHER_MEDIA_MAX_IMAGE_BYTES', 8 * 1024 * 1024),
+        'max_video_bytes' => (int) env('FINISHER_MEDIA_MAX_VIDEO_BYTES', 100 * 1024 * 1024),
+        'max_file_bytes' => (int) env('FINISHER_MEDIA_MAX_FILE_BYTES', 50 * 1024 * 1024),
+        // Decompression-bomb guard: a tiny PNG can claim 60k×60k pixels.
+        'max_image_pixels' => (int) env('FINISHER_MEDIA_MAX_IMAGE_PIXELS', 50_000_000),
+        'max_image_side' => (int) env('FINISHER_MEDIA_MAX_IMAGE_SIDE', 12000),
+        'max_video_seconds' => (int) env('FINISHER_MEDIA_MAX_VIDEO_SECONDS', 600),
+
+        'images' => [
+            // name => max width (never upscaled).
+            'variants' => ['thumb' => 320, 'card' => 800, 'display' => 1600],
+            'webp_quality' => 80,
+            'jpeg_quality' => 82,
+            // AVIF is only generated when enabled AND the GD/Imagick build
+            // supports it — it is slow to encode, so off by default.
+            'avif' => (bool) env('FINISHER_MEDIA_AVIF', false),
+            'avif_quality' => 60,
+            // Originals keep camera EXIF (GPS!) — they are only ever served
+            // to their owner. false = keep only the optimized variants.
+            'keep_original' => (bool) env('FINISHER_MEDIA_KEEP_IMAGE_ORIGINAL', true),
+        ],
+
+        'video' => [
+            'ffmpeg' => env('FFMPEG_BINARY'),
+            'ffprobe' => env('FFPROBE_BINARY'),
+            'max_width' => 1920,
+            'crf' => 23,
+            'preset' => 'medium',
+            'audio_bitrate' => '128k',
+            'webm' => (bool) env('FINISHER_MEDIA_WEBM', false),
+            'poster_at_seconds' => 1,
+            'timeout_seconds' => (int) env('FINISHER_MEDIA_TRANSCODE_TIMEOUT', 1800),
+            // Keep the uploaded source next to the MP4 (a 300 MB .mov adds up).
+            'keep_original' => (bool) env('FINISHER_MEDIA_KEEP_VIDEO_ORIGINAL', false),
+        ],
+
+        'urls' => [
+            // Public media: long-lived, bucketed expiry so the same URL is
+            // reused for a whole day (browser/CDN cache friendly).
+            'public_ttl_minutes' => (int) env('FINISHER_MEDIA_PUBLIC_URL_TTL', 60 * 24 * 7),
+            'public_bucket_minutes' => 60 * 24,
+            'private_ttl_minutes' => (int) env('FINISHER_MEDIA_PRIVATE_URL_TTL', 120),
+            'private_bucket_minutes' => 15,
+            'public_max_age' => 60 * 60 * 24 * 7,
+            'private_max_age' => 60 * 30,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Athlete Support ("Mi equipo de apoyo") — brief §29-§30
     |--------------------------------------------------------------------------
     */

@@ -11,7 +11,7 @@ use App\Console\Commands\ExpirePendingOrders;
 use App\Enums\InventoryAdjustmentReason;
 use App\Enums\InventoryMovementType;
 use App\Enums\OrderStatus;
-use App\Events\Commerce\InventoryUpdated;
+use App\Events\Realtime\InventoryUpdated;
 use App\Exceptions\ProductOutOfStockException;
 use App\Models\InventoryLevel;
 use App\Models\InventoryLocation;
@@ -85,6 +85,7 @@ test('two checkouts for the last unit: exactly one wins, the other is rejected w
 });
 
 test('receipt adds stock and every mutation is broadcast as inventory.updated', function () {
+    config(['broadcasting.default' => 'log']);
     Event::fake([InventoryUpdated::class]);
     $variant = a2StockedVariant(4);
 

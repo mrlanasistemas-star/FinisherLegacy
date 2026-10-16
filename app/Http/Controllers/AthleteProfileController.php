@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Athletes\EnsureAthleteForUser;
+use App\Enums\ProfileVisibility;
 use App\Http\Requests\UpdateAthleteProfileRequest;
+use App\Models\AthleteFollow;
 use App\Models\EventEdition;
 use App\Models\EventParticipant;
 use App\Models\Sport;
@@ -68,7 +70,17 @@ class AthleteProfileController extends Controller
                 'profile_photo_url' => $profile->profile_photo_path
                     ? Storage::disk('public')->url($profile->profile_photo_path)
                     : null,
+                'cover_photo_url' => $profile->cover_photo_path
+                    ? Storage::disk('public')->url($profile->cover_photo_path)
+                    : null,
+                'profile_visibility' => $profile->profile_visibility->value,
+                'public_url' => $profile->username ? route('profile.public', $profile->username) : null,
             ] : null,
+            'visibilityOptions' => self::visibilityOptions(),
+            'social' => [
+                'followers' => AthleteFollow::query()->where('following_id', $request->user()->id)->count(),
+                'following' => AthleteFollow::query()->where('follower_id', $request->user()->id)->count(),
+            ],
             'stats' => $stats->handle($athlete),
             'filters' => $filters,
             'filterOptions' => [
@@ -104,7 +116,30 @@ class AthleteProfileController extends Controller
                     : null,
             ] : null,
             'sports' => Sport::query()->where('active', true)->orderBy('sort_order')->get(['id', 'name']),
+            'visibilityOptions' => self::visibilityOptions(),
         ]);
+    }
+
+    /**
+     * Every privacy level the profile supports today, in human words — read
+     * from the enum so a new level (e.g. "solo seguidores") shows up here
+     * as soon as it exists, without a second list to keep in sync.
+     *
+     * @return list<array{value: string, label: string, description: string}>
+     */
+    private static function visibilityOptions(): array
+    {
+        $copy = [
+            'public' => ['Público', 'Cualquiera puede ver tu perfil y tu historia.'],
+            'followers' => ['Solo seguidores', 'Solo las personas que te siguen ven tu historia.'],
+            'private' => ['Privado', 'Solo tú ves tu historia.'],
+        ];
+
+        return array_map(function (ProfileVisibility $case) use ($copy): array {
+            [$label, $description] = $copy[$case->value];
+
+            return ['value' => $case->value, 'label' => $label, 'description' => $description];
+        }, ProfileVisibility::cases());
     }
 
     public function update(UpdateAthleteProfileRequest $request): RedirectResponse

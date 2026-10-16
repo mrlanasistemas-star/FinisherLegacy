@@ -7,11 +7,15 @@ use App\Exceptions\MediaTooLargeException;
 use App\Models\Athlete;
 use App\Models\AthleteEventMedia;
 use App\Models\EventParticipant;
+use App\Models\MediaFile;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Storage::fake('athlete_media');
+    Storage::fake(config('finisher.media_disk'));
+    Storage::fake('media_tmp');
+    config(['finisher.media.video.ffmpeg' => null, 'finisher.media.video.ffprobe' => null]);
 });
 
 function uploadPhoto(Athlete $athlete, EventParticipant $participant, string $name = 'photo.jpg')
@@ -58,19 +62,26 @@ test('an oversized image is rejected before it counts against the limit', functi
     );
 })->throws(MediaTooLargeException::class);
 
-test('a real checksum and mime are recorded, and deleting removes the stored file', function () {
+test('a real checksum and mime are recorded, and deleting removes every stored rendition', function () {
     $athlete = Athlete::factory()->create();
     $participant = EventParticipant::factory()->create();
 
     $media = uploadPhoto($athlete, $participant);
+    $file = $media->mediaFile;
 
     expect($media->checksum)->toHaveLength(64)
-        ->and($media->mime)->toStartWith('image/');
+        ->and($media->mime)->toStartWith('image/')
+        ->and($media->disk)->toBe(config('finisher.media_disk'));
 
-    Storage::disk('athlete_media')->assertExists($media->path);
+    Storage::disk($media->disk)->assertExists($media->path);
+    $paths = collect($file->variants)->pluck('path')->push($file->original_path)->filter();
+    expect($paths)->not->toBeEmpty();
 
     app(DeleteAthleteEventMedia::class)->handle($media);
 
-    Storage::disk('athlete_media')->assertMissing($media->path);
-    expect(AthleteEventMedia::find($media->id))->toBeNull();
+    foreach ($paths as $path) {
+        Storage::disk($file->disk)->assertMissing($path);
+    }
+    expect(AthleteEventMedia::find($media->id))->toBeNull()
+        ->and(MediaFile::find($file->id))->toBeNull();
 });

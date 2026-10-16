@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentProvider;
 use App\Enums\PaymentStatus;
-use App\Events\Commerce\PaymentUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,16 +18,6 @@ use Spatie\Activitylog\Support\LogOptions;
 class Payment extends Model
 {
     use LogsActivity;
-
-    protected static function booted(): void
-    {
-        // `payment.updated` broadcast (spec §72).
-        static::updated(function (Payment $payment) {
-            if ($payment->wasChanged('status')) {
-                PaymentUpdated::dispatch($payment);
-            }
-        });
-    }
 
     protected function casts(): array
     {
