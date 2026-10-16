@@ -2,8 +2,10 @@
 
 namespace App\Services\Production;
 
+use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\PlateStatus;
 use App\Enums\ProductionJobStatus;
+use App\Models\LegacyPlateEntitlement;
 use App\Models\Plate;
 use App\Models\ProductionJob;
 
@@ -41,6 +43,35 @@ class PlateProductionCoordinator
 
             ProductionJobStatus::Cancelled => $this->syncCancelled($job, $plate),
         };
+
+        $this->syncEntitlement($job, $plate);
+    }
+
+    /**
+     * The commercial right (LegacyPlateEntitlement) mirrors the physical
+     * outcome so "Mis Legacy Plates" and Preparación y entrega agree:
+     * ready → produced, delivered → delivered. Never moves backwards.
+     */
+    private function syncEntitlement(ProductionJob $job, Plate $plate): void
+    {
+        $status = match ($job->status) {
+            ProductionJobStatus::Ready => LegacyPlateEntitlementStatus::Produced,
+            ProductionJobStatus::Delivered => LegacyPlateEntitlementStatus::Delivered,
+            default => null,
+        };
+
+        if ($status === null) {
+            return;
+        }
+
+        LegacyPlateEntitlement::query()
+            ->where('plate_id', $plate->id)
+            ->whereNotIn('status', [LegacyPlateEntitlementStatus::Cancelled, LegacyPlateEntitlementStatus::Delivered])
+            ->get()
+            ->each(fn (LegacyPlateEntitlement $entitlement) => $entitlement->update(array_filter([
+                'status' => $status,
+                'fulfilled_at' => $status === LegacyPlateEntitlementStatus::Delivered ? ($entitlement->fulfilled_at ?? now()) : null,
+            ])));
     }
 
     /**

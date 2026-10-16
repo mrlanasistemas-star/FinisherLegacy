@@ -41,7 +41,7 @@ test('every admin sidebar destination responds for an admin', function (string $
     $this->actingAs($admin)->get($url)->assertOk();
 })->with([
     '/admin', '/admin/orders', '/admin/products', '/admin/product-categories', '/admin/inventory',
-    '/admin/legacy-plates/production', '/admin/plates', '/admin/legacy-codes',
+    '/admin/legacy-nfc/preparacion', '/admin/legacy-nfc/etiquetas', '/admin/legacy-nfc/productos', '/admin/plates', '/admin/legacy-codes',
     '/admin/editions', '/admin/participants', '/admin/preregistrations', '/admin/organizers',
     '/admin/photos', '/admin/community', '/admin/content', '/admin/messages',
     '/admin/athletes', '/admin/users', '/admin/settings', '/admin/audit',

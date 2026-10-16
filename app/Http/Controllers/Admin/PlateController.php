@@ -117,6 +117,11 @@ class PlateController extends Controller
                     'queued_at' => $plate->latestProductionJob->queued_at->format('d/m/Y H:i'),
                 ] : null,
                 'can_reprint' => in_array($plate->status, [PlateStatus::Ready, PlateStatus::Delivered], true),
+                'nfc' => ($nfc = $plate->activeNfcAssignment()->with('tag')->first()) !== null ? [
+                    'tag' => $nfc->tag?->shortToken(),
+                    'connected' => $nfc->isClaimed(),
+                ] : null,
+                'data_url' => $plate->plate_template_version_id === null ? route('admin.legacy-nfc.preparation.data', $plate) : null,
             ],
             'legacyPlateModel' => $plate->layoutViewer(),
             'personalization' => [

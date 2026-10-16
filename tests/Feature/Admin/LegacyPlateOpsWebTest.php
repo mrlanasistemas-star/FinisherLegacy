@@ -36,14 +36,14 @@ test('an unpaid entitlement is listed but cannot be produced, even by direct req
         'legacy_plate_model_id' => $model->id,
     ]);
 
-    $response = $this->actingAs($this->admin)->get("/admin/legacy-plates/production?event_edition_id={$edition->id}");
+    // The old URL now lives in Legacy + NFC → Preparación y entrega, where
+    // only paid entitlements wait in "Pendiente" (unpaid ones are commerce).
+    $this->actingAs($this->admin)->get("/admin/legacy-plates/production?event_edition_id={$edition->id}")
+        ->assertRedirect(route('admin.legacy-nfc.preparation.index', ['event_edition_id' => $edition->id]));
 
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->component('admin/legacy-plates/Production')
-        ->where('queue.0.paid', false)
-        ->where('queue.0.eligible', false)
-        ->where('queue.0.reasons', ['LEGACY_PLATE_NOT_PAID'])
-    );
+    $this->actingAs($this->admin)->get(route('admin.legacy-nfc.preparation.index', ['event_edition_id' => $edition->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('admin/legacy-nfc/Preparation')->where('lanes.0.count', 0));
 
     $this->actingAs($this->admin)
         ->post("/admin/legacy-plates/production/entitlements/{$entitlement->id}/produce")
