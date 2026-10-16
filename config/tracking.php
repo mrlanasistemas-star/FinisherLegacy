@@ -44,6 +44,6 @@ return [
     'pairing_code_minutes' => 15,
 
     // Rate limits (fallbacks — a central limiter definition wins).
-    'ingest_per_minute' => (int) env('TRACKING_INGEST_PER_MINUTE', 30),
-    'live_view_per_minute' => (int) env('TRACKING_LIVE_VIEW_PER_MINUTE', 60),
+    'ingest_per_minute' => (int) env('TRACKING_INGEST_PER_MINUTE', 60),
+    'live_view_per_minute' => (int) env('TRACKING_LIVE_VIEW_PER_MINUTE', 30),
 ];

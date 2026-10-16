@@ -178,7 +178,7 @@ class AppServiceProvider extends ServiceProvider
             $actor = $request->user('sanctum')?->id ?: $request->ip();
 
             return [
-                Limit::perMinute(60)->by('tracking-ingest:'.$sessionKey.'|'.$actor),
+                Limit::perMinute((int) config('tracking.ingest_per_minute', 60))->by('tracking-ingest:'.$sessionKey.'|'.$actor),
                 Limit::perMinute(240)->by('tracking-ingest-u:'.$actor),
             ];
         });
@@ -187,7 +187,7 @@ class AppServiceProvider extends ServiceProvider
         // Fallback polling ~every 10–15 s; many viewers may share one IP (a
         // family on the finish-line Wi-Fi), so the key is IP + token.
         RateLimiter::for('live-view', function (Request $request) {
-            return Limit::perMinute(30)->by('live-view:'.$request->ip().'|'.(string) ($request->route('token') ?? ''));
+            return Limit::perMinute((int) config('tracking.live_view_per_minute', 30))->by('live-view:'.$request->ip().'|'.(string) ($request->route('token') ?? ''));
         });
 
         // Community writes (posts, comments, reactions, follows, reports)
