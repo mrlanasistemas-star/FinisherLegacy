@@ -111,7 +111,7 @@ class PhotographerController extends Controller
                     'payout_status' => $sale->payout_status,
                     'created_at' => $sale->created_at->toIso8601String(),
                 ]),
-            'payouts' => $profile->payouts()->with('recorder:id,name')->latest('paid_at')->get()
+            'payouts' => $profile->payouts()->with('recorder:id,first_name,last_name')->latest('paid_at')->get()
                 ->map(fn (PhotographerPayout $payout) => [
                     'uuid' => $payout->uuid,
                     'amount_minor' => $payout->amount_minor,

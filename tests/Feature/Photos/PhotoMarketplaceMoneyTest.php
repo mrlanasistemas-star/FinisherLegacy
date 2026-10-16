@@ -8,6 +8,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PhotographerStatus;
 use App\Models\EventEdition;
+use App\Models\EventParticipant;
 use App\Models\EventPhoto;
 use App\Models\Order;
 use App\Models\Payment;
@@ -334,7 +335,7 @@ test('a signed-in athlete sees the photos of their own bib automatically, no sea
     $mine->syncBibs(['482']);
     $someoneElse = marketPhoto(attributes: ['event_edition_id' => $mine->event_edition_id]);
     $someoneElse->syncBibs(['900']);
-    \App\Models\EventParticipant::factory()->create([
+    EventParticipant::factory()->create([
         'event_edition_id' => $mine->event_edition_id,
         'user_id' => $runner->id,
         'bib_number' => '482',

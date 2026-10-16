@@ -190,7 +190,7 @@ class DashboardController extends Controller
     private function recentOrders(): array
     {
         return array_values(Order::query()
-            ->with('user:id,name')
+            ->with('user:id,first_name,last_name')
             ->withCount('items')
             ->latest()
             ->limit(8)
