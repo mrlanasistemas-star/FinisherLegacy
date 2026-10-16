@@ -427,3 +427,5 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 */
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('api.webhooks.stripe');
 Route::post('webhooks/openpay', OpenPayWebhookController::class)->name('api.webhooks.openpay');
+
+require __DIR__.'/api/platform.php';

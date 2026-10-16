@@ -9,6 +9,7 @@ final class PushSendResult
     private function __construct(
         public readonly PushSendStatus $status,
         public readonly ?string $reason = null,
+        public readonly bool $retryable = false,
     ) {}
 
     public static function sent(): self
@@ -21,8 +22,12 @@ final class PushSendResult
         return new self(PushSendStatus::NotConfigured, 'No hay un proveedor de push configurado todavía.');
     }
 
-    public static function failed(string $reason): self
+    /**
+     * `$retryable` = transient provider trouble (429/5xx/network) — the
+     * queued job backs off and tries again instead of giving up.
+     */
+    public static function failed(string $reason, bool $retryable = false): self
     {
-        return new self(PushSendStatus::Failed, $reason);
+        return new self(PushSendStatus::Failed, $reason, $retryable);
     }
 }

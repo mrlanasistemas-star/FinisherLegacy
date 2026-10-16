@@ -16,6 +16,8 @@
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",
+        "laravel/horizon": "^5.50",
+        "laravel/reverb": "^1.12",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
@@ -120,6 +122,10 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "ext-pcntl": "8.4",
+            "ext-posix": "8.4"
         }
     },
     "minimum-stability": "stable",
