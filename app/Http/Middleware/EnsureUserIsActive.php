@@ -7,6 +7,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -21,11 +22,12 @@ class EnsureUserIsActive
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->is('api/*')) {
-            // Only when there's a credential to resolve — anonymous public
-            // API calls skip the guard lookup entirely.
-            $user = $request->bearerToken() !== null || $request->hasSession()
-                ? $request->user('sanctum')
-                : null;
+            // Only when there's a bearer token — anonymous public API calls
+            // skip the lookup. Resolved straight from the token table (not
+            // the sanctum guard) so it never primes/caches guard state.
+            $bearer = $request->bearerToken();
+            $model = Sanctum::personalAccessTokenModel();
+            $user = $bearer !== null ? $model::findToken($bearer)?->tokenable : null;
 
             if ($user instanceof User && ! $user->status->canSignIn()) {
                 throw new AccountSuspendedException($user->status);
