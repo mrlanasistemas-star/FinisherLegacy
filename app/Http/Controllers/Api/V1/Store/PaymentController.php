@@ -46,8 +46,15 @@ class PaymentController extends Controller
 
         return $this->respond([
             'order_uuid' => $order->uuid,
+            'provider' => $intent->clientPayload['provider'] ?? $provider,
             'provider_reference' => $intent->providerReference,
             'client_payload' => $intent->clientPayload,
+            // Additive, Stripe PaymentSheet: the PaymentIntent client
+            // secret (never the secret API key) and the publishable key.
+            'client_secret' => $intent->clientPayload['client_secret'] ?? null,
+            'publishable_key' => $intent->clientPayload['publishable_key'] ?? null,
+            'amount_minor' => $order->total_minor,
+            'currency' => $order->currency,
         ], status: 201);
     }
 
@@ -63,7 +70,7 @@ class PaymentController extends Controller
 
         $order = $sync->handle($order);
 
-        return $this->respond(new OrderResource($order->load(['items', 'latestPayment'])));
+        return $this->respond(new OrderResource($order->load(['items.productVariant', 'items.product.media', 'latestPayment'])));
     }
 
     /**

@@ -263,6 +263,8 @@ return [
     */
     'product_media' => [
         'disk' => env('FINISHER_PRODUCT_MEDIA_DISK', 'product_media'),
+        // GLB/GLTF upload limit (spec §22: never a 15 MB model on Home).
+        'max_model_kb' => env('FINISHER_PRODUCT_MODEL_MAX_KB', 30 * 1024),
     ],
 
     /*

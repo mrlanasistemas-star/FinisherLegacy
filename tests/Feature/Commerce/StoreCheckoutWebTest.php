@@ -27,7 +27,7 @@ test('adding an item builds a cart the owner can see and update', function () {
         );
 });
 
-test('checking out creates an Order and redirects straight to it', function () {
+test('checking out creates an Order and redirects straight to its payment step', function () {
     $user = User::factory()->create();
     $variant = ProductVariant::factory()->create(['product_id' => Product::factory()->create(['tracks_inventory' => false])]);
 
@@ -39,7 +39,7 @@ test('checking out creates an Order and redirects straight to it', function () {
     $response = $this->actingAs($user)->post('/checkout');
 
     $order = Order::query()->where('user_id', $user->id)->firstOrFail();
-    $response->assertRedirect("/mis-pedidos/{$order->uuid}");
+    $response->assertRedirect("/checkout/{$order->uuid}");
 });
 
 test('a user can only see their own orders, never someone else\'s', function () {

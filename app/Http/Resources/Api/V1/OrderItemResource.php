@@ -25,6 +25,12 @@ class OrderItemResource extends JsonResource
             'line_total_minor' => $this->line_total_minor,
             'currency' => $this->currency,
             'fulfilled' => $this->isFulfilled(),
+            // Additive (mobile store). Read from the live catalog only for
+            // display; the commercial snapshot above stays the truth.
+            'variant_name' => $this->relationLoaded('productVariant') || $this->product_variant_id === null
+                ? $this->productVariant?->name
+                : $this->productVariant()->value('name'),
+            'image_url' => $this->product_id !== null ? $this->product?->primaryImageUrl() : null,
         ];
     }
 }

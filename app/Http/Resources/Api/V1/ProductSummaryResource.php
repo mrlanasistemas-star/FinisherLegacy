@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\Product;
+use App\Models\ProductMedia;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -37,6 +38,12 @@ class ProductSummaryResource extends JsonResource
             'from_price_minor' => $activeVariants->min('base_price_minor') ?? $this->variants->min('base_price_minor'),
             'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
             'image_url' => $this->primaryImageUrl(),
+            // Additive (mobile store, spec §19/§23): "Producto conectado"
+            // badge, editorial flags and the gallery in its one shape.
+            'nfc_enabled' => (bool) $this->qr_capable,
+            'is_featured' => (bool) $this->is_featured,
+            'is_new' => $this->created_at !== null && $this->created_at->gt(now()->subDays(30)),
+            'media' => $this->whenLoaded('media', fn () => $this->media->map(fn (ProductMedia $m) => $m->toMediaArray())->values()),
         ];
     }
 }

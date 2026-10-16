@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\ProductVariant;
+use App\Support\Commerce\VariantStockStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,6 +26,8 @@ class ProductVariantResource extends JsonResource
             'currency' => $this->currency,
             'active' => $this->active,
             'in_stock' => $this->resource->isAvailable(),
+            ...VariantStockStatus::swatch($this->resource),
+            ...VariantStockStatus::for($this->resource),
         ];
     }
 }

@@ -25,6 +25,7 @@ return new class extends Migration
 
         Schema::table('products', function (Blueprint $table) {
             $table->unsignedInteger('minimum_stock')->nullable();
+            $table->boolean('is_featured')->default(false);
         });
 
         Schema::table('inventory_movements', function (Blueprint $table) {
@@ -59,7 +60,7 @@ return new class extends Migration
             $table->dropColumn('reason');
         });
 
-        Schema::table('products', fn (Blueprint $table) => $table->dropColumn('minimum_stock'));
+        Schema::table('products', fn (Blueprint $table) => $table->dropColumn(['minimum_stock', 'is_featured']));
         Schema::table('product_variants', fn (Blueprint $table) => $table->dropColumn('minimum_stock'));
     }
 };
