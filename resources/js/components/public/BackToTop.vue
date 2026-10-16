@@ -38,7 +38,7 @@ onBeforeUnmount(() => {
             v-if="visible"
             type="button"
             aria-label="Volver arriba"
-            class="fl-focus-glow fixed right-5 bottom-5 z-40 flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-[0_8px_24px_-12px_rgb(23_23_20/0.25)] transition-all duration-200 hover:scale-105 hover:border-fl-gold hover:text-fl-gold-ink active:scale-95 sm:right-8 sm:bottom-8"
+            class="fl-focus-glow fixed right-5 bottom-[calc(1.25rem+var(--fl-bottom-bar,0px))] z-40 flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-[0_8px_24px_-12px_rgb(23_23_20/0.25)] transition-all duration-200 hover:scale-105 hover:border-fl-gold hover:text-fl-gold-ink active:scale-95 sm:right-8 sm:bottom-[calc(2rem+var(--fl-bottom-bar,0px))]"
             @click="scrollToTop"
         >
             <ArrowUp class="size-5" />

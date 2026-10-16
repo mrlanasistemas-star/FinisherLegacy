@@ -130,6 +130,27 @@ export type PublicProductCard = {
     availability_label?: string;
     compare_at_minor?: number | null;
     promotion_label?: string | null;
+    colors?: ProductColor[];
+    sizes?: { label: string; in_stock: boolean }[];
+    /** Visual stock hint, never a count. */
+    stock_level?: 'ok' | 'low' | 'out' | null;
+    is_nfc?: boolean;
+    is_new?: boolean;
+    is_presale?: boolean;
+};
+
+export type ProductColor = { name: string; hex: string | null };
+
+/** Product media contract shared with admin + API (`model_3d` = GLB/GLTF). */
+export type ProductMediaItem = {
+    uuid: string;
+    type: 'image' | 'video' | 'model_3d' | string;
+    url: string;
+    poster_url: string | null;
+    alt: string | null;
+    is_primary: boolean;
+    position: number;
+    srcset?: string;
 };
 
 export type ProductAvailability = 'available' | 'coming_soon' | 'concept';
