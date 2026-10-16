@@ -3,6 +3,7 @@
 namespace App\Actions\Social;
 
 use App\Models\LegacyMoment;
+use App\Services\Media\MediaStorage;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -14,7 +15,9 @@ class DeleteMoment
     public function handle(LegacyMoment $moment): void
     {
         foreach ($moment->media()->whereNull('athlete_event_media_id')->get() as $media) {
-            if ($media->path !== null) {
+            if ($media->mediaFile !== null) {
+                app(MediaStorage::class)->delete($media->mediaFile);
+            } elseif ($media->path !== null) {
                 Storage::disk($media->disk ?? 'public')->delete($media->path);
             }
             $media->delete();

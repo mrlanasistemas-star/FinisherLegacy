@@ -20,6 +20,11 @@ class AthleteEventMediaResource extends JsonResource
             'uuid' => $this->uuid,
             'type' => $this->type->value,
             'url' => $this->url(),
+            // Additive (media pipeline): processing | ready | pending_transcode | failed.
+            'status' => $this->processingStatus(),
+            'thumb_url' => $this->mediaFile?->url($this->mediaFile->hasVariant('thumb') ? 'thumb' : 'poster_thumb'),
+            'card_url' => $this->mediaFile?->url($this->mediaFile->hasVariant('card') ? 'card' : 'poster_card'),
+            'poster_url' => $this->mediaFile?->url('poster'),
             'width' => $this->width,
             'height' => $this->height,
             'duration_seconds' => $this->duration_seconds,

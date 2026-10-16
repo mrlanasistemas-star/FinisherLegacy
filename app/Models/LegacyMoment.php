@@ -116,7 +116,8 @@ class LegacyMoment extends Model
     /** @return HasMany<LegacyMomentMedia, $this> */
     public function media(): HasMany
     {
-        return $this->hasMany(LegacyMomentMedia::class)->orderBy('sort_order');
+        // chaperone: media URLs read the moment's visibility without N+1.
+        return $this->hasMany(LegacyMomentMedia::class)->orderBy('sort_order')->chaperone('moment');
     }
 
     /** @return HasMany<LegacyMomentReaction, $this> */
