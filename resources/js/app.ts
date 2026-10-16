@@ -20,6 +20,7 @@ const PUBLIC_PAGES = new Set([
 const PUBLIC_PREFIXES = [
     'events/',
     'legacy-code/',
+    'nfc/',
     'profile/',
     'errors/',
     'store/',

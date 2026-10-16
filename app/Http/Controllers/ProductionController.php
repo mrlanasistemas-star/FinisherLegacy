@@ -12,7 +12,6 @@ use App\Actions\Production\StartBackEngraving;
 use App\Actions\Production\StartFrontEngraving;
 use App\Actions\Production\StartProductionPreparation;
 use App\Actions\Production\VerifyProductionQr;
-use App\Enums\ProductionJobStatus;
 use App\Exceptions\Devices\DeviceApiException;
 use App\Models\ProductionJob;
 use App\Support\Production\FailProductionJobData;
@@ -20,7 +19,6 @@ use App\Support\Production\VerifyQrData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Inertia\Response;
 
 /**
  * The manual/web fallback for the exact same physical workflow the Device
@@ -31,14 +29,6 @@ use Inertia\Response;
  */
 class ProductionController extends Controller
 {
-    private const COLUMNS = [
-        'pending' => ['queued'],
-        'processing' => ['assigned', 'preparing', 'engraving_front', 'awaiting_flip', 'engraving_back', 'verifying_qr'],
-        'ready' => ['ready'],
-        'delivered' => ['delivered'],
-        'issue' => ['failed', 'cancelled'],
-    ];
-
     public function __construct(
         private readonly StartProductionPreparation $prepareAction,
         private readonly StartFrontEngraving $startFrontAction,
@@ -52,25 +42,15 @@ class ProductionController extends Controller
         private readonly CancelProductionJob $cancelAction,
     ) {}
 
-    public function index(): Response
+    /**
+     * The laser kanban (front/flip/back/QR) is no longer web UI — staff use
+     * Admin → Legacy + NFC → "Preparación y entrega" (docs/NFC.md). The
+     * job endpoints below stay for backward compatibility; the machine
+     * software uses the Device API.
+     */
+    public function index(): RedirectResponse
     {
-        $jobs = ProductionJob::query()
-            ->whereHas('plate', fn ($q) => $q->whereNotNull('legacy_code_id'))
-            ->with(['plate.legacyCode', 'plate.eventEdition.event', 'productionDevice'])
-            ->orderByDesc('updated_at')
-            ->limit(300)
-            ->get();
-
-        $columns = [];
-
-        foreach (self::COLUMNS as $key => $statuses) {
-            $columns[$key] = $jobs
-                ->whereIn('status', array_map(fn (string $s) => ProductionJobStatus::from($s), $statuses))
-                ->values()
-                ->map(fn (ProductionJob $job) => $this->cardPayload($job));
-        }
-
-        return Inertia::render('production/Index', ['columns' => $columns]);
+        return to_route('admin.legacy-nfc.preparation.index');
     }
 
     public function prepare(Request $request, ProductionJob $job): RedirectResponse
@@ -138,50 +118,5 @@ class ProductionController extends Controller
         }
 
         return back();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function cardPayload(ProductionJob $job): array
-    {
-        $plate = $job->plate;
-
-        return [
-            'id' => $job->id,
-            'status' => $job->status->value,
-            'manual_action' => $this->manualNextAction($job),
-            'serial_number' => $plate->serial_number,
-            'athlete_name' => $plate->athlete_name,
-            'bib_number' => $plate->bib_number,
-            'event_name' => $plate->eventEdition?->event->name ?? $plate->event_name,
-            'legacy_code' => $plate->legacyCode?->code,
-            'generation_mode' => $plate->generation_mode->value,
-            'updated_at' => $job->updated_at?->diffForHumans(),
-            'download_format' => $plate->eventEdition->production_export_format ?? 'svg',
-            'download_dpi' => $plate->eventEdition->default_dpi ?? 300,
-            'device' => $job->productionDevice ? [
-                'name' => $job->productionDevice->name,
-                'online' => $job->productionDevice->isOnline(),
-            ] : null,
-            'checklist' => [
-                'front' => $job->front_engraved_at !== null,
-                'back' => $job->back_engraved_at !== null,
-                'qr' => $job->qr_verified_at !== null,
-            ],
-            'error_message' => $job->error_message,
-        ];
-    }
-
-    /**
-     * Unlike ProductionJob::nextAction() (Device API — never represents
-     * "claim", a device-only concept), the web fallback's `queued` column
-     * DOES have a manual action: `prepare` handles the implicit
-     * assign-to-me-and-start-preparing hop for an operator with no device
-     * involved. See docs/adr/0003 §Web fallback.
-     */
-    private function manualNextAction(ProductionJob $job): ?string
-    {
-        return $job->status === ProductionJobStatus::Queued ? 'prepare' : $job->nextAction();
     }
 }

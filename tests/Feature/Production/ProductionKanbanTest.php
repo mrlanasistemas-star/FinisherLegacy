@@ -65,7 +65,7 @@ test('production routes are blocked without the production.access permission', f
     $this->actingAs($user)->get(route('production.index'))->assertForbidden();
 });
 
-test('the kanban groups jobs into the right columns', function () {
+test('the old kanban URL redirects to Preparación y entrega, which maps the same jobs to stages', function () {
     producibleJob(); // queued -> pending
 
     $processing = producibleJob();
@@ -81,16 +81,20 @@ test('the kanban groups jobs into the right columns', function () {
         advanceToStatus($this->productionUser, $delivered, $status);
     }
 
-    $response = $this->actingAs($this->productionUser)->get(route('production.index'));
+    $this->actingAs($this->productionUser)->get(route('production.index'))
+        ->assertRedirect(route('admin.legacy-nfc.preparation.index'));
 
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->component('production/Index')
-        ->has('columns.pending', 1)
-        ->has('columns.processing', 1)
-        ->has('columns.ready', 1)
-        ->has('columns.delivered', 1)
-    );
+    // Lanes: pending, preparing, personalized, nfc_assigned, ready, delivered.
+    // A job the machine closed as "ready" without an NFC tag still needs it.
+    $this->actingAs($this->productionUser)->get(route('admin.legacy-nfc.preparation.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/legacy-nfc/Preparation')
+            ->where('lanes.0.count', 1)
+            ->where('lanes.1.count', 1)
+            ->where('lanes.2.count', 1)
+            ->where('lanes.5.count', 1)
+        );
 });
 
 test('a job advances through the full physical workflow to delivered', function () {
@@ -151,15 +155,15 @@ test('the board stays on a bounded query budget with ~30 jobs in production', fu
 
     DB::enableQueryLog();
 
-    $response = $this->actingAs($this->productionUser)->get(route('production.index'));
+    $response = $this->actingAs($this->productionUser)->get(route('admin.legacy-nfc.preparation.index'));
 
     $queryCount = count(DB::getQueryLog());
     DB::disableQueryLog();
 
     $response->assertOk();
     // A handful of fixed queries (auth, permissions, the eager-loaded job
-    // query itself) — must NOT scale with the number of jobs.
-    expect($queryCount)->toBeLessThan(15);
+    // query and its relations) — must NOT scale with the number of jobs.
+    expect($queryCount)->toBeLessThan(20);
 });
 
 test('production.view alone cannot mutate a job', function () {

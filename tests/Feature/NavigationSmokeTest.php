@@ -83,7 +83,7 @@ test('every admin section and workspace tab destination responds for an admin', 
     '/admin/products', '/admin/inventory', '/admin/orders', '/admin/payments', '/admin/coupons',
     '/admin/promotions', '/admin/product-categories',
     // Legacy + NFC (Resumen is /admin/legacy-nfc — A6)
-    '/admin/legacy-plates/production', '/admin/plates', '/admin/legacy-plates/presales', '/admin/legacy-plate-models',
+    '/admin/legacy-nfc/preparacion', '/admin/legacy-nfc/etiquetas', '/admin/legacy-nfc/productos', '/admin/plates', '/admin/legacy-plates/presales', '/admin/legacy-plate-models',
     // Comunidad
     '/admin/community',
     // Personas

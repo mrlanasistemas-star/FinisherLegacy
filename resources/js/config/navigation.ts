@@ -311,9 +311,9 @@ export const adminSections: AdminSection[] = [
         key: 'legacy',
         label: 'Legacy + NFC',
         icon: Nfc,
-        // cross-agent: /admin/legacy-nfc is built by A6 (Legacy + NFC workspace).
+        // /admin/legacy-nfc redirects to the first tab the user can open.
         href: '/admin/legacy-nfc',
-        hrefPermission: 'legacyplates.manage',
+        hrefPermission: 'nfc.view',
         match: [
             '/admin/legacy-nfc',
             '/admin/legacy-plates',
@@ -327,21 +327,25 @@ export const adminSections: AdminSection[] = [
         ],
         tabs: [
             {
-                label: 'Resumen',
-                href: '/admin/legacy-nfc', // cross-agent (A6)
-                permission: 'legacyplates.manage',
-                exact: true,
-            },
-            {
-                label: 'Preparación y entrega',
-                href: '/admin/legacy-plates/production',
-                permission: 'legacyplates.produce',
-                match: ['/production'],
-            },
-            {
                 label: 'Legacy Plates',
                 href: '/admin/plates',
                 permission: 'plates.view',
+            },
+            {
+                label: 'Preparación y entrega',
+                href: '/admin/legacy-nfc/preparacion',
+                permission: 'production.access',
+                match: ['/production', '/admin/legacy-plates/production'],
+            },
+            {
+                label: 'Etiquetas NFC',
+                href: '/admin/legacy-nfc/etiquetas',
+                permission: 'nfc.view',
+            },
+            {
+                label: 'Productos conectados',
+                href: '/admin/legacy-nfc/productos',
+                permission: 'nfc.view',
             },
             {
                 label: 'Preventas',

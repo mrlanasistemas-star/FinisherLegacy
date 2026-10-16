@@ -26,7 +26,6 @@ use App\Services\Media\ResolveMediaEntitlement;
 use App\Support\RaceDistanceFormatter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -249,25 +248,5 @@ class AthleteHistoryController extends Controller
         ]);
     }
 
-    public function myGear(Request $request, EnsureAthleteForUser $ensureAthlete, GetAthleteOwnedProducts $query): Response
-    {
-        $athlete = $ensureAthlete->handle($request->user(), 'dashboard_my_gear');
-
-        return Inertia::render('dashboard/MyGear', [
-            'items' => $query->handle($athlete)->map(fn (AthleteOwnedProduct $owned) => [
-                'uuid' => $owned->uuid,
-                'product' => $owned->product->name,
-                'variant' => $owned->productVariant?->name,
-                'image_url' => $owned->product->image_path ? Storage::disk('public')->url($owned->product->image_path) : null,
-                'status' => $owned->status->value,
-                'acquired_at' => $owned->acquired_at->toDateString(),
-                'asset_code' => $owned->asset_code,
-                'usage_history' => $owned->gearSelections->map(fn (EventGearSelection $selection) => [
-                    'event_participant_id' => $selection->event_participant_id,
-                    'event' => $selection->eventParticipant->eventEdition?->event?->name,
-                    'edition' => $selection->eventParticipant->eventEdition?->name,
-                ])->values()->all(),
-            ])->values(),
-        ]);
-    }
+    // "Mi equipo" (dashboard.my-gear) moved to App\Http\Controllers\Nfc\MyGearController.
 }

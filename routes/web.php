@@ -225,7 +225,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('dashboard/media/{media:uuid}/visibility', [AthleteHistoryController::class, 'updateMediaVisibility'])->name('dashboard.media.visibility');
     Route::delete('dashboard/media/{media:uuid}', [AthleteHistoryController::class, 'destroyMedia'])->name('dashboard.media.destroy');
     Route::get('dashboard/my-plates', [AthleteHistoryController::class, 'myPlates'])->name('dashboard.my-plates');
-    Route::get('dashboard/my-gear', [AthleteHistoryController::class, 'myGear'])->name('dashboard.my-gear');
+    // dashboard.my-gear ("Mi equipo") lives in routes/web/nfc.php.
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
@@ -560,3 +560,4 @@ require __DIR__.'/web/tracking.php';
 require __DIR__.'/web/admin-workspace.php';
 require __DIR__.'/web/platform.php';
 require __DIR__.'/web/community.php';
+require __DIR__.'/web/nfc.php';

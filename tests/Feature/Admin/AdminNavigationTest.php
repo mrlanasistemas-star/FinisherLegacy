@@ -50,7 +50,7 @@ test('production_operator sees production access but not users/roles', function 
     $productionOperator = User::factory()->create();
     $productionOperator->assignRole('production_operator');
 
-    $response = $this->actingAs($productionOperator)->get('/production');
+    $response = $this->actingAs($productionOperator)->get('/admin/legacy-nfc/preparacion');
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
