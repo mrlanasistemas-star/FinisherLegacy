@@ -24,6 +24,7 @@ use App\Models\Plate;
 use App\Queries\Athletes\GetAthleteHistory;
 use App\Queries\Athletes\GetEventParticipantDetail;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
+use App\Queries\Tracking\GetParticipantTrackingSummary;
 use App\Services\Media\ResolveMediaEntitlement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -169,6 +170,8 @@ class AthleteHistoryController extends Controller
                 'product' => $owned->product->name,
                 'variant' => $owned->productVariant?->name,
             ])->values(),
+            // "Seguimiento en vivo" card (live tracking, SPEC §75-§84).
+            'tracking' => fn () => app(GetParticipantTrackingSummary::class)->handle($participant),
         ]);
     }
 

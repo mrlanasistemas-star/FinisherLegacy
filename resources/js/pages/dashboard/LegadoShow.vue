@@ -24,6 +24,7 @@ import type {
 import MediaUploader from '@/components/shared/MediaUploader.vue';
 import Money from '@/components/shared/Money.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
+import LiveTrackingCard from '@/components/tracking/LiveTrackingCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import type { ParticipantTracking } from '@/types/tracking';
 
 type Split = {
     label: string | null;
@@ -130,6 +132,7 @@ const {
     availableGear,
     purchases,
     supportSession,
+    tracking,
 } = defineProps<{
     participant: {
         id: number;
@@ -159,6 +162,7 @@ const {
     availableGear: AvailableGear[];
     purchases: Purchase[];
     supportSession: SupportSession | null;
+    tracking?: ParticipantTracking;
 }>();
 
 const legacyPlateStatusLabel: Record<string, string> = {
@@ -498,6 +502,12 @@ function rejectMessage(id: number) {
                 </Button>
             </div>
         </section>
+
+        <LiveTrackingCard
+            v-if="tracking"
+            :participant-id="participant.id"
+            :tracking="tracking"
+        />
 
         <!-- Apoyo -->
         <section class="mt-8">
