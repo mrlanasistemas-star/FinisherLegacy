@@ -75,7 +75,7 @@ class TrackingSessionController extends Controller
         return $this->respond($sessions->map(fn (TrackingSession $s) => [
             'uuid' => $s->uuid,
             'event_participant_id' => $s->event_participant_id,
-            'event_name' => $s->eventParticipant->eventEdition?->event?->name ?? $s->eventParticipant->eventEdition?->name,
+            'event_name' => $s->eventParticipant->eventEdition?->event->name ?? $s->eventParticipant->eventEdition?->name,
             'source' => $s->source->value,
             'started_at' => $s->started_at->toIso8601String(),
             'distance_m' => $s->distance_m,

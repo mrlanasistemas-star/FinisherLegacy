@@ -54,6 +54,7 @@ enum LegacyPlateFieldKey: string
      */
     public static function selectable(): array
     {
-        return array_values(array_filter(self::cases(), fn (self $key) => $key !== self::Qr));
+        // Qr is the last case, so filtering it out keeps the result a list.
+        return array_filter(self::cases(), fn (self $key) => $key !== self::Qr);
     }
 }

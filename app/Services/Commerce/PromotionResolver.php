@@ -63,7 +63,7 @@ class PromotionResolver
             ->get()
             ->map(fn (Promotion $promotion) => [
                 'promotion' => $promotion,
-                'product_ids' => $promotion->products->pluck('id')->map(fn ($id) => (int) $id)->all(),
+                'product_ids' => array_values($promotion->products->pluck('id')->map(fn ($id) => (int) $id)->all()),
             ]);
     }
 }

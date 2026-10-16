@@ -28,8 +28,8 @@ class PaymentUpdated extends RealtimeEvent
         $this->payload = [
             'uuid' => $payment->uuid,
             'order_uuid' => $order?->uuid,
-            'status' => $payment->status?->value,
-            'provider' => $payment->provider?->value,
+            'status' => $payment->status->value,
+            'provider' => $payment->provider->value,
             'updated_at' => $payment->updated_at?->toIso8601String(),
         ];
     }

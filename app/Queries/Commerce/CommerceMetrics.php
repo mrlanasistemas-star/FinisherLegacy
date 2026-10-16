@@ -113,7 +113,7 @@ class CommerceMetrics
 
         return array_values($rows->map(fn (object $row) => [
             'product_id' => (int) $row->product_id,
-            'name' => (string) ($products->get((int) $row->product_id)?->name ?? 'Producto'),
+            'name' => (string) ($products->get((int) $row->product_id)->name ?? 'Producto'),
             'image_url' => $products->get((int) $row->product_id)?->primaryImageUrl(),
             'units' => (int) $row->units,
             'revenue_minor' => (int) $row->revenue_minor,
@@ -164,7 +164,7 @@ class CommerceMetrics
             ->map(fn (Order $order) => [
                 'uuid' => $order->uuid,
                 'order_number' => $order->order_number,
-                'customer' => $order->customer_snapshot['name'] ?? $order->user?->name ?? 'Cliente',
+                'customer' => $order->customer_snapshot['name'] ?? $order->user->name ?? 'Cliente',
                 'delivery' => $order->customer_snapshot['delivery']['method'] ?? 'pickup',
                 'items' => $order->items->whereNull('fulfilled_at')->map(fn (OrderItem $i) => "{$i->quantity}× {$i->name}")->values(),
                 'total_minor' => $order->total_minor,
@@ -226,7 +226,7 @@ class CommerceMetrics
 
         return array_values($rows->map(fn (object $row) => [
             'product_id' => $row->product_id !== null ? (int) $row->product_id : null,
-            'name' => (string) ($products->get((int) $row->product_id)?->name ?? $row->fallback_name),
+            'name' => (string) ($products->get((int) $row->product_id)->name ?? $row->fallback_name),
             'type' => $products->get((int) $row->product_id)?->type->value,
             'image_url' => $products->get((int) $row->product_id)?->primaryImageUrl(),
             'units' => (int) $row->units,

@@ -49,7 +49,7 @@ class GetLiveTrackingSnapshot
                 'avatar_url' => $this->avatarUrl($participant),
             ],
             'event' => [
-                'name' => $participant->eventEdition?->event?->name ?? $participant->eventEdition?->name,
+                'name' => $participant->eventEdition?->event->name ?? $participant->eventEdition?->name,
                 'race' => $participant->eventRace?->name,
             ],
             'status' => $status,
@@ -162,14 +162,14 @@ class GetLiveTrackingSnapshot
         return [
             'url' => $supportSession->isAcceptingMessages() ? route('support.show', ['publicCode' => $supportSession->public_code]) : null,
             'accepting' => $supportSession->isAcceptingMessages(),
-            'messages' => $messages->map(fn (AthleteSupportMessage $m) => [
+            'messages' => array_values($messages->map(fn (AthleteSupportMessage $m) => [
                 'id' => $m->uuid,
                 'from' => $this->firstName($m->contributor?->display_name),
                 'type' => $m->type->value,
                 'text' => $m->type === SupportMessageType::Text ? $m->message_text : null,
                 'delivered' => $m->triggered_at !== null || $m->consumed_at !== null,
                 'created_at' => $m->created_at?->toIso8601String(),
-            ])->values()->all(),
+            ])->all()),
         ];
     }
 

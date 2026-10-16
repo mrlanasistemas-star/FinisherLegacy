@@ -96,7 +96,7 @@ class EventWorkspaceController extends Controller
                 'finishers' => (int) (($byStatus[ResultStatus::Finished->value] ?? 0) + ($byStatus[ResultStatus::Verified->value] ?? 0)),
                 'dnf' => (int) (($byStatus[ResultStatus::Dnf->value] ?? 0) + ($byStatus[ResultStatus::Dns->value] ?? 0) + ($byStatus[ResultStatus::Dq->value] ?? 0)),
             ],
-            'resultsStatus' => $eventEdition->results_status?->value,
+            'resultsStatus' => $eventEdition->results_status->value,
             'filters' => [
                 'q' => $filters['q'] ?? null,
                 'event_race_id' => isset($filters['event_race_id']) ? (int) $filters['event_race_id'] : null,

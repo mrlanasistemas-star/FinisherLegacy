@@ -52,7 +52,7 @@ final class GearItem
                 'name' => $edition->event?->name,
                 'edition' => $edition->name,
                 'slug' => $edition->event?->slug,
-                'date' => $edition->event_date?->toDateString(),
+                'date' => $edition->event_date->toDateString(),
                 'race' => null,
                 'official_time' => null,
             ] : null,
@@ -70,7 +70,7 @@ final class GearItem
         $edition = $plate->eventEdition;
 
         return [
-            'uuid' => $code?->uuid ?? 'plate-'.$plate->serial_number,
+            'uuid' => $code->uuid ?? 'plate-'.$plate->serial_number,
             'kind' => 'legacy_plate',
             'product_name' => 'Legacy Plate',
             'variant_name' => $plate->event_name,
@@ -85,7 +85,7 @@ final class GearItem
             'image_url' => asset(ResolveNfcTag::PLATE_IMAGE),
             'story_url' => $code !== null ? route('legacy-code.show', $code->code) : null,
             'event' => [
-                'name' => $edition?->event?->name ?? $plate->event_name,
+                'name' => $edition?->event->name ?? $plate->event_name,
                 'edition' => $edition?->name,
                 'slug' => $edition?->event?->slug,
                 'date' => $plate->event_date?->toDateString(),

@@ -52,7 +52,7 @@ class CommunityCommentCreated implements ShouldBroadcast, ShouldDispatchAfterCom
                 'username' => $this->comment->author?->athleteProfile?->username,
             ],
             'excerpt' => Str::limit($this->comment->body, 120),
-            'created_at' => $this->comment->created_at?->toIso8601String(),
+            'created_at' => $this->comment->created_at->toIso8601String(),
         ];
     }
 }

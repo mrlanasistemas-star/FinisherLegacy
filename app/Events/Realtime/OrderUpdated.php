@@ -24,9 +24,9 @@ class OrderUpdated extends RealtimeEvent
         $this->payload = [
             'uuid' => $order->uuid,
             'order_number' => $order->order_number,
-            'status' => $order->status?->value,
-            'payment_status' => $order->payment_status?->value,
-            'fulfillment_status' => $order->fulfillment_status?->value,
+            'status' => $order->status->value,
+            'payment_status' => $order->payment_status->value,
+            'fulfillment_status' => $order->fulfillment_status->value,
             'updated_at' => $order->updated_at?->toIso8601String(),
         ];
     }

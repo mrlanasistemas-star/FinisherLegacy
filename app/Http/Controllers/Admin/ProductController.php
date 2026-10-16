@@ -72,7 +72,7 @@ class ProductController extends Controller
             // no real photo has been uploaded yet.
             'concept_image_url' => $product->imageSource() === 'concept' ? $product->conceptImageUrl(480) : null,
             'from_price_minor' => $product->variants->min('base_price_minor'),
-            'currency' => $product->variants->first()?->currency ?? 'MXN',
+            'currency' => $product->variants->first()->currency ?? 'MXN',
             'stock' => $product->tracks_inventory
                 ? (int) $product->variants->sum(fn (ProductVariant $v) => $v->inventoryLevels->sum('quantity_on_hand') - $v->inventoryLevels->sum('quantity_reserved'))
                 : null,
@@ -343,7 +343,7 @@ class ProductController extends Controller
             ->map(fn (Order $order) => [
                 'uuid' => $order->uuid,
                 'order_number' => $order->order_number,
-                'customer' => $order->customer_snapshot['name'] ?? $order->user?->name ?? 'Cliente',
+                'customer' => $order->customer_snapshot['name'] ?? $order->user->name ?? 'Cliente',
                 'units' => (int) $order->items->sum('quantity'),
                 'lines' => $order->items->pluck('name')->values(),
                 'status' => $order->status->value,

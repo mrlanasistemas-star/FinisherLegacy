@@ -47,10 +47,9 @@ class GetMyGear
             ->get()
             ->map(fn (Plate $plate) => GearItem::fromPlate($plate));
 
-        return $plates->concat($products)
+        return array_values($plates->concat($products)
             ->sortByDesc(fn (array $item) => $item['connected_at'] ?? $item['acquired_at'])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**

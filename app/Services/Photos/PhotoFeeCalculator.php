@@ -60,7 +60,7 @@ class PhotoFeeCalculator
      * What the portal shows next to the price field — the estimate for
      * the web checkout's default gateway, labelled generically.
      *
-     * @return array<string, float|int|string|bool>
+     * @return array{platform_commission_percent: float, processor_fee_percent: float, processor_fee_fixed_minor: int, processor_fee_vat_percent: float, processor_fee_estimated: bool, min_price_minor: int, max_price_minor: int, default_price_minor: int}
      */
     public function rules(): array
     {

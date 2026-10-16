@@ -75,7 +75,7 @@ class GetFeaturedProducts
             'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
             'in_stock' => $product->variants->contains(fn (ProductVariant $variant) => $variant->isAvailable()),
             'image_url' => $product->primaryImageUrl(),
-            'image_alt' => $galleryImages->first()?->alt_text ?? $product->conceptImageAlt(),
+            'image_alt' => $galleryImages->first()->alt_text ?? $product->conceptImageAlt(),
             'image_source' => $product->imageSource(),
             'hover_image_url' => $hoverImage?->url() ?? self::conceptHoverUrl($product, $galleryImages->isEmpty()),
             'variant_count' => $product->variants->count(),

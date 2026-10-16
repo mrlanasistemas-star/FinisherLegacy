@@ -43,6 +43,9 @@ class ConnectProductRequest extends FormRequest
         return ['product_id.required_without' => 'Elige el producto que vas a conectar.'];
     }
 
+    /**
+     * @return array<int, \Closure(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator) {

@@ -53,7 +53,7 @@ class TriggerTrackingSupportMessages
         $due = $this->resolver->handle($probe, (int) $session->distance_m)
             ->filter(fn (AthleteSupportMessage $m) => $m->triggered_at === null);
 
-        $userId = $participant->athlete?->user_id ?? $participant->user_id;
+        $userId = $participant->athlete->user_id ?? $participant->user_id;
         $count = 0;
 
         foreach ($due as $message) {

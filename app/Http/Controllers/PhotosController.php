@@ -44,7 +44,7 @@ class PhotosController extends Controller
         $editionId = $request->integer('evento') ?: null;
         $bib = ltrim(trim(mb_substr($request->string('numero')->toString(), 0, 20)), '#');
         $searched = $editionId !== null && $bib !== '';
-        $owned = $viewer === null ? [] : PhotoSale::query()->where('buyer_user_id', $viewer->id)->pluck('event_photo_id')->all();
+        $owned = $viewer === null ? [] : array_values(PhotoSale::query()->where('buyer_user_id', $viewer->id)->pluck('event_photo_id')->map(fn ($id) => (int) $id)->all());
 
         return Inertia::render('photos/Index', [
             'events' => $this->eventOptions(),
@@ -124,7 +124,7 @@ class PhotosController extends Controller
                 'edition_id' => $p->event_edition_id,
                 'event' => $p->eventEdition->event->name,
                 'race' => $p->eventRace?->name,
-                'date' => $p->eventEdition->event_date?->toDateString(),
+                'date' => $p->eventEdition->event_date->toDateString(),
                 'bib' => ltrim((string) $p->bib_number, '#'),
                 'photos' => $this->photographerResults($p->event_edition_id, ltrim((string) $p->bib_number, '#'), $owned),
             ])
@@ -134,7 +134,7 @@ class PhotosController extends Controller
     }
 
     /**
-     * @return Collection<int, array{id: int, label: string, date: string|null}>
+     * @return Collection<int, array{id: int, label: string, date: string}>
      */
     private function eventOptions(): Collection
     {
@@ -148,8 +148,8 @@ class PhotosController extends Controller
             ->get(['id', 'event_id', 'name', 'event_date'])
             ->map(fn (EventEdition $edition) => [
                 'id' => $edition->id,
-                'label' => trim(($edition->event?->name ?? 'Evento').($edition->name ? ' — '.$edition->name : '')),
-                'date' => $edition->event_date?->toDateString(),
+                'label' => trim(($edition->event->name ?? 'Evento').($edition->name ? ' — '.$edition->name : '')),
+                'date' => $edition->event_date->toDateString(),
             ])
             ->values();
     }
@@ -160,7 +160,7 @@ class PhotosController extends Controller
      */
     private function photographerResults(int $editionId, string $bib, array $owned): array
     {
-        return EventPhoto::query()
+        return array_values(EventPhoto::query()
             ->where('event_edition_id', $editionId)
             ->forSale()
             ->whereHas('bibs', fn ($q) => $q->where('bib_number', $bib))
@@ -177,13 +177,13 @@ class PhotosController extends Controller
                 'height' => $photo->height,
                 'event' => $photo->eventEdition?->event?->name,
                 'race' => null,
-                'source' => $photo->photographer?->display_name ?? 'Fotógrafo',
+                'source' => $photo->photographer->display_name ?? 'Fotógrafo',
                 'price_minor' => $photo->price_minor,
                 'currency' => $photo->currency,
                 'owned' => in_array($photo->id, $owned, true),
                 'is_public' => true,
             ])
-            ->all();
+            ->all());
     }
 
     /**
@@ -193,7 +193,7 @@ class PhotosController extends Controller
      */
     private function athleteResults(int $editionId, string $bib, ?User $viewer, SocialVisibility $visibility): array
     {
-        return EventParticipant::query()
+        return array_values(EventParticipant::query()
             ->where('event_edition_id', $editionId)
             ->where('bib_number', $bib)
             ->with(['athlete.user.athleteProfile', 'eventEdition.event', 'eventRace'])
@@ -215,8 +215,7 @@ class PhotosController extends Controller
                     ->get()
                     ->map(fn (AthleteEventMedia $media) => $this->athletePhoto($media, $participant));
             })
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -224,7 +223,7 @@ class PhotosController extends Controller
      */
     private function purchased(User $viewer): array
     {
-        return PhotoSale::query()
+        return array_values(PhotoSale::query()
             ->where('buyer_user_id', $viewer->id)
             ->with(['photo.eventEdition.event', 'photo.photographer'])
             ->latest('id')
@@ -239,8 +238,7 @@ class PhotosController extends Controller
                 'download_url' => route('photos.download', $sale),
                 'purchased_at' => $sale->created_at->toIso8601String(),
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -254,7 +252,7 @@ class PhotosController extends Controller
             return [];
         }
 
-        return AthleteEventMedia::query()
+        return array_values(AthleteEventMedia::query()
             ->where('athlete_id', $athlete->id)
             ->where('type', AthleteEventMediaType::Image)
             ->with(['eventParticipant.eventEdition.event', 'eventParticipant.eventRace'])
@@ -262,8 +260,7 @@ class PhotosController extends Controller
             ->limit(self::MAX_RESULTS)
             ->get()
             ->map(fn (AthleteEventMedia $media) => $this->athletePhoto($media, $media->eventParticipant))
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**

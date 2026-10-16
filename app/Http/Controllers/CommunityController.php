@@ -410,7 +410,7 @@ class CommunityController extends Controller
             ->map(fn (EventParticipant $p) => [
                 'id' => $p->id,
                 'event_edition_id' => $p->event_edition_id,
-                'label' => trim(($p->eventEdition?->event?->name ?? 'Evento').' · '.($p->eventRace?->name ?? ''), ' ·'),
+                'label' => trim(($p->eventEdition?->event->name ?? 'Evento').' · '.($p->eventRace->name ?? ''), ' ·'),
                 'date' => $p->eventEdition?->event_date?->toDateString(),
             ]);
 
@@ -425,8 +425,8 @@ class CommunityController extends Controller
             ->get(['id', 'event_id', 'name', 'event_date'])
             ->map(fn (EventEdition $edition) => [
                 'id' => $edition->id,
-                'label' => $edition->event?->name ?? $edition->name,
-                'date' => $edition->event_date?->toDateString(),
+                'label' => $edition->event->name ?? $edition->name,
+                'date' => $edition->event_date->toDateString(),
             ]);
 
         $gear = $athlete === null ? collect() : AthleteOwnedProduct::query()
@@ -435,7 +435,7 @@ class CommunityController extends Controller
             ->latest('id')
             ->limit(30)
             ->get(['id', 'uuid', 'product_id'])
-            ->map(fn (AthleteOwnedProduct $item) => ['uuid' => $item->uuid, 'label' => $item->product?->name ?? 'Producto']);
+            ->map(fn (AthleteOwnedProduct $item) => ['uuid' => $item->uuid, 'label' => $item->product->name ?? 'Producto']);
 
         return [
             'has_profile' => $profile !== null,

@@ -50,7 +50,7 @@ class MomentResource extends JsonResource
                 'name' => $edition->event?->name,
                 'slug' => $edition->event?->slug,
                 'edition' => $edition->name,
-                'date' => $edition->event_date?->toDateString(),
+                'date' => $edition->event_date->toDateString(),
                 'city' => $edition->city,
             ],
             'author' => new AthleteResource($this->author),

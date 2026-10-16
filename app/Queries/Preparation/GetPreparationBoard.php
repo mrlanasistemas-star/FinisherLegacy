@@ -63,12 +63,12 @@ class GetPreparationBoard
             'key' => $stage->value,
             'title' => $stage->label(),
             'count' => $cards->where('stage', $stage->value)->count(),
-            'items' => $cards->where('stage', $stage->value)->take(60)->values()->all(),
-        ])->values()->all();
+            'items' => array_values($cards->where('stage', $stage->value)->take(60)->all()),
+        ])->all();
 
         return [
-            'lanes' => $lanes,
-            'attention' => $cards->where('stage', PreparationStage::Attention->value)->take(20)->values()->all(),
+            'lanes' => array_values($lanes),
+            'attention' => array_values($cards->where('stage', PreparationStage::Attention->value)->take(20)->all()),
         ];
     }
 
@@ -90,7 +90,7 @@ class GetPreparationBoard
             'next_action' => $this->nextAction($stage, $job),
             'athlete_name' => $plate->engraving_display_name ?: $plate->athlete_name,
             'bib_number' => $plate->bib_number,
-            'event' => $plate->eventEdition?->event?->name ?? $plate->event_name,
+            'event' => $plate->eventEdition?->event->name ?? $plate->event_name,
             'race' => $plate->race_name,
             'official_time' => $plate->official_time,
             'serial_number' => $plate->serial_number,
@@ -134,31 +134,37 @@ class GetPreparationBoard
             ->latest('updated_at')
             ->limit(self::PENDING_ENTITLEMENT_LIMIT)
             ->get()
-            ->map(function (LegacyPlateEntitlement $entitlement) {
-                $participant = $entitlement->eventParticipant;
-                $check = $this->eligibility->checkForEntitlement($entitlement);
+            ->map(fn (LegacyPlateEntitlement $entitlement) => $this->entitlementCard($entitlement));
+    }
 
-                return [
-                    'key' => 'entitlement-'.$entitlement->id,
-                    'job_id' => null,
-                    'plate_id' => null,
-                    'entitlement_id' => $entitlement->id,
-                    'stage' => PreparationStage::Pending->value,
-                    'next_action' => 'generate',
-                    'athlete_name' => $participant?->full_name ?: ($participant ? trim("{$participant->first_name} {$participant->last_name}") : null),
-                    'bib_number' => $participant?->bib_number,
-                    'event' => $entitlement->eventEdition?->event?->name,
-                    'race' => $participant?->eventRace?->name,
-                    'official_time' => $participant?->result?->official_time,
-                    'serial_number' => null,
-                    'model' => $entitlement->legacyPlateModel?->name,
-                    'historical' => false,
-                    'nfc' => null,
-                    'eligible' => $check->eligible,
-                    'reasons' => $check->reasons,
-                    'updated_at' => $entitlement->updated_at?->toIso8601String(),
-                ];
-            });
+    /**
+     * @return array<string, mixed>
+     */
+    private function entitlementCard(LegacyPlateEntitlement $entitlement): array
+    {
+        $participant = $entitlement->eventParticipant;
+        $check = $this->eligibility->checkForEntitlement($entitlement);
+
+        return [
+            'key' => 'entitlement-'.$entitlement->id,
+            'job_id' => null,
+            'plate_id' => null,
+            'entitlement_id' => $entitlement->id,
+            'stage' => PreparationStage::Pending->value,
+            'next_action' => 'generate',
+            'athlete_name' => $participant?->full_name ?: ($participant ? trim("{$participant->first_name} {$participant->last_name}") : null),
+            'bib_number' => $participant?->bib_number,
+            'event' => $entitlement->eventEdition?->event?->name,
+            'race' => $participant?->eventRace?->name,
+            'official_time' => $participant?->result?->official_time,
+            'serial_number' => null,
+            'model' => $entitlement->legacyPlateModel?->name,
+            'historical' => false,
+            'nfc' => null,
+            'eligible' => $check->eligible,
+            'reasons' => $check->reasons,
+            'updated_at' => $entitlement->updated_at?->toIso8601String(),
+        ];
     }
 
     /**
@@ -178,7 +184,7 @@ class GetPreparationBoard
             'layout' => $layout,
             'values' => array_merge([
                 'athlete_name' => $plate->engraving_display_name ?: $plate->athlete_name,
-                'event_name' => $plate->eventEdition?->event?->name ?? $plate->event_name,
+                'event_name' => $plate->eventEdition?->event->name ?? $plate->event_name,
                 'race_name' => $plate->race_name,
                 'event_date' => $plate->event_date?->toDateString(),
                 'official_time' => $plate->official_time,

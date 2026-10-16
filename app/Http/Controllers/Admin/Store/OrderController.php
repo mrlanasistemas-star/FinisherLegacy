@@ -12,6 +12,8 @@ use App\Http\Controllers\Controller;
 use App\Models\InventoryLocation;
 use App\Models\Order;
 use App\Models\OrderItem;
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,7 +34,7 @@ class OrderController extends Controller
     public function index(Request $request): Response
     {
         $search = $request->string('q')->toString();
-        $base = fn () => Order::query()
+        $base = fn (): Builder => Order::query()
             ->when($search, fn ($q) => $q->where(fn ($w) => $w
                 ->where('order_number', 'like', "%{$search}%")
                 ->orWhereHas('user', fn ($u) => $u->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%"))));
@@ -46,8 +48,10 @@ class OrderController extends Controller
             'cancelled' => fn ($q) => $q->where('status', OrderStatus::Cancelled),
         ];
 
-        $board = collect($lanes)->map(function (callable $scope, string $key) use ($base) {
-            $query = $scope($base());
+        $board = collect($lanes)->map(function (Closure $scope, string $key) use ($base) {
+            // Scopes add where() clauses to the builder in place.
+            $query = $base();
+            $scope($query);
 
             return [
                 'key' => $key,
@@ -71,7 +75,8 @@ class OrderController extends Controller
                         'items_preview' => $order->items->take(2)->pluck('name')->values(),
                         'has_photos' => $order->items->contains(fn (OrderItem $i) => $i->event_photo_id !== null),
                         'created_at' => $order->created_at->toIso8601String(),
-                    ]),
+                    ])
+                    ->all(),
             ];
         })->values();
 

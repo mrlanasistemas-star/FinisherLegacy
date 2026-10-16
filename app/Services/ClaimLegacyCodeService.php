@@ -50,6 +50,8 @@ class ClaimLegacyCodeService
      * @return array{legacyCode: LegacyCode, medal: ?Medal, alreadyOwned: bool}
      *
      * @throws AthleteIdentityConflictException if the User and the Plate resolve to two different Athletes
+     * @throws LegacyCodeUnavailableException if the code is in an unavailable status
+     * @throws LegacyCodeClaimConflictException if the code is already claimed by someone else
      */
     public function claim(string $code, User $user, ?string $ip = null): array
     {

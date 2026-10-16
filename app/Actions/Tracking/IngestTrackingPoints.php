@@ -9,11 +9,12 @@ use App\Models\TrackingSession;
 use App\Models\TrackingShare;
 use App\Support\Tracking\Geo;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
+ * @phpstan-type NormalizedPoint array{lat: float, lng: float, accuracy: ?float, altitude: ?float, speed: ?float, battery: ?int, recorded_at: CarbonImmutable}
+ *
  * GPS batch ingest (SPEC §79-§80). Shape/range validation lives in the
  * Form Request; this Action owns the domain rules:
  *
@@ -44,7 +45,7 @@ class IngestTrackingPoints
             throw new TrackingSessionNotActiveException;
         }
 
-        $normalized = $this->normalize($session, $points);
+        $normalized = collect($this->normalize($session, $points));
 
         if ($normalized->isEmpty()) {
             return ['accepted' => 0, 'last_recorded_at' => $session->last_point_at?->toIso8601String()];
@@ -112,9 +113,9 @@ class IngestTrackingPoints
 
     /**
      * @param  list<array<string, mixed>>  $points
-     * @return Collection<int, array{lat: float, lng: float, accuracy: ?float, altitude: ?float, speed: ?float, battery: ?int, recorded_at: CarbonImmutable}>
+     * @return array<int, NormalizedPoint>
      */
-    private function normalize(TrackingSession $session, array $points): Collection
+    private function normalize(TrackingSession $session, array $points): array
     {
         $now = CarbonImmutable::now();
         $oldest = CarbonImmutable::instance($session->started_at)
@@ -150,13 +151,14 @@ class IngestTrackingPoints
                 && $p['recorded_at']->lessThanOrEqualTo($newest))
             ->unique(fn (array $p) => $p['recorded_at']->getTimestamp())
             ->sortBy(fn (array $p) => $p['recorded_at']->getTimestamp())
-            ->values();
+            ->values()
+            ->all();
     }
 
     /**
-     * @param  Collection<int, array{lat: float, lng: float, accuracy: ?float, altitude: ?float, speed: ?float, battery: ?int, recorded_at: CarbonImmutable}>  $fresh
+     * @param  iterable<int, NormalizedPoint>  $fresh
      */
-    private function applyToSnapshot(TrackingSession $session, Collection $fresh, int $inserted): void
+    private function applyToSnapshot(TrackingSession $session, iterable $fresh, int $inserted): void
     {
         $maxAccuracy = (float) config('tracking.max_accuracy_m', 50);
         $maxSpeed = (float) config('tracking.max_speed_mps', 25);

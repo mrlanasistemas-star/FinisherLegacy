@@ -28,8 +28,8 @@ class LoadTestSeeder extends Seeder
             throw new RuntimeException('LoadTestSeeder must never run in production.');
         }
 
-        $count = (int) env('LOADTEST_USERS', 50);
-        $password = Hash::make((string) env('LOADTEST_PASSWORD', 'loadtest-password'));
+        $count = (int) config('finisher.loadtest.users', 50);
+        $password = Hash::make((string) config('finisher.loadtest.password', 'loadtest-password'));
         $race = EventRace::query()->where('name', 'Load test 10K')->first()
             ?? EventRace::factory()->create(['name' => 'Load test 10K']);
 
@@ -58,6 +58,9 @@ class LoadTestSeeder extends Seeder
             );
         }
 
-        $this->command?->info("{$count} load-test users ready (loadtest+N@finisherlegacy.test).");
+        // Seeder::$command is only set when run through artisan; the framework guards it the same way.
+        if (isset($this->command)) { // @phpstan-ignore isset.property
+            $this->command->info("{$count} load-test users ready (loadtest+N@finisherlegacy.test).");
+        }
     }
 }

@@ -86,7 +86,10 @@ class SocialSignIn
                 $user->password = Str::random(64);
                 $user->revokeAllAccess();
                 $user->markEmailAsVerified();
-                event(new Verified($user));
+                // User intentionally does not implement MustVerifyEmail (doing so would
+                // turn on the `verified` middleware gate and Fortify's verification
+                // emails); the Verified listeners only need the User model.
+                event(new Verified($user)); // @phpstan-ignore argument.type
             }
 
             $user->socialAccounts()->create([

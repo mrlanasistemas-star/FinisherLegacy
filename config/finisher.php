@@ -472,4 +472,14 @@ return [
     'memory_packs' => [
         'enabled' => (bool) env('FINISHER_MEMORY_PACKS_ENABLED', false),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Load-test seed (tools/loadtest) — never used in production
+    |--------------------------------------------------------------------------
+    */
+    'loadtest' => [
+        'users' => (int) env('LOADTEST_USERS', 50),
+        'password' => (string) env('LOADTEST_PASSWORD', 'loadtest-password'),
+    ],
 ];
