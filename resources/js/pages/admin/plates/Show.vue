@@ -65,6 +65,8 @@ const {
         template: { name: string; version: number | null } | null;
         production_job: { status: string; queued_at: string | null } | null;
         can_reprint: boolean;
+        nfc: { tag: string | null; connected: boolean } | null;
+        data_url: string | null;
     };
     legacyPlateModel: LegacyPlateModelData | null;
     personalization: LegacyPlatePersonalization;
@@ -355,13 +357,34 @@ function submitReprint() {
                 </div>
 
                 <div class="mt-6 flex flex-wrap gap-2">
+                    <!-- Legacy Plate V3: the machine software only needs the
+                         personalisation data. Historical template plates keep
+                         their file package (HistoricalPipelineNotice). -->
                     <Button
+                        v-if="plate.data_url"
+                        as-child
+                        class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                    >
+                        <a :href="plate.data_url">
+                            <Download class="size-4" />
+                            Datos de personalización
+                        </a>
+                    </Button>
+                    <Button
+                        v-else
                         class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
                         @click="downloadOpen = true"
                     >
                         <Download class="size-4" />
                         Descargar / regenerar archivos
                     </Button>
+                    <span
+                        v-if="plate.nfc"
+                        class="inline-flex items-center rounded-full bg-fl-cream px-3 text-xs font-medium text-fl-gold-ink"
+                    >
+                        NFC
+                        {{ plate.nfc.connected ? 'conectado' : plate.nfc.tag }}
+                    </span>
                     <Button
                         v-if="plate.can_reprint"
                         variant="outline"

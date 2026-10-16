@@ -10,10 +10,12 @@ use App\Enums\OrderStatus;
 use App\Enums\PhotographerStatus;
 use App\Enums\PlateStatus;
 use App\Enums\ProductType;
+use App\Enums\ReportStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AthleteProfile;
 use App\Models\ContactMessage;
 use App\Models\Event;
+use App\Models\EventEdition;
 use App\Models\EventIncident;
 use App\Models\EventParticipant;
 use App\Models\EventPhoto;
@@ -26,6 +28,7 @@ use App\Models\PhotoSale;
 use App\Models\Plate;
 use App\Models\Product;
 use App\Models\Promotion;
+use App\Models\Report;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +78,7 @@ class DashboardController extends Controller
                 'photographers_pending' => PhotographerProfile::query()->where('status', PhotographerStatus::Pending)->count(),
                 'low_stock' => $this->lowStockCount(),
             ],
+            'today' => $this->todayOverview(),
             'salesSeries' => $this->salesSeries($from, $days, $currency),
             'production' => $this->productionPipeline(),
             'recentOrders' => $this->recentOrders(),
@@ -98,6 +102,48 @@ class DashboardController extends Controller
                 'new_messages' => ContactMessage::query()->where('status', 'new')->count(),
             ],
         ]);
+    }
+
+    /**
+     * "Hoy" — the operational strip at the top of Inicio (spec §48/§107):
+     * events happening today or within the next 7 days (max 6), the Legacy
+     * Plate preparation queue and open community reports. Read-only,
+     * bounded aggregates; pending orders and low stock come from `kpis`.
+     *
+     * @return array<string, mixed>
+     */
+    private function todayOverview(): array
+    {
+        $today = CarbonImmutable::today();
+
+        return [
+            'date' => $today->toDateString(),
+            'events' => EventEdition::query()
+                ->with('event:id,name')
+                ->withCount('participants')
+                ->whereDate('event_date', '>=', $today->toDateString())
+                ->whereDate('event_date', '<=', $today->addDays(7)->toDateString())
+                ->orderBy('event_date')
+                ->limit(6)
+                ->get(['id', 'event_id', 'name', 'event_date', 'city'])
+                ->map(fn (EventEdition $edition) => [
+                    'id' => $edition->id,
+                    'name' => $edition->event->name,
+                    'edition' => $edition->name,
+                    'event_date' => $edition->event_date->toDateString(),
+                    'is_today' => $edition->event_date->isToday(),
+                    'city' => $edition->city,
+                    'participants' => $edition->participants_count,
+                ])->all(),
+            'preparation_queue' => LegacyPlateEntitlement::query()
+                ->whereIn('status', [LegacyPlateEntitlementStatus::Paid, LegacyPlateEntitlementStatus::Linked])
+                ->count()
+                + Plate::query()->whereIn('status', [
+                    PlateStatus::Draft, PlateStatus::PendingConfirmation, PlateStatus::Queued,
+                    PlateStatus::Processing, PlateStatus::Produced, PlateStatus::QualityCheck, PlateStatus::Ready,
+                ])->count(),
+            'community_reports' => Report::query()->whereIn('status', [ReportStatus::Open, ReportStatus::Reviewing])->count(),
+        ];
     }
 
     /**
@@ -190,7 +236,7 @@ class DashboardController extends Controller
     private function recentOrders(): array
     {
         return array_values(Order::query()
-            ->with('user:id,name')
+            ->with('user:id,first_name,last_name')
             ->withCount('items')
             ->latest()
             ->limit(8)

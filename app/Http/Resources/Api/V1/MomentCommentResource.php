@@ -23,6 +23,7 @@ class MomentCommentResource extends JsonResource
             'body' => $this->body,
             'created_at' => $this->created_at->toIso8601String(),
             'author' => new AthleteResource($this->author),
+            'is_hidden' => $this->hidden_at !== null,
             // Author of the comment, or author of the Moment it's on — both
             // may remove it.
             'can_delete' => $viewer !== null && ($viewer->id === $this->user_id || $viewer->id === $this->moment?->user_id),

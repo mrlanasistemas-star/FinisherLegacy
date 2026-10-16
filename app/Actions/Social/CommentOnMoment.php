@@ -2,6 +2,7 @@
 
 namespace App\Actions\Social;
 
+use App\Events\Community\CommunityCommentCreated;
 use App\Models\LegacyMoment;
 use App\Models\LegacyMomentComment;
 use App\Models\User;
@@ -20,6 +21,7 @@ class CommentOnMoment
 
         if ($author->id !== $moment->user_id) {
             $this->notify->momentComment($moment, $author, $comment->body);
+            CommunityCommentCreated::dispatch($comment->setRelation('moment', $moment), $moment->user_id);
         }
 
         return $comment;

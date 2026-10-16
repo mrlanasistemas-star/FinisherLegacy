@@ -16,6 +16,7 @@ import {
     ChevronRight,
     ClipboardList,
     Factory,
+    Flag,
     Hourglass,
     Inbox,
     Package,
@@ -108,7 +109,38 @@ const props = defineProps<{
         open_incidents: number;
         new_messages: number;
     };
+    today: {
+        date: string;
+        events: {
+            id: number;
+            name: string;
+            edition: string;
+            event_date: string;
+            is_today: boolean;
+            city: string;
+            participants: number;
+        }[];
+        preparation_queue: number;
+        community_reports: number;
+    };
 }>();
+
+const attention = computed(() =>
+    [
+        {
+            label: 'Legacy Plates por preparar',
+            value: props.today.preparation_queue,
+            icon: Factory,
+            href: '/admin/legacy-plates/production',
+        },
+        {
+            label: 'Reportes de comunidad',
+            value: props.today.community_reports,
+            icon: Flag,
+            href: '/admin/community',
+        },
+    ].filter((row) => row.value > 0),
+);
 
 const fmt = new Intl.NumberFormat('es-MX');
 
@@ -151,7 +183,7 @@ const kpiCards = computed(() => [
     },
     {
         key: 'plates',
-        label: 'Placas en producción',
+        label: 'Legacy Plates en preparación',
         value: props.kpis.plates_in_production,
         icon: Factory,
         href: '/admin/legacy-plates/production',
@@ -248,7 +280,7 @@ const generalCards = computed(() => [
         label: 'Eventos',
         value: props.general.events,
         icon: Calendar,
-        href: '/admin/editions',
+        href: '/admin/events',
     },
     {
         label: 'Prerregistros',
@@ -272,15 +304,18 @@ const timeAgo = (iso: string | null) =>
           })
         : '';
 
-const today = new Date().toLocaleDateString('es-MX', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-});
+// Server date, so the SSR markup and the client render agree.
+const todayLabel = computed(() =>
+    new Date(`${props.today.date}T12:00:00`).toLocaleDateString('es-MX', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+    }),
+);
 </script>
 
 <template>
-    <Head title="Resumen · Administración" />
+    <Head title="Inicio · Administración" />
 
     <div class="w-full space-y-8 p-4 md:p-8">
         <!-- Header -->
@@ -288,8 +323,10 @@ const today = new Date().toLocaleDateString('es-MX', {
             class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
         >
             <div>
-                <p class="fl-eyebrow first-letter:uppercase">{{ today }}</p>
-                <h1 class="fl-display mt-2 text-3xl sm:text-4xl">Resumen</h1>
+                <p class="fl-eyebrow first-letter:uppercase">
+                    {{ todayLabel }}
+                </p>
+                <h1 class="fl-display mt-2 text-3xl sm:text-4xl">Inicio</h1>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <Link
@@ -326,6 +363,106 @@ const today = new Date().toLocaleDateString('es-MX', {
                 </div>
             </div>
         </div>
+
+        <!-- Hoy: what needs eyes today (spec §48/§107) -->
+        <section
+            class="grid gap-3 sm:gap-4 lg:grid-cols-3"
+            aria-label="Operación de hoy"
+        >
+            <div class="fl-card p-5 lg:col-span-2">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Eventos de esta semana
+                    </h2>
+                    <Link
+                        href="/admin/events"
+                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                    >
+                        Todos los eventos
+                        <ArrowRight class="size-3.5" />
+                    </Link>
+                </div>
+                <ul
+                    v-if="today.events.length"
+                    class="mt-3 divide-y divide-border"
+                >
+                    <li v-for="event in today.events" :key="event.id">
+                        <Link
+                            :href="`/admin/events/${event.id}`"
+                            class="flex min-h-12 items-center gap-3 py-2 text-sm hover:text-fl-gold-ink"
+                        >
+                            <span
+                                class="w-16 shrink-0 text-xs font-semibold uppercase"
+                                :class="
+                                    event.is_today
+                                        ? 'text-emerald-700'
+                                        : 'text-muted-foreground'
+                                "
+                            >
+                                {{
+                                    event.is_today
+                                        ? 'Hoy'
+                                        : shortDate(event.event_date)
+                                }}
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span
+                                    class="block truncate font-medium text-foreground"
+                                    >{{ event.name }}</span
+                                >
+                                <span
+                                    class="block truncate text-xs text-muted-foreground"
+                                    >{{ event.edition }} ·
+                                    {{ event.city }}</span
+                                >
+                            </span>
+                            <span
+                                class="legacy-numeric shrink-0 text-xs text-muted-foreground"
+                                >{{
+                                    fmt.format(event.participants)
+                                }}
+                                participantes</span
+                            >
+                            <ChevronRight
+                                class="size-4 shrink-0 text-muted-foreground"
+                            />
+                        </Link>
+                    </li>
+                </ul>
+                <p v-else class="mt-3 text-sm text-muted-foreground">
+                    No hay eventos en los próximos 7 días.
+                </p>
+            </div>
+
+            <div class="fl-card p-5">
+                <h2 class="text-sm font-semibold text-foreground">
+                    Por atender
+                </h2>
+                <ul v-if="attention.length" class="mt-3 space-y-1">
+                    <li v-for="row in attention" :key="row.label">
+                        <Link
+                            :href="row.href"
+                            class="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm hover:bg-foreground/[0.03]"
+                        >
+                            <component
+                                :is="row.icon"
+                                class="size-4 text-fl-gold-ink"
+                            />
+                            <span class="flex-1 text-foreground">{{
+                                row.label
+                            }}</span>
+                            <span
+                                class="legacy-numeric font-semibold text-foreground"
+                                >{{ fmt.format(row.value) }}</span
+                            >
+                        </Link>
+                    </li>
+                </ul>
+                <p v-else class="mt-3 text-sm text-muted-foreground">
+                    Todo al día: nada por preparar ni reportes abiertos.
+                </p>
+            </div>
+        </section>
 
         <!-- KPIs -->
         <section
@@ -517,7 +654,9 @@ const today = new Date().toLocaleDateString('es-MX', {
             <section class="fl-card p-5 sm:p-6 xl:col-span-5">
                 <div class="flex items-center justify-between gap-3">
                     <div>
-                        <h2 class="font-semibold">Producción Legacy Plate</h2>
+                        <h2 class="font-semibold">
+                            Preparación y entrega de Legacy Plates
+                        </h2>
                         <p class="text-xs text-muted-foreground">
                             {{ productionTotal }} en proceso ·
                             {{ production.delivered }} entregadas

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AthleteEventMediaType;
+use App\Enums\ProfileVisibility;
 use App\Http\Resources\Api\V1\MomentResource;
 use App\Models\AthleteEventMedia;
 use App\Models\AthleteFollow;
@@ -10,6 +11,7 @@ use App\Models\AthleteProfile;
 use App\Queries\Social\MomentQuery;
 use App\Services\PublicAthleteProfileService;
 use App\Services\Social\SocialVisibility;
+use App\Support\Social\ReportReasons;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -19,8 +21,13 @@ use Inertia\Response;
  * Public Legacy Profile (/@username). Everything beyond the header is
  * filtered for the viewer: medals by their own visibility, posts through
  * SocialVisibility/MomentQuery, photos only when the athlete made them
- * public. A private profile renders profile/Private for everyone but its
- * owner.
+ * public.
+ *
+ *  - Full access (canViewProfile) → profile/Show with content.
+ *  - Followers-only profile, signed-in non-follower → profile/Show with
+ *    `restricted: true` (header + Seguir, no content).
+ *  - Otherwise (private, blocked, anonymous on followers-only) →
+ *    profile/Private.
  */
 class PublicProfileController extends Controller
 {
@@ -29,23 +36,37 @@ class PublicProfileController extends Controller
     public function show(Request $request, AthleteProfile $athleteProfile, MomentQuery $moments, SocialVisibility $visibility): Response
     {
         $athleteProfile->load(['user', 'mainSport']);
+        abort_if($athleteProfile->user === null, 404);
         $viewer = $request->user();
 
         $isOwner = $viewer !== null && $viewer->id === $athleteProfile->user_id;
+        $canView = $this->profiles->isVisibleTo($athleteProfile, $viewer);
 
-        if (! $this->profiles->isVisibleTo($athleteProfile, $viewer)) {
+        if (! $canView && ! $visibility->canSeeProfileShell($athleteProfile, $viewer)) {
             return Inertia::render('profile/Private', [
                 'username' => $athleteProfile->username,
+                'followersOnly' => $athleteProfile->profile_visibility === ProfileVisibility::Followers
+                    && ! $visibility->isHiddenBetween($viewer, $athleteProfile->user_id),
             ]);
         }
 
-        $medals = $this->profiles->publicMedals($athleteProfile);
-        $athleteId = $athleteProfile->user->athlete()->value('id');
+        $ownerId = $athleteProfile->user_id;
+        $medals = $canView ? $this->profiles->publicMedals($athleteProfile) : collect();
+        $athleteId = $canView ? $athleteProfile->user->athlete()->value('id') : null;
 
         return Inertia::render('profile/Show', [
             'isOwner' => $isOwner,
-            'profile' => $this->profiles->profilePayload($athleteProfile),
-            'stats' => $this->profiles->statsPayload($athleteProfile, $medals),
+            'restricted' => ! $canView,
+            'profile' => [
+                ...$this->profiles->profilePayload($athleteProfile),
+                'visibility' => $athleteProfile->profile_visibility->value,
+            ],
+            'stats' => $canView
+                ? [
+                    ...$this->profiles->statsPayload($athleteProfile, $medals),
+                    'posts' => $moments->visibleTo($viewer)->where('legacy_moments.user_id', $ownerId)->count(),
+                ]
+                : ['medals' => 0, 'events' => 0, 'posts' => 0],
             'medals' => $medals->map(function ($medal) {
                 $frontImage = $medal->images->firstWhere('type', 'front');
 
@@ -58,20 +79,22 @@ class PublicProfileController extends Controller
                         ? Storage::disk('public')->url($frontImage->thumbnail_path)
                         : null,
                 ];
-            }),
+            })->values(),
             'social' => [
-                'followers' => AthleteFollow::query()->where('following_id', $athleteProfile->user_id)->count(),
-                'following' => AthleteFollow::query()->where('follower_id', $athleteProfile->user_id)->count(),
-                'is_following' => $viewer !== null && in_array($athleteProfile->user_id, $visibility->followingIds($viewer), true),
+                'followers' => AthleteFollow::query()->where('following_id', $ownerId)->count(),
+                'following' => AthleteFollow::query()->where('follower_id', $ownerId)->count(),
+                'is_following' => $viewer !== null && $visibility->follows($viewer, $ownerId),
             ],
-            'events' => $this->profiles->recentEvents($athleteProfile, 20),
-            'posts' => MomentResource::collection(
-                $moments->visibleTo($viewer)
-                    ->where('legacy_moments.user_id', $athleteProfile->user_id)
-                    ->orderByDesc('legacy_moments.id')
-                    ->limit(6)
-                    ->get()
-            )->resolve($request),
+            'events' => $canView ? $this->profiles->recentEvents($athleteProfile, 20) : [],
+            'posts' => $canView
+                ? Inertia::scroll(fn () => MomentResource::collection(
+                    $moments->paginate(
+                        $moments->visibleTo($viewer)->where('legacy_moments.user_id', $ownerId),
+                        12,
+                    )
+                ))
+                : ['data' => []],
+            'reportReasons' => ReportReasons::options(),
             // Public page = public photos only, even for the owner (it is
             // a preview of what everyone else sees).
             'photos' => $athleteId === null ? [] : AthleteEventMedia::query()

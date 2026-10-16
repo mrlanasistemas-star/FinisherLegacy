@@ -48,8 +48,11 @@ class ImageProcessingService
         $originalPath = null;
 
         if ($config['keep_original']) {
-            // From the sniffed content, never the client's file name.
-            $originalExtension = $file->guessExtension() ?: 'jpg';
+            // Extension from the file CONTENT, never the client's name: this
+            // lands on a public disk, so `x.html` must not be served as HTML
+            // (security audit A1 — stored XSS).
+            $guessed = strtolower((string) $file->guessExtension());
+            $originalExtension = in_array($guessed, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'heic', 'heif'], true) ? $guessed : 'jpg';
             $originalPath = "{$directory}/original/{$basename}.{$originalExtension}";
             $storage->putFileAs("{$directory}/original", $file, "{$basename}.{$originalExtension}");
         }

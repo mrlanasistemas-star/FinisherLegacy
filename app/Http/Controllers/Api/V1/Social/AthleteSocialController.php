@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1\Social;
 
 use App\Actions\Social\BlockUser;
 use App\Actions\Social\FollowAthlete;
-use App\Enums\ProfileVisibility;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
@@ -35,7 +34,10 @@ class AthleteSocialController extends Controller
     public function follow(Request $request, AthleteProfile $athleteProfile, FollowAthlete $follow): JsonResponse
     {
         $viewer = $this->sanctumUser($request);
-        $this->ensureVisible($athleteProfile, $viewer);
+        $athleteProfile->loadMissing('user');
+        // A followers-only profile can be followed by anyone signed in who
+        // is not blocked (that is how you get access).
+        abort_unless($athleteProfile->user !== null && $this->visibility->canSeeProfileShell($athleteProfile, $viewer), 404);
 
         $follow->handle($viewer, $athleteProfile);
 
@@ -120,16 +122,9 @@ class AthleteSocialController extends Controller
      */
     private function athleteList(Builder $userIds, User $viewer): JsonResponse
     {
-        $hidden = $this->visibility->hiddenUserIds($viewer);
         $following = $this->visibility->followingIds($viewer);
 
-        $page = User::query()
-            ->whereIn('users.id', $userIds)
-            ->where(fn (Builder $q) => $q
-                ->where('users.id', $viewer->id)
-                ->orWhereHas('athleteProfile', fn (Builder $p) => $p->where('profile_visibility', ProfileVisibility::Public)))
-            ->whereHas('athleteProfile')
-            ->when($hidden !== [], fn (Builder $q) => $q->whereNotIn('users.id', $hidden))
+        $page = $this->visibility->scopeListableUsers(User::query()->whereIn('users.id', $userIds), $viewer)
             ->with('athleteProfile')
             ->orderBy('first_name')
             ->orderBy('id')

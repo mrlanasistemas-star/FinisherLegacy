@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\MomentType;
 use App\Enums\MomentVisibility;
+use App\Enums\PostKind;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,9 @@ use Illuminate\Support\Str;
  * @property int|null $medal_id
  * @property int|null $athlete_owned_product_id
  * @property array<string, mixed>|null $metrics
+ * @property int|null $event_edition_id
+ * @property Carbon|null $hidden_at
+ * @property int|null $hidden_by
  * @property Carbon $created_at
  * @property-read int|null $likes_count Set by MomentQuery::withCardData()
  * @property-read int|null $cheers_count Set by MomentQuery::withCardData()
@@ -34,7 +38,7 @@ use Illuminate\Support\Str;
  */
 #[Fillable([
     'uuid', 'user_id', 'type', 'caption', 'visibility', 'event_participant_id',
-    'medal_id', 'athlete_owned_product_id', 'metrics',
+    'medal_id', 'athlete_owned_product_id', 'metrics', 'event_edition_id', 'hidden_at', 'hidden_by',
 ])]
 class LegacyMoment extends Model
 {
@@ -53,6 +57,7 @@ class LegacyMoment extends Model
             'type' => MomentType::class,
             'visibility' => MomentVisibility::class,
             'metrics' => 'array',
+            'hidden_at' => 'datetime',
         ];
     }
 
@@ -73,6 +78,29 @@ class LegacyMoment extends Model
         return $this->belongsTo(EventParticipant::class);
     }
 
+    /** @return BelongsTo<EventEdition, $this> */
+    public function eventEdition(): BelongsTo
+    {
+        return $this->belongsTo(EventEdition::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function hiddenBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hidden_by');
+    }
+
+    /**
+     * The card family (spec §54) — uses the eager-loaded media when
+     * present, never a query per card.
+     */
+    public function kind(): PostKind
+    {
+        $hasMedia = $this->relationLoaded('media') ? $this->media->isNotEmpty() : false;
+
+        return $this->type->kind($hasMedia);
+    }
+
     /** @return BelongsTo<Medal, $this> */
     public function medal(): BelongsTo
     {
@@ -88,7 +116,8 @@ class LegacyMoment extends Model
     /** @return HasMany<LegacyMomentMedia, $this> */
     public function media(): HasMany
     {
-        return $this->hasMany(LegacyMomentMedia::class)->orderBy('sort_order');
+        // chaperone: media URLs read the moment's visibility without N+1.
+        return $this->hasMany(LegacyMomentMedia::class)->orderBy('sort_order')->chaperone('moment');
     }
 
     /** @return HasMany<LegacyMomentReaction, $this> */

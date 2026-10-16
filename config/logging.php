@@ -1,6 +1,8 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
+use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
@@ -70,6 +72,31 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
+        // Structured JSON lines (one object per line, Context such as
+        // request_id included) for log shippers. Enable with
+        // LOG_STACK=json (or LOG_STACK=daily,json). docs/DEPLOYMENT.md.
+        'json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => RotatingFileHandler::class,
+            'handler_with' => [
+                'filename' => storage_path('logs/laravel.json.log'),
+                'maxFiles' => env('LOG_DAILY_DAYS', 14),
+            ],
+            'formatter' => JsonFormatter::class,
+        ],
+
+        // Payment incidents (webhook failures, amount mismatches, unknown
+        // references). Kept separate so ops can alert on it; never contains
+        // card data or provider secrets.
+        'payments' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/payments.log'),
+            'level' => 'info',
+            'days' => env('LOG_PAYMENTS_DAYS', 90),
             'replace_placeholders' => true,
         ],
 

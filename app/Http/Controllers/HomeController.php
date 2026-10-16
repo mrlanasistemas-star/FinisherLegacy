@@ -10,16 +10,21 @@ use App\Http\Resources\EventEditionCardResource;
 use App\Models\AthleteProfile;
 use App\Models\EventEdition;
 use App\Models\Product;
-use App\Models\Sport;
-use App\Queries\Commerce\GetFeaturedProducts;
 use App\Queries\Social\MomentQuery;
+use App\Queries\Store\StorefrontCatalog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Home as a story (owner spec §38-§44): hero, what it is, the five-step
+ * journey, the NFC moment, the store, community and a final CTA. Only
+ * real data is passed — every block that has nothing real to show
+ * renders its own honest empty state.
+ */
 class HomeController extends Controller
 {
-    public function index(Request $request, GetFeaturedProducts $featuredProducts, MomentQuery $moments): Response
+    public function index(Request $request, StorefrontCatalog $catalog, MomentQuery $moments): Response
     {
         $featuredEditions = EventEdition::query()
             ->whereHas('event', fn ($query) => $query->where('status', EventStatus::Published))
@@ -30,27 +35,28 @@ class HomeController extends Controller
             ->limit(3)
             ->get();
 
-        $legacyProfile = AthleteProfile::query()
-            ->where('profile_visibility', 'public')
-            ->whereHas('user.medals')
-            ->with(['user.medals' => fn ($query) => $query->where('visibility', 'public')->latest()->limit(4), 'mainSport'])
-            ->first();
-
-        // A real public athlete for the hero card, when one exists — the
-        // page falls back to a clearly-labelled sample card otherwise.
-        $heroAthlete = AthleteProfile::query()
-            ->where('profile_visibility', 'public')
-            ->whereNotNull('profile_photo_path')
-            ->whereNotNull('bio')
-            ->with(['user', 'mainSport'])
-            ->latest('updated_at')
-            ->first();
-
         // Public posts only — what a guest would see in Comunidad.
         $communityPosts = $moments->visibleTo($request->user())
             ->where('legacy_moments.visibility', 'public')
             ->orderByDesc('legacy_moments.id')
-            ->limit(3)
+            ->limit(6)
+            ->get();
+
+        $communityAthletes = AthleteProfile::query()
+            ->where('profile_visibility', 'public')
+            ->whereNotNull('profile_photo_path')
+            ->whereNotNull('username')
+            ->with(['user:id,first_name,last_name', 'mainSport:id,name'])
+            ->latest('updated_at')
+            ->limit(8)
+            ->get();
+
+        // Store band: the Legacy Plate leads, then the rest of the catalog.
+        $products = $catalog->query()
+            ->orderByRaw('type = ? desc', [ProductType::LegacyPlate->value])
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at')
+            ->limit(4)
             ->get();
 
         $legacyPlate = Product::query()
@@ -62,30 +68,18 @@ class HomeController extends Controller
 
         return Inertia::render('Home', [
             'featuredEditions' => $featuredEditions->map(fn ($edition) => (new EventEditionCardResource($edition))->resolve()),
-            'featuredProducts' => $featuredProducts->handle(5)->map(fn (Product $product) => GetFeaturedProducts::summarize($product)),
-            'legacyProfile' => $legacyProfile ? [
-                'username' => $legacyProfile->username,
-                'name' => $legacyProfile->user->name,
-                'city' => $legacyProfile->city,
-                'country' => $legacyProfile->country,
-                'sport' => $legacyProfile->mainSport?->name,
-                'photo_url' => $legacyProfile->profile_photo_path ? asset('storage/'.$legacyProfile->profile_photo_path) : null,
-                'medals_count' => $legacyProfile->user->medals()->count(),
-                'medals' => $legacyProfile->user->medals->map(fn ($medal) => [
-                    'title' => $medal->title,
-                    'distance_label' => $medal->distance_label,
-                ]),
-            ] : null,
-            'heroAthlete' => $heroAthlete && $heroAthlete->user ? [
-                'username' => $heroAthlete->username,
-                'name' => $heroAthlete->user->name,
-                'sport' => $heroAthlete->mainSport?->name,
-                'city' => $heroAthlete->city,
-                'bio' => $heroAthlete->bio,
-                'photo_url' => asset('storage/'.$heroAthlete->profile_photo_path),
-            ] : null,
-            'sports' => Sport::query()->where('active', true)->orderBy('sort_order')->get(['name', 'slug']),
+            'featuredProducts' => $catalog->cards($products),
             'communityPosts' => MomentResource::collection($communityPosts)->resolve($request),
+            'communityAthletes' => $communityAthletes
+                ->filter(fn (AthleteProfile $profile) => $profile->user !== null)
+                ->map(fn (AthleteProfile $profile) => [
+                    'username' => $profile->username,
+                    'name' => $profile->user->name,
+                    'sport' => $profile->mainSport?->name,
+                    'city' => $profile->city,
+                    'photo_url' => asset('storage/'.$profile->profile_photo_path),
+                ])
+                ->values(),
             'legacyPlateSlug' => $legacyPlate?->slug,
         ]);
     }

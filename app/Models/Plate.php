@@ -153,6 +153,16 @@ class Plate extends Model
         return $this->hasOne(ProductionJob::class)->latestOfMany();
     }
 
+    /**
+     * The NFC tag attached during "Preparación y entrega" (docs/NFC.md).
+     *
+     * @return HasOne<NfcAssignment, $this>
+     */
+    public function activeNfcAssignment(): HasOne
+    {
+        return $this->hasOne(NfcAssignment::class)->whereNull('ended_at')->latestOfMany();
+    }
+
     /** @return HasMany<PlateReprint, $this> */
     public function reprints(): HasMany
     {

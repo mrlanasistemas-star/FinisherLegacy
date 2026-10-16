@@ -11,6 +11,7 @@ use App\Models\EventEdition;
 use App\Models\EventGearSelection;
 use App\Models\EventParticipant;
 use App\Models\LegacyPlateEntitlement;
+use App\Queries\Admin\GetEventWorkspaceHeader;
 use App\Queries\Athletes\GetEventGear;
 use App\Queries\Commerce\GetAthleteOwnedProducts;
 use App\Queries\Operations\GetEventParticipantMetrics;
@@ -34,10 +35,32 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ParticipantController extends Controller
 {
-    public function index(Request $request, GetEventParticipantsList $list, GetEventParticipantMetrics $metricsQuery): Response
+    /**
+     * Retired global URL (spec §9/§136): participants only make sense
+     * inside one event, so the old list answers with a 301 to that event's
+     * workspace tab — or to the event list when no event was chosen.
+     */
+    public function index(Request $request): RedirectResponse
     {
         $eventEditionId = $request->integer('event_edition_id') ?: null;
-        $edition = $eventEditionId ? EventEdition::with(['event', 'races'])->find($eventEditionId) : null;
+
+        if ($eventEditionId === null || ! EventEdition::query()->whereKey($eventEditionId)->exists()) {
+            return redirect()->route('admin.events.index', status: 301);
+        }
+
+        return redirect()->route('admin.events.participants', [
+            'eventEdition' => $eventEditionId,
+            ...$request->except(['event_edition_id', 'page']),
+        ], 301);
+    }
+
+    /**
+     * "Participantes" tab of the event workspace (spec §9) — same page,
+     * same Query, scoped by the route instead of a query-string selector.
+     */
+    public function forEvent(Request $request, EventEdition $eventEdition, GetEventParticipantsList $list, GetEventParticipantMetrics $metricsQuery, GetEventWorkspaceHeader $header): Response
+    {
+        $edition = $eventEdition->loadMissing(['event', 'races']);
 
         $filters = [
             'q' => $request->string('q')->toString() ?: null,
@@ -47,23 +70,17 @@ class ParticipantController extends Controller
             'product' => $request->string('product')->toString() ?: null,
         ];
 
-        $participants = null;
-        $metrics = null;
-
-        if ($edition !== null) {
-            $participants = $list->handle($edition, $filters);
-            $participants->through(fn (EventParticipant $participant) => $this->rowShape($participant));
-            $metrics = $metricsQuery->handle($edition);
-        }
+        $participants = $list->handle($edition, $filters);
+        $participants->through(fn (EventParticipant $participant) => $this->rowShape($participant));
 
         return Inertia::render('admin/participants/Index', [
-            'events' => EventEdition::with('event')->orderByDesc('event_date')->limit(100)->get()
-                ->map(fn (EventEdition $e) => ['id' => $e->id, 'name' => $e->event->name.' — '.$e->name]),
-            'selectedEventEditionId' => $edition?->id,
-            'races' => $edition?->races->map(fn ($race) => ['id' => $race->id, 'name' => $race->name]) ?? [],
+            'workspace' => $header->handle($edition),
+            'events' => [],
+            'selectedEventEditionId' => $edition->id,
+            'races' => $edition->races->map(fn ($race) => ['id' => $race->id, 'name' => $race->name]),
             'participants' => $participants,
-            'metrics' => $metrics,
-            'filters' => array_merge(['event_edition_id' => $edition?->id], $filters),
+            'metrics' => $metricsQuery->handle($edition),
+            'filters' => array_merge(['event_edition_id' => $edition->id], $filters),
         ]);
     }
 

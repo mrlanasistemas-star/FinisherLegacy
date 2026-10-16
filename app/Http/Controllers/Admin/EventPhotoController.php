@@ -10,6 +10,7 @@ use App\Models\EventEdition;
 use App\Models\EventPhoto;
 use App\Models\PhotographerProfile;
 use App\Models\PhotoSale;
+use App\Queries\Admin\GetEventWorkspaceHeader;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -25,6 +26,17 @@ use Inertia\Response;
 class EventPhotoController extends Controller
 {
     private const PER_PAGE = [24, 50, 100];
+
+    /**
+     * "Media" tab of the event workspace (spec §9): the same review grid,
+     * pinned to one event by the route instead of the filter.
+     */
+    public function forEvent(Request $request, EventEdition $eventEdition, GetEventWorkspaceHeader $header): Response
+    {
+        $request->merge(['event_edition_id' => $eventEdition->id]);
+
+        return $this->index($request)->with('workspace', $header->handle($eventEdition));
+    }
 
     /**
      * Paginated, filterable review grid — never loads every photo at once.

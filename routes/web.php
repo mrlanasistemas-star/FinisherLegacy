@@ -61,15 +61,14 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Store\CartController as StoreCartController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
-use App\Http\Controllers\Store\ProductController as StoreProductController;
 use App\Http\Controllers\SupportAudioController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SupportSessionController;
+use Illuminate\Routing\RedirectController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::inertia('how-it-works', 'HowItWorks')->name('how-it-works');
 Route::inertia('privacy', 'Privacy')->name('privacy');
 Route::inertia('terms', 'Terms')->name('terms');
 Route::get('contact', [ContactController::class, 'show'])->name('contact');
@@ -148,11 +147,6 @@ Route::get('media/{media:uuid}/file', [AthleteEventMediaFileController::class, '
 
 Route::get('/@{athleteProfile:username}', [PublicProfileController::class, 'show'])->name('profile.public');
 
-Route::prefix('tienda')->name('store.products.')->group(function () {
-    Route::get('/', [StoreProductController::class, 'index'])->name('index');
-    Route::get('{product:slug}', [StoreProductController::class, 'show'])->name('show');
-});
-
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('l/{code}/claim', [LegacyCodeController::class, 'claim'])
         ->middleware('throttle:api-claim')
@@ -229,7 +223,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('dashboard/media/{media:uuid}/visibility', [AthleteHistoryController::class, 'updateMediaVisibility'])->name('dashboard.media.visibility');
     Route::delete('dashboard/media/{media:uuid}', [AthleteHistoryController::class, 'destroyMedia'])->name('dashboard.media.destroy');
     Route::get('dashboard/my-plates', [AthleteHistoryController::class, 'myPlates'])->name('dashboard.my-plates');
-    Route::get('dashboard/my-gear', [AthleteHistoryController::class, 'myGear'])->name('dashboard.my-gear');
+    // dashboard.my-gear ("Mi equipo") lives in routes/web/nfc.php.
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
@@ -301,17 +295,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('can:dashboard.admin.view')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        Route::middleware('can:events.view')->get('editions', [AdminEditionController::class, 'index'])->name('editions.index');
+        // Retired GET URLs → the events workspace (spec §9/§136, routes/web/admin-workspace.php).
+        Route::get('editions', RedirectController::class)->defaults('destination', '/admin/events')->defaults('status', 301)->name('editions.index');
         Route::middleware('can:events.manage')->group(function () {
             // Registered before the {eventEdition} wildcard route below —
             // Laravel matches in registration order, so "create" would
             // otherwise be swallowed as an eventEdition route parameter.
-            Route::get('editions/create', [AdminEditionController::class, 'create'])->name('editions.create');
+            Route::get('editions/create', RedirectController::class)->defaults('destination', '/admin/events/create')->defaults('status', 301)->name('editions.create');
             Route::post('editions', [AdminEditionController::class, 'store'])->name('editions.store');
             Route::post('editions/{eventEdition}/price-schedules', [AdminEditionController::class, 'storePriceSchedule'])->name('editions.price-schedules.store');
         });
         Route::middleware('can:eventdata.manage')->put('editions/{eventEdition}/data-sources', [AdminEditionController::class, 'updateDataSources'])->name('editions.data-sources.update');
-        Route::middleware('can:events.view')->get('editions/{eventEdition}', [AdminEditionController::class, 'show'])->name('editions.show');
+        Route::get('editions/{eventEdition}', RedirectController::class)->whereNumber('eventEdition')->defaults('destination', '/admin/events/{eventEdition}')->defaults('status', 301)->name('editions.show');
 
         Route::middleware('can:editions.manage')->prefix('events/{eventEdition}/production-setup')->name('editions.production-setup.')->group(function () {
             Route::get('/', [AdminProductionSetupController::class, 'show'])->name('show');
@@ -557,3 +552,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+require __DIR__.'/web/media.php';
+require __DIR__.'/web/tracking.php';
+require __DIR__.'/web/admin-workspace.php';
+require __DIR__.'/web/platform.php';
+require __DIR__.'/web/community.php';
+require __DIR__.'/web/nfc.php';
+require __DIR__.'/web/public.php';

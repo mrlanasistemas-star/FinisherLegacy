@@ -5,6 +5,7 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import { initializeNotificationRealtime } from '@/lib/notificationRealtime';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Finisher Legacy';
 
@@ -19,6 +20,7 @@ const PUBLIC_PAGES = new Set([
 const PUBLIC_PREFIXES = [
     'events/',
     'legacy-code/',
+    'nfc/',
     'profile/',
     'errors/',
     'store/',
@@ -65,3 +67,6 @@ initializeTheme();
 
 // This will listen for flash toast data from the server...
 initializeFlashToast();
+
+// Live notification badge/toasts (Reverb, with polling fallback)...
+initializeNotificationRealtime();

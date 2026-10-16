@@ -250,7 +250,9 @@ function submit() {
                                     <SelectItem value="file"
                                         >Archivo</SelectItem
                                     >
-                                    <SelectItem value="api">API</SelectItem>
+                                    <SelectItem value="api"
+                                        >Conexión automática</SelectItem
+                                    >
                                 </SelectContent>
                             </Select>
                         </div>

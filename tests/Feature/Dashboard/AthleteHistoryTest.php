@@ -13,6 +13,7 @@ use App\Models\LegacyPlateModel;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -24,7 +25,7 @@ use Illuminate\Support\Str;
 test('my-events only ever shows the signed-in athlete\'s own participations', function () {
     $user = User::factory()->create();
     $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');
-    $edition = EventEdition::factory()->create();
+    $edition = EventEdition::factory()->create(['event_date' => now()->subMonth()]);
     EventParticipant::factory()->create(['athlete_id' => $athlete->id, 'event_edition_id' => $edition->id]);
 
     $otherAthlete = Athlete::factory()->create();
@@ -33,7 +34,10 @@ test('my-events only ever shows the signed-in athlete\'s own participations', fu
     $response = $this->actingAs($user)->get('/dashboard/my-events');
 
     $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->component('dashboard/MyEvents')->has('participations', 1));
+    $response->assertInertia(fn ($page) => $page
+        ->component('dashboard/MyEvents')
+        ->has('past.data', 1)
+        ->has('upcoming', 0));
 });
 
 test('a participant belonging to another athlete cannot be opened through the URL', function () {
@@ -48,6 +52,8 @@ test('a participant belonging to another athlete cannot be opened through the UR
 
 test('media upload is blocked once the free-tier limit is reached, matching the badge the UI shows', function () {
     config(['finisher.event_media.free_images_per_participation' => 1]);
+    Storage::fake(config('finisher.media_disk'));
+    Storage::fake('media_tmp');
 
     $user = User::factory()->create();
     $athlete = app(EnsureAthleteForUser::class)->handle($user, 'test');

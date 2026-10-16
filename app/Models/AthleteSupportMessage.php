@@ -25,6 +25,7 @@ class AthleteSupportMessage extends Model
             'status' => SupportMessageStatus::class,
             'is_surprise' => 'boolean',
             'approved_at' => 'datetime',
+            'triggered_at' => 'datetime',
             'consumed_at' => 'datetime',
         ];
     }

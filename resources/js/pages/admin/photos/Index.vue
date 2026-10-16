@@ -25,7 +25,8 @@ import {
     XCircle,
 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
+import EventWorkspaceHeader from '@/components/admin/events/EventWorkspaceHeader.vue';
+import type { EventWorkspaceData } from '@/components/admin/events/types';
 import DatePicker from '@/components/DatePicker.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import Pagination from '@/components/public/Pagination.vue';
@@ -34,7 +35,6 @@ import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { CONTENT_AREA_NAV } from '@/config/areaNav';
 
 type Photo = {
     uuid: string;
@@ -60,6 +60,8 @@ type Filters = {
 };
 
 const props = defineProps<{
+    /** Present when rendered as the event workspace's "Media" tab. */
+    workspace?: EventWorkspaceData;
     photos: {
         data: Photo[];
         links: PaginationLink[];
@@ -102,12 +104,21 @@ function visit(extra: Record<string, unknown> = {}) {
             ...extra,
         }).filter(([, v]) => v !== null && v !== '' && v !== undefined),
     );
-    router.get('/admin/photos', query, {
-        preserveScroll: true,
-        preserveState: true,
-        replace: true,
-        onSuccess: () => (selected.value = new Set()),
-    });
+
+    if (props.workspace) {
+        delete query.event_edition_id;
+    }
+
+    router.get(
+        props.workspace ? `${props.workspace.base_url}/media` : '/admin/photos',
+        query,
+        {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            onSuccess: () => (selected.value = new Set()),
+        },
+    );
 }
 
 function clearFilters() {
@@ -125,7 +136,7 @@ function clearFilters() {
 const activeFilters = computed(
     () =>
         [
-            props.filters.event_edition_id,
+            props.workspace ? null : props.filters.event_edition_id,
             props.filters.photographer_id,
             props.filters.from,
             props.filters.to,
@@ -207,12 +218,17 @@ const shortDate = (iso: string | null) =>
 </script>
 
 <template>
-    <Head title="Fotografías" />
+    <Head :title="workspace ? `Media — ${workspace.name}` : 'Fotografías'" />
 
     <div class="w-full space-y-6 p-4 pb-32 md:p-8 md:pb-32">
-        <SecondaryNav :items="CONTENT_AREA_NAV" />
+        <EventWorkspaceHeader
+            v-if="workspace"
+            :workspace="workspace"
+            active="media"
+            class="!mb-0"
+        />
 
-        <div class="flex flex-wrap items-end justify-between gap-4">
+        <div v-else class="flex flex-wrap items-end justify-between gap-4">
             <div class="flex items-center gap-3">
                 <span
                     class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
@@ -296,6 +312,7 @@ const shortDate = (iso: string | null) =>
             @submit.prevent="visit({ page: null })"
         >
             <FancySelect
+                v-if="!workspace"
                 v-model="draft.event_edition_id"
                 aria-label="Evento"
                 placeholder="Todos los eventos"

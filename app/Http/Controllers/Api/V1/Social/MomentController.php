@@ -109,6 +109,7 @@ class MomentController extends Controller
             'reactions' => [
                 'like' => (int) $fresh->likes_count,
                 'cheer' => (int) $fresh->cheers_count,
+                'total' => (int) $fresh->likes_count + (int) $fresh->cheers_count,
             ],
             'my_reactions' => $fresh->viewerReactions->map(fn ($r) => $r->type->value)->values(),
         ]);

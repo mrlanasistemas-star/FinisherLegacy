@@ -27,6 +27,7 @@ class StoreMomentRequest extends FormRequest
             'caption' => ['nullable', 'string', 'max:'.config('finisher.social.moment_caption_max')],
             'visibility' => ['required', Rule::enum(MomentVisibility::class)],
             'event_participant_id' => ['nullable', 'integer'],
+            'event_edition_id' => ['nullable', 'integer', 'exists:event_editions,id'],
             'medal_uuid' => ['nullable', 'uuid'],
             'gear_uuid' => ['nullable', 'uuid'],
             'event_media_uuids' => ['nullable', 'array', 'max:'.$maxPhotos],

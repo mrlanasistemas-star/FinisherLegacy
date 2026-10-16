@@ -186,6 +186,14 @@ return [
             'legacyplates.produce' => 'Producir Legacy Plates',
         ],
     ],
+    'nfc' => [
+        'label' => 'Etiquetas NFC',
+        'icon' => 'Nfc',
+        'permissions' => [
+            'nfc.view' => 'Ver etiquetas NFC y productos conectados',
+            'nfc.manage' => 'Generar, asignar y desactivar etiquetas NFC',
+        ],
+    ],
     'store' => [
         'label' => 'Tienda',
         'icon' => 'ShoppingBag',

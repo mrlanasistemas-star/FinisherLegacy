@@ -14,6 +14,7 @@ use App\Models\Athlete;
 use App\Models\AthleteIdentityConflict;
 use App\Models\LegacyCode;
 use App\Models\Medal;
+use App\Models\NfcAssignment;
 use App\Models\Plate;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -131,6 +132,14 @@ class ClaimLegacyCodeService
             'athlete_id' => $athlete->id,
             'linked_at' => now(),
         ]);
+
+        // The plate's NFC tag (docs/NFC.md) follows the Legacy Code: claiming
+        // through /l/{code} or through /n/{token} leaves both connected.
+        NfcAssignment::query()
+            ->open()
+            ->where('plate_id', $plate->id)
+            ->whereNull('activated_at')
+            ->update(['athlete_id' => $athlete->id, 'activated_at' => now()]);
 
         if ($plate->medal_id) {
             return Medal::find($plate->medal_id);

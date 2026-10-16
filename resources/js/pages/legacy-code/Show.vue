@@ -19,16 +19,17 @@ import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 import { claim, continueMethod } from '@/routes/legacy-code';
 import type { LegacyCodeAthlete, LegacyCodePlate } from '@/types';
 
-const { code, available, linked, ownedByMe, plate, athlete, qrUrl } =
-    defineProps<{
-        code: string;
-        available: boolean;
-        linked: boolean;
-        ownedByMe: boolean;
-        plate: LegacyCodePlate | null;
-        athlete: LegacyCodeAthlete | null;
-        qrUrl: string | null;
-    }>();
+// `qrUrl` is still sent by the server for old clients but no longer shown:
+// new Legacy Plates open this page through NFC (docs/NFC.md §QR).
+const { code, available, linked, ownedByMe, plate, athlete } = defineProps<{
+    code: string;
+    available: boolean;
+    linked: boolean;
+    ownedByMe: boolean;
+    plate: LegacyCodePlate | null;
+    athlete: LegacyCodeAthlete | null;
+    qrUrl: string | null;
+}>();
 
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth.user != null);
@@ -42,7 +43,7 @@ const pageTitle = computed(() =>
 const metaDescription = computed(() =>
     plate?.athlete_name && plate.event_name
         ? `El logro de ${plate.athlete_name} en ${plate.event_name}, conservado en su Legacy Profile.`
-        : 'Escanea tu placa Finisher Legacy para llegar a tu Legacy Profile.',
+        : 'Una pieza física que conecta tu medalla con tu historia digital.',
 );
 
 const confirmOpen = ref(false);
@@ -138,14 +139,9 @@ function submitClaim() {
                 class="rounded-2xl border border-border bg-card/50 p-8 text-center"
             >
                 <div
-                    class="mx-auto flex size-20 items-center justify-center rounded-xl border border-fl-gold/30 bg-white p-2"
+                    class="mx-auto flex size-20 items-center justify-center rounded-xl border border-fl-gold/30 bg-white text-fl-gold-ink"
                 >
-                    <img
-                        v-if="qrUrl"
-                        :src="qrUrl"
-                        alt="Código QR de este Legacy Code"
-                        class="size-full"
-                    />
+                    <Award class="size-8" />
                 </div>
                 <p
                     class="mt-6 rounded-md border border-border bg-background px-3 py-1.5 font-mono text-sm text-fl-gold-ink"

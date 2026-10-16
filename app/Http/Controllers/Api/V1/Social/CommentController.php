@@ -36,6 +36,8 @@ class CommentController extends Controller
             ->with(['author.athleteProfile', 'moment'])
             ->whereHas('author')
             ->when($hidden !== [], fn ($q) => $q->whereNotIn('user_id', $hidden))
+            // Hidden by moderation: only its author still sees it.
+            ->where(fn ($q) => $q->whereNull('hidden_at')->orWhere('user_id', $user->id))
             ->orderBy('id')
             ->paginate((int) config('finisher.social.comments_per_page'));
 
