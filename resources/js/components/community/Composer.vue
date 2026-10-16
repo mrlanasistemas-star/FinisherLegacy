@@ -1,22 +1,28 @@
 <script setup lang="ts">
 /**
- * "¿Qué logro quieres compartir?" — posts through the same CreateMoment
- * action the mobile app uses (StoreMomentRequest validation, photo
- * processing, ownership checks of linked participations/medals). Videos
- * aren't accepted by that pipeline yet, so the attach button is photos
- * only (honest about what the backend supports).
+ * Composer — "¿Qué quieres compartir?". Pick a post kind (Momento,
+ * Resultado, Foto, Mi equipo, Legacy Plate, Texto), write, attach photos,
+ * relate an event and choose who sees it. Posts through the same
+ * CreateMoment action the mobile app uses (validation, photo processing,
+ * ownership checks). Photos only: the moment upload pipeline does not
+ * accept video yet, so the UI doesn't pretend it does.
  */
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import {
-    CalendarCheck,
+    CalendarDays,
+    Globe2,
     ImagePlus,
     Lock,
-    Trophy,
+    Medal,
+    PenLine,
+    Camera,
+    ShoppingBag,
+    Sparkles,
+    Timer,
     Users,
-    Globe2,
     X,
 } from '@lucide/vue';
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
@@ -25,35 +31,87 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { store } from '@/routes/community/posts';
 import { edit as editProfile } from '@/routes/dashboard/profile';
-import type { VisibilityOption } from '@/types';
+import type { PostKind, VisibilityOption } from '@/types';
 
 export type ComposerData = {
     has_profile: boolean;
-    participations: { id: number; label: string; date: string | null }[];
+    participations: {
+        id: number;
+        event_edition_id: number;
+        label: string;
+        date: string | null;
+    }[];
+    editions: { id: number; label: string; date: string | null }[];
     medals: { uuid: string; title: string }[];
-    types: { value: string; label: string }[];
+    gear: { uuid: string; label: string }[];
 };
 
 const props = defineProps<{
     composer: ComposerData;
     visibilityOptions: VisibilityOption[];
-    limits: { caption_max: number; max_photos: number };
+    limits: { caption_max: number; max_photos: number; photo_max_kb?: number };
 }>();
+
+const emit = defineEmits<{ published: [] }>();
 
 const page = usePage();
 const user = computed(() => page.props.auth.user!);
 const profile = computed(() => page.props.auth.profile);
 
-type Panel = 'none' | 'event' | 'achievement';
-const panel = ref<Panel>('none');
-const achievementMode = ref<'medal' | 'record'>('medal');
+const kinds: {
+    value: PostKind;
+    label: string;
+    icon: typeof PenLine;
+    hint: string;
+}[] = [
+    {
+        value: 'moment',
+        label: 'Momento',
+        icon: Sparkles,
+        hint: 'Un entrenamiento, una marca o un recuerdo.',
+    },
+    {
+        value: 'race_result',
+        label: 'Resultado',
+        icon: Timer,
+        hint: 'Comparte tu tiempo oficial de una carrera.',
+    },
+    {
+        value: 'photo',
+        label: 'Foto',
+        icon: Camera,
+        hint: 'Hasta 4 fotos de tu día.',
+    },
+    {
+        value: 'gear',
+        label: 'Mi equipo',
+        icon: ShoppingBag,
+        hint: 'El equipo que te acompaña.',
+    },
+    {
+        value: 'legacy_plate',
+        label: 'Legacy Plate',
+        icon: Medal,
+        hint: 'Tu medalla y su historia.',
+    },
+    {
+        value: 'text',
+        label: 'Texto',
+        icon: PenLine,
+        hint: 'Una idea, un ánimo, una meta.',
+    },
+];
+
+const kind = ref<PostKind>('text');
+const expanded = ref(false);
 
 const form = useForm<{
-    type: string;
     caption: string;
     visibility: string | number | null;
     event_participant_id: string | number | null;
+    event_edition_id: string | number | null;
     medal_uuid: string | number | null;
+    gear_uuid: string | number | null;
     metrics: {
         title: string;
         distance_km: string;
@@ -62,11 +120,12 @@ const form = useForm<{
     };
     photos: File[];
 }>({
-    type: 'manual',
     caption: '',
     visibility: 'public',
     event_participant_id: null,
+    event_edition_id: null,
     medal_uuid: null,
+    gear_uuid: null,
     metrics: {
         title: '',
         distance_km: '',
@@ -78,18 +137,29 @@ const form = useForm<{
 
 const previews = ref<string[]>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
+const sizeError = ref<string | null>(null);
 
 function pickPhotos(event: Event) {
-    const files = Array.from((event.target as HTMLInputElement).files ?? []);
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    const maxBytes = (props.limits.photo_max_kb ?? 8192) * 1024;
+    const tooBig = files.filter((file) => file.size > maxBytes);
+    sizeError.value = tooBig.length
+        ? 'Alguna foto pesa demasiado; elige una más ligera.'
+        : null;
+
     const room = props.limits.max_photos - form.photos.length;
-    const accepted = files.slice(0, Math.max(room, 0));
+    const accepted = files
+        .filter((file) => file.size <= maxBytes)
+        .slice(0, Math.max(room, 0));
 
     form.photos = [...form.photos, ...accepted];
     previews.value = [
         ...previews.value,
         ...accepted.map((file) => URL.createObjectURL(file)),
     ];
-    (event.target as HTMLInputElement).value = '';
+    input.value = '';
+    expanded.value = true;
 }
 
 function removePhoto(index: number) {
@@ -102,61 +172,116 @@ onBeforeUnmount(() =>
     previews.value.forEach((url) => URL.revokeObjectURL(url)),
 );
 
-function togglePanel(next: Panel) {
-    panel.value = panel.value === next ? 'none' : next;
+function selectKind(next: PostKind) {
+    kind.value = next;
+    expanded.value = true;
+
+    if (next === 'photo' && !form.photos.length) {
+        fileInput.value?.click();
+    }
 }
 
-const hasRecord = computed(
-    () =>
-        panel.value === 'achievement' &&
-        achievementMode.value === 'record' &&
-        (form.metrics.title ||
-            form.metrics.distance_km ||
-            form.metrics.duration_minutes ||
-            form.metrics.is_personal_record),
+// A race result belongs to its event: keep the related event in sync.
+watch(
+    () => form.event_participant_id,
+    (id) => {
+        const participation = props.composer.participations.find(
+            (p) => p.id === Number(id),
+        );
+
+        if (participation) {
+            form.event_edition_id = participation.event_edition_id;
+        }
+    },
 );
 
-// The post type follows what is attached — nobody has to pick a type.
+const hasMetrics = computed(
+    () =>
+        kind.value === 'moment' &&
+        !!(
+            form.metrics.title ||
+            form.metrics.distance_km ||
+            form.metrics.duration_minutes ||
+            form.metrics.is_personal_record
+        ),
+);
+
+/** The stored MomentType for the chosen kind (see App\Enums\MomentType::kind()). */
 const resolvedType = computed(() => {
-    if (panel.value === 'event' && form.event_participant_id) {
-        return 'race_completed';
+    switch (kind.value) {
+        case 'race_result':
+            return 'race_completed';
+        case 'photo':
+            return 'photo';
+        case 'gear':
+            return 'gear';
+        case 'legacy_plate':
+            return 'legacy_plate';
+        case 'moment':
+            if (form.medal_uuid) {
+                return 'medal_claimed';
+            }
+
+            if (hasMetrics.value) {
+                return form.metrics.is_personal_record
+                    ? 'personal_record'
+                    : 'training';
+            }
+
+            return 'memory';
+        default:
+            return 'text';
+    }
+});
+
+const missing = computed<string | null>(() => {
+    if (kind.value === 'race_result' && !form.event_participant_id) {
+        return 'Elige la carrera de tu resultado.';
+    }
+
+    if (kind.value === 'photo' && !form.photos.length) {
+        return 'Agrega al menos una foto.';
+    }
+
+    if (kind.value === 'gear' && !form.gear_uuid) {
+        return 'Elige un producto de Mi equipo.';
+    }
+
+    if (kind.value === 'legacy_plate' && !form.medal_uuid && !form.gear_uuid) {
+        return 'Elige la medalla de tu Legacy Plate.';
     }
 
     if (
-        panel.value === 'achievement' &&
-        achievementMode.value === 'medal' &&
-        form.medal_uuid
+        (kind.value === 'text' || kind.value === 'moment') &&
+        !form.caption.trim() &&
+        !form.photos.length &&
+        !form.medal_uuid &&
+        !hasMetrics.value
     ) {
-        return 'medal_claimed';
+        return 'Escribe algo para publicar.';
     }
 
-    if (hasRecord.value) {
-        return form.metrics.is_personal_record ? 'personal_record' : 'training';
-    }
-
-    return 'manual';
+    return null;
 });
 
-const canSubmit = computed(
-    () =>
-        !form.processing &&
-        (form.caption.trim() !== '' ||
-            form.photos.length > 0 ||
-            resolvedType.value !== 'manual'),
-);
-
 function submit() {
+    if (missing.value) {
+        return;
+    }
+
+    const usesMedal = kind.value === 'moment' || kind.value === 'legacy_plate';
+    const usesGear = kind.value === 'gear' || kind.value === 'legacy_plate';
+
     form.transform((data) => ({
         type: resolvedType.value,
         caption: data.caption,
         visibility: data.visibility,
         event_participant_id:
-            panel.value === 'event' ? data.event_participant_id : null,
-        medal_uuid:
-            panel.value === 'achievement' && achievementMode.value === 'medal'
-                ? data.medal_uuid
-                : null,
-        metrics: hasRecord.value
+            kind.value === 'race_result' ? data.event_participant_id : null,
+        event_edition_id: data.event_edition_id,
+        medal_uuid: usesMedal ? data.medal_uuid : null,
+        gear_uuid: usesGear ? data.gear_uuid : null,
+        metrics: hasMetrics.value
             ? {
                   title: data.metrics.title || null,
                   distance_km: data.metrics.distance_km || null,
@@ -169,12 +294,18 @@ function submit() {
         photos: data.photos,
     })).post(store().url, {
         preserveScroll: true,
+        preserveState: true,
         forceFormData: true,
+        // Show the new post on top: refresh the feed from its first page.
+        only: ['posts'],
+        reset: ['posts'],
         onSuccess: () => {
             previews.value.forEach((url) => URL.revokeObjectURL(url));
             previews.value = [];
             form.reset();
-            panel.value = 'none';
+            kind.value = 'text';
+            expanded.value = false;
+            emit('published');
         },
     });
 }
@@ -197,10 +328,21 @@ const participationOptions = computed(() =>
         description: p.date ?? undefined,
     })),
 );
-
+const editionOptions = computed(() =>
+    props.composer.editions.map((e) => ({
+        value: e.id,
+        label: e.label,
+        description: e.date ?? undefined,
+    })),
+);
 const medalOptions = computed(() =>
     props.composer.medals.map((m) => ({ value: m.uuid, label: m.title })),
 );
+const gearOptions = computed(() =>
+    props.composer.gear.map((g) => ({ value: g.uuid, label: g.label })),
+);
+
+const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
 </script>
 
 <template>
@@ -226,154 +368,209 @@ const medalOptions = computed(() =>
                 />
                 <div class="min-w-0 flex-1">
                     <label for="composer-caption" class="sr-only"
-                        >¿Qué logro quieres compartir?</label
+                        >¿Qué quieres compartir?</label
                     >
                     <textarea
                         id="composer-caption"
                         v-model="form.caption"
-                        rows="2"
+                        :rows="expanded ? 3 : 1"
                         :maxlength="limits.caption_max"
-                        placeholder="¿Qué logro quieres compartir?"
+                        placeholder="¿Qué quieres compartir hoy?"
                         class="w-full resize-none border-0 bg-transparent px-0 py-2 text-[15px] placeholder:text-muted-foreground focus:ring-0 focus:outline-none"
+                        @focus="expanded = true"
                     />
                     <InputError :message="form.errors.caption" />
                 </div>
             </div>
 
-            <!-- Photo previews -->
-            <div v-if="previews.length" class="mt-3 grid grid-cols-4 gap-2">
-                <div
-                    v-for="(src, index) in previews"
-                    :key="src"
-                    class="relative aspect-square overflow-hidden rounded-lg bg-muted"
-                >
-                    <img :src="src" alt="" class="size-full object-cover" />
-                    <button
-                        type="button"
-                        class="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white"
-                        :aria-label="`Quitar foto ${index + 1}`"
-                        @click="removePhoto(index)"
-                    >
-                        <X class="size-3.5" />
-                    </button>
-                </div>
-            </div>
-            <InputError
-                :message="
-                    form.errors.photos ||
-                    (form.errors as Record<string, string>)['photos.0']
-                "
-            />
-
-            <!-- Event panel -->
+            <!-- Kind picker -->
             <div
-                v-if="panel === 'event'"
-                class="mt-3 rounded-lg border border-border bg-background p-3"
+                class="-mx-1 mt-2 flex [scrollbar-width:none] gap-1.5 overflow-x-auto px-1 pb-1"
+                role="radiogroup"
+                aria-label="Tipo de publicación"
             >
-                <label
-                    for="composer-event"
-                    class="text-xs font-medium text-muted-foreground"
-                    >¿En qué evento participaste?</label
+                <button
+                    v-for="item in kinds"
+                    :key="item.value"
+                    type="button"
+                    role="radio"
+                    :aria-checked="kind === item.value"
+                    class="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    :class="
+                        kind === item.value
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                    "
+                    @click="selectKind(item.value)"
                 >
-                <FancySelect
-                    v-if="composer.participations.length"
-                    id="composer-event"
-                    v-model="form.event_participant_id"
-                    :options="participationOptions"
-                    placeholder="Selecciona tu participación"
-                    class="mt-1.5"
-                />
-                <p v-else class="mt-1.5 text-sm text-muted-foreground">
-                    Aún no tienes participaciones registradas. Tu resultado
-                    aparecerá aquí después de tu próximo evento.
+                    <component :is="item.icon" class="size-3.5" />
+                    {{ item.label }}
+                </button>
+            </div>
+
+            <div v-if="expanded" class="mt-3 space-y-3">
+                <p class="text-xs text-muted-foreground">
+                    {{ activeKind.hint }}
                 </p>
-            </div>
 
-            <!-- Achievement panel -->
-            <div
-                v-if="panel === 'achievement'"
-                class="mt-3 space-y-3 rounded-lg border border-border bg-background p-3"
-            >
-                <div class="flex gap-1 rounded-full bg-muted p-1 text-xs">
-                    <button
-                        type="button"
-                        class="flex-1 rounded-full px-3 py-1.5 font-medium"
-                        :class="
-                            achievementMode === 'medal'
-                                ? 'bg-card shadow-sm'
-                                : 'text-muted-foreground'
-                        "
-                        @click="achievementMode = 'medal'"
+                <!-- Race result -->
+                <div v-if="kind === 'race_result'">
+                    <FancySelect
+                        v-if="composer.participations.length"
+                        id="composer-participation"
+                        v-model="form.event_participant_id"
+                        :options="participationOptions"
+                        aria-label="Tu carrera"
+                        placeholder="Elige tu carrera"
+                    />
+                    <p
+                        v-else
+                        class="rounded-lg bg-fl-paper p-3 text-sm text-muted-foreground"
                     >
-                        Medalla
-                    </button>
-                    <button
-                        type="button"
-                        class="flex-1 rounded-full px-3 py-1.5 font-medium"
-                        :class="
-                            achievementMode === 'record'
-                                ? 'bg-card shadow-sm'
-                                : 'text-muted-foreground'
-                        "
-                        @click="achievementMode = 'record'"
-                    >
-                        Entrenamiento / marca
-                    </button>
+                        Aún no tienes resultados registrados. Aparecerán aquí
+                        después de tu próxima carrera.
+                    </p>
                 </div>
 
-                <template v-if="achievementMode === 'medal'">
+                <!-- Moment: medal or training numbers -->
+                <div
+                    v-if="kind === 'moment'"
+                    class="space-y-2 rounded-xl border border-border bg-fl-paper p-3"
+                >
                     <FancySelect
                         v-if="composer.medals.length"
                         v-model="form.medal_uuid"
                         :options="medalOptions"
-                        aria-label="Medalla"
-                        placeholder="Selecciona una medalla"
+                        aria-label="Medalla (opcional)"
+                        placeholder="Medalla (opcional)"
                     />
-                    <p v-else class="text-sm text-muted-foreground">
-                        Registra una medalla en Mi Legado para compartirla.
-                    </p>
-                </template>
-
-                <div v-else class="grid gap-2 sm:grid-cols-3">
-                    <Input
-                        v-model="form.metrics.title"
-                        maxlength="80"
-                        placeholder="Título (ej. Fondo largo)"
-                        aria-label="Título del entrenamiento"
-                        class="sm:col-span-3"
-                    />
-                    <Input
-                        v-model="form.metrics.distance_km"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Distancia (km)"
-                        aria-label="Distancia en kilómetros"
-                    />
-                    <Input
-                        v-model="form.metrics.duration_minutes"
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="Tiempo (min)"
-                        aria-label="Tiempo en minutos"
-                    />
-                    <label
-                        class="flex h-10 items-center gap-2 rounded-lg border border-input bg-card px-3 text-sm"
-                    >
-                        <Checkbox
-                            :model-value="form.metrics.is_personal_record"
-                            @update:model-value="
-                                (v) => (form.metrics.is_personal_record = !!v)
-                            "
+                    <div class="grid gap-2 sm:grid-cols-3">
+                        <Input
+                            v-model="form.metrics.title"
+                            maxlength="80"
+                            placeholder="Título (ej. Fondo largo)"
+                            aria-label="Título"
+                            class="sm:col-span-3"
                         />
-                        Marca personal
-                    </label>
+                        <Input
+                            v-model="form.metrics.distance_km"
+                            type="number"
+                            inputmode="decimal"
+                            min="0"
+                            step="0.01"
+                            placeholder="Distancia (km)"
+                            aria-label="Distancia en kilómetros"
+                        />
+                        <Input
+                            v-model="form.metrics.duration_minutes"
+                            type="number"
+                            inputmode="numeric"
+                            min="0"
+                            step="1"
+                            placeholder="Tiempo (min)"
+                            aria-label="Tiempo en minutos"
+                        />
+                        <label
+                            class="flex h-10 items-center gap-2 rounded-lg border border-input bg-card px-3 text-sm"
+                        >
+                            <Checkbox
+                                :model-value="form.metrics.is_personal_record"
+                                @update:model-value="
+                                    (v) =>
+                                        (form.metrics.is_personal_record = !!v)
+                                "
+                            />
+                            Marca personal
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Gear -->
+                <div v-if="kind === 'gear' || kind === 'legacy_plate'">
+                    <FancySelect
+                        v-if="kind === 'legacy_plate' && composer.medals.length"
+                        v-model="form.medal_uuid"
+                        :options="medalOptions"
+                        aria-label="Medalla de tu Legacy Plate"
+                        placeholder="Medalla de tu Legacy Plate"
+                    />
+                    <FancySelect
+                        v-else-if="composer.gear.length"
+                        v-model="form.gear_uuid"
+                        :options="gearOptions"
+                        aria-label="Producto de Mi equipo"
+                        placeholder="Elige un producto de Mi equipo"
+                    />
+                    <p
+                        v-else
+                        class="rounded-lg bg-fl-paper p-3 text-sm text-muted-foreground"
+                    >
+                        {{
+                            kind === 'gear'
+                                ? 'Cuando conectes un producto aparecerá aquí.'
+                                : 'Registra una medalla en Mi legado para mostrar tu Legacy Plate.'
+                        }}
+                    </p>
+                </div>
+
+                <!-- Photo previews -->
+                <div v-if="previews.length" class="grid grid-cols-4 gap-2">
+                    <div
+                        v-for="(src, index) in previews"
+                        :key="src"
+                        class="relative aspect-square overflow-hidden rounded-lg bg-muted"
+                    >
+                        <img :src="src" alt="" class="size-full object-cover" />
+                        <button
+                            type="button"
+                            class="absolute top-1 right-1 flex size-7 items-center justify-center rounded-full bg-black/60 text-white"
+                            :aria-label="`Quitar foto ${index + 1}`"
+                            @click="removePhoto(index)"
+                        >
+                            <X class="size-3.5" />
+                        </button>
+                    </div>
+                </div>
+                <InputError
+                    :message="
+                        sizeError ||
+                        form.errors.photos ||
+                        (form.errors as Record<string, string>)['photos.0']
+                    "
+                />
+
+                <!-- Related event -->
+                <div
+                    v-if="kind !== 'race_result' && composer.editions.length"
+                    class="flex items-center gap-2"
+                >
+                    <CalendarDays
+                        class="size-4 shrink-0 text-fl-gold-ink"
+                        aria-hidden="true"
+                    />
+                    <FancySelect
+                        id="composer-event"
+                        v-model="form.event_edition_id"
+                        :options="editionOptions"
+                        aria-label="Evento relacionado (opcional)"
+                        placeholder="Evento relacionado (opcional)"
+                        size="sm"
+                        class="flex-1"
+                    />
+                    <button
+                        v-if="form.event_edition_id"
+                        type="button"
+                        class="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+                        aria-label="Quitar evento"
+                        @click="form.event_edition_id = null"
+                    >
+                        <X class="size-4" />
+                    </button>
                 </div>
             </div>
 
             <div
-                class="mt-3 flex flex-wrap items-center gap-1 border-t border-border pt-3"
+                class="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3"
             >
                 <input
                     ref="fileInput"
@@ -386,40 +583,17 @@ const medalOptions = computed(() =>
                 />
                 <button
                     type="button"
-                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                    class="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
                     :disabled="form.photos.length >= limits.max_photos"
                     @click="fileInput?.click()"
                 >
-                    <ImagePlus class="size-4 text-emerald-700" />
-                    Foto
-                </button>
-                <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors hover:bg-muted"
-                    :class="
-                        panel === 'event'
-                            ? 'bg-muted text-foreground'
-                            : 'text-muted-foreground'
-                    "
-                    :aria-pressed="panel === 'event'"
-                    @click="togglePanel('event')"
-                >
-                    <CalendarCheck class="size-4 text-sky-700" />
-                    Evento
-                </button>
-                <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm transition-colors hover:bg-muted"
-                    :class="
-                        panel === 'achievement'
-                            ? 'bg-muted text-foreground'
-                            : 'text-muted-foreground'
-                    "
-                    :aria-pressed="panel === 'achievement'"
-                    @click="togglePanel('achievement')"
-                >
-                    <Trophy class="size-4 text-fl-gold-ink" />
-                    Logro
+                    <ImagePlus class="size-4 text-fl-gold-ink" />
+                    Fotos
+                    <span
+                        v-if="form.photos.length"
+                        class="legacy-numeric text-xs"
+                        >{{ form.photos.length }}/{{ limits.max_photos }}</span
+                    >
                 </button>
 
                 <div class="ml-auto flex items-center gap-2">
@@ -431,18 +605,28 @@ const medalOptions = computed(() =>
                         v-model="form.visibility"
                         :options="visibilitySelectOptions"
                         size="sm"
-                        class="h-9 w-40 rounded-full text-xs font-medium"
+                        class="h-10 w-36 rounded-full text-xs font-medium"
                     />
                     <Button
                         type="submit"
-                        size="sm"
-                        class="h-9 rounded-full px-5 tracking-wide"
-                        :disabled="!canSubmit"
+                        class="h-10 rounded-full px-5 tracking-wide"
+                        :disabled="form.processing || !!missing"
+                        :title="missing ?? undefined"
                     >
                         {{ form.processing ? 'Publicando…' : 'Publicar' }}
                     </Button>
                 </div>
             </div>
+            <p
+                v-if="form.progress"
+                class="mt-2 h-1 overflow-hidden rounded-full bg-muted"
+                aria-hidden="true"
+            >
+                <span
+                    class="block h-full bg-fl-gold transition-[width]"
+                    :style="{ width: `${form.progress.percentage}%` }"
+                />
+            </p>
         </form>
     </div>
 </template>

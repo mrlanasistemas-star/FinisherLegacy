@@ -40,12 +40,16 @@ class ReactToMoment
         }
     }
 
-    public function remove(User $user, LegacyMoment $moment, MomentReactionType $type): void
+    /**
+     * @param  MomentReactionType|null  $type  null removes every reaction of the user on the Moment
+     *                                         (the web shows a single "Celebrar" toggle).
+     */
+    public function remove(User $user, LegacyMoment $moment, ?MomentReactionType $type): void
     {
         LegacyMomentReaction::query()
             ->where('legacy_moment_id', $moment->id)
             ->where('user_id', $user->id)
-            ->where('type', $type)
+            ->when($type !== null, fn ($q) => $q->where('type', $type))
             ->delete();
     }
 }

@@ -15,12 +15,19 @@ use Illuminate\Support\Str;
  * @property int $legacy_moment_id
  * @property int $user_id
  * @property string $body
+ * @property Carbon|null $hidden_at Hidden by moderation (author still sees it)
+ * @property int|null $hidden_by
  * @property Carbon $created_at
  */
-#[Fillable(['uuid', 'legacy_moment_id', 'user_id', 'body'])]
+#[Fillable(['uuid', 'legacy_moment_id', 'user_id', 'body', 'hidden_at', 'hidden_by'])]
 class LegacyMomentComment extends Model
 {
     use SoftDeletes;
+
+    protected function casts(): array
+    {
+        return ['hidden_at' => 'datetime'];
+    }
 
     protected static function booted(): void
     {

@@ -31,13 +31,28 @@ class MomentResource extends JsonResource
         $medal = $this->medal;
         $medalFront = $medal?->images?->firstWhere('type', 'front');
 
+        $kind = $this->kind();
+        $edition = $this->eventEdition ?? $participant?->eventEdition;
+
         return [
             'uuid' => $this->uuid,
             'type' => $this->type->value,
+            // Comunidad v1 card family (spec §54) — additive for the app.
+            'kind' => $kind->value,
+            'kind_label' => $kind->label(),
             'caption' => $this->caption,
             'visibility' => $this->visibility->value,
             'created_at' => $this->created_at->toIso8601String(),
             'is_owner' => $viewer !== null && $viewer->id === $this->user_id,
+            'is_hidden' => $this->hidden_at !== null,
+            'share_url' => route('community.posts.show', $this->uuid),
+            'event' => $edition === null ? null : [
+                'name' => $edition->event?->name,
+                'slug' => $edition->event?->slug,
+                'edition' => $edition->name,
+                'date' => $edition->event_date?->toDateString(),
+                'city' => $edition->city,
+            ],
             'author' => new AthleteResource($this->author),
             'activity' => $participant === null ? null : [
                 'participant_id' => $viewer !== null && $viewer->id === $this->user_id ? $participant->id : null,
@@ -76,6 +91,7 @@ class MomentResource extends JsonResource
             'reactions' => [
                 'like' => (int) ($this->likes_count ?? 0),
                 'cheer' => (int) ($this->cheers_count ?? 0),
+                'total' => (int) ($this->likes_count ?? 0) + (int) ($this->cheers_count ?? 0),
             ],
             'my_reactions' => $this->relationLoaded('viewerReactions')
                 ? $this->viewerReactions->map(fn (LegacyMomentReaction $r) => $r->type->value)->values()

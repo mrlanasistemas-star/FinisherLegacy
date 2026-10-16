@@ -26,7 +26,7 @@ class FollowAthlete
             throw new SocialActionNotAllowedException('No puedes seguirte a ti mismo.');
         }
 
-        if (! $this->visibility->canViewProfile($target, $follower)) {
+        if (! $this->visibility->canSeeProfileShell($target, $follower)) {
             throw new SocialActionNotAllowedException('No puedes seguir a este atleta.');
         }
 
