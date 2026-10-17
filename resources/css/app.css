@@ -24,6 +24,24 @@
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
 
+    /* Finisher Legacy radius system (UI System §4) — generates rounded-control,
+       rounded-card, rounded-media, rounded-hero. Raw values live in :root (see
+       below) so component CSS can also read them via var(). They replace ~19
+       ad-hoc radii / arbitrary rounded-[Npx] values. Pills stay rounded-full. */
+    --radius-control: var(--fl-radius-control);
+    --radius-card: var(--fl-radius-card);
+    --radius-media: var(--fl-radius-media);
+    --radius-hero: var(--fl-radius-hero);
+
+    /* Finisher Legacy elevation system (UI System §5) — generates
+       shadow-fl-micro/soft/float/overlay. Warm-tinted, three elevations plus a
+       control micro-shadow; replaces the ~25 one-off shadow-[...] definitions.
+       Raw values live in :root so component CSS can read them via var(). */
+    --shadow-fl-micro: var(--fl-shadow-micro);
+    --shadow-fl-soft: var(--fl-shadow-soft);
+    --shadow-fl-float: var(--fl-shadow-float);
+    --shadow-fl-overlay: var(--fl-shadow-overlay);
+
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
@@ -97,6 +115,18 @@
     --fl-cream: #f4eedf;
     --fl-stone: #6b675e;
     --fl-line: #e7e3da;
+
+    /* Radius + elevation raw values (UI System §4/§5). The @theme block maps
+       these to the rounded-* / shadow-fl-* utilities; keeping the source of
+       truth here means component CSS (.fl-card etc.) can read them via var(). */
+    --fl-radius-control: 0.625rem;
+    --fl-radius-card: 1rem;
+    --fl-radius-media: 1.25rem;
+    --fl-radius-hero: 1.75rem;
+    --fl-shadow-micro: 0 1px 2px rgb(23 23 20 / 0.04);
+    --fl-shadow-soft: 0 2px 10px -4px rgb(23 23 20 / 0.08);
+    --fl-shadow-float: 0 18px 40px -28px rgb(23 23 20 / 0.32);
+    --fl-shadow-overlay: 0 32px 64px -24px rgb(23 23 20 / 0.4);
 
     /* Motion tokens for the public site — durations only, easing stays the
        cubic-bezier already used by <Reveal>/<StaggerGroup> below. Kept under
@@ -219,11 +249,60 @@
         line-height: 1.05;
         color: var(--foreground);
     }
+    /* Fluid editorial type scale (UI System §3). Pair with .fl-display for the
+       serif look, or use directly for fluid sans sizing. Headings are set in
+       the serif; body-lg stays in the sans. */
+    .fl-h1 {
+        font-size: clamp(2rem, 4vw, 3.5rem);
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+    }
+    .fl-h2 {
+        font-size: clamp(1.5rem, 2.6vw, 2.5rem);
+        line-height: 1.12;
+        letter-spacing: -0.015em;
+    }
+    .fl-h3 {
+        font-size: clamp(1.25rem, 1.8vw, 1.6rem);
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+    }
+    .fl-body-lg {
+        font-size: clamp(1.0625rem, 1.1vw, 1.1875rem);
+        line-height: 1.6;
+    }
     .fl-card {
         background: var(--card);
         border: 1px solid var(--border);
-        border-radius: 0.75rem;
-        box-shadow: 0 1px 2px rgb(23 23 20 / 0.03);
+        border-radius: var(--fl-radius-card);
+        box-shadow: var(--fl-shadow-soft);
+    }
+    /* Section vertical rhythm (UI System §6). Alternate these down a page —
+       never run one rhythm the whole length. Desktop 80–144, mobile 48–80. */
+    .fl-section-sm {
+        padding-block: 3rem;
+    }
+    .fl-section {
+        padding-block: 4rem;
+    }
+    .fl-section-lg {
+        padding-block: 6rem;
+    }
+    @media (min-width: 640px) {
+        .fl-section-sm {
+            padding-block: 4rem;
+        }
+        .fl-section {
+            padding-block: 6rem;
+        }
+        .fl-section-lg {
+            padding-block: 8rem;
+        }
+    }
+    @media (min-width: 1024px) {
+        .fl-section-lg {
+            padding-block: 9rem;
+        }
     }
     .fl-container {
         margin-inline: auto;
