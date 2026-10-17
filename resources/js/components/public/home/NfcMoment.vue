@@ -60,7 +60,7 @@ onBeforeUnmount(() => observer?.disconnect());
         aria-labelledby="nfc-title"
     >
         <div
-            class="fl-container grid items-center gap-12 py-20 sm:py-28 lg:grid-cols-12 lg:gap-10"
+            class="fl-container fl-section-sm grid items-center gap-12 lg:grid-cols-12 lg:gap-10"
         >
             <div class="lg:col-span-5">
                 <p class="fl-eyebrow flex items-center gap-2">
@@ -138,7 +138,7 @@ onBeforeUnmount(() => observer?.disconnect());
 
                     <!-- revealed card -->
                     <div
-                        class="fl-tap__card absolute top-[34%] right-0 w-[38%] rounded-2xl border border-border bg-card p-4 shadow-[0_30px_50px_-30px_rgb(23_23_20/0.45)] sm:p-5"
+                        class="fl-tap__card absolute top-[34%] right-0 w-[38%] rounded-media border border-border bg-card p-4 shadow-fl-float sm:p-5"
                     >
                         <p
                             class="text-[10px] font-semibold tracking-[0.18em] text-fl-gold-ink uppercase"

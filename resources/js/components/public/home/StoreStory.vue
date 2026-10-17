@@ -1,18 +1,40 @@
 <script setup lang="ts">
 /**
  * Store band (owner spec §43): the physical product is not merch, it's
- * part of your story. Real products from the catalog (Legacy Plate
- * first); nothing is shown when the catalog is empty.
+ * part of your story. The Legacy Plate is elevated as the hero product
+ * (the controller forces it first and passes `legacyPlateSlug`, so the
+ * CTA links straight to it) with its photoreal render; the rest of the
+ * catalogue rides a horizontal rail instead of a dense grid (UI System
+ * §7/§13). Real products only; nothing shows when the catalogue is empty.
  */
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight } from '@lucide/vue';
+import { ArrowRight, Nfc } from '@lucide/vue';
+import { computed } from 'vue';
+import Reveal from '@/components/motion/Reveal.vue';
+import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
 import { Button } from '@/components/ui/button';
+import { MEDIA } from '@/config/media';
 import { productCardProps } from '@/lib/store';
-import { index as storeIndex } from '@/routes/store/products';
+import {
+    index as storeIndex,
+    show as productShow,
+} from '@/routes/store/products';
 import type { PublicProductCard } from '@/types';
 
-defineProps<{ products: PublicProductCard[] }>();
+const props = defineProps<{
+    products: PublicProductCard[];
+    legacyPlateSlug: string | null;
+}>();
+
+const platePhoto = MEDIA.plate.hero;
+
+// Keep the hero plate out of the rail so it isn't shown twice.
+const railProducts = computed(() =>
+    props.legacyPlateSlug
+        ? props.products.filter((p) => p.slug !== props.legacyPlateSlug)
+        : props.products,
+);
 
 const lines = [
     'Legacy Plate',
@@ -26,7 +48,7 @@ const lines = [
 <template>
     <section
         v-if="products.length"
-        class="py-20 sm:py-28"
+        class="fl-section-lg"
         aria-labelledby="tienda-title"
     >
         <div class="fl-container">
@@ -35,7 +57,7 @@ const lines = [
                     <p class="fl-eyebrow">Tienda</p>
                     <h2
                         id="tienda-title"
-                        class="fl-display mt-4 text-[2.6rem] sm:text-6xl"
+                        class="fl-display mt-4 text-[clamp(2.4rem,5vw,3.75rem)]"
                     >
                         No es merch.
                         <span class="block text-fl-stone italic"
@@ -44,7 +66,7 @@ const lines = [
                     </h2>
                 </div>
                 <div class="lg:col-span-5 lg:pb-2">
-                    <p class="text-lg leading-relaxed text-muted-foreground">
+                    <p class="fl-body-lg text-muted-foreground">
                         Lo que llevas puesto el día de la carrera y lo que te
                         llevas a casa. Con NFC, se conecta a tu perfil.
                     </p>
@@ -60,28 +82,93 @@ const lines = [
                 </div>
             </div>
 
-            <div
-                class="mt-12 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 lg:grid-cols-4"
-            >
-                <ProductCard
-                    v-for="product in products"
-                    :key="product.uuid"
-                    v-bind="productCardProps(product)"
-                />
-            </div>
-
-            <div class="mt-12 flex justify-center">
-                <Button
-                    as-child
-                    size="lg"
-                    variant="outline"
-                    class="h-12 rounded-full bg-card px-7"
+            <!-- Hero product: the Legacy Plate -->
+            <Reveal v-if="legacyPlateSlug" class="mt-14">
+                <div
+                    class="grid overflow-hidden rounded-hero border border-border bg-card shadow-fl-soft lg:grid-cols-2"
                 >
-                    <Link :href="storeIndex()">
-                        Ver tienda <ArrowRight class="size-4" />
-                    </Link>
-                </Button>
+                    <div
+                        class="relative aspect-[4/3] bg-fl-black lg:aspect-auto lg:min-h-[26rem]"
+                    >
+                        <img
+                            :src="platePhoto.src"
+                            :srcset="platePhoto.srcset"
+                            sizes="(min-width: 1024px) 50vw, 100vw"
+                            :width="platePhoto.width"
+                            :height="platePhoto.height"
+                            :alt="platePhoto.alt"
+                            loading="lazy"
+                            decoding="async"
+                            class="size-full object-cover"
+                        />
+                    </div>
+                    <div class="flex flex-col justify-center gap-5 p-8 sm:p-12">
+                        <p class="fl-eyebrow flex items-center gap-2">
+                            <Nfc class="size-4" aria-hidden="true" /> El
+                            producto insignia
+                        </p>
+                        <h3 class="fl-display text-[clamp(2rem,3.4vw,3rem)]">
+                            Legacy Plate
+                        </h3>
+                        <p class="fl-body-lg max-w-md text-muted-foreground">
+                            Zamak niquelado, acabado en resina y NFC integrado.
+                            Se sujeta al listón de tu medalla y, con un toque,
+                            vuelve a abrir tu carrera.
+                        </p>
+                        <div
+                            class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-3"
+                        >
+                            <Button
+                                as-child
+                                size="lg"
+                                class="h-12 rounded-full px-6"
+                            >
+                                <Link :href="productShow(legacyPlateSlug)">
+                                    Ver la Legacy Plate
+                                    <ArrowRight class="size-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </Reveal>
+
+            <!-- The rest of the catalogue as a rail -->
+            <StaggerGroup
+                v-if="railProducts.length"
+                class="fl-rail mt-12 flex gap-5 overflow-x-auto pb-4"
+                :stagger-ms="70"
+            >
+                <div
+                    v-for="product in railProducts"
+                    :key="product.uuid"
+                    class="w-[72vw] shrink-0 snap-start sm:w-64"
+                >
+                    <ProductCard v-bind="productCardProps(product)" />
+                </div>
+            </StaggerGroup>
+
+            <div class="mt-10">
+                <Link
+                    :href="storeIndex()"
+                    class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
+                >
+                    Ver toda la tienda <ArrowRight class="size-4" />
+                </Link>
             </div>
         </div>
     </section>
 </template>
+
+<style scoped>
+.fl-rail {
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+}
+.fl-rail::-webkit-scrollbar {
+    display: none;
+}
+</style>

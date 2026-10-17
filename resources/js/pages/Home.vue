@@ -16,6 +16,7 @@ import NfcMoment from '@/components/public/home/NfcMoment.vue';
 import StoreStory from '@/components/public/home/StoreStory.vue';
 import StoryHero from '@/components/public/home/StoryHero.vue';
 import WhatIsIt from '@/components/public/home/WhatIsIt.vue';
+import SectionHeading from '@/components/public/SectionHeading.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { index as eventsIndex } from '@/routes/events';
 import type {
@@ -47,44 +48,53 @@ defineProps<{
 
     <NfcMoment />
 
-    <StoreStory :products="featuredProducts" />
+    <StoreStory
+        :products="featuredProducts"
+        :legacy-plate-slug="legacyPlateSlug"
+    />
 
-    <section
-        class="border-t border-border py-20 sm:py-24"
-        aria-labelledby="eventos-title"
-    >
+    <section class="fl-section" aria-label="Eventos">
         <div class="fl-container">
-            <div class="flex flex-wrap items-end justify-between gap-6">
-                <div>
-                    <p class="fl-eyebrow">Eventos</p>
-                    <h2
-                        id="eventos-title"
-                        class="fl-display mt-4 text-4xl sm:text-5xl"
+            <SectionHeading eyebrow="Eventos" title="Tu próxima salida.">
+                <template #action>
+                    <Link
+                        :href="eventsIndex()"
+                        class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
                     >
-                        Tu próxima salida.
-                    </h2>
-                </div>
-                <Link
-                    :href="eventsIndex()"
-                    class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-                >
-                    Explorar eventos <ArrowRight class="size-4" />
-                </Link>
-            </div>
+                        Explorar eventos <ArrowRight class="size-4" />
+                    </Link>
+                </template>
+            </SectionHeading>
 
             <div
                 v-if="featuredEditions.length"
-                class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                class="mt-10 grid gap-5 lg:grid-cols-3"
             >
-                <EventCard
-                    v-for="edition in featuredEditions"
-                    :key="edition.id"
-                    :edition="edition"
-                />
+                <!-- First edition reads larger; the rest are compact. -->
+                <div
+                    :class="
+                        featuredEditions.length > 1
+                            ? 'lg:col-span-2'
+                            : 'lg:col-span-3'
+                    "
+                >
+                    <EventCard :edition="featuredEditions[0]" />
+                </div>
+                <div
+                    v-if="featuredEditions.length > 1"
+                    class="grid gap-5 sm:grid-cols-2 lg:grid-cols-1"
+                >
+                    <EventCard
+                        v-for="edition in featuredEditions.slice(1)"
+                        :key="edition.id"
+                        :edition="edition"
+                        compact
+                    />
+                </div>
             </div>
             <p
                 v-else
-                class="mt-10 rounded-2xl border border-dashed border-foreground/15 bg-card p-8 text-muted-foreground"
+                class="mt-10 rounded-media border border-dashed border-foreground/15 bg-card p-8 text-muted-foreground"
             >
                 Estamos preparando los próximos eventos. Mientras tanto, explora
                 el calendario completo en

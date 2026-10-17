@@ -9,6 +9,8 @@ import { ArrowRight } from '@lucide/vue';
 import { computed } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import PostPreview from '@/components/community/PostPreview.vue';
+import Reveal from '@/components/motion/Reveal.vue';
+import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
 import { register } from '@/routes';
@@ -35,6 +37,13 @@ const hasContent = computed(
     () => props.posts.length > 0 || props.athletes.length > 0,
 );
 
+// A "living community" composition: a featured first post, a short side
+// column, then a supporting row — real posts only, nothing discarded past
+// what the layout can hold.
+const featuredPost = computed(() => props.posts[0] ?? null);
+const sidePosts = computed(() => props.posts.slice(1, 3));
+const morePosts = computed(() => props.posts.slice(3, 6));
+
 const features = [
     'Perfiles',
     'Fotos',
@@ -46,10 +55,7 @@ const features = [
 </script>
 
 <template>
-    <section
-        class="border-t border-border bg-card py-20 sm:py-28"
-        aria-labelledby="comunidad-title"
-    >
+    <section class="fl-section-sm bg-card" aria-labelledby="comunidad-title">
         <div class="fl-container">
             <div class="grid gap-8 lg:grid-cols-12 lg:items-end">
                 <div class="lg:col-span-7">
@@ -79,10 +85,12 @@ const features = [
             </div>
 
             <template v-if="hasContent">
-                <ul
+                <StaggerGroup
                     v-if="athletes.length"
-                    class="mt-12 flex gap-5 overflow-x-auto pb-2"
+                    as="ul"
+                    class="fl-rail mt-12 flex gap-5 overflow-x-auto pb-2"
                     aria-label="Atletas de la comunidad"
+                    :stagger-ms="50"
                 >
                     <li v-for="athlete in athletes" :key="athlete.username">
                         <Link
@@ -109,18 +117,42 @@ const features = [
                             >
                         </Link>
                     </li>
-                </ul>
+                </StaggerGroup>
 
-                <div
-                    v-if="posts.length"
-                    class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-                >
-                    <PostPreview
-                        v-for="post in posts.slice(0, 3)"
-                        :key="post.uuid"
-                        :post="post"
-                    />
-                </div>
+                <template v-if="featuredPost">
+                    <!-- Featured post + short side column -->
+                    <div class="mt-10 grid gap-5 lg:grid-cols-3">
+                        <Reveal
+                            :class="sidePosts.length ? 'lg:col-span-2' : ''"
+                        >
+                            <PostPreview :post="featuredPost" />
+                        </Reveal>
+                        <StaggerGroup
+                            v-if="sidePosts.length"
+                            class="grid gap-5 sm:grid-cols-2 lg:grid-cols-1"
+                            :stagger-ms="80"
+                        >
+                            <PostPreview
+                                v-for="post in sidePosts"
+                                :key="post.uuid"
+                                :post="post"
+                            />
+                        </StaggerGroup>
+                    </div>
+
+                    <!-- Supporting row -->
+                    <StaggerGroup
+                        v-if="morePosts.length"
+                        class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                        :stagger-ms="70"
+                    >
+                        <PostPreview
+                            v-for="post in morePosts"
+                            :key="post.uuid"
+                            :post="post"
+                        />
+                    </StaggerGroup>
+                </template>
 
                 <div class="mt-10">
                     <Link
@@ -134,7 +166,7 @@ const features = [
 
             <div
                 v-else
-                class="mt-12 grid overflow-hidden rounded-[1.75rem] border border-border bg-background md:grid-cols-2"
+                class="mt-12 grid overflow-hidden rounded-hero border border-border bg-background md:grid-cols-2"
             >
                 <img
                     :src="photo.src"
@@ -165,3 +197,16 @@ const features = [
         </div>
     </section>
 </template>
+
+<style scoped>
+.fl-rail {
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+}
+.fl-rail::-webkit-scrollbar {
+    display: none;
+}
+</style>

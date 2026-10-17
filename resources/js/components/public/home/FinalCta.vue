@@ -18,9 +18,9 @@ const photo = MEDIA.photo.triumph;
 </script>
 
 <template>
-    <section class="fl-container py-16 sm:py-24">
+    <section class="fl-container fl-section">
         <div
-            class="relative isolate overflow-hidden rounded-[2rem] bg-fl-black px-6 py-20 text-center sm:px-12 sm:py-28"
+            class="relative isolate overflow-hidden rounded-hero bg-fl-black px-6 py-20 text-center shadow-fl-overlay sm:px-12 sm:py-28"
         >
             <img
                 :src="photo.src"
@@ -40,10 +40,14 @@ const photo = MEDIA.photo.triumph;
                 Tu historia. Tu legado.
             </p>
             <h2
-                class="mx-auto mt-5 max-w-3xl font-serif text-[2.6rem] leading-[1.02] font-medium tracking-[-0.02em] text-white sm:text-6xl"
+                class="mx-auto mt-5 max-w-3xl font-serif text-[clamp(2.4rem,6vw,3.75rem)] leading-[1.02] font-medium tracking-[-0.02em] text-white"
             >
-                Tu próxima meta también merece quedarse.
+                La meta se cruza una vez. Tu legado se queda para siempre.
             </h2>
+            <p class="mx-auto mt-5 max-w-xl text-base text-white/70 sm:text-lg">
+                Elige tu próxima carrera, termínala y deja que cada tiempo, cada
+                foto y cada medalla vivan en un solo lugar.
+            </p>
             <div class="mt-10 flex flex-wrap justify-center gap-3">
                 <Button
                     as-child

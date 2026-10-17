@@ -11,9 +11,7 @@
  * HTML; the sticky stage starts on chapter 1 and simply stays there if
  * the observer never fires. Reduced motion → instant swaps.
  */
-import { Nfc } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
-import PlateFront from '@/components/public/home/PlateFront.vue';
 import { MEDIA } from '@/config/media';
 import { SAMPLE_FRONT } from '@/lib/plate-art';
 
@@ -63,6 +61,11 @@ const photos = {
     moment: MEDIA.photo.celebration,
 };
 
+// Photoreal Legacy Plate render (UI System §13: prefer the raster render
+// over the flat SVG in plate moments). The NFC beat is intentionally NOT
+// shown here — it lands once, in NfcMoment.
+const platePhoto = MEDIA.plate.hero;
+
 const legacyRows = [
     { year: '2026', name: 'Medio maratón', time: SAMPLE_FRONT.time },
     { year: '2025', name: '10K nocturno', time: '00:47:12' },
@@ -98,7 +101,7 @@ onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
-    <section class="relative py-20 sm:py-28" aria-labelledby="journey-title">
+    <section class="fl-section relative" aria-labelledby="journey-title">
         <div class="fl-container">
             <div class="max-w-2xl">
                 <p class="fl-eyebrow">Cómo se construye</p>
@@ -117,7 +120,7 @@ onBeforeUnmount(() => observer?.disconnect());
                         class="sticky top-24 h-[calc(100svh-8rem)] max-h-[44rem] min-h-[30rem]"
                     >
                         <div
-                            class="relative size-full overflow-hidden rounded-[2rem] border border-border bg-[#efece5]"
+                            class="relative size-full overflow-hidden rounded-hero border border-border bg-[#efece5]"
                         >
                             <div
                                 v-for="(chapter, index) in chapters"
@@ -154,7 +157,7 @@ onBeforeUnmount(() => observer?.disconnect());
                                 <!-- Guardas el momento: result card over the photo -->
                                 <div
                                     v-if="chapter.visual === 'moment'"
-                                    class="absolute inset-x-8 bottom-8 rounded-2xl bg-white/95 p-6 shadow-2xl backdrop-blur"
+                                    class="absolute inset-x-8 bottom-8 rounded-media bg-white/95 p-6 shadow-fl-overlay backdrop-blur"
                                 >
                                     <div
                                         class="flex items-center justify-between"
@@ -200,24 +203,20 @@ onBeforeUnmount(() => observer?.disconnect());
                                 </div>
 
                                 <!-- Conectas tu Legacy Plate -->
-                                <div
-                                    v-if="chapter.visual === 'plate'"
-                                    class="flex size-full items-center justify-center bg-[radial-gradient(circle_at_50%_45%,#ffffff,#ece8df_75%)] p-14"
-                                >
-                                    <div class="relative w-full max-w-md">
-                                        <div class="fl-scene__plate">
-                                            <PlateFront />
-                                        </div>
-                                        <span
-                                            class="absolute -top-6 right-[6%] flex items-center gap-2 rounded-full bg-foreground px-3.5 py-2 text-xs font-medium text-background shadow-lg"
-                                        >
-                                            <Nfc
-                                                class="size-3.5 text-fl-gold"
-                                            />
-                                            NFC integrado
-                                        </span>
-                                    </div>
-                                </div>
+                                <template v-if="chapter.visual === 'plate'">
+                                    <img
+                                        :src="platePhoto.src"
+                                        :srcset="platePhoto.srcset"
+                                        sizes="45vw"
+                                        :alt="platePhoto.alt"
+                                        loading="lazy"
+                                        decoding="async"
+                                        class="fl-scene__img size-full object-cover"
+                                    />
+                                    <div
+                                        class="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent"
+                                    />
+                                </template>
 
                                 <!-- Construyes tu legado -->
                                 <div
@@ -244,7 +243,7 @@ onBeforeUnmount(() => observer?.disconnect());
                                             <li
                                                 v-for="(row, i) in legacyRows"
                                                 :key="row.name"
-                                                class="fl-scene__row relative flex items-center gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm"
+                                                class="fl-scene__row relative flex items-center gap-4 rounded-card border border-border bg-white p-4 shadow-fl-soft"
                                                 :style="{
                                                     transitionDelay: `${120 + i * 90}ms`,
                                                 }"
@@ -332,7 +331,7 @@ onBeforeUnmount(() => observer?.disconnect());
 
                         <!-- Inline visual (phones / tablets) -->
                         <div
-                            class="mt-8 overflow-hidden rounded-3xl border border-border bg-[#efece5] lg:hidden"
+                            class="mt-8 overflow-hidden rounded-media border border-border bg-[#efece5] lg:hidden"
                         >
                             <img
                                 v-if="chapter.visual in photos"
@@ -357,20 +356,21 @@ onBeforeUnmount(() => observer?.disconnect());
                                         : ''
                                 "
                             />
-                            <div
+                            <img
                                 v-else-if="chapter.visual === 'plate'"
-                                class="flex aspect-[4/3] items-center justify-center bg-[radial-gradient(circle_at_50%_45%,#ffffff,#ece8df_75%)] p-8"
-                            >
-                                <PlateFront
-                                    class="w-full max-w-xs"
-                                    :sweep="false"
-                                />
-                            </div>
+                                :src="platePhoto.src"
+                                :srcset="platePhoto.srcset"
+                                sizes="100vw"
+                                :alt="platePhoto.alt"
+                                loading="lazy"
+                                decoding="async"
+                                class="aspect-[4/3] w-full object-cover"
+                            />
                             <ol v-else class="space-y-2 p-5">
                                 <li
                                     v-for="row in legacyRows"
                                     :key="row.name"
-                                    class="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm shadow-sm"
+                                    class="flex items-center justify-between rounded-card bg-white px-4 py-3 text-sm shadow-fl-soft"
                                 >
                                     <span>
                                         <span class="block font-medium">{{
@@ -410,14 +410,6 @@ onBeforeUnmount(() => observer?.disconnect());
 .fl-scene.is-active .fl-scene__img {
     transform: scale(1);
 }
-.fl-scene__plate {
-    transform: perspective(1000px) rotateX(18deg) rotateZ(-4deg)
-        translateY(24px);
-    transition: transform 1000ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.fl-scene.is-active .fl-scene__plate {
-    transform: perspective(1000px) rotateX(10deg) rotateZ(-3deg) translateY(0);
-}
 .fl-scene__row {
     opacity: 0.001;
     translate: 0 12px;
@@ -452,7 +444,6 @@ onBeforeUnmount(() => observer?.disconnect());
 @media (prefers-reduced-motion: reduce) {
     .fl-scene,
     .fl-scene__img,
-    .fl-scene__plate,
     .fl-scene__row,
     .fl-chapter__word,
     .fl-chapter__dot {
