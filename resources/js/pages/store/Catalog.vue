@@ -8,7 +8,6 @@
 import { Link, router } from '@inertiajs/vue3';
 import { ArrowLeft, Nfc, SlidersHorizontal, X } from '@lucide/vue';
 import { computed, reactive, watch } from 'vue';
-import FancySelect from '@/components/forms/FancySelect.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
@@ -121,14 +120,16 @@ const activeCount = computed(
         Number(state.disponibles),
 );
 
+// `label` is the full accessible name; `short` is the compact text shown
+// inside the desktop segmented control. Values map 1:1 to the server `orden`.
 const sortOptions = [
-    { value: 'destacados', label: 'Destacados' },
-    { value: 'novedades', label: 'Novedades' },
-    { value: 'precio-asc', label: 'Precio: menor a mayor' },
-    { value: 'precio-desc', label: 'Precio: mayor a menor' },
+    { value: 'destacados', label: 'Destacados', short: 'Destacados' },
+    { value: 'novedades', label: 'Novedades', short: 'Novedades' },
+    { value: 'precio-asc', label: 'Precio: menor a mayor', short: 'Precio ↑' },
+    { value: 'precio-desc', label: 'Precio: mayor a menor', short: 'Precio ↓' },
 ];
 
-const typeOptions = computed(() => [
+const typeOptions = computed<{ value: string | null; label: string }[]>(() => [
     { value: null, label: 'Todos los tipos' },
     ...props.types,
 ]);
@@ -144,21 +145,25 @@ const lede = computed(
 <template>
     <SeoHead :title="title" :description="lede" />
 
-    <section class="fl-container pt-8 pb-6 sm:pt-12">
+    <section class="fl-container pt-8 pb-8 sm:pt-12 sm:pb-10">
         <Link
             :href="storeIndex()"
-            class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            class="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-4" />
             Tienda
         </Link>
-        <div class="mt-6 grid items-end gap-4 lg:grid-cols-12">
-            <h1 class="fl-display text-[2.6rem] sm:text-6xl lg:col-span-7">
-                {{ title }}
-            </h1>
-            <p
-                class="text-base leading-relaxed text-muted-foreground sm:text-lg lg:col-span-5 lg:pb-2"
-            >
+        <div class="mt-4 grid items-end gap-x-8 gap-y-5 lg:grid-cols-12">
+            <div class="lg:col-span-7">
+                <p class="fl-eyebrow flex items-center gap-3">
+                    <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
+                    {{ category ? 'Colección' : 'Catálogo completo' }}
+                </p>
+                <h1 class="fl-display mt-5 text-[2.6rem] sm:text-6xl">
+                    {{ title }}
+                </h1>
+            </div>
+            <p class="fl-body-lg text-muted-foreground lg:col-span-5 lg:pb-2">
                 {{ lede }}
             </p>
         </div>
@@ -197,7 +202,9 @@ const lede = computed(
     <div
         class="sticky top-16 z-30 border-y border-border bg-background/90 backdrop-blur-md"
     >
-        <div class="fl-container flex items-center justify-between gap-3 py-3">
+        <div
+            class="fl-container flex flex-wrap items-center gap-x-3 gap-y-2 py-3"
+        >
             <p class="text-sm text-muted-foreground" aria-live="polite">
                 <span class="legacy-numeric font-semibold text-foreground">{{
                     products.total
@@ -205,7 +212,36 @@ const lede = computed(
                 {{ products.total === 1 ? 'producto' : 'productos' }}
             </p>
 
-            <div class="hidden items-center gap-2 lg:flex">
+            <div
+                class="hidden flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-2 lg:flex"
+            >
+                <!-- Tipo (single-select chips) -->
+                <div
+                    v-if="!category"
+                    class="flex flex-wrap items-center gap-1.5"
+                    role="radiogroup"
+                    aria-label="Tipo de producto"
+                >
+                    <button
+                        v-for="option in typeOptions"
+                        :key="option.value ?? 'all'"
+                        type="button"
+                        role="radio"
+                        class="fl-chip fl-chip--sm"
+                        :class="
+                            state.tipo === option.value ? 'fl-chip--on' : ''
+                        "
+                        :aria-checked="state.tipo === option.value"
+                        @click="set('tipo', option.value)"
+                    >
+                        {{ option.label }}
+                    </button>
+                </div>
+                <span
+                    v-if="!category"
+                    class="h-6 w-px bg-border"
+                    aria-hidden="true"
+                />
                 <div
                     v-if="sizes.length"
                     class="flex items-center gap-1"
@@ -226,7 +262,7 @@ const lede = computed(
                         {{ size }}
                     </button>
                 </div>
-                <span class="mx-1 h-6 w-px bg-border" aria-hidden="true" />
+                <span class="h-6 w-px bg-border" aria-hidden="true" />
                 <button
                     type="button"
                     class="fl-chip fl-chip--sm"
@@ -245,32 +281,31 @@ const lede = computed(
                 >
                     Disponibles
                 </button>
-                <FancySelect
-                    v-if="!category"
-                    :model-value="state.tipo"
-                    :options="typeOptions"
-                    placeholder="Todos los tipos"
-                    size="sm"
-                    class="w-40"
-                    aria-label="Tipo de producto"
-                    @update:model-value="
-                        set('tipo', ($event as string) ?? null)
-                    "
-                />
-                <FancySelect
-                    :model-value="state.orden"
-                    :options="sortOptions"
-                    size="sm"
-                    class="w-52"
-                    aria-label="Ordenar"
-                    @update:model-value="
-                        set('orden', ($event as string) ?? 'destacados')
-                    "
-                />
+                <span class="h-6 w-px bg-border" aria-hidden="true" />
+                <!-- Orden (segmented control) -->
+                <div class="fl-seg" role="radiogroup" aria-label="Ordenar">
+                    <button
+                        v-for="option in sortOptions"
+                        :key="option.value"
+                        type="button"
+                        role="radio"
+                        class="fl-seg__opt"
+                        :class="
+                            state.orden === option.value
+                                ? 'fl-seg__opt--on'
+                                : ''
+                        "
+                        :aria-checked="state.orden === option.value"
+                        :aria-label="option.label"
+                        @click="set('orden', option.value)"
+                    >
+                        {{ option.short }}
+                    </button>
+                </div>
                 <button
                     v-if="activeCount"
                     type="button"
-                    class="inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
+                    class="inline-flex min-h-9 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
                     @click="clearAll"
                 >
                     <X class="size-3.5" /> Limpiar
@@ -282,7 +317,7 @@ const lede = computed(
                 <SheetTrigger as-child>
                     <Button
                         variant="outline"
-                        class="h-10 rounded-full lg:hidden"
+                        class="ml-auto h-11 rounded-full lg:hidden"
                     >
                         <SlidersHorizontal class="size-4" />
                         Filtrar
@@ -295,7 +330,7 @@ const lede = computed(
                 </SheetTrigger>
                 <SheetContent
                     side="bottom"
-                    class="max-h-[85vh] gap-0 overflow-y-auto rounded-t-3xl bg-background p-0"
+                    class="max-h-[85vh] gap-0 overflow-y-auto rounded-t-hero bg-background p-0"
                 >
                     <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-border" />
                     <SheetTitle class="px-5 pt-4 font-serif text-2xl"
@@ -308,29 +343,53 @@ const lede = computed(
                     <div class="space-y-6 px-5 py-5">
                         <div>
                             <p class="mb-2 text-sm font-medium">Ordenar</p>
-                            <FancySelect
-                                :model-value="state.orden"
-                                :options="sortOptions"
+                            <div
+                                class="flex flex-wrap gap-2"
+                                role="radiogroup"
                                 aria-label="Ordenar"
-                                @update:model-value="
-                                    set(
-                                        'orden',
-                                        ($event as string) ?? 'destacados',
-                                    )
-                                "
-                            />
+                            >
+                                <button
+                                    v-for="option in sortOptions"
+                                    :key="option.value"
+                                    type="button"
+                                    role="radio"
+                                    class="fl-chip"
+                                    :class="
+                                        state.orden === option.value
+                                            ? 'fl-chip--on'
+                                            : ''
+                                    "
+                                    :aria-checked="state.orden === option.value"
+                                    @click="set('orden', option.value)"
+                                >
+                                    {{ option.label }}
+                                </button>
+                            </div>
                         </div>
                         <div v-if="!category">
                             <p class="mb-2 text-sm font-medium">Tipo</p>
-                            <FancySelect
-                                :model-value="state.tipo"
-                                :options="typeOptions"
-                                placeholder="Todos los tipos"
+                            <div
+                                class="flex flex-wrap gap-2"
+                                role="radiogroup"
                                 aria-label="Tipo de producto"
-                                @update:model-value="
-                                    set('tipo', ($event as string) ?? null)
-                                "
-                            />
+                            >
+                                <button
+                                    v-for="option in typeOptions"
+                                    :key="option.value ?? 'all'"
+                                    type="button"
+                                    role="radio"
+                                    class="fl-chip"
+                                    :class="
+                                        state.tipo === option.value
+                                            ? 'fl-chip--on'
+                                            : ''
+                                    "
+                                    :aria-checked="state.tipo === option.value"
+                                    @click="set('tipo', option.value)"
+                                >
+                                    {{ option.label }}
+                                </button>
+                            </div>
                         </div>
                         <div v-if="sizes.length">
                             <p class="mb-2 text-sm font-medium">Talla</p>
@@ -414,7 +473,7 @@ const lede = computed(
         </div>
         <div
             v-else
-            class="mx-auto max-w-lg rounded-3xl border border-dashed border-foreground/15 bg-card px-6 py-14 text-center"
+            class="mx-auto max-w-lg rounded-media border border-dashed border-foreground/15 bg-card px-6 py-14 text-center"
         >
             <p class="font-serif text-2xl text-foreground">
                 Nada con esos filtros… todavía.
@@ -472,5 +531,43 @@ const lede = computed(
     border-color: var(--foreground);
     background: var(--foreground);
     color: var(--background);
+}
+
+/* Segmented control — the compact "Orden" switch on desktop. Connected
+   pills in a bordered track; the active option is the filled indicator. */
+.fl-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 3px;
+    box-shadow: var(--shadow-fl-micro);
+}
+.fl-seg__opt {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    border-radius: 9999px;
+    padding: 0 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+    transition:
+        background-color 160ms ease,
+        color 160ms ease;
+}
+.fl-seg__opt:hover {
+    color: var(--foreground);
+}
+.fl-seg__opt--on {
+    background: var(--foreground);
+    color: var(--background);
+}
+.fl-seg__opt:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
 }
 </style>

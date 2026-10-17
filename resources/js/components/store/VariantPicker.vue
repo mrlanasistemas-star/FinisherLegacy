@@ -6,8 +6,25 @@
  * Never shows a stock count — only available / últimas piezas / agotada.
  */
 import { computed, watch } from 'vue';
-import type { Variant } from '@/components/shared/VariantSelector.vue';
 import { swatchColor } from '@/lib/store';
+
+/**
+ * Canonical variant shape for the storefront. Reads whatever attributes
+ * the backend sends (brief §30/§96: consume `attributes`, never hardcode
+ * per product). This is the single source of truth for the type now that
+ * the old `shared/VariantSelector.vue` has been retired.
+ */
+export type Variant = {
+    id: number;
+    sku: string;
+    name: string;
+    attributes: Record<string, string> | null;
+    base_price_minor: number;
+    sale_price_minor?: number | null;
+    promotion_label?: string | null;
+    currency: string;
+    in_stock: boolean;
+};
 
 type StoreVariant = Variant & { low_stock?: boolean };
 
@@ -139,7 +156,7 @@ watch(
                     :key="variant.id"
                     type="button"
                     :disabled="!variant.in_stock"
-                    class="relative h-12 rounded-xl border text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed"
+                    class="relative h-12 rounded-control border text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed"
                     :class="
                         model === variant.id
                             ? 'border-foreground bg-foreground text-background'

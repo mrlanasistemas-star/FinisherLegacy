@@ -173,9 +173,7 @@ const lineDetails = (line: Line) =>
         <div class="fl-container py-10 md:py-14">
             <header class="mb-8">
                 <p class="fl-eyebrow">Checkout</p>
-                <h1
-                    class="font-serif text-3xl font-semibold tracking-tight md:text-4xl"
-                >
+                <h1 class="fl-display mt-2 text-3xl md:text-4xl">
                     {{ step === 'details' ? 'Confirma tu pedido' : 'Pago' }}
                 </h1>
                 <p
@@ -320,7 +318,7 @@ const lineDetails = (line: Line) =>
                                     :aria-checked="
                                         form.delivery_method === 'pickup'
                                     "
-                                    class="flex min-h-20 items-start gap-3 rounded-xl border p-4 text-left transition"
+                                    class="flex min-h-20 items-start gap-3 rounded-control border p-4 text-left transition"
                                     :class="
                                         form.delivery_method === 'pickup'
                                             ? 'border-foreground ring-1 ring-foreground'
@@ -346,7 +344,7 @@ const lineDetails = (line: Line) =>
                                     :aria-checked="
                                         form.delivery_method === 'shipping'
                                     "
-                                    class="flex min-h-20 items-start gap-3 rounded-xl border p-4 text-left transition"
+                                    class="flex min-h-20 items-start gap-3 rounded-control border p-4 text-left transition"
                                     :class="
                                         form.delivery_method === 'shipping'
                                             ? 'border-foreground ring-1 ring-foreground'
@@ -531,7 +529,7 @@ const lineDetails = (line: Line) =>
                             />
                             <div
                                 v-else
-                                class="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
+                                class="rounded-control border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
                             >
                                 El pago en línea no está disponible por ahora.
                                 Tu pedido quedó registrado; puedes pagarlo en tu
@@ -566,7 +564,7 @@ const lineDetails = (line: Line) =>
                                 class="flex gap-3"
                             >
                                 <div
-                                    class="relative aspect-[4/5] w-14 shrink-0 overflow-hidden rounded-lg bg-fl-cream"
+                                    class="relative aspect-[4/5] w-14 shrink-0 overflow-hidden rounded-control bg-fl-cream"
                                 >
                                     <img
                                         v-if="line.image_url"

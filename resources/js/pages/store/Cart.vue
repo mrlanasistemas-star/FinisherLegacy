@@ -120,9 +120,7 @@ const details = (item: CartItem) =>
             <header class="mb-8 flex items-end justify-between gap-4">
                 <div>
                     <p class="fl-eyebrow">Tienda</p>
-                    <h1
-                        class="font-serif text-3xl font-semibold tracking-tight md:text-4xl"
-                    >
+                    <h1 class="fl-display mt-2 text-3xl md:text-4xl">
                         Tu carrito
                     </h1>
                 </div>
@@ -150,7 +148,7 @@ const details = (item: CartItem) =>
                                     ? `/tienda/${item.product_slug}`
                                     : undefined
                             "
-                            class="aspect-[4/5] w-24 shrink-0 overflow-hidden rounded-xl bg-fl-cream sm:w-32"
+                            class="aspect-[4/5] w-24 shrink-0 overflow-hidden rounded-card bg-fl-cream sm:w-32"
                         >
                             <img
                                 v-if="item.image_url"
@@ -328,7 +326,7 @@ const details = (item: CartItem) =>
 
                         <div
                             v-if="coupon"
-                            class="flex items-center justify-between rounded-xl border border-fl-gold/40 bg-fl-cream px-3 py-2 text-sm"
+                            class="flex items-center justify-between rounded-control border border-fl-gold/40 bg-fl-cream px-3 py-2 text-sm"
                         >
                             <span
                                 class="flex items-center gap-1.5 font-medium text-fl-gold-ink"

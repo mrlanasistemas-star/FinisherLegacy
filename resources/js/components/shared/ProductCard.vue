@@ -4,17 +4,17 @@
  * angle on hover, name, type, price, colors, sizes, a visual stock hint
  * (never a count) and the NFC / Nuevo / Preventa / Últimas piezas badges.
  *
- * Hover is deliberately quiet: a 2–3° tilt that follows the pointer, a
- * small image scale, a soft shadow. Pointer tilt only runs on fine
- * pointers without reduced motion; everything is CSS, nothing hides
- * content.
+ * Hover is deliberately calm and stable (UI System §8): a gentle lift,
+ * a soft float shadow and a slight image scale — plus a crossfade to the
+ * second product angle only when one exists. No pointer-follow tilt and
+ * no CLS: the media box keeps a fixed 4:5 ratio. Everything is CSS and
+ * fully reduced-motion aware; nothing ever hides content.
  */
 import { Link } from '@inertiajs/vue3';
 import { Nfc } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import ProductImagePlaceholder from '@/components/shared/ProductImagePlaceholder.vue';
-import { useReducedMotion } from '@/composables/useReducedMotion';
 import { PRODUCT_TYPE_LABELS, STOCK_LABELS, swatchColor } from '@/lib/store';
 import type { ProductAvailability, ProductColor } from '@/types';
 
@@ -52,9 +52,6 @@ const props = withDefaults(
         stockLevel: null,
     },
 );
-
-const reduced = useReducedMotion();
-const tilt = ref({ x: 0, y: 0 });
 
 const typeLabel = computed(
     () =>
@@ -108,37 +105,16 @@ const badges = computed(() => {
 
 const visibleColors = computed(() => props.colors.slice(0, 5));
 const visibleSizes = computed(() => props.sizes.slice(0, 6));
-
-function onMove(event: PointerEvent) {
-    if (reduced.value || event.pointerType !== 'mouse') {
-        return;
-    }
-
-    const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const px = (event.clientX - box.left) / box.width - 0.5;
-    const py = (event.clientY - box.top) / box.height - 0.5;
-    tilt.value = { x: py * -3, y: px * 3 };
-}
-
-function onLeave() {
-    tilt.value = { x: 0, y: 0 };
-}
 </script>
 
 <template>
     <Link
         :href="`/tienda/${slug}`"
-        class="fl-product-card group flex h-full flex-col rounded-2xl focus-visible:outline-none"
+        class="fl-product-card group flex h-full flex-col rounded-card focus-visible:outline-none"
         :aria-label="`${name}${typeLabel ? ` — ${typeLabel}` : ''}`"
     >
         <div
-            class="fl-product-card__media relative aspect-[4/5] overflow-hidden rounded-2xl border border-border bg-[#f1efe9] group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2"
-            :style="{
-                '--tilt-x': `${tilt.x}deg`,
-                '--tilt-y': `${tilt.y}deg`,
-            }"
-            @pointermove="onMove"
-            @pointerleave="onLeave"
+            class="fl-product-card__media relative aspect-[4/5] overflow-hidden rounded-media border border-border bg-[#f1efe9] group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2"
         >
             <template v-if="imageUrl">
                 <img
@@ -236,7 +212,7 @@ function onLeave() {
                         <Money
                             :minor="fromPriceMinor"
                             :currency="currency"
-                            class="font-semibold"
+                            class="legacy-numeric font-semibold"
                             :class="
                                 compareAtMinor
                                     ? 'text-[#9f2a1d]'
@@ -247,7 +223,7 @@ function onLeave() {
                             v-if="compareAtMinor"
                             :minor="compareAtMinor"
                             :currency="currency"
-                            class="block text-xs text-muted-foreground line-through"
+                            class="legacy-numeric block text-xs text-muted-foreground line-through"
                         />
                     </template>
                 </p>
@@ -325,16 +301,16 @@ function onLeave() {
 
 <style scoped>
 .fl-product-card__media {
-    transform: perspective(900px) rotateX(var(--tilt-x, 0deg))
-        rotateY(var(--tilt-y, 0deg));
     transition:
-        transform 500ms cubic-bezier(0.16, 1, 0.3, 1),
-        box-shadow 500ms ease,
+        transform 450ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 450ms ease,
         border-color 300ms ease;
 }
+/* Calm, premium hover: a gentle lift + float shadow (UI System §8). */
 .group:hover .fl-product-card__media {
+    transform: translateY(-4px);
     border-color: rgb(23 23 20 / 0.18);
-    box-shadow: 0 24px 40px -28px rgb(23 23 20 / 0.35);
+    box-shadow: var(--shadow-fl-float);
 }
 .fl-product-card__img {
     transition:

@@ -84,7 +84,7 @@ const legacyExtras = computed(() =>
 
 <template>
     <SeoHead
-        title="Tienda"
+        title="Equipo para correr, piezas para recordar"
         description="Legacy Plate con NFC, ropa técnica y accesorios para atletas. No es merch: es parte de tu historia."
     />
 
@@ -136,7 +136,7 @@ const legacyExtras = computed(() =>
 
             <div class="relative lg:col-span-6">
                 <div
-                    class="relative mx-auto aspect-[5/4] max-w-xl overflow-hidden rounded-[2rem] bg-fl-black lg:max-w-none"
+                    class="relative mx-auto aspect-[5/4] max-w-xl overflow-hidden rounded-hero bg-fl-black lg:max-w-none"
                 >
                     <img
                         :src="plate.hero.src"
@@ -165,7 +165,7 @@ const legacyExtras = computed(() =>
                     </div>
                 </div>
                 <div
-                    class="absolute -top-6 -left-2 hidden w-56 rounded-2xl border border-border bg-card p-4 shadow-[0_24px_48px_-30px_rgb(23_23_20/0.45)] sm:block lg:-left-8"
+                    class="absolute -top-6 -left-2 hidden w-56 rounded-card border border-border bg-card p-4 shadow-fl-float sm:block lg:-left-8"
                 >
                     <p
                         class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em] text-fl-gold-ink uppercase"
@@ -189,7 +189,7 @@ const legacyExtras = computed(() =>
         <div class="fl-container py-10 sm:py-12">
             <h2 id="categorias" class="sr-only">Categorías</h2>
             <ul
-                class="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-4"
+                class="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border lg:grid-cols-4"
             >
                 <li
                     v-for="(category, index) in visibleCategories.slice(0, 8)"
@@ -268,7 +268,7 @@ const legacyExtras = computed(() =>
     <!-- Legacy collection -->
     <section v-if="featured" class="fl-container pb-16 sm:pb-24">
         <div
-            class="grid overflow-hidden rounded-[2rem] border border-border bg-card lg:grid-cols-12"
+            class="grid overflow-hidden rounded-hero border border-border bg-card lg:grid-cols-12"
         >
             <div
                 class="relative min-h-[24rem] overflow-hidden bg-[#efece5] sm:min-h-[30rem] lg:col-span-6"
@@ -423,7 +423,7 @@ const legacyExtras = computed(() =>
         <div class="grid gap-5 md:grid-cols-2">
             <Reveal
                 as="article"
-                class="group relative aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-fl-black sm:aspect-[5/4] md:aspect-[4/5] lg:aspect-[5/4]"
+                class="group relative aspect-[4/5] overflow-hidden rounded-hero bg-fl-black sm:aspect-[5/4] md:aspect-[4/5] lg:aspect-[5/4]"
             >
                 <img
                     :src="photo.runner.src"
@@ -459,7 +459,7 @@ const legacyExtras = computed(() =>
             <Reveal
                 as="article"
                 :delay-ms="80"
-                class="group relative aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-fl-black sm:aspect-[5/4] md:aspect-[4/5] lg:aspect-[5/4]"
+                class="group relative aspect-[4/5] overflow-hidden rounded-hero bg-fl-black sm:aspect-[5/4] md:aspect-[4/5] lg:aspect-[5/4]"
             >
                 <img
                     :src="photo.triumph.src"
@@ -546,7 +546,7 @@ const legacyExtras = computed(() =>
     <!-- Closing CTA -->
     <section class="fl-container py-16 sm:py-24">
         <div
-            class="relative overflow-hidden rounded-[2rem] border border-border bg-[radial-gradient(120%_120%_at_100%_0%,#f4eedf,transparent_55%),#fff] px-6 py-14 text-center sm:px-12 sm:py-20"
+            class="relative overflow-hidden rounded-hero border border-border bg-[radial-gradient(120%_120%_at_100%_0%,#f4eedf,transparent_55%),#fff] px-6 py-14 text-center sm:px-12 sm:py-20"
         >
             <p class="fl-eyebrow">Tu próxima historia</p>
             <h2 class="fl-display mx-auto mt-4 max-w-2xl text-4xl sm:text-5xl">

@@ -28,12 +28,12 @@ import PlateClipSteps from '@/components/public/PlateClipSteps.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import Money from '@/components/shared/Money.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
-import type { Variant } from '@/components/shared/VariantSelector.vue';
 import ProductGallery from '@/components/store/ProductGallery.vue';
 import type { GalleryEntry } from '@/components/store/ProductGallery.vue';
 import ProductStorySections from '@/components/store/ProductStorySections.vue';
 import type { ContentSection } from '@/components/store/ProductStorySections.vue';
 import VariantPicker from '@/components/store/VariantPicker.vue';
+import type { Variant } from '@/components/store/VariantPicker.vue';
 import { Button } from '@/components/ui/button';
 import { productCardProps, PRODUCT_TYPE_LABELS } from '@/lib/store';
 import { howItWorks, login } from '@/routes';
@@ -398,7 +398,7 @@ const savedInMiEquipo = [
                         </p>
 
                         <dl
-                            class="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border text-sm"
+                            class="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border text-sm"
                         >
                             <div
                                 v-for="row in plateSpec"
@@ -464,7 +464,7 @@ const savedInMiEquipo = [
                         <div
                             v-if="showPlateHelp"
                             id="ya-tengo-placa"
-                            class="mt-3 flex gap-3 rounded-2xl border border-border bg-card p-4 text-sm"
+                            class="mt-3 flex gap-3 rounded-card border border-border bg-card p-4 text-sm"
                         >
                             <Smartphone
                                 class="mt-0.5 size-5 shrink-0 text-fl-gold-ink"
@@ -558,7 +558,7 @@ const savedInMiEquipo = [
                         <div class="mt-6">
                             <div
                                 v-if="!product.is_purchasable"
-                                class="rounded-2xl border border-border bg-card p-5"
+                                class="rounded-card border border-border bg-card p-5"
                             >
                                 <p class="font-semibold">
                                     {{
@@ -643,7 +643,7 @@ const savedInMiEquipo = [
                     <!-- Connected product -->
                     <div
                         v-if="product.is_nfc"
-                        class="mt-8 overflow-hidden rounded-2xl border border-border bg-card"
+                        class="mt-8 overflow-hidden rounded-card border border-border bg-card"
                     >
                         <div class="flex items-start gap-4 p-5">
                             <span
@@ -743,7 +743,7 @@ const savedInMiEquipo = [
         <!-- How it works with Finisher Legacy -->
         <section
             v-if="product.is_nfc"
-            class="mt-20 overflow-hidden rounded-[1.75rem] border border-border bg-card"
+            class="mt-20 overflow-hidden rounded-hero border border-border bg-card"
         >
             <div class="grid lg:grid-cols-2">
                 <div class="p-8 sm:p-12">

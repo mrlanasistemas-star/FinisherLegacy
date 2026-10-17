@@ -142,7 +142,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
         <!-- Stage -->
         <div class="relative min-w-0 flex-1">
             <div
-                class="fl-stage relative aspect-[4/5] overflow-hidden rounded-[1.25rem] border border-border bg-[#f1efe9] sm:aspect-square lg:aspect-[5/6]"
+                class="fl-stage relative aspect-[4/5] overflow-hidden rounded-media border border-border bg-[#f1efe9] sm:aspect-square lg:aspect-[5/6]"
                 tabindex="0"
                 role="group"
                 :aria-roledescription="'galería'"
@@ -263,6 +263,14 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                         <ChevronRight class="size-5" />
                     </button>
                 </template>
+
+                <!-- Desktop position indicator (mobile uses the count below). -->
+                <span
+                    v-if="count > 1 && current?.type !== 'model_3d'"
+                    class="legacy-numeric pointer-events-none absolute bottom-4 left-1/2 hidden -translate-x-1/2 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-fl-soft backdrop-blur lg:block"
+                    aria-hidden="true"
+                    >{{ active + 1 }} / {{ count }}</span
+                >
             </div>
 
             <p
@@ -289,7 +297,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                 role="tab"
                 :aria-selected="index === active"
                 :aria-label="thumbLabel(item, index)"
-                class="relative size-[4.25rem] shrink-0 overflow-hidden rounded-xl border-2 bg-[#f1efe9] transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:size-[4.75rem]"
+                class="relative size-[4.25rem] shrink-0 overflow-hidden rounded-control border-2 bg-[#f1efe9] transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:size-[4.75rem]"
                 :class="
                     index === active
                         ? 'border-foreground'
@@ -369,11 +377,11 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                                 :poster="current.poster_url ?? undefined"
                                 controls
                                 playsinline
-                                class="max-h-full max-w-full rounded-xl"
+                                class="max-h-full max-w-full rounded-media"
                             />
                             <div
                                 v-else-if="current.type === 'model_3d'"
-                                class="size-full max-w-5xl overflow-hidden rounded-2xl"
+                                class="size-full max-w-5xl overflow-hidden rounded-media"
                             >
                                 <Product3DViewer
                                     :src="current.url"
@@ -387,7 +395,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                                 :srcset="current.srcset"
                                 sizes="100vw"
                                 :alt="current.alt || productName"
-                                class="max-h-full max-w-full rounded-xl object-contain"
+                                class="max-h-full max-w-full rounded-media object-contain"
                             />
                         </template>
                         <template v-if="count > 1">
@@ -431,7 +439,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
     border-radius: 9999px;
     background: rgb(255 255 255 / 0.9);
     color: var(--foreground);
-    box-shadow: 0 6px 18px -12px rgb(23 23 20 / 0.45);
+    box-shadow: var(--shadow-fl-soft);
     transition:
         background-color 160ms ease,
         opacity 200ms ease;
