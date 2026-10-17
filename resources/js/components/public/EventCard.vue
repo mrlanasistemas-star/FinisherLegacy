@@ -12,9 +12,19 @@ import { MEDIA } from '@/config/media';
 import { show as eventShow } from '@/routes/events';
 import type { EventEditionCard, EventPhase } from '@/types';
 
-const { edition, compact = false } = defineProps<{
+const {
+    edition,
+    compact = false,
+    featured = false,
+} = defineProps<{
     edition: EventEditionCard;
     compact?: boolean;
+    /**
+     * Larger, hero-like presentation: wider media that sits beside the
+     * details on desktop and a bigger title. Optional — defaults to the
+     * standard card so Home / search / community keep their current look.
+     */
+    featured?: boolean;
 }>();
 
 const phaseCopy: Record<EventPhase, { label: string; class: string }> = {
@@ -73,11 +83,18 @@ const location = computed(() =>
 <template>
     <Link
         :href="eventShow(edition.event.slug)"
-        class="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[border-color,box-shadow] duration-300 hover:border-foreground/20 hover:shadow-[0_18px_40px_-28px_rgb(23_23_20/0.35)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        class="group flex h-full flex-col overflow-hidden rounded-card border border-border bg-card shadow-fl-soft transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-fl-float focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        :class="featured ? 'md:flex-row md:rounded-hero' : ''"
     >
         <div
             class="relative overflow-hidden bg-fl-cream"
-            :class="compact ? 'aspect-[16/9]' : 'aspect-[4/3]'"
+            :class="
+                featured
+                    ? 'aspect-[16/10] md:aspect-auto md:min-h-[19rem] md:w-[56%]'
+                    : compact
+                      ? 'aspect-[16/9]'
+                      : 'aspect-[4/3]'
+            "
         >
             <img
                 v-if="edition.event.cover_url"
@@ -117,14 +134,17 @@ const location = computed(() =>
             </template>
 
             <span
-                class="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.14em] uppercase shadow-sm"
+                class="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-[0.14em] uppercase shadow-fl-micro"
                 :class="phaseCopy[edition.phase].class"
             >
                 {{ phaseCopy[edition.phase].label }}
             </span>
         </div>
 
-        <div class="flex flex-1 gap-4 p-5">
+        <div
+            class="flex flex-1 gap-4"
+            :class="featured ? 'p-6 sm:p-7 md:items-center' : 'p-5'"
+        >
             <div
                 class="legacy-numeric flex w-12 shrink-0 flex-col items-center border-r border-border pr-4 text-center leading-none"
                 :aria-label="`${dayNumber} ${monthAbbrev} ${yearLabel}`"
@@ -144,7 +164,8 @@ const location = computed(() =>
             <div class="flex min-w-0 flex-1 flex-col">
                 <p class="fl-eyebrow">{{ edition.event.sport.name }}</p>
                 <h3
-                    class="mt-1 text-[17px] leading-snug font-semibold text-foreground"
+                    class="mt-1 leading-snug font-semibold text-foreground"
+                    :class="featured ? 'text-xl sm:text-2xl' : 'text-[17px]'"
                 >
                     {{ edition.event.name }}
                 </h3>

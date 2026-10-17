@@ -16,11 +16,18 @@ const props = withDefaults(
         image?: string | null;
         type?: 'website' | 'profile' | 'article' | 'product';
         noindex?: boolean;
+        /**
+         * Optional schema.org structured data (e.g. a SportsEvent) rendered
+         * as a single <script type="application/ld+json"> inside the head.
+         * Pass a plain object of already-real values — never fabricate data.
+         */
+        jsonLd?: Record<string, unknown> | null;
     }>(),
     {
         image: null,
         type: 'website',
         noindex: false,
+        jsonLd: null,
     },
 );
 
@@ -48,6 +55,21 @@ const socialTitle = computed(() =>
         <meta name="twitter:title" :content="socialTitle" />
         <meta name="twitter:description" :content="description" />
         <meta v-if="image" name="twitter:image" :content="image" />
+        <!--
+            Rendered as a dynamic component (not a literal <script> element) on
+            purpose: a literal script tag in an SFC template trips Vue's
+            "side-effect tags are ignored in client templates" compiler error.
+            :is="'script'" produces a real ld+json script in the <Head> without
+            that error. v-text sets the serialized structured data as its body.
+        -->
+        <!-- eslint-disable vue/no-v-text-v-html-on-component -- v-text is correct here: :is="'script'" is a native element, and v-text sets raw ld+json text (a slot child would HTML-escape "<" and corrupt the JSON). -->
+        <component
+            v-if="jsonLd"
+            :is="'script'"
+            type="application/ld+json"
+            v-text="JSON.stringify(jsonLd)"
+        />
+        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
         <slot />
     </Head>
 </template>

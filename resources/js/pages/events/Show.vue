@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { Calendar, MapPin, Trophy } from '@lucide/vue';
 import { computed } from 'vue';
+import SeoHead from '@/components/public/SeoHead.vue';
 import LegacyPlatePresaleCard from '@/components/shared/LegacyPlatePresaleCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -92,35 +93,12 @@ const eventJsonLd = computed(() => {
 </script>
 
 <template>
-    <Head :title="`${event.name} | Finisher Legacy`">
-        <meta name="description" :content="metaDescription" />
-        <link v-if="canonicalUrl" rel="canonical" :href="canonicalUrl" />
-        <meta property="og:type" content="website" />
-        <meta
-            property="og:title"
-            :content="`${event.name} | Finisher Legacy`"
-        />
-        <meta property="og:description" :content="metaDescription" />
-        <meta v-if="canonicalUrl" property="og:url" :content="canonicalUrl" />
-        <meta
-            v-if="event.cover_url"
-            property="og:image"
-            :content="event.cover_url"
-        />
-        <meta
-            name="twitter:title"
-            :content="`${event.name} | Finisher Legacy`"
-        />
-        <meta name="twitter:description" :content="metaDescription" />
-        <meta
-            v-if="event.cover_url"
-            name="twitter:image"
-            :content="event.cover_url"
-        />
-        <script v-if="eventJsonLd" type="application/ld+json">
-            {{ JSON.stringify(eventJsonLd) }}
-        </script>
-    </Head>
+    <SeoHead
+        :title="event.name"
+        :description="metaDescription"
+        :image="event.cover_url"
+        :json-ld="eventJsonLd"
+    />
 
     <section class="fl-container pt-8 sm:pt-10">
         <div class="flex flex-wrap items-center gap-2">
@@ -141,7 +119,7 @@ const eventJsonLd = computed(() => {
         </p>
 
         <div
-            class="relative mt-8 aspect-[16/9] overflow-hidden rounded-2xl bg-fl-cream sm:aspect-[21/9]"
+            class="relative mt-8 aspect-[16/9] overflow-hidden rounded-media bg-fl-cream shadow-fl-soft sm:aspect-[21/9]"
         >
             <img
                 v-if="event.cover_url"
@@ -178,7 +156,7 @@ const eventJsonLd = computed(() => {
         </div>
     </section>
 
-    <section class="py-12 sm:py-16">
+    <section class="fl-section">
         <div class="fl-container grid gap-12 lg:grid-cols-3">
             <div class="space-y-10 lg:col-span-2">
                 <div v-if="event.description">
@@ -200,14 +178,14 @@ const eventJsonLd = computed(() => {
                         <div
                             v-for="race in edition.races"
                             :key="race.name"
-                            class="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3"
+                            class="flex items-center justify-between rounded-control border border-border bg-card px-4 py-3 shadow-fl-micro"
                         >
                             <span class="font-medium text-foreground">{{
                                 race.name
                             }}</span>
                             <span
                                 v-if="race.start_time"
-                                class="text-sm text-muted-foreground/80"
+                                class="legacy-numeric text-sm text-muted-foreground/80"
                             >
                                 {{ race.start_time }}
                             </span>
@@ -217,17 +195,17 @@ const eventJsonLd = computed(() => {
 
                 <div
                     v-else
-                    class="rounded-xl border border-border bg-card p-6 text-muted-foreground"
+                    class="rounded-card border border-border bg-card p-6 text-muted-foreground shadow-fl-soft"
                 >
                     Este evento todavía no tiene una edición publicada con fecha
                     activa.
                 </div>
             </div>
 
-            <aside class="space-y-6">
+            <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
                 <div
                     v-if="edition"
-                    class="space-y-5 rounded-2xl border border-border bg-card p-6"
+                    class="space-y-5 rounded-card border border-border bg-card p-6 shadow-fl-soft"
                 >
                     <div class="flex items-start gap-3">
                         <Calendar
@@ -238,7 +216,7 @@ const eventJsonLd = computed(() => {
                                 Fecha
                             </p>
                             <p
-                                class="text-sm font-medium text-foreground capitalize"
+                                class="legacy-numeric text-sm font-medium text-foreground capitalize"
                             >
                                 {{ formattedDate }}
                             </p>

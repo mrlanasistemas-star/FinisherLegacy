@@ -17,6 +17,7 @@ import {
 import { computed } from 'vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import PlateFront from '@/components/public/home/PlateFront.vue';
+import HowItWorksSteps from '@/components/public/HowItWorksSteps.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
@@ -36,6 +37,32 @@ const parts = [
     { id: 'mi-legado', label: 'Mi legado' },
     { id: 'comunidad', label: 'Comunidad' },
     { id: 'apoyo', label: 'Apoyo' },
+];
+
+// The journey as a five-chapter arc — the editorial spine of the page.
+const chapters = ['Corre', 'Conecta', 'Guarda', 'Comparte', 'Revive'];
+
+// How an NFC product joins your legacy — rendered with the shared
+// HowItWorksSteps component (consolidates the former inline `.hw-steps`).
+const nfcSteps = [
+    {
+        number: '01',
+        title: 'Acércalo',
+        description:
+            'Acerca tu teléfono al producto y se abre su página al instante.',
+    },
+    {
+        number: '02',
+        title: 'Confírmalo',
+        description:
+            'Inicia sesión y confírmalo: aparece en Mi equipo, ligado a ti.',
+    },
+    {
+        number: '03',
+        title: 'Vívelo',
+        description:
+            'Llévalo a tus eventos y se suma, carrera a carrera, a tu legado.',
+    },
 ];
 
 const concept = (key: string) => ({
@@ -97,6 +124,20 @@ const photo = MEDIA.photo;
                 carrera, cada producto y cada persona que te acompaña.
             </p>
 
+            <!-- The journey as a five-chapter arc -->
+            <p
+                class="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-medium"
+            >
+                <template v-for="(verb, i) in chapters" :key="verb">
+                    <span class="text-foreground">{{ verb }}</span>
+                    <span
+                        v-if="i < chapters.length - 1"
+                        class="h-px w-6 bg-fl-gold/60"
+                        aria-hidden="true"
+                    />
+                </template>
+            </p>
+
             <nav class="mt-10" aria-label="Partes">
                 <ol class="flex flex-wrap gap-2">
                     <li v-for="(part, index) in parts" :key="part.id">
@@ -117,14 +158,11 @@ const photo = MEDIA.photo;
     </section>
 
     <!-- 1 · Legacy Plate -->
-    <section
-        id="legacy-plate"
-        class="scroll-mt-20 border-t border-border py-20 sm:py-28"
-    >
+    <section id="legacy-plate" class="fl-section-lg scroll-mt-20">
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <Reveal class="lg:col-span-6">
                 <div
-                    class="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-border bg-[#efece5] sm:aspect-[5/5]"
+                    class="relative aspect-[4/5] overflow-hidden rounded-media border border-border bg-[#efece5] shadow-fl-soft sm:aspect-[5/5]"
                 >
                     <img
                         :src="MEDIA.plate.ribbonHeld.src"
@@ -135,6 +173,16 @@ const photo = MEDIA.photo;
                         decoding="async"
                         class="absolute inset-0 size-full object-cover object-[50%_35%]"
                     />
+                    <!-- The NFC moment, shown on the plate itself -->
+                    <span
+                        class="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-fl-micro"
+                    >
+                        <Nfc
+                            class="size-3.5 text-fl-gold-ink"
+                            aria-hidden="true"
+                        />
+                        Acerca tu teléfono
+                    </span>
                 </div>
             </Reveal>
             <div class="lg:col-span-6 lg:pl-6">
@@ -199,10 +247,7 @@ const photo = MEDIA.photo;
     </section>
 
     <!-- 2 · Productos con NFC -->
-    <section
-        id="productos-nfc"
-        class="scroll-mt-20 border-t border-border bg-card py-20 sm:py-28"
-    >
+    <section id="productos-nfc" class="fl-section scroll-mt-20 bg-card">
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <div class="lg:order-2 lg:col-span-6">
                 <Reveal>
@@ -210,7 +255,7 @@ const photo = MEDIA.photo;
                         <div
                             v-for="(key, i) in ['trisuit', 'chill-band']"
                             :key="key"
-                            class="relative overflow-hidden rounded-[1.5rem] border border-border bg-[#f1efe9]"
+                            class="relative overflow-hidden rounded-media border border-border bg-[#f1efe9]"
                             :class="i === 1 ? 'mt-10' : ''"
                         >
                             <img
@@ -240,20 +285,6 @@ const photo = MEDIA.photo;
                     Ropa, accesorios y piezas Finisher que se conectan a tu
                     perfil. Lo que usaste en cada carrera queda contado.
                 </p>
-                <ol class="hw-steps">
-                    <li>
-                        <span>1</span>
-                        Acerca tu teléfono al producto: se abre su página.
-                    </li>
-                    <li>
-                        <span>2</span>
-                        Inicia sesión y confírmalo: aparece en Mi equipo.
-                    </li>
-                    <li>
-                        <span>3</span>
-                        Llévalo a tus eventos y se suma a tu legado.
-                    </li>
-                </ol>
                 <Link
                     :href="catalog({ query: { nfc: '1' } })"
                     class="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
@@ -262,17 +293,27 @@ const photo = MEDIA.photo;
                 </Link>
             </div>
         </div>
+
+        <!-- El momento NFC: cómo un producto se suma a tu legado -->
+        <div class="fl-container mt-16">
+            <div
+                class="flex items-center gap-3 text-sm font-semibold text-foreground"
+            >
+                <Nfc class="size-4 text-fl-gold-ink" aria-hidden="true" />
+                Así se activa
+            </div>
+            <Reveal class="mt-6">
+                <HowItWorksSteps :steps="nfcSteps" />
+            </Reveal>
+        </div>
     </section>
 
     <!-- 3 · Mi legado -->
-    <section
-        id="mi-legado"
-        class="scroll-mt-20 border-t border-border py-20 sm:py-28"
-    >
+    <section id="mi-legado" class="fl-section-lg scroll-mt-20">
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <Reveal class="lg:col-span-6">
                 <div
-                    class="rounded-[2rem] border border-border bg-[radial-gradient(circle_at_20%_10%,#f4eedf,#f8f7f3_70%)] p-6 sm:p-10"
+                    class="rounded-hero border border-border bg-[radial-gradient(circle_at_20%_10%,#f4eedf,#f8f7f3_70%)] p-6 shadow-fl-soft sm:p-10"
                 >
                     <div class="flex items-center justify-between">
                         <p class="font-serif text-2xl text-foreground">
@@ -293,7 +334,7 @@ const photo = MEDIA.photo;
                                 >{{ row.year.slice(2) }}</span
                             >
                             <div
-                                class="flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm"
+                                class="flex-1 rounded-card border border-border bg-card p-4 shadow-fl-soft"
                             >
                                 <p class="font-medium text-foreground">
                                     {{ row.name }}
@@ -351,10 +392,7 @@ const photo = MEDIA.photo;
     </section>
 
     <!-- 4 · Comunidad -->
-    <section
-        id="comunidad"
-        class="scroll-mt-20 border-t border-border bg-card py-20 sm:py-28"
-    >
+    <section id="comunidad" class="fl-section scroll-mt-20 bg-card">
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <div class="lg:order-2 lg:col-span-6">
                 <Reveal>
@@ -366,10 +404,10 @@ const photo = MEDIA.photo;
                             :alt="photo.dawn.alt"
                             loading="lazy"
                             decoding="async"
-                            class="aspect-[5/4] w-full rounded-[2rem] object-cover"
+                            class="aspect-[5/4] w-full rounded-media object-cover"
                         />
                         <div
-                            class="absolute -bottom-8 left-4 w-[78%] rounded-2xl border border-border bg-card p-4 shadow-[0_24px_40px_-28px_rgb(23_23_20/0.5)] sm:left-8 sm:w-72"
+                            class="absolute -bottom-8 left-4 w-[78%] rounded-card border border-border bg-card p-4 shadow-fl-float sm:left-8 sm:w-72"
                         >
                             <div class="flex items-center gap-3">
                                 <span
@@ -438,14 +476,11 @@ const photo = MEDIA.photo;
     </section>
 
     <!-- 5 · Apoyo -->
-    <section
-        id="apoyo"
-        class="scroll-mt-20 border-t border-border py-20 sm:py-28"
-    >
+    <section id="apoyo" class="fl-section-lg scroll-mt-20">
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <Reveal class="lg:col-span-6">
                 <div
-                    class="overflow-hidden rounded-[2rem] border border-border bg-card"
+                    class="overflow-hidden rounded-hero border border-border bg-card shadow-fl-soft"
                 >
                     <div class="relative h-60 bg-[#eef0ea] sm:h-72">
                         <svg
@@ -486,7 +521,7 @@ const photo = MEDIA.photo;
                             />
                         </svg>
                         <span
-                            class="absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold shadow-sm"
+                            class="absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold shadow-fl-micro"
                         >
                             <Radio class="size-3.5 text-[#b4533a]" /> En vivo
                         </span>
@@ -503,7 +538,7 @@ const photo = MEDIA.photo;
                             >
                         </div>
                         <p
-                            class="w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-4 py-2.5 text-sm"
+                            class="w-fit max-w-[85%] rounded-media rounded-bl-md bg-muted px-4 py-2.5 text-sm"
                         >
                             ¡Vas increíble, ya casi! 💛 — Mamá
                         </p>
@@ -549,7 +584,7 @@ const photo = MEDIA.photo;
     <!-- Close -->
     <section class="fl-container pb-20 sm:pb-28">
         <div
-            class="grid items-center gap-10 overflow-hidden rounded-[2rem] border border-border bg-card p-8 sm:p-12 lg:grid-cols-12"
+            class="grid items-center gap-10 overflow-hidden rounded-hero border border-border bg-card p-8 shadow-fl-soft sm:p-12 lg:grid-cols-12"
         >
             <div class="lg:col-span-7">
                 <p class="fl-eyebrow">Tu historia. Tu legado.</p>
@@ -605,30 +640,6 @@ const photo = MEDIA.photo;
 }
 .hw-list strong {
     color: var(--foreground);
-    font-weight: 600;
-}
-.hw-steps {
-    margin-top: 1.75rem;
-    display: grid;
-    gap: 0.9rem;
-}
-.hw-steps li {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    color: var(--foreground);
-}
-.hw-steps span {
-    display: flex;
-    width: 2rem;
-    height: 2rem;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9999px;
-    background: var(--foreground);
-    color: var(--fl-gold);
-    font-size: 0.75rem;
     font-weight: 600;
 }
 .hw-sample {
