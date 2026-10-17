@@ -1,5 +1,10 @@
 <script setup lang="ts">
-/** Gear highlight — a product from the athlete's Mi equipo. */
+/**
+ * Gear highlight — a product from the athlete's Mi equipo. The
+ * CommunityPost['gear'] contract only sends { uuid, product_name }: no
+ * image URL or product slug, so (real-data-only) we link to the store
+ * rather than inventing a product thumbnail or a specific-product URL.
+ */
 import { Link } from '@inertiajs/vue3';
 import { ShoppingBag } from '@lucide/vue';
 import { index as storeIndex } from '@/routes/store/products';
@@ -10,7 +15,7 @@ defineProps<{ gear: NonNullable<CommunityPost['gear']> }>();
 
 <template>
     <div
-        class="flex items-center gap-4 rounded-xl border border-border bg-gradient-to-br from-white to-fl-paper p-4"
+        class="flex items-center gap-4 rounded-card border border-border bg-gradient-to-br from-white to-fl-paper p-4"
     >
         <span
             class="flex size-12 shrink-0 items-center justify-center rounded-full bg-fl-cream"

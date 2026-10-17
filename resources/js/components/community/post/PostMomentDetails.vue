@@ -14,7 +14,7 @@ defineProps<{
     <div class="space-y-3">
         <div
             v-if="metrics"
-            class="overflow-hidden rounded-xl border border-border bg-fl-paper"
+            class="overflow-hidden rounded-card border border-border bg-fl-paper"
         >
             <p
                 v-if="metrics.is_personal_record || metrics.title"
@@ -76,7 +76,7 @@ defineProps<{
 
         <div
             v-if="medal"
-            class="flex items-center gap-4 rounded-xl border border-border bg-fl-paper p-3"
+            class="flex items-center gap-4 rounded-card border border-border bg-fl-paper p-3"
         >
             <img
                 v-if="medal.image_url"

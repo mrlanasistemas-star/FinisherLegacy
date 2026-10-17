@@ -19,7 +19,7 @@ const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 
 const celebrated = ref(props.post.my_reactions.length > 0);
-const count = ref(props.post.reactions.total ?? props.post.reactions.cheer);
+const count = ref(props.post.reactions.total);
 const busy = ref(false);
 const burst = ref(false);
 
@@ -27,9 +27,17 @@ watch(
     () => props.post,
     (post) => {
         celebrated.value = post.my_reactions.length > 0;
-        count.value = post.reactions.total ?? post.reactions.cheer;
+        count.value = post.reactions.total;
     },
 );
+
+const celebrateLabel = computed(() => {
+    const action = celebrated.value ? 'Quitar celebración' : 'Celebrar';
+
+    return count.value > 0
+        ? `${action} · ${count.value} ${count.value === 1 ? 'celebración' : 'celebraciones'}`
+        : action;
+});
 
 function toggle() {
     if (busy.value) {
@@ -104,7 +112,7 @@ async function share() {
             class="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             :class="celebrated ? 'text-fl-gold-ink' : 'text-muted-foreground'"
             :aria-pressed="isGuest ? undefined : celebrated"
-            :aria-label="celebrated ? 'Quitar celebración' : 'Celebrar'"
+            :aria-label="celebrateLabel"
             @click="isGuest ? undefined : toggle()"
         >
             <PartyPopper
@@ -113,11 +121,13 @@ async function share() {
                     celebrated ? 'fill-fl-gold/30' : '',
                     burst ? 'fl-celebrate-pop' : '',
                 ]"
+                aria-hidden="true"
             />
-            <span>Celebrar</span>
+            <span aria-hidden="true">Celebrar</span>
             <span
                 v-if="count > 0"
                 class="legacy-numeric text-xs tabular-nums"
+                aria-hidden="true"
                 >{{ count }}</span
             >
         </component>
@@ -125,12 +135,18 @@ async function share() {
         <Link
             :href="`${show(post.uuid).url}#comentarios`"
             class="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+            :aria-label="
+                post.comments_count > 0
+                    ? `Comentar · ${post.comments_count} ${post.comments_count === 1 ? 'comentario' : 'comentarios'}`
+                    : 'Comentar'
+            "
         >
-            <MessageCircle class="size-[18px]" />
-            <span>Comentar</span>
+            <MessageCircle class="size-[18px]" aria-hidden="true" />
+            <span aria-hidden="true">Comentar</span>
             <span
                 v-if="post.comments_count > 0"
                 class="legacy-numeric text-xs"
+                aria-hidden="true"
                 >{{ post.comments_count }}</span
             >
         </Link>

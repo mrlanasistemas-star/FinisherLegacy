@@ -2,25 +2,19 @@
 /**
  * One post with its comments ("mensajes de apoyo"). Visibility, who may
  * comment and who may delete a comment are decided server-side
- * (LegacyMomentPolicy / LegacyMomentCommentPolicy). Comments are flat —
- * no threads, no chat.
+ * (LegacyMomentPolicy / LegacyMomentCommentPolicy). When the post has
+ * media the detail splits on desktop (media left, caption + actions +
+ * comments right); text-only posts stay centered in a reading measure.
  */
-import { Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, EyeOff, Flag, Trash2 } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
-import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import CommunityPost from '@/components/community/CommunityPost.vue';
 import CommunityReportDialog from '@/components/community/CommunityReportDialog.vue';
-import InputError from '@/components/InputError.vue';
+import PostMediaGrid from '@/components/community/post/PostMediaGrid.vue';
+import PostComments from '@/components/community/PostComments.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
-import { Button } from '@/components/ui/button';
-import { useCommunityReport } from '@/composables/useCommunityReport';
-import { timeAgo } from '@/lib/datetime';
-import { confirmAction } from '@/lib/swal';
-import { login } from '@/routes';
 import { index as communityIndex } from '@/routes/community';
-import { destroy as destroyComment } from '@/routes/community/comments';
-import { store as storeComment } from '@/routes/community/posts/comments';
 import type {
     CommunityComment,
     CommunityPost as CommunityPostData,
@@ -37,34 +31,8 @@ const props = defineProps<{
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
-const profile = computed(() => page.props.auth.profile);
-const { openReport } = useCommunityReport();
 
-const form = useForm({ body: '' });
-
-function submit() {
-    form.post(storeComment(props.post.uuid).url, {
-        preserveScroll: true,
-        only: ['comments', 'post'],
-        onSuccess: () => form.reset(),
-    });
-}
-
-async function remove(comment: CommunityComment) {
-    if (
-        !(await confirmAction({
-            title: '¿Eliminar este mensaje?',
-            confirmButtonText: 'Eliminar',
-        }))
-    ) {
-        return;
-    }
-
-    router.visit(destroyComment(comment.uuid), {
-        preserveScroll: true,
-        only: ['comments', 'post'],
-    });
-}
+const hasMedia = computed(() => props.post.media.length > 0);
 
 const description = computed(
     () =>
@@ -82,7 +50,7 @@ const description = computed(
         :noindex="post.visibility !== 'public'"
     />
 
-    <div class="fl-container max-w-2xl py-8 sm:py-10">
+    <div class="fl-container py-6 sm:py-10">
         <Link
             :href="communityIndex()"
             class="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -91,158 +59,69 @@ const description = computed(
             Volver a la comunidad
         </Link>
 
-        <div class="mt-4">
-            <CommunityPost :post="post" detail />
+        <!-- Split detail: media left, content + comments right. -->
+        <div
+            v-if="hasMedia"
+            class="mt-4 lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-6"
+        >
+            <div
+                class="overflow-hidden bg-card sm:rounded-media sm:border sm:border-border lg:sticky lg:top-20"
+            >
+                <PostMediaGrid
+                    :media="post.media"
+                    :author-name="post.author.name"
+                />
+            </div>
+
+            <div class="mt-4 min-w-0 lg:mt-0">
+                <CommunityPost :post="post" detail hide-media />
+
+                <section
+                    id="comentarios"
+                    class="mt-6 scroll-mt-24"
+                    aria-labelledby="comentarios-title"
+                >
+                    <h2 id="comentarios-title" class="fl-h3 font-serif">
+                        Mensajes de apoyo
+                        <span class="text-base text-muted-foreground">{{
+                            comments.length
+                        }}</span>
+                    </h2>
+                    <PostComments
+                        class="mt-4"
+                        :post-uuid="post.uuid"
+                        :comments="comments"
+                        :comment-max="commentMax"
+                        :can-interact="canInteract"
+                    />
+                </section>
+            </div>
         </div>
 
-        <section
-            id="comentarios"
-            class="mt-10 scroll-mt-24"
-            aria-labelledby="comentarios-title"
-        >
-            <h2 id="comentarios-title" class="font-serif text-2xl">
-                Mensajes de apoyo
-                <span class="text-base text-muted-foreground">{{
-                    comments.length
-                }}</span>
-            </h2>
+        <!-- Text-only: centered reading measure. -->
+        <div v-else class="mx-auto mt-4 max-w-2xl">
+            <CommunityPost :post="post" detail />
 
-            <form
-                v-if="user && canInteract"
-                class="mt-5 flex gap-3"
-                @submit.prevent="submit"
+            <section
+                id="comentarios"
+                class="mt-8 scroll-mt-24"
+                aria-labelledby="comentarios-title-text"
             >
-                <AthleteAvatar
-                    :name="user.name"
-                    :photo-url="profile?.photo_url"
-                    size="sm"
+                <h2 id="comentarios-title-text" class="fl-h3 font-serif">
+                    Mensajes de apoyo
+                    <span class="text-base text-muted-foreground">{{
+                        comments.length
+                    }}</span>
+                </h2>
+                <PostComments
+                    class="mt-4"
+                    :post-uuid="post.uuid"
+                    :comments="comments"
+                    :comment-max="commentMax"
+                    :can-interact="canInteract"
                 />
-                <div class="flex-1">
-                    <label for="comment-body" class="sr-only"
-                        >Escribe un mensaje</label
-                    >
-                    <textarea
-                        id="comment-body"
-                        v-model="form.body"
-                        rows="2"
-                        :maxlength="commentMax"
-                        placeholder="Escribe un mensaje de apoyo…"
-                        class="w-full rounded-xl border border-input bg-card px-4 py-3 text-sm focus:border-foreground/30 focus:ring-2 focus:ring-ring/30 focus:outline-none"
-                        @keydown.meta.enter="submit"
-                        @keydown.ctrl.enter="submit"
-                    />
-                    <InputError :message="form.errors.body" />
-                    <div class="mt-2 flex justify-end">
-                        <Button
-                            type="submit"
-                            class="rounded-full px-5"
-                            :disabled="form.processing || !form.body.trim()"
-                        >
-                            Enviar
-                        </Button>
-                    </div>
-                </div>
-            </form>
-            <p
-                v-else-if="!user"
-                class="mt-5 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground"
-            >
-                <Link
-                    :href="login()"
-                    class="font-semibold text-foreground underline underline-offset-4"
-                    >Inicia sesión</Link
-                >
-                para dejar un mensaje de apoyo.
-            </p>
-
-            <TransitionGroup
-                tag="ul"
-                class="mt-6 space-y-4"
-                enter-active-class="transition duration-300 ease-out motion-reduce:transition-none"
-                enter-from-class="translate-y-1 opacity-0"
-                leave-active-class="transition duration-200 ease-in motion-reduce:transition-none"
-                leave-to-class="opacity-0"
-            >
-                <li
-                    v-for="comment in comments"
-                    :key="comment.uuid"
-                    class="flex gap-3"
-                >
-                    <Link
-                        :href="
-                            comment.author.username
-                                ? `/@${comment.author.username}`
-                                : '#'
-                        "
-                        class="rounded-full"
-                        :aria-label="`Perfil de ${comment.author.name}`"
-                    >
-                        <AthleteAvatar
-                            :name="comment.author.name"
-                            :photo-url="comment.author.photo_url"
-                            size="sm"
-                        />
-                    </Link>
-                    <div
-                        class="min-w-0 flex-1 rounded-xl border border-border bg-card px-4 py-3"
-                    >
-                        <div class="flex items-center gap-2">
-                            <p class="truncate text-sm font-semibold">
-                                {{ comment.author.name }}
-                            </p>
-                            <time
-                                :datetime="comment.created_at"
-                                class="text-xs text-muted-foreground"
-                                >{{ timeAgo(comment.created_at) }}</time
-                            >
-                            <span class="ml-auto flex items-center">
-                                <button
-                                    v-if="user && !comment.can_delete"
-                                    type="button"
-                                    class="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-                                    aria-label="Reportar mensaje"
-                                    @click="
-                                        openReport({
-                                            type: 'comment',
-                                            id: comment.uuid,
-                                        })
-                                    "
-                                >
-                                    <Flag class="size-3.5" />
-                                </button>
-                                <button
-                                    v-if="comment.can_delete"
-                                    type="button"
-                                    class="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-destructive"
-                                    aria-label="Eliminar mensaje"
-                                    @click="remove(comment)"
-                                >
-                                    <Trash2 class="size-3.5" />
-                                </button>
-                            </span>
-                        </div>
-                        <p
-                            v-if="comment.is_hidden"
-                            class="mt-1 flex items-center gap-1 text-xs text-amber-800"
-                        >
-                            <EyeOff class="size-3" /> Oculto por moderación:
-                            solo tú lo ves.
-                        </p>
-                        <p
-                            class="mt-1 text-sm leading-relaxed whitespace-pre-line"
-                        >
-                            {{ comment.body }}
-                        </p>
-                    </div>
-                </li>
-            </TransitionGroup>
-            <p
-                v-if="!comments.length"
-                class="mt-6 text-sm text-muted-foreground"
-            >
-                Aún no hay mensajes. ¡Celebra este logro!
-            </p>
-        </section>
+            </section>
+        </div>
     </div>
 
     <CommunityReportDialog v-if="user" :reasons="reportReasons" />

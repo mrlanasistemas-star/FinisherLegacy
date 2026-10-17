@@ -27,7 +27,7 @@ const subtitle = computed(() =>
         :href="
             activity.event_slug ? `/events/${activity.event_slug}` : undefined
         "
-        class="group/result relative block overflow-hidden rounded-xl border border-border bg-fl-paper px-4 py-4 transition-colors hover:border-foreground/20 sm:px-5"
+        class="group/result relative block overflow-hidden rounded-card border border-border bg-fl-paper px-4 py-4 transition-colors hover:border-foreground/20 sm:px-5"
     >
         <span
             class="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-fl-gold to-fl-gold-dim"

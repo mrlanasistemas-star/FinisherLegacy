@@ -16,7 +16,7 @@ defineProps<{
 
 <template>
     <div
-        class="fl-plate group/plate relative overflow-hidden rounded-xl p-4 sm:p-5"
+        class="fl-plate group/plate relative overflow-hidden rounded-card p-4 sm:p-5"
     >
         <span class="fl-plate-sweep" aria-hidden="true" />
         <div class="relative flex items-center gap-4">

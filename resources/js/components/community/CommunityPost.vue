@@ -44,8 +44,10 @@ const props = withDefaults(
         post: CommunityPost;
         /** Detail page: caption is not a link, delete goes back to the feed. */
         detail?: boolean;
+        /** Split detail renders the media column separately — hide it here. */
+        hideMedia?: boolean;
     }>(),
-    { detail: false },
+    { detail: false, hideMedia: false },
 );
 
 const emit = defineEmits<{ deleted: [uuid: string] }>();
@@ -122,7 +124,7 @@ async function remove() {
 
 <template>
     <article
-        class="fl-card overflow-hidden transition-shadow duration-300 hover:shadow-[0_18px_40px_-30px_rgb(23_23_20/0.35)]"
+        class="overflow-hidden bg-card transition-shadow duration-300 sm:rounded-card sm:border sm:border-border sm:shadow-fl-soft sm:hover:shadow-fl-float"
         :aria-label="`Publicación de ${post.author.name}`"
     >
         <p
@@ -133,7 +135,7 @@ async function remove() {
             Oculta por moderación: solo tú la ves.
         </p>
 
-        <header class="flex items-start gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
+        <header class="flex items-center gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
             <component
                 :is="authorHref ? Link : 'div'"
                 :href="authorHref ?? undefined"
@@ -145,30 +147,21 @@ async function remove() {
                 <AthleteAvatar
                     :name="post.author.name"
                     :photo-url="post.author.photo_url"
+                    size="sm"
                 />
             </component>
 
             <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <component
-                        :is="authorHref ? Link : 'span'"
-                        :href="authorHref ?? undefined"
-                        class="truncate text-[15px] font-semibold text-foreground hover:underline"
-                    >
-                        {{ post.author.name }}
-                    </component>
-                    <span
-                        class="rounded-full bg-fl-cream px-2 py-0.5 text-[10px] font-semibold tracking-[0.12em] text-fl-gold-ink uppercase"
-                        >{{ post.kind_label }}</span
-                    >
-                </div>
-                <p
-                    class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground"
+                <component
+                    :is="authorHref ? Link : 'span'"
+                    :href="authorHref ?? undefined"
+                    class="block truncate text-sm font-semibold text-foreground hover:underline"
                 >
-                    <span v-if="post.author.username"
-                        >@{{ post.author.username }}</span
-                    >
-                    <span aria-hidden="true">·</span>
+                    {{ post.author.name }}
+                </component>
+                <p
+                    class="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground"
+                >
                     <Link :href="detailHref" class="hover:underline">
                         <time :datetime="post.created_at">{{
                             timeAgo(post.created_at)
@@ -184,10 +177,14 @@ async function remove() {
                             class="size-3"
                             aria-hidden="true"
                         />
-                        <span class="sr-only sm:not-sr-only">{{
+                        <span class="sr-only">{{
                             visibilityMeta[visibility].label
                         }}</span>
                     </span>
+                    <span aria-hidden="true">·</span>
+                    <span class="tracking-[0.1em] uppercase">{{
+                        post.kind_label
+                    }}</span>
                 </p>
             </div>
 
@@ -195,7 +192,7 @@ async function remove() {
                 <DropdownMenuTrigger as-child>
                     <button
                         type="button"
-                        class="-mr-2 flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        class="-mr-2 flex size-11 items-center justify-center rounded-full text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         aria-label="Opciones de la publicación"
                     >
                         <MoreHorizontal class="size-4" />
@@ -294,11 +291,10 @@ async function remove() {
         </div>
 
         <PostMediaGrid
-            v-if="post.media.length"
+            v-if="post.media.length && !hideMedia"
             class="mt-3"
             :media="post.media"
             :author-name="post.author.name"
-            :href="detail ? null : detailHref"
         />
 
         <PostActions class="mt-2" :post="post" />

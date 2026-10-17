@@ -73,7 +73,7 @@ defineProps<{ post: CommunityPost }>();
             >
                 <span class="inline-flex items-center gap-1.5">
                     <PartyPopper class="size-3.5" />
-                    {{ post.reactions.cheer }}
+                    {{ post.reactions.total }}
                 </span>
                 <span class="inline-flex items-center gap-1.5">
                     <MessageCircle class="size-3.5" />
