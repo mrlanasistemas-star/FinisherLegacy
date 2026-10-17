@@ -76,10 +76,7 @@ const content = copy[status] ?? {
         </Reveal>
 
         <Reveal :delay-ms="200">
-            <Button
-                as-child
-                class="fl-hover-lift mt-8 bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
-            >
+            <Button as-child size="lg" class="fl-hover-lift mt-8 rounded-full">
                 <Link :href="home()">
                     <ArrowLeft class="size-4" />
                     Volver al inicio

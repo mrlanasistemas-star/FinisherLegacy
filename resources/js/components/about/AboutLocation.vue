@@ -149,7 +149,7 @@ const collaborations = [
         </div>
 
         <div
-            class="flex flex-col justify-between rounded-xl bg-foreground p-6 text-background sm:p-10 lg:col-span-3"
+            class="flex flex-col justify-between rounded-hero bg-foreground p-6 text-background shadow-fl-float sm:p-10 lg:col-span-3"
         >
             <div>
                 <p
@@ -180,7 +180,7 @@ const collaborations = [
                 </ul>
                 <Button
                     as-child
-                    class="mt-6 h-11 rounded-full bg-fl-gold px-6 text-fl-black hover:bg-fl-gold-soft"
+                    class="mt-6 h-11 rounded-full bg-background px-6 text-foreground hover:bg-background/90"
                 >
                     <Link :href="contact()">
                         Contáctanos

@@ -10,7 +10,7 @@ defineProps<{ items: CompanyGalleryItem[] }>();
         <li
             v-for="item in items"
             :key="item.id"
-            class="mb-4 break-inside-avoid overflow-hidden rounded-xl border border-border bg-card"
+            class="mb-4 break-inside-avoid overflow-hidden rounded-card border border-border bg-card"
         >
             <figure>
                 <img

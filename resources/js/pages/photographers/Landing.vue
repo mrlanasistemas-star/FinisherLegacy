@@ -21,11 +21,15 @@ import {
     Users,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import Reveal from '@/components/motion/Reveal.vue';
+import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import FeeBreakdown from '@/components/photos/FeeBreakdown.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
 import type { PhotoFeeRules } from '@/lib/photoFees';
+import { dashboard as photographerDashboard } from '@/routes/photographer';
+import { register as photographerRegister } from '@/routes/photographers';
 
 const props = defineProps<{
     fees: PhotoFeeRules;
@@ -134,9 +138,9 @@ const benefits = [
                 <Button
                     as-child
                     size="lg"
-                    class="h-12 rounded-full bg-fl-gold px-7 text-fl-black hover:bg-fl-gold-soft"
+                    class="h-12 rounded-full bg-background px-7 text-foreground hover:bg-background/90"
                 >
-                    <Link href="/fotografos/registro">
+                    <Link :href="photographerRegister()">
                         <Camera class="size-4" />
                         Quiero vender mis fotos
                     </Link>
@@ -148,7 +152,7 @@ const benefits = [
                     variant="outline"
                     class="h-12 rounded-full border-white/40 bg-transparent px-7 text-white hover:bg-white/10 hover:text-white"
                 >
-                    <Link href="/fotografo">Ir a mi portal</Link>
+                    <Link :href="photographerDashboard()">Ir a mi portal</Link>
                 </Button>
             </div>
             <dl
@@ -173,9 +177,9 @@ const benefits = [
 
     <!-- Calculator -->
     <section
-        class="fl-container grid items-center gap-10 py-16 sm:py-20 lg:grid-cols-12"
+        class="fl-section fl-container grid items-center gap-10 lg:grid-cols-12"
     >
-        <div class="lg:col-span-6">
+        <Reveal class="lg:col-span-6">
             <p class="fl-eyebrow">Tus números, claros</p>
             <h2 class="fl-display mt-3 text-3xl sm:text-4xl">
                 Sabes cuánto ganas antes de subir una sola foto.
@@ -186,12 +190,10 @@ const benefits = [
                 depende de la pasarela del cliente y queda registrado en cada
                 venta). No hay cuota de alta ni mensualidad.
             </p>
-        </div>
+        </Reveal>
         <!-- Calculator -->
-        <div class="lg:col-span-5 lg:col-start-8">
-            <div
-                class="fl-card p-6 shadow-[0_24px_48px_-32px_rgb(23_23_20/0.4)] sm:p-7"
-            >
+        <Reveal :delay-ms="120" class="lg:col-span-5 lg:col-start-8">
+            <div class="fl-card p-6 shadow-fl-float sm:p-7">
                 <p class="flex items-center gap-2 text-sm font-semibold">
                     <CircleDollarSign class="size-4 text-fl-gold-ink" />
                     Calcula lo que ganas por foto
@@ -210,7 +212,7 @@ const benefits = [
                             type="number"
                             :min="fees.min_price_minor / 100"
                             step="1"
-                            class="legacy-numeric h-16 w-full rounded-xl border border-input bg-card pr-4 pl-10 font-serif text-3xl outline-none focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
+                            class="legacy-numeric h-16 w-full rounded-control border border-input bg-card pr-4 pl-10 font-serif text-3xl outline-none focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
                             aria-label="Precio por foto"
                         />
                     </span>
@@ -219,20 +221,30 @@ const benefits = [
                     <FeeBreakdown :rules="fees" :price-minor="priceMinor" />
                 </div>
             </div>
-        </div>
+        </Reveal>
     </section>
 
-    <section class="border-y border-border bg-card py-16 sm:py-20">
+    <!-- Así funciona: sube → asigna → publica → vende -->
+    <section class="fl-section-sm border-y border-border bg-card">
         <div class="fl-container">
             <h2 class="fl-display text-3xl sm:text-4xl">Así funciona</h2>
-            <ol class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+            <StaggerGroup
+                as="ol"
+                item-selector="li"
+                class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-5"
+            >
                 <li
                     v-for="(step, index) in steps"
                     :key="step.title"
                     class="relative"
                 >
                     <span
-                        class="flex size-12 items-center justify-center rounded-2xl bg-fl-cream text-fl-gold-ink"
+                        aria-hidden="true"
+                        class="absolute top-6 left-12 hidden h-px w-[calc(100%-2rem)] bg-border lg:block"
+                        :class="index === steps.length - 1 ? 'lg:hidden' : ''"
+                    />
+                    <span
+                        class="relative flex size-12 items-center justify-center rounded-media bg-fl-cream text-fl-gold-ink"
                     >
                         <component :is="step.icon" class="size-5" />
                     </span>
@@ -246,20 +258,20 @@ const benefits = [
                         {{ step.text }}
                     </p>
                 </li>
-            </ol>
+            </StaggerGroup>
         </div>
     </section>
 
-    <section class="fl-container py-16 sm:py-20">
-        <div class="grid gap-6 md:grid-cols-3">
+    <section class="fl-section fl-container">
+        <StaggerGroup class="grid gap-6 md:grid-cols-3">
             <div v-for="b in benefits" :key="b.title" class="fl-card p-6">
                 <component :is="b.icon" class="size-6 text-fl-gold-ink" />
                 <h3 class="mt-4 font-semibold">{{ b.title }}</h3>
                 <p class="mt-1.5 text-sm text-muted-foreground">{{ b.text }}</p>
             </div>
-        </div>
+        </StaggerGroup>
         <div
-            class="mt-12 flex flex-col items-start gap-5 rounded-2xl bg-foreground p-8 text-background sm:flex-row sm:items-center sm:justify-between sm:p-10"
+            class="mt-12 flex flex-col items-start gap-5 rounded-hero bg-foreground p-8 text-background shadow-fl-float sm:flex-row sm:items-center sm:justify-between sm:p-10"
         >
             <div>
                 <p class="font-serif text-3xl">
@@ -272,9 +284,9 @@ const benefits = [
             <Button
                 as-child
                 size="lg"
-                class="h-12 rounded-full bg-fl-gold px-7 text-fl-black hover:bg-fl-gold-soft"
+                class="h-12 rounded-full bg-background px-7 text-foreground hover:bg-background/90"
             >
-                <Link href="/fotografos/registro">
+                <Link :href="photographerRegister()">
                     Registrarme como fotógrafo
                     <ArrowRight class="size-4" />
                 </Link>

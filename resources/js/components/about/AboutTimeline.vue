@@ -73,7 +73,7 @@ const disciplines = [
                     :alt="milestone.title"
                     loading="lazy"
                     decoding="async"
-                    class="aspect-[4/3] w-full rounded-xl border border-border object-cover"
+                    class="aspect-[4/3] w-full rounded-media border border-border object-cover"
                 />
             </div>
         </li>
@@ -86,7 +86,7 @@ const disciplines = [
             <li
                 v-for="item in disciplines"
                 :key="item.label"
-                class="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-fl-black"
+                class="group relative aspect-[3/4] overflow-hidden rounded-media bg-fl-black"
             >
                 <img
                     :src="item.image.src"

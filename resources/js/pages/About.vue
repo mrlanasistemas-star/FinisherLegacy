@@ -5,6 +5,8 @@ import { computed } from 'vue';
 import AboutGallery from '@/components/about/AboutGallery.vue';
 import AboutLocation from '@/components/about/AboutLocation.vue';
 import AboutTimeline from '@/components/about/AboutTimeline.vue';
+import Reveal from '@/components/motion/Reveal.vue';
+import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
@@ -97,7 +99,7 @@ const story = computed(() =>
     <!-- Hero -->
     <section class="fl-container pt-12 pb-16 sm:pt-16 lg:pb-24">
         <div class="grid items-end gap-10 lg:grid-cols-12">
-            <div class="lg:col-span-7">
+            <Reveal class="lg:col-span-7">
                 <p class="fl-eyebrow flex items-center gap-3">
                     <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
                     Nosotros
@@ -108,18 +110,21 @@ const story = computed(() =>
                     Conocemos la meta porque también hemos estado
                     <span class="text-fl-gold-ink italic">ahí.</span>
                 </h1>
-            </div>
-            <p
+            </Reveal>
+            <Reveal
                 v-if="company.intro"
-                class="text-lg leading-relaxed text-muted-foreground lg:col-span-5 lg:pb-3"
+                :delay-ms="120"
+                class="lg:col-span-5 lg:pb-3"
             >
-                {{ company.intro }}
-            </p>
+                <p class="text-lg leading-relaxed text-muted-foreground">
+                    {{ company.intro }}
+                </p>
+            </Reveal>
         </div>
 
         <div class="mt-12 grid gap-4 sm:grid-cols-3">
             <div
-                class="relative aspect-[4/3] overflow-hidden rounded-2xl bg-fl-black sm:col-span-2 sm:aspect-[16/9]"
+                class="relative aspect-[4/3] overflow-hidden rounded-media bg-fl-black sm:col-span-2 sm:aspect-[16/9]"
             >
                 <img
                     src="/media/home/story/race-effort-640.webp"
@@ -136,7 +141,7 @@ const story = computed(() =>
                 />
             </div>
             <div
-                class="relative hidden overflow-hidden rounded-2xl bg-fl-black sm:block"
+                class="relative hidden overflow-hidden rounded-media bg-fl-black sm:block"
             >
                 <img
                     src="/media/home/story/finish-emotion-640.webp"
@@ -150,12 +155,28 @@ const story = computed(() =>
         </div>
     </section>
 
+    <!-- Whitespace statement — why Finisher Legacy exists -->
+    <section class="fl-section-lg fl-container">
+        <Reveal class="mx-auto max-w-[46rem] text-center">
+            <p class="fl-eyebrow">Por qué existimos</p>
+            <p
+                class="mt-6 font-serif text-3xl leading-[1.2] text-foreground sm:text-4xl lg:text-[2.75rem]"
+            >
+                El cronómetro se detiene, pero lo que viviste no.
+                <span class="text-muted-foreground">
+                    Finisher Legacy existe para preservar el esfuerzo, los
+                    recuerdos y la comunidad que rodean cada meta.</span
+                >
+            </p>
+        </Reveal>
+    </section>
+
     <!-- Desde el deporte -->
-    <section class="border-y border-border bg-card py-16 sm:py-24">
+    <section class="fl-section bg-accent">
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
-            <div class="lg:col-span-5">
+            <Reveal class="lg:col-span-5">
                 <div
-                    class="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-fl-black"
+                    class="relative aspect-[4/5] overflow-hidden rounded-media bg-fl-black shadow-fl-soft"
                 >
                     <img
                         :src="MEDIA.photo.celebration.src"
@@ -169,14 +190,18 @@ const story = computed(() =>
                         class="size-full object-cover"
                     />
                 </div>
-            </div>
+            </Reveal>
             <div class="lg:col-span-7">
                 <SectionHeading
                     eyebrow="Quiénes somos"
                     title="Construimos Finisher Legacy desde el deporte."
                     description="Buscamos preservar y conectar todo lo que rodea a un atleta: lo que siente al cruzar la meta, lo que guarda después y la comunidad con la que lo comparte."
                 />
-                <ol class="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2">
+                <StaggerGroup
+                    as="ol"
+                    item-selector="li"
+                    class="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2"
+                >
                     <li
                         v-for="(pillar, index) in pillars"
                         :key="pillar.title"
@@ -195,16 +220,24 @@ const story = computed(() =>
                             {{ pillar.text }}
                         </p>
                     </li>
-                </ol>
+                </StaggerGroup>
             </div>
         </div>
     </section>
 
     <!-- Historia: problema / origen / experiencia -->
-    <section v-if="story.length" class="fl-container py-16 sm:py-24">
-        <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+    <section v-if="story.length" class="fl-section-sm fl-container">
+        <p class="fl-eyebrow">Nuestra historia</p>
+        <StaggerGroup
+            as="div"
+            item-selector="article"
+            class="mt-8 grid gap-10 md:grid-cols-2 lg:grid-cols-3"
+        >
             <article v-for="block in story" :key="block.title">
-                <h2 class="font-serif text-2xl text-foreground sm:text-3xl">
+                <span class="block h-px w-10 bg-fl-gold" aria-hidden="true" />
+                <h2
+                    class="mt-5 font-serif text-2xl text-foreground sm:text-3xl"
+                >
                     {{ block.title }}
                 </h2>
                 <p
@@ -213,29 +246,29 @@ const story = computed(() =>
                     {{ block.text }}
                 </p>
             </article>
-        </div>
+        </StaggerGroup>
     </section>
 
     <!-- Nuestro camino -->
-    <section class="border-t border-border bg-card py-16 sm:py-24">
+    <section class="fl-section bg-card">
         <div class="fl-container">
             <SectionHeading
                 eyebrow="Trayectoria"
                 title="Nuestro camino."
                 description="Los eventos, carreras y proyectos que han construido la experiencia detrás de Finisher Legacy."
             />
-            <div class="mt-14">
+            <Reveal class="mt-14">
                 <AboutTimeline :milestones="milestones" :can-edit="canEdit" />
-            </div>
+            </Reveal>
         </div>
     </section>
 
-    <!-- Del deporte al producto -->
+    <!-- Del deporte al producto (the page's one dark band) -->
     <section
-        class="relative overflow-hidden bg-[#141311] py-16 text-white sm:py-24"
+        class="fl-section relative overflow-hidden bg-[#141311] text-white"
     >
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
-            <div class="lg:col-span-5">
+            <Reveal class="lg:col-span-5">
                 <p
                     class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold uppercase"
                 >
@@ -251,15 +284,15 @@ const story = computed(() =>
                 </p>
                 <Button
                     as-child
-                    class="mt-8 h-11 rounded-full bg-fl-gold px-6 text-fl-black hover:bg-fl-gold-soft"
+                    class="mt-8 h-11 rounded-full bg-background px-6 text-foreground hover:bg-background/90"
                 >
                     <Link :href="storeIndex()">
                         Ver la tienda
                         <ArrowRight class="size-4" />
                     </Link>
                 </Button>
-            </div>
-            <div class="grid gap-3 lg:col-span-7">
+            </Reveal>
+            <Reveal :delay-ms="120" class="grid gap-3 lg:col-span-7">
                 <img
                     :src="MEDIA.plate.hero.src"
                     :srcset="MEDIA.plate.hero.srcset"
@@ -269,13 +302,13 @@ const story = computed(() =>
                     :alt="MEDIA.plate.hero.alt"
                     loading="lazy"
                     decoding="async"
-                    class="w-full rounded-[20px]"
+                    class="w-full rounded-hero"
                 />
                 <ul class="grid grid-cols-4 gap-3">
                     <li
                         v-for="product in products"
                         :key="product.key"
-                        class="overflow-hidden rounded-xl bg-fl-cream"
+                        class="overflow-hidden rounded-media bg-fl-cream"
                     >
                         <img
                             :src="`/media/products/concepts/${product.key}-480.webp`"
@@ -288,23 +321,20 @@ const story = computed(() =>
                         />
                     </li>
                 </ul>
-            </div>
+            </Reveal>
         </div>
     </section>
 
     <!-- Galería -->
-    <section v-if="gallery.length" class="fl-container py-16 sm:py-24">
+    <section v-if="gallery.length" class="fl-section-sm fl-container">
         <SectionHeading eyebrow="Galería" title="Detrás de Finisher Legacy." />
-        <div class="mt-10">
+        <Reveal class="mt-10">
             <AboutGallery :items="gallery" />
-        </div>
+        </Reveal>
     </section>
 
     <!-- Visión -->
-    <section
-        v-if="company.vision"
-        class="border-t border-border py-16 sm:py-24"
-    >
+    <section v-if="company.vision" class="fl-section-lg">
         <div class="fl-container max-w-4xl text-center">
             <p class="fl-eyebrow">Visión</p>
             <p
@@ -341,7 +371,7 @@ const story = computed(() =>
     </section>
 
     <!-- Dónde estamos + colaboración -->
-    <section class="border-t border-border bg-background py-16 sm:py-24">
+    <section class="fl-section bg-accent">
         <div class="fl-container">
             <AboutLocation
                 :country="company.country"

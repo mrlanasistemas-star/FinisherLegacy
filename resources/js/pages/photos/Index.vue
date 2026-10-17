@@ -9,6 +9,8 @@
 import { Link, router, usePage } from '@inertiajs/vue3';
 import {
     Camera,
+    ChevronLeft,
+    ChevronRight,
     Download,
     Flag,
     ImageOff,
@@ -26,10 +28,21 @@ import FancySelect from '@/components/forms/FancySelect.vue';
 import PhotoPickCard from '@/components/photos/PhotoPickCard.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { login, register } from '@/routes';
-import { index as photosIndex } from '@/routes/photos';
+import { dashboard, login, register } from '@/routes';
+import { landing as photographersLanding } from '@/routes/photographers';
+import {
+    checkout as photosCheckout,
+    index as photosIndex,
+} from '@/routes/photos';
 
 type Photo = {
     uuid: string;
@@ -175,7 +188,7 @@ function buy() {
 
     buying.value = true;
     router.post(
-        '/fotos/comprar',
+        photosCheckout().url,
         { photos: [...selected.value] },
         {
             preserveScroll: true,
@@ -201,14 +214,40 @@ function buy() {
     );
 }
 
+// Lightbox state. `v-model:open` on the shared Dialog drives this through
+// `lightboxOpen` so Reka owns the focus-trap, Esc and overlay dismissal.
 const lightbox = ref<Photo | null>(null);
+const lightboxOpen = computed({
+    get: () => lightbox.value !== null,
+    set: (open: boolean) => {
+        if (!open) {
+            lightbox.value = null;
+        }
+    },
+});
+
+// Keyboard arrows step through every photo the lightbox can open (the
+// athlete's own-event photos plus the pro results), in display order.
+const lightboxIndex = computed(() =>
+    lightbox.value
+        ? buyable.value.findIndex((p) => p.uuid === lightbox.value!.uuid)
+        : -1,
+);
+function stepLightbox(direction: 1 | -1) {
+    const list = buyable.value;
+
+    if (!list.length || lightboxIndex.value < 0) {
+        return;
+    }
+
+    const next = (lightboxIndex.value + direction + list.length) % list.length;
+    lightbox.value = list[next] ?? null;
+}
 
 function toggleFromLightbox() {
     if (lightbox.value) {
         toggle(lightbox.value);
     }
-
-    lightbox.value = null;
 }
 </script>
 
@@ -239,7 +278,7 @@ function toggleFromLightbox() {
                 </p>
             </div>
             <Link
-                href="/fotografos"
+                :href="photographersLanding()"
                 class="inline-flex items-center gap-2 self-start rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-foreground/25 lg:self-auto"
             >
                 <Camera class="size-4 text-fl-gold-ink" />
@@ -293,7 +332,7 @@ function toggleFromLightbox() {
                 </Button>
             </form>
             <div
-                class="flex items-start gap-4 rounded-xl border border-dashed border-foreground/20 bg-card p-5 sm:p-6 lg:col-span-4"
+                class="flex items-start gap-4 rounded-card border border-dashed border-foreground/20 bg-card p-5 sm:p-6 lg:col-span-4"
             >
                 <span
                     class="flex size-10 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
@@ -379,7 +418,7 @@ function toggleFromLightbox() {
                         </div>
                         <p
                             v-else
-                            class="mt-3 flex items-start gap-3 rounded-xl border border-dashed border-foreground/15 bg-card p-4 text-sm text-muted-foreground"
+                            class="mt-3 flex items-start gap-3 rounded-card border border-dashed border-foreground/15 bg-card p-4 text-sm text-muted-foreground"
                         >
                             <ImageOff class="size-5 shrink-0" />
                             Aún no hay fotos de fotógrafos con tu número en este
@@ -455,7 +494,7 @@ function toggleFromLightbox() {
                         </div>
                         <p
                             v-else
-                            class="mt-4 flex items-start gap-3 rounded-xl border border-dashed border-foreground/15 bg-card p-5 text-sm text-muted-foreground"
+                            class="mt-4 flex items-start gap-3 rounded-card border border-dashed border-foreground/15 bg-card p-5 text-sm text-muted-foreground"
                         >
                             <ImageOff class="size-5 shrink-0" />
                             Aún no hay fotos de fotógrafos con ese número.
@@ -475,7 +514,7 @@ function toggleFromLightbox() {
                                 :src="photo.thumb_url"
                                 :alt="`Foto de ${photo.event ?? 'evento'}`"
                                 loading="lazy"
-                                class="aspect-square w-full rounded-lg bg-muted object-cover"
+                                class="aspect-square w-full rounded-control bg-muted object-cover"
                             />
                         </div>
                     </div>
@@ -493,7 +532,7 @@ function toggleFromLightbox() {
                         <article
                             v-for="item in purchased"
                             :key="item.uuid"
-                            class="overflow-hidden rounded-xl border border-border bg-card"
+                            class="overflow-hidden rounded-card border border-border bg-card"
                         >
                             <img
                                 :src="item.thumb_url"
@@ -539,7 +578,7 @@ function toggleFromLightbox() {
                                 :src="photo.thumb_url"
                                 :alt="`Mi foto en ${photo.event ?? 'evento'}`"
                                 loading="lazy"
-                                class="aspect-square w-full rounded-lg bg-muted object-cover"
+                                class="aspect-square w-full rounded-control bg-muted object-cover"
                             />
                             <span
                                 v-if="!photo.is_public"
@@ -551,7 +590,7 @@ function toggleFromLightbox() {
                     <p v-else class="mt-4 text-sm text-muted-foreground">
                         Sube tus fotos desde el detalle de cada evento en
                         <Link
-                            href="/dashboard"
+                            :href="dashboard()"
                             class="font-medium text-foreground underline underline-offset-4"
                             >Mi Legado</Link
                         >.
@@ -560,7 +599,7 @@ function toggleFromLightbox() {
 
                 <div
                     v-if="isGuest && !searched"
-                    class="rounded-xl border border-border bg-card p-6"
+                    class="rounded-card border border-border bg-card p-6"
                 >
                     <p class="font-semibold">¿Ya tienes cuenta?</p>
                     <p class="mt-1 text-sm text-muted-foreground">
@@ -591,7 +630,7 @@ function toggleFromLightbox() {
                             :key="photo.uuid"
                             :src="photo.thumb_url"
                             alt=""
-                            class="size-12 rounded-lg border-2 border-card object-cover"
+                            class="size-12 rounded-control border-2 border-card object-cover"
                         />
                     </div>
                     <dl class="mt-5 space-y-3 text-sm">
@@ -651,49 +690,73 @@ function toggleFromLightbox() {
         </div>
     </section>
 
-    <!-- Lightbox -->
-    <div
-        v-if="lightbox"
-        class="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4"
-        role="dialog"
-        aria-modal="true"
-        @click.self="lightbox = null"
-    >
-        <div
-            class="max-h-full w-full max-w-4xl overflow-hidden rounded-2xl bg-card"
+    <!-- Lightbox: the shared Reka Dialog handles focus-trap, Esc, overlay
+         dismissal and labelling; arrow keys step through the photos. -->
+    <Dialog v-model:open="lightboxOpen">
+        <DialogContent
+            :show-close-button="false"
+            class="gap-0 overflow-hidden rounded-media p-0 sm:max-w-4xl"
+            @keydown.left.prevent="stepLightbox(-1)"
+            @keydown.right.prevent="stepLightbox(1)"
         >
-            <img
-                :src="lightbox.url"
-                alt=""
-                class="max-h-[75vh] w-full bg-black object-contain"
-            />
-            <div class="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div>
-                    <p class="font-semibold">{{ lightbox.source }}</p>
-                    <p class="text-sm text-muted-foreground">
-                        {{ lightbox.event }} · vista previa con marca de agua
-                    </p>
-                </div>
-                <div class="flex gap-2">
-                    <Button
-                        v-if="!lightbox.owned"
-                        class="rounded-full"
-                        @click="toggleFromLightbox"
+            <template v-if="lightbox">
+                <div class="relative bg-fl-black">
+                    <img
+                        :src="lightbox.url"
+                        :alt="`Vista previa con marca de agua · ${lightbox.source}`"
+                        class="max-h-[75vh] w-full object-contain"
+                    />
+                    <button
+                        v-if="buyable.length > 1"
+                        type="button"
+                        class="fl-focus-glow absolute top-1/2 left-3 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
+                        aria-label="Foto anterior"
+                        @click="stepLightbox(-1)"
                     >
-                        {{
-                            selected.has(lightbox.uuid)
-                                ? 'Quitar'
-                                : `Agregar · ${money(lightbox.price_minor ?? 0)}`
-                        }}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        class="rounded-full"
-                        @click="lightbox = null"
-                        >Cerrar</Button
+                        <ChevronLeft class="size-5" />
+                    </button>
+                    <button
+                        v-if="buyable.length > 1"
+                        type="button"
+                        class="fl-focus-glow absolute top-1/2 right-3 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
+                        aria-label="Foto siguiente"
+                        @click="stepLightbox(1)"
                     >
+                        <ChevronRight class="size-5" />
+                    </button>
                 </div>
-            </div>
-        </div>
-    </div>
+                <div
+                    class="flex flex-wrap items-center justify-between gap-3 p-4"
+                >
+                    <div class="min-w-0">
+                        <DialogTitle class="truncate font-semibold">{{
+                            lightbox.source
+                        }}</DialogTitle>
+                        <DialogDescription class="truncate">
+                            {{ lightbox.event }} · vista previa con marca de
+                            agua
+                        </DialogDescription>
+                    </div>
+                    <div class="flex gap-2">
+                        <Button
+                            v-if="!lightbox.owned"
+                            class="rounded-full"
+                            @click="toggleFromLightbox"
+                        >
+                            {{
+                                selected.has(lightbox.uuid)
+                                    ? 'Quitar'
+                                    : `Agregar · ${money(lightbox.price_minor ?? 0)}`
+                            }}
+                        </Button>
+                        <DialogClose as-child>
+                            <Button variant="outline" class="rounded-full"
+                                >Cerrar</Button
+                            >
+                        </DialogClose>
+                    </div>
+                </div>
+            </template>
+        </DialogContent>
+    </Dialog>
 </template>

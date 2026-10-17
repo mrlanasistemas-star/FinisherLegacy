@@ -81,11 +81,13 @@ const locationLabel = computed(() =>
                 <p
                     class="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground"
                 >
-                    Cuéntanos qué tienes en mente. Leemos cada mensaje y te
+                    Organizadores, atletas, fotógrafos, marcas y aliados:
+                    cuéntanos qué tienes en mente. Leemos cada mensaje y te
                     respondemos por correo.
                 </p>
 
-                <ul class="mt-10 space-y-3">
+                <p class="fl-eyebrow mt-10">¿Con qué te ayudamos?</p>
+                <ul class="mt-4 space-y-3">
                     <li
                         v-for="type in types"
                         :key="type.value"
@@ -137,7 +139,11 @@ const locationLabel = computed(() =>
                     class="fl-card flex flex-col items-start gap-4 p-8 sm:p-10"
                     role="status"
                 >
-                    <CheckCircle2 class="size-8 text-emerald-600" />
+                    <span
+                        class="flex size-12 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
+                    >
+                        <CheckCircle2 class="size-7" />
+                    </span>
                     <h2 class="font-serif text-3xl">Mensaje enviado.</h2>
                     <p class="text-muted-foreground">
                         Gracias por escribirnos. Te responderemos al correo que

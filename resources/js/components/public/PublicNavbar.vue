@@ -37,11 +37,16 @@ import {
     register,
     search,
 } from '@/routes';
+import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as communityIndex } from '@/routes/community';
 import { edit as editProfile } from '@/routes/dashboard/profile';
 import { index as eventsIndex } from '@/routes/events';
+import { index as notificationsIndex } from '@/routes/notifications';
 import { index as photosIndex } from '@/routes/photos';
-import { edit as editSettingsProfile } from '@/routes/profile';
+import {
+    edit as editSettingsProfile,
+    publicMethod as publicProfile,
+} from '@/routes/profile';
 import { show as cartShow } from '@/routes/store/cart';
 import { index as ordersIndex } from '@/routes/store/orders';
 import { index as storeIndex } from '@/routes/store/products';
@@ -97,21 +102,21 @@ const accountLinks = computed(() => {
         {
             label: 'Mi perfil',
             href: profile.value?.username
-                ? `/@${profile.value.username}`
+                ? publicProfile(profile.value.username).url
                 : editProfile().url,
         },
         { label: 'Mis fotos', href: photosIndex().url },
         { label: 'Mis pedidos', href: ordersIndex().url },
         {
             label: 'Notificaciones',
-            href: '/notifications',
+            href: notificationsIndex().url,
             count: unread.value,
         },
         { label: 'Configuración', href: editSettingsProfile().url },
     ];
 
     if ((page.props.auth.permissions ?? []).includes('dashboard.admin.view')) {
-        links.push({ label: 'Administración', href: '/admin' });
+        links.push({ label: 'Administración', href: adminDashboard().url });
     }
 
     return links;
@@ -120,17 +125,17 @@ const accountLinks = computed(() => {
 
 <template>
     <header
-        class="fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300"
+        class="fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300 motion-reduce:transition-none"
         :class="
             scrolled
-                ? 'border-border bg-background/90 shadow-[0_1px_0_rgb(23_23_20/0.02)] backdrop-blur-md'
-                : 'border-transparent bg-background'
+                ? 'border-border bg-background/80 shadow-fl-micro backdrop-blur-md supports-[backdrop-filter]:bg-background/70'
+                : 'border-transparent bg-transparent'
         "
     >
         <div class="fl-container flex h-16 items-center justify-between gap-4">
             <Link
                 :href="home()"
-                class="shrink-0 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                class="shrink-0 rounded-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 aria-label="Finisher Legacy — Inicio"
             >
                 <FinisherLegacyLogo variant="wordmark" size="sm" />
@@ -165,7 +170,7 @@ const accountLinks = computed(() => {
 
                 <template v-if="user">
                     <Link
-                        href="/notifications"
+                        :href="notificationsIndex()"
                         class="relative hidden size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
                         :aria-label="
                             unread > 0
@@ -238,7 +243,7 @@ const accountLinks = computed(() => {
                         <DropdownMenuContent
                             align="end"
                             :side-offset="8"
-                            class="w-60 rounded-xl"
+                            class="w-60 rounded-card shadow-fl-float"
                         >
                             <UserMenuContent :user="user" />
                         </DropdownMenuContent>
@@ -274,7 +279,7 @@ const accountLinks = computed(() => {
                     </SheetTrigger>
                     <SheetContent
                         side="right"
-                        class="w-[86vw] max-w-sm gap-0 bg-background p-0"
+                        class="w-[86vw] max-w-sm gap-0 bg-background p-0 shadow-fl-overlay"
                     >
                         <SheetTitle class="sr-only">Menú</SheetTitle>
                         <SheetDescription class="sr-only"
@@ -324,7 +329,7 @@ const accountLinks = computed(() => {
                             >
                                 <Link
                                     :href="link.href"
-                                    class="flex items-center justify-between rounded-xl px-3 py-2.5 font-serif text-[1.65rem] leading-tight transition-colors hover:bg-muted"
+                                    class="flex min-h-12 items-center justify-between rounded-control px-3 py-2.5 font-serif text-[1.65rem] leading-tight transition-colors hover:bg-muted"
                                     :class="
                                         isActive(link)
                                             ? 'text-foreground'
@@ -344,7 +349,9 @@ const accountLinks = computed(() => {
                             </SheetClose>
                         </nav>
 
-                        <div class="mt-auto border-t border-border px-5 py-5">
+                        <div
+                            class="mt-auto border-t border-border px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+                        >
                             <template v-if="user">
                                 <p class="fl-eyebrow mb-2">Tu cuenta</p>
                                 <div class="-mx-3 flex flex-col">
@@ -355,7 +362,7 @@ const accountLinks = computed(() => {
                                     >
                                         <Link
                                             :href="item.href"
-                                            class="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                                            class="flex min-h-11 items-center justify-between rounded-control px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                                         >
                                             {{ item.label }}
                                             <span
@@ -369,7 +376,7 @@ const accountLinks = computed(() => {
                                         <Link
                                             :href="logout()"
                                             as="button"
-                                            class="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+                                            class="flex min-h-11 items-center rounded-control px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
                                             @click="router.flushAll()"
                                         >
                                             Cerrar sesión
@@ -380,7 +387,10 @@ const accountLinks = computed(() => {
                             <template v-else>
                                 <div class="grid gap-2">
                                     <SheetClose as-child>
-                                        <Button as-child class="rounded-full">
+                                        <Button
+                                            as-child
+                                            class="h-12 rounded-full"
+                                        >
                                             <Link :href="register()"
                                                 >Crear cuenta</Link
                                             >
@@ -390,7 +400,7 @@ const accountLinks = computed(() => {
                                         <Button
                                             as-child
                                             variant="outline"
-                                            class="rounded-full"
+                                            class="h-12 rounded-full"
                                         >
                                             <Link :href="login()">
                                                 <LogIn class="size-4" />
@@ -418,15 +428,24 @@ const accountLinks = computed(() => {
     right: 0;
     bottom: -4px;
     height: 1.5px;
-    background: var(--fl-gold);
+    border-radius: 1px;
+    /* Graphite hairline on hover; gold stays reserved for the earned/active
+       state (UI System §2 — gold as accent only). */
+    background: var(--foreground);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+        transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 220ms ease;
 }
 
 .fl-nav-link:hover::after,
 .fl-nav-link--active::after {
     transform: scaleX(1);
+}
+
+.fl-nav-link--active::after {
+    background: var(--fl-gold);
 }
 
 @media (prefers-reduced-motion: reduce) {

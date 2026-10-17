@@ -26,7 +26,7 @@ const emit = defineEmits<{ toggle: []; open: [] }>();
 
 <template>
     <article
-        class="group relative overflow-hidden rounded-xl border-2 bg-card transition-colors"
+        class="group relative overflow-hidden rounded-card border-2 bg-card transition-colors"
         :class="selected ? 'border-foreground' : 'border-transparent'"
     >
         <button

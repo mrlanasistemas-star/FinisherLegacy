@@ -6,6 +6,7 @@ import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import { about, contact, howItWorks, privacy, terms } from '@/routes';
 import { index as communityIndex } from '@/routes/community';
 import { index as eventsIndex } from '@/routes/events';
+import { landing as photographersLanding } from '@/routes/photographers';
 import { index as photosIndex } from '@/routes/photos';
 import { index as storeIndex } from '@/routes/store/products';
 
@@ -16,14 +17,20 @@ type Company = {
 };
 
 const page = usePage();
-const company = computed(
-    () =>
-        (page.props.company as Company | undefined) ?? {
-            country: null,
-            city: null,
-            channels: {},
-        },
-);
+// Normalize field-by-field: some pages (e.g. About) pass their own `company`
+// page prop that shadows the shared one and has a different shape (no
+// `channels`). Reading `company.channels.email` off that shape would throw and
+// blank the whole page, so every field is guarded here, not just the
+// whole-object fallback.
+const company = computed(() => {
+    const raw = page.props.company as Partial<Company> | undefined;
+
+    return {
+        country: raw?.country ?? null,
+        city: raw?.city ?? null,
+        channels: raw?.channels ?? {},
+    };
+});
 
 const year = new Date().getFullYear();
 
@@ -42,7 +49,7 @@ const columns = [
         title: 'Finisher Legacy',
         links: [
             { label: 'Nosotros', href: about() },
-            { label: 'Fotógrafos', href: '/fotografos' },
+            { label: 'Fotógrafos', href: photographersLanding() },
             { label: 'Contacto', href: contact() },
         ],
     },
@@ -148,7 +155,7 @@ const location = computed(() =>
             </div>
 
             <div
-                class="mt-14 flex flex-col gap-6 rounded-xl border border-border bg-background p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"
+                class="mt-14 flex flex-col gap-6 rounded-card border border-border bg-background p-6 shadow-fl-soft sm:flex-row sm:items-center sm:justify-between sm:p-8"
             >
                 <div>
                     <p class="font-serif text-xl text-foreground">
