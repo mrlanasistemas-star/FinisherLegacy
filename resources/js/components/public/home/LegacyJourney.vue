@@ -12,6 +12,8 @@
  * the observer never fires. Reduced motion → instant swaps.
  */
 import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
+import Reveal from '@/components/motion/Reveal.vue';
+import { useParallax } from '@/composables/useParallax';
 import { MEDIA } from '@/config/media';
 import { SAMPLE_FRONT } from '@/lib/plate-art';
 
@@ -76,6 +78,11 @@ const active = ref(0);
 const items = useTemplateRef<HTMLElement[]>('items');
 let observer: IntersectionObserver | null = null;
 
+// Gentle scroll-parallax drift on the whole sticky media frame (a parent of
+// the scene images, so it never conflicts with their active-state ken-burns).
+const stickyCol = useTemplateRef<HTMLElement>('stickyCol');
+useParallax(stickyCol);
+
 onMounted(() => {
     if (typeof IntersectionObserver === 'undefined' || !items.value) {
         return;
@@ -103,7 +110,7 @@ onBeforeUnmount(() => observer?.disconnect());
 <template>
     <section class="fl-section relative" aria-labelledby="journey-title">
         <div class="fl-container">
-            <div class="max-w-2xl">
+            <Reveal class="max-w-2xl">
                 <p class="fl-eyebrow">Cómo se construye</p>
                 <h2
                     id="journey-title"
@@ -111,16 +118,16 @@ onBeforeUnmount(() => observer?.disconnect());
                 >
                     De la salida a tu legado.
                 </h2>
-            </div>
+            </Reveal>
 
             <div class="mt-14 lg:mt-20 lg:grid lg:grid-cols-12 lg:gap-12">
                 <!-- Sticky stage (desktop) -->
-                <div class="hidden lg:col-span-6 lg:block">
+                <div ref="stickyCol" class="hidden lg:col-span-6 lg:block">
                     <div
                         class="sticky top-24 h-[calc(100svh-8rem)] max-h-[44rem] min-h-[30rem]"
                     >
                         <div
-                            class="relative size-full overflow-hidden rounded-hero border border-border bg-[#efece5]"
+                            class="fl-journey-frame relative size-full overflow-hidden rounded-hero border border-border bg-[#efece5]"
                         >
                             <div
                                 v-for="(chapter, index) in chapters"
@@ -438,6 +445,16 @@ onBeforeUnmount(() => observer?.disconnect());
     .fl-chapter.is-active .fl-chapter__dot {
         background: var(--fl-gold);
         transform: scale(1.6);
+    }
+}
+
+/* Scroll-parallax drift on the whole media frame (desktop only; transform-only,
+   var-driven, instant so it tracks scroll). `--sp` runs +1→-1 across the long
+   section, so the frame drifts a few px as the chapters pass. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .fl-journey-frame {
+        transform: translateY(calc(var(--sp, 0) * 14px));
+        will-change: transform;
     }
 }
 

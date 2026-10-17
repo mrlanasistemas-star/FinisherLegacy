@@ -7,6 +7,8 @@
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from '@lucide/vue';
+import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
+import Reveal from '@/components/motion/Reveal.vue';
 import EventCard from '@/components/public/EventCard.vue';
 import CommunityStory from '@/components/public/home/CommunityStory.vue';
 import type { HomeAthlete } from '@/components/public/home/CommunityStory.vue';
@@ -18,6 +20,7 @@ import StoryHero from '@/components/public/home/StoryHero.vue';
 import WhatIsIt from '@/components/public/home/WhatIsIt.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
+import { useReducedMotion } from '@/composables/useReducedMotion';
 import { index as eventsIndex } from '@/routes/events';
 import type {
     CommunityPost,
@@ -32,6 +35,56 @@ defineProps<{
     communityAthletes: HomeAthlete[];
     legacyPlateSlug: string | null;
 }>();
+
+/**
+ * Thin scroll-progress accent — a single gold hairline across the top that
+ * fills as you move down the page, signalling "there's more below". Driven by
+ * a rAF-throttled scroll listener writing a transform (scaleX) only, and only
+ * mounted when motion is allowed (it's purely a progress affordance).
+ */
+const reducedMotion = useReducedMotion();
+const progressEl = useTemplateRef<HTMLElement>('progress');
+let progressFrame = 0;
+
+function renderProgress() {
+    progressFrame = 0;
+
+    const el = progressEl.value;
+
+    if (!el) {
+        return;
+    }
+
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    const ratio = max > 0 ? Math.min(1, Math.max(0, doc.scrollTop / max)) : 0;
+    el.style.transform = `scaleX(${ratio.toFixed(4)})`;
+}
+
+function onProgressScroll() {
+    if (progressFrame === 0) {
+        progressFrame = requestAnimationFrame(renderProgress);
+    }
+}
+
+onMounted(() => {
+    if (reducedMotion.value) {
+        return;
+    }
+
+    window.addEventListener('scroll', onProgressScroll, { passive: true });
+    window.addEventListener('resize', onProgressScroll, { passive: true });
+    renderProgress();
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('scroll', onProgressScroll);
+    window.removeEventListener('resize', onProgressScroll);
+
+    if (progressFrame !== 0) {
+        cancelAnimationFrame(progressFrame);
+    }
+});
 </script>
 
 <template>
@@ -39,6 +92,19 @@ defineProps<{
         title="Finisher Legacy — Tu historia. Tu legado."
         description="Corres, terminas y lo guardas. Finisher Legacy conecta tus carreras, tus recuerdos, tu Legacy Plate con NFC y tu comunidad en un solo lugar."
     />
+
+    <!-- Thin scroll-progress accent (motion-only; a single gold hairline). -->
+    <div
+        v-if="!reducedMotion"
+        class="pointer-events-none fixed inset-x-0 top-0 z-[60]"
+        aria-hidden="true"
+    >
+        <div
+            ref="progress"
+            class="legacy-line origin-left"
+            style="transform: scaleX(0)"
+        />
+    </div>
 
     <StoryHero />
 
@@ -66,7 +132,7 @@ defineProps<{
                 </template>
             </SectionHeading>
 
-            <div
+            <Reveal
                 v-if="featuredEditions.length"
                 class="mt-10 grid gap-5 lg:grid-cols-3"
             >
@@ -91,7 +157,7 @@ defineProps<{
                         compact
                     />
                 </div>
-            </div>
+            </Reveal>
             <p
                 v-else
                 class="mt-10 rounded-media border border-dashed border-foreground/15 bg-card p-8 text-muted-foreground"

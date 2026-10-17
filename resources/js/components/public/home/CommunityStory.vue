@@ -6,12 +6,13 @@
  */
 import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowRight } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import PostPreview from '@/components/community/PostPreview.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import { Button } from '@/components/ui/button';
+import { useParallax } from '@/composables/useParallax';
 import { MEDIA } from '@/config/media';
 import { register } from '@/routes';
 import { index as communityIndex } from '@/routes/community';
@@ -33,6 +34,10 @@ const props = defineProps<{
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 const photo = MEDIA.photo.dawn;
+
+// Scroll parallax on the empty-state invitation photo (writes `--sp` on its cell).
+const inviteMediaEl = useTemplateRef<HTMLElement>('inviteMedia');
+useParallax(inviteMediaEl);
 const hasContent = computed(
     () => props.posts.length > 0 || props.athletes.length > 0,
 );
@@ -168,17 +173,22 @@ const features = [
                 v-else
                 class="mt-12 grid overflow-hidden rounded-hero border border-border bg-background md:grid-cols-2"
             >
-                <img
-                    :src="photo.src"
-                    :srcset="photo.srcset"
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    :width="photo.width"
-                    :height="photo.height"
-                    :alt="photo.alt"
-                    loading="lazy"
-                    decoding="async"
-                    class="h-64 w-full object-cover md:h-full"
-                />
+                <div
+                    ref="inviteMedia"
+                    class="relative h-64 overflow-hidden md:h-full"
+                >
+                    <img
+                        :src="photo.src"
+                        :srcset="photo.srcset"
+                        sizes="(min-width: 768px) 50vw, 100vw"
+                        :width="photo.width"
+                        :height="photo.height"
+                        :alt="photo.alt"
+                        loading="lazy"
+                        decoding="async"
+                        class="fl-invite-img size-full object-cover"
+                    />
+                </div>
                 <div class="flex flex-col justify-center p-8 sm:p-12">
                     <p class="font-serif text-3xl leading-tight sm:text-4xl">
                         La comunidad está empezando. Sé de los primeros.
@@ -208,5 +218,18 @@ const features = [
 }
 .fl-rail::-webkit-scrollbar {
     display: none;
+}
+
+/* Scroll parallax on the empty-state invitation photo (oversized so the drift
+   never exposes the cell edge; still under reduced motion). */
+.fl-invite-img {
+    transform: none;
+    will-change: transform;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .fl-invite-img {
+        transform: translateY(calc(var(--sp, 0) * 20px)) scale(1.1);
+    }
 }
 </style>

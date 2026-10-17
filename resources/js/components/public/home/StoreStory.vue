@@ -9,11 +9,12 @@
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, Nfc } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
 import { Button } from '@/components/ui/button';
+import { useParallax } from '@/composables/useParallax';
 import { MEDIA } from '@/config/media';
 import { productCardProps } from '@/lib/store';
 import {
@@ -28,6 +29,10 @@ const props = defineProps<{
 }>();
 
 const platePhoto = MEDIA.plate.hero;
+
+// Scroll parallax for the Legacy Plate hero image (writes `--sp` on its panel).
+const plateMediaEl = useTemplateRef<HTMLElement>('plateMedia');
+useParallax(plateMediaEl);
 
 // Keep the hero plate out of the rail so it isn't shown twice.
 const railProducts = computed(() =>
@@ -85,22 +90,25 @@ const lines = [
             <!-- Hero product: the Legacy Plate -->
             <Reveal v-if="legacyPlateSlug" class="mt-14">
                 <div
-                    class="grid overflow-hidden rounded-hero border border-border bg-card shadow-fl-soft lg:grid-cols-2"
+                    class="fl-plate-card group grid overflow-hidden rounded-hero border border-border bg-card shadow-fl-soft transition-[border-color,box-shadow] duration-500 hover:border-fl-gold/45 hover:shadow-fl-float lg:grid-cols-2"
                 >
                     <div
-                        class="relative aspect-[4/3] bg-fl-black lg:aspect-auto lg:min-h-[26rem]"
+                        ref="plateMedia"
+                        class="relative aspect-[4/3] overflow-hidden bg-fl-black lg:aspect-auto lg:min-h-[26rem]"
                     >
-                        <img
-                            :src="platePhoto.src"
-                            :srcset="platePhoto.srcset"
-                            sizes="(min-width: 1024px) 50vw, 100vw"
-                            :width="platePhoto.width"
-                            :height="platePhoto.height"
-                            :alt="platePhoto.alt"
-                            loading="lazy"
-                            decoding="async"
-                            class="size-full object-cover"
-                        />
+                        <div class="fl-plate-pan size-full">
+                            <img
+                                :src="platePhoto.src"
+                                :srcset="platePhoto.srcset"
+                                sizes="(min-width: 1024px) 50vw, 100vw"
+                                :width="platePhoto.width"
+                                :height="platePhoto.height"
+                                :alt="platePhoto.alt"
+                                loading="lazy"
+                                decoding="async"
+                                class="fl-plate-img size-full object-cover"
+                            />
+                        </div>
                     </div>
                     <div class="flex flex-col justify-center gap-5 p-8 sm:p-12">
                         <p class="fl-eyebrow flex items-center gap-2">
@@ -170,5 +178,27 @@ const lines = [
 }
 .fl-rail::-webkit-scrollbar {
     display: none;
+}
+
+/* Legacy Plate hero image: the pan layer tracks scroll parallax instantly
+   (no transition), the image layer carries the hover zoom (transitioned). The
+   image is oversized so the drift never exposes the panel edge. */
+.fl-plate-pan,
+.fl-plate-img {
+    transform: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .fl-plate-pan {
+        transform: translateY(calc(var(--sp, 0) * 22px));
+        will-change: transform;
+    }
+    .fl-plate-img {
+        transform: scale(1.08);
+        transition: transform 600ms var(--legacy-ease);
+    }
+    .fl-plate-card:hover .fl-plate-img {
+        transform: scale(1.12);
+    }
 }
 </style>
