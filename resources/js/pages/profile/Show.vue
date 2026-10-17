@@ -24,6 +24,7 @@ import { toast } from 'vue-sonner';
 import CommunityPost from '@/components/community/CommunityPost.vue';
 import CommunityReportDialog from '@/components/community/CommunityReportDialog.vue';
 import FollowButton from '@/components/community/FollowButton.vue';
+import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import LegacyTimelineList from '@/components/profile/LegacyTimelineList.vue';
 import type { TimelineEntry } from '@/components/profile/LegacyTimelineList.vue';
 import ProfileHeader from '@/components/profile/ProfileHeader.vue';
@@ -152,18 +153,58 @@ const highlights = computed(() =>
     props.events.filter((event) => event.official_time).slice(0, 3),
 );
 
+// Real event context for the timeline, derived only from data already on the
+// page: the public photos array carries an event name per image, so we can
+// surface a genuine photo from each event + a truthful public-photo count.
+// (The events payload itself has no image/plate/position fields; we never
+// fabricate them — see §0 "real data only".)
+const photosByEvent = computed(() => {
+    const map = new Map<string, { url: string; count: number }>();
+
+    for (const photo of props.photos) {
+        if (!photo.event) {
+            continue;
+        }
+
+        const existing = map.get(photo.event);
+
+        if (existing) {
+            existing.count += 1;
+        } else {
+            map.set(photo.event, { url: photo.url, count: 1 });
+        }
+    }
+
+    return map;
+});
+
 const timeline = computed<TimelineEntry[]>(() =>
-    props.events.map((event, index) => ({
-        key: `${event.event_slug}-${index}`,
-        date: event.event_date,
-        title: event.event ?? 'Evento',
-        subtitle: event.race,
-        distance: event.distance,
-        time: event.official_time,
-        pace: event.pace,
-        href: event.event_slug ? `/events/${event.event_slug}` : null,
-    })),
+    props.events.map((event, index) => {
+        const eventPhotos = event.event
+            ? photosByEvent.value.get(event.event)
+            : undefined;
+
+        return {
+            key: `${event.event_slug}-${index}`,
+            date: event.event_date,
+            title: event.event ?? 'Evento',
+            subtitle: event.race,
+            distance: event.distance,
+            time: event.official_time,
+            pace: event.pace,
+            href: event.event_slug ? `/events/${event.event_slug}` : null,
+            imageUrl: eventPhotos?.url ?? null,
+            photoCount: eventPhotos?.count,
+        };
+    }),
 );
+
+// Deterministic editorial grid: every 5th tile becomes a 2-wide banner whose
+// height matches its square neighbours (2 cols wide, 2:1 ratio = one col tall),
+// so rows always align without fragile CSS masonry. Leads with a banner.
+function editorialTileClass(index: number): string {
+    return index % 5 === 0 ? 'col-span-2 aspect-[2/1]' : 'aspect-square';
+}
 
 function tileImage(post: CommunityPostData): string | null {
     return (
@@ -245,9 +286,19 @@ const profileJsonLd = computed(() => {
     />
     <Head>
         <meta property="profile:username" :content="profile.username" />
-        <script type="application/ld+json">
-            {{ JSON.stringify(profileJsonLd) }}
-        </script>
+        <!--
+            Dynamic component (not a literal <script>) on purpose: a literal
+            script tag in an SFC template trips Vue's "side-effect tags are
+            ignored in client templates" compiler error, which breaks this
+            page's client hydration. :is="'script'" emits a real ld+json script.
+        -->
+        <!-- eslint-disable vue/no-v-text-v-html-on-component -- v-text is correct here: :is="'script'" is a native element, and v-text sets raw ld+json text (a slot child would HTML-escape "<" and corrupt the JSON). -->
+        <component
+            :is="'script'"
+            type="application/ld+json"
+            v-text="JSON.stringify(profileJsonLd)"
+        />
+        <!-- eslint-enable vue/no-v-text-v-html-on-component -->
     </Head>
 
     <div class="fl-container py-6 sm:py-8">
@@ -259,6 +310,7 @@ const profileJsonLd = computed(() => {
             :sports="profile.sport ? [profile.sport] : []"
             :photo-url="profile.photo_url"
             :cover-url="restricted ? null : profile.cover_url"
+            :is-finisher="!restricted && stats.medals > 0"
             :stats="
                 restricted
                     ? [
@@ -338,7 +390,7 @@ const profileJsonLd = computed(() => {
         <!-- Followers-only, not following yet -->
         <section
             v-if="restricted"
-            class="mx-auto mt-12 max-w-md rounded-2xl border border-border bg-card p-8 text-center"
+            class="mx-auto mt-12 max-w-md rounded-hero border border-border bg-card p-8 text-center shadow-fl-soft"
         >
             <span
                 class="mx-auto flex size-14 items-center justify-center rounded-full bg-fl-cream"
@@ -355,16 +407,23 @@ const profileJsonLd = computed(() => {
         </section>
 
         <template v-else>
-            <!-- Legacy highlights -->
+            <!--
+                Legacy highlights — an editorial, numbers-as-statement band:
+                top real results with the official time set BIG in the serif.
+                Deliberately distinct from the boxed medal/photo grids (one
+                seamless hairline-divided panel, no per-card chrome).
+            -->
             <section
                 v-if="highlights.length"
-                class="mt-10"
+                class="mt-12"
                 aria-labelledby="highlights-title"
             >
                 <h2 id="highlights-title" class="fl-eyebrow">
                     Destacados de su legado
                 </h2>
-                <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                <StaggerGroup
+                    class="mt-4 grid gap-px overflow-hidden rounded-media border border-border bg-border sm:grid-cols-3"
+                >
                     <component
                         :is="item.event_slug ? Link : 'div'"
                         v-for="(item, index) in highlights"
@@ -374,9 +433,13 @@ const profileJsonLd = computed(() => {
                                 ? `/events/${item.event_slug}`
                                 : undefined
                         "
-                        class="fl-card fl-hover-lift block p-4"
+                        class="group relative flex flex-col bg-card p-6 transition-colors sm:p-7"
+                        :class="item.event_slug ? 'hover:bg-fl-cream/40' : ''"
                     >
-                        <p class="truncate text-xs text-muted-foreground">
+                        <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
+                        <p
+                            class="mt-4 truncate text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase"
+                        >
                             {{
                                 [item.distance, shortDate(item.event_date)]
                                     .filter(Boolean)
@@ -384,25 +447,32 @@ const profileJsonLd = computed(() => {
                             }}
                         </p>
                         <p
-                            class="mt-1 truncate font-serif text-lg leading-tight"
+                            class="mt-1 line-clamp-2 font-serif text-lg leading-tight text-foreground"
                         >
                             {{ item.event }}
                         </p>
                         <p
-                            class="legacy-numeric mt-3 flex items-center gap-2 font-serif text-3xl"
+                            class="legacy-numeric mt-5 font-serif text-4xl leading-none text-foreground sm:text-5xl"
                         >
-                            <Timer
-                                class="size-4 text-fl-gold-ink"
-                                aria-hidden="true"
-                            />
                             {{ item.official_time }}
                         </p>
+                        <p
+                            class="mt-2 inline-flex items-center gap-1 text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase"
+                        >
+                            <Timer
+                                class="size-3 text-fl-gold-ink"
+                                aria-hidden="true"
+                            />
+                            Tiempo oficial
+                        </p>
                     </component>
-                </div>
+                </StaggerGroup>
             </section>
 
             <div class="mt-10">
-                <div class="flex items-center gap-1 border-b border-border">
+                <div
+                    class="sticky top-16 z-30 -mx-4 flex items-center gap-1 border-b border-border bg-background/90 px-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+                >
                     <div
                         class="flex flex-1 gap-1 overflow-x-auto"
                         role="tablist"
@@ -419,7 +489,7 @@ const profileJsonLd = computed(() => {
                             class="-mb-px min-h-11 shrink-0 border-b-2 px-4 text-sm font-medium transition-colors"
                             :class="
                                 activeTab === tab.key
-                                    ? 'border-foreground text-foreground'
+                                    ? 'border-fl-gold text-foreground'
                                     : 'border-transparent text-muted-foreground hover:text-foreground'
                             "
                             @click="activeTab = tab.key"
@@ -487,16 +557,17 @@ const profileJsonLd = computed(() => {
                             id="profile-posts"
                             :class="
                                 layout === 'grid'
-                                    ? 'grid grid-cols-3 gap-1 sm:gap-2'
+                                    ? '-mx-4 grid [grid-auto-flow:dense] grid-cols-2 gap-1 sm:mx-0 sm:grid-cols-3 sm:gap-2'
                                     : 'mx-auto max-w-2xl space-y-5'
                             "
                         >
                             <template v-if="layout === 'grid'">
                                 <Link
-                                    v-for="post in visiblePosts"
+                                    v-for="(post, index) in visiblePosts"
                                     :key="post.uuid"
                                     :href="showPost(post.uuid)"
-                                    class="group/tile relative block aspect-square overflow-hidden rounded-md bg-fl-cream sm:rounded-lg"
+                                    class="group/tile relative block overflow-hidden bg-fl-cream sm:rounded-card"
+                                    :class="editorialTileClass(index)"
                                     :aria-label="`Publicación: ${post.kind_label}`"
                                 >
                                     <img
@@ -634,20 +705,26 @@ const profileJsonLd = computed(() => {
                     class="pt-8"
                 >
                     <div
-                        class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+                        class="-mx-4 grid [grid-auto-flow:dense] grid-cols-2 gap-1 sm:mx-0 sm:grid-cols-3 sm:gap-2"
                     >
-                        <img
-                            v-for="photo in photos"
+                        <div
+                            v-for="(photo, index) in photos"
                             :key="photo.uuid"
-                            :src="photo.url"
-                            :alt="
-                                photo.event
-                                    ? `${profile.name} en ${photo.event}`
-                                    : `Foto de ${profile.name}`
-                            "
-                            loading="lazy"
-                            class="aspect-square w-full rounded-lg bg-muted object-cover"
-                        />
+                            class="group/photo relative overflow-hidden bg-muted sm:rounded-card"
+                            :class="editorialTileClass(index)"
+                        >
+                            <img
+                                :src="photo.url"
+                                :alt="
+                                    photo.event
+                                        ? `${profile.name} en ${photo.event}`
+                                        : `Foto de ${profile.name}`
+                                "
+                                loading="lazy"
+                                decoding="async"
+                                class="size-full object-cover transition-transform duration-500 group-hover/photo:scale-105 motion-reduce:transition-none"
+                            />
+                        </div>
                     </div>
                 </section>
             </div>

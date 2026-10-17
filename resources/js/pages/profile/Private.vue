@@ -25,7 +25,12 @@ withDefaults(
 
     <section class="fl-container max-w-md py-28 text-center">
         <div
-            class="mx-auto flex size-16 items-center justify-center rounded-full border border-border bg-card text-muted-foreground"
+            class="mx-auto flex size-16 items-center justify-center rounded-full shadow-fl-soft"
+            :class="
+                followersOnly
+                    ? 'bg-fl-cream text-fl-gold-ink'
+                    : 'border border-border bg-card text-muted-foreground'
+            "
         >
             <Lock class="size-7" />
         </div>
