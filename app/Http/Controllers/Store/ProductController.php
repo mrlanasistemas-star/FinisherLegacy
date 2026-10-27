@@ -209,6 +209,7 @@ class ProductController extends Controller
     public static function typeLabel(ProductType $type): string
     {
         return match ($type) {
+            ProductType::LegacyTag => 'Finisher Legacy Tag',
             ProductType::LegacyPlate => 'Legacy Plate',
             ProductType::Apparel => 'Ropa',
             ProductType::Accessory => 'Accesorios',

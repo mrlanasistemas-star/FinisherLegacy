@@ -194,6 +194,32 @@ return [
             'nfc.manage' => 'Generar, asignar y desactivar etiquetas NFC',
         ],
     ],
+    'tags' => [
+        'label' => 'Finisher Legacy Tags',
+        'icon' => 'Tag',
+        'permissions' => [
+            'tags.view' => 'Ver tags, activaciones e historial por unidad',
+            'tags.manage' => 'Recibir lotes, transferir, reemplazar y desactivar tags',
+            'pos.sell' => 'Vender en persona (venta rápida)',
+        ],
+    ],
+    'allies' => [
+        'label' => 'Aliados y distribución',
+        'icon' => 'Handshake',
+        'permissions' => [
+            'allies.view' => 'Ver aliados y proveedores',
+            'allies.manage' => 'Gestionar aliados, proveedores y condiciones',
+            'ally.portal' => 'Portal de aliado (solo su propio inventario y ventas)',
+        ],
+    ],
+    'support' => [
+        'label' => 'Soporte',
+        'icon' => 'LifeBuoy',
+        'permissions' => [
+            'support.view' => 'Ver incidencias',
+            'support.manage' => 'Abrir y resolver incidencias, reemplazos y devoluciones',
+        ],
+    ],
     'store' => [
         'label' => 'Tienda',
         'icon' => 'ShoppingBag',

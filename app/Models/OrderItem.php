@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -56,6 +57,12 @@ class OrderItem extends Model
     public function ownedProduct(): HasOne
     {
         return $this->hasOne(AthleteOwnedProduct::class);
+    }
+
+    /** @return HasMany<LegacyTag, $this> */
+    public function legacyTags(): HasMany
+    {
+        return $this->hasMany(LegacyTag::class);
     }
 
     public function isFulfilled(): bool

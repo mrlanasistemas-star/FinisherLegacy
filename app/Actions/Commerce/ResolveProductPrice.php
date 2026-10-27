@@ -4,6 +4,7 @@ namespace App\Actions\Commerce;
 
 use App\Enums\ProductPriceType;
 use App\Enums\ProductType;
+use App\Enums\SalesChannel;
 use App\Exceptions\PriceNotAvailableException;
 use App\Models\EventEdition;
 use App\Models\Product;
@@ -43,9 +44,14 @@ class ResolveProductPrice
      * Base price (schedule or variant) with the best running "oferta"
      * applied on top — what the cart shows and what checkout charges.
      */
-    public function handle(Product $product, ?ProductVariant $variant = null, ?EventEdition $eventEdition = null, ?DateTimeInterface $at = null): ResolvedPrice
+    /**
+     * `$channel`/`$allyId` select channel prices (ally, own event…). A
+     * schedule scoped to a channel never applies to another channel — the
+     * online store (no channel) only ever sees unscoped schedules.
+     */
+    public function handle(Product $product, ?ProductVariant $variant = null, ?EventEdition $eventEdition = null, ?DateTimeInterface $at = null, ?SalesChannel $channel = null, ?int $allyId = null): ResolvedPrice
     {
-        $base = $this->basePrice($product, $variant, $eventEdition, $at);
+        $base = $this->basePrice($product, $variant, $eventEdition, $at, $channel, $allyId);
         $promotion = $this->promotions->bestFor($product, $base->amountMinor);
 
         return $promotion === null
@@ -53,7 +59,7 @@ class ResolveProductPrice
             : $base->withPromotion($base->amountMinor - $promotion->discountFor($base->amountMinor), $promotion->id, $promotion->label());
     }
 
-    private function basePrice(Product $product, ?ProductVariant $variant, ?EventEdition $eventEdition, ?DateTimeInterface $at): ResolvedPrice
+    private function basePrice(Product $product, ?ProductVariant $variant, ?EventEdition $eventEdition, ?DateTimeInterface $at, ?SalesChannel $channel = null, ?int $allyId = null): ResolvedPrice
     {
         $at = Carbon::instance($at ?? now());
 
@@ -72,6 +78,14 @@ class ResolveProductPrice
 
                 if ($eventEdition !== null) {
                     $query->orWhere('event_edition_id', $eventEdition->id);
+                }
+            })
+            ->where(function ($query) use ($channel, $allyId) {
+                $query->whereNull('sales_channel');
+
+                if ($channel !== null) {
+                    $query->orWhere(fn ($q) => $q->where('sales_channel', $channel->value)
+                        ->where(fn ($a) => $a->whereNull('ally_id')->when($allyId !== null, fn ($x) => $x->orWhere('ally_id', $allyId))));
                 }
             })
             ->get()
@@ -112,8 +126,9 @@ class ResolveProductPrice
     {
         $variantSpecific = $schedule->product_variant_id !== null && $variant !== null && $schedule->product_variant_id === $variant->id ? 1 : 0;
         $eventSpecific = $schedule->event_edition_id !== null ? 1 : 0;
+        $channelSpecific = ($schedule->sales_channel !== null ? 1 : 0) + ($schedule->ally_id !== null ? 1 : 0);
         $typeRank = self::TYPE_RANK[$schedule->price_type->value];
 
-        return sprintf('%d%d%d%010d', $variantSpecific, $eventSpecific, $typeRank, $schedule->id);
+        return sprintf('%d%d%d%d%010d', $channelSpecific, $variantSpecific, $eventSpecific, $typeRank, $schedule->id);
     }
 }

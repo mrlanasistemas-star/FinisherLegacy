@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'product_id', 'product_variant_id', 'event_edition_id', 'price_type',
-    'amount_minor', 'currency', 'starts_at', 'ends_at', 'active',
+    'amount_minor', 'currency', 'starts_at', 'ends_at', 'active', 'sales_channel', 'ally_id',
 ])]
 class ProductPriceSchedule extends Model
 {

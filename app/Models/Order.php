@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\DeliveryMethod;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
+use App\Enums\SalesChannel;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +28,8 @@ use Spatie\Activitylog\Support\LogOptions;
     'subtotal_minor', 'discount_minor', 'tax_minor', 'total_minor', 'currency',
     'coupon_id', 'coupon_code', 'coupon_name',
     'customer_snapshot', 'confirmed_at', 'cancelled_at', 'completed_at',
+    'sales_channel', 'ally_id', 'inventory_location_id', 'seller_user_id', 'delivery_method', 'shipping_address',
+    'carrier', 'tracking_number', 'shipped_at', 'delivered_at', 'notes', 'sale_started_at',
 ])]
 class Order extends Model
 {
@@ -46,6 +50,12 @@ class Order extends Model
             'confirmed_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'completed_at' => 'datetime',
+            'sales_channel' => SalesChannel::class,
+            'delivery_method' => DeliveryMethod::class,
+            'shipping_address' => 'array',
+            'shipped_at' => 'datetime',
+            'delivered_at' => 'datetime',
+            'sale_started_at' => 'datetime',
         ];
     }
 
@@ -91,6 +101,30 @@ class Order extends Model
     }
 
     /** @return BelongsTo<Coupon, $this> */
+    /** @return BelongsTo<Ally, $this> */
+    public function ally(): BelongsTo
+    {
+        return $this->belongsTo(Ally::class);
+    }
+
+    /** @return BelongsTo<InventoryLocation, $this> */
+    public function inventoryLocation(): BelongsTo
+    {
+        return $this->belongsTo(InventoryLocation::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'seller_user_id');
+    }
+
+    /** Physical units delivered with this order. */
+    public function legacyTags(): HasMany
+    {
+        return $this->hasMany(LegacyTag::class);
+    }
+
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);

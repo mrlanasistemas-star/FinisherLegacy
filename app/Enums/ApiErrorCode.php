@@ -68,4 +68,6 @@ enum ApiErrorCode: string
     case NfcNotClaimable = 'NFC_NOT_CLAIMABLE';
     case NfcTagInUse = 'NFC_TAG_IN_USE';
     case NfcTransferInvalid = 'NFC_TRANSFER_INVALID';
+    case TagAlreadyActivated = 'TAG_ALREADY_ACTIVATED';
+    case TagNotActivatable = 'TAG_NOT_ACTIVATABLE';
 }

@@ -110,6 +110,49 @@ class InventoryService
         });
     }
 
+    /**
+     * An in-person sale (POS / ally / event stand): stock leaves right away,
+     * with no reservation phase. Never touches other orders' reservations —
+     * it only sells what is available at that location.
+     */
+    public function sellDirect(ProductVariant $variant, InventoryLocation $location, int $quantity, ?string $referenceType = null, ?int $referenceId = null, ?User $actor = null, ?string $reason = 'sale'): InventoryLevel
+    {
+        return DB::transaction(function () use ($variant, $location, $quantity, $referenceType, $referenceId, $actor, $reason) {
+            $level = $this->lockedLevel($variant, $location);
+            $variant->loadMissing('product');
+
+            if ($variant->product->tracks_inventory && $level->availableQuantity() < $quantity) {
+                throw new ProductOutOfStockException;
+            }
+
+            $level->update(['quantity_on_hand' => max(0, $level->quantity_on_hand - $quantity)]);
+
+            return $this->finish($level, $variant, $location, InventoryMovementType::Sale, -$quantity, $referenceType, $referenceId, $actor, null, $reason);
+        });
+    }
+
+    /**
+     * Moves stock between two locations as a pair of movements sharing the
+     * same reference, so the kardex of both locations explains the change.
+     */
+    public function transfer(ProductVariant $variant, InventoryLocation $from, InventoryLocation $to, int $quantity, ?User $actor = null, ?string $notes = null, ?string $referenceType = null, ?int $referenceId = null): void
+    {
+        DB::transaction(function () use ($variant, $from, $to, $quantity, $actor, $notes, $referenceType, $referenceId) {
+            $source = $this->lockedLevel($variant, $from);
+
+            if ($source->availableQuantity() < $quantity) {
+                throw new ProductOutOfStockException;
+            }
+
+            $source->update(['quantity_on_hand' => $source->quantity_on_hand - $quantity]);
+            $this->finish($source, $variant, $from, InventoryMovementType::TransferOut, -$quantity, $referenceType, $referenceId, $actor, $notes, 'transfer');
+
+            $target = $this->lockedLevel($variant, $to);
+            $target->increment('quantity_on_hand', $quantity);
+            $this->finish($target, $variant, $to, InventoryMovementType::TransferIn, $quantity, $referenceType, $referenceId, $actor, $notes, 'transfer');
+        });
+    }
+
     public function receive(ProductVariant $variant, InventoryLocation $location, int $quantity, ?string $notes = null, ?User $actor = null, ?string $reason = null): InventoryLevel
     {
         return DB::transaction(function () use ($variant, $location, $quantity, $notes, $actor, $reason) {

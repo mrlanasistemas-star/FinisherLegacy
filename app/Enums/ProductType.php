@@ -9,6 +9,9 @@ namespace App\Enums;
  */
 enum ProductType: string
 {
+    /** Finished-from-factory NFC tag with strap — the commercial product since 2026-10-27. Serialized: one LegacyTag row per unit. */
+    case LegacyTag = 'legacy_tag';
+    /** Historical: plate personalised/engraved at the event (kept for existing orders). */
     case LegacyPlate = 'legacy_plate';
     case Apparel = 'apparel';
     case Accessory = 'accessory';

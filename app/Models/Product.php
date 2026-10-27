@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Storage;
     'uuid', 'name', 'slug', 'description', 'tagline', 'type', 'category_id', 'brand', 'image_path', 'status',
     'availability', 'sort_order',
     'taxable', 'requires_shipping', 'qr_capable', 'tracks_inventory', 'active', 'minimum_stock', 'is_featured',
+    'collection_id', 'tracks_units', 'material', 'strap_type', 'dimensions', 'instructions', 'seo_title', 'seo_description',
 ])]
 class Product extends Model
 {
@@ -38,6 +39,7 @@ class Product extends Model
             'requires_shipping' => 'boolean',
             'qr_capable' => 'boolean',
             'tracks_inventory' => 'boolean',
+            'tracks_units' => 'boolean',
             'active' => 'boolean',
             'is_featured' => 'boolean',
             'minimum_stock' => 'integer',
@@ -45,6 +47,12 @@ class Product extends Model
     }
 
     /** @return BelongsTo<ProductCategory, $this> */
+    /** @return BelongsTo<Collection, $this> */
+    public function collection(): BelongsTo
+    {
+        return $this->belongsTo(Collection::class);
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(ProductCategory::class);

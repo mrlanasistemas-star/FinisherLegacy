@@ -2,6 +2,7 @@
 
 namespace App\Actions\Commerce;
 
+use App\Actions\LegacyTags\AssignTagsToOrderItem;
 use App\Enums\FulfillmentStatus;
 use App\Models\InventoryLocation;
 use App\Models\Order;
@@ -22,6 +23,7 @@ class FulfillOrderItem
     public function __construct(
         private readonly InventoryService $inventory,
         private readonly CreateAthleteOwnedProduct $createOwnedProduct,
+        private readonly AssignTagsToOrderItem $assignTags,
     ) {}
 
     public function handle(OrderItem $item, InventoryLocation $location): OrderItem
@@ -35,6 +37,12 @@ class FulfillOrderItem
 
             if ($item->productVariant !== null && $item->product->tracks_inventory) {
                 $this->inventory->commitSale($item->productVariant, $location, $item->quantity, OrderItem::class, $item->id);
+            }
+
+            // Serialized products (Finisher Legacy Tag): bind the exact pieces
+            // leaving the shelf to this item — they are activated later by the buyer.
+            if ($item->product->tracks_units) {
+                $this->assignTags->handle($item, $location);
             }
 
             $item->update(['fulfilled_at' => now()]);

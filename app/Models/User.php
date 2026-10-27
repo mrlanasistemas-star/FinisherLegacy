@@ -126,6 +126,12 @@ class User extends Authenticatable implements ProductionActor
      *
      * @return HasOne<Athlete, $this>
      */
+    /** Partner businesses this account sells for (ally portal). */
+    public function allies(): BelongsToMany
+    {
+        return $this->belongsToMany(Ally::class)->withPivot('role')->withTimestamps();
+    }
+
     public function athlete(): HasOne
     {
         return $this->hasOne(Athlete::class);

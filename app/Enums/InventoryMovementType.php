@@ -10,4 +10,7 @@ enum InventoryMovementType: string
     case Adjustment = 'adjustment';
     case Reserve = 'reserve';
     case Release = 'release';
+    /** Paired rows of one transfer between locations (same reference). */
+    case TransferOut = 'transfer_out';
+    case TransferIn = 'transfer_in';
 }

@@ -3,7 +3,7 @@
 namespace App\Support;
 
 /**
- * The 7 roles the product ships with — protected from deletion and (for
+ * The system roles the product ships with — protected from deletion and (for
  * super_admin) from permission edits in /admin/roles. Custom roles created
  * later through that screen are anything not in this list.
  */
@@ -20,6 +20,8 @@ class SystemRoles
         'production_operator' => 'Operador de producción',
         'athlete' => 'Atleta',
         'photographer' => 'Fotógrafo',
+        'sales_staff' => 'Vendedor',
+        'ally' => 'Aliado',
     ];
 
     public static function isSystem(string $name): bool
