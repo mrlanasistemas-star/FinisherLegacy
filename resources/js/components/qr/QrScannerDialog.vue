@@ -9,7 +9,6 @@
 import { router } from '@inertiajs/vue3';
 import { AlertTriangle } from '@lucide/vue';
 import QrScanner from 'qr-scanner';
-import QrScannerWorkerPath from 'qr-scanner/qr-scanner-worker.min.js?url';
 import { nextTick, onBeforeUnmount, useTemplateRef, watch } from 'vue';
 import { ref } from 'vue';
 import {
@@ -19,8 +18,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-
-QrScanner.WORKER_PATH = QrScannerWorkerPath;
 
 const open = defineModel<boolean>('open', { default: false });
 

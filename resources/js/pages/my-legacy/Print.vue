@@ -12,7 +12,7 @@ import AppContainer from '@/components/shared/AppContainer.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { edit } from '@/routes/my-legacy';
 import { download as downloadRoute } from '@/routes/my-legacy/print';
-import { formatStoryDate } from '@/types/legacy-tags';
+import { formatStoryDate, forRecipient } from '@/types/legacy-tags';
 import type { StoryMediaItem, StoryView } from '@/types/legacy-tags';
 
 type Layout = {
@@ -266,7 +266,10 @@ async function download() {
                                     :style="{ fontSize: '3cqi' }"
                                 >
                                     <template v-if="story.recipient_label"
-                                        >Para {{ story.recipient_label }} —
+                                        >{{
+                                            forRecipient(story.recipient_label)
+                                        }}
+                                        —
                                     </template>
                                     {{ dedication }}
                                 </p>

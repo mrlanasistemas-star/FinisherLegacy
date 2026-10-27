@@ -19,7 +19,7 @@ import { howItWorks } from '@/routes';
 import { index as collectionsIndex } from '@/routes/collections';
 import { show as productShow } from '@/routes/store/products';
 import type { CollectionCardData, CollectionDetail } from '@/types/collections';
-import { collectionSubtitle } from '@/types/collections';
+import { collectionBaseName, collectionSubtitle } from '@/types/collections';
 
 const props = defineProps<{
     collection: CollectionDetail;
@@ -27,11 +27,12 @@ const props = defineProps<{
 }>();
 
 const subtitle = computed(() => collectionSubtitle(props.collection));
+const baseName = computed(() => collectionBaseName(props.collection));
 
 const seoTitle = computed(
     () =>
         props.collection.seo_title ??
-        `Colección ${props.collection.name}${props.collection.year ? ` ${props.collection.year}` : ''}`,
+        `Colección ${baseName.value}${props.collection.year ? ` ${props.collection.year}` : ''}`,
 );
 const seoDescription = computed(
     () =>
@@ -149,7 +150,7 @@ const steps = [
                     id="collection-title"
                     class="mt-5 font-serif text-[clamp(2.75rem,8vw,6.5rem)] leading-[0.98] font-medium tracking-[-0.03em]"
                 >
-                    {{ collection.name }}
+                    {{ baseName }}
                     <span
                         v-if="collection.year"
                         class="legacy-numeric block text-fl-gold-soft italic"

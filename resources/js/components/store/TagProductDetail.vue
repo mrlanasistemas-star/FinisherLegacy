@@ -390,6 +390,15 @@ const after = computed(() => [
                                     pronto.
                                 </p>
                             </div>
+                            <p
+                                v-else-if="
+                                    isGuest && !selectedVariant?.in_stock
+                                "
+                                class="rounded-card border border-border bg-card px-5 py-4 text-sm text-muted-foreground"
+                            >
+                                Estamos reponiendo este diseño. Vuelve pronto o
+                                búscalo con nuestros aliados.
+                            </p>
                             <Button
                                 v-else-if="isGuest"
                                 as-child

@@ -335,7 +335,9 @@ function isProcessing(item: StoryMediaItem): boolean {
                 </div>
                 <div class="min-w-0">
                     <p class="fl-eyebrow">Tu recuerdo</p>
-                    <h1 class="fl-display mt-1 truncate text-3xl">
+                    <h1
+                        class="fl-display mt-1 line-clamp-2 text-2xl sm:text-3xl"
+                    >
                         {{ story.title }}
                     </h1>
                     <p

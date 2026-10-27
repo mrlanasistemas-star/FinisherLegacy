@@ -52,7 +52,9 @@ defineProps<{
                     {{
                         total === 0
                             ? 'Cada tag que actives abre una historia aquí.'
-                            : `${total} ${total === 1 ? 'recuerdo' : 'recuerdos'} que se pueden tocar.`
+                            : total === 1
+                              ? '1 recuerdo que se puede tocar.'
+                              : `${total} recuerdos que se pueden tocar.`
                     }}
                 </p>
             </div>

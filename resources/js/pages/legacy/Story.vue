@@ -32,7 +32,7 @@ import {
     destroy as destroyShare,
     store as storeShare,
 } from '@/routes/my-legacy/shares';
-import { formatStoryDate } from '@/types/legacy-tags';
+import { formatStoryDate, forRecipient } from '@/types/legacy-tags';
 import type { StoryShare, StoryView } from '@/types/legacy-tags';
 
 defineOptions({ layout: [] });
@@ -297,7 +297,7 @@ async function nativeShare() {
                     v-if="mode === 'recipient' && greeting"
                     class="mb-5 inline-flex rounded-full border border-fl-gold/40 bg-black/30 px-3 py-1 text-xs font-medium text-fl-gold-soft backdrop-blur"
                 >
-                    Para {{ greeting }}
+                    {{ forRecipient(greeting) }}
                 </p>
                 <p
                     class="text-[11px] font-semibold tracking-[0.28em] text-fl-gold uppercase"
@@ -340,7 +340,7 @@ async function nativeShare() {
                     v-if="story.recipient_label"
                     class="mt-6 text-xs font-semibold tracking-[0.24em] text-fl-gold-soft uppercase"
                 >
-                    Para {{ story.recipient_label }}
+                    {{ forRecipient(story.recipient_label) }}
                 </p>
                 <blockquote
                     class="mt-4 font-serif text-2xl leading-snug font-light text-fl-paper italic sm:text-3xl"
@@ -369,7 +369,7 @@ async function nativeShare() {
                             {{ fact.label }}
                         </dt>
                         <dd
-                            class="legacy-numeric mt-1.5 font-serif text-xl text-fl-paper"
+                            class="legacy-numeric mt-1.5 font-serif text-lg leading-snug text-fl-paper sm:text-xl"
                         >
                             {{ fact.value }}
                         </dd>
@@ -615,11 +615,11 @@ async function nativeShare() {
                             type="text"
                             maxlength="80"
                             placeholder="Mamá, Mi entrenador…"
-                            class="h-12 min-w-0 flex-1 rounded-xl border border-white/15 bg-black/30 px-3 text-base text-fl-paper outline-none placeholder:text-fl-paper/35 focus:border-fl-gold"
+                            class="h-11 min-w-0 flex-1 rounded-full border border-white/15 bg-black/30 px-4 text-base text-fl-paper outline-none placeholder:text-fl-paper/35 focus:border-fl-gold"
                         />
                         <button
                             type="submit"
-                            class="h-12 shrink-0 rounded-xl bg-fl-gold px-4 text-sm font-semibold text-fl-black disabled:opacity-60"
+                            class="h-11 shrink-0 rounded-full bg-fl-gold px-5 text-sm font-semibold text-fl-black disabled:opacity-60"
                             :disabled="shareForm.processing || !shareForm.label"
                         >
                             Crear
@@ -653,7 +653,7 @@ async function nativeShare() {
                                     'line-through opacity-50': !share.active,
                                 }"
                             >
-                                Para {{ share.label }}
+                                {{ forRecipient(share.label) }}
                             </p>
                             <p class="text-xs text-fl-paper/50">
                                 {{

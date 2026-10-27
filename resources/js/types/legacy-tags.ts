@@ -106,3 +106,11 @@ export function formatStoryDate(date: string | null): string | null {
         year: 'numeric',
     });
 }
+
+/**
+ * "Para mamá" from a recipient label — people often type the "Para"
+ * themselves, so it is never printed twice ("Para Para mamá").
+ */
+export function forRecipient(label: string): string {
+    return `Para ${label.trim().replace(/^para\s+/i, '')}`;
+}

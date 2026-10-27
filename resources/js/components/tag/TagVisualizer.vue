@@ -84,15 +84,30 @@ const edgeShift = computed(() => -ry.value * 0.35);
 
 const accentColor = computed(() => props.accent || 'var(--fl-gold)');
 
+/**
+ * The year is drawn as the large numeral, so a name that already ends with
+ * it ("Cozumel 2026") would print it twice — drop the trailing copy.
+ */
+const displayName = computed(() => {
+    const name = props.name.trim();
+    const year =
+        props.year === null || props.year === '' ? '' : String(props.year);
+    const trimmed =
+        year && name.endsWith(year) ? name.slice(0, -year.length).trim() : '';
+
+    return trimmed || name;
+});
+
 /** Long names wrap onto two lines and shrink, never overflow the body. */
 const nameLines = computed(() => {
-    const words = props.name.trim().toUpperCase().split(/\s+/).filter(Boolean);
+    const name = displayName.value;
+    const words = name.toUpperCase().split(/\s+/).filter(Boolean);
 
-    if (words.length <= 1 || props.name.length <= 11) {
-        return [props.name.toUpperCase()];
+    if (words.length <= 1 || name.length <= 11) {
+        return [name.toUpperCase()];
     }
 
-    const half = Math.ceil(props.name.length / 2);
+    const half = Math.ceil(name.length / 2);
     let first = '';
     const rest: string[] = [];
 

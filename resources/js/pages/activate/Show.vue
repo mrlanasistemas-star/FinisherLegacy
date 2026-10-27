@@ -174,7 +174,9 @@ const inputClass =
                     >
                         Finisher Legacy
                     </p>
-                    <h1 class="fl-display mt-2 text-3xl leading-tight">
+                    <h1
+                        class="fl-display mt-2 text-3xl leading-tight text-white"
+                    >
                         {{ collectionName ?? 'Tu tag' }}
                     </h1>
                     <p

@@ -137,7 +137,7 @@ const nodes = ['Tu tag', 'NFC · QR', 'Tu historia'];
 
                     <!-- Phone -->
                     <div
-                        class="demo-phone absolute top-[22%] w-[46%] sm:top-[10%] sm:w-[30%]"
+                        class="demo-phone absolute top-[10%] w-[40%] sm:w-[30%]"
                         aria-hidden="true"
                     >
                         <div

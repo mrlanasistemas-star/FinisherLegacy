@@ -40,7 +40,7 @@
         @if (! empty($data['dedication']))
             <div class="rule"></div>
             <div class="dedication">
-                @if (! empty($data['recipient_label']))Para {{ $data['recipient_label'] }} — @endif{{ \Illuminate\Support\Str::limit($data['dedication'], $layout === 'classic' ? 220 : 320) }}
+                @if (! empty($data['recipient_label']))Para {{ preg_replace('/^para\s+/iu', '', trim($data['recipient_label'])) }} — @endif{{ \Illuminate\Support\Str::limit($data['dedication'], $layout === 'classic' ? 220 : 320) }}
             </div>
         @endif
     </div>

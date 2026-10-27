@@ -57,3 +57,20 @@ export function collectionSubtitle(c: {
 
     return parts.length ? parts.join(' · ') : null;
 }
+
+/**
+ * The collection name without a trailing year when the year is shown on
+ * its own ("Cozumel 2026" + 2026 → "Cozumel"), so it never reads twice.
+ */
+export function collectionBaseName(c: {
+    name: string;
+    year?: number | null;
+}): string {
+    const name = c.name.trim();
+
+    if (!c.year || !name.endsWith(String(c.year))) {
+        return name;
+    }
+
+    return name.slice(0, -String(c.year).length).trim() || name;
+}

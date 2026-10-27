@@ -34,7 +34,7 @@ const bars = Array.from({ length: 42 }, (_, i) =>
         aria-labelledby="story-preview-title"
     >
         <div
-            class="fl-container grid items-center gap-14 lg:grid-cols-12 lg:gap-12"
+            class="fl-container grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-12"
         >
             <div class="lg:col-span-5">
                 <p class="fl-eyebrow flex items-center gap-3">
@@ -159,13 +159,13 @@ const bars = Array.from({ length: 42 }, (_, i) =>
                                 <Play class="size-4 translate-x-px" />
                             </span>
                             <span
-                                class="flex h-9 flex-1 items-center gap-[3px]"
+                                class="flex h-9 min-w-0 flex-1 items-center gap-[2px] sm:gap-[3px]"
                                 aria-hidden="true"
                             >
                                 <span
                                     v-for="(h, i) in bars"
                                     :key="i"
-                                    class="w-[3px] flex-1 rounded-full"
+                                    class="max-w-[3px] min-w-px flex-1 rounded-full"
                                     :class="
                                         i < 15
                                             ? 'bg-fl-gold'

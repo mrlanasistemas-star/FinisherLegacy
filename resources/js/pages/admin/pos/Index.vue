@@ -506,7 +506,7 @@ function newSale() {
                                 <Input
                                     ref="codeField"
                                     v-model="codeInput"
-                                    class="h-11 pl-10 font-mono tracking-wide"
+                                    class="h-11 pl-10 font-mono tracking-wide placeholder:font-sans placeholder:tracking-normal"
                                     placeholder="Escanea o escribe el código del tag"
                                     autocomplete="off"
                                     autocapitalize="characters"
@@ -795,7 +795,7 @@ function newSale() {
     <!-- Sticky checkout bar -->
     <div
         v-if="!showSuccess && location"
-        class="fixed inset-x-0 bottom-14 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm lg:bottom-0 lg:pl-[calc(var(--sidebar-width,16rem)+1rem)]"
+        class="fixed inset-x-0 bottom-14 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm lg:bottom-0 lg:left-[var(--sidebar-width,16rem)]"
     >
         <div class="mx-auto flex max-w-5xl items-center gap-3">
             <div class="min-w-0 flex-1">

@@ -45,7 +45,14 @@ const model = defineModel<Value>({ default: null });
 const encode = (value: Value) => (value === null ? NONE : String(value));
 
 const internal = computed({
-    get: () => (model.value === null ? undefined : encode(model.value)),
+    // A null model shows its "all / none" option's label ("Todos los
+    // tipos") when the list has one, instead of a bare placeholder.
+    get: () =>
+        model.value === null
+            ? props.options.some((o) => o.value === null)
+                ? NONE
+                : undefined
+            : encode(model.value),
     set: (raw: string | undefined) => {
         if (raw === undefined || raw === NONE) {
             model.value = null;

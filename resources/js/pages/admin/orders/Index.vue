@@ -195,12 +195,14 @@ const search = useDebounceFn(() => {
                     class="block rounded-xl border border-border bg-card p-3.5 shadow-[0_1px_2px_rgb(23_23_20/0.04)] transition-[border-color,transform] hover:-translate-y-0.5 hover:border-foreground/25"
                 >
                     <div class="flex items-center justify-between gap-2">
-                        <span class="font-mono text-xs font-semibold">{{
-                            order.order_number
-                        }}</span>
-                        <span class="text-[11px] text-muted-foreground">{{
-                            timeAgo(order.created_at)
-                        }}</span>
+                        <span
+                            class="shrink-0 font-mono text-xs font-semibold whitespace-nowrap"
+                            >{{ order.order_number }}</span
+                        >
+                        <span
+                            class="min-w-0 truncate text-[11px] text-muted-foreground"
+                            >{{ timeAgo(order.created_at) }}</span
+                        >
                     </div>
                     <p
                         class="mt-2 flex items-center gap-1.5 text-sm font-medium"
