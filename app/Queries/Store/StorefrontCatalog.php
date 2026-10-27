@@ -76,14 +76,14 @@ class StorefrontCatalog
 
         $legacy = $this->query()
             ->where(fn (Builder $q) => $q
-                ->where('type', ProductType::LegacyPlate->value)
+                ->whereIn('type', [ProductType::LegacyTag->value, ProductType::LegacyPlate->value])
                 ->orWhereHas('category', fn (Builder $c) => $c->where('slug', 'like', '%legacy%')))
             ->orderBy('sort_order')
             ->limit(4)
             ->get();
 
         $nfc = $this->query()
-            ->where(fn (Builder $q) => $q->where('qr_capable', true)->orWhere('type', ProductType::LegacyPlate->value))
+            ->where(fn (Builder $q) => $q->where('qr_capable', true)->orWhereIn('type', [ProductType::LegacyTag->value, ProductType::LegacyPlate->value]))
             ->orderBy('sort_order')
             ->limit(4)
             ->get();
@@ -155,7 +155,7 @@ class StorefrontCatalog
         return $this->query()
             ->when($filters['category'] ?? null, fn (Builder $q, ProductCategory $category) => $q->where('category_id', $category->id))
             ->when($type !== null && $type !== ProductType::DigitalPhoto, fn (Builder $q) => $q->where('type', $type->value))
-            ->when($filters['nfc'] ?? false, fn (Builder $q) => $q->where(fn (Builder $w) => $w->where('qr_capable', true)->orWhere('type', ProductType::LegacyPlate->value)))
+            ->when($filters['nfc'] ?? false, fn (Builder $q) => $q->where(fn (Builder $w) => $w->where('qr_capable', true)->orWhereIn('type', [ProductType::LegacyTag->value, ProductType::LegacyPlate->value])))
             ->when($filters['disponibles'] ?? false, fn (Builder $q) => $q->where('availability', ProductAvailability::Available->value))
             ->when($filters['talla'] ?? null, fn (Builder $q, string $size) => $q->whereHas('variants', fn (Builder $v) => $v
                 ->where('active', true)

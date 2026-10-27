@@ -1,10 +1,15 @@
 <?php
 
-use App\Enums\EditionStatus;
-use App\Enums\EventStatus;
-use App\Models\EventEdition;
+use App\Enums\ProductType;
 use App\Models\Product;
 use App\Models\ProductVariant;
+
+/*
+ * Since 2026-10-27 the Home tells the Finisher Legacy Tag story and only
+ * receives published collections + active tag products (the event and
+ * community teasers left the Home; they live in Eventos / Comunidad).
+ * Collections are covered in PublicExperienceTest.
+ */
 
 test('home page loads', function () {
     $response = $this->get(route('home'));
@@ -13,53 +18,25 @@ test('home page loads', function () {
     $response->assertInertia(fn ($page) => $page->component('Home'));
 });
 
-test('home page only features published, upcoming editions', function () {
-    $published = EventEdition::factory()->create([
-        'event_date' => now()->addWeek(),
-        'status' => EditionStatus::Published,
-    ]);
-    $published->event()->update(['status' => EventStatus::Published]);
-
-    $draftEdition = EventEdition::factory()->create([
-        'event_date' => now()->addWeek(),
-        'status' => EditionStatus::Draft,
-    ]);
-    $draftEdition->event()->update(['status' => EventStatus::Published]);
-
-    $response = $this->get(route('home'));
-
-    $response->assertInertia(fn ($page) => $page
-        ->component('Home')
-        ->where('featuredEditions.0.id', $published->id)
-        ->has('featuredEditions', 1)
-    );
-});
-
-/**
- * The Home "Tienda" teaser (public store visibility, brief item A5) reuses
- * the same active-product query the storefront itself uses — never an
- * inactive product, never more than a handful.
- */
-test('home features only active products, never an inactive one', function () {
-    $visible = Product::factory()->create(['active' => true, 'status' => 'active', 'name' => 'Visible Product']);
+test('home features only active tag products, never an inactive one or another type', function () {
+    $visible = Product::factory()->create(['type' => ProductType::LegacyTag, 'name' => 'Visible Tag']);
     ProductVariant::factory()->create(['product_id' => $visible->id]);
-    $hidden = Product::factory()->create(['active' => false, 'status' => 'active', 'name' => 'Hidden Product']);
+    $hidden = Product::factory()->create(['type' => ProductType::LegacyTag, 'active' => false, 'name' => 'Hidden Tag']);
     ProductVariant::factory()->create(['product_id' => $hidden->id]);
+    $apparel = Product::factory()->create(['name' => 'Trisuit']);
+    ProductVariant::factory()->create(['product_id' => $apparel->id]);
 
-    $response = $this->get(route('home'));
-
-    $response->assertInertia(fn ($page) => $page
+    $this->get(route('home'))->assertInertia(fn ($page) => $page
         ->component('Home')
-        ->where('featuredProducts.0.name', 'Visible Product')
-        ->has('featuredProducts', 1)
+        ->where('tagProducts.0.name', 'Visible Tag')
+        ->has('tagProducts', 1)
     );
 });
 
 test('home features no products when the catalog is empty', function () {
-    $response = $this->get(route('home'));
-
-    $response->assertInertia(fn ($page) => $page
+    $this->get(route('home'))->assertInertia(fn ($page) => $page
         ->component('Home')
-        ->where('featuredProducts', [])
+        ->where('tagProducts', [])
+        ->where('collections', [])
     );
 });

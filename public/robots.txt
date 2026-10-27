@@ -20,5 +20,9 @@ Disallow: /two-factor-challenge
 Disallow: /preregistrations/
 Disallow: /l/*/qr.svg
 Disallow: /l/*/continue/
+Disallow: /t/
+Disallow: /activar
+Disallow: /mi-legacy
+Disallow: /legacy/para/
 
 Sitemap: /sitemap.xml

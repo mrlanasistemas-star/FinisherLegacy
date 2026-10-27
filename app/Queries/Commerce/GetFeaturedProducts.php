@@ -121,7 +121,7 @@ class GetFeaturedProducts
             'colors' => array_values($colors),
             'sizes' => collect($sizes)->map(fn (bool $inStock, string $label) => ['label' => $label, 'in_stock' => $inStock])->values()->all(),
             'stock_level' => self::stockLevel($product),
-            'is_nfc' => (bool) ($product->getAttribute('nfc_capable') ?? $product->qr_capable) || $product->type === ProductType::LegacyPlate,
+            'is_nfc' => (bool) ($product->getAttribute('nfc_capable') ?? $product->qr_capable) || in_array($product->type, [ProductType::LegacyPlate, ProductType::LegacyTag], true),
             'is_new' => $product->created_at !== null && $product->created_at->gt(now()->subDays(self::NEW_FOR_DAYS)),
             'is_presale' => (bool) $product->getAttribute('has_presale'),
         ];

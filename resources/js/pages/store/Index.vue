@@ -1,6 +1,10 @@
 <script setup lang="ts">
 /**
- * Store home (owner spec §17-§18): editorial hero, categories,
+ * Store home (owner spec §17-§18). Since 2026-10-27 the hero product is
+ * the Finisher Legacy Tag (drawn by the illustrative TagVisualizer until
+ * real photography exists); historical Legacy Plate products stay
+ * purchasable through their own page but are no longer promoted here.
+ * Editorial hero, categories,
  * featured, the Legacy collection, new arrivals, NFC-connected products,
  * "más usados en carreras", editorial blocks and a closing CTA. Every
  * product block comes from the catalog; a block with nothing real to
@@ -13,10 +17,12 @@ import Reveal from '@/components/motion/Reveal.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import Money from '@/components/shared/Money.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
+import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
 import { productCardProps } from '@/lib/store';
 import { howItWorks } from '@/routes';
+import { index as collectionsIndex } from '@/routes/collections';
 import { index as eventsIndex } from '@/routes/events';
 import { catalog } from '@/routes/store';
 import { show as categoryShow } from '@/routes/store/categories';
@@ -25,6 +31,12 @@ import type { PublicProductCard } from '@/types';
 
 type FeaturedProduct = PublicProductCard & {
     description: string | null;
+    collection?: {
+        name: string;
+        slug: string;
+        year: number | null;
+        destination: string | null;
+    } | null;
     gallery: { url: string; alt_text: string | null }[];
 };
 
@@ -48,7 +60,6 @@ const props = defineProps<{
     }[];
 }>();
 
-const plate = MEDIA.plate;
 const photo = MEDIA.photo;
 
 const visibleCategories = computed(() =>
@@ -59,7 +70,9 @@ const visibleCategories = computed(() =>
 // catalog never reads as the same four cards repeated.
 const featuredRow = computed(() =>
     props.sections.featured
-        .filter((p) => p.type !== 'legacy_plate')
+        .filter(
+            (p) => p.type !== 'legacy_plate' && p.uuid !== props.featured?.uuid,
+        )
         .slice(0, 4),
 );
 const shown = computed(() => new Set(featuredRow.value.map((p) => p.uuid)));
@@ -85,7 +98,7 @@ const legacyExtras = computed(() =>
 <template>
     <SeoHead
         title="Equipo para correr, piezas para recordar"
-        description="Legacy Plate con NFC, ropa técnica y accesorios para atletas. No es merch: es parte de tu historia."
+        description="El Finisher Legacy Tag, ropa técnica y accesorios para atletas. El recuerdo físico de tu logro, con tu historia dentro."
     />
 
     <!-- Hero -->
@@ -109,9 +122,8 @@ const legacyExtras = computed(() =>
                 <p
                     class="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground"
                 >
-                    Lo que usas en tus carreras y lo que te llevas de ellas.
-                    Cada pieza puede conectarse a tu perfil y quedarse en tu
-                    historia.
+                    Lo que usas en tus carreras y el recuerdo que te llevas de
+                    ellas: el Finisher Legacy Tag, con tu historia dentro.
                 </p>
                 <div class="mt-9 flex flex-wrap gap-3">
                     <Button as-child size="lg" class="h-12 rounded-full px-6">
@@ -121,14 +133,13 @@ const legacyExtras = computed(() =>
                         </Link>
                     </Button>
                     <Button
-                        v-if="featured"
                         as-child
                         size="lg"
                         variant="outline"
                         class="h-12 rounded-full px-6"
                     >
-                        <Link :href="productShow(featured.slug)"
-                            >Conoce la Legacy Plate</Link
+                        <Link :href="collectionsIndex()"
+                            >Explorar colecciones</Link
                         >
                     </Button>
                 </div>
@@ -138,29 +149,33 @@ const legacyExtras = computed(() =>
                 <div
                     class="relative mx-auto aspect-[5/4] max-w-xl overflow-hidden rounded-hero bg-fl-black lg:max-w-none"
                 >
-                    <img
-                        :src="plate.hero.src"
-                        :srcset="plate.hero.srcset"
-                        sizes="(min-width: 1024px) 46vw, 100vw"
-                        :width="plate.hero.width"
-                        :height="plate.hero.height"
-                        :alt="plate.hero.alt"
-                        fetchpriority="high"
-                        decoding="async"
-                        class="size-full object-cover"
+                    <div
+                        class="absolute inset-0 bg-[radial-gradient(55%_60%_at_50%_45%,color-mix(in_srgb,var(--fl-gold)_16%,transparent),transparent_70%)]"
+                        aria-hidden="true"
                     />
+                    <div class="absolute inset-x-0 top-[6%] mx-auto w-[34%]">
+                        <TagVisualizer
+                            :name="featured?.collection?.name ?? 'Tu colección'"
+                            :subtitle="
+                                featured?.collection?.destination ??
+                                'Destino · Disciplina'
+                            "
+                            :year="featured?.collection?.year ?? null"
+                        />
+                    </div>
                     <div
                         class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-6 sm:p-8"
                     >
                         <p
                             class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
                         >
-                            Legacy Plate
+                            Finisher Legacy Tag · render ilustrativo
                         </p>
                         <p
                             class="mt-1 font-serif text-xl text-white sm:text-2xl"
                         >
-                            Tu carrera, al frente. Tu historia, a un toque.
+                            El recuerdo físico de tu logro. Tu historia vive
+                            dentro.
                         </p>
                     </div>
                 </div>
@@ -173,7 +188,7 @@ const legacyExtras = computed(() =>
                         <Nfc class="size-3.5" aria-hidden="true" /> Conectado
                     </p>
                     <p class="mt-2 text-sm leading-snug text-foreground">
-                        Acerca tu teléfono y se abre tu legado.
+                        Acerca tu teléfono y se abre tu historia.
                     </p>
                 </div>
             </div>
@@ -266,43 +281,53 @@ const legacyExtras = computed(() =>
     </section>
 
     <!-- Legacy collection -->
-    <section v-if="featured" class="fl-container pb-16 sm:pb-24">
+    <section
+        v-if="featured && featured.type === 'legacy_tag'"
+        class="fl-container pb-16 sm:pb-24"
+    >
         <div
             class="grid overflow-hidden rounded-hero border border-border bg-card lg:grid-cols-12"
         >
             <div
-                class="relative min-h-[24rem] overflow-hidden bg-[#efece5] sm:min-h-[30rem] lg:col-span-6"
+                class="relative min-h-[24rem] overflow-hidden bg-fl-black sm:min-h-[30rem] lg:col-span-6"
             >
                 <img
-                    :src="plate.ribbonHeld.src"
-                    :srcset="plate.ribbonHeld.srcset"
-                    sizes="(min-width: 1024px) 40vw, 90vw"
-                    :width="plate.ribbonHeld.width"
-                    :height="plate.ribbonHeld.height"
-                    :alt="plate.ribbonHeld.alt"
+                    v-if="
+                        featured.image_source === 'upload' && featured.image_url
+                    "
+                    :src="featured.image_url"
+                    :alt="featured.image_alt ?? featured.name"
                     loading="lazy"
                     decoding="async"
-                    class="absolute inset-0 size-full object-cover object-[50%_35%]"
+                    class="absolute inset-0 size-full object-cover"
                 />
+                <div v-else class="absolute inset-x-0 top-[8%] mx-auto w-[34%]">
+                    <TagVisualizer
+                        :name="featured.collection?.name ?? featured.name"
+                        :subtitle="featured.collection?.destination ?? null"
+                        :year="featured.collection?.year ?? null"
+                        :tilt="false"
+                    />
+                </div>
             </div>
             <div class="flex flex-col justify-center p-8 sm:p-12 lg:col-span-6">
-                <p class="fl-eyebrow">Colección Legacy</p>
+                <p class="fl-eyebrow">Finisher Legacy Tag</p>
                 <h2 class="fl-display mt-4 text-4xl sm:text-5xl">
-                    Tu medalla merece una historia que se pueda volver a abrir.
+                    Tu carrera termina. Tu historia no.
                 </h2>
                 <p class="mt-5 text-lg leading-relaxed text-muted-foreground">
                     {{
                         featured.tagline ||
-                        'Una pieza física que conecta tu medalla con tu historia digital.'
+                        'Un tag de colección con NFC y QR: lo activas y guardas ahí la historia de tu carrera.'
                     }}
                 </p>
                 <ul class="mt-6 flex flex-wrap gap-2 text-sm">
                     <li
                         v-for="item in [
-                            'Zamak niquelado',
-                            'Resina',
-                            'NFC integrado',
-                            '70 × 45 mm',
+                            'Diseño de colección',
+                            'NFC',
+                            'QR de respaldo',
+                            'Código impreso',
                         ]"
                         :key="item"
                         class="rounded-full border border-border px-3 py-1.5 text-muted-foreground"
@@ -313,7 +338,7 @@ const legacyExtras = computed(() =>
                 <div class="mt-8 flex flex-wrap items-center gap-5">
                     <Button as-child size="lg" class="h-12 rounded-full px-6">
                         <Link :href="productShow(featured.slug)">
-                            Ver Legacy Plate
+                            Ver {{ featured.name }}
                             <ArrowRight class="size-4" />
                         </Link>
                     </Button>

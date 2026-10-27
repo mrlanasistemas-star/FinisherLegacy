@@ -138,7 +138,7 @@ const title = computed(() => props.category?.name ?? 'Todo el catálogo');
 const lede = computed(
     () =>
         props.category?.description ??
-        'Legacy Plate, ropa técnica y accesorios pensados para correr, terminar y recordar.',
+        'Finisher Legacy Tag, ropa técnica y accesorios pensados para correr, terminar y recordar.',
 );
 </script>
 

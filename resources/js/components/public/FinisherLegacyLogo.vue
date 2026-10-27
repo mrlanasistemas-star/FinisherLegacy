@@ -95,9 +95,7 @@ const failed = ref(false);
             class="leading-none font-semibold tracking-[0.28em] whitespace-nowrap uppercase"
             :class="[
                 wordSizes[size],
-                resolvedTone === 'light'
-                    ? 'text-foreground'
-                    : 'text-foreground',
+                resolvedTone === 'light' ? 'text-white' : 'text-foreground',
             ]"
             aria-hidden="true"
         >
@@ -105,7 +103,7 @@ const failed = ref(false);
             <span
                 :class="
                     resolvedTone === 'light'
-                        ? 'text-fl-gold-ink'
+                        ? 'text-fl-gold-soft'
                         : 'text-fl-gold-ink'
                 "
                 >Legacy</span

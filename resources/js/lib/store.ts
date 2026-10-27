@@ -5,6 +5,7 @@
 import type { ProductColor, PublicProductCard } from '@/types';
 
 export const PRODUCT_TYPE_LABELS: Record<string, string> = {
+    legacy_tag: 'Finisher Legacy Tag',
     legacy_plate: 'Legacy Plate',
     apparel: 'Ropa',
     accessory: 'Accesorio',

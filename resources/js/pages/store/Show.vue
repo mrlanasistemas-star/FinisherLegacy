@@ -32,6 +32,8 @@ import ProductGallery from '@/components/store/ProductGallery.vue';
 import type { GalleryEntry } from '@/components/store/ProductGallery.vue';
 import ProductStorySections from '@/components/store/ProductStorySections.vue';
 import type { ContentSection } from '@/components/store/ProductStorySections.vue';
+import TagProductDetail from '@/components/store/TagProductDetail.vue';
+import type { TagProduct } from '@/components/store/TagProductDetail.vue';
 import VariantPicker from '@/components/store/VariantPicker.vue';
 import type { Variant } from '@/components/store/VariantPicker.vue';
 import { Button } from '@/components/ui/button';
@@ -72,6 +74,10 @@ type Product = {
     /** Product renders shown until a real photo is uploaded in admin. */
     concept_gallery: { url: string; alt: string; srcset?: string }[];
     contentSections: ContentSection[];
+    seo_title?: string | null;
+    seo_description?: string | null;
+    specs?: TagProduct['specs'];
+    collection?: TagProduct['collection'];
 };
 
 const props = defineProps<{
@@ -82,6 +88,18 @@ const props = defineProps<{
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 const isLegacyPlate = computed(() => props.product.type === 'legacy_plate');
+/** Finisher Legacy Tag → its own layout (TagProductDetail). */
+const isLegacyTag = computed(() => props.product.type === 'legacy_tag');
+const tagProduct = computed<TagProduct>(() => ({
+    ...props.product,
+    specs: props.product.specs ?? {
+        material: null,
+        strap_type: null,
+        dimensions: null,
+        instructions: null,
+    },
+    collection: props.product.collection ?? null,
+}));
 const typeLabel = computed(
     () => props.product.category ?? PRODUCT_TYPE_LABELS[props.product.type],
 );
@@ -237,6 +255,7 @@ const showPlateHelp = ref(false);
 const showBar = computed(
     () =>
         !isLegacyPlate.value &&
+        !isLegacyTag.value &&
         props.product.is_purchasable &&
         selectedVariant.value !== null,
 );
@@ -291,13 +310,21 @@ const savedInMiEquipo = [
 
 <template>
     <SeoHead
-        :title="product.name"
-        :description="metaDescription"
+        :title="product.seo_title || product.name"
+        :description="product.seo_description || metaDescription"
         :image="shareImage"
         type="product"
     />
 
-    <div class="fl-container pt-6 pb-28 sm:pt-8 lg:pb-20">
+    <TagProductDetail
+        v-if="isLegacyTag"
+        :product="tagProduct"
+        :gallery-items="galleryItems"
+        :videos="videos"
+        :related-products="relatedProducts"
+    />
+
+    <div v-else class="fl-container pt-6 pb-28 sm:pt-8 lg:pb-20">
         <nav
             aria-label="Ruta de navegación"
             class="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"

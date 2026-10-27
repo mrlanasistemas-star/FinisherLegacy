@@ -37,20 +37,19 @@ function storeProduct(array $attributes = [], array $variants = [['Negro', 'M', 
     return $product;
 }
 
-test('home renders the story with real products, Legacy Plate first', function () {
+test('home renders the tag story with real tag products only', function () {
     storeProduct(['name' => 'Trisuit', 'sort_order' => 0]);
-    storeProduct(['name' => 'Legacy Plate', 'type' => ProductType::LegacyPlate, 'sort_order' => 5]);
+    storeProduct(['name' => 'Legacy Plate', 'type' => ProductType::LegacyPlate, 'sort_order' => 1]);
+    storeProduct(['name' => 'Finisher Legacy Tag', 'type' => ProductType::LegacyTag, 'sort_order' => 5]);
 
     $this->get(route('home'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Home')
-            ->where('featuredProducts.0.name', 'Legacy Plate')
-            ->where('featuredProducts.0.is_nfc', true)
-            ->has('featuredProducts', 2)
-            ->has('communityPosts')
-            ->has('communityAthletes')
-            ->has('featuredEditions'));
+            ->where('tagProducts.0.name', 'Finisher Legacy Tag')
+            ->where('tagProducts.0.is_nfc', true)
+            ->has('tagProducts', 1)
+            ->has('collections'));
 });
 
 test('como funciona renders and the old url redirects there', function () {

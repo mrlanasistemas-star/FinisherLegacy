@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Store;
 
+use App\Actions\Commerce\IsVariantAvailableForCheckout;
+use App\Actions\Commerce\ResolveProductPrice;
 use App\Enums\ProductAvailability;
 use App\Enums\ProductType;
+use App\Exceptions\PriceNotAvailableException;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -11,6 +14,7 @@ use App\Models\ProductContentSection;
 use App\Models\ProductMedia;
 use App\Models\ProductVariant;
 use App\Queries\Commerce\GetFeaturedProducts;
+use App\Queries\Store\PublicCollections;
 use App\Queries\Store\StorefrontCatalog;
 use App\Services\Commerce\PromotionResolver;
 use Illuminate\Http\RedirectResponse;
@@ -40,14 +44,18 @@ class ProductController extends Controller
 
         $products = $catalog->query()->orderBy('sort_order')->orderBy('name')->limit(12)->get();
 
-        // The Legacy Plate is the storefront's hero product when published.
-        $plate = $products->firstWhere('type', ProductType::LegacyPlate)
+        // The Finisher Legacy Tag is the storefront's hero product; a
+        // historical Legacy Plate only leads while no tag is published.
+        $plate = $products->firstWhere('type', ProductType::LegacyTag)
+            ?? $catalog->query()->where('type', ProductType::LegacyTag->value)->orderBy('sort_order')->first()
+            ?? $products->firstWhere('type', ProductType::LegacyPlate)
             ?? $catalog->query()->where('type', ProductType::LegacyPlate->value)->first();
 
         return Inertia::render('store/Index', [
             'products' => $catalog->cards($products),
             'featured' => $plate === null ? null : [
                 ...GetFeaturedProducts::summarize($plate),
+                'collection' => $plate->collection?->isPublished() ? ['name' => $plate->collection->name, 'slug' => $plate->collection->slug, 'year' => $plate->collection->year, 'destination' => $plate->collection->destination] : null,
                 'description' => $plate->description,
                 'gallery' => $plate->media->where('type', 'image')->sortByDesc('is_primary')->take(3)->values()
                     ->map(fn (ProductMedia $m) => ['url' => $m->url(), 'alt_text' => $m->alt_text]),
@@ -77,7 +85,7 @@ class ProductController extends Controller
             404,
         );
 
-        $product->loadMissing(['category', 'variants.inventoryLevels', 'media', 'contentSections']);
+        $product->loadMissing(['category', 'collection', 'variants.inventoryLevels', 'media', 'contentSections']);
         // Wire the inverse relation in memory so ProductVariant::isAvailable()
         // never lazy-loads `product` per variant (no N+1).
         $product->variants->each(fn (ProductVariant $variant) => $variant->setRelation('product', $product));
@@ -115,8 +123,26 @@ class ProductController extends Controller
                 'is_new' => $merch['is_new'],
                 'stock_level' => $merch['stock_level'],
                 'requires_shipping' => $product->requires_shipping,
+                'seo_title' => $product->seo_title,
+                'seo_description' => $product->seo_description,
+                // Tag specs: shown only when the admin filled them in.
+                'specs' => [
+                    'material' => $product->material,
+                    'strap_type' => $product->strap_type,
+                    'dimensions' => $product->dimensions,
+                    'instructions' => $product->instructions,
+                ],
+                'collection' => $product->collection !== null && $product->collection->isPublished() ? [
+                    'name' => $product->collection->name,
+                    'slug' => $product->collection->slug,
+                    'tagline' => $product->collection->tagline,
+                    'destination' => $product->collection->destination,
+                    'discipline' => $product->collection->discipline,
+                    'year' => $product->collection->year,
+                    'accent_color' => PublicCollections::safeColor($product->collection->accent_color),
+                ] : null,
                 'image_url' => $product->primaryImageUrl(),
-                'variants' => $product->variants->where('active', true)->values()->map(fn (ProductVariant $variant) => [
+                'variants' => $product->variants->where('active', true)->values()->map(fn (ProductVariant $variant) => $this->tagVariant($product, $variant, [
                     'id' => $variant->id,
                     'sku' => $variant->sku,
                     'name' => $variant->name,
@@ -129,7 +155,7 @@ class ProductController extends Controller
                     'currency' => $variant->currency,
                     'in_stock' => $variant->isAvailable(),
                     'low_stock' => $this->variantIsLow($variant),
-                ]),
+                ])),
                 'gallery' => $product->media->values()->map(fn (ProductMedia $m, int $i) => self::mediaItem($m, $i)),
                 'concept_gallery' => $product->media->isEmpty() && ! $product->image_path ? $product->conceptGallery() : [],
                 'contentSections' => $product->contentSections->map(fn (ProductContentSection $s) => [
@@ -193,6 +219,35 @@ class ProductController extends Controller
                 ->values(),
             'filters' => $filters,
         ]);
+    }
+
+    /**
+     * A Finisher Legacy Tag shows exactly what the cart will charge
+     * (ResolveProductPrice: schedule + oferta) and the checkout's own
+     * availability answer. Other product types keep their payload as is.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function tagVariant(Product $product, ProductVariant $variant, array $payload): array
+    {
+        if ($product->type !== ProductType::LegacyTag) {
+            return $payload;
+        }
+
+        try {
+            $price = app(ResolveProductPrice::class)->handle($product, $variant);
+            $payload['base_price_minor'] = $price->originalAmountMinor ?? $price->amountMinor;
+            $payload['sale_price_minor'] = $price->originalAmountMinor !== null ? $price->amountMinor : null;
+            $payload['promotion_label'] = $price->promotionLabel;
+            $payload['currency'] = $price->currency;
+        } catch (PriceNotAvailableException) {
+            // Keep the variant base price; checkout will refuse if it cannot price it.
+        }
+
+        $payload['in_stock'] = app(IsVariantAvailableForCheckout::class)->handle($variant);
+
+        return $payload;
     }
 
     private function variantIsLow(ProductVariant $variant): bool

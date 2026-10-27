@@ -24,6 +24,7 @@ const PUBLIC_PREFIXES = [
     'profile/',
     'errors/',
     'store/',
+    'collections/',
     'community/',
     'photos/',
     'search/',

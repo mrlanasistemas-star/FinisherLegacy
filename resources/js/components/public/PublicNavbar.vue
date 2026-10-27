@@ -28,6 +28,7 @@ import {
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
+import { ACTIVATE_URL, MI_LEGACY_URL } from '@/config/public-links';
 import {
     dashboard,
     home,
@@ -38,9 +39,8 @@ import {
     search,
 } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
-import { index as communityIndex } from '@/routes/community';
+import { index as collectionsIndex } from '@/routes/collections';
 import { edit as editProfile } from '@/routes/dashboard/profile';
-import { index as eventsIndex } from '@/routes/events';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { index as photosIndex } from '@/routes/photos';
 import {
@@ -49,7 +49,6 @@ import {
 } from '@/routes/profile';
 import { show as cartShow } from '@/routes/store/cart';
 import { index as ordersIndex } from '@/routes/store/orders';
-import { index as storeIndex } from '@/routes/store/products';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -62,15 +61,27 @@ const firstName = computed(
 
 const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
 
-// Owner spec §6: five destinations, nothing more. Fotos, Nosotros and the
-// rest live in the footer.
+// Finisher Legacy Tag era (docs/architecture/public-experience.md): five
+// destinations, nothing internal. Tienda, Eventos, Comunidad, Nosotros and
+// the rest live in the footer.
 const navLinks = [
     { label: 'Inicio', href: home(), exact: true },
-    { label: 'Eventos', href: eventsIndex() },
-    { label: 'Tienda', href: storeIndex() },
-    { label: 'Comunidad', href: communityIndex() },
+    { label: 'Colecciones', href: collectionsIndex() },
     { label: 'Cómo funciona', href: howItWorks() },
+    { label: 'Mi Legacy', href: MI_LEGACY_URL },
+    { label: 'Activar', href: ACTIVATE_URL },
 ];
+
+/*
+ * Pages that open on a dark cinematic hero: until the visitor scrolls, the
+ * bar is transparent with light ink so it reads over the photograph.
+ */
+const DARK_HERO_PAGES = new Set([
+    'Home',
+    'collections/Index',
+    'collections/Show',
+    'HowItWorks',
+]);
 
 function isActive(link: (typeof navLinks)[number]): boolean {
     return link.exact
@@ -79,6 +90,15 @@ function isActive(link: (typeof navLinks)[number]): boolean {
 }
 
 const scrolled = ref(false);
+const overDark = computed(
+    () =>
+        !scrolled.value &&
+        (DARK_HERO_PAGES.has(page.component) ||
+            // The Finisher Legacy Tag product page opens on a dark hero too.
+            (page.component === 'store/Show' &&
+                (page.props.product as { type?: string } | undefined)?.type ===
+                    'legacy_tag')),
+);
 
 function handleScroll() {
     scrolled.value = window.scrollY > 8;
@@ -98,6 +118,7 @@ const badge = (count: number) => (count > 9 ? '9+' : String(count));
 // Same destinations as the desktop avatar dropdown (UserMenuContent).
 const accountLinks = computed(() => {
     const links: { label: string; href: string; count?: number }[] = [
+        { label: 'Mi Legacy', href: MI_LEGACY_URL },
         { label: 'Mi legado', href: dashboard().url },
         {
             label: 'Mi perfil',
@@ -126,11 +147,12 @@ const accountLinks = computed(() => {
 <template>
     <header
         class="fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300 motion-reduce:transition-none"
-        :class="
+        :class="[
             scrolled
                 ? 'border-border bg-background/80 shadow-fl-micro backdrop-blur-md supports-[backdrop-filter]:bg-background/70'
-                : 'border-transparent bg-transparent'
-        "
+                : 'border-transparent bg-transparent',
+            { 'fl-nav--over-dark': overDark },
+        ]"
     >
         <div class="fl-container flex h-16 items-center justify-between gap-4">
             <Link
@@ -138,7 +160,11 @@ const accountLinks = computed(() => {
                 class="shrink-0 rounded-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 aria-label="Finisher Legacy — Inicio"
             >
-                <FinisherLegacyLogo variant="wordmark" size="sm" />
+                <FinisherLegacyLogo
+                    variant="wordmark"
+                    size="sm"
+                    :tone="overDark ? 'light' : 'dark'"
+                />
             </Link>
 
             <nav
@@ -162,7 +188,7 @@ const accountLinks = computed(() => {
             <div class="flex items-center gap-1 sm:gap-2">
                 <Link
                     :href="search()"
-                    class="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    class="fl-nav-icon flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     aria-label="Buscar atletas, eventos y productos"
                 >
                     <Search class="size-[18px]" />
@@ -171,7 +197,7 @@ const accountLinks = computed(() => {
                 <template v-if="user">
                     <Link
                         :href="notificationsIndex()"
-                        class="relative hidden size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
+                        class="fl-nav-icon relative hidden size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
                         :aria-label="
                             unread > 0
                                 ? `Notificaciones (${unread} sin leer)`
@@ -188,7 +214,7 @@ const accountLinks = computed(() => {
                     </Link>
                     <Link
                         :href="cartShow()"
-                        class="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        class="fl-nav-icon relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         :aria-label="
                             cartCount > 0
                                 ? `Carrito (${cartCount} artículos)`
@@ -207,9 +233,9 @@ const accountLinks = computed(() => {
                     <Button
                         as-child
                         size="sm"
-                        class="ml-1 hidden h-9 rounded-full px-4 text-[13px] md:inline-flex"
+                        class="fl-nav-cta ml-1 hidden h-9 rounded-full px-4 text-[13px] md:inline-flex"
                     >
-                        <Link :href="dashboard()">Mi legado</Link>
+                        <Link :href="MI_LEGACY_URL">Mi Legacy</Link>
                     </Button>
 
                     <DropdownMenu>
@@ -253,16 +279,18 @@ const accountLinks = computed(() => {
                 <template v-else>
                     <Link
                         :href="login()"
-                        class="hidden rounded-full px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted md:inline-flex"
+                        class="fl-nav-icon hidden rounded-full px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted md:inline-flex"
                     >
                         Iniciar sesión
                     </Link>
                     <Button
                         as-child
                         size="sm"
-                        class="hidden h-9 rounded-full px-4 text-[13px] sm:inline-flex"
+                        class="fl-nav-cta hidden h-9 rounded-full px-4 text-[13px] sm:inline-flex"
                     >
-                        <Link :href="register()">Crear cuenta</Link>
+                        <Link :href="collectionsIndex()"
+                            >Explorar colecciones</Link
+                        >
                     </Button>
                 </template>
 
@@ -271,7 +299,7 @@ const accountLinks = computed(() => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            class="rounded-full lg:hidden"
+                            class="fl-nav-icon rounded-full lg:hidden"
                             aria-label="Abrir menú"
                         >
                             <Menu class="size-5" />
@@ -391,8 +419,8 @@ const accountLinks = computed(() => {
                                             as-child
                                             class="h-12 rounded-full"
                                         >
-                                            <Link :href="register()"
-                                                >Crear cuenta</Link
+                                            <Link :href="collectionsIndex()"
+                                                >Explorar colecciones</Link
                                             >
                                         </Button>
                                     </SheetClose>
@@ -407,6 +435,13 @@ const accountLinks = computed(() => {
                                                 Iniciar sesión
                                             </Link>
                                         </Button>
+                                    </SheetClose>
+                                    <SheetClose as-child>
+                                        <Link
+                                            :href="register()"
+                                            class="flex min-h-11 items-center justify-center text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                                            >Crear cuenta</Link
+                                        >
                                     </SheetClose>
                                 </div>
                             </template>
@@ -452,5 +487,31 @@ const accountLinks = computed(() => {
     .fl-nav-link::after {
         transition: none;
     }
+}
+
+/* Over a dark cinematic hero (Home, Colecciones, Cómo funciona) before
+   the visitor scrolls: light ink, white CTA. Once scrolled the bar turns
+   paper and these rules no longer apply. */
+.fl-nav--over-dark .fl-nav-link,
+.fl-nav--over-dark .fl-nav-icon {
+    color: rgb(255 255 255 / 0.75);
+}
+.fl-nav--over-dark .fl-nav-link:hover,
+.fl-nav--over-dark .fl-nav-link--active,
+.fl-nav--over-dark .fl-nav-icon:hover {
+    color: #fff;
+}
+.fl-nav--over-dark .fl-nav-icon:hover {
+    background-color: rgb(255 255 255 / 0.1);
+}
+.fl-nav--over-dark .fl-nav-link::after {
+    background: #fff;
+}
+.fl-nav--over-dark .fl-nav-link--active::after {
+    background: var(--fl-gold);
+}
+.fl-nav--over-dark .fl-nav-cta {
+    background: #fff;
+    color: var(--fl-black);
 }
 </style>

@@ -3,7 +3,9 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowUpRight, Mail, MapPin, Phone } from '@lucide/vue';
 import { computed } from 'vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
+import { ACTIVATE_URL, MI_LEGACY_URL } from '@/config/public-links';
 import { about, contact, howItWorks, privacy, terms } from '@/routes';
+import { index as collectionsIndex } from '@/routes/collections';
 import { index as communityIndex } from '@/routes/community';
 import { index as eventsIndex } from '@/routes/events';
 import { landing as photographersLanding } from '@/routes/photographers';
@@ -36,28 +38,36 @@ const year = new Date().getFullYear();
 
 const columns = [
     {
+        title: 'Tu tag',
+        links: [
+            { label: 'Colecciones', href: collectionsIndex().url },
+            { label: 'Cómo funciona', href: howItWorks().url },
+            { label: 'Activar mi tag', href: ACTIVATE_URL },
+            { label: 'Mi Legacy', href: MI_LEGACY_URL },
+        ],
+    },
+    {
         title: 'Explora',
         links: [
-            { label: 'Eventos', href: eventsIndex() },
-            { label: 'Tienda', href: storeIndex() },
-            { label: 'Comunidad', href: communityIndex() },
-            { label: 'Fotos de evento', href: photosIndex() },
-            { label: 'Cómo funciona', href: howItWorks() },
+            { label: 'Tienda', href: storeIndex().url },
+            { label: 'Eventos', href: eventsIndex().url },
+            { label: 'Comunidad', href: communityIndex().url },
+            { label: 'Fotos de evento', href: photosIndex().url },
         ],
     },
     {
         title: 'Finisher Legacy',
         links: [
-            { label: 'Nosotros', href: about() },
-            { label: 'Fotógrafos', href: photographersLanding() },
-            { label: 'Contacto', href: contact() },
+            { label: 'Nosotros', href: about().url },
+            { label: 'Ayuda y contacto', href: contact().url },
+            { label: 'Fotógrafos', href: photographersLanding().url },
         ],
     },
     {
         title: 'Legal',
         links: [
-            { label: 'Privacidad', href: privacy() },
-            { label: 'Términos', href: terms() },
+            { label: 'Privacidad', href: privacy().url },
+            { label: 'Términos', href: terms().url },
         ],
     },
 ];
@@ -93,13 +103,16 @@ const location = computed(() =>
                     <p
                         class="mt-6 max-w-sm font-serif text-2xl leading-snug text-foreground"
                     >
-                        Tu historia. Tu legado.
+                        El recuerdo físico de tu logro.
+                        <span class="block text-fl-gold-ink italic"
+                            >Tu historia vive dentro.</span
+                        >
                     </p>
                     <p
                         class="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground"
                     >
-                        Tus carreras, tus recuerdos, tu equipo y tu comunidad,
-                        conectados en un solo lugar.
+                        El Finisher Legacy Tag guarda la historia de tu carrera:
+                        tócalo con tu teléfono y vuelve al momento.
                     </p>
 
                     <ul
@@ -136,7 +149,7 @@ const location = computed(() =>
                 </div>
 
                 <div
-                    class="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7"
+                    class="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:col-span-7"
                 >
                     <div v-for="column in columns" :key="column.title">
                         <h3 class="fl-eyebrow">{{ column.title }}</h3>

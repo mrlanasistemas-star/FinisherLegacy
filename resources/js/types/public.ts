@@ -122,6 +122,8 @@ export type PublicProductCard = {
     in_stock: boolean;
     image_url: string | null;
     image_alt?: string | null;
+    /** 'upload' = admin photo, 'concept' = render fallback, null = none. */
+    image_source?: 'upload' | 'concept' | null;
     hover_image_url: string | null;
     variant_count: number;
     category_slug?: string | null;
