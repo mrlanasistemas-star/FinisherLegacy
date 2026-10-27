@@ -15,6 +15,8 @@ import {
     Trash2,
 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
+import ChannelPricesPanel from '@/components/admin/catalog/ChannelPricesPanel.vue';
+import type { ChannelPricing } from '@/components/admin/catalog/ChannelPricesPanel.vue';
 import ProductGalleryManager from '@/components/admin/ProductGalleryManager.vue';
 import type { AdminProductMedia } from '@/components/admin/ProductGalleryManager.vue';
 import InventoryMatrix from '@/components/commerce/InventoryMatrix.vue';
@@ -87,7 +89,17 @@ const props = defineProps<{
         is_featured: boolean;
         active: boolean;
         concept_gallery?: { url: string; alt: string; srcset?: string }[];
+        collection_id?: number | null;
+        tracks_units?: boolean;
+        material?: string | null;
+        strap_type?: string | null;
+        dimensions?: string | null;
+        instructions?: string | null;
+        seo_title?: string | null;
+        seo_description?: string | null;
     };
+    collections?: { id: number; name: string }[];
+    channelPricing?: ChannelPricing;
     variants: Variant[];
     matrix: {
         sizes: string[];
@@ -274,7 +286,22 @@ const detailsForm = useForm({
     requires_shipping: props.product.requires_shipping,
     tracks_inventory: props.product.tracks_inventory,
     active: props.product.active,
+    // Finisher Legacy Tag catalog fields (all optional server-side).
+    collection_id: (props.product.collection_id ?? null) as
+        string | number | null,
+    tracks_units: props.product.tracks_units ?? false,
+    material: props.product.material ?? '',
+    strap_type: props.product.strap_type ?? '',
+    dimensions: props.product.dimensions ?? '',
+    instructions: props.product.instructions ?? '',
+    seo_title: props.product.seo_title ?? '',
+    seo_description: props.product.seo_description ?? '',
 });
+
+const collectionOptions = computed(() => [
+    { value: null, label: 'Sin colección' },
+    ...(props.collections ?? []).map((c) => ({ value: c.id, label: c.name })),
+]);
 
 function saveDetails() {
     detailsForm.patch(`/admin/products/${props.product.id}`, {
@@ -300,6 +327,7 @@ const statusOptions = [
 ];
 
 const typeOptions = [
+    { value: 'legacy_tag', label: 'Finisher Legacy Tag' },
     { value: 'legacy_plate', label: 'Legacy Plate' },
     { value: 'apparel', label: 'Textil' },
     { value: 'accessory', label: 'Accesorio' },
@@ -585,6 +613,111 @@ const date = (iso: string) =>
                         Controla inventario
                     </label>
                 </div>
+
+                <!-- Finisher Legacy Tag: collection, unit tracking, physical spec, SEO -->
+                <div
+                    class="grid gap-5 border-t border-border pt-5 md:col-span-2 md:grid-cols-2"
+                >
+                    <h3
+                        class="text-sm font-semibold text-muted-foreground uppercase md:col-span-2"
+                    >
+                        Colección y ficha física
+                    </h3>
+                    <div class="grid gap-1.5">
+                        <Label for="p-collection">Colección</Label>
+                        <FancySelect
+                            id="p-collection"
+                            v-model="detailsForm.collection_id"
+                            :options="collectionOptions"
+                        />
+                        <InputError
+                            :message="detailsForm.errors.collection_id"
+                        />
+                    </div>
+                    <label
+                        class="flex min-h-10 items-start gap-2 rounded-xl border border-border p-3 text-sm"
+                    >
+                        <Checkbox
+                            class="mt-0.5"
+                            :model-value="detailsForm.tracks_units"
+                            @update:model-value="
+                                (v) => (detailsForm.tracks_units = !!v)
+                            "
+                        />
+                        <span>
+                            <span class="font-medium"
+                                >Cada pieza es única y se activa</span
+                            >
+                            <span class="block text-xs text-muted-foreground"
+                                >Cada unidad tiene su serie, su código NFC/QR y
+                                su historial (lotes y tags).</span
+                            >
+                        </span>
+                    </label>
+                    <div class="grid gap-1.5">
+                        <Label for="p-material">Material</Label>
+                        <Input
+                            id="p-material"
+                            v-model="detailsForm.material"
+                            maxlength="255"
+                            placeholder="Ej. Acero inoxidable"
+                        />
+                        <InputError :message="detailsForm.errors.material" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="p-strap">Tipo de correa</Label>
+                        <Input
+                            id="p-strap"
+                            v-model="detailsForm.strap_type"
+                            maxlength="255"
+                        />
+                        <InputError :message="detailsForm.errors.strap_type" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="p-dimensions">Dimensiones</Label>
+                        <Input
+                            id="p-dimensions"
+                            v-model="detailsForm.dimensions"
+                            maxlength="120"
+                            placeholder="Ej. 70 × 45 mm"
+                        />
+                        <InputError :message="detailsForm.errors.dimensions" />
+                    </div>
+                    <div class="grid gap-1.5 md:col-span-2">
+                        <Label for="p-instructions"
+                            >Instrucciones / cuidados</Label
+                        >
+                        <Textarea
+                            id="p-instructions"
+                            v-model="detailsForm.instructions"
+                            rows="3"
+                        />
+                        <InputError
+                            :message="detailsForm.errors.instructions"
+                        />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="p-seo-title">Título SEO</Label>
+                        <Input
+                            id="p-seo-title"
+                            v-model="detailsForm.seo_title"
+                            maxlength="255"
+                        />
+                        <InputError :message="detailsForm.errors.seo_title" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="p-seo-desc">Descripción SEO</Label>
+                        <Textarea
+                            id="p-seo-desc"
+                            v-model="detailsForm.seo_description"
+                            rows="2"
+                            maxlength="320"
+                        />
+                        <InputError
+                            :message="detailsForm.errors.seo_description"
+                        />
+                    </div>
+                </div>
                 <div class="flex justify-end md:col-span-2">
                     <Button
                         type="submit"
@@ -789,6 +922,13 @@ const date = (iso: string) =>
             >
                 Sin variantes todavía.
             </p>
+
+            <ChannelPricesPanel
+                v-if="channelPricing"
+                :product-id="product.id"
+                :pricing="channelPricing"
+                :variants="variants"
+            />
         </section>
 
         <!-- VENTAS -->

@@ -8,7 +8,9 @@ use App\Enums\ProductAvailability;
 use App\Enums\ProductMediaType;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
+use App\Http\Controllers\Admin\Catalog\ChannelPriceController;
 use App\Http\Controllers\Controller;
+use App\Models\Collection;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -127,6 +129,14 @@ class ProductController extends Controller
                 'tracks_inventory' => $product->tracks_inventory,
                 'minimum_stock' => $product->minimum_stock,
                 'is_featured' => (bool) $product->is_featured,
+                'collection_id' => $product->collection_id,
+                'tracks_units' => (bool) $product->tracks_units,
+                'material' => $product->material,
+                'strap_type' => $product->strap_type,
+                'dimensions' => $product->dimensions,
+                'instructions' => $product->instructions,
+                'seo_title' => $product->seo_title,
+                'seo_description' => $product->seo_description,
                 'active' => $product->active,
                 'image_url' => $product->image_path ? Storage::disk('public')->url($product->image_path) : null,
                 'concept_gallery' => $product->imageSource() === 'concept' ? $product->conceptGallery() : [],
@@ -160,6 +170,8 @@ class ProductController extends Controller
             'recentOrders' => $this->recentOrdersFor($product),
             'reasons' => InventoryAdjustmentReason::options(),
             'categories' => ProductCategory::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'collections' => Collection::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'channelPricing' => ChannelPriceController::panelFor($product),
             'media' => $product->media->map(fn (ProductMedia $m) => [
                 'id' => $m->id,
                 'uuid' => $m->uuid,
@@ -376,11 +388,20 @@ class ProductController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65000'],
             'minimum_stock' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'is_featured' => ['sometimes', 'boolean'],
+            // Finisher Legacy Tag catalog fields (commerce-os §Administración) — all optional.
+            'collection_id' => ['sometimes', 'nullable', 'integer', 'exists:collections,id'],
+            'tracks_units' => ['sometimes', 'boolean'],
+            'material' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'strap_type' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'dimensions' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'instructions' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'seo_title' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'seo_description' => ['sometimes', 'nullable', 'string', 'max:320'],
         ]);
 
         // Optional on the wire (older clients/tests don't send them): an
         // omitted value keeps the column's current value / its default.
-        foreach (['availability', 'sort_order', 'is_featured'] as $optional) {
+        foreach (['availability', 'sort_order', 'is_featured', 'tracks_units'] as $optional) {
             if (! isset($data[$optional])) {
                 unset($data[$optional]);
             }

@@ -172,6 +172,8 @@ const movementLabel: Record<string, string> = {
     adjustment: 'Ajuste',
     reserve: 'Reserva (checkout)',
     release: 'Reserva liberada',
+    transfer_out: 'Transferencia (salida)',
+    transfer_in: 'Transferencia (entrada)',
 };
 
 const when = (iso: string | null) =>

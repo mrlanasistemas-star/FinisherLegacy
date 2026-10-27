@@ -79,6 +79,7 @@ const search = useDebounceFn(() => {
 }, 350);
 
 const typeLabels: Record<string, string> = {
+    legacy_tag: 'Finisher Legacy Tag',
     legacy_plate: 'Legacy Plate',
     apparel: 'Textil',
     accessory: 'Accesorio',
@@ -137,6 +138,7 @@ function submit() {
 }
 
 const typeOptions = [
+    { value: 'legacy_tag', label: 'Finisher Legacy Tag', icon: Nfc },
     { value: 'legacy_plate', label: 'Legacy Plate', icon: Nfc },
     { value: 'apparel', label: 'Textil', icon: Layers },
     { value: 'accessory', label: 'Accesorio', icon: Tag },

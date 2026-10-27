@@ -111,3 +111,93 @@ Throttle `tag-open` por IP (30/min + 300/h). Códigos nunca incrementales.
   (conciliable) y soporte puede `revokeOwnership`. Desactivable por config.
 - `public_code` impreso en la pieza: quien tenga la pieza física puede
   activarla si está vendida — es el comportamiento esperado.
+
+## Activación y Mi Legacy
+
+Capa web + API sobre las acciones de arriba. `ActivateTag` sigue siendo el
+único escritor; `App\Support\LegacyTags\TagActivationState` responde (sin
+escribir) "¿qué hace abrir este tag para esta persona?" con las mismas
+reglas, y `App\Support\LegacyTags\StoryPresenter` arma lo que ven web y API.
+
+### Rutas (`routes/web/legacy.php`, `routes/api/legacy.php`)
+
+| Ruta | Nombre | Qué hace |
+|---|---|---|
+| `GET /t/{code}` | `tag.open` | Normaliza (`TagCode::normalize`), registra `tag_opened` (`?src=qr` → qr, sin src → nfc). Activado → historia (dueño siempre; otros según visibilidad, si no `legacy/Private`). Activable (vendido/entregado o stock en ubicación de campo) → `/activar/{code}?src=…`. Resto → `activate/Unavailable` con `reason`. |
+| `GET /n/{token}` | `nfc.tap` | Si un `LegacyTag.nfc_tag_id` apunta a ese chip → redirige a `/t/{code}`. |
+| `GET /activar` · `POST /activar` | `activate.index` · `activate.lookup` | Escribir el código (o pegar la URL del QR) → `/activar/{code}?src=code`. Código inválido/desconocido → error de validación sin pistas. |
+| `GET /activar/{code}` | `activate.show` | Pasos: 1 Tu tag · 2 Tu cuenta · 3 Activar · 4 ¿De qué carrera? Recuerda la fuente por código en sesión (sobrevive al login). Registra `activation_started`. Desconocido → 404 con página amable. |
+| `GET /activar/{code}/continuar/{login\|register}` | `activate.continue` | Guarda `url.intended` = `activate.show` (patrón NFC). |
+| `POST /activar/{code}` 🔒 | `activate.store` | `ActivateTag` (throttle `api-claim`). 409/422 → toast + estado `taken`/`unavailable`. |
+| `POST /activar/{code}/recuerdo` 🔒 | `activate.complete` | Paso 4: participación propia / "Otra carrera" / "Lo completo después" → editor. |
+| `GET /legacy/{publicId}` | `legacy.story.show` | Historia (policy). Registra `legacy_viewed` (fuente heredada de `/t`). |
+| `GET /legacy/para/{token}` | `legacy.share.show` | Enlace de destinatario (40 chars). Registra `share_opened` + contadores. Revocado → página honesta. |
+| `GET /mi-legacy` 🔒 | `my-legacy.index` | Biblioteca por año. "Mi legado" (`/dashboard`) se conserva. |
+| `/mi-legacy/{publicId}/editar`, `PATCH /mi-legacy/{publicId}`, `…/media` (POST, `media/orden` PATCH, `media/{id}` PATCH/DELETE), `…/enlaces` (POST, `enlaces/{id}` DELETE) 🔒 | `my-legacy.*` | Editor (solo dueño). Subidas con throttle `uploads`. |
+| `GET|POST /mi-legacy/{publicId}/imprimir` 🔒 | `my-legacy.print(.download)` | Plantilla de impresión → PDF (dompdf, 3 diseños). |
+| `GET /api/v1/tags/{code}`, `POST /api/v1/tags/{code}/activate`, `GET /api/v1/me/stories`, `GET /api/v1/stories/{publicId}` | `api.v1.*` | Ver docs/api/v1.md §Finisher Legacy Tag (contrato estable para el app). |
+
+Throttle `tag-open` (30/min + 300/h por IP) lo registra
+`App\Providers\LegacyTagServiceProvider` (con fallback, como NFC), que
+también programa `model:prune` diario de `LegacyTagScan`.
+
+### Política (`App\Policies\LegacyStoryPolicy`)
+
+| Visibilidad | Dueño | Con el tag / enlace directo | Enlace de destinatario | Buscadores |
+|---|---|---|---|---|
+| `public` | ✔ ver/editar | ✔ | ✔ | indexable (nunca en sitemap) |
+| `unlisted` (default) | ✔ | ✔ (el `public_id` aleatorio es la capacidad) | ✔ | `noindex` (meta + `X-Robots-Tag`) |
+| `private` | ✔ | ✘ → "Este recuerdo es privado" | ✔ | `noindex` |
+
+`update`/`share`/`print`/`delete`: solo el dueño (403 para cualquier otro;
+filas de media de otra historia → 404). API: `private` → 404 a terceros.
+Media: `LegacyStory` implementa `OwnsMediaFiles` (sin firma solo el dueño;
+los demás reciben URLs firmadas emitidas tras la policy).
+
+### Media de historias
+
+`legacy_story_media.role`: `photo` (hasta `legacy.stories.max_photos`,
+ordenadas, la primera es portada) · `audio` (uno; M4A/MP3/AAC/WebM/OGG
+sniffados) · `certificate` (uno; PDF o imagen). Todo vía `MediaStorage`
+(privado, MIME detectado por contenido, límites `legacy.stories.max_*_bytes`).
+HEIC no se acepta (el pipeline de imágenes no lo soporta). La duración del
+audio solo se valida en el navegador (no hay ffprobe obligatorio).
+
+### Analítica (`legacy_tag_scans`)
+
+`tag_opened` (/t, GET /api/v1/tags) · `activation_started` (vista de
+activación activable) · `activation_completed` (ActivateTag) ·
+`legacy_viewed` (historia) · `share_opened` (enlace de destinatario) ×
+fuente `nfc`/`qr`/`code`/`link`, `is_owner`, hash diario de visitante.
+
+## Administración: catálogo, inventario y tags
+
+Controladores en `app/Http/Controllers/Admin/Catalog/*`, rutas en
+`routes/web/admin-catalog.php` (todas bajo `auth` + `verified` +
+`can:dashboard.admin.view` + el permiso indicado). Páginas en
+`resources/js/pages/admin/{catalog,inventory,tags}`; enlaces para la
+navegación en `resources/js/config/admin-catalog-links.ts`.
+
+| URL | Qué es | Permiso |
+|---|---|---|
+| `/admin/catalogo/colecciones` (+ `/crear`, `/{id}`, `/{id}/editar`) | CRUD de colecciones; imágenes en disco `public` bajo `collections/`. Con productos → se **archiva**, no se borra. | `products.manage` |
+| `/admin/products/{id}` (pestañas Información / Variantes) | Campos nuevos (colección, `tracks_units`, material, correa, dimensiones, instrucciones, SEO) + **Precios por canal** (`POST /admin/products/{id}/precios-canal`, `PATCH /admin/products/precios-canal/{schedule}` activa/desactiva; nunca se borran; `activity_log`). | `products.manage` |
+| `/admin/inventario/existencias` | Piezas por SKU × ubicación (en inventario / reservadas / vendidas / activadas), alerta con el mínimo del SKU. El agregado sigue en `/admin/comercio/inventario`. | `inventory.manage` |
+| `/admin/inventario/ubicaciones` (+ `/{id}`) | CRUD de ubicaciones; con historial → se desactiva. Detalle: stock por SKU y movimientos. | `inventory.manage` |
+| `/admin/inventario/lotes` (+ `/{uuid}`) | Lotes y sus piezas. | `tags.view` |
+| `/admin/inventario/lotes/crear`, `POST /lotes`, `/lotes/{uuid}/codigos.csv`, `POST /lotes/{uuid}/recibir` | `CreateLot` (≤ 5000), CSV para fábrica (`serial, public_code, display_code, nfc_url, qr_url`), `ReceiveLot` (defectuosos por código, URL o serie). | `tags.manage` |
+| `/admin/inventario/transferir` | `TransferTags::quantity` o `::units` (códigos/URLs/series pegados). | `tags.manage` |
+| `/admin/inventario/proveedores` | Proveedores (con lotes → inactivo). | ver `allies.view`, escribir `allies.manage` |
+| `/admin/tags`, `/admin/tags/{uuid}`, `/admin/tags/{uuid}/qr.svg` | Registro por pieza con filtros (estado, SKU, colección, ubicación, lote, canal, aliado, activado, rango de fechas) y búsqueda por serie / código / URL escaneada / pedido / correo del dueño; detalle con trazabilidad, historial, aperturas, soporte, NFC/QR. | `tags.view` |
+| `POST /admin/tags/{uuid}/{desactivar,reactivar,reemplazar,devolver,revocar,notas}` | `ManageTag` / `TagLifecycle::note`, motivo obligatorio. | `tags.manage` |
+
+Notas:
+
+- URLs públicas de una pieza: `App\Support\LegacyTags\TagUrls` (delega en
+  `LegacyTag::nfcUrl()/qrUrl()`, ruta `tag.open`). La historia se enlaza con
+  `route('legacy.story.show', $publicId)`.
+- Estados y colores de tag/lote/movimiento: un solo helper,
+  `resources/js/lib/tagStatus.ts`.
+- `InventoryService` puede lanzar `ProductOutOfStockException` si el stock
+  agregado no coincide con las piezas; los controladores lo convierten en
+  error de validación (nada se mueve).

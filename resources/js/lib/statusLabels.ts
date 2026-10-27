@@ -292,6 +292,10 @@ export const athleteOwnedProductStatus: StatusMap = {
 };
 
 export const productType: StatusMap = {
+    legacy_tag: {
+        label: 'Finisher Legacy Tag',
+        class: 'border-fl-gold/30 text-fl-gold-ink',
+    },
     legacy_plate: {
         label: 'Legacy Plate',
         class: 'border-fl-gold/30 text-fl-gold-ink',
