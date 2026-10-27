@@ -37,5 +37,11 @@ return [
     'stories' => [
         'max_photos' => 12,
         'max_audio_seconds' => 180,
+        // Upload ceilings for the story editor (MediaStorage sniffs the real
+        // type; the extension is never trusted).
+        'max_photo_bytes' => (int) env('LEGACY_STORY_MAX_PHOTO_BYTES', 12 * 1024 * 1024),
+        'max_audio_bytes' => (int) env('LEGACY_STORY_MAX_AUDIO_BYTES', 15 * 1024 * 1024),
+        'max_certificate_bytes' => (int) env('LEGACY_STORY_MAX_CERTIFICATE_BYTES', 10 * 1024 * 1024),
+        'max_shares' => 20,
     ],
 ];

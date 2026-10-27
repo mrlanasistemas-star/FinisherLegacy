@@ -38,9 +38,9 @@ class LegacyTagScan extends Model
         return $this->belongsTo(LegacyTag::class, 'legacy_tag_id');
     }
 
-    /** @return Builder<LegacyTagScan> */
+    /** @return Builder<self> */
     public function prunable(): Builder
     {
-        return static::query()->where('created_at', '<', now()->subDays((int) config('legacy.scans.retention_days', 365)));
+        return self::query()->where('created_at', '<', now()->subDays((int) config('legacy.scans.retention_days', 365)));
     }
 }

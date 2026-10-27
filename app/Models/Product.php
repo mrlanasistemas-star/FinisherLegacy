@@ -46,13 +46,13 @@ class Product extends Model
         ];
     }
 
-    /** @return BelongsTo<ProductCategory, $this> */
     /** @return BelongsTo<Collection, $this> */
     public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
     }
 
+    /** @return BelongsTo<ProductCategory, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(ProductCategory::class);

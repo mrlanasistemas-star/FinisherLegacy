@@ -10,7 +10,7 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Commerce\InventoryService;
 use App\Services\LegacyTags\TagLifecycle;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -105,6 +105,6 @@ class TransferTags
             ->withProperties(['to' => $to->slug, 'count' => $tags->count(), 'serials' => $tags->pluck('serial')->take(50)->all()])
             ->log('tags.transferred');
 
-        return $tags->map->fresh();
+        return $tags->fresh();
     }
 }

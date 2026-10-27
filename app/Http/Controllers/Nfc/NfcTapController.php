@@ -10,6 +10,7 @@ use App\Exceptions\Athletes\AthleteIdentityConflictException;
 use App\Exceptions\Nfc\NfcAlreadyClaimedException;
 use App\Exceptions\Nfc\NfcNotClaimableException;
 use App\Http\Controllers\Controller;
+use App\Models\LegacyTag;
 use App\Models\NfcTag;
 use App\Queries\Nfc\ResolveNfcTag;
 use App\Support\Nfc\NfcToken;
@@ -31,6 +32,13 @@ class NfcTapController extends Controller
     {
         $tag = $this->findTag($token);
         $recordTap->handle($tag, $request, 'web', $request->user()?->id);
+
+        // A chip that belongs to a Finisher Legacy Tag opens its /t/{code}
+        // flow (docs/architecture/commerce-os.md §Activación y Mi Legacy).
+        $legacyTagCode = LegacyTag::query()->where('nfc_tag_id', $tag->id)->value('public_code');
+        if (is_string($legacyTagCode)) {
+            return redirect()->route('tag.open', $legacyTagCode);
+        }
 
         $resolution = $resolve->handle($tag, $request->user());
 

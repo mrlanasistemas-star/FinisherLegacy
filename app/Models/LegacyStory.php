@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\Media\OwnsMediaFiles;
 use App\Enums\StoryVisibility;
 use Database\Factories\LegacyStoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'event_name', 'distance', 'result_time', 'race_date', 'location', 'recipient_label', 'dedication', 'body',
     'external_url', 'visibility', 'completed_at',
 ])]
-class LegacyStory extends Model
+class LegacyStory extends Model implements OwnsMediaFiles
 {
     /** @use HasFactory<LegacyStoryFactory> */
     use HasFactory, SoftDeletes;
@@ -91,5 +92,26 @@ class LegacyStory extends Model
     public function publicUrl(): string
     {
         return route('legacy.story.show', $this->public_id);
+    }
+
+    /**
+     * Without a signed URL only the owner may fetch a story file; every
+     * other viewer gets short-lived signed URLs minted after
+     * LegacyStoryPolicy::view (or a valid recipient share link).
+     */
+    public function canViewMedia(?User $viewer, MediaFile $file): bool
+    {
+        return $this->isOwnedBy($viewer);
+    }
+
+    /** Only public stories get long-lived, cacheable media URLs. */
+    public function mediaIsPublic(MediaFile $file): bool
+    {
+        return $this->visibility === StoryVisibility::Public;
+    }
+
+    public function syncFromMediaFile(MediaFile $file): void
+    {
+        // Nothing denormalised: the pivot points at the file itself.
     }
 }

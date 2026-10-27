@@ -100,7 +100,6 @@ class Order extends Model
         return $this->hasOne(Payment::class)->latestOfMany();
     }
 
-    /** @return BelongsTo<Coupon, $this> */
     /** @return BelongsTo<Ally, $this> */
     public function ally(): BelongsTo
     {
@@ -119,12 +118,17 @@ class Order extends Model
         return $this->belongsTo(User::class, 'seller_user_id');
     }
 
-    /** Physical units delivered with this order. */
+    /**
+     * Physical units delivered with this order.
+     *
+     * @return HasMany<LegacyTag, $this>
+     */
     public function legacyTags(): HasMany
     {
         return $this->hasMany(LegacyTag::class);
     }
 
+    /** @return BelongsTo<Coupon, $this> */
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);

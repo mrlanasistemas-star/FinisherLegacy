@@ -729,6 +729,90 @@ paths:
         "422":
           description: NFC_NOT_CLAIMABLE (desactivada, sin asignar o etiqueta de evento)
 
+  /tags/{code}:
+    get:
+      tags: [Gear]
+      summary: Resolver un Finisher Legacy Tag (público, throttle tag-open; Bearer opcional) — docs/api/v1.md §Finisher Legacy Tag
+      security: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[A-Za-z0-9-]{8,24}$" }
+        - name: src
+          in: query
+          required: false
+          schema: { type: string, enum: [nfc, qr, code, link] }
+      responses:
+        "200":
+          description: "{data:{code, display_code, status: activatable|mine|taken|unavailable, reason: disabled|replaced|returned|not_sold|null, message, can_activate, owned_by_me, tag:{collection, design}|null, story_url, story_public_id, activate_url}} — sin PII"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          description: TOO_MANY_REQUESTS
+
+  /tags/{code}/activate:
+    post:
+      tags: [Gear]
+      summary: Activar el tag (idempotente para su dueño) — 200 {data:<StoryResource de dueño>}
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source: { type: string, enum: [nfc, qr, code, link] }
+                race_mode: { type: string, enum: [participation, manual, later] }
+                event_participant_id: { type: integer }
+                event_name: { type: string, maxLength: 160 }
+                distance: { type: string, maxLength: 60 }
+                result_time: { type: string, example: "1:45:30" }
+                race_date: { type: string, format: date }
+                location: { type: string, maxLength: 160 }
+      responses:
+        "200":
+          description: OK — StoryResource (public_id, title, is_owner, event{source,name,edition,race,distance,result_time,date,location}, dedication, recipient_label, body, external_url, visibility, cover_url, photos[{id,url,thumb_url,caption,width,height,status}], audio_url, certificate_url, certificate_mime, tag{serial,display_code,collection,design}, web_url, year, shares[], created_at)
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: TAG_ALREADY_ACTIVATED (otra persona ya lo activó)
+        "422":
+          description: TAG_NOT_ACTIVATABLE (error.details.reason disabled|replaced|returned|not_sold) o validación
+
+  /me/stories:
+    get:
+      tags: [Gear]
+      summary: Mis recuerdos (Mi Legacy) — 200 {data:[StoryResource de dueño]}
+      responses:
+        "200":
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+
+  /stories/{publicId}:
+    get:
+      tags: [Gear]
+      summary: Leer una historia (LegacyStoryPolicy; private → 404 salvo dueño; Bearer opcional)
+      security: []
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[a-z0-9]{8,16}$" }
+      responses:
+        "200":
+          description: OK — StoryResource (serial, display_code y shares sólo para el dueño)
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /gear/{code}:
     get:
       tags: [Gear]

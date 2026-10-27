@@ -26,7 +26,7 @@ use App\Services\LegacyTags\TagLifecycle;
 use App\Support\CodeGenerator;
 use App\Support\LegacyTags\TagCode;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -75,7 +75,7 @@ class RecordInPersonSale
             $tags = $this->lockUnits($location, $scannedCodes, $quantities);
             $tags->loadMissing('productVariant.product');
 
-            $lines = $tags->groupBy('product_variant_id')->map(function (Collection $units) use ($channel, $location) {
+            $lines = $tags->groupBy('product_variant_id')->map(function (\Illuminate\Support\Collection $units) use ($channel, $location) {
                 /** @var ProductVariant $variant */
                 $variant = $units->first()->productVariant;
                 $price = $this->prices->handle($variant->product, $variant, $location->eventEdition, null, $channel, $location->ally_id);
@@ -186,7 +186,7 @@ class RecordInPersonSale
             throw new InvalidArgumentException('Hay un código que no corresponde a un Finisher Legacy Tag.');
         }
 
-        $tags = collect();
+        $tags = new Collection;
 
         if ($codes->isNotEmpty()) {
             $tags = LegacyTag::query()->whereIn('public_code', $codes->all())->lockForUpdate()->get();
