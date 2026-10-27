@@ -561,3 +561,8 @@ require __DIR__.'/web/platform.php';
 require __DIR__.'/web/community.php';
 require __DIR__.'/web/nfc.php';
 require __DIR__.'/web/public.php';
+
+require __DIR__.'/web/collections.php';
+require __DIR__.'/web/legacy.php';
+require __DIR__.'/web/admin-catalog.php';
+require __DIR__.'/web/admin-commercial.php';

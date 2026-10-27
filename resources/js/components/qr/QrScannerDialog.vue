@@ -24,6 +24,17 @@ QrScanner.WORKER_PATH = QrScannerWorkerPath;
 
 const open = defineModel<boolean>('open', { default: false });
 
+/**
+ * `capture`: hand the raw decoded text back to the caller (`decode` event)
+ * instead of opening a Legacy Code — used by Venta rápida to scan the QR
+ * printed on a Finisher Legacy Tag (/t/{code}?src=qr).
+ */
+const props = withDefaults(
+    defineProps<{ capture?: boolean; title?: string; description?: string }>(),
+    { capture: false, title: undefined, description: undefined },
+);
+const emit = defineEmits<{ decode: [value: string] }>();
+
 const videoRef = useTemplateRef<HTMLVideoElement>('video');
 const error = ref<string | null>(null);
 let scanner: QrScanner | null = null;
@@ -40,6 +51,14 @@ function extractLegacyCode(rawValue: string): string | null {
 }
 
 function handleDecode(result: { data: string }) {
+    if (props.capture) {
+        stop();
+        open.value = false;
+        emit('decode', result.data);
+
+        return;
+    }
+
     const code = extractLegacyCode(result.data);
 
     if (!code) {
@@ -91,8 +110,13 @@ onBeforeUnmount(stop);
     <Dialog v-model:open="open">
         <DialogContent class="sm:max-w-sm">
             <DialogHeader>
-                <DialogTitle>Escanea tu Legacy Code</DialogTitle>
-                <DialogDescription>
+                <DialogTitle>{{
+                    title ?? 'Escanea tu Legacy Code'
+                }}</DialogTitle>
+                <DialogDescription v-if="description">{{
+                    description
+                }}</DialogDescription>
+                <DialogDescription v-else>
                     Apunta la cámara a un QR de Legacy Code (placas anteriores o
                     tarjetas impresas). Cargaremos el evento, el tiempo y el
                     ritmo por ti. Con la Legacy Plate actual basta acercar el

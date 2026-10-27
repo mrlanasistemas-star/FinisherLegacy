@@ -29,6 +29,7 @@ use App\Models\Plate;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Report;
+use App\Queries\Admin\CommerceDashboardMetrics;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,8 +49,10 @@ class DashboardController extends Controller
 
     private const PERIODS = [7, 30, 90];
 
-    public function index(Request $request): Response
+    public function index(Request $request, CommerceDashboardMetrics $metrics): Response
     {
+        $range = in_array($request->query('rango'), CommerceDashboardMetrics::RANGES, true) ? (string) $request->query('rango') : '30d';
+
         $days = in_array((int) $request->query('period'), self::PERIODS, true) ? (int) $request->query('period') : 30;
         $from = CarbonImmutable::now()->startOfDay()->subDays($days - 1);
         $previousFrom = $from->subDays($days);
@@ -60,6 +63,15 @@ class DashboardController extends Controller
         $lowStock = $this->lowStockRows();
 
         return Inertia::render('admin/Dashboard', [
+            // Commerce + Activation OS (docs/architecture/commerce-os.md §Administración comercial).
+            'range' => $range,
+            'ranges' => [
+                ['value' => 'hoy', 'label' => 'Hoy'],
+                ['value' => '7d', 'label' => '7 días'],
+                ['value' => '30d', 'label' => '30 días'],
+                ['value' => 'mes', 'label' => 'Este mes'],
+            ],
+            'commerce' => $metrics->handle($range),
             'period' => $days,
             'periods' => self::PERIODS,
             'currency' => $currency,

@@ -22,6 +22,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import KanbanBoard from '@/components/admin/KanbanBoard.vue';
 import type { KanbanLane } from '@/components/admin/KanbanBoard.vue';
+import SalesChannelBadge from '@/components/admin/SalesChannelBadge.vue';
 import CommerceSubTabs from '@/components/commerce/CommerceSubTabs.vue';
 import Money from '@/components/shared/Money.vue';
 import { timeAgo } from '@/lib/datetime';
@@ -40,6 +41,11 @@ type OrderCard = {
     items_preview: string[];
     has_photos: boolean;
     created_at: string;
+    channel: string | null;
+    ally: string | null;
+    location: string | null;
+    seller: string | null;
+    delivery_method: string | null;
 };
 
 const props = defineProps<{
@@ -49,7 +55,8 @@ const props = defineProps<{
         total_minor: number;
         orders: OrderCard[];
     }[];
-    filters: { q: string };
+    filters: { q: string; canal?: string | null };
+    channels?: { value: string; label: string }[];
 }>();
 
 const laneMeta: Record<
@@ -102,10 +109,17 @@ const lanes = computed<KanbanLane<OrderCard>[]>(() =>
 );
 
 const query = ref(props.filters.q ?? '');
+const channel = ref<string | null>(props.filters.canal ?? null);
+
+function setChannel(value: string | null) {
+    channel.value = value;
+    search();
+}
+
 const search = useDebounceFn(() => {
     router.get(
         '/admin/orders',
-        { q: query.value || undefined },
+        { q: query.value || undefined, canal: channel.value || undefined },
         { preserveState: true, replace: true },
     );
 }, 350);
@@ -148,6 +162,32 @@ const search = useDebounceFn(() => {
             </div>
         </div>
 
+        <div
+            v-if="channels?.length"
+            class="mb-5 flex flex-wrap items-center gap-1.5"
+            role="group"
+            aria-label="Filtrar por canal"
+        >
+            <button
+                v-for="option in [
+                    { value: null, label: 'Todos los canales' },
+                    ...channels,
+                ]"
+                :key="option.value ?? 'all'"
+                type="button"
+                class="h-8 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-fl-gold"
+                :class="
+                    channel === option.value
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                "
+                :aria-pressed="channel === option.value"
+                @click="setChannel(option.value)"
+            >
+                {{ option.label }}
+            </button>
+        </div>
+
         <KanbanBoard :lanes="lanes" :item-key="(order) => order.id">
             <template #card="{ item: order }">
                 <Link
@@ -168,6 +208,18 @@ const search = useDebounceFn(() => {
                         <UserRound class="size-3.5 text-muted-foreground" />
                         <span class="truncate">{{
                             order.customer ?? 'Invitado'
+                        }}</span>
+                    </p>
+                    <p
+                        v-if="order.channel"
+                        class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+                    >
+                        <SalesChannelBadge :channel="order.channel" short />
+                        <span v-if="order.ally" class="truncate">{{
+                            order.ally
+                        }}</span>
+                        <span v-else-if="order.location" class="truncate">{{
+                            order.location
                         }}</span>
                     </p>
                     <p

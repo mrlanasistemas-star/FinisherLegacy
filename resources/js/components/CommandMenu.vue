@@ -67,6 +67,26 @@ const quickActions = computed<Entry[]>(() => {
     const perms = permissions.value;
     const actions: Entry[] = [];
 
+    if (perms.includes('pos.sell') && isAdmin.value) {
+        actions.push({
+            key: 'action:pos',
+            label: 'Nueva venta rápida',
+            href: '/admin/venta-rapida',
+            icon: Plus,
+            group: 'Acciones',
+        });
+    }
+
+    if (perms.includes('support.manage') && isAdmin.value) {
+        actions.push({
+            key: 'action:support',
+            label: 'Nueva incidencia',
+            href: '/admin/soporte?nueva=1',
+            icon: Plus,
+            group: 'Acciones',
+        });
+    }
+
     if (perms.includes('events.manage') && isAdmin.value) {
         actions.push({
             key: 'action:event',

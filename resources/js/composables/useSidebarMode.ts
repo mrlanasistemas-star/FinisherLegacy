@@ -25,7 +25,7 @@ const STORAGE_KEY = 'fl_sidebar_mode';
 // wins over the stored/local preference, which only resolves a page that
 // is neither (events, support, the marketing pages...).
 // The photographer portal and Mis fotos are the user's OWN things → Personal.
-const TRABAJO_URL = /^\/(admin|operator|production|imports)(\/|$)/;
+const TRABAJO_URL = /^\/(admin|aliado|operator|production|imports)(\/|$)/;
 const PERSONAL_URL = /^\/(dashboard|mis-pedidos|fotografo|fotos)(\/|$)/;
 
 function readStored(): SidebarMode | null {

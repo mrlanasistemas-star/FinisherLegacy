@@ -8,37 +8,51 @@
  * - "Mi espacio" (personal): Mi legado, Mis eventos, Mi equipo, Mis pedidos,
  *   Mi perfil (spec §7/§134) + an "Explorar" group of public pages and the
  *   photographer's own portal.
- * - Administración: EXACTLY seven first-level sections (spec §8/§133).
- *   Every former module lives as a workspace tab inside one of them; a
- *   section is shown when the account can open at least one of its tabs.
+ * - Administración: sections by business domain (Commerce + Activation OS,
+ *   docs/architecture/commerce-os.md §Administración comercial): Inicio ·
+ *   Comercial · Catálogo · Inventario · Legacy · Soporte · Eventos ·
+ *   Comunidad · Personas · Configuración, plus "Operación (histórico)"
+ *   (`secondary`, collapsed at the bottom). A section is shown when the
+ *   account can open at least one of its tabs. Catálogo / Inventario / Tags
+ *   destinations come from ./admin-catalog-links.ts.
  *
  * `permission` strings come from the shared `auth.permissions` prop
  * (App\Support\PermissionCatalog). Real protection is always server-side
  * (`can:` middleware) — this only decides what to render.
  *
- * Hidden on purpose (URLs still work, see the audit): /operator,
- * /production, /admin/legacy-codes, /admin/plate-studio,
- * /admin/machine-profiles, /admin/production-devices, /admin/incidents,
- * /imports, /dashboard/medals, /dashboard/my-plates.
+ * Not linked anywhere (URLs still work, see the audit): /dashboard/medals,
+ * /dashboard/my-plates. The old Plate/production tools now live under
+ * "Operación (histórico)" for whoever holds their permissions.
  */
 import type { LucideIcon } from '@lucide/vue';
 import {
+    Archive,
+    Boxes,
     Calendar,
     Camera,
     Compass,
+    Handshake,
     House,
     LayoutGrid,
+    LifeBuoy,
     MessagesSquare,
     Nfc,
     Package,
     Receipt,
     Settings,
+    Shapes,
     ShoppingBag,
     Store,
     UserCircle,
     Users,
     Wallet,
+    Zap,
 } from '@lucide/vue';
+import {
+    catalogLinks,
+    inventoryLinks,
+    tagLinks,
+} from '@/config/admin-catalog-links';
 
 export interface NavItem {
     label: string;
@@ -61,12 +75,16 @@ export interface WorkspaceTab {
 
 export type AdminSectionKey =
     | 'inicio'
-    | 'eventos'
-    | 'comercio'
+    | 'comercial'
+    | 'catalogo'
+    | 'inventario'
     | 'legacy'
+    | 'soporte'
+    | 'eventos'
     | 'comunidad'
     | 'personas'
-    | 'configuracion';
+    | 'configuracion'
+    | 'operacion';
 
 export interface AdminSection {
     key: AdminSectionKey;
@@ -82,8 +100,9 @@ export interface AdminSection {
     tabs: WorkspaceTab[];
     /** Paths where the page renders its own workspace tabs (event detail). */
     hideTabsOn?: RegExp;
-    /** Shown directly in the admin mobile bottom bar (max 4 + "Más"). */
-    mobile?: boolean;
+    /** Legacy/secondary area: rendered collapsed at the bottom of the
+     * sidebar (and last in the mobile "Más" sheet). */
+    secondary?: boolean;
 }
 
 export interface ResolvedSection extends AdminSection {
@@ -94,6 +113,8 @@ export interface ResolvedSection extends AdminSection {
 // ── Mi espacio ───────────────────────────────────────────────────────────
 
 export const personalNav: NavItem[] = [
+    // Finisher Legacy Tag library (docs/architecture/commerce-os.md §Activación y Mi Legacy).
+    { label: 'Mi Legacy', icon: Nfc, href: '/mi-legacy', permission: null },
     {
         label: 'Mi legado',
         icon: LayoutGrid,
@@ -164,6 +185,7 @@ export const photographerNav: NavItem[] = [
 
 /** Athlete mobile bottom bar (spec §50): Legado, Eventos, Tienda, Pedidos, Perfil. */
 export const athleteMobileTabs: NavItem[] = [
+    { label: 'Mi Legacy', icon: Nfc, href: '/mi-legacy', permission: null },
     {
         label: 'Legado',
         icon: LayoutGrid,
@@ -177,7 +199,6 @@ export const athleteMobileTabs: NavItem[] = [
         href: '/dashboard/my-events',
         permission: null,
     },
-    { label: 'Tienda', icon: ShoppingBag, href: '/tienda', permission: null },
     { label: 'Pedidos', icon: Receipt, href: '/mis-pedidos', permission: null },
     {
         label: 'Perfil',
@@ -188,6 +209,11 @@ export const athleteMobileTabs: NavItem[] = [
 ];
 
 // ── Administración ───────────────────────────────────────────────────────
+//
+// Commerce + Product + Activation OS (docs/architecture/commerce-os.md
+// §Administración comercial): sections by business domain. Operación is the
+// pre-tag (Legacy Plate / producción) workflow — kept reachable for whoever
+// holds those permissions, rendered collapsed at the bottom of the sidebar.
 
 export const adminSections: AdminSection[] = [
     {
@@ -206,7 +232,139 @@ export const adminSections: AdminSection[] = [
                 exact: true,
             },
         ],
-        mobile: true,
+    },
+    {
+        key: 'comercial',
+        label: 'Comercial',
+        icon: Store,
+        href: '/admin/orders',
+        hrefPermission: 'orders.view',
+        match: [
+            '/admin/orders',
+            '/admin/payments',
+            '/admin/venta-rapida',
+            '/admin/comercio/ventas',
+            '/admin/aliados',
+            '/admin/coupons',
+            '/admin/promotions',
+        ],
+        tabs: [
+            {
+                label: 'Pedidos',
+                href: '/admin/orders',
+                permission: 'orders.view',
+                // Pagos is a sub-pill inside Pedidos.
+                match: ['/admin/payments'],
+            },
+            {
+                label: 'Venta rápida',
+                href: '/admin/venta-rapida',
+                permission: 'pos.sell',
+            },
+            {
+                label: 'Ventas',
+                href: '/admin/comercio/ventas',
+                permission: 'orders.view',
+            },
+            {
+                label: 'Aliados',
+                href: '/admin/aliados',
+                permission: 'allies.view',
+            },
+            {
+                label: 'Cupones y ofertas',
+                href: '/admin/coupons',
+                permission: 'coupons.manage',
+                match: ['/admin/promotions'],
+            },
+        ],
+    },
+    {
+        key: 'catalogo',
+        label: 'Catálogo',
+        icon: Shapes,
+        href: '/admin/products',
+        hrefPermission: 'products.manage',
+        match: [
+            '/admin/products',
+            '/admin/product-categories',
+            '/admin/catalogo',
+        ],
+        tabs: [
+            {
+                label: 'Productos',
+                href: '/admin/products',
+                permission: 'products.manage',
+            },
+            ...catalogLinks,
+            {
+                label: 'Categorías',
+                href: '/admin/product-categories',
+                permission: 'products.manage',
+            },
+        ],
+    },
+    {
+        key: 'inventario',
+        label: 'Inventario',
+        icon: Boxes,
+        // Existencias, Ubicaciones, Lotes, Transferir, Proveedores come from
+        // admin-catalog-links.ts; the older /admin/comercio/inventario and
+        // /admin/inventory screens still highlight this section.
+        href: '/admin/inventario/existencias',
+        hrefPermission: 'inventory.manage',
+        match: [
+            '/admin/inventario',
+            '/admin/comercio/inventario',
+            '/admin/inventory',
+        ],
+        tabs: [...inventoryLinks],
+    },
+    {
+        key: 'legacy',
+        label: 'Legacy',
+        icon: Nfc,
+        href: '/admin/tags',
+        hrefPermission: 'tags.view',
+        match: [
+            '/admin/tags',
+            '/admin/activaciones',
+            '/admin/legacy-nfc/etiquetas',
+            '/admin/legacy-nfc/productos',
+        ],
+        tabs: [
+            ...tagLinks,
+            {
+                label: 'Activaciones',
+                href: '/admin/activaciones',
+                permission: 'tags.view',
+            },
+            {
+                label: 'Etiquetas NFC',
+                href: '/admin/legacy-nfc/etiquetas',
+                permission: 'nfc.view',
+            },
+            {
+                label: 'Productos conectados',
+                href: '/admin/legacy-nfc/productos',
+                permission: 'nfc.view',
+            },
+        ],
+    },
+    {
+        key: 'soporte',
+        label: 'Soporte',
+        icon: LifeBuoy,
+        href: '/admin/soporte',
+        hrefPermission: 'support.view',
+        match: ['/admin/soporte'],
+        tabs: [
+            {
+                label: 'Incidencias',
+                href: '/admin/soporte',
+                permission: 'support.view',
+            },
+        ],
     },
     {
         key: 'eventos',
@@ -220,9 +378,6 @@ export const adminSections: AdminSection[] = [
             '/admin/participants',
             '/admin/preregistrations',
             '/admin/photos',
-            '/admin/incidents',
-            '/imports',
-            '/operator',
         ],
         hideTabsOn: /^\/admin\/events\/\d+(\/|$)/,
         tabs: [
@@ -234,125 +389,12 @@ export const adminSections: AdminSection[] = [
                     '/admin/editions',
                     '/admin/participants',
                     '/admin/preregistrations',
-                    '/imports',
                 ],
             },
             {
                 label: 'Fotos por revisar',
                 href: '/admin/photos',
                 permission: 'photos.manage',
-            },
-        ],
-        mobile: true,
-    },
-    {
-        key: 'comercio',
-        label: 'Comercio',
-        icon: Store,
-        // cross-agent: /admin/comercio is built by A2 (Comercio workspace).
-        href: '/admin/comercio',
-        hrefPermission: 'orders.view',
-        match: [
-            '/admin/comercio',
-            '/admin/products',
-            '/admin/product-categories',
-            '/admin/inventory',
-            '/admin/orders',
-            '/admin/payments',
-            '/admin/coupons',
-            '/admin/promotions',
-        ],
-        tabs: [
-            {
-                label: 'Resumen',
-                href: '/admin/comercio', // cross-agent (A2)
-                permission: 'orders.view',
-                exact: true,
-            },
-            {
-                label: 'Productos',
-                href: '/admin/products',
-                permission: 'products.manage',
-                // Categorías is a sub-pill inside Productos (A2).
-                match: ['/admin/product-categories'],
-            },
-            {
-                label: 'Inventario',
-                href: '/admin/comercio/inventario', // A2
-                permission: 'inventory.manage',
-                match: ['/admin/inventory'],
-            },
-            {
-                label: 'Pedidos',
-                href: '/admin/orders',
-                permission: 'orders.view',
-                // Pagos is a sub-pill inside Pedidos (A2, spec §10).
-                match: ['/admin/payments'],
-            },
-            {
-                label: 'Ventas',
-                href: '/admin/comercio/ventas', // A2
-                permission: 'orders.view',
-            },
-            {
-                label: 'Cupones',
-                href: '/admin/coupons',
-                permission: 'coupons.manage',
-                // Ofertas is a sub-pill inside Cupones (A2, spec §10).
-                match: ['/admin/promotions'],
-            },
-        ],
-        mobile: true,
-    },
-    {
-        key: 'legacy',
-        label: 'Legacy + NFC',
-        icon: Nfc,
-        // /admin/legacy-nfc redirects to the first tab the user can open.
-        href: '/admin/legacy-nfc',
-        hrefPermission: 'nfc.view',
-        match: [
-            '/admin/legacy-nfc',
-            '/admin/legacy-plates',
-            '/admin/plates',
-            '/admin/legacy-plate-models',
-            '/admin/legacy-codes',
-            '/admin/plate-studio',
-            '/admin/machine-profiles',
-            '/admin/production-devices',
-            '/production',
-        ],
-        tabs: [
-            {
-                label: 'Legacy Plates',
-                href: '/admin/plates',
-                permission: 'plates.view',
-            },
-            {
-                label: 'Preparación y entrega',
-                href: '/admin/legacy-nfc/preparacion',
-                permission: 'production.access',
-                match: ['/production', '/admin/legacy-plates/production'],
-            },
-            {
-                label: 'Etiquetas NFC',
-                href: '/admin/legacy-nfc/etiquetas',
-                permission: 'nfc.view',
-            },
-            {
-                label: 'Productos conectados',
-                href: '/admin/legacy-nfc/productos',
-                permission: 'nfc.view',
-            },
-            {
-                label: 'Preventas',
-                href: '/admin/legacy-plates/presales',
-                permission: 'legacyplates.manage',
-            },
-            {
-                label: 'Diseños',
-                href: '/admin/legacy-plate-models',
-                permission: 'legacyplates.manage',
             },
         ],
     },
@@ -417,7 +459,6 @@ export const adminSections: AdminSection[] = [
                 permission: 'roles.manage',
             },
         ],
-        mobile: true,
     },
     {
         key: 'configuracion',
@@ -466,11 +507,127 @@ export const adminSections: AdminSection[] = [
             },
         ],
     },
+    {
+        // Histórico: the engraved-at-the-event Legacy Plate workflow.
+        // Nothing here is deleted (docs/architecture/deprecation.md).
+        key: 'operacion',
+        label: 'Operación (histórico)',
+        icon: Archive,
+        href: '/admin/plates',
+        hrefPermission: 'plates.view',
+        secondary: true,
+        match: [
+            '/admin/legacy-nfc/preparacion',
+            '/admin/legacy-plates',
+            '/admin/plates',
+            '/admin/legacy-plate-models',
+            '/admin/legacy-codes',
+            '/admin/plate-studio',
+            '/admin/machine-profiles',
+            '/admin/production-devices',
+            '/admin/incidents',
+            '/production',
+            '/operator',
+            '/imports',
+        ],
+        tabs: [
+            {
+                label: 'Legacy Plates',
+                href: '/admin/plates',
+                permission: 'plates.view',
+            },
+            {
+                label: 'Preparación y entrega',
+                href: '/admin/legacy-nfc/preparacion',
+                permission: 'production.access',
+                match: ['/production', '/admin/legacy-plates/production'],
+            },
+            {
+                label: 'Preventas',
+                href: '/admin/legacy-plates/presales',
+                permission: 'legacyplates.manage',
+            },
+            {
+                label: 'Diseños',
+                href: '/admin/legacy-plate-models',
+                permission: 'legacyplates.manage',
+            },
+            {
+                label: 'Plate Studio',
+                href: '/admin/plate-studio',
+                permission: 'platetemplates.view',
+            },
+            {
+                label: 'Perfiles de máquina',
+                href: '/admin/machine-profiles',
+                permission: 'platetemplates.view',
+            },
+            {
+                label: 'Estaciones',
+                href: '/admin/production-devices',
+                permission: 'productiondevices.view',
+            },
+            {
+                label: 'Legacy Codes',
+                href: '/admin/legacy-codes',
+                permission: 'legacycodes.view',
+            },
+            {
+                label: 'Incidencias de evento',
+                href: '/admin/incidents',
+                permission: 'incidents.view',
+            },
+            {
+                label: 'Importaciones',
+                href: '/imports',
+                permission: 'imports.manage',
+            },
+            {
+                label: 'Event OS',
+                href: '/operator',
+                permission: 'operator.access',
+            },
+        ],
+    },
 ];
 
 /**
- * Staff without the admin panel (seeded `production_operator`) still need
- * their one work screen. A6 turns /production into "Preparación y entrega".
+ * Admin mobile bottom bar: Inicio · Venta rápida · Pedidos · Tags · Más.
+ * Permission-aware — a link the viewer cannot open is dropped; "Más"
+ * (every section) is always appended by MobileBottomNav.
+ */
+export const adminMobileTabs: NavItem[] = [
+    {
+        label: 'Inicio',
+        icon: House,
+        href: '/admin',
+        permission: 'dashboard.admin.view',
+        exact: true,
+    },
+    {
+        label: 'Venta rápida',
+        icon: Zap,
+        href: '/admin/venta-rapida',
+        permission: 'pos.sell',
+    },
+    {
+        label: 'Pedidos',
+        icon: Receipt,
+        href: '/admin/orders',
+        permission: 'orders.view',
+    },
+    {
+        label: 'Tags',
+        icon: Nfc,
+        href: '/admin/tags',
+        permission: 'tags.view',
+    },
+];
+
+/**
+ * Work screens for accounts WITHOUT the admin panel: the seeded
+ * `production_operator` (one screen) and ally sellers (`ally` role → their
+ * own portal and Venta rápida restricted to their locations).
  */
 export const staffNav: NavItem[] = [
     {
@@ -478,6 +635,19 @@ export const staffNav: NavItem[] = [
         icon: Package,
         href: '/production',
         permission: 'production.access',
+    },
+    {
+        label: 'Portal aliado',
+        icon: Handshake,
+        href: '/aliado',
+        permission: 'ally.portal',
+        exact: true,
+    },
+    {
+        label: 'Venta rápida',
+        icon: Zap,
+        href: '/aliado/venta-rapida',
+        permission: 'ally.portal',
     },
 ];
 

@@ -201,3 +201,24 @@ Notas:
 - `InventoryService` puede lanzar `ProductOutOfStockException` si el stock
   agregado no coincide con las piezas; los controladores lo convierten en
   error de validación (nada se mueve).
+
+## Administración comercial y operación
+
+Navegación por dominio (`adminSections` en `resources/js/config/navigation.ts`;
+Catálogo/Inventario/Tags importados de `admin-catalog-links.ts`): Inicio ·
+Comercial · Catálogo · Inventario · Legacy · Soporte · Eventos · Comunidad ·
+Personas · Configuración · **Operación (histórico)** colapsada al final.
+Móvil: Inicio · Venta rápida · Pedidos · Tags · Más. Ver `docs/MODULES.md` y
+`docs/architecture/deprecation.md`.
+
+| URL | Permiso | Qué es |
+|---|---|---|
+| `/admin` | `dashboard.admin.view` | Inicio: `App\Queries\Admin\CommerceDashboardMetrics` (`?rango=hoy|7d|30d|mes`). Ventas (total, pedidos, ticket, piezas sin fotos digitales), por canal, inventario (tags `in_stock`/`reserved`, SKUs bajo `minimum_stock`, agotados), activación (vendidas en el periodo → activadas, pendientes, tasa, % en `legacy.tags.kpi.activation_window_hours` sobre piezas vendidas hace ≥ esa ventana, mediana), producto (aperturas por fuente, incidencias, devoluciones, reemplazos, defectos), colecciones, KPI venta rápida (mediana `sale_started_at → created_at`, meta 90 s interna). Sin datos ⇒ `null` ⇒ "—"/"Sin información todavía". SQL portable; medianas en PHP sobre conjuntos acotados. |
+| `/admin/venta-rapida` | `pos.sell` | POS (≤90 s): ubicación recordada en el dispositivo, escaneo/pegado/teclado-wedge/cámara (`QrScannerDialog` modo `capture`) o tiles de diseño, precio por canal/aliado (`ResolveProductPrice`), efectivo/terminal, comprador opcional → `RecordInPersonSale`. `started_at` del cliente, acotado a [ahora − 1 h, ahora]. `GET …/pieza` valida un código contra la ubicación (JSON). |
+| `/aliado`, `/aliado/venta-rapida`, `POST /aliado/incidencias` | `ally.portal` | Portal del aliado: solo sus aliados vía `ally_user` (`App\Support\Commerce\PosLocations`). Ubicación ajena ⇒ 403; pieza ajena ⇒ error de la acción. |
+| `/admin/aliados[/{uuid}]` | `allies.view` / `allies.manage` | Lista con filtros; alta/edición (comisión, condiciones); ligar usuario por correo (rol seller/manager; si no es staff recibe rol `ally`); ubicaciones del aliado; stock por SKU; ventas; activadas; **ventas inferidas por activación** (`metadata.unreported_sale`) para conciliar; incidencias. |
+| `/admin/soporte[/{uuid}]` | `support.view` / `support.manage` | Incidencias `SC-AAMM-0001` (`App\Actions\SupportCases\OpenSupportCase`). Reemplazo (`ManageTag::replace`, guarda `replacement_tag_id`), devolución (`ManageTag::return` + `refund_minor` **solo registrado**, sin pasarela), revocar propiedad. Historial = `activity_log` del caso + kardex de la pieza. |
+| `/admin/activaciones` | `tags.view` | Activaciones recientes (tiempo a activar) y pendientes (más antiguas primero); "Reenviar instrucciones" solo con correo del comprador (`TagActivationReminder`, en cola). |
+| `/admin/orders` (+ `PATCH …/envio`, `POST …/entregado`) | `orders.view` / `orders.manage` | Filtro y badge de canal (`resources/js/lib/salesChannel.ts`, única fuente de etiquetas/colores), aliado/ubicación/vendedor; en detalle, envío editable, piezas entregadas con estado de activación y "Marcar entregado" (`AssignTagsToOrderItem::markDelivered` + `orders.delivered_at`). |
+
+Pruebas: `tests/Feature/Admin/Commercial/*`.

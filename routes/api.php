@@ -433,3 +433,4 @@ require __DIR__.'/api/tracking.php';
 require __DIR__.'/api/platform.php';
 require __DIR__.'/api/community.php';
 require __DIR__.'/api/nfc.php';
+require __DIR__.'/api/legacy.php';

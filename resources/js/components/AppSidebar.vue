@@ -3,12 +3,14 @@
  * Desktop sidebar (sheet on mobile). Two sides, never mixed:
  * - Mi espacio — Mi legado, Mis eventos, Mi equipo, Mis pedidos, Mi perfil
  *   (+ the photographer portal and an "Explorar" group of public pages).
- * - Administración — exactly seven sections (spec §8/§133); everything
+ * - Administración — domain sections (navigation.ts) + a collapsed
+ *   "Histórico" group (Operación); everything
  *   else is a workspace tab under the topbar (WorkspaceTabs.vue).
  * The switch only appears for accounts that have both sides.
  */
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed, watchEffect } from 'vue';
+import { ChevronDown } from '@lucide/vue';
+import { computed, ref, watchEffect } from 'vue';
 import NavUser from '@/components/NavUser.vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import {
@@ -38,15 +40,23 @@ import {
 const page = usePage();
 const permissions = computed(() => page.props.auth?.permissions ?? []);
 
-const sections = computed(() => visibleAdminSections(permissions.value));
+const allSections = computed(() => visibleAdminSections(permissions.value));
+const sections = computed(() =>
+    allSections.value.filter((section) => !section.secondary),
+);
+// "Operación (histórico)": collapsed at the bottom unless you are in it.
+const secondarySections = computed(() =>
+    allSections.value.filter((section) => section.secondary),
+);
+const secondaryOpen = ref(false);
 const photographer = computed(() =>
     visibleItems(photographerNav, permissions.value),
 );
 const staff = computed(() =>
-    sections.value.length ? [] : visibleItems(staffNav, permissions.value),
+    allSections.value.length ? [] : visibleItems(staffNav, permissions.value),
 );
 const hasWorkSide = computed(
-    () => sections.value.length > 0 || staff.value.length > 0,
+    () => allSections.value.length > 0 || staff.value.length > 0,
 );
 
 const { mode, setMode, detectFromUrl } = useSidebarMode();
@@ -61,6 +71,15 @@ function isItemActive(item: NavItem): boolean {
         ? isCurrentUrl(item.href)
         : isCurrentOrParentUrl(item.href);
 }
+
+const secondaryActive = computed(() =>
+    secondarySections.value.some((section) =>
+        isAdminSectionActive(section, currentUrl.value),
+    ),
+);
+const showSecondary = computed(
+    () => secondaryOpen.value || secondaryActive.value,
+);
 </script>
 
 <template>
@@ -134,6 +153,44 @@ function isItemActive(item: NavItem): boolean {
                         >
                             <SidebarMenuButton
                                 as-child
+                                :is-active="
+                                    isAdminSectionActive(section, currentUrl)
+                                "
+                                :tooltip="section.label"
+                            >
+                                <Link :href="section.resolvedHref">
+                                    <component :is="section.icon" />
+                                    <span>{{ section.label }}</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarGroup>
+
+                <SidebarGroup
+                    v-if="secondarySections.length"
+                    class="mt-auto px-2 py-0"
+                >
+                    <button
+                        type="button"
+                        class="flex h-8 w-full items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-fl-gold"
+                        :aria-expanded="showSecondary"
+                        @click="secondaryOpen = !secondaryOpen"
+                    >
+                        Histórico
+                        <ChevronDown
+                            class="size-3.5 transition-transform"
+                            :class="showSecondary ? 'rotate-180' : ''"
+                        />
+                    </button>
+                    <SidebarMenu v-if="showSecondary">
+                        <SidebarMenuItem
+                            v-for="section in secondarySections"
+                            :key="section.key"
+                        >
+                            <SidebarMenuButton
+                                as-child
+                                size="sm"
                                 :is-active="
                                     isAdminSectionActive(section, currentUrl)
                                 "

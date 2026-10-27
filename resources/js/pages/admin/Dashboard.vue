@@ -1,58 +1,119 @@
 <script setup lang="ts">
 /**
- * Administración → Resumen. Every figure is a live aggregate from
- * Admin\DashboardController — no sample numbers. Full width: KPIs, sales
- * chart for the selected period, Legacy Plate production pipeline (labels
- * over the existing internal states), commerce and photo panels.
+ * Administración → Inicio (Commerce + Activation OS). Every figure is a
+ * live aggregate from App\Queries\Admin\CommerceDashboardMetrics (via
+ * Admin\DashboardController): ventas, canales, inventario, activación,
+ * producto, colecciones y el KPI interno de venta rápida. A value the
+ * system cannot measure yet arrives as `null` and renders "—" with
+ * "Sin información todavía" — never a made-up number. The "Hoy" strip
+ * (eventos de la semana, por atender, pedidos recientes) is kept.
  */
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
-    AlertTriangle,
-    ArrowDownRight,
+    Activity,
     ArrowRight,
-    ArrowUpRight,
-    Calendar,
-    Camera,
+    Boxes,
     ChevronRight,
-    ClipboardList,
-    Factory,
-    Flag,
-    Hourglass,
+    Clock,
     Inbox,
-    Package,
-    PackageX,
-    Percent,
-    ReceiptText,
-    ShoppingBag,
-    TriangleAlert,
-    UserRoundPlus,
-    Users,
-    Wallet,
+    LifeBuoy,
+    Nfc,
+    QrCode,
+    Receipt,
+    Sparkles,
+    Timer,
+    Type,
+    Zap,
 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
+import SalesChannelBadge from '@/components/admin/SalesChannelBadge.vue';
 import Money from '@/components/shared/Money.vue';
+import { SALES_CHANNEL_ORDER, channelSwatch } from '@/lib/salesChannel';
 import { paymentStatus, statusClass, statusLabel } from '@/lib/statusLabels';
 
-type SalesTotal = { currency: string; total_minor: number; orders: number };
+defineOptions({ inheritAttrs: false });
+
+type SkuRow = {
+    variant_id: number;
+    sku: string;
+    name: string;
+    available: number;
+    minimum: number;
+};
+
+type Commerce = {
+    range: string;
+    currency: string;
+    sales: {
+        total_minor: number | null;
+        orders: number;
+        average_ticket_minor: number | null;
+        units: number;
+        other_currency_orders: number;
+    };
+    channels: {
+        channel: string;
+        label: string;
+        orders: number;
+        total_minor: number;
+        units: number;
+        share: number | null;
+    }[];
+    inventory: {
+        tracked_skus: number;
+        units_available: number;
+        units_reserved: number;
+        low_stock_count: number;
+        sold_out_count: number;
+        low_stock: SkuRow[];
+        sold_out: SkuRow[];
+    };
+    activation: {
+        sold: number;
+        activated: number;
+        pending: number;
+        rate: number | null;
+        window_hours: number;
+        mature_sold: number;
+        within_window_rate: number | null;
+        median_seconds: number | null;
+        activations_in_range: number;
+    };
+    product: {
+        opens: { nfc: number; qr: number; code: number; link: number };
+        opens_total: number;
+        tags_with_incidents: number;
+        support_cases: number;
+        defects: number;
+        returns: number;
+        replacements: number;
+    };
+    collections: {
+        top: CollectionRow | null;
+        ranking: CollectionRow[];
+    };
+    pos: {
+        target_seconds: number;
+        sales: number;
+        median_seconds: number | null;
+        within_target_rate: number | null;
+    };
+};
+
+type CollectionRow = {
+    id: number;
+    name: string;
+    slug: string;
+    units: number;
+    activated: number;
+    activation_rate: number | null;
+    available: number;
+};
 
 const props = defineProps<{
-    period: number;
-    periods: number[];
-    currency: string;
-    kpis: {
-        pending_orders: number;
-        sales: SalesTotal[];
-        sales_previous: SalesTotal[];
-        plates_in_production: number;
-        photos_pending: number;
-        photographers_pending: number;
-        low_stock: number;
-    };
-    salesSeries: { date: string; total_minor: number; orders: number }[];
-    production: {
-        stages: { key: string; label: string; count: number; states: string }[];
-        delivered: number;
-    };
+    range: string;
+    ranges: { value: string; label: string }[];
+    commerce: Commerce;
     recentOrders: {
         id: number;
         uuid: string;
@@ -65,50 +126,7 @@ const props = defineProps<{
         items: number;
         created_at: string | null;
     }[];
-    activeOffers: {
-        id: number;
-        name: string;
-        label: string;
-        applies_to: string;
-        products_count: number;
-        ends_at: string | null;
-    }[];
-    lowStock: {
-        product_id: number;
-        sku: string;
-        product: string;
-        variant: string;
-        image_url: string | null;
-        available: number;
-        reserved: number;
-    }[];
-    photos: {
-        pending: number;
-        published: number;
-        rejected: number;
-        sales: {
-            currency: string;
-            sold: number;
-            gross_minor: number;
-            net_minor: number;
-        }[];
-        photographers_pending: {
-            id: number;
-            uuid: string;
-            name: string;
-            city: string | null;
-            created_at: string | null;
-        }[];
-        recent_pending: { uuid: string; thumb_url: string }[];
-    };
-    general: {
-        athletes: number;
-        events: number;
-        participants: number;
-        preregistrations: number;
-        open_incidents: number;
-        new_messages: number;
-    };
+    general: { new_messages: number; open_incidents: number };
     today: {
         date: string;
         events: {
@@ -123,122 +141,126 @@ const props = defineProps<{
         preparation_queue: number;
         community_reports: number;
     };
+    kpis: { photos_pending: number; pending_orders: number };
 }>();
+
+const NA = '—';
+const nf = new Intl.NumberFormat('es-MX');
+const num = (n: number) => nf.format(n);
+const pct = (r: number | null) =>
+    r === null
+        ? NA
+        : `${(r * 100).toLocaleString('es-MX', { maximumFractionDigits: 1 })}%`;
+
+function duration(seconds: number | null): string {
+    if (seconds === null) {
+        return NA;
+    }
+
+    if (seconds < 90) {
+        return `${seconds} s`;
+    }
+
+    if (seconds < 3600) {
+        return `${Math.round(seconds / 60)} min`;
+    }
+
+    if (seconds < 86400 * 2) {
+        return `${(seconds / 3600).toLocaleString('es-MX', { maximumFractionDigits: 1 })} h`;
+    }
+
+    return `${(seconds / 86400).toLocaleString('es-MX', { maximumFractionDigits: 1 })} días`;
+}
+
+const rangeLabel = computed(
+    () =>
+        props.ranges
+            .find((r) => r.value === props.range)
+            ?.label.toLowerCase() ?? '',
+);
+
+function setRange(value: string) {
+    router.get(
+        '/admin',
+        { rango: value },
+        { preserveScroll: true, preserveState: true, replace: true },
+    );
+}
+
+const c = computed(() => props.commerce);
+
+const channels = computed(() =>
+    SALES_CHANNEL_ORDER.map(
+        (key) =>
+            c.value.channels.find((row) => row.channel === key) ?? {
+                channel: key,
+                label: key,
+                orders: 0,
+                total_minor: 0,
+                units: 0,
+                share: null,
+            },
+    ),
+);
+const hasChannelSales = computed(() =>
+    channels.value.some((row) => row.orders > 0),
+);
+
+const opens = computed(() => [
+    { key: 'nfc', label: 'NFC', icon: Nfc, value: c.value.product.opens.nfc },
+    { key: 'qr', label: 'QR', icon: QrCode, value: c.value.product.opens.qr },
+    {
+        key: 'code',
+        label: 'Código',
+        icon: Type,
+        value: c.value.product.opens.code,
+    },
+]);
+const opensMax = computed(() =>
+    Math.max(...opens.value.map((o) => o.value), 1),
+);
+
+/** Meter for the POS KPI: median vs target (target at 2/3 of the track). */
+const posMeter = computed(() => {
+    const median = c.value.pos.median_seconds;
+
+    if (median === null) {
+        return null;
+    }
+
+    const track = c.value.pos.target_seconds * 1.5;
+
+    return {
+        width: Math.min(100, (median / track) * 100),
+        target: (c.value.pos.target_seconds / track) * 100,
+        ok: median <= c.value.pos.target_seconds,
+    };
+});
 
 const attention = computed(() =>
     [
         {
-            label: 'Legacy Plates por preparar',
-            value: props.today.preparation_queue,
-            icon: Factory,
-            href: '/admin/legacy-plates/production',
+            label: 'Pedidos por atender',
+            value: props.kpis.pending_orders,
+            href: '/admin/orders',
+        },
+        {
+            label: 'Incidencias abiertas (eventos)',
+            value: props.general.open_incidents,
+            href: '/admin/incidents',
+        },
+        {
+            label: 'Fotos por revisar',
+            value: props.kpis.photos_pending,
+            href: '/admin/photos?status=review',
         },
         {
             label: 'Reportes de comunidad',
             value: props.today.community_reports,
-            icon: Flag,
             href: '/admin/community',
         },
     ].filter((row) => row.value > 0),
 );
-
-const fmt = new Intl.NumberFormat('es-MX');
-
-const mainSales = computed(
-    () =>
-        props.kpis.sales.find((s) => s.currency === props.currency) ?? {
-            currency: props.currency,
-            total_minor: 0,
-            orders: 0,
-        },
-);
-const otherSales = computed(() =>
-    props.kpis.sales.filter((s) => s.currency !== props.currency),
-);
-const previousMain = computed(
-    () =>
-        props.kpis.sales_previous.find((s) => s.currency === props.currency)
-            ?.total_minor ?? 0,
-);
-const delta = computed(() => {
-    if (previousMain.value === 0) {
-        return null;
-    }
-
-    return Math.round(
-        ((mainSales.value.total_minor - previousMain.value) /
-            previousMain.value) *
-            100,
-    );
-});
-
-const kpiCards = computed(() => [
-    {
-        key: 'orders',
-        label: 'Pedidos pendientes',
-        value: props.kpis.pending_orders,
-        icon: ShoppingBag,
-        href: '/admin/orders',
-        tone: 'bg-sky-50 text-sky-700',
-    },
-    {
-        key: 'plates',
-        label: 'Legacy Plates en preparación',
-        value: props.kpis.plates_in_production,
-        icon: Factory,
-        href: '/admin/legacy-plates/production',
-        tone: 'bg-fl-cream text-fl-gold-ink',
-    },
-    {
-        key: 'photos',
-        label: 'Fotos pendientes',
-        value: props.kpis.photos_pending,
-        icon: Camera,
-        href: '/admin/photos?status=review',
-        tone: 'bg-violet-50 text-violet-700',
-    },
-    {
-        key: 'photographers',
-        label: 'Fotógrafos pendientes',
-        value: props.kpis.photographers_pending,
-        icon: UserRoundPlus,
-        href: '/admin/photographers?status=pending',
-        tone: 'bg-emerald-50 text-emerald-700',
-    },
-    {
-        key: 'stock',
-        label: 'Stock bajo',
-        value: props.kpis.low_stock,
-        icon: PackageX,
-        href: '/admin/inventory',
-        tone:
-            props.kpis.low_stock > 0
-                ? 'bg-amber-50 text-amber-700'
-                : 'bg-muted text-muted-foreground',
-    },
-]);
-
-// --- Sales chart (single series: daily paid sales, default currency) ----
-
-const W = 720;
-const H = 200;
-const PAD_B = 22;
-const max = computed(() =>
-    Math.max(...props.salesSeries.map((d) => d.total_minor), 1),
-);
-const barGap = 2;
-const barWidth = computed(() =>
-    Math.max(W / props.salesSeries.length - barGap, 2),
-);
-const hovered = ref<number | null>(null);
-const hoveredPoint = computed(() =>
-    hovered.value === null ? null : props.salesSeries[hovered.value],
-);
-const hasSales = computed(() => props.salesSeries.some((d) => d.total_minor));
-
-function barHeight(value: number) {
-    return value === 0 ? 0 : Math.max(((H - PAD_B) * value) / max.value, 3);
-}
 
 const shortDate = (iso: string) =>
     new Date(`${iso}T12:00:00`).toLocaleDateString('es-MX', {
@@ -246,65 +268,6 @@ const shortDate = (iso: string) =>
         month: 'short',
     });
 
-const axisTicks = computed(() => {
-    const n = props.salesSeries.length;
-    const step = n <= 7 ? 1 : n <= 30 ? 7 : 15;
-
-    return props.salesSeries
-        .map((d, i) => ({ i, label: shortDate(d.date) }))
-        .filter(({ i }) => i % step === 0 || i === n - 1);
-});
-
-function setPeriod(days: number) {
-    router.get(
-        '/admin',
-        { period: days },
-        { preserveScroll: true, preserveState: true, replace: true },
-    );
-}
-
-// --- Production -----------------------------------------------------------
-
-const productionTotal = computed(() =>
-    props.production.stages.reduce((sum, s) => sum + s.count, 0),
-);
-
-const generalCards = computed(() => [
-    {
-        label: 'Atletas',
-        value: props.general.athletes,
-        icon: Users,
-        href: '/admin/athletes',
-    },
-    {
-        label: 'Eventos',
-        value: props.general.events,
-        icon: Calendar,
-        href: '/admin/events',
-    },
-    {
-        label: 'Prerregistros',
-        value: props.general.preregistrations,
-        icon: ClipboardList,
-        href: '/admin/preregistrations',
-    },
-    {
-        label: 'Incidencias abiertas',
-        value: props.general.open_incidents,
-        icon: TriangleAlert,
-        href: '/admin/incidents',
-    },
-]);
-
-const timeAgo = (iso: string | null) =>
-    iso
-        ? new Date(iso).toLocaleDateString('es-MX', {
-              day: 'numeric',
-              month: 'short',
-          })
-        : '';
-
-// Server date, so the SSR markup and the client render agree.
 const todayLabel = computed(() =>
     new Date(`${props.today.date}T12:00:00`).toLocaleDateString('es-MX', {
         weekday: 'long',
@@ -327,6 +290,9 @@ const todayLabel = computed(() =>
                     {{ todayLabel }}
                 </p>
                 <h1 class="fl-display mt-2 text-3xl sm:text-4xl">Inicio</h1>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Ventas, inventario y activación de Finisher Legacy Tags.
+                </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <Link
@@ -338,7 +304,6 @@ const todayLabel = computed(() =>
                     {{ general.new_messages }} mensaje{{
                         general.new_messages === 1 ? '' : 's'
                     }}
-                    <ChevronRight class="size-4 text-muted-foreground" />
                 </Link>
                 <div
                     class="inline-flex rounded-full border border-border bg-card p-1"
@@ -346,94 +311,551 @@ const todayLabel = computed(() =>
                     aria-label="Periodo"
                 >
                     <button
-                        v-for="days in periods"
-                        :key="days"
+                        v-for="option in ranges"
+                        :key="option.value"
                         type="button"
-                        class="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
+                        class="min-h-9 rounded-full px-3.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-fl-gold"
                         :class="
-                            period === days
+                            range === option.value
                                 ? 'bg-foreground text-background'
                                 : 'text-muted-foreground hover:text-foreground'
                         "
-                        :aria-pressed="period === days"
-                        @click="setPeriod(days)"
+                        :aria-pressed="range === option.value"
+                        @click="setRange(option.value)"
                     >
-                        {{ days }} días
+                        {{ option.label }}
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Hoy: what needs eyes today (spec §48/§107) -->
+        <!-- VENTAS -->
+        <section aria-labelledby="h-ventas">
+            <div class="mb-3 flex items-center justify-between gap-2">
+                <h2 id="h-ventas" class="fl-eyebrow">
+                    Ventas · {{ rangeLabel }}
+                </h2>
+                <Link
+                    href="/admin/comercio/ventas"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                >
+                    Detalle de ventas <ArrowRight class="size-3.5" />
+                </Link>
+            </div>
+            <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+                <div class="fl-card col-span-2 p-5 xl:col-span-1">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Total vendido
+                    </p>
+                    <p
+                        class="legacy-numeric mt-2 text-3xl font-semibold text-foreground"
+                    >
+                        <Money
+                            v-if="c.sales.total_minor !== null"
+                            :minor="c.sales.total_minor"
+                            :currency="c.currency"
+                        />
+                        <template v-else>{{ NA }}</template>
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        <template v-if="c.sales.total_minor === null"
+                            >Sin ventas pagadas en el periodo.</template
+                        >
+                        <template v-else
+                            >Pedidos pagados en {{ c.currency }}.</template
+                        >
+                        <template v-if="c.sales.other_currency_orders > 0">
+                            + {{ c.sales.other_currency_orders }} en otra
+                            moneda.
+                        </template>
+                    </p>
+                </div>
+                <div class="fl-card p-5">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Pedidos
+                    </p>
+                    <p
+                        class="legacy-numeric mt-2 text-2xl font-semibold text-foreground"
+                    >
+                        {{ num(c.sales.orders) }}
+                    </p>
+                </div>
+                <div class="fl-card p-5">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Ticket promedio
+                    </p>
+                    <p
+                        class="legacy-numeric mt-2 text-2xl font-semibold text-foreground"
+                    >
+                        <Money
+                            v-if="c.sales.average_ticket_minor !== null"
+                            :minor="c.sales.average_ticket_minor"
+                            :currency="c.currency"
+                        />
+                        <template v-else>{{ NA }}</template>
+                    </p>
+                </div>
+                <div class="fl-card col-span-2 p-5 sm:col-span-1">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Piezas vendidas
+                    </p>
+                    <p
+                        class="legacy-numeric mt-2 text-2xl font-semibold text-foreground"
+                    >
+                        {{ num(c.sales.units) }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        Productos físicos (sin fotos digitales).
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- POR CANAL + POS -->
+        <section class="grid gap-3 sm:gap-4 lg:grid-cols-3">
+            <div class="fl-card p-5 lg:col-span-2" aria-labelledby="h-canal">
+                <h2 id="h-canal" class="text-sm font-semibold text-foreground">
+                    Por canal
+                </h2>
+                <ul v-if="hasChannelSales" class="mt-4 space-y-4">
+                    <li v-for="row in channels" :key="row.channel">
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-2 text-sm"
+                        >
+                            <SalesChannelBadge :channel="row.channel" />
+                            <span class="legacy-numeric text-foreground">
+                                <Money
+                                    :minor="row.total_minor"
+                                    :currency="c.currency"
+                                />
+                                <span class="ml-2 text-xs text-muted-foreground"
+                                    >{{ num(row.orders) }} pedidos ·
+                                    {{ num(row.units) }} piezas ·
+                                    {{ pct(row.share) }}</span
+                                >
+                            </span>
+                        </div>
+                        <div
+                            class="mt-2 h-2 overflow-hidden rounded-full bg-muted"
+                            role="presentation"
+                        >
+                            <div
+                                class="h-full rounded-full"
+                                :style="{
+                                    width: `${(row.share ?? 0) * 100}%`,
+                                    background: channelSwatch(row.channel),
+                                }"
+                            />
+                        </div>
+                    </li>
+                </ul>
+                <p v-else class="mt-3 text-sm text-muted-foreground">
+                    Sin información todavía: no hay ventas pagadas en este
+                    periodo.
+                </p>
+            </div>
+
+            <div class="fl-card p-5" aria-labelledby="h-pos">
+                <div class="flex items-center justify-between gap-2">
+                    <h2
+                        id="h-pos"
+                        class="text-sm font-semibold text-foreground"
+                    >
+                        Venta rápida
+                    </h2>
+                    <span
+                        class="flex size-8 items-center justify-center rounded-lg bg-foreground text-background"
+                    >
+                        <Zap class="size-4" />
+                    </span>
+                </div>
+                <p
+                    class="legacy-numeric mt-3 text-3xl font-semibold text-foreground"
+                >
+                    {{ duration(c.pos.median_seconds) }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                    Mediana por venta en persona · meta interna
+                    {{ c.pos.target_seconds }} s
+                </p>
+                <div v-if="posMeter" class="mt-4">
+                    <div class="relative h-2 rounded-full bg-muted">
+                        <div
+                            class="h-full rounded-full"
+                            :class="
+                                posMeter.ok ? 'bg-emerald-600' : 'bg-amber-600'
+                            "
+                            :style="{ width: `${posMeter.width}%` }"
+                        />
+                        <span
+                            class="absolute -top-1 h-4 w-0.5 bg-foreground"
+                            :style="{ left: `${posMeter.target}%` }"
+                            aria-hidden="true"
+                        />
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        {{ pct(c.pos.within_target_rate) }} dentro de la meta ·
+                        {{ num(c.pos.sales) }} ventas medidas
+                    </p>
+                </div>
+                <p v-else class="mt-4 text-xs text-muted-foreground">
+                    Sin información todavía: se mide desde que se abre la
+                    pantalla de Venta rápida hasta cobrar.
+                </p>
+            </div>
+        </section>
+
+        <!-- ACTIVACIÓN -->
+        <section aria-labelledby="h-activacion">
+            <div class="mb-3 flex items-center justify-between gap-2">
+                <h2 id="h-activacion" class="fl-eyebrow">
+                    Activación · piezas vendidas {{ rangeLabel }}
+                </h2>
+                <Link
+                    href="/admin/activaciones"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                >
+                    Activaciones <ArrowRight class="size-3.5" />
+                </Link>
+            </div>
+            <div
+                class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6"
+            >
+                <div class="fl-card p-4">
+                    <p class="text-xs text-muted-foreground">Vendidas</p>
+                    <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                        {{ num(c.activation.sold) }}
+                    </p>
+                </div>
+                <div class="fl-card p-4">
+                    <p class="text-xs text-muted-foreground">Activadas</p>
+                    <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                        {{ num(c.activation.activated) }}
+                    </p>
+                </div>
+                <div class="fl-card p-4">
+                    <p class="text-xs text-muted-foreground">Pendientes</p>
+                    <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                        {{ num(c.activation.pending) }}
+                    </p>
+                </div>
+                <div class="fl-card p-4">
+                    <p class="text-xs text-muted-foreground">
+                        Tasa de activación
+                    </p>
+                    <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                        {{ pct(c.activation.rate) }}
+                    </p>
+                </div>
+                <div class="fl-card p-4">
+                    <p class="text-xs text-muted-foreground">
+                        Activadas en {{ c.activation.window_hours }} h
+                    </p>
+                    <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                        {{ pct(c.activation.within_window_rate) }}
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-muted-foreground">
+                        {{
+                            c.activation.mature_sold
+                                ? `de ${num(c.activation.mature_sold)} vendidas hace ≥${c.activation.window_hours} h`
+                                : 'Sin información todavía'
+                        }}
+                    </p>
+                </div>
+                <div class="fl-card p-4">
+                    <p class="text-xs text-muted-foreground">
+                        Mediana hasta activar
+                    </p>
+                    <p class="legacy-numeric mt-1 text-2xl font-semibold">
+                        {{ duration(c.activation.median_seconds) }}
+                    </p>
+                </div>
+            </div>
+            <p
+                v-if="c.activation.sold === 0"
+                class="mt-2 text-xs text-muted-foreground"
+            >
+                Sin información todavía: no se vendieron tags en este periodo.
+            </p>
+        </section>
+
+        <!-- INVENTARIO + PRODUCTO -->
+        <section class="grid gap-3 sm:gap-4 lg:grid-cols-2">
+            <div class="fl-card p-5" aria-labelledby="h-inv">
+                <div class="flex items-center justify-between gap-2">
+                    <h2
+                        id="h-inv"
+                        class="text-sm font-semibold text-foreground"
+                    >
+                        Inventario
+                    </h2>
+                    <Boxes class="size-4 text-fl-gold-ink" />
+                </div>
+                <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Tags disponibles
+                        </dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(c.inventory.units_available) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Reservados
+                        </dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(c.inventory.units_reserved) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Stock bajo
+                        </dt>
+                        <dd
+                            class="legacy-numeric text-xl font-semibold"
+                            :class="
+                                c.inventory.low_stock_count
+                                    ? 'text-amber-700'
+                                    : ''
+                            "
+                        >
+                            {{ num(c.inventory.low_stock_count) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Agotados</dt>
+                        <dd
+                            class="legacy-numeric text-xl font-semibold"
+                            :class="
+                                c.inventory.sold_out_count ? 'text-red-700' : ''
+                            "
+                        >
+                            {{ num(c.inventory.sold_out_count) }}
+                        </dd>
+                    </div>
+                </dl>
+                <ul
+                    v-if="
+                        c.inventory.sold_out.length ||
+                        c.inventory.low_stock.length
+                    "
+                    class="mt-4 divide-y divide-border text-sm"
+                >
+                    <li
+                        v-for="row in [
+                            ...c.inventory.sold_out,
+                            ...c.inventory.low_stock,
+                        ].slice(0, 6)"
+                        :key="row.variant_id"
+                        class="flex min-h-10 items-center justify-between gap-3 py-1.5"
+                    >
+                        <span class="min-w-0">
+                            <span class="block truncate text-foreground">{{
+                                row.name
+                            }}</span>
+                            <span class="text-xs text-muted-foreground">{{
+                                row.sku
+                            }}</span>
+                        </span>
+                        <span
+                            class="legacy-numeric shrink-0 text-xs font-semibold"
+                            :class="
+                                row.available <= 0
+                                    ? 'text-red-700'
+                                    : 'text-amber-700'
+                            "
+                        >
+                            {{
+                                row.available <= 0
+                                    ? 'Agotado'
+                                    : `${row.available} / mín. ${row.minimum}`
+                            }}
+                        </span>
+                    </li>
+                </ul>
+                <p
+                    v-else-if="c.inventory.tracked_skus === 0"
+                    class="mt-4 text-sm text-muted-foreground"
+                >
+                    Sin información todavía: no hay SKUs con inventario.
+                </p>
+                <p v-else class="mt-4 text-sm text-muted-foreground">
+                    Ningún SKU por debajo de su mínimo.
+                </p>
+            </div>
+
+            <div class="fl-card p-5" aria-labelledby="h-prod">
+                <div class="flex items-center justify-between gap-2">
+                    <h2
+                        id="h-prod"
+                        class="text-sm font-semibold text-foreground"
+                    >
+                        Producto
+                    </h2>
+                    <Activity class="size-4 text-fl-gold-ink" />
+                </div>
+                <p class="mt-3 text-xs text-muted-foreground">
+                    Aperturas de tags por fuente
+                </p>
+                <ul v-if="c.product.opens_total" class="mt-2 space-y-2">
+                    <li
+                        v-for="o in opens"
+                        :key="o.key"
+                        class="grid grid-cols-[5.5rem_1fr_3rem] items-center gap-3 text-sm"
+                    >
+                        <span class="inline-flex items-center gap-1.5">
+                            <component
+                                :is="o.icon"
+                                class="size-3.5 text-muted-foreground"
+                            />
+                            {{ o.label }}
+                        </span>
+                        <span class="h-2 rounded-full bg-muted">
+                            <span
+                                class="block h-full rounded-full bg-foreground/80"
+                                :style="{
+                                    width: `${(o.value / opensMax) * 100}%`,
+                                }"
+                            />
+                        </span>
+                        <span class="legacy-numeric text-right">{{
+                            num(o.value)
+                        }}</span>
+                    </li>
+                </ul>
+                <p v-else class="mt-2 text-sm text-muted-foreground">
+                    Sin información todavía.
+                </p>
+                <dl
+                    class="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4 sm:grid-cols-4"
+                >
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Tags con incidencias
+                        </dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(c.product.tags_with_incidents) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Defectos</dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(c.product.defects) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Devoluciones
+                        </dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(c.product.returns) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Reemplazos
+                        </dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(c.product.replacements) }}
+                        </dd>
+                    </div>
+                </dl>
+                <Link
+                    href="/admin/soporte"
+                    class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                >
+                    <LifeBuoy class="size-3.5" /> Ir a Soporte
+                </Link>
+            </div>
+        </section>
+
+        <!-- COLECCIONES -->
+        <section class="fl-card p-5" aria-labelledby="h-col">
+            <div class="flex items-center justify-between gap-2">
+                <h2 id="h-col" class="text-sm font-semibold text-foreground">
+                    Colecciones · {{ rangeLabel }}
+                </h2>
+                <Sparkles class="size-4 text-fl-gold-ink" />
+            </div>
+            <div
+                v-if="c.collections.top"
+                class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
+            >
+                <div class="rounded-xl bg-fl-cream/60 p-4">
+                    <p class="text-xs text-muted-foreground">
+                        Colección más vendida
+                    </p>
+                    <p class="fl-display mt-1 text-2xl">
+                        {{ c.collections.top.name }}
+                    </p>
+                    <dl class="mt-3 grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                Piezas
+                            </dt>
+                            <dd class="legacy-numeric font-semibold">
+                                {{ num(c.collections.top.units) }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                Activación
+                            </dt>
+                            <dd class="legacy-numeric font-semibold">
+                                {{ pct(c.collections.top.activation_rate) }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                Disponibles
+                            </dt>
+                            <dd class="legacy-numeric font-semibold">
+                                {{ num(c.collections.top.available) }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs text-muted-foreground">
+                            <th class="pb-2 font-medium">Colección</th>
+                            <th class="pb-2 text-right font-medium">Piezas</th>
+                            <th class="pb-2 text-right font-medium">
+                                Activación
+                            </th>
+                            <th class="pb-2 text-right font-medium">
+                                Disponibles
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        <tr v-for="row in c.collections.ranking" :key="row.id">
+                            <td class="py-2 text-foreground">{{ row.name }}</td>
+                            <td class="legacy-numeric py-2 text-right">
+                                {{ num(row.units) }}
+                            </td>
+                            <td class="legacy-numeric py-2 text-right">
+                                {{ pct(row.activation_rate) }}
+                            </td>
+                            <td class="legacy-numeric py-2 text-right">
+                                {{ num(row.available) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p v-else class="mt-3 text-sm text-muted-foreground">
+                Sin información todavía: ninguna pieza de colección vendida en
+                este periodo.
+            </p>
+        </section>
+
+        <!-- HOY -->
         <section
             class="grid gap-3 sm:gap-4 lg:grid-cols-3"
             aria-label="Operación de hoy"
         >
-            <div class="fl-card p-5 lg:col-span-2">
-                <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-sm font-semibold text-foreground">
-                        Eventos de esta semana
-                    </h2>
-                    <Link
-                        href="/admin/events"
-                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
-                    >
-                        Todos los eventos
-                        <ArrowRight class="size-3.5" />
-                    </Link>
-                </div>
-                <ul
-                    v-if="today.events.length"
-                    class="mt-3 divide-y divide-border"
-                >
-                    <li v-for="event in today.events" :key="event.id">
-                        <Link
-                            :href="`/admin/events/${event.id}`"
-                            class="flex min-h-12 items-center gap-3 py-2 text-sm hover:text-fl-gold-ink"
-                        >
-                            <span
-                                class="w-16 shrink-0 text-xs font-semibold uppercase"
-                                :class="
-                                    event.is_today
-                                        ? 'text-emerald-700'
-                                        : 'text-muted-foreground'
-                                "
-                            >
-                                {{
-                                    event.is_today
-                                        ? 'Hoy'
-                                        : shortDate(event.event_date)
-                                }}
-                            </span>
-                            <span class="min-w-0 flex-1">
-                                <span
-                                    class="block truncate font-medium text-foreground"
-                                    >{{ event.name }}</span
-                                >
-                                <span
-                                    class="block truncate text-xs text-muted-foreground"
-                                    >{{ event.edition }} ·
-                                    {{ event.city }}</span
-                                >
-                            </span>
-                            <span
-                                class="legacy-numeric shrink-0 text-xs text-muted-foreground"
-                                >{{
-                                    fmt.format(event.participants)
-                                }}
-                                participantes</span
-                            >
-                            <ChevronRight
-                                class="size-4 shrink-0 text-muted-foreground"
-                            />
-                        </Link>
-                    </li>
-                </ul>
-                <p v-else class="mt-3 text-sm text-muted-foreground">
-                    No hay eventos en los próximos 7 días.
-                </p>
-            </div>
-
             <div class="fl-card p-5">
                 <h2 class="text-sm font-semibold text-foreground">
                     Por atender
@@ -444,315 +866,52 @@ const todayLabel = computed(() =>
                             :href="row.href"
                             class="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm hover:bg-foreground/[0.03]"
                         >
-                            <component
-                                :is="row.icon"
-                                class="size-4 text-fl-gold-ink"
-                            />
+                            <Clock class="size-4 text-fl-gold-ink" />
                             <span class="flex-1 text-foreground">{{
                                 row.label
                             }}</span>
                             <span
                                 class="legacy-numeric font-semibold text-foreground"
-                                >{{ fmt.format(row.value) }}</span
+                                >{{ num(row.value) }}</span
                             >
                         </Link>
                     </li>
                 </ul>
                 <p v-else class="mt-3 text-sm text-muted-foreground">
-                    Todo al día: nada por preparar ni reportes abiertos.
+                    Todo al día.
                 </p>
             </div>
-        </section>
 
-        <!-- KPIs -->
-        <section
-            class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6"
-            aria-label="Indicadores"
-        >
-            <div
-                class="fl-card col-span-2 flex flex-col justify-between p-5 md:col-span-3 xl:col-span-1"
-            >
+            <div class="fl-card p-5">
                 <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs font-medium text-muted-foreground">
-                        Ventas · {{ period }} días
-                    </p>
-                    <span
-                        class="flex size-8 items-center justify-center rounded-lg bg-foreground text-background"
-                    >
-                        <Wallet class="size-4" />
-                    </span>
-                </div>
-                <p
-                    class="legacy-numeric mt-3 text-2xl font-semibold text-foreground sm:text-3xl"
-                >
-                    <Money
-                        :minor="mainSales.total_minor"
-                        :currency="mainSales.currency"
-                    />
-                </p>
-                <p
-                    class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground"
-                >
-                    {{ mainSales.orders }} pedidos pagados
-                    <span
-                        v-if="delta !== null"
-                        class="inline-flex items-center gap-0.5 font-semibold"
-                        :class="
-                            delta >= 0 ? 'text-emerald-700' : 'text-red-700'
-                        "
-                    >
-                        <component
-                            :is="delta >= 0 ? ArrowUpRight : ArrowDownRight"
-                            class="size-3.5"
-                        />
-                        {{ Math.abs(delta) }}% vs. periodo anterior
-                    </span>
-                </p>
-                <p
-                    v-if="otherSales.length"
-                    class="mt-1 text-xs text-muted-foreground"
-                >
-                    Además:
-                    <template v-for="(s, i) in otherSales" :key="s.currency">
-                        <Money :minor="s.total_minor" :currency="s.currency" />
-                        <template v-if="i < otherSales.length - 1">
-                            ·
-                        </template>
-                    </template>
-                </p>
-            </div>
-            <Link
-                v-for="card in kpiCards"
-                :key="card.key"
-                :href="card.href"
-                class="fl-card group flex flex-col justify-between p-5 transition-colors hover:border-foreground/20"
-            >
-                <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs font-medium text-muted-foreground">
-                        {{ card.label }}
-                    </p>
-                    <span
-                        class="flex size-8 items-center justify-center rounded-lg"
-                        :class="card.tone"
-                    >
-                        <component :is="card.icon" class="size-4" />
-                    </span>
-                </div>
-                <p
-                    class="legacy-numeric mt-3 text-3xl font-semibold text-foreground"
-                >
-                    {{ fmt.format(card.value) }}
-                </p>
-                <p
-                    class="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground"
-                >
-                    Ver detalle <ArrowRight class="size-3" />
-                </p>
-            </Link>
-        </section>
-
-        <!-- Sales chart + production -->
-        <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
-            <section class="fl-card p-5 sm:p-6 xl:col-span-7">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h2 class="font-semibold">
-                            Ventas pagadas por día ({{ currency }})
-                        </h2>
-                        <p class="text-xs text-muted-foreground">
-                            Últimos {{ period }} días · pedidos con pago
-                            confirmado
-                        </p>
-                    </div>
-                    <div
-                        v-if="hoveredPoint"
-                        class="rounded-lg border border-border bg-card px-3 py-1.5 text-right text-xs shadow-sm"
-                        aria-live="polite"
-                    >
-                        <p class="text-muted-foreground">
-                            {{ shortDate(hoveredPoint.date) }} ·
-                            {{ hoveredPoint.orders }} pedidos
-                        </p>
-                        <p class="legacy-numeric font-semibold">
-                            <Money
-                                :minor="hoveredPoint.total_minor"
-                                :currency="currency"
-                            />
-                        </p>
-                    </div>
-                </div>
-                <div class="relative mt-5">
-                    <svg
-                        :viewBox="`0 0 ${W} ${H}`"
-                        class="h-52 w-full overflow-visible"
-                        preserveAspectRatio="none"
-                        role="img"
-                        :aria-label="`Ventas pagadas por día, últimos ${period} días`"
-                        @pointerleave="hovered = null"
-                    >
-                        <line
-                            v-for="f in [0.25, 0.5, 0.75]"
-                            :key="f"
-                            x1="0"
-                            :x2="W"
-                            :y1="(H - PAD_B) * f"
-                            :y2="(H - PAD_B) * f"
-                            stroke="currentColor"
-                            class="text-border"
-                            stroke-width="1"
-                            vector-effect="non-scaling-stroke"
-                        />
-                        <line
-                            x1="0"
-                            :x2="W"
-                            :y1="H - PAD_B"
-                            :y2="H - PAD_B"
-                            stroke="currentColor"
-                            class="text-foreground/30"
-                            vector-effect="non-scaling-stroke"
-                        />
-                        <g v-for="(d, i) in salesSeries" :key="d.date">
-                            <rect
-                                :x="i * (barWidth + barGap)"
-                                y="0"
-                                :width="barWidth + barGap"
-                                :height="H - PAD_B"
-                                fill="transparent"
-                                @pointerenter="hovered = i"
-                            />
-                            <rect
-                                :x="i * (barWidth + barGap)"
-                                :y="H - PAD_B - barHeight(d.total_minor)"
-                                :width="barWidth"
-                                :height="barHeight(d.total_minor)"
-                                rx="2"
-                                :class="
-                                    hovered === i
-                                        ? 'fill-fl-gold'
-                                        : 'fill-foreground/85'
-                                "
-                                pointer-events="none"
-                            />
-                        </g>
-                    </svg>
-                    <div
-                        class="mt-1 flex justify-between text-[10px] text-muted-foreground"
-                    >
-                        <span v-for="t in axisTicks" :key="t.i">{{
-                            t.label
-                        }}</span>
-                    </div>
-                    <p
-                        v-if="!hasSales"
-                        class="absolute inset-x-0 top-16 text-center text-sm text-muted-foreground"
-                    >
-                        Aún no hay ventas pagadas en este periodo.
-                    </p>
-                </div>
-            </section>
-
-            <section class="fl-card p-5 sm:p-6 xl:col-span-5">
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <h2 class="font-semibold">
-                            Preparación y entrega de Legacy Plates
-                        </h2>
-                        <p class="text-xs text-muted-foreground">
-                            {{ productionTotal }} en proceso ·
-                            {{ production.delivered }} entregadas
-                        </p>
-                    </div>
-                    <Link
-                        href="/admin/legacy-plates/production"
-                        class="text-xs font-medium text-muted-foreground hover:text-foreground"
-                        >Tablero →</Link
-                    >
-                </div>
-                <ol class="mt-5 space-y-2.5">
-                    <li
-                        v-for="(stage, i) in production.stages"
-                        :key="stage.key"
-                        class="grid grid-cols-[1.75rem_1fr_auto] items-center gap-3"
-                    >
-                        <span
-                            class="flex size-7 items-center justify-center rounded-full text-[11px] font-semibold"
-                            :class="
-                                stage.count
-                                    ? 'bg-foreground text-background'
-                                    : 'border border-border text-muted-foreground'
-                            "
-                            >{{ i + 1 }}</span
-                        >
-                        <div class="min-w-0">
-                            <div class="flex items-baseline justify-between">
-                                <p class="truncate text-sm font-medium">
-                                    {{ stage.label }}
-                                </p>
-                                <span
-                                    class="ml-2 hidden text-[10px] text-muted-foreground sm:inline"
-                                    >{{ stage.states }}</span
-                                >
-                            </div>
-                            <div
-                                class="mt-1 h-1.5 overflow-hidden rounded-full bg-muted"
-                            >
-                                <div
-                                    class="h-full rounded-full bg-fl-gold transition-[width] duration-700"
-                                    :style="{
-                                        width: `${productionTotal ? Math.max((stage.count / productionTotal) * 100, stage.count ? 4 : 0) : 0}%`,
-                                    }"
-                                />
-                            </div>
-                        </div>
-                        <span
-                            class="legacy-numeric w-8 text-right text-lg font-semibold"
-                            >{{ stage.count }}</span
-                        >
-                    </li>
-                </ol>
-                <p class="mt-4 text-[11px] text-muted-foreground">
-                    NFC y clip se registran juntos en el estado interno
-                    "Producida".
-                </p>
-            </section>
-        </div>
-
-        <!-- Commerce -->
-        <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
-            <section class="fl-card overflow-hidden xl:col-span-7">
-                <div
-                    class="flex items-center justify-between border-b border-border px-5 py-4"
-                >
-                    <h2 class="flex items-center gap-2 font-semibold">
-                        <ReceiptText class="size-4 text-fl-gold-ink" />
+                    <h2 class="text-sm font-semibold text-foreground">
                         Pedidos recientes
                     </h2>
                     <Link
                         href="/admin/orders"
-                        class="text-xs font-medium text-muted-foreground hover:text-foreground"
-                        >Todos →</Link
+                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
                     >
+                        Pedidos <ArrowRight class="size-3.5" />
+                    </Link>
                 </div>
-                <ul class="divide-y divide-border">
-                    <li v-for="order in recentOrders" :key="order.id">
+                <ul
+                    v-if="recentOrders.length"
+                    class="mt-3 divide-y divide-border"
+                >
+                    <li
+                        v-for="order in recentOrders.slice(0, 5)"
+                        :key="order.id"
+                    >
                         <Link
                             :href="`/admin/orders/${order.uuid}`"
-                            class="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-5 py-3 transition-colors hover:bg-muted/50 sm:grid-cols-[8rem_1fr_auto_auto]"
+                            class="flex min-h-11 items-center gap-3 py-1.5 text-sm hover:text-fl-gold-ink"
                         >
+                            <Receipt class="size-4 text-muted-foreground" />
+                            <span class="min-w-0 flex-1 truncate">
+                                {{ order.number }} · {{ order.customer }}
+                            </span>
                             <span
-                                class="legacy-numeric text-sm font-semibold"
-                                >{{ order.number }}</span
-                            >
-                            <span
-                                class="order-3 col-span-2 truncate text-sm text-muted-foreground sm:order-none sm:col-span-1"
-                                >{{ order.customer }} · {{ order.items }}
-                                {{
-                                    order.items === 1 ? 'artículo' : 'artículos'
-                                }}
-                                · {{ timeAgo(order.created_at) }}</span
-                            >
-                            <span
-                                class="hidden rounded-full border px-2 py-0.5 text-[11px] font-medium sm:inline"
+                                class="hidden rounded-full border px-2 py-0.5 text-[11px] sm:inline"
                                 :class="
                                     statusClass(
                                         paymentStatus,
@@ -766,313 +925,62 @@ const todayLabel = computed(() =>
                                     )
                                 }}</span
                             >
-                            <span
-                                class="legacy-numeric text-right text-sm font-semibold"
-                            >
-                                <Money
-                                    :minor="order.total_minor"
-                                    :currency="order.currency"
-                                />
-                            </span>
+                            <Money
+                                class="legacy-numeric shrink-0"
+                                :minor="order.total_minor"
+                                :currency="order.currency"
+                            />
                         </Link>
-                    </li>
-                    <li
-                        v-if="!recentOrders.length"
-                        class="px-5 py-10 text-center text-sm text-muted-foreground"
-                    >
-                        Todavía no hay pedidos.
                     </li>
                 </ul>
-            </section>
+                <p v-else class="mt-3 text-sm text-muted-foreground">
+                    Aún no hay pedidos.
+                </p>
+            </div>
 
-            <div class="grid gap-6 xl:col-span-5">
-                <section class="fl-card p-5">
-                    <div class="flex items-center justify-between">
-                        <h2 class="flex items-center gap-2 font-semibold">
-                            <Percent class="size-4 text-fl-gold-ink" />
-                            Ofertas activas
-                        </h2>
+            <div class="fl-card p-5">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Eventos de esta semana
+                    </h2>
+                    <Timer class="size-4 text-fl-gold-ink" />
+                </div>
+                <ul
+                    v-if="today.events.length"
+                    class="mt-3 divide-y divide-border"
+                >
+                    <li v-for="event in today.events" :key="event.id">
                         <Link
-                            href="/admin/promotions"
-                            class="text-xs font-medium text-muted-foreground hover:text-foreground"
-                            >Gestionar →</Link
-                        >
-                    </div>
-                    <ul class="mt-4 space-y-2">
-                        <li
-                            v-for="offer in activeOffers"
-                            :key="offer.id"
-                            class="flex items-center gap-3 rounded-xl border border-border px-3 py-2.5"
+                            :href="`/admin/events/${event.id}`"
+                            class="flex min-h-11 items-center gap-3 py-1.5 text-sm hover:text-fl-gold-ink"
                         >
                             <span
-                                class="rounded-full bg-foreground px-2.5 py-1 text-[11px] font-semibold text-background"
-                                >{{ offer.label }}</span
-                            >
-                            <span class="min-w-0 flex-1">
-                                <span
-                                    class="block truncate text-sm font-medium"
-                                    >{{ offer.name }}</span
-                                >
-                                <span class="text-xs text-muted-foreground">
-                                    {{
-                                        offer.applies_to === 'all'
-                                            ? 'Toda la tienda'
-                                            : `${offer.products_count} productos`
-                                    }}
-                                    <template v-if="offer.ends_at">
-                                        · termina {{ timeAgo(offer.ends_at) }}
-                                    </template>
-                                </span>
-                            </span>
-                        </li>
-                        <li
-                            v-if="!activeOffers.length"
-                            class="text-sm text-muted-foreground"
-                        >
-                            No hay ofertas corriendo ahora.
-                        </li>
-                    </ul>
-                </section>
-
-                <section class="fl-card p-5">
-                    <div class="flex items-center justify-between">
-                        <h2 class="flex items-center gap-2 font-semibold">
-                            <Package class="size-4 text-fl-gold-ink" />
-                            Stock bajo
-                        </h2>
-                        <Link
-                            href="/admin/inventory"
-                            class="text-xs font-medium text-muted-foreground hover:text-foreground"
-                            >Inventario →</Link
-                        >
-                    </div>
-                    <ul class="mt-4 space-y-2">
-                        <li
-                            v-for="row in lowStock"
-                            :key="row.sku"
-                            class="flex items-center gap-3"
-                        >
-                            <span
-                                class="size-11 shrink-0 overflow-hidden rounded-lg border border-border bg-muted"
-                            >
-                                <img
-                                    v-if="row.image_url"
-                                    :src="row.image_url"
-                                    :alt="row.product"
-                                    loading="lazy"
-                                    decoding="async"
-                                    class="size-full object-cover"
-                                />
-                                <Package
-                                    v-else
-                                    class="m-3 size-5 text-muted-foreground"
-                                />
-                            </span>
-                            <Link
-                                :href="`/admin/products/${row.product_id}`"
-                                class="min-w-0 flex-1 hover:underline"
-                            >
-                                <span
-                                    class="block truncate text-sm font-medium"
-                                    >{{ row.product }}</span
-                                >
-                                <span
-                                    class="block truncate text-xs text-muted-foreground"
-                                    >{{ row.variant }} · {{ row.sku }}</span
-                                >
-                            </Link>
-                            <span
-                                class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold"
+                                class="w-14 shrink-0 text-xs font-semibold uppercase"
                                 :class="
-                                    row.available <= 0
-                                        ? 'border-red-200 bg-red-50 text-red-700'
-                                        : 'border-amber-200 bg-amber-50 text-amber-700'
+                                    event.is_today
+                                        ? 'text-emerald-700'
+                                        : 'text-muted-foreground'
                                 "
                             >
-                                <AlertTriangle class="size-3" />
                                 {{
-                                    row.available <= 0
-                                        ? 'Agotado'
-                                        : `${row.available} disp.`
+                                    event.is_today
+                                        ? 'Hoy'
+                                        : shortDate(event.event_date)
                                 }}
                             </span>
-                        </li>
-                        <li
-                            v-if="!lowStock.length"
-                            class="text-sm text-muted-foreground"
-                        >
-                            Todo el inventario está por encima del mínimo.
-                        </li>
-                    </ul>
-                </section>
-            </div>
-        </div>
-
-        <!-- Photos -->
-        <section class="fl-card p-5 sm:p-6">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="flex items-center gap-2 font-semibold">
-                    <Camera class="size-4 text-fl-gold-ink" />
-                    Fotografías
-                </h2>
-                <div class="flex gap-3 text-xs font-medium">
-                    <Link
-                        href="/admin/photos"
-                        class="text-muted-foreground hover:text-foreground"
-                        >Revisar fotos →</Link
-                    >
-                    <Link
-                        href="/admin/photographers"
-                        class="text-muted-foreground hover:text-foreground"
-                        >Fotógrafos →</Link
-                    >
-                </div>
-            </div>
-            <div class="mt-5 grid gap-6 lg:grid-cols-12">
-                <dl
-                    class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:col-span-5 lg:grid-cols-2"
-                >
-                    <div class="rounded-xl bg-violet-50 p-4">
-                        <dt
-                            class="flex items-center gap-1.5 text-xs text-violet-700"
-                        >
-                            <Hourglass class="size-3.5" /> Pendientes
-                        </dt>
-                        <dd class="legacy-numeric mt-1 text-2xl font-semibold">
-                            {{ fmt.format(photos.pending) }}
-                        </dd>
-                    </div>
-                    <div class="rounded-xl bg-emerald-50 p-4">
-                        <dt class="text-xs text-emerald-700">Publicadas</dt>
-                        <dd class="legacy-numeric mt-1 text-2xl font-semibold">
-                            {{ fmt.format(photos.published) }}
-                        </dd>
-                    </div>
-                    <div class="rounded-xl bg-red-50 p-4">
-                        <dt class="text-xs text-red-700">Rechazadas</dt>
-                        <dd class="legacy-numeric mt-1 text-2xl font-semibold">
-                            {{ fmt.format(photos.rejected) }}
-                        </dd>
-                    </div>
-                    <div class="rounded-xl bg-fl-cream p-4">
-                        <dt class="text-xs text-fl-gold-ink">
-                            Ventas · {{ period }} días
-                        </dt>
-                        <dd class="legacy-numeric mt-1 text-2xl font-semibold">
-                            {{
-                                fmt.format(
-                                    photos.sales.reduce(
-                                        (n, s) => n + s.sold,
-                                        0,
-                                    ),
-                                )
-                            }}
-                        </dd>
-                        <dd
-                            v-for="s in photos.sales"
-                            :key="s.currency"
-                            class="text-xs text-muted-foreground"
-                        >
-                            <Money
-                                :minor="s.gross_minor"
-                                :currency="s.currency"
-                            />
-                            brutos
-                        </dd>
-                    </div>
-                </dl>
-                <div class="lg:col-span-4">
-                    <p class="mb-2 text-xs font-medium text-muted-foreground">
-                        Por revisar
-                    </p>
-                    <div
-                        v-if="photos.recent_pending.length"
-                        class="grid grid-cols-4 gap-2"
-                    >
-                        <Link
-                            v-for="photo in photos.recent_pending"
-                            :key="photo.uuid"
-                            href="/admin/photos?status=review"
-                            class="aspect-square overflow-hidden rounded-lg bg-muted"
-                        >
-                            <img
-                                :src="photo.thumb_url"
-                                alt="Foto pendiente de revisión"
-                                loading="lazy"
-                                decoding="async"
-                                class="size-full object-cover transition-transform hover:scale-105"
+                            <span class="min-w-0 flex-1 truncate">{{
+                                event.name
+                            }}</span>
+                            <ChevronRight
+                                class="size-4 shrink-0 text-muted-foreground"
                             />
                         </Link>
-                    </div>
-                    <p v-else class="text-sm text-muted-foreground">
-                        No hay fotos esperando revisión.
-                    </p>
-                </div>
-                <div class="lg:col-span-3">
-                    <p class="mb-2 text-xs font-medium text-muted-foreground">
-                        Fotógrafos por aprobar
-                    </p>
-                    <ul class="space-y-2">
-                        <li
-                            v-for="p in photos.photographers_pending"
-                            :key="p.id"
-                        >
-                            <Link
-                                :href="`/admin/photographers/${p.uuid}`"
-                                class="flex items-center gap-3 rounded-xl border border-border px-3 py-2 hover:border-foreground/20"
-                            >
-                                <span
-                                    class="flex size-8 items-center justify-center rounded-full bg-fl-cream font-serif text-sm text-fl-gold-ink"
-                                    >{{ p.name.charAt(0) }}</span
-                                >
-                                <span class="min-w-0">
-                                    <span
-                                        class="block truncate text-sm font-medium"
-                                        >{{ p.name }}</span
-                                    >
-                                    <span class="text-xs text-muted-foreground"
-                                        >{{ p.city ?? 'Sin ciudad' }} ·
-                                        {{ timeAgo(p.created_at) }}</span
-                                    >
-                                </span>
-                            </Link>
-                        </li>
-                        <li
-                            v-if="!photos.photographers_pending.length"
-                            class="text-sm text-muted-foreground"
-                        >
-                            Sin solicitudes nuevas.
-                        </li>
-                    </ul>
-                </div>
+                    </li>
+                </ul>
+                <p v-else class="mt-3 text-sm text-muted-foreground">
+                    No hay eventos en los próximos 7 días.
+                </p>
             </div>
-        </section>
-
-        <!-- General -->
-        <section
-            class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
-            aria-label="General"
-        >
-            <Link
-                v-for="item in generalCards"
-                :key="item.label"
-                :href="item.href"
-                class="fl-card flex items-center gap-4 p-4 hover:border-foreground/20"
-            >
-                <span
-                    class="flex size-10 items-center justify-center rounded-xl bg-muted text-foreground"
-                >
-                    <component :is="item.icon" class="size-4" />
-                </span>
-                <span>
-                    <span class="block text-xs text-muted-foreground">{{
-                        item.label
-                    }}</span>
-                    <span class="legacy-numeric text-xl font-semibold">{{
-                        fmt.format(item.value)
-                    }}</span>
-                </span>
-            </Link>
         </section>
     </div>
 </template>

@@ -2,6 +2,11 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { CreditCard, Package2, ShoppingCart, Undo2 } from '@lucide/vue';
 import { ref } from 'vue';
+import OrderCommercePanel from '@/components/admin/orders/OrderCommercePanel.vue';
+import type {
+    OrderCommerce,
+    OrderUnit,
+} from '@/components/admin/orders/OrderCommercePanel.vue';
 import Money from '@/components/shared/Money.vue';
 import OrderStatusBadge from '@/components/shared/OrderStatusBadge.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
@@ -84,8 +89,11 @@ const props = defineProps<{
             phone: string | null;
         };
         delivery?: Delivery;
-    };
+    } & Omit<OrderCommerce, 'uuid'>;
     items: Item[];
+    units?: OrderUnit[];
+    deliveryMethods?: { value: string; label: string }[];
+    canManage?: boolean;
     payments: PaymentRow[];
     inventoryLocations: { id: number; name: string }[];
     paymentMethods: string[];
@@ -240,6 +248,13 @@ const addressLine = (delivery: Delivery) =>
                 </p>
             </div>
         </section>
+
+        <OrderCommercePanel
+            :order="order"
+            :units="units ?? []"
+            :delivery-methods="deliveryMethods ?? []"
+            :can-manage="canManage ?? false"
+        />
 
         <section class="mb-6">
             <h2

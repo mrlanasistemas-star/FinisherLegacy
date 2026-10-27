@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin\Store;
 
 use App\Actions\Commerce\FulfillOrderItem;
 use App\Actions\Commerce\ReturnOrderItem;
+use App\Enums\DeliveryMethod;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\SalesChannel;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryLocation;
+use App\Models\LegacyTag;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Closure;
@@ -34,7 +37,9 @@ class OrderController extends Controller
     public function index(Request $request): Response
     {
         $search = $request->string('q')->toString();
+        $channel = SalesChannel::tryFrom((string) $request->query('canal'));
         $base = fn (): Builder => Order::query()
+            ->when($channel, fn ($q) => $q->where('sales_channel', $channel->value))
             ->when($search, fn ($q) => $q->where(fn ($w) => $w
                 ->where('order_number', 'like', "%{$search}%")
                 ->orWhereHas('user', fn ($u) => $u->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%"))));
@@ -57,7 +62,7 @@ class OrderController extends Controller
                 'key' => $key,
                 'count' => (clone $query)->count(),
                 'total_minor' => (int) (clone $query)->sum('total_minor'),
-                'orders' => $query->with(['user', 'eventEdition.event', 'items'])
+                'orders' => $query->with(['user', 'eventEdition.event', 'items', 'ally:id,name', 'inventoryLocation:id,name', 'seller:id,first_name,last_name'])
                     ->latest('id')
                     ->limit(30)
                     ->get()
@@ -75,6 +80,12 @@ class OrderController extends Controller
                         'items_preview' => $order->items->take(2)->pluck('name')->values(),
                         'has_photos' => $order->items->contains(fn (OrderItem $i) => $i->event_photo_id !== null),
                         'created_at' => $order->created_at->toIso8601String(),
+                        // Commerce OS: channel / ally / point of sale / seller / delivery.
+                        'channel' => $order->sales_channel->value,
+                        'ally' => $order->ally?->name,
+                        'location' => $order->inventoryLocation?->name,
+                        'seller' => $order->seller?->name,
+                        'delivery_method' => $order->delivery_method?->value,
                     ])
                     ->all(),
             ];
@@ -82,13 +93,14 @@ class OrderController extends Controller
 
         return Inertia::render('admin/orders/Index', [
             'board' => $board,
-            'filters' => ['q' => $search],
+            'filters' => ['q' => $search, 'canal' => $channel?->value],
+            'channels' => SalesChannel::options(),
         ]);
     }
 
     public function show(Order $order): Response
     {
-        $order->loadMissing(['items.product', 'items.ownedProduct', 'payments', 'user', 'athlete', 'eventEdition.event']);
+        $order->loadMissing(['items.product', 'items.ownedProduct', 'payments', 'user', 'athlete', 'eventEdition.event', 'ally:id,uuid,name', 'inventoryLocation:id,name', 'seller:id,first_name,last_name', 'legacyTags.productVariant:id,sku', 'legacyTags.owner:id,full_name']);
 
         return Inertia::render('admin/orders/Show', [
             'order' => [
@@ -112,7 +124,33 @@ class OrderController extends Controller
                     'phone' => $order->customer_snapshot['phone'] ?? null,
                 ],
                 'delivery' => $order->customer_snapshot['delivery'] ?? null,
+                // Commerce OS (docs/architecture/commerce-os.md §Pedidos).
+                'channel' => $order->sales_channel->value,
+                'ally' => $order->ally ? ['uuid' => $order->ally->uuid, 'name' => $order->ally->name] : null,
+                'location' => $order->inventoryLocation?->name,
+                'seller' => $order->seller?->name,
+                'delivery_method' => $order->delivery_method?->value,
+                'carrier' => $order->carrier,
+                'tracking_number' => $order->tracking_number,
+                'shipped_at' => $order->shipped_at?->toDateString(),
+                'delivered_at' => $order->delivered_at?->toIso8601String(),
+                'notes' => $order->notes,
+                'sale_seconds' => $order->sale_started_at !== null ? (int) $order->sale_started_at->diffInSeconds($order->created_at) : null,
             ],
+            // Traceability SKU → unit → order → buyer → activation.
+            'units' => $order->legacyTags->map(fn (LegacyTag $tag) => [
+                'uuid' => $tag->uuid,
+                'serial' => $tag->serial,
+                'display_code' => $tag->displayCode(),
+                'sku' => $tag->productVariant?->sku,
+                'order_item_id' => $tag->order_item_id,
+                'status' => $tag->status->value,
+                'status_label' => $tag->status->label(),
+                'owner' => $tag->owner?->full_name,
+                'activated_at' => $tag->activated_at?->toIso8601String(),
+            ])->values(),
+            'deliveryMethods' => DeliveryMethod::options(),
+            'canManage' => request()->user()?->can('orders.manage') ?? false,
             'items' => $order->items->map(fn (OrderItem $item) => [
                 'id' => $item->id,
                 'name' => $item->name,

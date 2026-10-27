@@ -12,9 +12,9 @@ function tabsOf(key: string): WorkspaceTab[] {
     return adminSections.find((section) => section.key === key)?.tabs ?? [];
 }
 
-export const LEGACY_PLATE_AREA_NAV = tabsOf('legacy');
-export const COMMERCE_ORDERS_AREA_NAV = tabsOf('comercio');
-export const CATALOG_AREA_NAV = tabsOf('comercio');
+export const LEGACY_PLATE_AREA_NAV = tabsOf('operacion');
+export const COMMERCE_ORDERS_AREA_NAV = tabsOf('comercial');
+export const CATALOG_AREA_NAV = tabsOf('catalogo');
 export const SYSTEM_AREA_NAV = tabsOf('configuracion');
 export const CONTENT_AREA_NAV = tabsOf('configuracion');
 export const PEOPLE_AREA_NAV = tabsOf('personas');

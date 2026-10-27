@@ -1,8 +1,10 @@
 <script setup lang="ts">
 /**
  * Bottom tab bar below `lg` (spec §49/§50), same config as the sidebar:
- * - Administración: Inicio · Eventos · Comercio · Personas · Más — "Más"
- *   opens a sheet with the remaining sections, search and the account.
+ * - Administración: Inicio · Venta rápida · Pedidos · Tags · Más
+ *   (`adminMobileTabs`, permission-aware) — "Más" opens a sheet with every
+ *   section (Operación histórico last), search and the account.
+ * - Ally portal (no admin panel): Portal · Venta rápida · Más.
  * - Mi espacio: Legado · Eventos · Tienda · Pedidos · Perfil. Mi equipo,
  *   Comunidad… stay one tap away in the sidebar (topbar menu button).
  * No QR scanner here anymore: NFC opens the right page by itself (§29).
@@ -21,6 +23,7 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useSidebarMode } from '@/composables/useSidebarMode';
 import type { NavItem } from '@/config/navigation';
 import {
+    adminMobileTabs,
     athleteMobileTabs,
     isAdminSectionActive,
     staffNav,
@@ -44,17 +47,21 @@ const { currentUrl, isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
 watchEffect(() => detectFromUrl(currentUrl.value));
 
 const adminMode = computed(
-    () => mode.value === 'trabajo' && sections.value.length > 0,
+    () =>
+        mode.value === 'trabajo' &&
+        (sections.value.length > 0 || staff.value.length > 0),
 );
 
 const adminTabs = computed(() =>
-    sections.value.filter((section) => section.mobile).slice(0, 4),
+    (sections.value.length
+        ? visibleItems(adminMobileTabs, permissions.value)
+        : staff.value
+    ).slice(0, 4),
 );
-const moreSections = computed(() =>
-    sections.value.filter(
-        (section) => !adminTabs.value.some((tab) => tab.key === section.key),
-    ),
-);
+const moreSections = computed(() => [
+    ...sections.value.filter((section) => !section.secondary),
+    ...sections.value.filter((section) => section.secondary),
+]);
 
 function isItemActive(item: NavItem): boolean {
     return item.exact
@@ -62,10 +69,8 @@ function isItemActive(item: NavItem): boolean {
         : isCurrentOrParentUrl(item.href);
 }
 
-const moreActive = computed(() =>
-    moreSections.value.some((section) =>
-        isAdminSectionActive(section, currentUrl.value),
-    ),
+const moreActive = computed(
+    () => !adminTabs.value.some((item) => isItemActive(item)),
 );
 
 const sheetOpen = ref(false);
@@ -86,23 +91,19 @@ const tabClass =
     >
         <template v-if="adminMode">
             <Link
-                v-for="section in adminTabs"
-                :key="section.key"
-                :href="section.resolvedHref"
+                v-for="item in adminTabs"
+                :key="item.href"
+                :href="item.href"
                 :class="[
                     tabClass,
-                    isAdminSectionActive(section, currentUrl)
+                    isItemActive(item)
                         ? 'text-fl-gold-ink'
                         : 'text-muted-foreground/80',
                 ]"
-                :aria-current="
-                    isAdminSectionActive(section, currentUrl)
-                        ? 'page'
-                        : undefined
-                "
+                :aria-current="isItemActive(item) ? 'page' : undefined"
             >
-                <component :is="section.icon" class="size-5" />
-                {{ section.label }}
+                <component :is="item.icon" class="size-5" />
+                {{ item.label }}
             </Link>
             <button
                 type="button"
