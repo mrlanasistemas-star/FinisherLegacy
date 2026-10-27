@@ -19,7 +19,7 @@ class AppLinksController extends Controller
         abort_if(blank($teamId), 404);
         $appId = $teamId.'.'.config('nfc.app.ios_bundle_id', 'com.finisherlegacy.app');
 
-        $paths = (array) config('nfc.app.paths', ['/n/*']);
+        $paths = (array) config('nfc.app.paths', ['/n/*', '/t/*']);
 
         // Both the modern (appIDs/components) and legacy (appID/paths) keys,
         // so every iOS version the app supports recognises the link.

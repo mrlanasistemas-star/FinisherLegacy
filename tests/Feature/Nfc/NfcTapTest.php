@@ -99,7 +99,7 @@ test('app link files are 404 until configured, then served as JSON', function ()
         ->assertOk()
         ->assertHeader('Content-Type', 'application/json')
         ->assertJsonPath('applinks.details.0.appID', 'ABCDE12345.com.finisherlegacy.app')
-        ->assertJsonPath('applinks.details.0.paths', ['/n/*']);
+        ->assertJsonPath('applinks.details.0.paths', ['/n/*', '/t/*']);
 
     $this->get('/.well-known/assetlinks.json')
         ->assertOk()

@@ -32,6 +32,6 @@ return [
         // Comma-separated SHA-256 signing cert fingerprints; assetlinks.json is 404 while empty.
         'android_sha256' => array_values(array_filter(array_map('trim', explode(',', (string) env('ANDROID_SHA256_CERT_FINGERPRINTS', ''))))),
         // Paths the app claims as universal/app links.
-        'paths' => ['/n/*'],
+        'paths' => ['/n/*', '/t/*'],
     ],
 ];
