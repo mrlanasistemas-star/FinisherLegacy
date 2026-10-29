@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>FL product stage</title>
+<style>html,body{margin:0;background:#F4F1EA}canvas{display:block;max-width:100vw;height:auto}</style>
+<script type="importmap">
+{ "imports": {
+    "three": "/node_modules/three/build/three.module.js",
+    "three/addons/": "/node_modules/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<script>window.addEventListener("error", (e) => { window.__result = window.__result ?? "error: " + e.message; });</script>
+<script type="module">
+    // Open this page through render.mjs (or any static server rooted at the
+    // repo) — e.g. /tools/renders/products3d/stage.html?product=racepack&angle=hero&w=1200&h=1500
+    // to preview a scene in a normal browser.
+    import { renderProduct } from './lib.js';
+
+    const q = new URLSearchParams(location.search);
+    const product = q.get('product') ?? 'racepack';
+
+    try {
+        const mod = await import(`./${product}.js`);
+        window.__result = await renderProduct(mod, q.get('angle') ?? 'hero', Number(q.get('w') ?? 1200), Number(q.get('h') ?? 1500));
+    } catch (e) {
+        console.error(e?.stack ?? String(e));
+        window.__result = 'error: ' + (e?.stack ?? String(e));
+    }
+</script>
+</body>
+</html>
