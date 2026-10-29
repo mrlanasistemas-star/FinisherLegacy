@@ -13,9 +13,11 @@
  *   through it (the strap is drawn behind the body and shows through the
  *   hole);
  * - subtle material grain + a single sheen that follows the tilt;
- * - FRONT: the collection artwork (name, subtitle, year, accent contour
- *   lines) and a small NFC mark; BACK: an illustrative (non-scannable)
- *   QR, a masked printed-code placeholder and the NFC instruction.
+ * - FRONT: the collection artwork — the name set as large as it fits
+ *   (shared layout in ./tagLayout.ts, same as the 3D textures), subtitle,
+ *   big outlined year, accent contour lines and the NFC mark; BACK (NFC
+ *   only — the tag carries no QR): "Tu historia vive dentro.", a big NFC
+ *   seal in engraved rings, "Acerca tu celular" and the masked unit code.
  *
  * Nothing here is product data: dimensions/material come only from the
  * product record and are rendered by the pages, never by this drawing.
@@ -23,6 +25,15 @@
  */
 import { computed, ref, useId } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import {
+    displayName as tagDisplayName,
+    estimateSans,
+    estimateSerif,
+    fitLine,
+    fitName,
+    frontLayout,
+    TAG_TEXT_W,
+} from './tagLayout';
 
 const props = withDefaults(
     defineProps<{
@@ -84,97 +95,38 @@ const edgeShift = computed(() => -ry.value * 0.35);
 
 const accentColor = computed(() => props.accent || 'var(--fl-gold)');
 
-/**
- * The year is drawn as the large numeral, so a name that already ends with
- * it ("Cozumel 2026") would print it twice — drop the trailing copy.
- */
-const displayName = computed(() => {
-    const name = props.name.trim();
-    const year =
-        props.year === null || props.year === '' ? '' : String(props.year);
-    const trimmed =
-        year && name.endsWith(year) ? name.slice(0, -year.length).trim() : '';
-
-    return trimmed || name;
-});
-
-/** Long names wrap onto two lines and shrink, never overflow the body. */
-const nameLines = computed(() => {
-    const name = displayName.value;
-    const words = name.toUpperCase().split(/\s+/).filter(Boolean);
-
-    if (words.length <= 1 || name.length <= 11) {
-        return [name.toUpperCase()];
-    }
-
-    const half = Math.ceil(name.length / 2);
-    let first = '';
-    const rest: string[] = [];
-
-    for (const word of words) {
-        if (!rest.length && (first + ' ' + word).trim().length <= half + 3) {
-            first = (first + ' ' + word).trim();
-        } else {
-            rest.push(word);
-        }
-    }
-
-    return rest.length ? [first, rest.join(' ')] : [first];
-});
-
-const nameSize = computed(() => {
-    const longest = Math.max(...nameLines.value.map((l) => l.length));
-
-    return Math.max(15, Math.min(32, Math.floor(290 / Math.max(longest, 6))));
-});
-
 const yearText = computed(() =>
     props.year === null || props.year === '' ? null : String(props.year),
 );
 
+/** Name as large as it fits (1–2 lines), same layout as the 3D artwork. */
+const name = computed(() =>
+    fitName(tagDisplayName(props.name, yearText.value), estimateSerif),
+);
+
+const subtitleText = computed(() => props.subtitle?.toUpperCase() ?? '');
+const subtitleSize = computed(() =>
+    fitLine(subtitleText.value, estimateSans, { max: 11.5, min: 7.5 }),
+);
+
+const yearSize = computed(() =>
+    yearText.value
+        ? Math.min(80, TAG_TEXT_W / estimateSerif(yearText.value))
+        : 0,
+);
+
+const layout = computed(() =>
+    frontLayout(name.value, !!props.subtitle, !!yearText.value),
+);
+
+/** Engraved rings around the NFC seal (back). */
+const rings = Array.from({ length: 30 }, (_, i) => 62 + i * 3.2);
+
 const ariaLabel = computed(
     () =>
         props.label ??
-        `Ilustración del Finisher Legacy Tag${props.face === 'back' ? ' (reverso)' : ''}: colección ${props.name}${yearText.value ? ` ${yearText.value}` : ''}, con correa, ojal metálico${props.face === 'back' ? ', código QR y NFC' : ' y NFC'}.`,
+        `Ilustración del Finisher Legacy Tag${props.face === 'back' ? ' (reverso)' : ''}: colección ${props.name}${yearText.value ? ` ${yearText.value}` : ''}, con correa, ojal metálico${props.face === 'back' ? ' y sello NFC para acercar el celular' : ' y NFC'}.`,
 );
-
-/**
- * Illustrative 21×21 QR-like pattern (NOT scannable, no URL encoded),
- * deterministic per collection name so each collection looks its own.
- */
-const qrCells = computed(() => {
-    let seed = 0;
-
-    for (const ch of props.name + (yearText.value ?? '')) {
-        seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
-    }
-
-    const rand = () => {
-        seed = (seed * 1664525 + 1013904223) >>> 0;
-
-        return seed / 4294967296;
-    };
-
-    const inFinder = (x: number, y: number) =>
-        (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
-    const cells: { x: number; y: number }[] = [];
-
-    for (let y = 0; y < 21; y++) {
-        for (let x = 0; x < 21; x++) {
-            if (!inFinder(x, y) && rand() > 0.52) {
-                cells.push({ x, y });
-            }
-        }
-    }
-
-    return cells;
-});
-
-const finders = [
-    [0, 0],
-    [14, 0],
-    [0, 14],
-];
 </script>
 
 <template>
@@ -426,7 +378,7 @@ const finders = [
 
                             <text
                                 x="120"
-                                y="76"
+                                :y="layout.brandY"
                                 text-anchor="middle"
                                 class="tag-visualizer__brand"
                                 style="fill: var(--fl-gold-soft)"
@@ -434,25 +386,30 @@ const finders = [
                                 FINISHER LEGACY
                             </text>
                             <rect
-                                x="104"
-                                y="86"
-                                width="32"
-                                height="0.8"
+                                x="106"
+                                :y="layout.ruleY"
+                                width="28"
+                                height="1"
                                 style="fill: var(--fl-gold)"
                             />
 
                             <text
-                                v-for="(line, index) in nameLines"
+                                v-for="(line, index) in name.lines"
                                 :key="line"
                                 x="120"
-                                :y="
-                                    (nameLines.length === 1 ? 160 : 146) +
-                                    index * (nameSize + 4)
-                                "
+                                :y="layout.baselines[index]"
                                 text-anchor="middle"
                                 class="tag-visualizer__name"
-                                :font-size="nameSize"
-                                style="fill: var(--fl-paper)"
+                                :font-size="name.size"
+                                :textLength="
+                                    name.squeeze ? TAG_TEXT_W : undefined
+                                "
+                                :lengthAdjust="
+                                    name.squeeze
+                                        ? 'spacingAndGlyphs'
+                                        : undefined
+                                "
+                                style="fill: #fbfaf6"
                             >
                                 {{ line }}
                             </text>
@@ -460,160 +417,187 @@ const finders = [
                             <text
                                 v-if="subtitle"
                                 x="120"
-                                :y="
-                                    nameLines.length === 1
-                                        ? 184
-                                        : 184 + nameSize / 2
-                                "
+                                :y="layout.subtitleY"
                                 text-anchor="middle"
                                 class="tag-visualizer__sub"
+                                :font-size="subtitleSize"
+                                :letter-spacing="subtitleSize * 0.18"
                                 fill="#fff"
-                                fill-opacity="0.62"
+                                fill-opacity="0.8"
                             >
-                                {{ subtitle.toUpperCase() }}
+                                {{ subtitleText }}
                             </text>
 
                             <text
                                 v-if="yearText"
                                 x="120"
-                                y="262"
+                                :y="layout.yearY"
                                 text-anchor="middle"
                                 class="tag-visualizer__year"
-                                fill="none"
-                                :style="{ stroke: accentColor }"
-                                stroke-width="0.9"
+                                :font-size="yearSize"
+                                :style="{
+                                    stroke: accentColor,
+                                    fill: accentColor,
+                                }"
+                                fill-opacity="0.15"
+                                stroke-width="1.2"
                             >
                                 {{ yearText }}
                             </text>
 
                             <!-- NFC mark -->
                             <g
-                                transform="translate(40 306)"
+                                :transform="`translate(26 ${layout.footerY - 3.5})`"
                                 fill="none"
                                 style="stroke: var(--fl-gold-soft)"
-                                stroke-width="1.2"
+                                stroke-width="1.4"
                                 stroke-linecap="round"
-                                opacity="0.85"
                             >
-                                <path d="M0 -6 a 8 8 0 0 1 0 12" />
-                                <path d="M4 -10 a 13 13 0 0 1 0 20" />
-                                <path d="M8 -14 a 18 18 0 0 1 0 28" />
+                                <path d="M0 -5 a 7 7 0 0 1 0 10" />
+                                <path d="M4 -9.5 a 12 12 0 0 1 0 19" />
+                                <path d="M8 -14 a 17 17 0 0 1 0 28" />
                             </g>
                             <text
-                                x="62"
-                                y="309"
+                                x="66"
+                                :y="layout.footerY"
                                 class="tag-visualizer__micro"
                                 style="fill: var(--fl-gold-soft)"
-                                fill-opacity="0.8"
                             >
-                                TOCA · TU HISTORIA
+                                ACERCA TU CELULAR
                             </text>
                         </g>
 
-                        <!-- BACK -->
+                        <!-- BACK: NFC only (the tag carries no QR) -->
                         <g v-else>
+                            <!-- Engraved guilloche rings around the seal -->
+                            <g
+                                fill="none"
+                                style="stroke: var(--fl-stone)"
+                                stroke-opacity="0.16"
+                                stroke-width="0.4"
+                            >
+                                <circle
+                                    v-for="r in rings"
+                                    :key="r"
+                                    cx="120"
+                                    cy="168"
+                                    :r="r"
+                                />
+                            </g>
+                            <rect
+                                x="29"
+                                y="9"
+                                width="182"
+                                height="322"
+                                rx="18"
+                                fill="none"
+                                style="stroke: var(--fl-gold-ink)"
+                                stroke-opacity="0.4"
+                                stroke-width="0.7"
+                            />
                             <text
                                 x="120"
-                                y="84"
+                                y="78"
                                 text-anchor="middle"
                                 class="tag-visualizer__back-title"
                                 style="fill: var(--fl-black)"
                             >
-                                Tu historia vive dentro.
+                                <tspan x="120">Tu historia</tspan>
+                                <tspan x="120" dy="22">vive dentro.</tspan>
                             </text>
                             <rect
-                                x="104"
-                                y="96"
-                                width="32"
-                                height="0.8"
-                                style="fill: var(--fl-gold-dim)"
+                                x="106"
+                                y="110"
+                                width="28"
+                                height="1"
+                                style="fill: var(--fl-gold)"
                             />
 
-                            <!-- Illustrative QR (not scannable) -->
-                            <g transform="translate(70 118)">
-                                <rect
-                                    x="-8"
-                                    y="-8"
-                                    width="116"
-                                    height="116"
-                                    rx="10"
-                                    fill="#fff"
-                                />
-                                <g
-                                    transform="scale(4.76)"
-                                    style="fill: var(--fl-black)"
-                                >
-                                    <template
-                                        v-for="[fx, fy] in finders"
-                                        :key="`${fx}-${fy}`"
-                                    >
-                                        <rect
-                                            :x="fx"
-                                            :y="fy"
-                                            width="7"
-                                            height="7"
-                                        />
-                                        <rect
-                                            :x="fx + 1"
-                                            :y="fy + 1"
-                                            width="5"
-                                            height="5"
-                                            fill="#fff"
-                                        />
-                                        <rect
-                                            :x="fx + 2"
-                                            :y="fy + 2"
-                                            width="3"
-                                            height="3"
-                                        />
-                                    </template>
-                                    <rect
-                                        v-for="cell in qrCells"
-                                        :key="`${cell.x}:${cell.y}`"
-                                        :x="cell.x"
-                                        :y="cell.y"
-                                        width="1"
-                                        height="1"
-                                    />
-                                </g>
-                            </g>
-
-                            <text
-                                x="120"
-                                y="258"
-                                text-anchor="middle"
-                                class="tag-visualizer__micro"
-                                style="fill: var(--fl-stone)"
-                            >
-                                CÓDIGO
-                            </text>
-                            <text
-                                x="120"
-                                y="276"
-                                text-anchor="middle"
-                                class="tag-visualizer__code"
-                                style="fill: var(--fl-black)"
-                            >
-                                •••• •••• ••••
-                            </text>
-
-                            <g
-                                transform="translate(80 312)"
+                            <!-- NFC seal -->
+                            <circle
+                                cx="120"
+                                cy="168"
+                                r="50"
+                                fill="#fff"
+                                fill-opacity="0.85"
+                            />
+                            <circle
+                                cx="120"
+                                cy="168"
+                                r="50"
                                 fill="none"
                                 style="stroke: var(--fl-gold-ink)"
-                                stroke-width="1.2"
+                                stroke-width="1.6"
+                            />
+                            <circle
+                                cx="120"
+                                cy="168"
+                                r="55"
+                                fill="none"
+                                style="stroke: var(--fl-gold-ink)"
+                                stroke-width="0.5"
+                            />
+                            <g
+                                transform="translate(112 168)"
+                                fill="none"
+                                style="stroke: var(--fl-gold-ink)"
+                                stroke-width="3"
                                 stroke-linecap="round"
                             >
-                                <path d="M0 -5 a 7 7 0 0 1 0 10" />
-                                <path d="M4 -9 a 12 12 0 0 1 0 18" />
+                                <path d="M0 -12 a 16 16 0 0 1 0 24" />
+                                <path d="M9 -21 a 27 27 0 0 1 0 42" />
+                                <path d="M18 -30 a 38 38 0 0 1 0 60" />
                             </g>
+                            <circle
+                                cx="108"
+                                cy="168"
+                                r="4"
+                                style="fill: var(--fl-gold-ink)"
+                            />
+
                             <text
-                                x="96"
-                                y="315"
+                                x="120"
+                                y="250"
+                                text-anchor="middle"
+                                class="tag-visualizer__back-cta"
+                                style="fill: var(--fl-black)"
+                            >
+                                Acerca tu celular
+                            </text>
+                            <text
+                                x="120"
+                                y="268"
+                                text-anchor="middle"
                                 class="tag-visualizer__micro"
+                                style="
+                                    fill: var(--fl-stone);
+                                    font-size: 9.5px;
+                                    letter-spacing: 1.4px;
+                                "
+                            >
+                                SIN APPS · SE ABRE SOLO
+                            </text>
+                            <text
+                                x="120"
+                                y="297"
+                                text-anchor="middle"
+                                class="tag-visualizer__code"
                                 style="fill: var(--fl-gold-ink)"
                             >
-                                ACERCA TU TELÉFONO
+                                N.º •••• ••••
+                            </text>
+                            <text
+                                x="120"
+                                y="320"
+                                text-anchor="middle"
+                                class="tag-visualizer__micro"
+                                style="
+                                    fill: var(--fl-stone);
+                                    font-size: 8.5px;
+                                    letter-spacing: 2.8px;
+                                "
+                            >
+                                FINISHER LEGACY
                             </text>
                         </g>
 
@@ -708,48 +692,51 @@ const finders = [
 
 .tag-visualizer__brand {
     font-family: var(--font-sans);
-    font-size: 8.5px;
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: 3.2px;
+    letter-spacing: 3.4px;
 }
 
 .tag-visualizer__name {
     font-family: var(--font-serif);
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .tag-visualizer__sub {
     font-family: var(--font-sans);
-    font-size: 7.5px;
     font-weight: 600;
-    letter-spacing: 2.2px;
 }
 
 .tag-visualizer__year {
     font-family: var(--font-serif);
-    font-size: 58px;
     font-weight: 400;
-    letter-spacing: 1px;
 }
 
 .tag-visualizer__micro {
     font-family: var(--font-sans);
-    font-size: 6.5px;
+    font-size: 8px;
     font-weight: 600;
-    letter-spacing: 1.8px;
+    letter-spacing: 1.5px;
 }
 
 .tag-visualizer__back-title {
     font-family: var(--font-serif);
-    font-size: 15px;
+    font-size: 20px;
     font-style: italic;
+}
+
+.tag-visualizer__back-cta {
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 600;
 }
 
 .tag-visualizer__code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
 }
 
 @media (prefers-reduced-motion: reduce) {

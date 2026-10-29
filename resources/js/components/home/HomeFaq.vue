@@ -11,11 +11,11 @@ import { howItWorks } from '@/routes';
 const faqs = [
     {
         q: '¿Necesito instalar una app?',
-        a: 'No. Tu historia se abre en el navegador del teléfono, desde el NFC, el QR o un enlace.',
+        a: 'No. Acercas tu celular al tag y tu historia se abre en el navegador. También puedes compartirla con un enlace.',
     },
     {
         q: '¿Mi teléfono lo va a leer?',
-        a: 'La mayoría de los teléfonos recientes leen NFC, pero no todos. Por eso cada tag tiene también un QR y un código impreso.',
+        a: 'La mayoría de los teléfonos recientes leen NFC, pero no todos. Si el tuyo no lo hace, entra a Activar y escribe el código de tu tag: llegas al mismo lugar.',
     },
     {
         q: '¿Puedo regalarlo?',
@@ -51,12 +51,12 @@ const faqs = [
             </Reveal>
             <Reveal :delay-ms="120" class="lg:col-span-8">
                 <div
-                    class="divide-y divide-fl-line rounded-card border border-fl-line bg-white"
+                    class="divide-y divide-fl-line rounded-card border border-fl-line bg-white shadow-fl-micro"
                 >
                     <details
                         v-for="item in faqs"
                         :key="item.q"
-                        class="group px-5 sm:px-7"
+                        class="group px-5 transition-colors open:bg-fl-paper/60 sm:px-7"
                     >
                         <summary
                             class="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 py-4 text-left font-medium text-foreground [&::-webkit-details-marker]:hidden"

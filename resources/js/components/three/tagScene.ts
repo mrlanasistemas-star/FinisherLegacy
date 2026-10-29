@@ -1,16 +1,8 @@
 /**
- * Procedural three.js scene for the Finisher Legacy Tag (no .glb exists):
- *
- * - body: a rounded-rectangle ExtrudeGeometry with a bevel and a real
- *   punched eyelet (shape hole), resin-like MeshPhysicalMaterial with
- *   clearcoat;
- * - FRONT / BACK: two decal caps (ShapeGeometry of the same outline) with
- *   the canvas artwork from tagArtwork.ts — the back also uses it as a
- *   subtle bump map so the copy reads engraved;
- * - a gold grommet (two tori + a lining cylinder), a woven strap loop that
- *   passes through the eyelet (custom ribbon geometry along a closed
- *   curve) and a crimp where it closes;
- * - a soft contact shadow, RoomEnvironment + PMREM lighting.
+ * Interactive three.js viewer for the Finisher Legacy Tag (store, product
+ * pages). The mesh itself (body, artwork caps, grommet, strap) lives in
+ * tagModel.ts and is shared with the Home's travelling stage
+ * (tagStage.ts); this file adds the contact shadow, camera and controls.
  *
  * Interaction: OrbitControls (damping, no pan, ctrl/pinch zoom only, limited
  * polar angle), gentle idle auto-rotate that stops on interaction and comes
@@ -23,15 +15,9 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { TagArtworkOptions } from './tagArtwork';
-import {
-    drawBack,
-    drawFront,
-    drawShadow,
-    drawStrap,
-    loadArtworkFonts,
-} from './tagArtwork';
+import { drawShadow, loadArtworkFonts } from './tagArtwork';
+import { H, addStudioLighting, createTagModel } from './tagModel';
 
 export type TagFace = 'front' | 'back';
 
@@ -51,123 +37,7 @@ export type TagSceneHandle = {
     dispose: () => void;
 };
 
-// Tag proportions follow the illustrative drawing (200×340, r=26).
-const W = 2;
-const H = 3.4;
-const R = 0.26;
-const DEPTH = 0.08;
-const BEVEL = 0.028;
-const HOLE_Y = H / 2 - 0.34;
-const HOLE_R = 0.1;
-const CAP_Z = DEPTH / 2 + BEVEL;
 const TARGET = new THREE.Vector3(0, 0.55, 0);
-
-function outline(withHole: boolean): THREE.Shape {
-    const x = -W / 2;
-    const y = -H / 2;
-    const shape = new THREE.Shape();
-    shape.moveTo(x + R, y);
-    shape.lineTo(x + W - R, y);
-    shape.quadraticCurveTo(x + W, y, x + W, y + R);
-    shape.lineTo(x + W, y + H - R);
-    shape.quadraticCurveTo(x + W, y + H, x + W - R, y + H);
-    shape.lineTo(x + R, y + H);
-    shape.quadraticCurveTo(x, y + H, x, y + H - R);
-    shape.lineTo(x, y + R);
-    shape.quadraticCurveTo(x, y, x + R, y);
-
-    if (withHole) {
-        const hole = new THREE.Path();
-        hole.absarc(0, HOLE_Y, HOLE_R, 0, Math.PI * 2, true);
-        shape.holes.push(hole);
-    }
-
-    return shape;
-}
-
-/** Shape geometry with UVs normalized to the tag's 0…1 artwork space. */
-function capGeometry(): THREE.ShapeGeometry {
-    const geometry = new THREE.ShapeGeometry(outline(true), 24);
-    const pos = geometry.attributes.position;
-    const uv = geometry.attributes.uv;
-
-    for (let i = 0; i < pos.count; i++) {
-        uv.setXY(i, (pos.getX(i) + W / 2) / W, (pos.getY(i) + H / 2) / H);
-    }
-
-    uv.needsUpdate = true;
-
-    return geometry;
-}
-
-/** Flat woven strap along a closed curve that threads the eyelet. */
-function strapGeometry(): { geometry: THREE.BufferGeometry; length: number } {
-    const y = HOLE_Y;
-    const curve = new THREE.CatmullRomCurve3(
-        [
-            new THREE.Vector3(0, y - 0.045, 0),
-            new THREE.Vector3(0, y + 0.06, 0.1),
-            new THREE.Vector3(0, y + 0.22, 0.125),
-            new THREE.Vector3(0, H / 2 + 0.1, 0.14),
-            new THREE.Vector3(0, H / 2 + 0.75, 0.13),
-            new THREE.Vector3(0, H / 2 + 1.18, 0.06),
-            new THREE.Vector3(0, H / 2 + 1.28, 0),
-            new THREE.Vector3(0, H / 2 + 1.18, -0.06),
-            new THREE.Vector3(0, H / 2 + 0.75, -0.13),
-            new THREE.Vector3(0, H / 2 + 0.1, -0.14),
-            new THREE.Vector3(0, y + 0.22, -0.125),
-            new THREE.Vector3(0, y + 0.06, -0.1),
-        ],
-        true,
-        'centripetal',
-    );
-    const segments = 160;
-    const half = 0.075;
-    const side = new THREE.Vector3(1, 0, 0);
-    const positions: number[] = [];
-    const normals: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-    const length = curve.getLength();
-
-    for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const p = curve.getPointAt(t % 1);
-        const tangent = curve.getTangentAt(t % 1);
-        const normal = new THREE.Vector3()
-            .crossVectors(side, tangent)
-            .normalize();
-        positions.push(p.x - half, p.y, p.z, p.x + half, p.y, p.z);
-        normals.push(
-            normal.x,
-            normal.y,
-            normal.z,
-            normal.x,
-            normal.y,
-            normal.z,
-        );
-        uvs.push(0, t * length * 6, 1, t * length * 6);
-
-        if (i < segments) {
-            const a = i * 2;
-            indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-        }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(positions, 3),
-    );
-    geometry.setAttribute(
-        'normal',
-        new THREE.Float32BufferAttribute(normals, 3),
-    );
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geometry.setIndex(indices);
-
-    return { geometry, length };
-}
 
 const easeInOutCubic = (t: number) =>
     t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -199,128 +69,20 @@ export async function createTagScene(
     host.appendChild(canvas);
 
     const scene = new THREE.Scene();
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const room = new RoomEnvironment();
-    const envTarget = pmrem.fromScene(room, 0.04);
-    scene.environment = envTarget.texture;
-    scene.environmentIntensity = 0.85;
-
-    const key = new THREE.DirectionalLight(0xffffff, 1.4);
-    key.position.set(3, 5, 6);
-    scene.add(key);
-    const rim = new THREE.DirectionalLight(0xfff1d6, 0.8);
-    rim.position.set(-4, 2, -5);
-    scene.add(rim);
+    const disposeLighting = addStudioLighting(renderer, scene);
 
     const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
     camera.position.set(0, TARGET.y + 0.4, 10.6);
 
-    const maxAniso = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
-    const texture = (source: HTMLCanvasElement, color = true) => {
-        const t = new THREE.CanvasTexture(source);
-        t.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-        t.anisotropy = maxAniso;
-
-        return t;
-    };
-
     // ---- The tag ---------------------------------------------------------
-    const tag = new THREE.Group();
+    const model = createTagModel(renderer, options);
+    const tag = model.group;
     scene.add(tag);
 
-    const bodyGeometry = new THREE.ExtrudeGeometry(outline(true), {
-        depth: DEPTH,
-        bevelEnabled: true,
-        bevelThickness: BEVEL,
-        bevelSize: BEVEL,
-        bevelSegments: 5,
-        curveSegments: 28,
-    });
-    bodyGeometry.translate(0, 0, -DEPTH / 2);
-    const bodyMaterial = new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color(options.bodyColor),
-        roughness: 0.38,
-        metalness: 0.05,
-        clearcoat: 1,
-        clearcoatRoughness: 0.12,
-    });
-    tag.add(new THREE.Mesh(bodyGeometry, bodyMaterial));
-
-    const frontCanvas = drawFront(options);
-    const backCanvas = drawBack(options);
-    const frontMap = texture(frontCanvas);
-    const backMap = texture(backCanvas);
-    const backBump = texture(backCanvas, false);
-    const cap = capGeometry();
-
-    const frontMaterial = new THREE.MeshPhysicalMaterial({
-        map: frontMap,
-        roughness: 0.42,
-        metalness: 0.05,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08,
-    });
-    const front = new THREE.Mesh(cap, frontMaterial);
-    front.position.z = CAP_Z + 0.0015;
-    tag.add(front);
-
-    const backMaterial = new THREE.MeshPhysicalMaterial({
-        map: backMap,
-        bumpMap: backBump,
-        bumpScale: 0.6,
-        roughness: 0.6,
-        metalness: 0,
-        clearcoat: 0.4,
-        clearcoatRoughness: 0.35,
-    });
-    const back = new THREE.Mesh(cap, backMaterial);
-    back.rotation.y = Math.PI;
-    back.position.z = -CAP_Z - 0.0015;
-    tag.add(back);
-
-    // Grommet: a ring on each face + the lining of the eyelet.
-    const metal = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(options.metalColor),
-        metalness: 1,
-        roughness: 0.24,
-    });
-    const ringGeometry = new THREE.TorusGeometry(HOLE_R + 0.035, 0.032, 18, 64);
-    const ringFront = new THREE.Mesh(ringGeometry, metal);
-    ringFront.position.set(0, HOLE_Y, CAP_Z + 0.004);
-    const ringBack = ringFront.clone();
-    ringBack.position.z = -CAP_Z - 0.004;
-    const liningGeometry = new THREE.CylinderGeometry(
-        HOLE_R + 0.004,
-        HOLE_R + 0.004,
-        CAP_Z * 2 + 0.01,
-        48,
-        1,
-        true,
-    );
-    liningGeometry.rotateX(Math.PI / 2);
-    const lining = new THREE.Mesh(liningGeometry, metal);
-    lining.position.y = HOLE_Y;
-    tag.add(ringFront, ringBack, lining);
-
-    // Strap loop + crimp.
-    const strap = strapGeometry();
-    const strapMap = texture(drawStrap(options.strapColor, options.accent));
-    strapMap.wrapS = THREE.RepeatWrapping;
-    strapMap.wrapT = THREE.RepeatWrapping;
-    const strapMaterial = new THREE.MeshStandardMaterial({
-        map: strapMap,
-        roughness: 0.85,
-        metalness: 0,
-        side: THREE.DoubleSide,
-    });
-    tag.add(new THREE.Mesh(strap.geometry, strapMaterial));
-    const crimpGeometry = new THREE.BoxGeometry(0.2, 0.1, 0.07, 2, 2, 2);
-    const crimp = new THREE.Mesh(crimpGeometry, metal);
-    crimp.position.set(0, H / 2 + 1.25, 0);
-    tag.add(crimp);
+    const shadowMap = new THREE.CanvasTexture(drawShadow());
+    shadowMap.colorSpace = THREE.SRGBColorSpace;
 
     // Contact shadow (static on the floor; the tag floats above it).
-    const shadowMap = texture(drawShadow());
     const shadowMaterial = new THREE.MeshBasicMaterial({
         map: shadowMap,
         transparent: true,
@@ -622,20 +384,11 @@ export async function createTagScene(
             controls.removeEventListener('end', onEnd);
             controls.dispose();
 
-            const materials = new Set<THREE.Material>();
-            scene.traverse((object) => {
-                if (object instanceof THREE.Mesh) {
-                    object.geometry.dispose();
-                    materials.add(object.material as THREE.Material);
-                }
-            });
-            materials.forEach((m) => m.dispose());
-            [frontMap, backMap, backBump, strapMap, shadowMap].forEach((t) =>
-                t.dispose(),
-            );
-            envTarget.dispose();
-            pmrem.dispose();
-            room.dispose();
+            model.dispose();
+            shadow.geometry.dispose();
+            shadowMaterial.dispose();
+            shadowMap.dispose();
+            disposeLighting();
             renderer.dispose();
             canvas.remove();
         },

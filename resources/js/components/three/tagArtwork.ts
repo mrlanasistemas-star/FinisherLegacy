@@ -1,15 +1,30 @@
 /**
- * Canvas artwork for the procedural 3D Finisher Legacy Tag (LegacyTag3D).
+ * Canvas artwork for the procedural 3D Finisher Legacy Tag.
  *
- * Draws the FRONT (collection artwork) and BACK (NFC + "Toca para ver mi
- * historia", engraved guilloche, illustrative non-scannable QR and a
- * masked code) onto 2D canvases that the scene turns into textures. The
- * layout mirrors the illustrative SVG in components/tag/TagVisualizer.vue
- * (same 200×340 design space, same type hierarchy) so the poster and the
- * 3D model read as the same object.
+ * FRONT: the collection artwork — brand line, the collection name set as
+ * large as it fits (title-case Fraunces, up to two balanced lines), the
+ * subtitle in spaced caps, the year as a big outlined numeral and the NFC
+ * mark. BACK (2026-10-29: NFC only, no QR): "Tu historia vive dentro.", a
+ * big NFC seal inside engraved guilloche rings, "Acerca tu celular" and
+ * the masked unit code.
  *
- * Browser-only: called from tagScene.ts, which is loaded lazily on mount.
+ * Text is fitted with the real canvas measurements through the shared
+ * layout in components/tag/tagLayout.ts (the SVG TagVisualizer uses the
+ * same one), at 7 px per design unit (1400 × 2380) so it stays crisp at
+ * hero size with anisotropic filtering.
+ *
+ * Browser-only: called from the lazily loaded three.js modules.
  */
+import type { Measure } from '@/components/tag/tagLayout';
+import {
+    TAG_ART_H,
+    TAG_ART_W,
+    TAG_TEXT_W,
+    displayName,
+    fitLine,
+    fitName,
+    frontLayout,
+} from '@/components/tag/tagLayout';
 
 export type TagArtworkOptions = {
     name: string;
@@ -20,9 +35,9 @@ export type TagArtworkOptions = {
     accent: string;
 };
 
-/** Design space (matches TagVisualizer's body, minus its 20px margin). */
-export const ART_W = 200;
-export const ART_H = 340;
+export const ART_W = TAG_ART_W;
+export const ART_H = TAG_ART_H;
+export const ART_SCALE = 7;
 
 const GOLD = '#c9a45c';
 const GOLD_SOFT = '#e8d6ad';
@@ -63,6 +78,20 @@ export function shade(hex: string, amount: number): string {
     return `rgb(${r}, ${g}, ${b})`;
 }
 
+/** Mix two hex colors (t = share of `b`), returned as hex. */
+export function mix(a: string, b: string, t: number): string {
+    const ca = toRgb(a);
+    const cb = toRgb(b);
+
+    return `#${ca
+        .map((c, i) =>
+            Math.round(c + (cb[i] - c) * t)
+                .toString(16)
+                .padStart(2, '0'),
+        )
+        .join('')}`;
+}
+
 /** Relative luminance (0 dark … 1 light), to pick ink on custom bodies. */
 export function luminance(hex: string): number {
     const [r, g, b] = toRgb(hex).map((c) => {
@@ -74,6 +103,7 @@ export function luminance(hex: string): number {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+/** Draws spaced text (spacing in design units). */
 function spaced(
     ctx: CanvasRenderingContext2D,
     text: string,
@@ -98,6 +128,15 @@ function spaced(
     ctx.textAlign = previous;
 }
 
+/** Measure at font size 1 for the given font template (`${size}` → 100). */
+function measurer(ctx: CanvasRenderingContext2D, font: string): Measure {
+    return (text) => {
+        ctx.font = font.replace('{s}', '100');
+
+        return ctx.measureText(text).width / 100;
+    };
+}
+
 function nfcWaves(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -109,56 +148,28 @@ function nfcWaves(
     ctx.save();
     ctx.translate(x, y);
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1.2 * Math.max(scale * 0.8, 1);
+    ctx.lineWidth = 1.5 * Math.max(scale * 0.75, 1);
     ctx.lineCap = 'round';
 
     for (let i = 0; i < count; i++) {
-        const r = (8 + i * 5) * scale;
+        const r = (8 + i * 5.5) * scale;
         ctx.beginPath();
-        ctx.arc(-6 * scale, 0, r, -Math.PI / 3.2, Math.PI / 3.2);
+        ctx.arc(-6 * scale, 0, r, -Math.PI / 3.4, Math.PI / 3.4);
         ctx.stroke();
     }
 
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(-6 * scale + 2 * scale, 0, 2 * scale, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
 }
 
-function nameLines(name: string): string[] {
-    const upper = name.trim().toUpperCase();
-    const words = upper.split(/\s+/).filter(Boolean);
-
-    if (words.length <= 1 || upper.length <= 11) {
-        return [upper];
-    }
-
-    const half = Math.ceil(upper.length / 2);
-    let first = '';
-    const rest: string[] = [];
-
-    for (const word of words) {
-        if (!rest.length && `${first} ${word}`.trim().length <= half + 3) {
-            first = `${first} ${word}`.trim();
-        } else {
-            rest.push(word);
-        }
-    }
-
-    return rest.length ? [first, rest.join(' ')] : [first];
-}
-
-function displayName(name: string, year: string | null): string {
-    const trimmed = name.trim();
-
-    if (year && trimmed.endsWith(year)) {
-        return trimmed.slice(0, -year.length).trim() || trimmed;
-    }
-
-    return trimmed;
-}
-
-function makeCanvas(
+function prepare(
     scale: number,
+    target?: HTMLCanvasElement,
 ): [HTMLCanvasElement, CanvasRenderingContext2D] {
-    const canvas = document.createElement('canvas');
+    const canvas = target ?? document.createElement('canvas');
     canvas.width = Math.round(ART_W * scale);
     canvas.height = Math.round(ART_H * scale);
     const ctx = canvas.getContext('2d');
@@ -167,10 +178,27 @@ function makeCanvas(
         throw new Error('2D canvas unavailable');
     }
 
-    ctx.scale(scale, scale);
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
 
     return [canvas, ctx];
+}
+
+function grain(ctx: CanvasRenderingContext2D, seedStart: number) {
+    let seed = seedStart;
+    const rand = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+
+        return seed / 4294967296;
+    };
+
+    for (let i = 0; i < 3200; i++) {
+        ctx.fillStyle =
+            rand() > 0.5 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.05)';
+        ctx.fillRect(rand() * ART_W, rand() * ART_H, 0.5, 0.5);
+    }
 }
 
 /** Waits (bounded) for the brand fonts so the canvas never bakes a fallback. */
@@ -180,6 +208,7 @@ export async function loadArtworkFonts(timeoutMs = 1500): Promise<void> {
     }
 
     const loads = Promise.all([
+        document.fonts.load(`600 40px ${SERIF}`),
         document.fonts.load(`500 40px ${SERIF}`),
         document.fonts.load(`italic 400 40px ${SERIF}`),
         document.fonts.load(`600 12px ${SANS}`),
@@ -193,138 +222,138 @@ export async function loadArtworkFonts(timeoutMs = 1500): Promise<void> {
 
 export function drawFront(
     options: TagArtworkOptions,
-    scale = 5.12,
+    scale = ART_SCALE,
+    target?: HTMLCanvasElement,
 ): HTMLCanvasElement {
-    const [canvas, ctx] = makeCanvas(scale);
-    const { bodyColor, accent } = options;
+    const [canvas, ctx] = prepare(scale, target);
+    const { bodyColor } = options;
+    // Normalized #rrggbb so alpha suffixes below are valid.
+    const accent = mix(options.accent, options.accent, 0);
     const light = luminance(bodyColor) > 0.45;
-    const ink = light ? INK : '#f8f7f3';
+    const ink = light ? INK : '#fbfaf6';
     const brand = light ? GOLD_INK : GOLD_SOFT;
 
     // Body: a soft diagonal gradient of the collection body color.
     const bg = ctx.createLinearGradient(0, 0, ART_W, ART_H);
-    bg.addColorStop(0, shade(bodyColor, light ? 0.25 : 0.12));
+    bg.addColorStop(0, shade(bodyColor, light ? 0.25 : 0.14));
     bg.addColorStop(0.45, shade(bodyColor, 0));
-    bg.addColorStop(1, shade(bodyColor, light ? -0.08 : -0.35));
+    bg.addColorStop(1, shade(bodyColor, light ? -0.08 : -0.32));
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, ART_W, ART_H);
 
-    // Fine grain so the resin never looks like flat plastic.
-    let seed = 7;
-    const rand = () => {
-        seed = (seed * 1664525 + 1013904223) >>> 0;
-
-        return seed / 4294967296;
-    };
-
-    for (let i = 0; i < 2600; i++) {
-        ctx.fillStyle =
-            rand() > 0.5 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.05)';
-        ctx.fillRect(rand() * ART_W, rand() * ART_H, 0.6, 0.6);
-    }
+    // A warm glow of the accent behind the name.
+    const glow = ctx.createRadialGradient(100, 170, 4, 100, 170, 140);
+    glow.addColorStop(0, `${accent}33`);
+    glow.addColorStop(1, `${accent}00`);
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, ART_W, ART_H);
+    grain(ctx, 7);
 
     // Topographic contour lines in the collection accent.
     ctx.save();
     ctx.translate(-20, 0);
     ctx.strokeStyle = accent;
-    ctx.globalAlpha = 0.42;
+    ctx.globalAlpha = 0.5;
     ctx.lineWidth = 0.9;
     [
         'M20 300 C 70 262, 120 300, 170 258 S 230 236, 240 220',
         'M20 316 C 76 280, 126 318, 178 274 S 232 254, 240 242',
         'M20 332 C 82 298, 132 336, 186 290 S 234 272, 240 264',
         'M40 350 C 92 316, 140 352, 194 306 S 236 290, 250 286',
-        'M20 120 C 60 104, 96 126, 140 106 S 214 92, 240 98',
+        'M20 112 C 60 96, 96 118, 140 98 S 214 84, 240 90',
     ].forEach((d) => ctx.stroke(new Path2D(d)));
     ctx.restore();
 
+    const sansCaps = measurer(ctx, `600 {s}px ${SANS}`);
+    const serifName = measurer(ctx, `600 {s}px ${SERIF}`);
+    const name = fitName(displayName(options.name, options.year), serifName);
+    const layout = frontLayout(name, !!options.subtitle, !!options.year);
+
     // Brand line + gold rule.
     ctx.fillStyle = brand;
-    ctx.font = `600 8.5px ${SANS}`;
-    spaced(ctx, 'FINISHER LEGACY', 100, 76, 3.2);
+    ctx.font = `600 10px ${SANS}`;
+    spaced(ctx, 'FINISHER LEGACY', 100, layout.brandY, 3.4);
     ctx.fillStyle = GOLD;
-    ctx.fillRect(84, 86, 32, 0.8);
+    ctx.fillRect(86, layout.ruleY, 28, 1);
 
-    // Collection name.
-    const lines = nameLines(displayName(options.name, options.year));
-    const longest = Math.max(...lines.map((l) => l.length));
-    const size = Math.max(
-        15,
-        Math.min(32, Math.floor(290 / Math.max(longest, 6))),
-    );
+    // Collection name — as large as it fits.
     ctx.fillStyle = ink;
     ctx.textAlign = 'center';
-    ctx.font = `500 ${size}px ${SERIF}`;
-    lines.forEach((line, i) => {
-        ctx.fillText(
-            line,
-            100,
-            (lines.length === 1 ? 160 : 146) + i * (size + 4),
-            176,
-        );
+    ctx.font = `600 ${name.size}px ${SERIF}`;
+    name.lines.forEach((line, i) => {
+        ctx.fillText(line, 100, layout.baselines[i], TAG_TEXT_W);
     });
 
     if (options.subtitle) {
-        ctx.fillStyle = light
-            ? 'rgba(23,23,20,0.62)'
-            : 'rgba(255,255,255,0.62)';
-        ctx.font = `600 7.5px ${SANS}`;
-        spaced(
-            ctx,
-            options.subtitle.toUpperCase(),
-            100,
-            lines.length === 1 ? 184 : 184 + size / 2,
-            2.2,
-        );
+        const text = options.subtitle.toUpperCase();
+        const size = fitLine(text, sansCaps, { max: 11.5, min: 7.5 });
+        ctx.fillStyle = light ? 'rgba(23,23,20,0.72)' : 'rgba(255,255,255,0.8)';
+        ctx.font = `600 ${size}px ${SANS}`;
+        spaced(ctx, text, 100, layout.subtitleY, size * 0.18);
     }
 
     if (options.year) {
+        const size = Math.min(
+            80,
+            TAG_TEXT_W /
+                Math.max(
+                    measurer(ctx, `400 {s}px ${SERIF}`)(options.year),
+                    0.01,
+                ),
+        );
+        ctx.font = `400 ${size}px ${SERIF}`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = `${accent}26`;
+        ctx.fillText(options.year, 100, layout.yearY);
         ctx.strokeStyle = accent;
-        ctx.lineWidth = 0.9;
-        ctx.font = `400 58px ${SERIF}`;
-        ctx.strokeText(options.year, 100, 262);
+        ctx.lineWidth = 1.2;
+        ctx.strokeText(options.year, 100, layout.yearY);
     }
 
     // NFC mark + micro copy.
-    nfcWaves(ctx, 26, 306, 1, brand);
+    nfcWaves(ctx, 30, layout.footerY - 3.5, 0.9, brand);
     ctx.fillStyle = brand;
-    ctx.font = `600 6.5px ${SANS}`;
-    spaced(ctx, 'TOCA · TU HISTORIA', 42, 309, 1.8, 'left');
+    ctx.font = `600 8px ${SANS}`;
+    spaced(ctx, 'ACERCA TU CELULAR', 46, layout.footerY, 1.6, 'left');
 
     return canvas;
 }
 
 export function drawBack(
     options: TagArtworkOptions,
-    scale = 5.12,
+    scale = ART_SCALE,
+    target?: HTMLCanvasElement,
 ): HTMLCanvasElement {
-    const [canvas, ctx] = makeCanvas(scale);
+    const [canvas, ctx] = prepare(scale, target);
     const { backColor } = options;
     const light = luminance(backColor) > 0.45;
     const ink = light ? INK : '#f8f7f3';
-    const muted = light ? STONE : 'rgba(255,255,255,0.6)';
+    const muted = light ? STONE : 'rgba(255,255,255,0.7)';
     const goldText = light ? GOLD_INK : GOLD_SOFT;
+    const cx = 100;
+    const cy = 168;
 
     const bg = ctx.createLinearGradient(0, 0, ART_W, ART_H);
     bg.addColorStop(0, shade(backColor, light ? 0.3 : 0.08));
     bg.addColorStop(1, shade(backColor, -0.05));
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, ART_W, ART_H);
+    grain(ctx, 11);
 
     // Engraved guilloche: fine concentric rings around the NFC seal.
     ctx.save();
     ctx.strokeStyle = light
-        ? 'rgba(107,103,94,0.13)'
-        : 'rgba(255,255,255,0.08)';
+        ? 'rgba(107,103,94,0.16)'
+        : 'rgba(255,255,255,0.09)';
     ctx.lineWidth = 0.35;
 
-    for (let r = 46; r < 150; r += 2.6) {
+    for (let r = 62; r < 160; r += 2.8) {
         ctx.beginPath();
 
-        for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.04) {
+        for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.035) {
             const wobble = Math.sin(a * 12 + r * 0.3) * 1.1;
-            const x = 100 + Math.cos(a) * (r + wobble);
-            const y = 168 + Math.sin(a) * (r + wobble);
+            const x = cx + Math.cos(a) * (r + wobble);
+            const y = cy + Math.sin(a) * (r + wobble);
 
             if (a === 0) {
                 ctx.moveTo(x, y);
@@ -339,118 +368,51 @@ export function drawBack(
     ctx.restore();
 
     // Inset hairline frame (engraved border).
-    ctx.strokeStyle = light
-        ? 'rgba(133,102,43,0.35)'
-        : 'rgba(232,214,173,0.35)';
-    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = light ? 'rgba(133,102,43,0.4)' : 'rgba(232,214,173,0.4)';
+    ctx.lineWidth = 0.7;
     ctx.beginPath();
     ctx.roundRect(9, 9, ART_W - 18, ART_H - 18, 18);
     ctx.stroke();
 
     ctx.textAlign = 'center';
     ctx.fillStyle = ink;
-    ctx.font = `italic 400 15px ${SERIF}`;
-    ctx.fillText('Tu historia vive dentro.', 100, 84);
+    ctx.font = `italic 400 20px ${SERIF}`;
+    ctx.fillText('Tu historia', cx, 78);
+    ctx.fillText('vive dentro.', cx, 100);
     ctx.fillStyle = GOLD;
-    ctx.fillRect(84, 94, 32, 0.8);
+    ctx.fillRect(86, 110, 28, 1);
 
-    // NFC seal.
-    ctx.fillStyle = light ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.25)';
+    // NFC seal — big.
+    ctx.fillStyle = light ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    ctx.arc(100, 168, 38, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 50, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = goldText;
-    ctx.lineWidth = 1.1;
+    ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.arc(100, 168, 38, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 50, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.lineWidth = 0.4;
+    ctx.lineWidth = 0.5;
     ctx.beginPath();
-    ctx.arc(100, 168, 42, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 55, 0, Math.PI * 2);
     ctx.stroke();
-    nfcWaves(ctx, 98, 168, 1.55, goldText);
+    nfcWaves(ctx, cx + 4, cy, 2.05, goldText);
+
+    ctx.fillStyle = ink;
+    ctx.font = `600 21px ${SERIF}`;
+    ctx.fillText('Acerca tu celular', cx, 250, TAG_TEXT_W);
+    ctx.fillStyle = muted;
+    ctx.font = `600 9.5px ${SANS}`;
+    spaced(ctx, 'SIN APPS · SE ABRE SOLO', cx, 268, 1.4);
+
+    // Masked unit code (each tag has its own; never real data here).
     ctx.fillStyle = goldText;
-    ctx.beginPath();
-    ctx.arc(88, 168, 2.2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.font = `600 13px ${MONO}`;
+    spaced(ctx, 'N.º •••• ••••', cx, 297, 1.4);
 
-    ctx.fillStyle = ink;
-    ctx.font = `500 13px ${SERIF}`;
-    ctx.fillText('Toca para ver mi historia', 100, 232);
     ctx.fillStyle = muted;
-    ctx.font = `600 5.6px ${SANS}`;
-    spaced(ctx, 'ACERCA TU TELÉFONO', 100, 245, 1.6);
-
-    // Illustrative QR (NOT scannable — no URL is encoded).
-    const qx = 30;
-    const qy = 262;
-    const cell = 2;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(qx - 3, qy - 3, 21 * cell + 6, 21 * cell + 6, 3);
-    ctx.fill();
-    ctx.fillStyle = INK;
-    let seed = 0;
-
-    for (const ch of options.name + (options.year ?? '')) {
-        seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
-    }
-
-    const rand = () => {
-        seed = (seed * 1664525 + 1013904223) >>> 0;
-
-        return seed / 4294967296;
-    };
-
-    const inFinder = (x: number, y: number) =>
-        (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
-
-    for (let y = 0; y < 21; y++) {
-        for (let x = 0; x < 21; x++) {
-            if (!inFinder(x, y) && rand() > 0.52) {
-                ctx.fillRect(qx + x * cell, qy + y * cell, cell, cell);
-            }
-        }
-    }
-
-    for (const [fx, fy] of [
-        [0, 0],
-        [14, 0],
-        [0, 14],
-    ]) {
-        ctx.fillStyle = INK;
-        ctx.fillRect(qx + fx * cell, qy + fy * cell, 7 * cell, 7 * cell);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(
-            qx + (fx + 1) * cell,
-            qy + (fy + 1) * cell,
-            5 * cell,
-            5 * cell,
-        );
-        ctx.fillStyle = INK;
-        ctx.fillRect(
-            qx + (fx + 2) * cell,
-            qy + (fy + 2) * cell,
-            3 * cell,
-            3 * cell,
-        );
-    }
-
-    ctx.textAlign = 'left';
-    ctx.fillStyle = muted;
-    ctx.font = `600 5.4px ${SANS}`;
-    spaced(ctx, '¿SIN NFC?', 84, 272, 1.4, 'left');
-    ctx.fillStyle = ink;
-    ctx.font = `400 7px ${SANS}`;
-    ctx.fillText('Escanea el QR o', 84, 284);
-    ctx.fillText('escribe tu código.', 84, 293);
-    ctx.font = `400 8.5px ${MONO}`;
-    spaced(ctx, '•••• ••••', 84, 306, 1.4, 'left');
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = muted;
-    ctx.font = `600 5.6px ${SANS}`;
-    spaced(ctx, 'FINISHER LEGACY', 100, 324, 2.6);
+    ctx.font = `600 8.5px ${SANS}`;
+    spaced(ctx, 'FINISHER LEGACY', cx, 320, 2.8);
 
     return canvas;
 }
@@ -511,6 +473,27 @@ export function drawShadow(): HTMLCanvasElement {
     ctx.beginPath();
     ctx.arc(0, 0, 62, 0, Math.PI * 2);
     ctx.fill();
+
+    return canvas;
+}
+
+/** Soft ring sprite for the NFC pulse (white; tinted by the material). */
+export function drawPulseRing(): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return canvas;
+    }
+
+    const g = ctx.createRadialGradient(128, 128, 96, 128, 128, 126);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.55, 'rgba(255,255,255,1)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 256);
 
     return canvas;
 }

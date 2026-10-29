@@ -11,7 +11,8 @@
  * depends on WebGL. Rendering pauses offscreen; the scene is disposed on
  * unmount. SSR-safe: no window access outside lifecycle hooks.
  *
- * It is an illustrative render (artwork, QR and code are not real data).
+ * It is an illustrative render (artwork and code are not real data; the
+ * back shows the NFC seal only — the tag carries no QR).
  */
 import { RotateCcw } from '@lucide/vue';
 import {
