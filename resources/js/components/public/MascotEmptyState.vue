@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FinisherMascot from '@/components/public/FinisherMascot.vue';
+import Mascot3D from '@/components/mascot/Mascot3D.vue';
 
 defineProps<{
     title: string;
@@ -9,9 +9,9 @@ defineProps<{
 
 <template>
     <div
-        class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/30 px-6 py-14 text-center"
+        class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-fl-line bg-fl-paper/60 px-6 py-12 text-center"
     >
-        <FinisherMascot variant="empty" />
+        <Mascot3D mood="happy" class="h-36" alt="" :fps="40" />
 
         <div class="max-w-sm">
             <h3 class="text-base font-semibold text-foreground">{{ title }}</h3>

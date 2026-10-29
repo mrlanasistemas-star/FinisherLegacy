@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+/**
+ * The mascot at a given placement size. Renders the live 3D character
+ * (components/mascot/Mascot3D.vue), which falls back to the official PNG
+ * while loading, without WebGL or under prefers-reduced-motion. `variant`
+ * picks the size and the mood (success cheers, hero is happy…), so every
+ * existing call site keeps working unchanged.
+ */
+import Mascot3D from '@/components/mascot/Mascot3D.vue';
+import type { MascotMood } from '@/components/mascot/mascotScene';
 
-const props = withDefaults(
+type Variant = 'hero' | 'small' | 'empty' | 'success' | 'guide';
+
+withDefaults(
     defineProps<{
-        /**
-         * Placement context. Every variant currently renders the same
-         * `mascot-hero` pose (it's the only one the brand has shipped) —
-         * keeping the prop lets each call site express intent, and swapping
-         * in dedicated poses later only touches the `poses` map below.
-         */
-        variant?: 'hero' | 'small' | 'empty' | 'success' | 'guide';
-        /** Accessible label. Pass '' to mark the image purely decorative. */
+        variant?: Variant;
+        /** Accessible label. Pass '' to mark the mascot purely decorative. */
         alt?: string;
     }>(),
     {
@@ -19,59 +23,30 @@ const props = withDefaults(
     },
 );
 
-// mascot-hero.png is a real transparent PNG (RGBA, alpha-cut around the
-// character) — unlike the older mascot-hero.jpeg, which shipped with an
-// opaque light background and needed a radial mask hack to fade into dark
-// UI. The PNG needs none of that: it renders straight, no mask, no frame,
-// no card (brand system §23).
-const poses: Record<'hero' | 'small' | 'empty' | 'success' | 'guide', string> =
-    {
-        hero: '/images/brand/mascot/mascot-hero.png',
-        small: '/images/brand/mascot/mascot-hero.png',
-        empty: '/images/brand/mascot/mascot-hero.png',
-        success: '/images/brand/mascot/mascot-hero.png',
-        guide: '/images/brand/mascot/mascot-hero.png',
-    };
-
-const src = computed(() => poses[props.variant]);
-
-const sizeClass: Record<
-    'hero' | 'small' | 'empty' | 'success' | 'guide',
-    string
-> = {
+const sizeClass: Record<Variant, string> = {
     hero: 'h-64 sm:h-80',
     small: 'h-20',
-    empty: 'h-24',
-    success: 'h-28',
+    empty: 'h-28',
+    success: 'h-32',
     guide: 'h-24 sm:h-28',
 };
 
-const failed = ref(false);
+const moods: Record<Variant, MascotMood> = {
+    hero: 'happy',
+    small: 'idle',
+    empty: 'idle',
+    success: 'cheer',
+    guide: 'wave',
+};
 </script>
 
 <template>
-    <span
-        v-if="!failed"
-        class="fl-mascot-glow relative inline-block shrink-0"
-        :class="sizeClass[variant]"
-    >
-        <img
-            :src="src"
+    <span class="relative inline-block shrink-0" :class="sizeClass[variant]">
+        <Mascot3D
+            :mood="moods[variant]"
             :alt="alt"
-            class="h-full w-auto object-contain"
-            loading="lazy"
-            decoding="async"
-            @error="failed = true"
+            class="h-full"
+            :fps="variant === 'hero' ? 60 : 40"
         />
     </span>
 </template>
-
-<style scoped>
-/* A soft ground-glow instead of a frame — enough to seat the character on
-   dark UI without boxing it in an oval, card, or mask. */
-.fl-mascot-glow {
-    filter: drop-shadow(
-        0 12px 28px color-mix(in srgb, var(--fl-gold) 30%, transparent)
-    );
-}
-</style>

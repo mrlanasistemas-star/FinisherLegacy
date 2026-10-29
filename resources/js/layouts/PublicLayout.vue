@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
  * The site shell: ONE top navbar for every non-admin page (signed in or
- * not), footer, back-to-top and — for signed-in visitors on phones — the
- * bottom tab bar. Resolved for every page in app.ts except auth/ and the
+ * not), footer, back-to-top, the mascot guide (SiteGuide) and — for
+ * signed-in visitors on phones — the bottom tab bar. Resolved for every page in app.ts except auth/ and the
  * back office.
  */
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import SiteGuide from '@/components/mascot/SiteGuide.vue';
 import BackToTop from '@/components/public/BackToTop.vue';
 import PublicFooter from '@/components/public/PublicFooter.vue';
 import PublicNavbar from '@/components/public/PublicNavbar.vue';
@@ -23,8 +24,7 @@ const OWN_BOTTOM_BAR = new Set([
 
 const page = usePage();
 const showTabBar = computed(
-    () =>
-        page.props.auth?.user != null && !OWN_BOTTOM_BAR.has(page.component),
+    () => page.props.auth?.user != null && !OWN_BOTTOM_BAR.has(page.component),
 );
 </script>
 
@@ -47,6 +47,7 @@ const showTabBar = computed(
         </main>
         <PublicFooter />
         <BackToTop />
+        <SiteGuide />
         <SiteBottomNav v-if="showTabBar" />
         <Toaster />
     </div>
