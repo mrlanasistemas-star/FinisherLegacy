@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CommerceController as AdminCommerceController;
 use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
+use App\Http\Controllers\Admin\PaymentSettingsController as AdminPaymentSettingsController;
 use App\Http\Controllers\Admin\ProductMediaController as AdminProductMediaController;
 use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
@@ -39,5 +40,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:orders.manage')->post('orders/items/{item}/return', [AdminStoreOrderController::class, 'returnItem'])->name('orders.items.return');
 
         Route::middleware('can:products.manage')->post('products/media/{media}/poster', [AdminProductMediaController::class, 'poster'])->name('products.media.poster');
+
+        // Pagos: active gateway + OpenPay keys (private key encrypted, write-only).
+        Route::middleware('can:payments.configure')->prefix('configuracion/pagos')->name('settings.payments')->group(function () {
+            Route::get('/', [AdminPaymentSettingsController::class, 'index']);
+            Route::put('/', [AdminPaymentSettingsController::class, 'update'])->name('.update');
+            Route::post('probar', [AdminPaymentSettingsController::class, 'test'])->middleware('throttle:10,1')->name('.test');
+        });
     });
 });

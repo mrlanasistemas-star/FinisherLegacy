@@ -6,8 +6,10 @@ use App\Actions\Commerce\ProcessPaymentWebhook;
 use App\Exceptions\UnhandledPaymentWebhookEventException;
 use App\Http\Controllers\Controller;
 use App\Services\Commerce\PaymentGatewayRegistry;
+use App\Services\Commerce\Payments\PaymentSettings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -34,6 +36,18 @@ class OpenPayWebhookController extends Controller
                     ? strlen($payload['verification_code'])
                     : null,
             ]);
+
+            // Shown for one hour on /admin/configuracion/pagos (behind
+            // `payments.configure`) so the admin can paste it into the
+            // OpenPay dashboard — never in logs.
+            $code = $payload['verification_code'] ?? null;
+
+            if (is_string($code) && $code !== '' && strlen($code) <= 64) {
+                Cache::put(PaymentSettings::VERIFICATION_CACHE_KEY, [
+                    'code' => $code,
+                    'received_at' => now()->toIso8601String(),
+                ], now()->addHour());
+            }
 
             return response()->noContent();
         }

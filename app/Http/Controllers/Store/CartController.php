@@ -53,10 +53,13 @@ class CartController extends Controller
 
         try {
             $applyCoupon->handle($cart, $data['code'], $request->user());
+        } catch (ApiException $e) {
+            // Shown inline under the coupon field (and the code is kept).
+            return back()->withErrors(['code' => $e->getMessage()]);
         } catch (Throwable $e) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+            report($e);
 
-            return back();
+            return back()->withErrors(['code' => 'No pudimos aplicar el cupón. Intenta de nuevo.']);
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Cupón aplicado.']);

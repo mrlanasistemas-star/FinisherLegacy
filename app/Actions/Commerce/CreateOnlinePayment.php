@@ -156,9 +156,21 @@ class CreateOnlinePayment
             }
 
             if ($intent === null) {
-                // Provider-side attempt is terminal (e.g. canceled) — never
-                // silently stack a new charge on top; the status sync or
-                // webhook settles it first.
+                // Provider-side attempt can't be resumed. Settle what really
+                // happened first (server to server, same path as a webhook)
+                // — never silently stack a new charge on top of a live one.
+                $this->processWebhook->handle($gateway->fetchOutcome($payment));
+
+                if ($order->fresh()->payment_status->value === 'paid') {
+                    throw new PaymentAlreadyRecordedException;
+                }
+
+                // Provider says it's over (declined 3DS, canceled intent):
+                // a clean attempt is safe.
+                if (in_array($payment->fresh()->status, [PaymentStatus::Failed, PaymentStatus::Cancelled], true)) {
+                    return $this->startFreshAttempt($order, $provider, $gateway, $paymentData);
+                }
+
                 throw new PaymentAttemptInProgressException;
             }
 

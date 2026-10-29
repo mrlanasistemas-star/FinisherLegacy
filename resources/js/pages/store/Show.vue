@@ -37,8 +37,9 @@ import type { TagProduct } from '@/components/store/TagProductDetail.vue';
 import VariantPicker from '@/components/store/VariantPicker.vue';
 import type { Variant } from '@/components/store/VariantPicker.vue';
 import { Button } from '@/components/ui/button';
+import { useAuthGate } from '@/composables/useAuthGate';
 import { productCardProps, PRODUCT_TYPE_LABELS } from '@/lib/store';
-import { howItWorks, login } from '@/routes';
+import { howItWorks } from '@/routes';
 import { index as eventsIndex } from '@/routes/events';
 import { store as addToCartRoute } from '@/routes/store/cart/items';
 import { show as categoryShow } from '@/routes/store/categories';
@@ -87,6 +88,7 @@ const props = defineProps<{
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
+const { requireAuth, loginUrl } = useAuthGate();
 const isLegacyPlate = computed(() => props.product.type === 'legacy_plate');
 /** Finisher Legacy Tag → its own layout (TagProductDetail). */
 const isLegacyTag = computed(() => props.product.type === 'legacy_tag');
@@ -212,7 +214,11 @@ const form = useForm({
 });
 
 function addToCart() {
-    if (!selectedVariant.value || !selectedVariant.value.in_stock) {
+    if (
+        !selectedVariant.value ||
+        !selectedVariant.value.in_stock ||
+        !requireAuth()
+    ) {
         return;
     }
 
@@ -503,7 +509,7 @@ const savedInMiEquipo = [
                                 podrás conectarla a tu perfil en un paso.
                                 <Link
                                     v-if="isGuest"
-                                    :href="login()"
+                                    :href="loginUrl()"
                                     class="font-medium text-foreground underline underline-offset-4"
                                     >Iniciar sesión</Link
                                 >
@@ -609,7 +615,7 @@ const savedInMiEquipo = [
                                 size="lg"
                                 class="h-12 w-full rounded-full"
                             >
-                                <Link :href="login()"
+                                <Link :href="loginUrl()"
                                     >Inicia sesión para comprar</Link
                                 >
                             </Button>
@@ -880,7 +886,7 @@ const savedInMiEquipo = [
                 />
             </div>
             <Button v-if="isGuest" as-child class="h-11 rounded-full px-5">
-                <Link :href="login()">Inicia sesión</Link>
+                <Link :href="loginUrl()">Inicia sesión</Link>
             </Button>
             <Button
                 v-else

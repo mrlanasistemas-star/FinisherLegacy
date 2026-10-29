@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Store home (owner spec §17-§18). Since 2026-10-27 the hero product is
- * the Finisher Legacy Tag (drawn by the illustrative TagVisualizer until
+ * the Finisher Legacy Tag (a rotatable LegacyTag3D in the hero until
  * real photography exists); historical Legacy Plate products stay
  * purchasable through their own page but are no longer promoted here.
  * Editorial hero, categories,
@@ -18,6 +18,7 @@ import SeoHead from '@/components/public/SeoHead.vue';
 import Money from '@/components/shared/Money.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
+import LegacyTag3D from '@/components/three/LegacyTag3D.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
 import { productCardProps } from '@/lib/store';
@@ -147,32 +148,31 @@ const legacyExtras = computed(() =>
 
             <div class="relative lg:col-span-6">
                 <div
-                    class="relative mx-auto aspect-[5/4] max-w-xl overflow-hidden rounded-hero bg-fl-black lg:max-w-none"
+                    class="relative mx-auto flex max-w-xl flex-col overflow-hidden rounded-hero border border-border bg-fl-cream lg:max-w-none"
                 >
                     <div
-                        class="absolute inset-0 bg-[radial-gradient(55%_60%_at_50%_45%,color-mix(in_srgb,var(--fl-gold)_16%,transparent),transparent_70%)]"
+                        class="absolute inset-0 bg-[radial-gradient(55%_60%_at_50%_45%,color-mix(in_srgb,var(--fl-gold)_22%,transparent),transparent_70%)]"
                         aria-hidden="true"
                     />
-                    <div class="absolute inset-x-0 top-[6%] mx-auto w-[34%]">
-                        <TagVisualizer
+                    <div class="relative mx-auto w-[56%] pt-4 sm:w-[44%]">
+                        <LegacyTag3D
                             :name="featured?.collection?.name ?? 'Tu colección'"
                             :subtitle="
                                 featured?.collection?.destination ??
                                 'Destino · Disciplina'
                             "
                             :year="featured?.collection?.year ?? null"
+                            label="Finisher Legacy Tag en 3D"
                         />
                     </div>
-                    <div
-                        class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-6 sm:p-8"
-                    >
+                    <div class="relative px-6 pt-2 pb-6 sm:px-8 sm:pb-8">
                         <p
-                            class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
+                            class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                         >
-                            Finisher Legacy Tag · render ilustrativo
+                            Finisher Legacy Tag · gíralo en 3D
                         </p>
                         <p
-                            class="mt-1 font-serif text-xl text-white sm:text-2xl"
+                            class="mt-1 font-serif text-xl text-foreground sm:text-2xl"
                         >
                             El recuerdo físico de tu logro. Tu historia vive
                             dentro.
@@ -289,7 +289,7 @@ const legacyExtras = computed(() =>
             class="grid overflow-hidden rounded-hero border border-border bg-card lg:grid-cols-12"
         >
             <div
-                class="relative min-h-[24rem] overflow-hidden bg-fl-black sm:min-h-[30rem] lg:col-span-6"
+                class="relative min-h-[24rem] overflow-hidden bg-fl-cream sm:min-h-[30rem] lg:col-span-6"
             >
                 <img
                     v-if="

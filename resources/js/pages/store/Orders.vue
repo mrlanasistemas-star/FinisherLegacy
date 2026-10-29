@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * "Mis pedidos" (spec §7/§134) — the signed-in customer's own orders, each
- * with where it is in plain words and what's inside at a glance. Lives in
- * the athlete's personal area (app shell), not the public store chrome.
+ * with where it is in plain words and what's inside at a glance. Renders in
+ * the shared site navbar like the rest of the store.
  */
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowRight, ShoppingBag } from '@lucide/vue';
@@ -10,12 +10,9 @@ import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { shortDate } from '@/lib/datetime';
 import { show as orderShow } from '@/routes/store/orders';
 import { index as storeIndex } from '@/routes/store/products';
-
-defineOptions({ layout: AppLayout });
 
 type OrderRow = {
     uuid: string;

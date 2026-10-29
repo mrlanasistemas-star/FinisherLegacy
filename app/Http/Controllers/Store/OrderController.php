@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PhotoSale;
+use App\Support\Commerce\OrderPaymentState;
 use App\Support\Commerce\OrderProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -93,35 +94,9 @@ class OrderController extends Controller
                 'image_url' => $item->product?->primaryImageUrl(),
                 'product_slug' => $item->product?->slug,
             ]),
-            'openpay' => $this->openpayFrontendConfig(),
+            // Pending and still inside its payment window → "Completar pago"
+            // sends the athlete back to the checkout payment step.
+            'payable' => OrderPaymentState::isPayable($order) && $order->payment_status->value === 'pending',
         ]);
-    }
-
-    /**
-     * Public Openpay.js config only — merchant_id/public_key are meant for
-     * client-side use (brief §143: never the private key). Null when the
-     * default gateway isn't Openpay or credentials aren't set, so the
-     * frontend never tries to load Openpay.js pointlessly.
-     *
-     * @return array{merchant_id: string, public_key: string, sandbox: bool}|null
-     */
-    private function openpayFrontendConfig(): ?array
-    {
-        if (config('finisher.payments.default_gateway') !== 'openpay') {
-            return null;
-        }
-
-        $merchantId = config('finisher.payments.openpay.merchant_id');
-        $publicKey = config('finisher.payments.openpay.public_key');
-
-        if (blank($merchantId) || blank($publicKey)) {
-            return null;
-        }
-
-        return [
-            'merchant_id' => $merchantId,
-            'public_key' => $publicKey,
-            'sandbox' => ! (bool) config('finisher.payments.openpay.production_mode'),
-        ];
     }
 }

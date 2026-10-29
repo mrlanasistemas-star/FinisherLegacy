@@ -6,7 +6,10 @@ use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Actions\Commerce\CheckoutCart;
 use App\Actions\Commerce\CreateOnlinePayment;
 use App\Actions\Commerce\GetOrCreateCart;
+use App\Actions\Commerce\SyncOnlinePayment;
+use App\Enums\PaymentStatus;
 use App\Exceptions\Api\ApiException;
+use App\Exceptions\PaymentDeclinedException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\StoreCheckoutRequest;
 use App\Models\Order;
@@ -18,6 +21,7 @@ use App\Support\Commerce\WebCheckoutPayment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -128,15 +132,19 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Stripe's `return_url`. The query string Stripe appends
-     * (`redirect_status`, ...) is deliberately ignored: the page renders
-     * the server's state and polls `estado` until the webhook lands.
+     * Stripe's `return_url` and OpenPay's 3D Secure `redirect_url`
+     * (OpenPay appends `?id={charge_id}`). The query string is deliberately
+     * ignored as a source of truth: for OpenPay the charge is re-read from
+     * OpenPay's API (SyncOnlinePayment), and the page polls `estado` until
+     * the state is final.
      */
-    public function confirmation(Order $order): Response
+    public function confirmation(Order $order, SyncOnlinePayment $sync): Response
     {
         Gate::authorize('view', $order);
 
-        $order->loadMissing(['items.product.media', 'items.productVariant', 'latestPayment']);
+        $this->syncOpenPay($order, $sync);
+
+        $order->refresh()->loadMissing(['items.product.media', 'items.productVariant', 'latestPayment']);
 
         return Inertia::render('store/CheckoutConfirmation', [
             'order' => $this->orderState($order),
@@ -147,22 +155,33 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function status(Order $order): JsonResponse
+    public function status(Order $order, SyncOnlinePayment $sync): JsonResponse
     {
         Gate::authorize('view', $order);
 
-        return response()->json(['data' => $this->orderState($order->load('latestPayment'))]);
+        // OpenPay has no client-side confirmation: while the attempt is
+        // still pending, re-read the charge at most every few seconds so
+        // the page doesn't depend on the webhook being configured.
+        if (Cache::add("checkout.openpay-sync.{$order->id}", true, now()->addSeconds(8))) {
+            $this->syncOpenPay($order, $sync);
+        }
+
+        return response()->json(['data' => $this->orderState($order->refresh()->load('latestPayment'))]);
     }
 
     /**
      * Starts (or resumes) the online payment for an Order — never crashes
      * when the provider has no keys, it reports "not available".
      */
-    public function onlinePayment(Request $request, Order $order, CreateOnlinePayment $createPayment, WebCheckoutPayment $payments): JsonResponse
+    public function onlinePayment(Request $request, Order $order, CreateOnlinePayment $createPayment, WebCheckoutPayment $payments, SyncOnlinePayment $sync): JsonResponse
     {
         Gate::authorize('pay', $order);
 
         $provider = $payments->options()['provider'] ?? null;
+
+        if ($provider === null) {
+            return response()->json(['available' => false, 'message' => 'El pago en línea no está disponible en este momento.']);
+        }
 
         try {
             $intent = $createPayment->handle(
@@ -170,10 +189,41 @@ class CheckoutController extends Controller
                 provider: $provider,
                 paymentData: $request->only(['token_id', 'device_session_id']),
             );
-
-            return response()->json(['available' => true, 'client_payload' => $intent->clientPayload]);
+        } catch (PaymentDeclinedException $e) {
+            return response()->json(['available' => true, 'declined' => true, 'message' => $e->getMessage()]);
         } catch (ApiException $e) {
             return response()->json(['available' => false, 'message' => $e->getMessage()]);
+        }
+
+        // An OpenPay card charge without 3DS is final right away — confirm
+        // it now (server to server) instead of waiting for the webhook.
+        if ($provider === 'openpay' && ($intent->clientPayload['redirect_url'] ?? null) === null) {
+            $this->syncOpenPay($order, $sync);
+        }
+
+        return response()->json(['available' => true, 'client_payload' => $intent->clientPayload]);
+    }
+
+    /**
+     * Re-reads the latest pending OpenPay attempt from OpenPay's API and
+     * applies it through the same path a webhook takes. Never throws: the
+     * webhook (or the next poll) settles it if OpenPay is unreachable.
+     */
+    private function syncOpenPay(Order $order, SyncOnlinePayment $sync): void
+    {
+        $latest = $order->latestPayment()->first();
+
+        if ($latest === null
+            || $latest->provider->value !== 'openpay'
+            || blank($latest->provider_reference)
+            || ! in_array($latest->status, [PaymentStatus::Pending, PaymentStatus::Authorized], true)) {
+            return;
+        }
+
+        try {
+            $sync->handle($order);
+        } catch (Throwable $e) {
+            report($e);
         }
     }
 

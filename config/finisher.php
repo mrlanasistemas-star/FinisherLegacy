@@ -202,12 +202,15 @@ return [
     | hand-rolled HTTP call. Real credentials are still a per-environment
     | secret (brief §71: "no inventar credenciales"), so both stay
     | NotConfigured stubs in dev/test/CI until real keys are set via env.
-    | `default_gateway` is which one CreateOnlinePayment uses when the
-    | caller doesn't pick one — Stripe (Payment Element) is the primary web
-    | gateway (spec §24-§26); OpenPay stays an additional configurable one.
+    | `default_gateway` is which one the web checkout / CreateOnlinePayment
+    | use when the caller doesn't pick one — OpenPay (Openpay.js card form)
+    | is the primary web gateway; Stripe stays available. Admins can
+    | override the gateway and the OpenPay keys in /admin/configuracion/pagos
+    | (App\Services\Commerce\Payments\PaymentSettings merges those DB values
+    | over these at boot; the private key is stored encrypted).
     */
     'payments' => [
-        'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'stripe'),
+        'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'openpay'),
 
         // Gateway for `POST /api/v1/orders/{uuid}/payments/online` when the
         // client doesn't name one. Stripe: its official React Native SDK
@@ -232,6 +235,10 @@ return [
             'public_key' => env('OPENPAY_PUBLIC_KEY'),
             'country' => env('OPENPAY_COUNTRY', 'MX'),
             'production_mode' => (bool) env('OPENPAY_PRODUCTION_MODE', false),
+            // Always charge through 3D Secure. When false, a charge rejected
+            // by OpenPay's anti-fraud (error 3005) is retried once with 3DS,
+            // same as OpenPay's own official WooCommerce plugin does.
+            'use_3d_secure' => (bool) env('OPENPAY_USE_3D_SECURE', false),
         ],
     ],
 
@@ -422,7 +429,7 @@ return [
     'social' => [
         'moment_caption_max' => 1000,
         'comment_max' => 500,
-        'moment_max_photos' => 4,
+        'moment_max_photos' => (int) env('FINISHER_MOMENT_MAX_PHOTOS', 10),
         'moment_photo_max_kb' => 8192,
         'feed_per_page' => 15,
         'comments_per_page' => 30,

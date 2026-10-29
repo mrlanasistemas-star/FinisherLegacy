@@ -5,6 +5,7 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\HorizonServiceProvider;
 use App\Providers\LegacyTagServiceProvider;
 use App\Providers\NfcServiceProvider;
+use App\Providers\PaymentSettingsServiceProvider;
 use App\Providers\TrackingServiceProvider;
 
 return [
@@ -14,4 +15,5 @@ return [
     HorizonServiceProvider::class,
     NfcServiceProvider::class,
     LegacyTagServiceProvider::class,
+    PaymentSettingsServiceProvider::class,
 ];

@@ -8,6 +8,7 @@
  */
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
+    ArrowLeft,
     Check,
     Clock,
     Lock,
@@ -78,6 +79,10 @@ const props = defineProps<{
 
 const blocked = computed(() =>
     props.items.some((item) => !item.price_available || !item.in_stock),
+);
+
+const itemCount = computed(() =>
+    props.items.reduce((sum, item) => sum + item.quantity, 0),
 );
 
 const amountLabel = computed(() =>
@@ -172,22 +177,97 @@ const lineDetails = (line: Line) =>
     <div class="min-h-screen bg-background">
         <div class="fl-container py-10 md:py-14">
             <header class="mb-8">
-                <p class="fl-eyebrow">Checkout</p>
-                <h1 class="fl-display mt-2 text-3xl md:text-4xl">
-                    {{ step === 'details' ? 'Confirma tu pedido' : 'Pago' }}
+                <Link
+                    v-if="step === 'details'"
+                    href="/carrito"
+                    class="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                    <ArrowLeft class="size-4" /> Volver al carrito
+                </Link>
+                <p class="fl-eyebrow">Checkout seguro</p>
+                <h1 class="mt-2 font-serif text-3xl font-semibold md:text-4xl">
+                    {{
+                        step === 'details'
+                            ? 'Confirma tu pedido'
+                            : 'Último paso: el pago'
+                    }}
                 </h1>
+
+                <!-- Progress: datos → entrega → pago -->
+                <ol
+                    class="mt-6 flex items-center gap-2 text-xs font-medium sm:text-sm"
+                    aria-label="Pasos del checkout"
+                >
+                    <li
+                        v-for="(label, i) in ['Tus datos', 'Entrega', 'Pago']"
+                        :key="label"
+                        class="flex items-center gap-2"
+                        :aria-current="
+                            (step === 'details' && i === 0) ||
+                            (step === 'payment' && i === 2)
+                                ? 'step'
+                                : undefined
+                        "
+                    >
+                        <span
+                            class="flex size-6 items-center justify-center rounded-full text-[11px]"
+                            :class="
+                                step === 'payment' && i < 2
+                                    ? 'bg-emerald-600 text-white'
+                                    : (step === 'details' && i < 2) ||
+                                        (step === 'payment' && i === 2)
+                                      ? 'bg-foreground text-background'
+                                      : 'bg-muted text-muted-foreground'
+                            "
+                        >
+                            <Check
+                                v-if="step === 'payment' && i < 2"
+                                class="size-3.5"
+                            />
+                            <template v-else>{{ i + 1 }}</template>
+                        </span>
+                        <span
+                            :class="
+                                (step === 'details' && i === 2) ||
+                                (step === 'payment' && i < 2)
+                                    ? 'text-muted-foreground'
+                                    : 'text-foreground'
+                            "
+                            >{{ label }}</span
+                        >
+                        <span
+                            v-if="i < 2"
+                            class="mx-1 h-px w-6 bg-border sm:w-10"
+                            aria-hidden="true"
+                        />
+                    </li>
+                </ol>
+
                 <p
                     v-if="order && minutesLeft !== null"
-                    class="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground"
+                    class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-fl-cream px-3 py-1.5 text-sm text-foreground/80"
                 >
-                    <Clock class="size-4" />
+                    <Clock class="size-4 text-fl-gold-ink" />
                     Pedido #{{ order.order_number }} · apartamos tus piezas
                     {{
                         minutesLeft > 0
                             ? `${minutesLeft} min más`
                             : 'unos minutos más'
-                    }}.
+                    }}
                 </p>
+
+                <!-- Mobile: the total is always visible before the forms. -->
+                <div
+                    class="mt-5 flex items-center justify-between rounded-2xl border border-border bg-white px-4 py-3 lg:hidden"
+                >
+                    <span class="text-sm text-muted-foreground"
+                        >{{ itemCount }}
+                        {{ itemCount === 1 ? 'producto' : 'productos' }}</span
+                    >
+                    <span class="legacy-numeric text-base font-semibold"
+                        >Total {{ amountLabel }}</span
+                    >
+                </div>
             </header>
 
             <div
@@ -525,6 +605,8 @@ const lineDetails = (line: Line) =>
                                 :order-uuid="order.uuid"
                                 :config="payment.openpay"
                                 :amount-label="amountLabel"
+                                :holder-name="contact.name"
+                                @state="(s) => (paymentState = s)"
                                 @succeeded="goToConfirmation"
                             />
                             <div

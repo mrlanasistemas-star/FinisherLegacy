@@ -6,7 +6,7 @@
  * existing page untouched.
  *
  * - Gallery: uploaded ProductMedia when present; otherwise the
- *   illustrative TagVisualizer (front/back) — never the old plate renders.
+ *   procedural LegacyTag3D (rotatable, front/back) — never the old plate renders.
  * - Price/availability: what ProductController resolved for the variant
  *   (ResolveProductPrice + IsVariantAvailableForCheckout for tags).
  * - Add to cart: the existing cart endpoint (store.cart.items).
@@ -19,6 +19,7 @@ import {
     ChevronRight,
     Minus,
     Plus,
+    Rotate3d,
     ShieldCheck,
     Truck,
 } from '@lucide/vue';
@@ -31,11 +32,12 @@ import ProductStorySections from '@/components/store/ProductStorySections.vue';
 import type { ContentSection } from '@/components/store/ProductStorySections.vue';
 import VariantPicker from '@/components/store/VariantPicker.vue';
 import type { Variant } from '@/components/store/VariantPicker.vue';
-import TagVisualizer from '@/components/tag/TagVisualizer.vue';
+import LegacyTag3D from '@/components/three/LegacyTag3D.vue';
 import { Button } from '@/components/ui/button';
+import { useAuthGate } from '@/composables/useAuthGate';
 import { ACTIVATE_URL } from '@/config/public-links';
 import { productCardProps } from '@/lib/store';
-import { howItWorks, login } from '@/routes';
+import { howItWorks } from '@/routes';
 import {
     index as collectionsIndex,
     show as collectionShow,
@@ -84,6 +86,7 @@ const props = defineProps<{
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
+const { requireAuth, loginUrl } = useAuthGate();
 
 const art = computed(() => ({
     name: props.product.collection?.name ?? props.product.name,
@@ -99,6 +102,18 @@ const hasMedia = computed(
     () => props.galleryItems.length > 0 && props.product.gallery.length > 0,
 );
 const face = ref<'front' | 'back'>('front');
+/** Uploaded GLB → the gallery already has the real 3D; otherwise the procedural tag. */
+const hasModel = computed(() =>
+    props.galleryItems.some((item) => item.type === 'model_3d'),
+);
+const view3d = ref(false);
+const show3d = computed(() => !hasMedia.value || view3d.value);
+const tag3d = ref<{ show: (f: 'front' | 'back') => void } | null>(null);
+
+function showFace(next: 'front' | 'back') {
+    face.value = next;
+    tag3d.value?.show(next);
+}
 const faces = ['front', 'back'] as const;
 
 const selectedVariantId = ref<number | null>(
@@ -120,7 +135,7 @@ const form = useForm({
 });
 
 function addToCart() {
-    if (!selectedVariant.value?.in_stock) {
+    if (!selectedVariant.value?.in_stock || !requireAuth()) {
         return;
     }
 
@@ -195,9 +210,9 @@ const after = computed(() => [
 </script>
 
 <template>
-    <!-- Hero: the object on dark, the purchase on paper -->
+    <!-- Hero: the object on warm paper, the purchase on a white card -->
     <section
-        class="relative -mt-16 overflow-hidden bg-fl-black pt-24 pb-14 text-white sm:pt-28 lg:pb-24"
+        class="relative overflow-hidden bg-fl-paper pt-6 pb-14 text-foreground sm:pt-8 lg:pb-24"
     >
         <div
             class="pointer-events-none absolute inset-0"
@@ -209,24 +224,26 @@ const after = computed(() => [
         <div class="fl-container relative">
             <nav
                 aria-label="Ruta de navegación"
-                class="flex flex-wrap items-center gap-1.5 text-sm text-white/55"
+                class="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
             >
                 <template v-if="product.collection">
-                    <Link :href="collectionsIndex()" class="hover:text-white"
+                    <Link
+                        :href="collectionsIndex()"
+                        class="hover:text-foreground"
                         >Colecciones</Link
                     >
                     <ChevronRight class="size-3.5" aria-hidden="true" />
                     <Link
                         :href="collectionShow(product.collection.slug)"
-                        class="hover:text-white"
+                        class="hover:text-foreground"
                         >{{ product.collection.name }}</Link
                     >
                 </template>
-                <Link v-else :href="storeIndex()" class="hover:text-white"
+                <Link v-else :href="storeIndex()" class="hover:text-foreground"
                     >Tienda</Link
                 >
                 <ChevronRight class="size-3.5" aria-hidden="true" />
-                <span class="truncate text-white/85" aria-current="page">{{
+                <span class="truncate text-foreground" aria-current="page">{{
                     product.name
                 }}</span>
             </nav>
@@ -235,8 +252,8 @@ const after = computed(() => [
                 <!-- Visual -->
                 <div class="min-w-0 lg:col-span-7">
                     <div
-                        v-if="hasMedia"
-                        class="rounded-hero bg-fl-paper p-2 text-foreground sm:p-3"
+                        v-if="hasMedia && !show3d"
+                        class="rounded-hero bg-white p-2 text-foreground shadow-fl-overlay sm:p-3"
                     >
                         <ProductGallery
                             :items="galleryItems"
@@ -247,21 +264,36 @@ const after = computed(() => [
                                     : null
                             "
                         />
+                        <div
+                            v-if="!hasModel"
+                            class="flex justify-center px-2 pt-3 pb-1"
+                        >
+                            <button
+                                type="button"
+                                class="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-white px-5 text-sm font-medium transition-colors hover:border-foreground/40"
+                                @click="view3d = true"
+                            >
+                                <Rotate3d class="size-4" aria-hidden="true" />
+                                Ver en 3D — frente y reverso
+                            </button>
+                        </div>
                     </div>
                     <div v-else>
                         <div
-                            class="mx-auto w-[62%] max-w-[22rem] py-6 sm:w-[44%] lg:w-[52%]"
+                            class="mx-auto w-[78%] max-w-[26rem] py-2 sm:w-[56%] lg:w-[68%]"
                         >
-                            <TagVisualizer
+                            <LegacyTag3D
+                                ref="tag3d"
                                 :name="art.name"
                                 :subtitle="art.subtitle"
                                 :year="art.year"
                                 :accent="art.accent"
-                                :face="face"
+                                :label="`${product.name} en 3D`"
+                                @face-change="(f) => (face = f)"
                             />
                         </div>
                         <div
-                            class="mt-2 flex items-center justify-center gap-2"
+                            class="mt-2 flex flex-wrap items-center justify-center gap-2"
                             role="group"
                             aria-label="Cara del tag"
                         >
@@ -272,19 +304,27 @@ const after = computed(() => [
                                 class="min-h-11 rounded-full px-5 text-sm font-medium transition-colors"
                                 :class="
                                     face === option
-                                        ? 'bg-white text-fl-black'
-                                        : 'text-white/70 hover:text-white'
+                                        ? 'bg-foreground text-background'
+                                        : 'text-muted-foreground hover:text-foreground'
                                 "
                                 :aria-pressed="face === option"
-                                @click="face = option"
+                                @click="showFace(option)"
                             >
                                 {{ option === 'front' ? 'Frente' : 'Reverso' }}
                             </button>
+                            <button
+                                v-if="hasMedia"
+                                type="button"
+                                class="min-h-11 rounded-full px-5 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                                @click="view3d = false"
+                            >
+                                Ver fotos
+                            </button>
                         </div>
                         <p
-                            class="mt-3 text-center text-[11px] tracking-[0.18em] text-white/40 uppercase"
+                            class="mt-3 text-center text-[11px] tracking-[0.18em] text-muted-foreground uppercase"
                         >
-                            Render ilustrativo · fotografía próximamente
+                            Vista 3D ilustrativa · arrastra para girar
                         </p>
                     </div>
                 </div>
@@ -292,7 +332,7 @@ const after = computed(() => [
                 <!-- Purchase -->
                 <div class="min-w-0 lg:col-span-5">
                     <div
-                        class="rounded-hero bg-fl-paper p-6 text-foreground shadow-fl-overlay sm:p-8 lg:sticky lg:top-24"
+                        class="rounded-hero border border-border bg-white p-6 text-foreground shadow-fl-overlay sm:p-8 lg:sticky lg:top-24"
                     >
                         <p class="fl-eyebrow">
                             Finisher Legacy Tag<template
@@ -405,7 +445,7 @@ const after = computed(() => [
                                 size="lg"
                                 class="h-11 w-full rounded-full"
                             >
-                                <Link :href="login()"
+                                <Link :href="loginUrl()"
                                     >Inicia sesión para comprar</Link
                                 >
                             </Button>
@@ -598,12 +638,12 @@ const after = computed(() => [
 
     <!-- After buying -->
     <section
-        class="bg-fl-graphite py-16 text-white sm:py-24"
+        class="border-y border-border bg-white py-16 text-foreground sm:py-24"
         aria-labelledby="tag-after-title"
     >
         <div class="fl-container">
             <p
-                class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
             >
                 Qué pasa después de comprarlo
             </p>
@@ -612,25 +652,27 @@ const after = computed(() => [
                 class="mt-4 max-w-2xl font-serif text-[clamp(1.9rem,3.6vw,3rem)] leading-tight"
             >
                 Tu carrera termina.
-                <span class="text-white/50 italic">Tu historia no.</span>
+                <span class="text-muted-foreground italic"
+                    >Tu historia no.</span
+                >
             </h2>
             <ol class="mt-12 grid gap-10 sm:grid-cols-3">
                 <li
                     v-for="(step, index) in after"
                     :key="step.title"
-                    class="border-t border-white/15 pt-6"
+                    class="border-t border-border pt-6"
                 >
-                    <span class="legacy-numeric text-xs text-fl-gold"
+                    <span class="legacy-numeric text-xs text-fl-gold-ink"
                         >0{{ index + 1 }}</span
                     >
                     <p class="mt-3 font-serif text-2xl">{{ step.title }}</p>
-                    <p class="mt-2 text-[15px] text-white/60">
+                    <p class="mt-2 text-[15px] text-muted-foreground">
                         {{ step.body }}
                     </p>
                     <a
                         v-if="step.link"
                         :href="ACTIVATE_URL"
-                        class="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fl-gold-soft underline-offset-4 hover:underline"
+                        class="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fl-gold-ink underline-offset-4 hover:underline"
                     >
                         Ir a Activar
                         <ArrowRight class="size-4" aria-hidden="true" />

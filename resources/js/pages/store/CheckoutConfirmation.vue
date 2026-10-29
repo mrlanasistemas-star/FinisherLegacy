@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * Where Stripe's return_url lands (and where checkout goes after a
- * successful confirmPayment). It shows ONLY the server's state — never what
- * the redirect claims — and polls it briefly while the signed webhook is on
- * its way: procesando → confirmado, or error with a retry. Realtime
+ * Where Stripe's return_url and OpenPay's 3D Secure redirect land (and
+ * where checkout goes after a successful card payment). It shows ONLY the
+ * server's state — never what the redirect claims — and polls `estado`
+ * (which re-reads an OpenPay charge server-side) while the payment settles:
+ * procesando → confirmado, or error with a retry. Realtime
  * (`order.updated` on the user's private channel) refreshes it sooner when
  * available; polling is the fallback.
  */
@@ -212,13 +213,30 @@ function checkAgain() {
                             pedidos.
                         </template>
                     </p>
-                    <Button
+                    <div
                         v-if="view === 'waiting'"
-                        variant="outline"
-                        class="mt-6 h-11 rounded-full"
-                        @click="checkAgain"
-                        >Revisar de nuevo</Button
+                        class="mt-6 flex flex-wrap justify-center gap-3"
                     >
+                        <Button
+                            variant="outline"
+                            class="h-11 rounded-full"
+                            @click="checkAgain"
+                            >Revisar de nuevo</Button
+                        >
+                        <Button
+                            v-if="
+                                state.payable &&
+                                state.payment_state === 'pending'
+                            "
+                            as-child
+                            variant="ghost"
+                            class="h-11 rounded-full"
+                        >
+                            <Link :href="`/checkout/${state.uuid}`"
+                                >Volver al pago</Link
+                            >
+                        </Button>
+                    </div>
                 </template>
             </section>
 
