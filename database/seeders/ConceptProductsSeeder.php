@@ -30,8 +30,6 @@ class ConceptProductsSeeder extends Seeder
             ['visera-fl', 'Visera FL', ProductType::Accessory, $accessories, ProductAvailability::ComingSoon, 'Visera de running ligera, banda técnica y monograma FL discreto.'],
             ['gorra-fl', 'Gorra FL', ProductType::Accessory, $accessories, ProductAvailability::Concept, 'Gorra deportiva de cinco paneles en negro con FL dorado.'],
             ['jersey-fl', 'Jersey FL', ProductType::Apparel, $apparel, ProductAvailability::Concept, 'Jersey técnico de alto rendimiento con vivos champagne.'],
-            ['backpack-fl', 'Backpack FL', ProductType::Accessory, $accessories, ProductAvailability::Concept, 'Mochila deportiva para día de carrera con compartimento frontal.'],
-            ['llavero-nfc', 'Llavero NFC', ProductType::Accessory, $accessories, ProductAvailability::ComingSoon, 'Llavero metálico con panel negro, monograma FL y NFC integrado que abre tu Legacy.'],
         ];
 
         foreach ($products as [$slug, $name, $type, $categoryId, $availability, $tagline]) {

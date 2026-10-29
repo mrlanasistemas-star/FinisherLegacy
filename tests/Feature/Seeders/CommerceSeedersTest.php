@@ -30,17 +30,17 @@ test('LegacyPlateModelSeeder seeds exactly three front-only V3 layouts without a
     expect($trayecto->fields()->where('face', 'front')->get()->map(fn ($f) => $f->field_key->value)->all())->toContain('bib_number', 'overall_position', 'event_date');
 });
 
-test('ProductCatalogSeeder seeds the five ecosystem products with purchasable variants', function () {
+test('ProductCatalogSeeder seeds the store products (no Legacy Plate, no socks) with purchasable variants', function () {
     $this->seed(ProductCatalogSeeder::class);
 
     // The internal "fotografia-digital" product comes from a migration, not this seeder.
-    expect(Product::where('type', '!=', ProductType::DigitalPhoto)->count())->toBe(5);
+    expect(Product::where('type', '!=', ProductType::DigitalPhoto)->count())->toBe(3);
     $trisuit = Product::where('slug', 'trisuit')->firstOrFail();
     expect($trisuit->variants()->count())->toBe(24);
 
-    $legacyPlate = Product::where('slug', 'legacy-plate')->firstOrFail();
-    expect($legacyPlate->qr_capable)->toBeTrue()
-        ->and($legacyPlate->tracks_inventory)->toBeFalse();
+    expect(Product::whereIn('slug', ['legacy-plate', 'fast-t1-socks'])->exists())->toBeFalse()
+        ->and(Product::where('slug', 'racepack')->value('tagline'))->toBe('La mochila para tu día de carrera.')
+        ->and(Product::where('qr_capable', true)->exists())->toBeFalse();
 });
 
 test('ProductCatalogSeeder is idempotent — running it twice does not duplicate rows', function () {
@@ -48,7 +48,7 @@ test('ProductCatalogSeeder is idempotent — running it twice does not duplicate
     $this->seed(ProductCatalogSeeder::class);
 
     // The internal "fotografia-digital" product comes from a migration, not this seeder.
-    expect(Product::where('type', '!=', ProductType::DigitalPhoto)->count())->toBe(5);
+    expect(Product::where('type', '!=', ProductType::DigitalPhoto)->count())->toBe(3);
 });
 
 test('CommerceDemoSeeder seeds one manual and one API organizer', function () {
