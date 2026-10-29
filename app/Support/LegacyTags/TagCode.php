@@ -6,8 +6,8 @@ use App\Models\LegacyTag;
 use RuntimeException;
 
 /**
- * The public code of a physical tag — the only thing the NFC chip and the
- * backup QR carry (https://<domain>/t/{code}) and what a person can type at
+ * The public code of a physical tag — the only thing the NFC chip carries
+ * (https://<domain>/t/{code}) and what a person can type at
  * /activar. CSPRNG (random_int), no ambiguous glyphs (0/O, 1/I/L), never
  * derived from the internal id, a person or an order.
  */

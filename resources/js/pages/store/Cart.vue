@@ -24,6 +24,7 @@ import { computed, ref } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { index as collectionsIndex } from '@/routes/collections';
 
 type CartItem = {
     id: number;
@@ -450,21 +451,42 @@ const details = (item: CartItem) =>
 
             <div
                 v-else
-                class="flex flex-col items-center gap-4 py-24 text-center"
+                class="relative mx-auto mt-4 flex max-w-2xl flex-col items-center overflow-hidden rounded-hero border border-border bg-card px-6 py-14 text-center shadow-fl-micro sm:py-20"
             >
+                <div
+                    class="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(60%_100%_at_50%_0%,color-mix(in_srgb,var(--fl-gold)_14%,transparent),transparent_75%)]"
+                    aria-hidden="true"
+                />
                 <span
-                    class="flex size-16 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
+                    class="relative flex size-16 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink ring-1 ring-fl-gold/25"
                 >
                     <ShoppingBag class="size-7" />
                 </span>
-                <p class="font-serif text-2xl">Tu carrito está vacío.</p>
-                <p class="max-w-sm text-sm text-muted-foreground">
-                    El equipo que usas en tus carreras también forma parte de tu
-                    historia.
+                <p class="relative mt-6 font-serif text-3xl">
+                    Tu carrito está vacío.
                 </p>
-                <Button as-child class="mt-2 h-12 rounded-full px-6">
-                    <Link href="/tienda">Ver la tienda</Link>
-                </Button>
+                <p
+                    class="relative mt-3 max-w-sm text-[15px] leading-relaxed text-muted-foreground"
+                >
+                    Empieza por el Finisher Legacy Tag de tu carrera, o por el
+                    equipo que te acompaña en cada kilómetro.
+                </p>
+                <div
+                    class="relative mt-8 flex flex-col items-center gap-3 sm:flex-row"
+                >
+                    <Button as-child class="h-12 rounded-full px-6">
+                        <Link :href="collectionsIndex()"
+                            >Explorar colecciones</Link
+                        >
+                    </Button>
+                    <Button
+                        as-child
+                        variant="outline"
+                        class="h-12 rounded-full bg-transparent px-6"
+                    >
+                        <Link href="/tienda">Ver la tienda</Link>
+                    </Button>
+                </div>
             </div>
         </div>
 

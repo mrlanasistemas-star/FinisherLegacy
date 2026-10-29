@@ -42,7 +42,10 @@ class RecordTagScan
         }
     }
 
-    /** `?src=qr` on the printed QR; anything else that reaches /t/{code} is the NFC chip. */
+    /**
+     * Anything that reaches /t/{code} without `?src` is the NFC chip. The tag
+     * no longer has a printed QR, but old `?src=qr` links are still accepted.
+     */
     public static function sourceFrom(Request $request): TagAccessSource
     {
         return TagAccessSource::tryFrom((string) $request->query('src', 'nfc')) ?? TagAccessSource::Nfc;

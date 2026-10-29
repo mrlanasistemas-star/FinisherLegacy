@@ -37,8 +37,8 @@ const dark = computed(() => props.tone === 'dark');
         "
     >
         <div
-            class="relative aspect-[4/5] overflow-hidden rounded-media"
-            :class="dark ? 'bg-fl-graphite' : 'bg-fl-black'"
+            class="relative aspect-[4/5] overflow-hidden rounded-media transition-shadow duration-500 group-hover:shadow-fl-float"
+            :class="dark ? 'bg-fl-graphite' : 'bg-fl-cream ring-1 ring-fl-line'"
         >
             <template v-if="collection.cover_url">
                 <img
@@ -49,7 +49,7 @@ const dark = computed(() => props.tone === 'dark');
                     class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03] motion-reduce:transition-none"
                 />
                 <div
-                    class="absolute inset-0 bg-gradient-to-t from-fl-black/75 via-transparent to-transparent"
+                    class="absolute inset-0 bg-gradient-to-t from-fl-black/25 via-transparent to-transparent"
                 />
             </template>
             <template v-else>
@@ -75,11 +75,11 @@ const dark = computed(() => props.tone === 'dark');
 
             <span
                 v-if="collection.year"
-                class="legacy-numeric absolute top-4 left-4 rounded-full bg-fl-black/60 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-fl-gold-soft"
+                class="legacy-numeric absolute top-4 left-4 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-fl-gold-ink shadow-fl-micro backdrop-blur"
                 >{{ collection.year }}</span
             >
             <span
-                class="absolute right-4 bottom-4 flex size-10 items-center justify-center rounded-full bg-white text-fl-black transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
+                class="absolute right-4 bottom-4 flex size-10 items-center justify-center rounded-full bg-white text-fl-black shadow-fl-soft ring-1 ring-fl-line transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
                 aria-hidden="true"
             >
                 <ArrowUpRight class="size-4" />

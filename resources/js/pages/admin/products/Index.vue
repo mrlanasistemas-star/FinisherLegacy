@@ -356,7 +356,7 @@ const typeOptions = [
                         />
                         {{ product.active ? 'Visible' : 'Oculto' }}
                         <template v-if="product.qr_capable">
-                            · <Nfc class="size-3.5" /> Legacy Code
+                            · <Nfc class="size-3.5" /> Conectado (NFC)
                         </template>
                     </p>
                 </div>

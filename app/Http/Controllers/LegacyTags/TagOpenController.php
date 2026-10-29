@@ -15,8 +15,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * `GET /t/{code}` — what the NFC chip (and `?src=qr` on the printed QR)
- * opens (docs/architecture/commerce-os.md §Activación y Mi Legacy):
+ * `GET /t/{code}` — what the NFC chip opens (old `?src=qr` links from the
+ * retired printed QR still work and are counted as such) (docs/architecture/commerce-os.md §Activación y Mi Legacy):
  *
  *   activated   → the story (owner always; others per its visibility,
  *                 else a friendly "Este recuerdo es privado")

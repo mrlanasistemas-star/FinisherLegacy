@@ -66,6 +66,26 @@ const photo = MEDIA.photo;
 const visibleCategories = computed(() =>
     props.categories.filter((c) => c.products_count > 0),
 );
+// Columns follow the count, so a short list never leaves an empty grey cell.
+const categoryCols = computed(() => {
+    const n = Math.min(visibleCategories.value.length, 8);
+
+    if (n === 1) {
+        return 'grid-cols-1';
+    }
+
+    if (n === 3) {
+        return 'max-sm:grid-cols-1 sm:grid-cols-3';
+    }
+
+    // Odd counts: the last tile spans the row on two columns.
+    const odd =
+        n % 2 === 1
+            ? '[&>li:last-child]:col-span-2 lg:[&>li:last-child]:col-span-1'
+            : '';
+
+    return `${n >= 4 ? 'lg:grid-cols-4' : ''} ${odd}`;
+});
 
 // Each band shows products the previous bands didn't, so a small
 // catalog never reads as the same four cards repeated.
@@ -179,18 +199,12 @@ const legacyExtras = computed(() =>
                         </p>
                     </div>
                 </div>
-                <div
-                    class="absolute -top-6 -left-2 hidden w-56 rounded-card border border-border bg-card p-4 shadow-fl-float sm:block lg:-left-8"
+                <p
+                    class="absolute top-4 left-4 z-10 inline-flex items-center gap-2 rounded-full border border-fl-gold/30 bg-white/90 px-3 py-1.5 text-[11px] font-semibold tracking-[0.14em] text-fl-gold-ink uppercase shadow-fl-micro backdrop-blur sm:top-5 sm:left-5"
                 >
-                    <p
-                        class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.16em] text-fl-gold-ink uppercase"
-                    >
-                        <Nfc class="size-3.5" aria-hidden="true" /> Conectado
-                    </p>
-                    <p class="mt-2 text-sm leading-snug text-foreground">
-                        Acerca tu teléfono y se abre tu historia.
-                    </p>
-                </div>
+                    <Nfc class="size-3.5" aria-hidden="true" /> Solo acerca tu
+                    teléfono
+                </p>
             </div>
         </div>
     </section>
@@ -204,7 +218,8 @@ const legacyExtras = computed(() =>
         <div class="fl-container py-10 sm:py-12">
             <h2 id="categorias" class="sr-only">Categorías</h2>
             <ul
-                class="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border lg:grid-cols-4"
+                class="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border"
+                :class="categoryCols"
             >
                 <li
                     v-for="(category, index) in visibleCategories.slice(0, 8)"
@@ -318,16 +333,16 @@ const legacyExtras = computed(() =>
                 <p class="mt-5 text-lg leading-relaxed text-muted-foreground">
                     {{
                         featured.tagline ||
-                        'Un tag de colección con NFC y QR: lo activas y guardas ahí la historia de tu carrera.'
+                        'Un tag de colección con chip NFC: acercas tu teléfono, lo activas y guardas ahí la historia de tu carrera.'
                     }}
                 </p>
                 <ul class="mt-6 flex flex-wrap gap-2 text-sm">
                     <li
                         v-for="item in [
                             'Diseño de colección',
-                            'NFC',
-                            'QR de respaldo',
-                            'Código impreso',
+                            'Chip NFC',
+                            'Correa incluida',
+                            'Sin apps',
                         ]"
                         :key="item"
                         class="rounded-full border border-border px-3 py-1.5 text-muted-foreground"
@@ -443,69 +458,70 @@ const legacyExtras = computed(() =>
         </div>
     </section>
 
-    <!-- Editorial blocks -->
+    <!-- Editorial blocks — light cards: photo on top, text on white -->
     <section class="fl-container pb-16 sm:pb-24" aria-label="Historias">
         <div class="grid gap-5 md:grid-cols-2">
             <Reveal
                 as="article"
-                class="group relative aspect-[4/5] overflow-hidden rounded-hero bg-fl-black sm:aspect-[5/4] md:aspect-[4/5] lg:aspect-[5/4]"
+                class="group relative flex flex-col overflow-hidden rounded-hero border border-border bg-card p-3 shadow-fl-micro transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-fl-float"
             >
-                <img
-                    :src="photo.runner.src"
-                    :srcset="photo.runner.srcset"
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    :alt="photo.runner.alt"
-                    loading="lazy"
-                    decoding="async"
-                    class="absolute inset-0 size-full object-cover object-[30%_30%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03]"
-                />
                 <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
-                />
-                <div class="absolute inset-x-0 bottom-0 p-7 sm:p-9">
-                    <p
-                        class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
-                    >
-                        Antes de la meta
-                    </p>
+                    class="relative aspect-[16/10] overflow-hidden rounded-media bg-fl-cream"
+                >
+                    <img
+                        :src="photo.runner.src"
+                        :srcset="photo.runner.srcset"
+                        sizes="(min-width: 768px) 50vw, 100vw"
+                        :alt="photo.runner.alt"
+                        loading="lazy"
+                        decoding="async"
+                        class="absolute inset-0 size-full object-cover object-[30%_30%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03]"
+                    />
+                </div>
+                <div
+                    class="flex flex-1 flex-col px-4 pt-6 pb-5 sm:px-6 sm:pb-7"
+                >
+                    <p class="fl-eyebrow">Antes de la meta</p>
                     <h3
-                        class="mt-2 max-w-sm font-serif text-3xl leading-tight text-white"
+                        class="mt-2 max-w-md font-serif text-2xl leading-tight text-foreground sm:text-3xl"
                     >
                         Hecho para el kilómetro en que todo cuesta.
                     </h3>
                     <Link
                         :href="catalog({ query: { tipo: 'apparel' } })"
-                        class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white underline-offset-4 after:absolute after:inset-0 hover:underline"
+                        class="mt-5 inline-flex items-center gap-2 self-start text-sm font-semibold text-foreground underline decoration-fl-gold decoration-1 underline-offset-[6px] transition-[text-decoration-thickness] after:absolute after:inset-0 hover:decoration-2"
                     >
-                        Ver ropa técnica <ArrowRight class="size-4" />
+                        Ver ropa técnica
+                        <ArrowRight
+                            class="size-4 transition-transform group-hover:translate-x-0.5"
+                        />
                     </Link>
                 </div>
             </Reveal>
             <Reveal
                 as="article"
                 :delay-ms="80"
-                class="group relative aspect-[4/5] overflow-hidden rounded-hero bg-fl-black sm:aspect-[5/4] md:aspect-[4/5] lg:aspect-[5/4]"
+                class="group relative flex flex-col overflow-hidden rounded-hero border border-border bg-card p-3 shadow-fl-micro transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-fl-float"
             >
-                <img
-                    :src="photo.triumph.src"
-                    :srcset="photo.triumph.srcset"
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    :alt="photo.triumph.alt"
-                    loading="lazy"
-                    decoding="async"
-                    class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03]"
-                />
                 <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
-                />
-                <div class="absolute inset-x-0 bottom-0 p-7 sm:p-9">
-                    <p
-                        class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
-                    >
-                        Después de la meta
-                    </p>
+                    class="relative aspect-[16/10] overflow-hidden rounded-media bg-fl-cream"
+                >
+                    <img
+                        :src="photo.triumph.src"
+                        :srcset="photo.triumph.srcset"
+                        sizes="(min-width: 768px) 50vw, 100vw"
+                        :alt="photo.triumph.alt"
+                        loading="lazy"
+                        decoding="async"
+                        class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03]"
+                    />
+                </div>
+                <div
+                    class="flex flex-1 flex-col px-4 pt-6 pb-5 sm:px-6 sm:pb-7"
+                >
+                    <p class="fl-eyebrow">Después de la meta</p>
                     <h3
-                        class="mt-2 max-w-sm font-serif text-3xl leading-tight text-white"
+                        class="mt-2 max-w-md font-serif text-2xl leading-tight text-foreground sm:text-3xl"
                     >
                         Para el momento que no quieres olvidar.
                     </h3>
@@ -513,9 +529,12 @@ const legacyExtras = computed(() =>
                         :href="
                             featured ? productShow(featured.slug) : catalog()
                         "
-                        class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white underline-offset-4 after:absolute after:inset-0 hover:underline"
+                        class="mt-5 inline-flex items-center gap-2 self-start text-sm font-semibold text-foreground underline decoration-fl-gold decoration-1 underline-offset-[6px] transition-[text-decoration-thickness] after:absolute after:inset-0 hover:decoration-2"
                     >
-                        Guardar tu historia <ArrowRight class="size-4" />
+                        Guardar tu historia
+                        <ArrowRight
+                            class="size-4 transition-transform group-hover:translate-x-0.5"
+                        />
                     </Link>
                 </div>
             </Reveal>

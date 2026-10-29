@@ -80,8 +80,9 @@ defineProps<{
             <p
                 class="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground"
             >
-                Acerca tu teléfono a tu Finisher Legacy Tag o escribe el código
-                que trae impreso. Tu historia empieza aquí.
+                Acerca tu teléfono a tu Finisher Legacy Tag y se abre solo. Si
+                tu teléfono no lee NFC, escribe su código. Tu historia empieza
+                aquí.
             </p>
             <Link
                 :href="activateIndex().url"

@@ -23,8 +23,8 @@ const open = defineModel<boolean>('open', { default: false });
 
 /**
  * `capture`: hand the raw decoded text back to the caller (`decode` event)
- * instead of opening a Legacy Code — used by Venta rápida to scan the QR
- * printed on a Finisher Legacy Tag (/t/{code}?src=qr).
+ * instead of opening a Legacy Code. Not used for the Finisher Legacy Tag,
+ * which carries only NFC (no printed QR).
  */
 const props = withDefaults(
     defineProps<{ capture?: boolean; title?: string; description?: string }>(),

@@ -63,7 +63,7 @@ defineProps<{
             <div class="flex items-end gap-4 sm:gap-8">
                 <!-- Avatar -->
                 <div
-                    class="-mt-10 shrink-0 rounded-full p-[3px] sm:-mt-16"
+                    class="relative z-10 -mt-10 shrink-0 rounded-full p-[3px] sm:-mt-16"
                     :class="isFinisher ? 'fl-achievement-ring' : 'bg-border/70'"
                     :title="isFinisher ? 'Finisher' : undefined"
                 >
@@ -100,14 +100,14 @@ defineProps<{
                 </dl>
             </div>
 
-            <div class="mt-3 sm:mt-5 sm:flex sm:gap-8">
-                <div class="hidden w-36 shrink-0 sm:block" aria-hidden="true" />
-                <div class="min-w-0 flex-1">
+            <!-- Info aligns with the avatar's left edge (and the tabs below) -->
+            <div class="mt-3 sm:mt-4">
+                <div class="min-w-0">
                     <div
                         class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
                     >
                         <h1
-                            class="flex items-center gap-2 text-xl font-semibold tracking-tight"
+                            class="flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl"
                         >
                             {{ username }}
                             <span

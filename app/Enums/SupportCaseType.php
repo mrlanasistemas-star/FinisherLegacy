@@ -21,7 +21,7 @@ enum SupportCaseType: string
         return match ($this) {
             self::ActivationHelp => 'Ayuda con activación',
             self::NfcFailure => 'Falla NFC',
-            self::QrFailure => 'Falla QR',
+            self::QrFailure => 'Falla QR (antiguo)',
             self::Defect => 'Defecto',
             self::Return => 'Devolución',
             self::Replacement => 'Reemplazo',
@@ -31,10 +31,15 @@ enum SupportCaseType: string
     }
 
     /**
+     * Options for new cases. `QrFailure` stays only so old cases keep their
+     * label — the tag no longer carries a printed QR.
+     *
      * @return list<array{value: string, label: string}>
      */
     public static function options(): array
     {
-        return array_map(fn (self $c) => ['value' => $c->value, 'label' => $c->label()], self::cases());
+        $cases = array_filter(self::cases(), fn (self $c) => $c !== self::QrFailure);
+
+        return array_values(array_map(fn (self $c) => ['value' => $c->value, 'label' => $c->label()], $cases));
     }
 }

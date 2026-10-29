@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Activación + Mi Legacy (docs/architecture/commerce-os.md §Activación y Mi Legacy)
 |--------------------------------------------------------------------------
-| /t/{code} is what the NFC chip carries (QR: ?src=qr). Codes are random,
+| /t/{code} is what the NFC chip carries (old `?src=qr` links still resolve;
+| the tag no longer has a printed QR). Codes are random,
 | never incremental, and every public lookup is behind `tag-open`.
 */
 

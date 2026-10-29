@@ -7,7 +7,8 @@ captura → grabado frente/reverso → verificación → entrega. El admin girab
 alrededor de eventos, Plate Studio, producción y dispositivos.
 
 **Ahora:** **Finisher Legacy Tag** terminado de fábrica (diseño por colección,
-correa, NFC, URL única, QR de respaldo, código) → cobro → entrega inmediata →
+correa, chip NFC con URL única y código para escribir a mano; **sin QR**) →
+cobro → entrega inmediata →
 **activación digital** → el atleta construye su recuerdo. La plataforma es el
 valor; el objeto es la puerta.
 
@@ -40,13 +41,13 @@ conectados existentes. Un `LegacyTag` puede enlazar opcionalmente su chip
 | `inventory_lots` | Lote de fabricación por SKU (proveedor, costo, fechas, incidencias). |
 | `legacy_tags` | **Unidad física**: `serial` interno, `public_code` aleatorio (12 chars, alfabeto sin ambigüedad ≈59 bits), SKU, lote, ubicación, estado, canal, aliado, pedido/ítem, dueño, `athlete_owned_product_id`, `replaces_tag_id`, fechas venta/entrega/activación, contadores de apertura. |
 | `legacy_tag_events` | Historial append-only por unidad (kardex de pieza). |
-| `legacy_tag_scans` | Analítica sin PII: `tag_opened`, `activation_started`, `activation_completed`, `legacy_viewed`, `share_opened` × fuente `nfc`/`qr`/`code`/`link`. Sin IP ni UA; hash diario. Prune 365 d. |
+| `legacy_tag_scans` | Analítica sin PII: `tag_opened`, `activation_started`, `activation_completed`, `legacy_viewed`, `share_opened` × fuente `nfc`/`code`/`link` (`qr` solo para enlaces antiguos `?src=qr`; el tag ya no lleva QR). Sin IP ni UA; hash diario. Prune 365 d. |
 | `orders` (+) | `sales_channel` (direct/ally/own_event/online), `ally_id`, `inventory_location_id`, `seller_user_id`, `delivery_method`, envío/tracking, `sale_started_at` (KPI ≤90 s). |
 | `product_price_schedules` (+) | `sales_channel`, `ally_id` → precio por canal/aliado. La tienda online solo ve precios sin canal. |
 | `legacy_stories` | El recuerdo que abre un tag (1:1 opcional con tag). Participación real o datos libres, dedicatoria, destinatario, visibilidad `public`/`unlisted`/`private`. |
 | `legacy_story_media` | Fotos/audio/certificado → `media_files` (MediaStorage). |
 | `legacy_story_shares` | Enlace de destinatario ("Para mamá"), revocable; abre aunque la historia sea privada. |
-| `support_cases` | Incidencias: activación, NFC, QR, defecto, devolución, reemplazo, propiedad. |
+| `support_cases` | Incidencias: activación, NFC, defecto, devolución, reemplazo, propiedad (`qr_failure` solo existe para casos antiguos; no se ofrece al crear). |
 
 Migraciones: `2026_10_27_1000xx_*` — solo aditivas, reversibles, sin drops.
 
@@ -70,14 +71,14 @@ manufactured → in_stock ⇄ reserved → sold → delivered → activated
 
 | Acción | Uso |
 |---|---|
-| `CreateLot` | Registra lote y genera N tags `manufactured` (códigos listos para codificar NFC e imprimir QR). |
+| `CreateLot` | Registra lote y genera N tags `manufactured` (códigos listos para codificar el chip NFC). |
 | `ReceiveLot` | Lote recibido → `in_stock` en una ubicación; defectuosos → `disabled`. Stock agregado vía `InventoryService::receive`. |
 | `TransferTags` | Unidades o cantidad FIFO entre ubicaciones (`InventoryService::transfer`, movimientos `transfer_out`/`transfer_in`). |
 | `RecordInPersonSale` | Venta rápida (POS, aliado, stand): pedido pagado/surtido/completado con canal, ubicación, vendedor; pago manual; `sellDirect`; piezas `delivered`. |
 | `AssignTagsToOrderItem` | Pedido online: al surtir (`FulfillOrderItem`) liga las piezas exactas; envío → `sold`, entrega confirmada → `delivered`. |
 | `ActivateTag` | Reclamo: lock + `lockForUpdate`, idempotente para el dueño, `TAG_ALREADY_ACTIVATED` (409) para otro, `TAG_NOT_ACTIVATABLE` (422, `reason`: disabled/replaced/returned/not_sold). Crea `AthleteOwnedProduct` (Mi equipo / `/api/v1/me/gear` siguen funcionando) y la `LegacyStory` (no listada). |
 | `ManageTag` | `replace`, `return` (revoca dueño, la historia se conserva), `revokeOwnership`, `disable`/`enable`. |
-| `RecordTagScan` | Analítica privada. `?src=qr` = QR; sin parámetro = NFC. |
+| `RecordTagScan` | Analítica privada. Sin parámetro = NFC; `?src=qr` se sigue aceptando para enlaces antiguos. |
 
 `InventoryService` ganó `sellDirect()` (venta sin reserva, nunca toca
 reservas ajenas) y `transfer()`. `ResolveProductPrice::handle()` acepta
@@ -87,7 +88,7 @@ reservas ajenas) y `transfer()`. `ResolveProductPrice::handle()` acepta
 
 | URL | Qué hace |
 |---|---|
-| `/t/{code}` | Lo que lleva el chip NFC; el QR lleva `/t/{code}?src=qr`. Resuelve estado → historia, activación o página honesta. |
+| `/t/{code}` | Lo que lleva el chip NFC (el producto no tiene QR; los enlaces antiguos `?src=qr` siguen funcionando). Resuelve estado → historia, activación o página honesta. |
 | `/activar` | Escribir el código impreso (Legacy Code). |
 | `/activar/{code}` | Flujo de activación (login/registro → reclamar → completar recuerdo). |
 | `/legacy/{publicId}` | Historia (según visibilidad). |
@@ -125,7 +126,7 @@ reglas, y `App\Support\LegacyTags\StoryPresenter` arma lo que ven web y API.
 |---|---|---|
 | `GET /t/{code}` | `tag.open` | Normaliza (`TagCode::normalize`), registra `tag_opened` (`?src=qr` → qr, sin src → nfc). Activado → historia (dueño siempre; otros según visibilidad, si no `legacy/Private`). Activable (vendido/entregado o stock en ubicación de campo) → `/activar/{code}?src=…`. Resto → `activate/Unavailable` con `reason`. |
 | `GET /n/{token}` | `nfc.tap` | Si un `LegacyTag.nfc_tag_id` apunta a ese chip → redirige a `/t/{code}`. |
-| `GET /activar` · `POST /activar` | `activate.index` · `activate.lookup` | Escribir el código (o pegar la URL del QR) → `/activar/{code}?src=code`. Código inválido/desconocido → error de validación sin pistas. |
+| `GET /activar` · `POST /activar` | `activate.index` · `activate.lookup` | Respaldo cuando el teléfono no lee NFC: escribir el código (o pegar un enlace `/t/…`) → `/activar/{code}?src=code`. Código inválido/desconocido → error de validación sin pistas. |
 | `GET /activar/{code}` | `activate.show` | Pasos: 1 Tu tag · 2 Tu cuenta · 3 Activar · 4 ¿De qué carrera? Recuerda la fuente por código en sesión (sobrevive al login). Registra `activation_started`. Desconocido → 404 con página amable. |
 | `GET /activar/{code}/continuar/{login\|register}` | `activate.continue` | Guarda `url.intended` = `activate.show` (patrón NFC). |
 | `POST /activar/{code}` 🔒 | `activate.store` | `ActivateTag` (throttle `api-claim`). 409/422 → toast + estado `taken`/`unavailable`. |
@@ -168,7 +169,8 @@ audio solo se valida en el navegador (no hay ffprobe obligatorio).
 `tag_opened` (/t, GET /api/v1/tags) · `activation_started` (vista de
 activación activable) · `activation_completed` (ActivateTag) ·
 `legacy_viewed` (historia) · `share_opened` (enlace de destinatario) ×
-fuente `nfc`/`qr`/`code`/`link`, `is_owner`, hash diario de visitante.
+fuente `nfc`/`code`/`link` (`qr` = enlace antiguo; en el tablero cuenta como
+enlace), `is_owner`, hash diario de visitante.
 
 ## Administración: catálogo, inventario y tags
 
@@ -185,16 +187,16 @@ navegación en `resources/js/config/admin-catalog-links.ts`.
 | `/admin/inventario/existencias` | Piezas por SKU × ubicación (en inventario / reservadas / vendidas / activadas), alerta con el mínimo del SKU. El agregado sigue en `/admin/comercio/inventario`. | `inventory.manage` |
 | `/admin/inventario/ubicaciones` (+ `/{id}`) | CRUD de ubicaciones; con historial → se desactiva. Detalle: stock por SKU y movimientos. | `inventory.manage` |
 | `/admin/inventario/lotes` (+ `/{uuid}`) | Lotes y sus piezas. | `tags.view` |
-| `/admin/inventario/lotes/crear`, `POST /lotes`, `/lotes/{uuid}/codigos.csv`, `POST /lotes/{uuid}/recibir` | `CreateLot` (≤ 5000), CSV para fábrica (`serial, public_code, display_code, nfc_url, qr_url`), `ReceiveLot` (defectuosos por código, URL o serie). | `tags.manage` |
+| `/admin/inventario/lotes/crear`, `POST /lotes`, `/lotes/{uuid}/codigos.csv`, `POST /lotes/{uuid}/recibir` | `CreateLot` (≤ 5000), CSV para fábrica (`serial, public_code, display_code, nfc_url`; sin QR), `ReceiveLot` (defectuosos por código, URL o serie). | `tags.manage` |
 | `/admin/inventario/transferir` | `TransferTags::quantity` o `::units` (códigos/URLs/series pegados). | `tags.manage` |
 | `/admin/inventario/proveedores` | Proveedores (con lotes → inactivo). | ver `allies.view`, escribir `allies.manage` |
-| `/admin/tags`, `/admin/tags/{uuid}`, `/admin/tags/{uuid}/qr.svg` | Registro por pieza con filtros (estado, SKU, colección, ubicación, lote, canal, aliado, activado, rango de fechas) y búsqueda por serie / código / URL escaneada / pedido / correo del dueño; detalle con trazabilidad, historial, aperturas, soporte, NFC/QR. | `tags.view` |
+| `/admin/tags`, `/admin/tags/{uuid}` | Registro por pieza con filtros (estado, SKU, colección, ubicación, lote, canal, aliado, activado, rango de fechas) y búsqueda por serie / código / URL escaneada / pedido / correo del dueño; detalle con trazabilidad, historial, aperturas, soporte, URL del NFC y código. | `tags.view` |
 | `POST /admin/tags/{uuid}/{desactivar,reactivar,reemplazar,devolver,revocar,notas}` | `ManageTag` / `TagLifecycle::note`, motivo obligatorio. | `tags.manage` |
 
 Notas:
 
 - URLs públicas de una pieza: `App\Support\LegacyTags\TagUrls` (delega en
-  `LegacyTag::nfcUrl()/qrUrl()`, ruta `tag.open`). La historia se enlaza con
+  `LegacyTag::nfcUrl()`, ruta `tag.open`; el tag no lleva QR). La historia se enlaza con
   `route('legacy.story.show', $publicId)`.
 - Estados y colores de tag/lote/movimiento: un solo helper,
   `resources/js/lib/tagStatus.ts`.
@@ -214,7 +216,7 @@ Móvil: Inicio · Venta rápida · Pedidos · Tags · Más. Ver `docs/MODULES.md
 | URL | Permiso | Qué es |
 |---|---|---|
 | `/admin` | `dashboard.admin.view` | Inicio: `App\Queries\Admin\CommerceDashboardMetrics` (`?rango=hoy|7d|30d|mes`). Ventas (total, pedidos, ticket, piezas sin fotos digitales), por canal, inventario (tags `in_stock`/`reserved`, SKUs bajo `minimum_stock`, agotados), activación (vendidas en el periodo → activadas, pendientes, tasa, % en `legacy.tags.kpi.activation_window_hours` sobre piezas vendidas hace ≥ esa ventana, mediana), producto (aperturas por fuente, incidencias, devoluciones, reemplazos, defectos), colecciones, KPI venta rápida (mediana `sale_started_at → created_at`, meta 90 s interna). Sin datos ⇒ `null` ⇒ "—"/"Sin información todavía". SQL portable; medianas en PHP sobre conjuntos acotados. |
-| `/admin/venta-rapida` | `pos.sell` | POS (≤90 s): ubicación recordada en el dispositivo, escaneo/pegado/teclado-wedge/cámara (`QrScannerDialog` modo `capture`) o tiles de diseño, precio por canal/aliado (`ResolveProductPrice`), efectivo/terminal, comprador opcional → `RecordInPersonSale`. `started_at` del cliente, acotado a [ahora − 1 h, ahora]. `GET …/pieza` valida un código contra la ubicación (JSON). |
+| `/admin/venta-rapida` | `pos.sell` | POS (≤90 s): ubicación recordada en el dispositivo, pegado/teclado-wedge del código (sin cámara: el tag no tiene QR) o tiles de diseño, precio por canal/aliado (`ResolveProductPrice`), efectivo/terminal, comprador opcional → `RecordInPersonSale`. `started_at` del cliente, acotado a [ahora − 1 h, ahora]. `GET …/pieza` valida un código contra la ubicación (JSON). |
 | `/aliado`, `/aliado/venta-rapida`, `POST /aliado/incidencias` | `ally.portal` | Portal del aliado: solo sus aliados vía `ally_user` (`App\Support\Commerce\PosLocations`). Ubicación ajena ⇒ 403; pieza ajena ⇒ error de la acción. |
 | `/admin/aliados[/{uuid}]` | `allies.view` / `allies.manage` | Lista con filtros; alta/edición (comisión, condiciones); ligar usuario por correo (rol seller/manager; si no es staff recibe rol `ally`); ubicaciones del aliado; stock por SKU; ventas; activadas; **ventas inferidas por activación** (`metadata.unreported_sale`) para conciliar; incidencias. |
 | `/admin/soporte[/{uuid}]` | `support.view` / `support.manage` | Incidencias `SC-AAMM-0001` (`App\Actions\SupportCases\OpenSupportCase`). Reemplazo (`ManageTag::replace`, guarda `replacement_tag_id`), devolución (`ManageTag::return` + `refund_minor` **solo registrado**, sin pasarela), revocar propiedad. Historial = `activity_log` del caso + kardex de la pieza. |

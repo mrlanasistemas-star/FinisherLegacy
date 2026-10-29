@@ -56,7 +56,7 @@ test('tags index filters by status / location and finds a piece by pasted URL, s
         ->assertInertia(fn (Assert $page) => $page->has('tags.data', 3));
 });
 
-test('tag detail renders the traceability timeline, history, opens and QR', function () {
+test('tag detail renders the traceability timeline, history and opens (no QR)', function () {
     $admin = tagStaff();
     $tag = activatedTag('duena@example.com');
 
@@ -69,12 +69,13 @@ test('tag detail renders the traceability timeline, history, opens and QR', func
             ->where('tag.nfc_url', fn ($u) => str_ends_with($u, '/t/'.$tag->public_code))
             ->has('tag.story.public_id')
             ->has('events', fn (Assert $events) => $events->where('0.type', 'activated')->etc())
-            ->has('scans', 4)
+            ->missing('tag.qr_url')
+            // nfc, code, link — `qr` only shows up once an old ?src=qr link was used.
+            ->has('scans', 3)
             ->where('can.manage', true));
 
-    $this->actingAs($admin)->get("/admin/tags/{$tag->uuid}/qr.svg")
-        ->assertOk()
-        ->assertHeader('content-type', 'image/svg+xml');
+    // The tag has no printed QR, so there is no QR image to render.
+    $this->actingAs($admin)->get("/admin/tags/{$tag->uuid}/qr.svg")->assertNotFound();
 });
 
 test('unknown tag uuid is a 404', function () {

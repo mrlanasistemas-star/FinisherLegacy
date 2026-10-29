@@ -66,13 +66,14 @@ test('the factory CSV carries serial, code, display code and both URLs', functio
     $lines = array_values(array_filter(explode("\n", str_replace("\xEF\xBB\xBF", '', $response->streamedContent()))));
     $rows = array_map('str_getcsv', $lines);
 
-    expect($rows[0])->toBe(['serial', 'public_code', 'display_code', 'nfc_url', 'qr_url'])
+    // NFC only — the tag no longer carries a printed QR.
+    expect($rows[0])->toBe(['serial', 'public_code', 'display_code', 'nfc_url'])
         ->and($rows)->toHaveCount(4)
         ->and($rows[1][0])->toBe($tags[0]->serial)
         ->and($rows[1][1])->toBe($tags[0]->public_code)
         ->and($rows[1][2])->toBe(TagCode::format($tags[0]->public_code))
         ->and($rows[1][3])->toEndWith('/t/'.$tags[0]->public_code)
-        ->and($rows[1][4])->toEndWith('/t/'.$tags[0]->public_code.'?src=qr');
+        ->and($rows[1])->toHaveCount(4);
 });
 
 test('receiving a lot stocks good pieces and disables the defective ones (pasted URL or serial)', function () {

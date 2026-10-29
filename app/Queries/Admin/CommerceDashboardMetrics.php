@@ -279,9 +279,9 @@ class CommerceDashboardMetrics
         return [
             'opens' => [
                 'nfc' => (int) ($opens[TagAccessSource::Nfc->value] ?? 0),
-                'qr' => (int) ($opens[TagAccessSource::Qr->value] ?? 0),
                 'code' => (int) ($opens[TagAccessSource::Code->value] ?? 0),
-                'link' => (int) ($opens[TagAccessSource::Link->value] ?? 0),
+                // Old `?src=qr` links (the tag no longer has a printed QR) count as links.
+                'link' => (int) ($opens[TagAccessSource::Link->value] ?? 0) + (int) ($opens[TagAccessSource::Qr->value] ?? 0),
             ],
             'opens_total' => (int) $opens->sum(),
             'tags_with_incidents' => (clone $cases)->whereNotNull('legacy_tag_id')->distinct()->count('legacy_tag_id'),

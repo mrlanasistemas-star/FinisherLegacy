@@ -18,8 +18,8 @@ import {
     Clock,
     Inbox,
     LifeBuoy,
+    Link2,
     Nfc,
-    QrCode,
     Receipt,
     Sparkles,
     Timer,
@@ -81,7 +81,7 @@ type Commerce = {
         activations_in_range: number;
     };
     product: {
-        opens: { nfc: number; qr: number; code: number; link: number };
+        opens: { nfc: number; code: number; link: number };
         opens_total: number;
         tags_with_incidents: number;
         support_cases: number;
@@ -262,12 +262,17 @@ const hasChannelSales = computed(() =>
 
 const opens = computed(() => [
     { key: 'nfc', label: 'NFC', icon: Nfc, value: c.value.product.opens.nfc },
-    { key: 'qr', label: 'QR', icon: QrCode, value: c.value.product.opens.qr },
     {
         key: 'code',
-        label: 'Código',
+        label: 'Código manual',
         icon: Type,
         value: c.value.product.opens.code,
+    },
+    {
+        key: 'link',
+        label: 'Enlace',
+        icon: Link2,
+        value: c.value.product.opens.link,
     },
 ]);
 const opensMax = computed(() =>

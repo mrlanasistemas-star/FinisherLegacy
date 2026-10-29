@@ -19,13 +19,11 @@ use App\Models\LegacyTagScan;
 use App\Models\ProductVariant;
 use App\Models\SupportCase;
 use App\Services\LegacyTags\TagLifecycle;
-use App\Services\QrCodeService;
 use App\Support\LegacyTags\TagCode;
 use App\Support\LegacyTags\TagUrls;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -122,7 +120,7 @@ class LegacyTagController extends Controller
                 'display_code' => $tag->displayCode(),
                 'status' => $tag->status->value,
                 'nfc_url' => TagUrls::nfc($tag),
-                'qr_url' => TagUrls::qr($tag),
+
                 'disabled_reason' => $tag->disabled_reason,
                 'notes' => $tag->notes,
                 'is_sold' => $tag->status->isSold(),
@@ -173,12 +171,15 @@ class LegacyTagController extends Controller
                 'notes' => $e->notes,
                 'created_at' => $e->created_at->toIso8601String(),
             ])->values(),
-            'scans' => collect(TagAccessSource::cases())->map(fn (TagAccessSource $s) => [
-                'source' => $s->value,
-                'label' => $s->label(),
-                'count' => (int) ($opens->firstWhere('source', $s->value)->c ?? 0),
-                'last_at' => ($last = $opens->firstWhere('source', $s->value)?->last_at) ? Carbon::parse($last)->toIso8601String() : null,
-            ])->values(),
+            // `qr` only appears when an old `?src=qr` link was actually used.
+            'scans' => collect(TagAccessSource::cases())
+                ->reject(fn (TagAccessSource $s) => $s === TagAccessSource::Qr && ! $opens->firstWhere('source', $s->value))
+                ->map(fn (TagAccessSource $s) => [
+                    'source' => $s->value,
+                    'label' => $s->label(),
+                    'count' => (int) ($opens->firstWhere('source', $s->value)->c ?? 0),
+                    'last_at' => ($last = $opens->firstWhere('source', $s->value)?->last_at) ? Carbon::parse($last)->toIso8601String() : null,
+                ])->values(),
             'supportCases' => $cases->map(fn (SupportCase $c) => [
                 'uuid' => $c->uuid,
                 'number' => $c->number,
@@ -191,14 +192,6 @@ class LegacyTagController extends Controller
             'locations' => InventoryLocation::query()->where('active', true)->orderBy('name')->get(['id', 'name'])
                 ->map(fn ($l) => ['value' => $l->id, 'label' => $l->name])->all(),
             'can' => ['manage' => $request->user()->can('tags.manage')],
-        ]);
-    }
-
-    public function qr(LegacyTag $tag, QrCodeService $qr): HttpResponse
-    {
-        return response($qr->svg(TagUrls::qr($tag), 320), 200, [
-            'Content-Type' => 'image/svg+xml',
-            'Cache-Control' => 'private, max-age=3600',
         ]);
     }
 

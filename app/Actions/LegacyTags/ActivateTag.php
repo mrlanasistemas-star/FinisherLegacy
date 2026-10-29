@@ -23,8 +23,8 @@ use Illuminate\Support\Str;
 
 /**
  * TAG → resolve → check state → (login) → claim → Legacy story
- * (docs/architecture/commerce-os.md §Activación). Same action for NFC, QR,
- * typed Legacy Code and the API — only `$source` differs, for analytics.
+ * (docs/architecture/commerce-os.md §Activación). Same action for NFC, the
+ * typed code and the API — only `$source` differs, for analytics.
  *
  * Exactly one owner, even under concurrent requests: a Cache lock per tag
  * plus `lockForUpdate()` on the row inside the transaction; the loser sees

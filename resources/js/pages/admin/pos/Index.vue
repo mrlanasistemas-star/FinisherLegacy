@@ -4,8 +4,9 @@
  * Same page for /admin/venta-rapida (`pos.sell`) and /aliado/venta-rapida
  * (`ally.portal`, only the user's ally locations — enforced server-side).
  *
- * Flow: location (remembered per device) → scan / paste / type codes (a
- * keyboard-wedge scanner just "types + Enter"; camera optional) or tap a
+ * Flow: location (remembered per device) → paste / type codes (a
+ * keyboard-wedge reader just "types + Enter"; the tag has no QR, so there
+ * is no camera scanner) or tap a
  * design tile → payment → Cobrar → success screen → Nueva venta. The time
  * the screen opened travels as `started_at` (server clamps it) for the
  * internal 90 s KPI.
@@ -13,7 +14,6 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import {
     Banknote,
-    Camera,
     CheckCircle2,
     CreditCard,
     MapPin,
@@ -34,7 +34,7 @@ import {
 } from 'vue';
 import SalesChannelBadge from '@/components/admin/SalesChannelBadge.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
-import QrScannerDialog from '@/components/qr/QrScannerDialog.vue';
+
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -215,7 +215,7 @@ const currency = computed(
 const codeInput = ref('');
 const scanError = ref<string | null>(null);
 const looking = ref(false);
-const scannerOpen = ref(false);
+
 const codeField = ref<InstanceType<typeof Input> | null>(null);
 
 function focusCode() {
@@ -507,7 +507,7 @@ function newSale() {
                                     ref="codeField"
                                     v-model="codeInput"
                                     class="h-11 pl-10 font-mono tracking-wide placeholder:font-sans placeholder:tracking-normal"
-                                    placeholder="Escanea o escribe el código del tag"
+                                    placeholder="Escribe o pega el código del tag"
                                     autocomplete="off"
                                     autocapitalize="characters"
                                     spellcheck="false"
@@ -524,15 +524,6 @@ function newSale() {
                             >
                                 <Spinner v-if="looking" />
                                 <span v-else>Agregar</span>
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                class="h-11 px-3"
-                                aria-label="Escanear con la cámara"
-                                @click="scannerOpen = true"
-                            >
-                                <Camera class="size-5" />
                             </Button>
                         </form>
                         <p
@@ -824,12 +815,4 @@ function newSale() {
             </Button>
         </div>
     </div>
-
-    <QrScannerDialog
-        v-model:open="scannerOpen"
-        capture
-        title="Escanea el QR del tag"
-        description="Apunta la cámara al QR impreso en el Finisher Legacy Tag o en su empaque."
-        @decode="addCode"
-    />
 </template>

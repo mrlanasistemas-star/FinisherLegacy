@@ -78,7 +78,7 @@ const steps = [
     {
         n: '02',
         title: 'Lo activas',
-        body: 'Acercas el teléfono o escribes el código impreso.',
+        body: 'Acercas el teléfono y se abre. Sin NFC, escribes su código en Activar.',
     },
     {
         n: '03',

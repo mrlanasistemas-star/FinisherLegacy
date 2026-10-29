@@ -3,7 +3,8 @@
 namespace App\Enums;
 
 /**
- * Por dónde se abrió un tag: chip NFC, QR de respaldo, código escrito o enlace compartido.
+ * Por dónde se abrió un tag: chip NFC, código escrito o enlace compartido.
+ * `Qr` solo existe para enlaces antiguos (`?src=qr`): el tag ya no lleva QR impreso.
  */
 enum TagAccessSource: string
 {
@@ -16,8 +17,8 @@ enum TagAccessSource: string
     {
         return match ($this) {
             self::Nfc => 'NFC',
-            self::Qr => 'QR',
-            self::Code => 'Legacy Code',
+            self::Qr => 'Enlace antiguo (QR)',
+            self::Code => 'Código escrito',
             self::Link => 'Enlace',
         };
     }

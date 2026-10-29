@@ -129,8 +129,8 @@ test('activation: new tag + user, idempotent for the owner, refused for anyone e
         ->and($story->legacy_tag_id)->toBe($tag->id)
         ->and($story->athlete_id)->toBe($owner->athlete->id);
 
-    // Same user again (double tap / QR after NFC): same story, no second one.
-    $again = app(ActivateTag::class)->handle($tag, $owner, TagAccessSource::Qr);
+    // Same user again (double tap / typed code after NFC): same story, no second one.
+    $again = app(ActivateTag::class)->handle($tag, $owner, TagAccessSource::Code);
     expect($again->id)->toBe($story->id)->and(LegacyStory::query()->count())->toBe(1);
 
     expect(fn () => app(ActivateTag::class)->handle($tag, $other, TagAccessSource::Code))

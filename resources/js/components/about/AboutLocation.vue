@@ -149,18 +149,20 @@ const collaborations = [
         </div>
 
         <div
-            class="flex flex-col justify-between rounded-hero bg-foreground p-6 text-background shadow-fl-float sm:p-10 lg:col-span-3"
+            class="flex flex-col justify-between rounded-hero border border-fl-gold/25 bg-white p-6 text-foreground shadow-fl-soft sm:p-10 lg:col-span-3"
         >
             <div>
                 <p
-                    class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold uppercase"
+                    class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold-ink uppercase"
                 >
                     Colaboraciones
                 </p>
                 <h3 class="mt-4 font-serif text-3xl leading-tight sm:text-4xl">
                     ¿Quieres colaborar con Finisher Legacy?
                 </h3>
-                <p class="mt-4 max-w-lg text-sm leading-relaxed text-white/70">
+                <p
+                    class="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground"
+                >
                     Trabajamos con organizadores, fotógrafos, marcas y
                     proveedores que quieren llevar la experiencia del atleta más
                     allá de la meta.
@@ -172,7 +174,7 @@ const collaborations = [
                     <li v-for="item in collaborations" :key="item.type">
                         <Link
                             :href="contact({ query: { tipo: item.type } })"
-                            class="inline-flex rounded-full border border-white/20 px-3.5 py-1.5 text-xs font-medium text-white/85 transition-colors hover:border-fl-gold hover:text-white"
+                            class="inline-flex rounded-full border border-border bg-fl-paper px-3.5 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:border-fl-gold hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
                         >
                             {{ item.label }}
                         </Link>
@@ -180,7 +182,7 @@ const collaborations = [
                 </ul>
                 <Button
                     as-child
-                    class="mt-6 h-11 rounded-full bg-background px-6 text-foreground hover:bg-background/90"
+                    class="mt-6 h-11 rounded-full bg-foreground px-6 text-background hover:bg-fl-graphite"
                 >
                     <Link :href="contact()">
                         Contáctanos

@@ -337,7 +337,7 @@ const statusChips = computed(() =>
                     id="rcv-defective"
                     v-model="receiveForm.defective"
                     rows="3"
-                    placeholder="Escanea o pega códigos o series, uno por línea"
+                    placeholder="Lee el NFC o pega códigos o series, uno por línea"
                 />
                 <p class="text-xs text-muted-foreground">
                     {{ defectiveCount }} marcadas como defectuosas.

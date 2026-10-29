@@ -229,7 +229,7 @@ defineExpose({ celebration });
 
 <template>
     <article
-        class="overflow-hidden bg-card sm:rounded-card sm:border sm:border-border sm:shadow-fl-micro"
+        class="overflow-hidden bg-card transition-[box-shadow,border-color] duration-300 sm:rounded-card sm:border sm:border-border sm:shadow-fl-micro sm:hover:border-foreground/15 sm:hover:shadow-fl-soft"
         :aria-label="`Publicación de ${post.author.name}`"
     >
         <p

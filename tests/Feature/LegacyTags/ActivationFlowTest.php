@@ -162,8 +162,9 @@ test('warehouse stock is never activatable but an ally counter piece is', functi
     $this->get("/t/{$allyTag->public_code}")->assertRedirect(route('activate.show', ['code' => $allyTag->public_code, 'src' => 'nfc']));
 });
 
-// (7) QR backup.
-test('the printed QR is recorded as qr through the whole flow', function () {
+// (7) Old ?src=qr links. The tag no longer has a printed QR, but links that
+// were already shared keep working and stay traceable.
+test('an old ?src=qr link still works and is recorded as qr through the whole flow', function () {
     $tag = deliveredTag();
     $user = User::factory()->create();
 
@@ -203,7 +204,7 @@ test('a typed code at /activar resolves and activates as code', function () {
     $this->actingAs($user)->post(route('activate.lookup'), ['code' => $typed])
         ->assertRedirect(route('activate.show', ['code' => $tag->public_code, 'src' => 'code']));
 
-    // A pasted QR URL works too.
+    // A pasted /t/ link works too (including an old ?src=qr one).
     $this->actingAs($user)->post(route('activate.lookup'), ['code' => 'https://finisherlegacy.com/t/'.$tag->public_code.'?src=qr'])
         ->assertRedirect(route('activate.show', ['code' => $tag->public_code, 'src' => 'code']));
 

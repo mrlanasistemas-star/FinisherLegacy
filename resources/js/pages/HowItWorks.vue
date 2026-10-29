@@ -8,8 +8,9 @@
  * (drawn tag, example story) are labelled.
  */
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight, Link2, Nfc, QrCode, Type } from '@lucide/vue';
+import { ArrowRight, Link2, Nfc, Type } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import NfcTapVisual from '@/components/public/NfcTapVisual.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { MEDIA } from '@/config/media';
@@ -29,13 +30,13 @@ const steps: { verb: string; title: string; body: string; visual: Visual }[] = [
     {
         verb: 'Recibes',
         title: 'Te lo llevas listo.',
-        body: 'El tag llega terminado de fábrica, con su correa, su NFC, su QR de respaldo y su código impreso. No hay que esperar a que lo personalicen.',
+        body: 'El tag llega terminado de fábrica, con su correa y su chip NFC. No hay que esperar a que lo personalicen.',
         visual: 'hand',
     },
     {
         verb: 'Acercas',
-        title: 'Acerca tu teléfono o escanea el QR.',
-        body: 'El NFC abre la página de tu tag. Si tu teléfono no lo detecta, el QR del reverso o el código impreso te llevan al mismo lugar.',
+        title: 'Acerca tu teléfono. Eso es todo.',
+        body: 'El chip NFC abre la página de tu tag en el navegador, sin apps. Si tu teléfono no lee NFC, escribe en Activar el código de tu tag y llegas al mismo lugar.',
         visual: 'phone',
     },
     {
@@ -97,25 +98,20 @@ const ways = [
         body: 'Acerca la parte de atrás de tu teléfono al tag.',
     },
     {
-        icon: QrCode,
-        title: 'QR',
-        body: 'Escanéalo con la cámara, desde el reverso del tag.',
-    },
-    {
         icon: Type,
         title: 'Código',
-        body: 'Escríbelo en Activar. Viene impreso en el tag.',
+        body: 'Escribe en Activar el código de tu tag y llegas al mismo lugar.',
     },
 ];
 
 const faqs = [
     {
         q: '¿Necesito instalar una app?',
-        a: 'No. Tu historia se abre en el navegador del teléfono, desde el NFC, el QR o un enlace.',
+        a: 'No. Tu historia se abre en el navegador del teléfono, con solo acercarlo al tag o desde un enlace.',
     },
     {
         q: '¿Mi teléfono lo va a leer?',
-        a: 'La mayoría de los teléfonos recientes leen NFC, pero no todos. Por eso cada tag tiene también un QR y un código impreso.',
+        a: 'La mayoría de los teléfonos recientes leen NFC, pero no todos. Si el tuyo no lo hace, entra a Activar y escribe el código de tu tag: llegas al mismo lugar.',
     },
     {
         q: '¿Puedo regalarlo?',
@@ -233,16 +229,12 @@ const photo = MEDIA.photo;
                             </div>
                         </template>
                         <template v-else-if="step.visual === 'phone'">
-                            <div class="absolute inset-0 bg-fl-paper" />
-                            <img
-                                src="/media/home/scan/scan-phone.png"
-                                alt=""
-                                width="1080"
-                                height="1080"
-                                loading="lazy"
-                                decoding="async"
-                                class="absolute inset-0 m-auto w-[86%] mix-blend-multiply"
+                            <div
+                                class="absolute inset-0 bg-[radial-gradient(60%_55%_at_50%_50%,color-mix(in_srgb,var(--fl-gold)_16%,transparent),transparent_72%)]"
                             />
+                            <div class="absolute inset-0 m-auto size-[86%]">
+                                <NfcTapVisual />
+                            </div>
                         </template>
                         <template v-else-if="step.visual === 'story'">
                             <img
@@ -370,16 +362,14 @@ const photo = MEDIA.photo;
                                 />
                             </div>
                         </div>
-                        <img
+                        <div
                             v-else-if="step.visual === 'phone'"
-                            src="/media/home/scan/scan-phone.png"
-                            alt="Un teléfono escaneando un código QR"
-                            width="1080"
-                            height="1080"
-                            loading="lazy"
-                            decoding="async"
-                            class="mx-auto aspect-square w-[80%] max-w-sm mix-blend-multiply"
-                        />
+                            class="mx-auto aspect-square w-[86%] max-w-sm rounded-hero bg-fl-cream/60"
+                        >
+                            <NfcTapVisual
+                                label="Un teléfono se acerca al tag y se abre la historia por NFC"
+                            />
+                        </div>
                         <img
                             v-else-if="
                                 step.visual === 'story' ||
@@ -434,7 +424,7 @@ const photo = MEDIA.photo;
         </div>
     </section>
 
-    <!-- Three ways to open -->
+    <!-- How it opens: NFC, with the typed code as the fallback -->
     <section
         class="border-y border-fl-line bg-white py-16 text-foreground sm:py-24"
         aria-labelledby="ways-title"
@@ -443,7 +433,7 @@ const photo = MEDIA.photo;
             <p
                 class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
             >
-                Tres caminos, una historia
+                Un gesto, una historia
             </p>
             <h2
                 id="ways-title"
@@ -452,19 +442,39 @@ const photo = MEDIA.photo;
                 Acerca tu teléfono.
                 <span class="text-fl-gold-ink italic">Vuelve al momento.</span>
             </h2>
-            <ul class="mt-12 grid gap-10 sm:grid-cols-3">
+            <ul class="mt-12 grid max-w-4xl gap-5 sm:grid-cols-2">
                 <li
-                    v-for="way in ways"
+                    v-for="(way, i) in ways"
                     :key="way.title"
-                    class="border-t border-foreground/10 pt-6"
+                    class="group rounded-card border p-6 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-fl-float sm:p-8"
+                    :class="
+                        i === 0
+                            ? 'border-fl-gold/40 bg-fl-cream/50'
+                            : 'border-fl-line bg-fl-paper'
+                    "
                 >
-                    <component
-                        :is="way.icon"
-                        class="size-6 text-fl-gold-ink"
-                        aria-hidden="true"
-                    />
-                    <p class="mt-4 font-serif text-3xl">{{ way.title }}</p>
-                    <p class="mt-2 max-w-xs text-[15px] text-muted-foreground">
+                    <span
+                        class="flex size-12 items-center justify-center rounded-full bg-white text-fl-gold-ink shadow-fl-micro ring-1 ring-fl-line transition-transform duration-300 group-hover:scale-105"
+                    >
+                        <component
+                            :is="way.icon"
+                            class="size-6"
+                            aria-hidden="true"
+                        />
+                    </span>
+                    <p
+                        class="mt-6 text-[11px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
+                    >
+                        {{
+                            i === 0
+                                ? 'Así se abre'
+                                : 'Si tu teléfono no lee NFC'
+                        }}
+                    </p>
+                    <p class="mt-2 font-serif text-3xl">{{ way.title }}</p>
+                    <p
+                        class="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground"
+                    >
                         {{ way.body }}
                     </p>
                 </li>

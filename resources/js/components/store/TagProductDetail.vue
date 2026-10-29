@@ -169,14 +169,14 @@ const includes = computed(() => [
     props.product.specs.strap_type
         ? `Correa: ${props.product.specs.strap_type}`
         : 'Su correa',
-    'NFC, QR de respaldo y código impreso para abrir tu historia',
+    'Chip NFC: acercas tu teléfono y se abre tu historia',
     'Tu Legacy digital, listo para activarlo cuando quieras',
 ]);
 
 const how = [
     {
         title: 'Acerca tu teléfono',
-        body: 'El NFC del tag abre su página. También puedes escanear el QR del reverso.',
+        body: 'El chip NFC del tag abre su página en el navegador, sin instalar nada.',
     },
     {
         title: 'Actívalo',
@@ -199,7 +199,7 @@ const after = computed(() => [
     },
     {
         title: 'Lo activas',
-        body: 'Desde Activar: con el NFC, el QR o el código impreso.',
+        body: 'Acercas tu teléfono al tag. Si no lee NFC, escribe su código en Activar.',
         link: true,
     },
     {

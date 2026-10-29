@@ -9,7 +9,7 @@ namespace App\Enums;
  *                                   ↘ returned / replaced / disabled (any time, staff only)
  *
  * The product/SKU is ProductVariant; this is the individual unit with its own
- * public code, NFC and QR. Only staff Actions move a unit between states —
+ * public code and NFC chip. Only staff Actions move a unit between states —
  * never a controller and never the public, except activation itself.
  */
 enum LegacyTagStatus: string

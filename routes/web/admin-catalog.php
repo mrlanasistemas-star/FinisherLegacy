@@ -76,7 +76,6 @@ Route::middleware(['auth', 'verified', 'can:dashboard.admin.view'])->prefix('adm
         Route::middleware('can:tags.view')->group(function () {
             Route::get('/', [LegacyTagController::class, 'index'])->name('index');
             Route::get('{tag:uuid}', [LegacyTagController::class, 'show'])->name('show');
-            Route::get('{tag:uuid}/qr.svg', [LegacyTagController::class, 'qr'])->name('qr');
         });
 
         Route::middleware('can:tags.manage')->prefix('{tag:uuid}')->group(function () {

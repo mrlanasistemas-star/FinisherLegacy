@@ -34,7 +34,8 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  *   → 3 Activar (ActivateTag, the only writer) → 4 ¿De qué carrera? → 5
  *   story editor.
  *
- * How the person arrived (nfc / qr / typed code / link) is remembered in
+ * How the person arrived (nfc / typed code / link; `qr` only from old
+ * links) is remembered in
  * the session per code so it survives the login detour, for analytics.
  */
 class ActivationController extends Controller

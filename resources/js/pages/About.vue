@@ -9,6 +9,7 @@ import Reveal from '@/components/motion/Reveal.vue';
 import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
+import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
 import { contact } from '@/routes';
@@ -59,11 +60,11 @@ const pillars = [
     },
     {
         title: 'Tecnología',
-        text: 'El NFC de la Legacy Plate conecta lo físico con tu perfil digital.',
+        text: 'El chip NFC del Finisher Legacy Tag conecta lo físico con tu historia.',
     },
     {
         title: 'Productos físicos',
-        text: 'Placas y equipo diseñados para acompañar cada meta.',
+        text: 'El tag de colección y el equipo, diseñados para acompañar cada meta.',
     },
     {
         title: 'Identidad deportiva',
@@ -75,7 +76,7 @@ const products = [
     { key: 'chill-band', label: 'Chill Band' },
     { key: 'trisuit', label: 'Tri Suit' },
     { key: 'cap', label: 'Gorra' },
-    { key: 'nfc-keychain', label: 'Llavero NFC' },
+    { key: 'jersey', label: 'Jersey' },
 ];
 
 const story = computed(() =>
@@ -278,9 +279,9 @@ const story = computed(() =>
                     Del deporte a algo que puedes tocar.
                 </h2>
                 <p class="mt-5 max-w-md text-muted-foreground">
-                    La Legacy Plate y la línea Finisher Legacy nacen para
-                    acompañar cada meta: metal, textil técnico y NFC que conecta
-                    con tu historia.
+                    El Finisher Legacy Tag y la línea Finisher Legacy nacen para
+                    acompañar cada meta: un tag de colección con NFC que abre tu
+                    historia, y textil técnico para el camino.
                 </p>
                 <Button
                     as-child
@@ -293,17 +294,36 @@ const story = computed(() =>
                 </Button>
             </Reveal>
             <Reveal :delay-ms="120" class="grid gap-3 lg:col-span-7">
-                <img
-                    :src="MEDIA.plate.hero.src"
-                    :srcset="MEDIA.plate.hero.srcset"
-                    sizes="(min-width: 1024px) 55vw, 100vw"
-                    :width="MEDIA.plate.hero.width"
-                    :height="MEDIA.plate.hero.height"
-                    :alt="MEDIA.plate.hero.alt"
-                    loading="lazy"
-                    decoding="async"
-                    class="w-full rounded-hero shadow-fl-soft"
-                />
+                <div
+                    class="relative flex aspect-[16/10] items-center justify-center gap-[7%] overflow-hidden rounded-hero border border-fl-gold/20 bg-white shadow-fl-soft"
+                >
+                    <div
+                        class="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_65%_at_50%_50%,color-mix(in_srgb,var(--fl-gold)_16%,transparent),transparent_72%)]"
+                        aria-hidden="true"
+                    />
+                    <div class="relative w-[24%] -rotate-6">
+                        <TagVisualizer
+                            name="Tu colección"
+                            subtitle="Destino · Disciplina"
+                            face="front"
+                            :tilt="false"
+                            label="Finisher Legacy Tag, frente (render ilustrativo)"
+                        />
+                    </div>
+                    <div class="relative mt-[6%] w-[24%] rotate-3">
+                        <TagVisualizer
+                            name="Tu colección"
+                            subtitle="Destino · Disciplina"
+                            face="back"
+                            :tilt="false"
+                            label="Finisher Legacy Tag, reverso (render ilustrativo)"
+                        />
+                    </div>
+                    <span
+                        class="absolute right-4 bottom-3 text-[10px] tracking-[0.16em] text-muted-foreground uppercase"
+                        >Render ilustrativo</span
+                    >
+                </div>
                 <ul class="grid grid-cols-4 gap-3">
                     <li
                         v-for="product in products"

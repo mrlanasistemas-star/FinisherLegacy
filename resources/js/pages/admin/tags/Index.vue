@@ -193,7 +193,7 @@ const sortable = [
                 <input
                     v-model="filters.q"
                     type="search"
-                    placeholder="Serie, código, URL escaneada, pedido o correo del dueño…"
+                    placeholder="Serie, código, URL del NFC, pedido o correo del dueño…"
                     aria-label="Buscar tag"
                     class="h-9 w-full rounded-full border border-input bg-card pr-4 pl-10 text-sm outline-none hover:border-foreground/25 focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
                     @input="applyDebounced"

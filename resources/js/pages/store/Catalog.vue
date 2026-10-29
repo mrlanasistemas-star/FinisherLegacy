@@ -205,7 +205,10 @@ const lede = computed(
         <div
             class="fl-container flex flex-wrap items-center gap-x-3 gap-y-2 py-3"
         >
-            <p class="text-sm text-muted-foreground" aria-live="polite">
+            <p
+                class="shrink-0 text-sm text-muted-foreground lg:min-w-24 lg:self-start lg:pt-2"
+                aria-live="polite"
+            >
                 <span class="legacy-numeric font-semibold text-foreground">{{
                     products.total
                 }}</span>
@@ -213,7 +216,7 @@ const lede = computed(
             </p>
 
             <div
-                class="hidden flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-2 lg:flex"
+                class="hidden flex-1 flex-wrap items-center gap-x-3 gap-y-2 lg:flex"
             >
                 <!-- Tipo (single-select chips) -->
                 <div
@@ -281,9 +284,20 @@ const lede = computed(
                 >
                     Disponibles
                 </button>
-                <span class="h-6 w-px bg-border" aria-hidden="true" />
-                <!-- Orden (segmented control) -->
-                <div class="fl-seg" role="radiogroup" aria-label="Ordenar">
+                <button
+                    v-if="activeCount"
+                    type="button"
+                    class="inline-flex min-h-9 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
+                    @click="clearAll"
+                >
+                    <X class="size-3.5" /> Limpiar
+                </button>
+                <!-- Orden (segmented control), pinned right -->
+                <div
+                    class="fl-seg ml-auto"
+                    role="radiogroup"
+                    aria-label="Ordenar"
+                >
                     <button
                         v-for="option in sortOptions"
                         :key="option.value"
@@ -302,14 +316,6 @@ const lede = computed(
                         {{ option.short }}
                     </button>
                 </div>
-                <button
-                    v-if="activeCount"
-                    type="button"
-                    class="inline-flex min-h-9 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
-                    @click="clearAll"
-                >
-                    <X class="size-3.5" /> Limpiar
-                </button>
             </div>
 
             <!-- Mobile: filters in a sheet -->

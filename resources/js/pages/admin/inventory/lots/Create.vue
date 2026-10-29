@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * New manufacturing lot (CreateLot): generates one random public code per
- * piece right away so the factory can encode NFC and print QR. Stock does
+ * piece right away so the factory can encode the NFC chip. Stock does
  * not move until the lot is received.
  */
 import { Head, Link, useForm } from '@inertiajs/vue3';

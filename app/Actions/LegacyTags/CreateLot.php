@@ -18,7 +18,7 @@ use InvalidArgumentException;
 /**
  * Registers a manufacturing lot and generates one `manufactured` tag per
  * piece — the codes must exist BEFORE fabrication so the factory can encode
- * the NFC chips and print the backup QR (export: tags CSV of the lot).
+ * the NFC chips (export: tags CSV of the lot). The tag has no printed QR.
  * Stock is not counted until the lot is received (ReceiveLot).
  */
 class CreateLot

@@ -1,37 +1,39 @@
-# Public experience — Finisher Legacy Tag (2026-10-27)
+# Public experience — Finisher Legacy Tag (updated 2026-10-29)
 
 The public site sells and explains the **Finisher Legacy Tag**: a
 factory-finished collectible tag with strap, designed per **collection**,
-with NFC + unique URL + backup QR + printed code. Three layers drive every
-page: **objeto** (premium physical memory) → **historia** (tap / scan opens
-it) → **permanencia** (the story keeps growing).
+with an **NFC chip** that opens its unique URL (`/t/{code}`). **The tag has
+no QR** — not on the product, the packaging, prints, the activation flow or
+marketing copy. If a phone can't read NFC, the fallback is typing the tag's
+code at `/activar`. Three layers drive every page: **objeto** (premium
+physical memory) → **historia** (bring the phone close and it opens) →
+**permanencia** (the story keeps growing).
 
 Concept line: **"El recuerdo físico de tu logro. Tu historia vive dentro."**
 Domain: `docs/architecture/commerce-os.md`.
 
 ## Visual direction
 
-- Marketing pages (Home, Colecciones, Cómo funciona, tag product hero):
-  dark cinematic chapters (`bg-fl-black` / `bg-fl-graphite`, white ink)
-  alternating with warm paper (`bg-fl-paper`, `bg-fl-cream`). Gold is an
-  accent only: eyebrows, 1px rules, the tag's grommet, **one** gold CTA per
-  page (final CTA).
-- Classic, refined: Fraunces display (`font-serif`) + Instrument Sans UI.
-  Compact buttons (pill, `h-11` = 44px, `px-6`, `text-sm`), secondary
-  actions are text links with a gold underline
-  (`underline decoration-fl-gold underline-offset-[6px]`), never fat
-  full-width buttons.
+- **LIGHT only.** Every public page is warm paper (`bg-background` /
+  `bg-fl-paper` #F8F7F3), white cards and `bg-fl-cream` bands with warm
+  ink (#171714). **No black or graphite backgrounds** anywhere; the
+  navbar is the same light bar on every page (no transparent-over-dark
+  mode). Gold (#C9A45C) is an accent only — eyebrows, 1px rules, focus
+  rings, the tag's grommet; gold *text* uses `text-fl-gold-ink` (#85662B)
+  for contrast.
+- Classic, refined: Fraunces display (`font-serif`, `fl-display`) +
+  Instrument Sans UI. Compact pill buttons (`h-11`/`h-12`, `px-6`,
+  `text-sm`); secondary actions are text links with a gold underline.
+- Radii and shadows come from the token scale only: `rounded-control`,
+  `rounded-card`, `rounded-media`, `rounded-hero`, pills
+  `rounded-full`; `shadow-fl-micro/soft/float/overlay`.
+- Micro-interactions are quiet: hover lift (`fl-hover-lift` or
+  `hover:-translate-y-0.5` + `shadow-fl-float`), image zoom
+  (`fl-hover-zoom`), gold focus rings (`focus-visible:ring-fl-gold/40`).
+  All transitions/animations are off under `prefers-reduced-motion`.
 - Only existing `fl-*` tokens; the only per-record color is a
   collection's `accent_color`, validated server-side as a hex
   (`PublicCollections::safeColor`) and used only for artwork accents.
-- Motion tells the story and plays once (IntersectionObserver via
-  `useInView`, bounded fallback so content never stays hidden):
-  tag appears → callouts; phone approaches → NFC pulse → story opens;
-  the 6-step gold line fills. All of it is off under
-  `prefers-reduced-motion`. No scroll hijacking, no loops.
-- The public navbar turns transparent with light ink over dark heroes
-  (`DARK_HERO_PAGES` in `PublicNavbar.vue`, plus `store/Show` for
-  `legacy_tag` products) and back to paper once scrolled.
 
 ## Page map
 
@@ -42,7 +44,8 @@ Domain: `docs/architecture/commerce-os.md`.
 | `/colecciones/{slug}` | `pages/collections/Show.vue` | `Store\CollectionController@show` | collection + its active products (price via `ResolveProductPrice`, availability via `IsVariantAvailableForCheckout`) + 3 other collections. **404** if unpublished (`status != active` or `launch_at` in the future). |
 | `/tienda/{slug}` | `pages/store/Show.vue` → `components/store/TagProductDetail.vue` when `type = legacy_tag` | `Store\ProductController@show` | adds `collection` (only if published), `specs` (material, strap_type, dimensions, instructions), `seo_*`; tag variants priced by `ResolveProductPrice`, `in_stock` by `IsVariantAvailableForCheckout`. Other product types: unchanged layout. |
 | `/tienda` | `pages/store/Index.vue` | `Store\ProductController@index` | `featured` = first `legacy_tag` (historical plate only if no tag) |
-| `/como-funciona` | `pages/HowItWorks.vue` | route `inertia` | static (7 moments, 3 ways to open, FAQ) |
+| `/como-funciona` | `pages/HowItWorks.vue` | route `inertia` | static (7 moments with a pinned visual, how it opens — NFC, typed code as fallback — and FAQ) |
+| `/activar` | `pages/activate/Index.vue` | `LegacyTagsActivationController@index` | manual code entry (fallback for phones without NFC) next to the `NfcTapVisual` illustration |
 | `/sitemap.xml` | — | `SitemapController` | home, colecciones, cómo funciona, tienda, eventos, nosotros, contacto, published collections, active products, published events. **Never** profiles, stories, `/t/…`, recipient links. |
 
 `public/sitemap.xml` (static, hard-coded domain) was removed so the
@@ -65,34 +68,35 @@ contacto, Fotógrafos) · Legal.
 
 ## Components
 
+### Home (`pages/Home.vue`, light, 2026-10-29)
+
+Hero with the **interactive 3D tag** (`components/three/LegacyTag3D.vue`,
+three.js loaded lazily, poster first; front and back) → `HomeSteps`
+(cómo funciona in 3 steps) → `TagFaces` (frente y reverso) →
+`CollectionsShowcase` (real collections, fallback to tag products, honest
+empty state) → `StoryPreview` (example story page, labelled "Ejemplo") →
+`CommunityTeaser` → `HomeFaq` → `HomeFinalCta`. All sections are light;
+the 3D/SVG tag wears the first published collection or a neutral
+"Tu colección". The Home and `components/home/**`, `components/three/**`
+and `components/tag/**` are owned by the tag work stream — check their
+file headers for the current behaviour.
+
+### Shared
+
 | Component | Role |
 |---|---|
-| `components/tag/TagVisualizer.vue` | **Illustrative SVG render** of the tag: portrait body with thickness + rim light, punched eyelet with metal grommet, woven strap through it, grain + single sheen, collection artwork (name, subtitle, year, accent contour lines, NFC mark) on the front; illustrative non-scannable QR, masked code and NFC hint on the back. Props: `name`, `subtitle`, `year`, `accent`, `face`, `tilt`, `label`. Mouse-only 3D tilt, off for reduced motion. |
-| `components/home/HomeHero.vue` | Hero: real start-line video (≥md, no reduced motion; pauses off-screen) over poster `<picture>`; concept headline; CTAs. |
-| `components/home/FinishStory.vue` | A — "Tu carrera termina. Tu historia no." |
-| `components/home/TagObject.vue` | B — "Un recuerdo que puedes tocar." front/back toggle + part callouts (no numbers). |
-| `components/home/TapDemo.vue` | C — wordless demo tag → NFC/QR → story (example profile). |
-| `components/home/StoryPreview.vue` | D — example Legacy: photo, facts, dedication, audio waveform, certificate (drawings, labelled "Ejemplo"). |
-| `components/home/CollectionsShowcase.vue` | E — real collections; fallback to tag products; honest empty state. |
-| `components/home/RecipientsBlock.vue` | F — recipient albums (familia, pareja, amigos, entrenador). |
-| `components/home/LegacySequence.vue` | G — Compites → Consigues tu tag → Lo activas → Agregas tu historia → La compartes → Regresas a ella. |
-| `components/home/HomeFinalCta.vue` | H — emotional close, gold commercial CTA + activation link. |
+| `components/tag/TagVisualizer.vue` | Illustrative SVG of the tag (front: collection artwork, name, subtitle, year, accent lines, NFC mark; back: NFC hint — **no QR**). Props: `name`, `subtitle`, `year`, `accent`, `face`, `tilt`, `label`. |
+| `components/public/NfcTapVisual.vue` | SVG illustration of the one gesture: phone close to the tag → NFC waves → the story opens on screen. Used by Cómo funciona ("Acercas") and `/activar`. Unique SVG ids per instance; waves stop under reduced motion. |
 | `components/collections/CollectionCard.vue` | Collection card (cover or drawn tag), real "desde" price. |
 | `components/collections/TagProductTile.vue` | Product tile (photo or drawn tag) with resolved price. |
-| `components/store/TagProductDetail.vue` | Tag product page: gallery/visualizer, purchase card (existing cart endpoint), Qué incluye, specs only if filled, Cómo funciona, Qué pasa después de comprarlo. |
+| `components/store/TagProductDetail.vue` | Tag product page: gallery/3D viewer, purchase card (existing cart endpoint), Qué incluye, specs only if filled, Cómo funciona, Qué pasa después de comprarlo. |
 | `composables/useInView.ts` | One-shot in-view flag with reduced-motion + fallback. |
 | `app/Queries/Store/PublicCollections.php` | Read side of public collections (cards, detail, sitemap). |
-
-The previous Home components under `components/public/home/*` (plate era)
-are no longer used by the Home; they were left in place for the lead to
-remove once nothing else references them.
 
 ## Asset inventory
 
 | Path | Type | Resolution | Aspect | Used for |
 |---|---|---|---|---|
-| `media/home/hero/finisher-hero-desktop.mp4` | video (4.0 MB) | — | 16:9 | Home hero loop, ≥md only |
-| `media/home/hero/finisher-hero-desktop.webm` | video (2.4 MB) | — | 16:9 | same, preferred source |
 | `media/home/hero/finisher-hero-poster.webp` | image | 1280×720 | 16:9 | Hero poster ≥md |
 | `media/home/hero/finisher-hero-poster-mobile.webp` | image | 750×422 | 16:9 | Hero poster on phones |
 | `media/home/story/medal-closeup-{640,667}.webp` | image | 640×960 / 667×1000 | 2:3 | Block A portrait, Cómo funciona "Regresas" |
@@ -101,10 +105,9 @@ remove once nothing else references them.
 | `media/home/story/training-dawn-{640,1000}.webp` | image | 640×640 / 1000×1000 | 1:1 | Example story photo (Block D, Cómo funciona) |
 | `media/home/story/training-dawn.{mp4,webm}` + `-poster.webp` | video + poster | poster 1280×720 | 16:9 | not used (available for a future story chapter) |
 | `media/home/story/*.jpeg` | originals | same as webp | — | not referenced (sources) |
-| `media/home/scan/scan-phone.png` | image, white bg | 1080×1080 | 1:1 | Cómo funciona "Acercas" on paper (`mix-blend-multiply`); unsuitable on dark |
 | `media/home/final/legacy-final-poster-{640,1000}.webp` | image | 640×427 / 1000×667 | 3:2 | Block H background |
 | `images/brand/og-finisher-legacy.jpg` | image | 1200×630 | 1.91:1 | OG image (Home) |
-| `images/brand/logo/logo-mark*.png` | image | 1400×671 | ~2.1:1 | Navbar/footer wordmark (white on dark heroes) |
+| `images/brand/logo/logo-mark*.png` | image | 1400×671 | ~2.1:1 | Navbar/footer wordmark  |
 | `media/brand/plate/*` | renders | various | — | **OLD product (Legacy Plate)** — not used on new public pages; still served for historical plate products |
 | `media/products/concepts/nfc-keychain-*.webp` | concept render | 480×600…1200×1500 | 4:5 | not used (concept, not the tag) |
 

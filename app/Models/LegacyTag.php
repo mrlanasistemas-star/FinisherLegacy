@@ -20,8 +20,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * One physical Finisher Legacy Tag (docs/architecture/commerce-os.md §Tag).
  *
  * Traceable end to end: lot → location → order/channel → delivery →
- * activation → athlete → story. `public_code` is what NFC and the backup QR
- * both carry (/t/{code}); one tag, one story, whichever way it is opened.
+ * activation → athlete → story. `public_code` is what the NFC chip carries
+ * (/t/{code}) and what a person can type at /activar; one tag, one story.
  * Status changes only through App\Actions\LegacyTags\* (each writes a
  * legacy_tag_events row) — never by assigning `status` in a controller.
  */
@@ -147,12 +147,6 @@ class LegacyTag extends Model
     public function nfcUrl(): string
     {
         return route('tag.open', $this->public_code);
-    }
-
-    /** Same tag, same story — `?src=qr` only tells analytics how it was opened. */
-    public function qrUrl(): string
-    {
-        return route('tag.open', ['code' => $this->public_code, 'src' => 'qr']);
     }
 
     /** Human form printed on the tag/packaging: XXXX-XXXX-XXXX. */

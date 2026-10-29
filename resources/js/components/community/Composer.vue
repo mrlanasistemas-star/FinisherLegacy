@@ -125,13 +125,13 @@ function onPublished() {
             </button>
         </div>
         <div
-            class="-mx-1 mt-2 flex [scrollbar-width:none] items-center gap-1 overflow-x-auto px-1 [&::-webkit-scrollbar]:hidden"
+            class="-mx-1 mt-2 grid grid-cols-4 gap-1 px-1 sm:flex sm:items-center"
         >
             <button
                 v-for="action in quickActions"
                 :key="action.kind"
                 type="button"
-                class="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                class="inline-flex min-h-10 min-w-0 flex-col items-center justify-center gap-1 rounded-card px-1 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:shrink-0 sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-3 sm:py-0 sm:text-xs"
                 @click="openComposer(action.kind)"
             >
                 <component :is="action.icon" class="size-4 text-fl-gold-ink" />

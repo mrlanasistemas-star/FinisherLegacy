@@ -11,8 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Privacy-first tag analytics: which event, through which channel (NFC, QR,
- * typed code, link), whether the owner opened it. No IP, no user agent —
+ * Privacy-first tag analytics: which event, through which channel (NFC,
+ * typed code, link; `qr` only for old links), whether the owner opened it. No IP, no user agent —
  * only a daily-rotating keyed hash to count unique visitors.
  */
 #[Fillable(['legacy_tag_id', 'event', 'source', 'user_id', 'visitor_hash', 'is_owner', 'created_at'])]

@@ -2,7 +2,7 @@
 /**
  * One physical Finisher Legacy Tag, end to end: lot → inventory →
  * location → sale → delivery → activation → athlete → story, plus its
- * append-only history, open analytics (nfc / qr / code) and support cases.
+ * append-only history, open analytics (nfc / code / link) and support cases.
  * Staff actions (tags.manage) each open ONE dialog with a required reason
  * and go through App\Actions\LegacyTags\ManageTag server-side.
  */
@@ -36,7 +36,6 @@ import {
     enable,
     index,
     note,
-    qr,
     replace,
     returnTag,
     revoke,
@@ -63,7 +62,6 @@ type TagDetail = {
     display_code: string;
     status: string;
     nfc_url: string;
-    qr_url: string;
     disabled_reason: string | null;
     notes: string | null;
     is_sold: boolean;
@@ -683,24 +681,15 @@ const fullDate = (iso: string | null) =>
                         id="links-title"
                         class="mb-4 text-sm font-semibold text-muted-foreground uppercase"
                     >
-                        NFC · QR · código
+                        NFC · código
                     </h2>
-                    <div
-                        class="flex flex-col gap-4 sm:flex-row xl:flex-col 2xl:flex-row"
-                    >
-                        <img
-                            :src="qr(tag.uuid).url"
-                            :alt="`QR de ${tag.serial}`"
-                            width="160"
-                            height="160"
-                            class="size-40 shrink-0 self-center rounded-lg border border-border bg-white p-2"
-                        />
+                    <div class="flex flex-col gap-4">
                         <dl class="min-w-0 flex-1 space-y-3 text-sm">
                             <div
                                 v-for="item in [
                                     {
                                         key: 'code',
-                                        label: 'Código impreso',
+                                        label: 'Código del tag',
                                         value: tag.display_code,
                                         mono: true,
                                     },
@@ -708,12 +697,6 @@ const fullDate = (iso: string | null) =>
                                         key: 'nfc',
                                         label: 'URL del NFC',
                                         value: tag.nfc_url,
-                                        mono: false,
-                                    },
-                                    {
-                                        key: 'qr',
-                                        label: 'URL del QR',
-                                        value: tag.qr_url,
                                         mono: false,
                                     },
                                 ]"
@@ -875,11 +858,11 @@ const fullDate = (iso: string | null) =>
                         id="act-replacement"
                         v-model="form.replacement"
                         class="font-mono"
-                        placeholder="Escanea o escribe el código o la serie"
+                        placeholder="Lee el NFC o escribe el código o la serie"
                         autocomplete="off"
                     />
                     <p class="text-xs text-muted-foreground">
-                        Debe estar «En inventario». Acepta la URL escaneada.
+                        Debe estar «En inventario». Acepta la URL del NFC.
                     </p>
                     <InputError :message="form.errors.replacement" />
                 </div>

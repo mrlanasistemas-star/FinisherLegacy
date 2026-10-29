@@ -467,8 +467,8 @@ const caseError = computed(() => pageErrors.value.case ?? null);
                 <DialogHeader>
                     <DialogTitle>Reemplazar pieza</DialogTitle>
                     <DialogDescription>
-                        Escanea o escribe una pieza EN INVENTARIO. Hereda dueño
-                        y recuerdo; la actual queda como “Reemplazada”.
+                        Lee el NFC o escribe una pieza EN INVENTARIO. Hereda
+                        dueño y recuerdo; la actual queda como “Reemplazada”.
                     </DialogDescription>
                 </DialogHeader>
                 <form id="f-replace" @submit.prevent="doReplace">

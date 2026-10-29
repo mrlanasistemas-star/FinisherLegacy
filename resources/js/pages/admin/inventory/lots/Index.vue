@@ -250,7 +250,7 @@ const { filters, loading, apply, applyDebounced } = useAdminFilters(
             v-else
             :icon="Factory"
             title="Sin lotes"
-            text="Crea un lote para generar los códigos que la fábrica codificará en el NFC e imprimirá en el QR."
+            text="Crea un lote para generar los códigos que la fábrica codificará en el chip NFC."
         />
 
         <div class="mt-6"><Pagination :links="lots.links" /></div>

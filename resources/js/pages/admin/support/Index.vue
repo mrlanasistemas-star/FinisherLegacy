@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Soporte → Incidencias: activation help, NFC/QR failures, defects,
+ * Soporte → Incidencias: activation help, NFC failures, defects,
  * returns, replacements, ownership. Search by case number, tag code /
  * serial, order number or email; open cases first.
  */

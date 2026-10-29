@@ -649,8 +649,8 @@ const date = (iso: string) =>
                                 >Cada pieza es única y se activa</span
                             >
                             <span class="block text-xs text-muted-foreground"
-                                >Cada unidad tiene su serie, su código NFC/QR y
-                                su historial (lotes y tags).</span
+                                >Cada unidad tiene su serie, su código NFC y su
+                                historial (lotes y tags).</span
                             >
                         </span>
                     </label>

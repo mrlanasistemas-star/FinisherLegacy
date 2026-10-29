@@ -221,7 +221,7 @@ function submit() {
                     v-model="form.codes"
                     rows="6"
                     class="font-mono text-sm"
-                    placeholder="Escanea el QR / NFC o pega códigos, URLs /t/… o series, uno por línea"
+                    placeholder="Lee el NFC o pega códigos, URLs /t/… o series, uno por línea"
                 />
                 <p class="text-xs text-muted-foreground">
                     {{ codeCount }} {{ codeCount === 1 ? 'pieza' : 'piezas' }}

@@ -139,7 +139,7 @@ class InventoryLotController extends Controller
         ]);
     }
 
-    /** Codes for the factory: one row per piece, ready to encode NFC and print QR. */
+    /** Codes for the factory: one row per piece, ready to encode the NFC chip (the tag has no printed QR). */
     public function export(Request $request, InventoryLot $lot): StreamedResponse
     {
         activity()->causedBy($request->user())->performedOn($lot)->log('tags.lot.codes_exported');
@@ -154,12 +154,12 @@ class InventoryLotController extends Controller
             }
 
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['serial', 'public_code', 'display_code', 'nfc_url', 'qr_url']);
+            fputcsv($out, ['serial', 'public_code', 'display_code', 'nfc_url']);
 
             LegacyTag::query()->where('inventory_lot_id', $lot->id)->orderBy('id')
                 ->chunk(500, function (EloquentCollection $tags) use ($out) {
                     foreach ($tags as $tag) {
-                        fputcsv($out, [$tag->serial, $tag->public_code, TagCode::format($tag->public_code), TagUrls::nfc($tag), TagUrls::qr($tag)]);
+                        fputcsv($out, [$tag->serial, $tag->public_code, TagCode::format($tag->public_code), TagUrls::nfc($tag)]);
                     }
                 });
 

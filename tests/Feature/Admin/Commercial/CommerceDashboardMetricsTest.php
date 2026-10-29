@@ -95,7 +95,9 @@ test('seeded sales split by channel, units exclude nothing physical, activation 
         ->and($m['activation']['within_window_rate'])->toBe(0.5)
         ->and($m['activation']['median_seconds'])->toBe(55 * 3600)
         ->and($m['product']['opens']['nfc'])->toBe(1)
-        ->and($m['product']['opens']['qr'])->toBe(1)
+        // An old `?src=qr` link counts as a link: the tag has no printed QR any more.
+        ->and($m['product']['opens'])->not->toHaveKey('qr')
+        ->and($m['product']['opens']['link'])->toBe(1)
         ->and($m['product']['tags_with_incidents'])->toBe(1)
         ->and($m['product']['defects'])->toBe(1)
         ->and($m['collections']['top']['units'])->toBe(3)

@@ -13,6 +13,7 @@
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     ArrowRight,
+    BadgeCheck,
     ChevronRight,
     Minus,
     Nfc,
@@ -740,7 +741,7 @@ const savedInMiEquipo = [
                             v-if="product.brand"
                             class="flex items-center gap-2.5"
                         >
-                            <span class="size-4" aria-hidden="true" />
+                            <BadgeCheck class="size-4" aria-hidden="true" />
                             Marca: {{ product.brand }}
                         </li>
                     </ul>
