@@ -16,25 +16,13 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { confirmDestructive } from '@/lib/swal';
-import { dashboard } from '@/routes';
-import { index, show, update } from '@/routes/dashboard/medals';
+import { update } from '@/routes/dashboard/medals';
 import { destroy as destroyGalleryImage } from '@/routes/dashboard/medals/gallery';
 import type { MedalDetail } from '@/types';
 
 const { medal } = defineProps<{
     medal: MedalDetail;
 }>();
-
-defineOptions({
-    layout: (props: { medal: MedalDetail }) => ({
-        breadcrumbs: [
-            { title: 'Dashboard', href: dashboard() },
-            { title: 'Mis Medallas', href: index() },
-            { title: props.medal.title, href: show(props.medal.id) },
-            { title: 'Editar', href: '#' },
-        ],
-    }),
-});
 
 const form = useForm({
     event_name_manual: medal.event_name_manual ?? medal.title,
@@ -102,8 +90,8 @@ async function removeGalleryImage(medalImageId: number) {
 <template>
     <Head :title="`Editar ${medal.title}`" />
 
-    <div class="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
-        <h1 class="text-xl font-bold text-foreground">Editar medalla</h1>
+    <div class="fl-container max-w-2xl space-y-6 py-8 md:py-12">
+        <h1 class="font-serif text-3xl tracking-tight text-foreground">Editar medalla</h1>
 
         <div
             v-if="medal.is_official"

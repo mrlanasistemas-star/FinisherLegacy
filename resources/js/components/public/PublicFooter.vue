@@ -3,14 +3,8 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowUpRight, Mail, MapPin, Phone } from '@lucide/vue';
 import { computed } from 'vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
-import { ACTIVATE_URL, MI_LEGACY_URL } from '@/config/public-links';
-import { about, contact, howItWorks, privacy, terms } from '@/routes';
-import { index as collectionsIndex } from '@/routes/collections';
-import { index as communityIndex } from '@/routes/community';
-import { index as eventsIndex } from '@/routes/events';
-import { landing as photographersLanding } from '@/routes/photographers';
-import { index as photosIndex } from '@/routes/photos';
-import { index as storeIndex } from '@/routes/store/products';
+import { footerColumns as columns } from '@/config/public-links';
+import { contact } from '@/routes';
 
 type Company = {
     country: string | null;
@@ -35,42 +29,6 @@ const company = computed(() => {
 });
 
 const year = new Date().getFullYear();
-
-const columns = [
-    {
-        title: 'Tu tag',
-        links: [
-            { label: 'Colecciones', href: collectionsIndex().url },
-            { label: 'Cómo funciona', href: howItWorks().url },
-            { label: 'Activar mi tag', href: ACTIVATE_URL },
-            { label: 'Mi Legacy', href: MI_LEGACY_URL },
-        ],
-    },
-    {
-        title: 'Explora',
-        links: [
-            { label: 'Tienda', href: storeIndex().url },
-            { label: 'Eventos', href: eventsIndex().url },
-            { label: 'Comunidad', href: communityIndex().url },
-            { label: 'Fotos de evento', href: photosIndex().url },
-        ],
-    },
-    {
-        title: 'Finisher Legacy',
-        links: [
-            { label: 'Nosotros', href: about().url },
-            { label: 'Ayuda y contacto', href: contact().url },
-            { label: 'Fotógrafos', href: photographersLanding().url },
-        ],
-    },
-    {
-        title: 'Legal',
-        links: [
-            { label: 'Privacidad', href: privacy().url },
-            { label: 'Términos', href: terms().url },
-        ],
-    },
-];
 
 // Only networks an admin actually configured — nothing is shown (or
 // invented) for the rest.

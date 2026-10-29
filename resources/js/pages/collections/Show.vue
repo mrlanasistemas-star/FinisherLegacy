@@ -98,7 +98,7 @@ const steps = [
 
     <!-- Hero -->
     <section
-        class="relative -mt-16 overflow-hidden bg-fl-black text-white"
+        class="relative overflow-hidden bg-background text-foreground"
         aria-labelledby="collection-title"
     >
         <template v-if="collection.hero_url">
@@ -107,10 +107,14 @@ const steps = [
                 alt=""
                 fetchpriority="high"
                 decoding="async"
-                class="absolute inset-0 size-full object-cover opacity-60"
+                class="absolute inset-0 size-full object-cover"
             />
             <div
-                class="absolute inset-0 bg-gradient-to-r from-fl-black via-fl-black/70 to-fl-black/10"
+                class="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/25"
+                aria-hidden="true"
+            />
+            <div
+                class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent"
                 aria-hidden="true"
             />
         </template>
@@ -124,24 +128,28 @@ const steps = [
         />
 
         <div
-            class="fl-container relative grid min-h-[78svh] items-center gap-12 pt-28 pb-16 sm:pt-32 lg:grid-cols-12"
+            class="fl-container relative grid min-h-[70svh] items-center gap-12 pt-12 pb-16 sm:pt-20 lg:grid-cols-12"
         >
             <div class="lg:col-span-7">
                 <nav
                     aria-label="Ruta de navegación"
-                    class="flex items-center gap-1.5 text-sm text-white/55"
+                    class="flex items-center gap-1.5 text-sm text-muted-foreground"
                 >
-                    <Link :href="collectionsIndex()" class="hover:text-white"
+                    <Link
+                        :href="collectionsIndex()"
+                        class="hover:text-foreground"
                         >Colecciones</Link
                     >
                     <ChevronRight class="size-3.5" aria-hidden="true" />
-                    <span class="truncate text-white/85" aria-current="page">{{
-                        collection.name
-                    }}</span>
+                    <span
+                        class="truncate text-foreground"
+                        aria-current="page"
+                        >{{ collection.name }}</span
+                    >
                 </nav>
                 <p
                     v-if="subtitle"
-                    class="mt-10 flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                    class="mt-10 flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
                     {{ subtitle }}
@@ -153,19 +161,19 @@ const steps = [
                     {{ baseName }}
                     <span
                         v-if="collection.year"
-                        class="legacy-numeric block text-fl-gold-soft italic"
+                        class="legacy-numeric block text-fl-gold-ink italic"
                         >{{ collection.year }}</span
                     >
                 </h1>
                 <p
                     v-if="collection.tagline"
-                    class="mt-6 max-w-[32rem] text-lg leading-relaxed text-white/75"
+                    class="mt-6 max-w-[32rem] text-lg leading-relaxed text-muted-foreground"
                 >
                     {{ collection.tagline }}
                 </p>
                 <p
                     v-if="collection.edition || collection.season"
-                    class="mt-3 text-sm text-white/50"
+                    class="mt-3 text-sm text-muted-foreground"
                 >
                     {{
                         [collection.edition, collection.season]
@@ -176,7 +184,7 @@ const steps = [
                 <a
                     v-if="collection.products.length"
                     href="#piezas"
-                    class="mt-9 inline-flex h-11 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold tracking-wide text-fl-black transition-colors hover:bg-fl-paper"
+                    class="mt-9 inline-flex h-11 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold tracking-wide text-background transition-colors hover:bg-fl-graphite"
                 >
                     Ver
                     {{
@@ -195,7 +203,7 @@ const steps = [
                     :accent="collection.accent_color"
                 />
                 <p
-                    class="mt-4 text-center text-[11px] tracking-[0.18em] text-white/40 uppercase"
+                    class="mt-4 text-center text-[11px] tracking-[0.18em] text-muted-foreground uppercase"
                 >
                     Render ilustrativo
                 </p>
@@ -293,13 +301,13 @@ const steps = [
 
     <!-- How it works, briefly -->
     <section
-        class="bg-fl-graphite py-16 text-white sm:py-24"
+        class="border-y border-fl-line bg-white py-16 text-foreground sm:py-24"
         aria-labelledby="collection-how-title"
     >
         <div class="fl-container grid gap-12 lg:grid-cols-12">
             <div class="lg:col-span-4">
                 <p
-                    class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                    class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     Después de comprarlo
                 </p>
@@ -308,19 +316,19 @@ const steps = [
                     class="mt-4 font-serif text-[clamp(1.9rem,3.6vw,3rem)] leading-tight"
                 >
                     Tu carrera termina.
-                    <span class="text-white/50 italic">Tu historia no.</span>
+                    <span class="text-fl-gold-ink italic">Tu historia no.</span>
                 </h2>
                 <div class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                     <Link
                         :href="howItWorks()"
-                        class="inline-flex min-h-11 items-center gap-2 font-semibold text-white underline-offset-4 hover:underline"
+                        class="inline-flex min-h-11 items-center gap-2 font-semibold text-foreground underline-offset-4 hover:underline"
                     >
                         Cómo funciona
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>
                     <a
                         :href="ACTIVATE_URL"
-                        class="inline-flex min-h-11 items-center text-white/65 underline-offset-4 hover:text-white hover:underline"
+                        class="inline-flex min-h-11 items-center text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                         >¿Ya lo tienes? Actívalo</a
                     >
                 </div>
@@ -329,13 +337,13 @@ const steps = [
                 <li
                     v-for="step in steps"
                     :key="step.n"
-                    class="border-t border-white/15 pt-6"
+                    class="border-t border-foreground/10 pt-6"
                 >
-                    <span class="legacy-numeric text-xs text-fl-gold">{{
+                    <span class="legacy-numeric text-xs text-fl-gold-ink">{{
                         step.n
                     }}</span>
                     <p class="mt-3 font-serif text-2xl">{{ step.title }}</p>
-                    <p class="mt-2 text-[15px] text-white/60">
+                    <p class="mt-2 text-[15px] text-muted-foreground">
                         {{ step.body }}
                     </p>
                 </li>

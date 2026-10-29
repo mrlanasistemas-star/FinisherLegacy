@@ -8,10 +8,7 @@ import { ArrowRight, KeyRound } from '@lucide/vue';
 import { onMounted, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Spinner } from '@/components/ui/spinner';
-import PublicLayout from '@/layouts/PublicLayout.vue';
 import { lookup } from '@/routes/activate';
-
-defineOptions({ layout: PublicLayout });
 
 const props = defineProps<{ prefill: string | null }>();
 

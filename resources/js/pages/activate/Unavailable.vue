@@ -7,12 +7,9 @@ import { Head, Link } from '@inertiajs/vue3';
 import { LifeBuoy, Lock, SearchX } from '@lucide/vue';
 import { computed } from 'vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
-import PublicLayout from '@/layouts/PublicLayout.vue';
 import { contact, home } from '@/routes';
 import { index as activateIndex } from '@/routes/activate';
 import type { TagSummary } from '@/types/legacy-tags';
-
-defineOptions({ layout: PublicLayout });
 
 const props = defineProps<{
     reason: string | null;

@@ -9,7 +9,6 @@ import { Nfc } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import ConnectedGearCard from '@/components/nfc/ConnectedGearCard.vue';
 import type { GearItem } from '@/components/nfc/ConnectedGearCard.vue';
-import AppContainer from '@/components/shared/AppContainer.vue';
 import { Button } from '@/components/ui/button';
 
 const props = defineProps<{ items: GearItem[]; highlight: string | null }>();
@@ -52,7 +51,7 @@ onMounted(() => {
 <template>
     <Head title="Mi equipo" />
 
-    <AppContainer class="py-6 md:py-10">
+    <div class="fl-container py-8 md:py-12">
         <header
             class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
         >
@@ -129,5 +128,5 @@ onMounted(() => {
                 <Link href="/tienda">Ver la tienda</Link>
             </Button>
         </div>
-    </AppContainer>
+    </div>
 </template>

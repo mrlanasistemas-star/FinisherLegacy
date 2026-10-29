@@ -7,11 +7,8 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Lock } from '@lucide/vue';
 import { computed } from 'vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
-import PublicLayout from '@/layouts/PublicLayout.vue';
 import { home } from '@/routes';
 import type { TagSummary } from '@/types/legacy-tags';
-
-defineOptions({ layout: PublicLayout });
 
 defineProps<{ tag: TagSummary | null; loginUrl: string }>();
 

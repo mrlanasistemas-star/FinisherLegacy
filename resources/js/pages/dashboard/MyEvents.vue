@@ -12,19 +12,8 @@ import Reveal from '@/components/motion/Reveal.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import { Button } from '@/components/ui/button';
-import { dashboard } from '@/routes';
-import { myEvents } from '@/routes/dashboard';
 import { index as eventsIndex } from '@/routes/events';
 import type { LegadoEntry, LegadoTotals, UpcomingEntry } from '@/types/legado';
-
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Mi legado', href: dashboard() },
-            { title: 'Mis eventos', href: myEvents() },
-        ],
-    },
-});
 
 defineProps<{
     upcoming: UpcomingEntry[];

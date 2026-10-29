@@ -4,24 +4,13 @@ import { Award, Pencil, QrCode, Trash2 } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { confirmDestructive } from '@/lib/swal';
-import { dashboard } from '@/routes';
-import { destroy, edit, index } from '@/routes/dashboard/medals';
+import { destroy, edit } from '@/routes/dashboard/medals';
 import { show as legacyCodeShow } from '@/routes/legacy-code';
 import type { MedalDetail } from '@/types';
 
 const { medal } = defineProps<{
     medal: MedalDetail;
 }>();
-
-defineOptions({
-    layout: (props: { medal: MedalDetail }) => ({
-        breadcrumbs: [
-            { title: 'Dashboard', href: dashboard() },
-            { title: 'Mis Medallas', href: index() },
-            { title: props.medal.title, href: '#' },
-        ],
-    }),
-});
 
 async function handleDelete() {
     const result = await confirmDestructive({
@@ -39,11 +28,11 @@ async function handleDelete() {
 <template>
     <Head :title="medal.title" />
 
-    <div class="mx-auto max-w-4xl p-4 md:p-6">
+    <div class="fl-container max-w-4xl py-8 md:py-12">
         <div class="mb-6 flex items-start justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="text-2xl font-bold text-foreground">
+                    <h1 class="font-serif text-3xl tracking-tight text-foreground md:text-4xl">
                         {{ medal.title }}
                     </h1>
                     <Badge

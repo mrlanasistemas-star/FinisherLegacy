@@ -23,18 +23,8 @@ import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import { shortDate } from '@/lib/datetime';
-import { dashboard } from '@/routes';
 import { show as profileShow } from '@/routes/dashboard/profile';
 import { legacyPlateStatusLabel } from '@/types/legado';
-
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Mi legado', href: dashboard() },
-            { title: 'Mi perfil', href: profileShow() },
-        ],
-    },
-});
 
 type FilterOption = { id: number; name: string };
 

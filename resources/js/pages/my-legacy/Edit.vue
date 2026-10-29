@@ -22,7 +22,6 @@ import {
 import { computed, reactive, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
-import AppContainer from '@/components/shared/AppContainer.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { show as storyShow } from '@/routes/legacy/story';
 import { index as myLegacyIndex, print, update } from '@/routes/my-legacy';
@@ -303,7 +302,7 @@ function isProcessing(item: StoryMediaItem): boolean {
 <template>
     <Head :title="`Editar · ${story.title}`" />
 
-    <AppContainer class="py-6 pb-32 md:py-10">
+    <div class="fl-container py-8 pb-32 md:py-12">
         <div class="mx-auto max-w-2xl">
             <div class="flex items-center justify-between gap-3">
                 <Link
@@ -930,5 +929,5 @@ function isProcessing(item: StoryMediaItem): boolean {
                 </div>
             </form>
         </div>
-    </AppContainer>
+    </div>
 </template>

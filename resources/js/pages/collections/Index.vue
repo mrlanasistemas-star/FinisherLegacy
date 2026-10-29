@@ -29,7 +29,7 @@ const lead = props.collections[0] ?? null;
     />
 
     <section
-        class="relative -mt-16 overflow-hidden bg-fl-black pt-32 pb-16 text-white sm:pt-40 sm:pb-24"
+        class="relative overflow-hidden bg-background pt-12 pb-16 text-foreground sm:pt-20 sm:pb-24"
         aria-labelledby="collections-index-title"
     >
         <div
@@ -41,7 +41,7 @@ const lead = props.collections[0] ?? null;
         >
             <div class="lg:col-span-8">
                 <p
-                    class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                    class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
                     Colecciones
@@ -51,12 +51,12 @@ const lead = props.collections[0] ?? null;
                     class="mt-6 font-serif text-[clamp(2.6rem,7vw,6rem)] leading-[1.02] font-medium tracking-[-0.025em]"
                 >
                     Una colección
-                    <span class="block text-fl-gold-soft italic"
+                    <span class="block text-fl-gold-ink italic"
                         >por cada historia.</span
                     >
                 </h1>
                 <p
-                    class="mt-6 max-w-[34rem] text-lg leading-relaxed text-white/70"
+                    class="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground"
                 >
                     Cada destino, disciplina y edición tiene su propio Finisher
                     Legacy Tag. Elige el de tu carrera: lo llevas a casa, lo
@@ -77,7 +77,7 @@ const lead = props.collections[0] ?? null;
     </section>
 
     <section
-        class="bg-fl-paper py-16 sm:py-24"
+        class="border-t border-fl-line bg-fl-paper py-16 sm:py-24"
         aria-label="Todas las colecciones"
     >
         <div class="fl-container">

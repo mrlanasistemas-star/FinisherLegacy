@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Store\ProductController as StoreProductController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -11,6 +12,25 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('como-funciona', 'HowItWorks')->name('how-it-works');
 // The page used to live at /how-it-works — keep old links working.
 Route::permanentRedirect('how-it-works', '/como-funciona');
+
+// Guest gate for social actions (useAuthGate): remembers where the visitor
+// was (same-site relative paths only) and sends them to sign in. Fortify's
+// redirect()->intended() brings them back afterwards.
+Route::get('entrar', function (Request $request) {
+    $back = (string) $request->query('volver', '/');
+
+    if (! str_starts_with($back, '/') || str_starts_with($back, '//') || str_contains($back, '\\')) {
+        $back = '/';
+    }
+
+    if ($request->user() !== null) {
+        return redirect($back);
+    }
+
+    $request->session()->put('url.intended', url($back));
+
+    return redirect()->route($request->query('modo') === 'registro' ? 'register' : 'login');
+})->name('auth.gate');
 
 Route::prefix('tienda')->group(function () {
     Route::get('/', [StoreProductController::class, 'index'])->name('store.products.index');

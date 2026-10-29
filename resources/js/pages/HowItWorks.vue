@@ -142,7 +142,7 @@ const photo = MEDIA.photo;
 
     <!-- Hero -->
     <section
-        class="relative -mt-16 overflow-hidden bg-fl-black pt-32 pb-16 text-white sm:pt-40 sm:pb-24"
+        class="relative overflow-hidden bg-background pt-12 pb-16 text-foreground sm:pt-20 sm:pb-24"
         aria-labelledby="how-title"
     >
         <div
@@ -151,7 +151,7 @@ const photo = MEDIA.photo;
         />
         <div class="fl-container relative">
             <p
-                class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
             >
                 <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
                 Cómo funciona
@@ -161,11 +161,13 @@ const photo = MEDIA.photo;
                 class="mt-6 max-w-5xl font-serif text-[clamp(2.6rem,7vw,6rem)] leading-[1.02] font-medium tracking-[-0.025em]"
             >
                 Del logro físico
-                <span class="block text-fl-gold-soft italic"
+                <span class="block text-fl-gold-ink italic"
                     >a tu historia.</span
                 >
             </h1>
-            <p class="mt-6 max-w-[36rem] text-lg leading-relaxed text-white/70">
+            <p
+                class="mt-6 max-w-[36rem] text-lg leading-relaxed text-muted-foreground"
+            >
                 El Finisher Legacy Tag es el recuerdo que puedes tocar. Tu
                 historia vive dentro y se abre con tu teléfono.
             </p>
@@ -174,7 +176,7 @@ const photo = MEDIA.photo;
                 aria-label="Los siete momentos"
             >
                 <template v-for="(step, i) in steps" :key="step.verb">
-                    <li class="text-white/85">{{ step.verb }}</li>
+                    <li class="text-foreground/85">{{ step.verb }}</li>
                     <li
                         v-if="i < steps.length - 1"
                         class="h-px w-6 bg-fl-gold/60"
@@ -191,7 +193,7 @@ const photo = MEDIA.photo;
             <!-- Pinned visual (desktop) -->
             <div class="hidden lg:col-span-5 lg:block">
                 <div
-                    class="sticky top-24 aspect-[4/5] overflow-hidden rounded-hero bg-fl-black"
+                    class="sticky top-24 aspect-[4/5] overflow-hidden rounded-hero bg-fl-cream shadow-fl-soft"
                 >
                     <div
                         v-for="(step, index) in steps"
@@ -250,14 +252,14 @@ const photo = MEDIA.photo;
                                 alt=""
                                 loading="lazy"
                                 decoding="async"
-                                class="absolute inset-0 size-full object-cover opacity-80"
+                                class="absolute inset-0 size-full object-cover"
                             />
                             <div
-                                class="absolute inset-0 bg-gradient-to-t from-fl-black via-fl-black/40 to-transparent"
+                                class="absolute inset-0 bg-gradient-to-t from-fl-black/80 via-fl-black/25 to-transparent"
                             />
                             <div class="absolute inset-x-8 bottom-8 text-white">
                                 <span
-                                    class="rounded-full bg-fl-black/70 px-2.5 py-1 text-[10px] font-semibold tracking-[0.18em] text-fl-gold-soft uppercase"
+                                    class="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold tracking-[0.18em] text-fl-gold-ink uppercase"
                                     >Ejemplo</span
                                 >
                                 <p class="mt-4 font-serif text-4xl">
@@ -285,17 +287,17 @@ const photo = MEDIA.photo;
                                         'Para mis amigos',
                                     ]"
                                     :key="who"
-                                    class="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-5 py-3 font-serif text-2xl text-white"
+                                    class="inline-flex items-center gap-3 rounded-full border border-foreground/10 bg-white px-5 py-3 font-serif text-2xl text-foreground shadow-fl-micro"
                                     :style="{ marginLeft: `${i * 1.5}rem` }"
                                 >
                                     <Link2
-                                        class="size-4 text-fl-gold"
+                                        class="size-4 text-fl-gold-ink"
                                         aria-hidden="true"
                                     />
                                     {{ who }}
                                 </span>
                                 <span
-                                    class="mt-4 text-[11px] tracking-[0.18em] text-white/40 uppercase"
+                                    class="mt-4 text-[11px] tracking-[0.18em] text-muted-foreground uppercase"
                                     >Ejemplo de enlaces</span
                                 >
                             </div>
@@ -353,7 +355,7 @@ const photo = MEDIA.photo;
                                 step.visual === 'hand' ||
                                 step.visual === 'back'
                             "
-                            class="flex justify-center rounded-hero bg-fl-black py-8"
+                            class="flex justify-center rounded-hero bg-fl-cream py-8"
                         >
                             <div class="w-[40%] max-w-[11rem]">
                                 <TagVisualizer
@@ -434,12 +436,12 @@ const photo = MEDIA.photo;
 
     <!-- Three ways to open -->
     <section
-        class="bg-fl-graphite py-16 text-white sm:py-24"
+        class="border-y border-fl-line bg-white py-16 text-foreground sm:py-24"
         aria-labelledby="ways-title"
     >
         <div class="fl-container">
             <p
-                class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
             >
                 Tres caminos, una historia
             </p>
@@ -448,21 +450,21 @@ const photo = MEDIA.photo;
                 class="mt-4 max-w-3xl font-serif text-[clamp(2rem,4vw,3.5rem)] leading-tight"
             >
                 Acerca tu teléfono.
-                <span class="text-white/50 italic">Vuelve al momento.</span>
+                <span class="text-fl-gold-ink italic">Vuelve al momento.</span>
             </h2>
             <ul class="mt-12 grid gap-10 sm:grid-cols-3">
                 <li
                     v-for="way in ways"
                     :key="way.title"
-                    class="border-t border-white/15 pt-6"
+                    class="border-t border-foreground/10 pt-6"
                 >
                     <component
                         :is="way.icon"
-                        class="size-6 text-fl-gold"
+                        class="size-6 text-fl-gold-ink"
                         aria-hidden="true"
                     />
                     <p class="mt-4 font-serif text-3xl">{{ way.title }}</p>
-                    <p class="mt-2 max-w-xs text-[15px] text-white/60">
+                    <p class="mt-2 max-w-xs text-[15px] text-muted-foreground">
                         {{ way.body }}
                     </p>
                 </li>
@@ -507,7 +509,7 @@ const photo = MEDIA.photo;
 
     <!-- Close -->
     <section
-        class="bg-fl-black py-20 text-center text-white sm:py-28"
+        class="border-t border-fl-line bg-fl-cream py-20 text-center text-foreground sm:py-28"
         aria-labelledby="how-cta-title"
     >
         <div class="fl-container">
@@ -516,7 +518,7 @@ const photo = MEDIA.photo;
                 class="mx-auto max-w-3xl font-serif text-[clamp(2.2rem,5vw,4.25rem)] leading-[1.04]"
             >
                 Tu carrera termina.
-                <span class="block text-fl-gold-soft italic"
+                <span class="block text-fl-gold-ink italic"
                     >Tu historia no.</span
                 >
             </h2>
@@ -525,14 +527,14 @@ const photo = MEDIA.photo;
             >
                 <Link
                     :href="collectionsIndex()"
-                    class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-fl-gold px-6 text-sm font-semibold tracking-wide text-fl-black transition-colors hover:bg-fl-gold-soft"
+                    class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold tracking-wide text-background transition-colors hover:bg-fl-graphite"
                 >
                     Explorar colecciones
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
                 <a
                     :href="ACTIVATE_URL"
-                    class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-white underline decoration-fl-gold decoration-1 underline-offset-[6px] transition-colors hover:decoration-2"
+                    class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-foreground underline decoration-fl-gold decoration-1 underline-offset-[6px] transition-colors hover:decoration-2"
                 >
                     Activar mi tag
                 </a>

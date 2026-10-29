@@ -158,12 +158,6 @@ const props = defineProps<{
     supportSession: SupportSession | null;
 }>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [{ title: 'Mi legado', href: dashboard() }],
-    },
-});
-
 const heroImage = computed(
     () => props.story.cover_url ?? props.medals[0]?.image_url ?? null,
 );

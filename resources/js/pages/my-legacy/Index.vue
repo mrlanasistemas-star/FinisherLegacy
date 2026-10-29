@@ -6,7 +6,6 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ImageIcon, Mic, Plus, Sparkles } from '@lucide/vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
-import AppContainer from '@/components/shared/AppContainer.vue';
 import { index as activateIndex } from '@/routes/activate';
 import { show as storyShow } from '@/routes/legacy/story';
 import { edit } from '@/routes/my-legacy';
@@ -41,7 +40,7 @@ defineProps<{
 <template>
     <Head title="Mi Legacy" />
 
-    <AppContainer class="py-6 md:py-10">
+    <div class="fl-container py-8 md:py-12">
         <header class="flex items-end justify-between gap-4">
             <div>
                 <p class="fl-eyebrow">Mi Legacy</p>
@@ -72,21 +71,21 @@ defineProps<{
         <!-- Empty -->
         <section
             v-if="total === 0"
-            class="mt-10 overflow-hidden rounded-[var(--fl-radius-hero)] bg-fl-black px-6 py-12 text-center text-white sm:py-16"
+            class="mt-10 overflow-hidden rounded-[var(--fl-radius-hero)] border border-border bg-white bg-[radial-gradient(60%_70%_at_50%_0%,color-mix(in_srgb,var(--fl-gold)_10%,transparent),transparent_70%)] px-6 py-12 text-center shadow-fl-soft sm:py-16"
         >
             <div class="mx-auto w-28">
                 <LegacyTagArt :tag="null" />
             </div>
             <h2 class="fl-display mt-6 text-3xl">Activa tu primer tag</h2>
             <p
-                class="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/65"
+                class="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground"
             >
                 Acerca tu teléfono a tu Finisher Legacy Tag o escribe el código
                 que trae impreso. Tu historia empieza aquí.
             </p>
             <Link
                 :href="activateIndex().url"
-                class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-fl-gold px-6 text-sm font-semibold text-fl-black transition hover:bg-fl-gold-soft"
+                class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:bg-fl-graphite"
             >
                 <Sparkles class="size-4" aria-hidden="true" />
                 Activa tu primer tag
@@ -215,5 +214,5 @@ defineProps<{
                 </li>
             </ul>
         </section>
-    </AppContainer>
+    </div>
 </template>

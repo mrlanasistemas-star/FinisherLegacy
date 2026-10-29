@@ -18,24 +18,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { dashboard } from '@/routes';
 import {
-    index,
     matchParticipant,
     searchEvents,
     store,
 } from '@/routes/dashboard/medals';
 import type { EventSearchResult } from '@/types';
-
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Dashboard', href: dashboard() },
-            { title: 'Mis Medallas', href: index() },
-            { title: 'Agregar medalla', href: '#' },
-        ],
-    },
-});
 
 const steps = [
     'Origen',
@@ -186,7 +174,7 @@ function submit() {
 <template>
     <Head title="Agregar medalla" />
 
-    <div class="mx-auto max-w-2xl p-4 md:p-6">
+    <div class="fl-container max-w-2xl py-8 md:py-12">
         <!-- Step indicator -->
         <div class="mb-8 flex items-center gap-2">
             <template v-for="(label, index) in steps" :key="label">

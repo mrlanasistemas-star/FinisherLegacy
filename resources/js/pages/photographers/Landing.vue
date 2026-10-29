@@ -98,80 +98,92 @@ const benefits = [
     />
 
     <!-- Photographic hero -->
-    <section class="relative isolate overflow-hidden bg-fl-black text-white">
-        <img
-            :src="hero.src"
-            :srcset="hero.srcset"
-            sizes="100vw"
-            :width="hero.width"
-            :height="hero.height"
-            alt="Corredora en plena zancada fotografiada durante una carrera"
-            class="absolute inset-0 -z-10 size-full object-cover object-[70%_center]"
-            fetchpriority="high"
-            decoding="async"
-        />
+    <section class="relative overflow-hidden bg-background text-foreground">
         <div
-            aria-hidden="true"
-            class="absolute inset-0 -z-10 bg-gradient-to-r from-black/85 via-black/55 to-black/10"
-        />
-        <div class="fl-container py-20 sm:py-28 lg:py-36">
-            <p
-                class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
-            >
-                <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
-                Para fotógrafos deportivos
-            </p>
-            <h1
-                class="mt-5 max-w-3xl font-serif text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-7xl"
-            >
-                Tu cámara captura la meta.
-                <span class="text-fl-gold italic"
-                    >Finisher Legacy te ayuda a venderla.</span
+            class="fl-container grid items-center gap-10 pt-12 pb-16 sm:pt-20 sm:pb-24 lg:grid-cols-12 lg:gap-14"
+        >
+            <div class="lg:col-span-7">
+                <p
+                    class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
-            </h1>
-            <p class="mt-6 max-w-xl text-lg text-white/75">
-                Publicar sin costo inicial. Tú pones el precio, cada atleta
-                encuentra su foto por evento y número de participante, y ves
-                cada venta con su desglose.
-            </p>
-            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button
-                    as-child
-                    size="lg"
-                    class="h-12 rounded-full bg-background px-7 text-foreground hover:bg-background/90"
+                    <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
+                    Para fotógrafos deportivos
+                </p>
+                <h1
+                    class="mt-5 max-w-3xl font-serif text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-7xl"
                 >
-                    <Link :href="photographerRegister()">
-                        <Camera class="size-4" />
-                        Quiero vender mis fotos
-                    </Link>
-                </Button>
-                <Button
-                    v-if="user"
-                    as-child
-                    size="lg"
-                    variant="outline"
-                    class="h-12 rounded-full border-white/40 bg-transparent px-7 text-white hover:bg-white/10 hover:text-white"
+                    Tu cámara captura la meta.
+                    <span class="text-fl-gold-ink italic"
+                        >Finisher Legacy te ayuda a venderla.</span
+                    >
+                </h1>
+                <p class="mt-6 max-w-xl text-lg text-muted-foreground">
+                    Publicar sin costo inicial. Tú pones el precio, cada atleta
+                    encuentra su foto por evento y número de participante, y ves
+                    cada venta con su desglose.
+                </p>
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <Button
+                        as-child
+                        size="lg"
+                        class="h-12 rounded-full bg-foreground px-7 text-background hover:bg-fl-graphite"
+                    >
+                        <Link :href="photographerRegister()">
+                            <Camera class="size-4" />
+                            Quiero vender mis fotos
+                        </Link>
+                    </Button>
+                    <Button
+                        v-if="user"
+                        as-child
+                        size="lg"
+                        variant="outline"
+                        class="h-12 rounded-full border-foreground/20 bg-transparent px-7 text-foreground hover:bg-foreground/5 hover:text-foreground"
+                    >
+                        <Link :href="photographerDashboard()"
+                            >Ir a mi portal</Link
+                        >
+                    </Button>
+                </div>
+                <dl
+                    v-if="stats.photographers > 0 && stats.photos > 0"
+                    class="mt-10 flex gap-10 border-t border-foreground/10 pt-6"
                 >
-                    <Link :href="photographerDashboard()">Ir a mi portal</Link>
-                </Button>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Fotógrafos activos
+                        </dt>
+                        <dd class="legacy-numeric mt-1 text-3xl font-semibold">
+                            {{ stats.photographers }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Fotos publicadas
+                        </dt>
+                        <dd class="legacy-numeric mt-1 text-3xl font-semibold">
+                            {{ stats.photos }}
+                        </dd>
+                    </div>
+                </dl>
             </div>
-            <dl
-                v-if="stats.photographers > 0 && stats.photos > 0"
-                class="mt-10 flex gap-10 border-t border-white/15 pt-6"
-            >
-                <div>
-                    <dt class="text-xs text-white/60">Fotógrafos activos</dt>
-                    <dd class="legacy-numeric mt-1 text-3xl font-semibold">
-                        {{ stats.photographers }}
-                    </dd>
+            <div class="lg:col-span-5">
+                <div
+                    class="relative aspect-[4/5] overflow-hidden rounded-hero bg-fl-cream shadow-fl-float"
+                >
+                    <img
+                        :src="hero.src"
+                        :srcset="hero.srcset"
+                        sizes="(min-width: 1024px) 40vw, 100vw"
+                        :width="hero.width"
+                        :height="hero.height"
+                        alt="Corredora en plena zancada fotografiada durante una carrera"
+                        class="size-full object-cover object-[70%_center]"
+                        fetchpriority="high"
+                        decoding="async"
+                    />
                 </div>
-                <div>
-                    <dt class="text-xs text-white/60">Fotos publicadas</dt>
-                    <dd class="legacy-numeric mt-1 text-3xl font-semibold">
-                        {{ stats.photos }}
-                    </dd>
-                </div>
-            </dl>
+            </div>
         </div>
     </section>
 
@@ -271,20 +283,20 @@ const benefits = [
             </div>
         </StaggerGroup>
         <div
-            class="mt-12 flex flex-col items-start gap-5 rounded-hero bg-foreground p-8 text-background shadow-fl-float sm:flex-row sm:items-center sm:justify-between sm:p-10"
+            class="mt-12 flex flex-col items-start gap-5 rounded-hero border border-fl-line bg-fl-cream p-8 text-foreground sm:flex-row sm:items-center sm:justify-between sm:p-10"
         >
             <div>
                 <p class="font-serif text-3xl">
                     ¿Cubres carreras, trails o triatlones?
                 </p>
-                <p class="mt-2 text-sm text-white/70">
+                <p class="mt-2 text-sm text-muted-foreground">
                     Únete y empieza a vender en tu próximo evento.
                 </p>
             </div>
             <Button
                 as-child
                 size="lg"
-                class="h-12 rounded-full bg-background px-7 text-foreground hover:bg-background/90"
+                class="h-12 rounded-full bg-foreground px-7 text-background hover:bg-fl-graphite"
             >
                 <Link :href="photographerRegister()">
                     Registrarme como fotógrafo

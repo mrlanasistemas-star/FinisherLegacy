@@ -13,19 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { dashboard } from '@/routes';
-import { edit, show, update } from '@/routes/dashboard/profile';
+import { show, update } from '@/routes/dashboard/profile';
 import type { AthleteProfileFormData, SportOption } from '@/types';
-
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Mi legado', href: dashboard() },
-            { title: 'Mi perfil', href: show() },
-            { title: 'Editar', href: edit() },
-        ],
-    },
-});
 
 const { profile, sports, visibilityOptions } = defineProps<{
     profile: AthleteProfileFormData | null;
@@ -115,7 +104,9 @@ const previewProfile = computed(() => ({
                     </h1>
                 </header>
 
-                <div class="grid gap-4 sm:grid-cols-2">
+                <div
+                    class="grid items-start gap-4 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]"
+                >
                     <ImageDropzone
                         :model-value="form.profile_photo"
                         :initial-url="profile?.profile_photo_url ?? null"

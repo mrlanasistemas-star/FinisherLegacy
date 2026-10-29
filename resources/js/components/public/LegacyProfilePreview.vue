@@ -69,7 +69,7 @@ const initials = computed(() =>
 
             <div class="flex flex-col items-center px-6 pb-6 text-center">
                 <div
-                    class="-mt-10 flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-fl-graphite bg-background text-2xl font-semibold text-fl-gold-ink ring-1 ring-fl-gold/40"
+                    class="relative z-10 -mt-12 flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-card bg-fl-cream text-2xl font-semibold text-fl-gold-ink shadow-sm ring-1 ring-fl-gold/40"
                 >
                     <img
                         v-if="display.photo_url"

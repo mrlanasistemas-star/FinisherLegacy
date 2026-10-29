@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * `/legacy/{publicId}` and `/legacy/para/{token}` — what opens when
- * someone taps the tag. Cinematic, dark + gold, photo-first; built for a
+ * someone taps the tag. Editorial, warm paper + gold, photo-first; built for a
  * phone held in one hand. No app shell on purpose: only the memory.
  * Motion is decorative and off under prefers-reduced-motion.
  */
@@ -232,21 +232,23 @@ async function nativeShare() {
         />
     </Head>
 
-    <div class="legacy-story min-h-svh bg-fl-black text-fl-paper antialiased">
+    <div
+        class="legacy-story min-h-svh bg-background text-foreground antialiased"
+    >
         <!-- Top bar -->
         <header
             class="fixed inset-x-0 top-0 z-30 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 sm:px-6"
         >
             <Link
                 :href="isOwner ? myLegacyIndex().url : home().url"
-                class="rounded-full bg-black/35 px-3 py-1.5 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-soft uppercase backdrop-blur-md"
+                class="rounded-full border border-foreground/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase shadow-fl-micro backdrop-blur-md"
             >
                 {{ isOwner ? '← Mi Legacy' : 'Finisher Legacy' }}
             </Link>
             <Link
                 v-if="isOwner"
                 :href="edit(story.public_id).url"
-                class="inline-flex items-center gap-1.5 rounded-full bg-fl-gold px-4 py-2 text-sm font-semibold text-fl-black shadow-fl-float"
+                class="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-fl-float transition-colors hover:bg-fl-graphite"
             >
                 <PenLine class="size-4" aria-hidden="true" />
                 Editar
@@ -255,73 +257,91 @@ async function nativeShare() {
 
         <!-- Hero -->
         <section
-            class="relative flex min-h-[92svh] flex-col justify-end overflow-hidden"
+            class="relative overflow-hidden pt-[calc(max(env(safe-area-inset-top),0.75rem)+3.75rem)]"
             aria-labelledby="story-title"
         >
-            <img
-                v-if="story.cover?.url"
-                :src="story.cover.url"
-                :alt="story.cover.caption ?? story.title"
-                class="hero-photo absolute inset-0 size-full object-cover"
-                fetchpriority="high"
-                decoding="async"
-            />
             <div
-                v-else
-                class="absolute inset-0 flex items-center justify-center pb-40"
+                class="pointer-events-none absolute inset-x-0 top-0 h-[70svh]"
+                style="
+                    background: radial-gradient(
+                        70% 55% at 50% 20%,
+                        rgb(201 164 92 / 0.16),
+                        transparent 70%
+                    );
+                "
                 aria-hidden="true"
-            >
+            />
+            <div class="relative mx-auto w-full max-w-3xl px-4 sm:px-8">
                 <div
-                    class="absolute inset-0"
-                    style="
-                        background: radial-gradient(
-                            90% 60% at 50% 30%,
-                            rgb(201 164 92 / 0.22),
-                            transparent 70%
-                        );
+                    class="relative overflow-hidden rounded-[var(--fl-radius-hero)] bg-fl-cream shadow-fl-float"
+                    :class="
+                        story.cover?.url
+                            ? 'aspect-[4/5] sm:aspect-[16/11]'
+                            : 'aspect-[16/11]'
                     "
-                />
-                <div class="relative w-36 sm:w-44">
-                    <LegacyTagArt :tag="story.tag" />
+                >
+                    <img
+                        v-if="story.cover?.url"
+                        :src="story.cover.url"
+                        :alt="story.cover.caption ?? story.title"
+                        class="hero-photo absolute inset-0 size-full object-cover"
+                        fetchpriority="high"
+                        decoding="async"
+                    />
+                    <div
+                        v-else
+                        class="absolute inset-0 flex items-center justify-center"
+                        aria-hidden="true"
+                    >
+                        <div
+                            class="absolute inset-0"
+                            style="
+                                background: radial-gradient(
+                                    60% 60% at 50% 50%,
+                                    rgb(201 164 92 / 0.24),
+                                    transparent 70%
+                                );
+                            "
+                        />
+                        <div class="relative w-28 sm:w-36">
+                            <LegacyTagArt :tag="story.tag" />
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div
-                class="absolute inset-0 bg-gradient-to-t from-fl-black via-fl-black/55 to-fl-black/10"
-                aria-hidden="true"
-            />
 
             <div
-                class="reveal relative mx-auto w-full max-w-3xl px-5 pb-12 sm:px-8 sm:pb-16"
+                class="reveal relative mx-auto w-full max-w-3xl px-5 pt-10 pb-12 sm:px-8 sm:pt-12 sm:pb-16"
             >
                 <p
                     v-if="mode === 'recipient' && greeting"
-                    class="mb-5 inline-flex rounded-full border border-fl-gold/40 bg-black/30 px-3 py-1 text-xs font-medium text-fl-gold-soft backdrop-blur"
+                    class="mb-5 inline-flex rounded-full border border-fl-gold/40 bg-white px-3 py-1 text-xs font-medium text-fl-gold-ink shadow-fl-micro"
                 >
                     {{ forRecipient(greeting) }}
                 </p>
                 <p
-                    class="text-[11px] font-semibold tracking-[0.28em] text-fl-gold uppercase"
+                    class="text-[11px] font-semibold tracking-[0.28em] text-fl-gold-ink uppercase"
                 >
                     {{ eyebrow }}
-                    <span v-if="race.edition" class="text-fl-gold-soft/70">
+                    <span v-if="race.edition" class="text-fl-gold-ink/70">
                         · {{ race.edition }}</span
                     >
                 </p>
                 <h1
                     id="story-title"
-                    class="mt-3 font-serif text-[2.6rem] leading-[1.02] font-medium tracking-tight text-balance sm:text-6xl"
+                    class="mt-3 font-serif text-[2.6rem] leading-[1.02] font-medium tracking-tight text-balance text-foreground sm:text-6xl"
                 >
                     {{ story.title }}
                 </h1>
                 <p
                     v-if="metaLine"
-                    class="legacy-numeric mt-4 text-lg font-medium text-fl-paper/90"
+                    class="legacy-numeric mt-4 text-lg font-medium text-foreground/85"
                 >
                     {{ metaLine }}
                 </p>
                 <p
                     v-if="date || race.location"
-                    class="mt-1 text-sm text-fl-paper/60"
+                    class="mt-1 text-sm text-muted-foreground"
                 >
                     {{ [date, race.location].filter(Boolean).join(' · ') }}
                 </p>
@@ -332,24 +352,24 @@ async function nativeShare() {
             <!-- Dedication -->
             <section
                 v-if="story.dedication"
-                class="reveal border-t border-white/10 py-12"
+                class="reveal border-t border-foreground/10 py-12"
                 aria-label="Dedicatoria"
             >
                 <span class="block h-px w-12 bg-fl-gold" aria-hidden="true" />
                 <p
                     v-if="story.recipient_label"
-                    class="mt-6 text-xs font-semibold tracking-[0.24em] text-fl-gold-soft uppercase"
+                    class="mt-6 text-xs font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     {{ forRecipient(story.recipient_label) }}
                 </p>
                 <blockquote
-                    class="mt-4 font-serif text-2xl leading-snug font-light text-fl-paper italic sm:text-3xl"
+                    class="mt-4 font-serif text-2xl leading-snug font-light text-foreground italic sm:text-3xl"
                 >
                     “{{ story.dedication }}”
                 </blockquote>
                 <p
                     v-if="story.athlete_first_name"
-                    class="mt-5 text-sm text-fl-paper/55"
+                    class="mt-5 text-sm text-muted-foreground"
                 >
                     — {{ story.athlete_first_name }}
                 </p>
@@ -358,18 +378,18 @@ async function nativeShare() {
             <!-- Race facts -->
             <section
                 v-if="facts.length"
-                class="reveal border-t border-white/10 py-10"
+                class="reveal border-t border-foreground/10 py-10"
                 aria-label="Datos de la carrera"
             >
                 <dl class="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
                     <div v-for="fact in facts" :key="fact.label">
                         <dt
-                            class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold/80 uppercase"
+                            class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                         >
                             {{ fact.label }}
                         </dt>
                         <dd
-                            class="legacy-numeric mt-1.5 font-serif text-lg leading-snug text-fl-paper sm:text-xl"
+                            class="legacy-numeric mt-1.5 font-serif text-lg leading-snug text-foreground sm:text-xl"
                         >
                             {{ fact.value }}
                         </dd>
@@ -377,7 +397,7 @@ async function nativeShare() {
                 </dl>
                 <p
                     v-if="race.source === 'participation'"
-                    class="mt-6 text-xs text-fl-paper/45"
+                    class="mt-6 text-xs text-muted-foreground"
                 >
                     Resultado oficial del evento.
                 </p>
@@ -386,15 +406,15 @@ async function nativeShare() {
             <!-- Voice message -->
             <section
                 v-if="story.audio?.url"
-                class="reveal border-t border-white/10 py-10"
+                class="reveal border-t border-foreground/10 py-10"
                 aria-label="Mensaje de voz"
             >
                 <div
-                    class="flex items-center gap-4 rounded-2xl border border-fl-gold/25 bg-white/[0.04] p-4"
+                    class="flex items-center gap-4 rounded-2xl border border-fl-gold/30 bg-white p-4 shadow-fl-soft"
                 >
                     <button
                         type="button"
-                        class="flex size-14 shrink-0 items-center justify-center rounded-full bg-fl-gold text-fl-black transition hover:bg-fl-gold-soft focus-visible:ring-4 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
+                        class="flex size-14 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-fl-graphite focus-visible:ring-4 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
                         :aria-label="
                             playing ? 'Pausar mensaje' : 'Escuchar mensaje'
                         "
@@ -415,7 +435,9 @@ async function nativeShare() {
                             aria-label="Avance del mensaje"
                             @input="seek"
                         />
-                        <p class="legacy-numeric mt-1 text-xs text-fl-paper/55">
+                        <p
+                            class="legacy-numeric mt-1 text-xs text-muted-foreground"
+                        >
                             {{ clock(progress * duration) }} /
                             {{ clock(duration) }}
                         </p>
@@ -436,11 +458,11 @@ async function nativeShare() {
             <!-- Words -->
             <section
                 v-if="story.body"
-                class="reveal border-t border-white/10 py-12"
+                class="reveal border-t border-foreground/10 py-12"
                 aria-label="Mi historia"
             >
                 <p
-                    class="text-[17px] leading-[1.8] whitespace-pre-line text-fl-paper/85"
+                    class="text-[17px] leading-[1.8] whitespace-pre-line text-foreground/85"
                 >
                     {{ story.body }}
                 </p>
@@ -449,11 +471,11 @@ async function nativeShare() {
             <!-- Gallery -->
             <section
                 v-if="gallery.length > 1"
-                class="reveal border-t border-white/10 py-12"
+                class="reveal border-t border-foreground/10 py-12"
                 aria-label="Fotos"
             >
                 <h2
-                    class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                    class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     <Images class="size-4" aria-hidden="true" />
                     {{ gallery.length }} fotos
@@ -466,7 +488,7 @@ async function nativeShare() {
                     >
                         <button
                             type="button"
-                            class="group block w-full overflow-hidden rounded-xl focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
+                            class="group block w-full overflow-hidden rounded-xl bg-fl-cream shadow-fl-micro focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                             :aria-label="photo.caption ?? `Ver foto ${i + 1}`"
                             @click="openPhoto(i)"
                         >
@@ -482,7 +504,7 @@ async function nativeShare() {
                         </button>
                         <p
                             v-if="photo.caption"
-                            class="mt-1.5 text-xs text-fl-paper/55"
+                            class="mt-1.5 text-xs text-muted-foreground"
                         >
                             {{ photo.caption }}
                         </p>
@@ -493,21 +515,24 @@ async function nativeShare() {
             <!-- Certificate + link -->
             <section
                 v-if="story.certificate?.download_url || story.external_url"
-                class="reveal grid gap-3 border-t border-white/10 py-10 sm:grid-cols-2"
+                class="reveal grid gap-3 border-t border-foreground/10 py-10 sm:grid-cols-2"
             >
                 <a
                     v-if="story.certificate?.download_url"
                     :href="story.certificate.download_url"
                     target="_blank"
                     rel="noopener"
-                    class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-fl-gold/50"
+                    class="flex items-center gap-3 rounded-2xl border border-foreground/10 bg-white p-4 shadow-fl-micro transition hover:border-fl-gold/50"
                 >
-                    <FileText class="size-6 text-fl-gold" aria-hidden="true" />
+                    <FileText
+                        class="size-6 text-fl-gold-ink"
+                        aria-hidden="true"
+                    />
                     <span>
                         <span class="block text-sm font-semibold"
                             >Certificado</span
                         >
-                        <span class="block text-xs text-fl-paper/55"
+                        <span class="block text-xs text-muted-foreground"
                             >Ver o descargar</span
                         >
                     </span>
@@ -517,24 +542,25 @@ async function nativeShare() {
                     :href="story.external_url"
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-fl-gold/50"
+                    class="flex items-center gap-3 rounded-2xl border border-foreground/10 bg-white p-4 shadow-fl-micro transition hover:border-fl-gold/50"
                 >
                     <ExternalLink
-                        class="size-6 text-fl-gold"
+                        class="size-6 text-fl-gold-ink"
                         aria-hidden="true"
                     />
                     <span class="min-w-0">
                         <span class="block text-sm font-semibold">Enlace</span>
-                        <span class="block truncate text-xs text-fl-paper/55">{{
-                            story.external_url
-                        }}</span>
+                        <span
+                            class="block truncate text-xs text-muted-foreground"
+                            >{{ story.external_url }}</span
+                        >
                     </span>
                 </a>
             </section>
 
             <!-- The tag -->
             <section
-                class="reveal flex items-center gap-6 border-t border-white/10 py-12"
+                class="reveal flex items-center gap-6 border-t border-foreground/10 py-12"
                 aria-label="El tag de esta historia"
             >
                 <div class="w-20 shrink-0 sm:w-24">
@@ -542,14 +568,14 @@ async function nativeShare() {
                 </div>
                 <div>
                     <p
-                        class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                        class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                     >
                         Finisher Legacy Tag
                     </p>
                     <p class="mt-2 font-serif text-xl">
                         {{ story.tag?.collection?.name ?? 'Edición Finisher' }}
                     </p>
-                    <p class="mt-1 text-sm text-fl-paper/55">
+                    <p class="mt-1 text-sm text-muted-foreground">
                         Acerca un teléfono a este tag y abre esta historia.
                     </p>
                 </div>
@@ -558,17 +584,17 @@ async function nativeShare() {
             <!-- Owner panel -->
             <section
                 v-if="isOwner"
-                class="rounded-[var(--fl-radius-hero)] border border-fl-gold/25 bg-white/[0.04] p-5 sm:p-7"
+                class="rounded-[var(--fl-radius-hero)] border border-fl-gold/30 bg-white p-5 shadow-fl-soft sm:p-7"
                 aria-labelledby="owner-panel"
             >
                 <h2 id="owner-panel" class="font-serif text-2xl">
                     Comparte tu recuerdo
                 </h2>
-                <p class="mt-1 text-sm text-fl-paper/60">
+                <p class="mt-1 text-sm text-muted-foreground">
                     Ahora: {{ story.visibility_label }}.
                     <Link
                         :href="edit(story.public_id).url"
-                        class="text-fl-gold underline underline-offset-4"
+                        class="text-fl-gold-ink underline underline-offset-4"
                         >Cambiar</Link
                     >
                 </p>
@@ -604,7 +630,7 @@ async function nativeShare() {
                     <label for="share-label" class="text-sm font-semibold"
                         >Enlace personal para alguien especial</label
                     >
-                    <p class="mt-1 text-xs text-fl-paper/55">
+                    <p class="mt-1 text-xs text-muted-foreground">
                         Lo abre sin cuenta ni app, aunque tu recuerdo sea
                         privado. Lo puedes desactivar cuando quieras.
                     </p>
@@ -615,11 +641,11 @@ async function nativeShare() {
                             type="text"
                             maxlength="80"
                             placeholder="Mamá, Mi entrenador…"
-                            class="h-11 min-w-0 flex-1 rounded-full border border-white/15 bg-black/30 px-4 text-base text-fl-paper outline-none placeholder:text-fl-paper/35 focus:border-fl-gold"
+                            class="h-11 min-w-0 flex-1 rounded-full border border-input bg-background px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
                         />
                         <button
                             type="submit"
-                            class="h-11 shrink-0 rounded-full bg-fl-gold px-5 text-sm font-semibold text-fl-black disabled:opacity-60"
+                            class="h-11 shrink-0 rounded-full bg-foreground px-5 text-sm font-semibold text-background transition-colors hover:bg-fl-graphite disabled:opacity-60"
                             :disabled="shareForm.processing || !shareForm.label"
                         >
                             Crear
@@ -631,7 +657,10 @@ async function nativeShare() {
                     />
                 </form>
 
-                <ul v-if="shares.length" class="mt-5 divide-y divide-white/10">
+                <ul
+                    v-if="shares.length"
+                    class="mt-5 divide-y divide-foreground/10"
+                >
                     <li
                         v-for="share in shares"
                         :key="share.id"
@@ -641,8 +670,8 @@ async function nativeShare() {
                             class="size-4 shrink-0"
                             :class="
                                 share.active
-                                    ? 'text-fl-gold'
-                                    : 'text-fl-paper/30'
+                                    ? 'text-fl-gold-ink'
+                                    : 'text-muted-foreground/50'
                             "
                             aria-hidden="true"
                         />
@@ -655,7 +684,7 @@ async function nativeShare() {
                             >
                                 {{ forRecipient(share.label) }}
                             </p>
-                            <p class="text-xs text-fl-paper/50">
+                            <p class="text-xs text-muted-foreground">
                                 {{
                                     share.active
                                         ? `Abierto ${share.open_count} ${share.open_count === 1 ? 'vez' : 'veces'}`
@@ -666,7 +695,7 @@ async function nativeShare() {
                         <template v-if="share.active">
                             <button
                                 type="button"
-                                class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-fl-gold hover:bg-white/5"
+                                class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-fl-gold-ink hover:bg-foreground/5"
                                 @click="copy(share.url)"
                             >
                                 {{
@@ -677,7 +706,7 @@ async function nativeShare() {
                             </button>
                             <button
                                 type="button"
-                                class="rounded-lg p-1.5 text-fl-paper/50 hover:bg-white/5 hover:text-fl-paper"
+                                class="rounded-lg p-1.5 text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
                                 :aria-label="`Desactivar enlace para ${share.label}`"
                                 @click="revokeShare(share)"
                             >
@@ -691,10 +720,10 @@ async function nativeShare() {
             <!-- Visitor CTA -->
             <section
                 v-else
-                class="reveal border-t border-white/10 pt-12 text-center"
+                class="reveal border-t border-foreground/10 pt-12 text-center"
             >
                 <p
-                    class="text-[11px] font-semibold tracking-[0.28em] text-fl-gold uppercase"
+                    class="text-[11px] font-semibold tracking-[0.28em] text-fl-gold-ink uppercase"
                 >
                     Finisher Legacy
                 </p>
@@ -703,7 +732,7 @@ async function nativeShare() {
                 </p>
                 <Link
                     :href="home().url"
-                    class="mt-6 inline-flex h-10 items-center justify-center rounded-full border border-fl-gold/50 px-5 text-sm font-semibold text-fl-gold-soft transition hover:bg-fl-gold hover:text-fl-black"
+                    class="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-colors hover:bg-fl-graphite"
                 >
                     Conoce Finisher Legacy
                 </Link>
@@ -713,7 +742,7 @@ async function nativeShare() {
         <!-- Lightbox -->
         <div
             v-if="current"
-            class="fixed inset-0 z-50 flex flex-col bg-black/95"
+            class="fixed inset-0 z-50 flex flex-col bg-fl-paper/95 backdrop-blur-md"
             role="dialog"
             aria-modal="true"
             :aria-label="current.caption ?? 'Foto'"
@@ -722,7 +751,7 @@ async function nativeShare() {
             <div class="flex justify-end p-3">
                 <button
                     type="button"
-                    class="rounded-full p-2 text-white/80 hover:bg-white/10"
+                    class="rounded-full p-2 text-foreground/80 hover:bg-foreground/5"
                     aria-label="Cerrar"
                     @click="openIndex = null"
                 >
@@ -736,12 +765,12 @@ async function nativeShare() {
                 <img
                     :src="current.url ?? ''"
                     :alt="current.caption ?? ''"
-                    class="max-h-full max-w-full object-contain"
+                    class="max-h-full max-w-full rounded-xl object-contain shadow-fl-overlay"
                 />
                 <button
                     v-if="gallery.length > 1"
                     type="button"
-                    class="absolute left-2 rounded-full bg-black/50 p-2 text-white"
+                    class="absolute left-2 rounded-full bg-white/90 p-2 text-foreground shadow-fl-soft"
                     aria-label="Foto anterior"
                     @click="step(-1)"
                 >
@@ -750,14 +779,16 @@ async function nativeShare() {
                 <button
                     v-if="gallery.length > 1"
                     type="button"
-                    class="absolute right-2 rounded-full bg-black/50 p-2 text-white"
+                    class="absolute right-2 rounded-full bg-white/90 p-2 text-foreground shadow-fl-soft"
                     aria-label="Foto siguiente"
                     @click="step(1)"
                 >
                     <ChevronRight class="size-6" />
                 </button>
             </div>
-            <p class="min-h-12 px-5 py-4 text-center text-sm text-white/75">
+            <p
+                class="min-h-12 px-5 py-4 text-center text-sm text-muted-foreground"
+            >
                 {{ current.caption }}
             </p>
         </div>
@@ -774,10 +805,11 @@ async function nativeShare() {
     height: 2.5rem;
     padding: 0 1rem;
     border-radius: 9999px;
-    border: 1px solid rgb(255 255 255 / 0.15);
+    border: 1px solid rgb(23 23 20 / 0.12);
+    background: #fff;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--fl-paper);
+    color: var(--fl-black);
     transition: border-color 0.2s;
 }
 

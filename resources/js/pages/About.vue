@@ -124,7 +124,7 @@ const story = computed(() =>
 
         <div class="mt-12 grid gap-4 sm:grid-cols-3">
             <div
-                class="relative aspect-[4/3] overflow-hidden rounded-media bg-fl-black sm:col-span-2 sm:aspect-[16/9]"
+                class="relative aspect-[4/3] overflow-hidden rounded-media bg-fl-cream sm:col-span-2 sm:aspect-[16/9]"
             >
                 <img
                     src="/media/home/story/race-effort-640.webp"
@@ -141,7 +141,7 @@ const story = computed(() =>
                 />
             </div>
             <div
-                class="relative hidden overflow-hidden rounded-media bg-fl-black sm:block"
+                class="relative hidden overflow-hidden rounded-media bg-fl-cream sm:block"
             >
                 <img
                     src="/media/home/story/finish-emotion-640.webp"
@@ -176,7 +176,7 @@ const story = computed(() =>
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <Reveal class="lg:col-span-5">
                 <div
-                    class="relative aspect-[4/5] overflow-hidden rounded-media bg-fl-black shadow-fl-soft"
+                    class="relative aspect-[4/5] overflow-hidden rounded-media bg-fl-cream shadow-fl-soft"
                 >
                     <img
                         :src="MEDIA.photo.celebration.src"
@@ -263,28 +263,28 @@ const story = computed(() =>
         </div>
     </section>
 
-    <!-- Del deporte al producto (the page's one dark band) -->
+    <!-- Del deporte al producto -->
     <section
-        class="fl-section relative overflow-hidden bg-[#141311] text-white"
+        class="fl-section relative overflow-hidden border-y border-fl-line bg-fl-cream text-foreground"
     >
         <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
             <Reveal class="lg:col-span-5">
                 <p
-                    class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold uppercase"
+                    class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold-ink uppercase"
                 >
                     Producto
                 </p>
                 <h2 class="mt-4 font-serif text-4xl leading-tight sm:text-5xl">
                     Del deporte a algo que puedes tocar.
                 </h2>
-                <p class="mt-5 max-w-md text-white/70">
+                <p class="mt-5 max-w-md text-muted-foreground">
                     La Legacy Plate y la línea Finisher Legacy nacen para
                     acompañar cada meta: metal, textil técnico y NFC que conecta
                     con tu historia.
                 </p>
                 <Button
                     as-child
-                    class="mt-8 h-11 rounded-full bg-background px-6 text-foreground hover:bg-background/90"
+                    class="mt-8 h-11 rounded-full bg-foreground px-6 text-background hover:bg-fl-graphite"
                 >
                     <Link :href="storeIndex()">
                         Ver la tienda
@@ -302,13 +302,13 @@ const story = computed(() =>
                     :alt="MEDIA.plate.hero.alt"
                     loading="lazy"
                     decoding="async"
-                    class="w-full rounded-hero"
+                    class="w-full rounded-hero shadow-fl-soft"
                 />
                 <ul class="grid grid-cols-4 gap-3">
                     <li
                         v-for="product in products"
                         :key="product.key"
-                        class="overflow-hidden rounded-media bg-fl-cream"
+                        class="overflow-hidden rounded-media bg-white shadow-fl-micro"
                     >
                         <img
                             :src="`/media/products/concepts/${product.key}-480.webp`"

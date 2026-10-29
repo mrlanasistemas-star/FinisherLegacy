@@ -18,7 +18,6 @@ import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
 import { Spinner } from '@/components/ui/spinner';
-import PublicLayout from '@/layouts/PublicLayout.vue';
 import { contact } from '@/routes';
 import {
     complete,
@@ -29,8 +28,6 @@ import {
 import { show as storyShow } from '@/routes/legacy/story';
 import { formatStoryDate } from '@/types/legacy-tags';
 import type { ParticipationOption, TagSummary } from '@/types/legacy-tags';
-
-defineOptions({ layout: PublicLayout });
 
 const props = defineProps<{
     code: string;

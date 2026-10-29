@@ -30,7 +30,6 @@ import Reveal from '@/components/motion/Reveal.vue';
 import LinkPlateDialog from '@/components/shared/LinkPlateDialog.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
-import { dashboard } from '@/routes';
 import { index as communityIndex } from '@/routes/community';
 import { myEvents, myGear } from '@/routes/dashboard';
 import { show as legadoShow } from '@/routes/dashboard/legado';
@@ -42,12 +41,6 @@ import { index as ordersIndex } from '@/routes/store/orders';
 import { index as storeIndex } from '@/routes/store/products';
 import type { CommunityPost } from '@/types';
 import type { LegadoEntry, LegadoTotals, UpcomingEntry } from '@/types/legado';
-
-defineOptions({
-    layout: {
-        breadcrumbs: [{ title: 'Mi legado', href: dashboard() }],
-    },
-});
 
 const props = defineProps<{
     legacyId: string | null;

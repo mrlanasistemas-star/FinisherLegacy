@@ -8,7 +8,6 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Download, ImagePlus } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
-import AppContainer from '@/components/shared/AppContainer.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { edit } from '@/routes/my-legacy';
 import { download as downloadRoute } from '@/routes/my-legacy/print';
@@ -162,7 +161,7 @@ async function download() {
 <template>
     <Head :title="`Imprimir · ${story.title}`" />
 
-    <AppContainer class="py-6 md:py-10">
+    <div class="fl-container py-8 md:py-12">
         <div class="mx-auto max-w-5xl">
             <Link
                 :href="edit(story.public_id).url"
@@ -394,5 +393,5 @@ async function download() {
                 </div>
             </div>
         </div>
-    </AppContainer>
+    </div>
 </template>

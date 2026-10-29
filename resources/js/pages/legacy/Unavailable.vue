@@ -2,10 +2,7 @@
 /** A recipient link that was revoked by the story's owner. */
 import { Head, Link } from '@inertiajs/vue3';
 import { Link2Off } from '@lucide/vue';
-import PublicLayout from '@/layouts/PublicLayout.vue';
 import { home } from '@/routes';
-
-defineOptions({ layout: PublicLayout });
 
 defineProps<{ kind: string; title: string; message: string }>();
 </script>

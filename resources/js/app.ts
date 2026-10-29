@@ -9,26 +9,18 @@ import { initializeNotificationRealtime } from '@/lib/notificationRealtime';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Finisher Legacy';
 
-const PUBLIC_PAGES = new Set([
-    'Home',
-    'HowItWorks',
-    'Privacy',
-    'Terms',
-    'Contact',
-    'About',
-]);
-const PUBLIC_PREFIXES = [
-    'events/',
-    'legacy-code/',
-    'nfc/',
-    'profile/',
-    'errors/',
-    'store/',
-    'collections/',
-    'community/',
-    'photos/',
-    'search/',
-    'photographers/',
+/**
+ * Back-office surfaces keep the sidebar App Shell at full width (see
+ * layouts/AppLayout.vue + config/navigation.ts). `photographer/` is the
+ * photographer's own portal (/fotografo), not the public `photographers/`
+ * landing.
+ */
+const BACK_OFFICE_PREFIXES = [
+    'admin/',
+    'operator/',
+    'imports/',
+    'ally/',
+    'photographer/',
 ];
 
 createInertiaApp({
@@ -40,23 +32,24 @@ createInertiaApp({
             : title.includes(appName)
               ? title
               : `${title} | ${appName}`,
+    // ONE site shell: every non-admin page, signed in or not, renders under
+    // the same top navbar (PublicLayout). Only the auth screens and the back
+    // office opt out. Pages may still pass `layout: []` for immersive views
+    // (historia, seguimiento en vivo).
     layout: (name) => {
-        switch (true) {
-            case PUBLIC_PAGES.has(name):
-            case PUBLIC_PREFIXES.some((prefix) => name.startsWith(prefix)):
-                return PublicLayout;
-            case name.startsWith('auth/'):
-                return AuthLayout;
-            case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
-            default:
-                // Every authenticated surface — dashboard, admin, Event OS,
-                // producción, importaciones — shares the exact same App Shell,
-                // so there is only ever one sidebar for a logged-in user. See
-                // resources/js/config/navigation.ts for the single list every
-                // part of that shell reads from.
-                return AppLayout;
+        if (name.startsWith('auth/')) {
+            return AuthLayout;
         }
+
+        if (BACK_OFFICE_PREFIXES.some((prefix) => name.startsWith(prefix))) {
+            return AppLayout;
+        }
+
+        if (name.startsWith('settings/')) {
+            return [PublicLayout, SettingsLayout];
+        }
+
+        return PublicLayout;
     },
     progress: {
         color: '#C9A45C',

@@ -7,18 +7,8 @@ import MascotEmptyState from '@/components/public/MascotEmptyState.vue';
 import QrScannerDialog from '@/components/qr/QrScannerDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { dashboard } from '@/routes';
-import { create, index, show } from '@/routes/dashboard/medals';
+import { create, show } from '@/routes/dashboard/medals';
 import type { MedalCard } from '@/types';
-
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Dashboard', href: dashboard() },
-            { title: 'Mis Medallas', href: index() },
-        ],
-    },
-});
 
 defineProps<{
     medals: MedalCard[];
@@ -44,10 +34,13 @@ function formatDate(value: string | null): string | null {
 
     <QrScannerDialog v-model:open="scannerOpen" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
-        <div class="mb-6 flex items-center justify-between">
+    <div class="fl-container py-8 md:py-12">
+        <div class="mb-8 flex items-end justify-between">
             <div>
-                <h1 class="text-xl font-bold text-foreground">Mis Medallas</h1>
+                <p class="fl-eyebrow">Mi legado</p>
+                <h1 class="mt-2 font-serif text-3xl tracking-tight md:text-4xl">
+                    Mis medallas
+                </h1>
                 <p class="mt-1 text-sm text-muted-foreground">
                     Tu vitrina digital de logros.
                 </p>

@@ -20,7 +20,7 @@ const benefits = [
     { icon: IdCard, label: 'Tu perfil y tu historia' },
     { icon: Users, label: 'Comunidad que celebra' },
     { icon: Camera, label: 'Tus fotos de evento' },
-    { icon: Nfc, label: 'Legacy Plate con NFC' },
+    { icon: Nfc, label: 'Tu Finisher Legacy Tag' },
 ];
 const year = new Date().getFullYear();
 </script>
@@ -61,11 +61,11 @@ const year = new Date().getFullYear();
             class="flex flex-1 items-start justify-center px-4 pb-10 sm:items-center sm:px-6"
         >
             <div
-                class="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-border bg-card shadow-[0_40px_80px_-48px_rgb(23_23_20/0.45)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
+                class="grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-border/80 bg-white shadow-[0_40px_80px_-48px_rgb(23_23_20/0.35)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
             >
                 <!-- Photo pane: banner on tablet, side panel on desktop -->
                 <aside
-                    class="relative hidden min-h-40 overflow-hidden bg-fl-black sm:block lg:min-h-[640px]"
+                    class="relative hidden min-h-44 overflow-hidden bg-fl-cream sm:block lg:min-h-[640px]"
                 >
                     <img
                         src="/media/home/story/race-effort-1000.webp"
@@ -74,7 +74,7 @@ const year = new Date().getFullYear();
                         class="absolute inset-0 size-full object-cover object-[30%_25%]"
                     />
                     <div
-                        class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10"
+                        class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent"
                         aria-hidden="true"
                     />
                     <div

@@ -9,19 +9,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
-
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Configuración de perfil',
-                href: edit(),
-            },
-        ],
-    },
-});
 
 const page = usePage();
 // Authenticated-only surface — the route middleware guarantees a user.

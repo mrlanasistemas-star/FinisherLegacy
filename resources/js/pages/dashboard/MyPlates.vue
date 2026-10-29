@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Boxes } from '@lucide/vue';
-import AppContainer from '@/components/shared/AppContainer.vue';
 import LegacyPlateCard from '@/components/shared/LegacyPlateCard.vue';
 
 type PlateEntitlement = {
@@ -29,9 +28,12 @@ defineProps<{ plates: PlateEntitlement[] }>();
 <template>
     <Head title="Mis Legacy Plates" />
 
-    <AppContainer class="py-4 md:py-6">
-        <h1 class="text-xl font-bold text-foreground">Mis Legacy Plates</h1>
-        <p class="mt-1 text-sm text-muted-foreground">
+    <div class="fl-container py-8 md:py-12">
+        <p class="fl-eyebrow">Mi legado</p>
+        <h1 class="mt-2 font-serif text-3xl tracking-tight md:text-4xl">
+            Mis Legacy Plates
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm text-muted-foreground">
             La pieza física que guarda tu historia deportiva — incluye tus
             preventas, aunque el evento todavía no haya pasado.
         </p>
@@ -66,5 +68,5 @@ defineProps<{ plates: PlateEntitlement[] }>();
                 >Explorar eventos</Link
             >
         </div>
-    </AppContainer>
+    </div>
 </template>
