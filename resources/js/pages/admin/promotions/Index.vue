@@ -152,7 +152,7 @@ const discountLabel = (p: Promo) =>
 <template>
     <Head title="Ofertas" />
 
-    <div class="w-full p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <CommerceSubTabs group="coupons" />
 
         <div
@@ -178,7 +178,7 @@ const discountLabel = (p: Promo) =>
 
         <div
             v-if="promotions.length"
-            class="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+            class="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
         >
             <article
                 v-for="promo in promotions"

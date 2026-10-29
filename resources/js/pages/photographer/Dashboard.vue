@@ -197,7 +197,7 @@ function save() {
 <template>
     <Head title="Portal del fotógrafo" />
 
-    <div class="mx-auto w-full max-w-6xl space-y-8 p-4 md:p-8">
+    <div class="w-full space-y-8 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div
             v-if="!profile"
             class="fl-card flex flex-col items-center gap-4 p-12 text-center"

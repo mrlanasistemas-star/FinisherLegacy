@@ -173,7 +173,7 @@ const date = (iso: string | null) =>
 <template>
     <Head :title="`Fotógrafo · ${photographer.display_name}`" />
 
-    <div class="w-full space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <Link
             href="/admin/photographers"
             class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"

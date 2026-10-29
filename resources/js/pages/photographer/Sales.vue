@@ -40,7 +40,7 @@ const money = (minor: number) =>
 <template>
     <Head title="Ventas y pagos" />
 
-    <div class="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="flex items-center gap-3">
             <span
                 class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"

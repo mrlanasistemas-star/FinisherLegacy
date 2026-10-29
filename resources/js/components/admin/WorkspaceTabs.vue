@@ -30,7 +30,7 @@ const show = computed(
     <nav
         v-if="show && section"
         :aria-label="`Secciones de ${section.label}`"
-        class="border-b border-border bg-background/80 px-4 md:px-6"
+        class="border-b border-border bg-background/80 px-4 md:px-6 xl:px-8"
     >
         <div
             class="-mb-px flex [scrollbar-width:none] gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden"

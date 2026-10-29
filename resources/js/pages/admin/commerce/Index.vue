@@ -128,7 +128,7 @@ const providerLabel: Record<string, string> = {
 <template>
     <Head title="Comercio" />
 
-    <div class="w-full space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <header>
             <p class="fl-eyebrow">Comercio</p>
             <h1 class="font-serif text-2xl font-semibold md:text-3xl">

@@ -220,7 +220,7 @@ const shortDate = (iso: string | null) =>
 <template>
     <Head :title="workspace ? `Media — ${workspace.name}` : 'Fotografías'" />
 
-    <div class="w-full space-y-6 p-4 pb-32 md:p-8 md:pb-32">
+    <div class="w-full space-y-6 px-4 pt-6 pb-32 md:px-6 md:pt-8 xl:px-8">
         <EventWorkspaceHeader
             v-if="workspace"
             :workspace="workspace"

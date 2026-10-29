@@ -164,7 +164,7 @@ function openNfc(card: PreparationCardData) {
 <template>
     <Head title="PreparaciÃ³n y entrega" />
 
-    <div class="w-full p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div
             class="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"
         >
@@ -260,7 +260,10 @@ function openNfc(card: PreparationCardData) {
             </template>
         </KanbanBoard>
 
-        <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div
+            v-else
+            class="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+        >
             <PreparationCard
                 v-for="card in allCards"
                 :key="card.key"

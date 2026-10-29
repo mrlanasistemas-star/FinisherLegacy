@@ -138,7 +138,7 @@ const statusLabel = (v: string) =>
 <template>
     <Head title="Proveedores" />
 
-    <div class="w-full p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <CatalogHeader
             eyebrow="Inventario"
             title="Proveedores"
@@ -180,7 +180,7 @@ const statusLabel = (v: string) =>
 
         <div
             v-else-if="suppliers.data.length"
-            class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
         >
             <article
                 v-for="s in suppliers.data"

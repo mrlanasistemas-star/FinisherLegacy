@@ -84,7 +84,7 @@ const columns = [
 <template>
     <Head title="Aliados" />
 
-    <div class="w-full p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="fl-eyebrow">Comercial</p>
@@ -98,7 +98,7 @@ const columns = [
             </Button>
         </div>
 
-        <div class="mt-6 grid gap-2 sm:grid-cols-3 lg:max-w-3xl">
+        <div class="mt-6 grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
             <FancySelect
                 v-model="type"
                 :options="[{ value: null, label: 'Todos los tipos' }, ...types]"

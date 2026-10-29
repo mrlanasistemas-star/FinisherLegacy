@@ -18,12 +18,10 @@ import {
     Zap,
 } from '@lucide/vue';
 import { computed } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import DatePicker from '@/components/DatePicker.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import { getInitials } from '@/composables/useInitials';
-import { SYSTEM_AREA_NAV } from '@/config/areaNav';
 
 type ActivityRow = {
     id: number;
@@ -178,9 +176,7 @@ const time = (iso: string) =>
 <template>
     <Head title="Auditoría" />
 
-    <div class="w-full p-4 md:p-8">
-        <SecondaryNav :items="SYSTEM_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6 flex items-center gap-3">
             <span
                 class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"

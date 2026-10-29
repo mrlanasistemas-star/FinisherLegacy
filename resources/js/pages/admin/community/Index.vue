@@ -18,9 +18,7 @@ import {
     X,
 } from '@lucide/vue';
 import { computed } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Button } from '@/components/ui/button';
-import { CONTENT_AREA_NAV } from '@/config/areaNav';
 import { shortDate } from '@/lib/datetime';
 import { confirmAction } from '@/lib/swal';
 import { index as adminCommunityIndex } from '@/routes/admin/community';
@@ -205,9 +203,7 @@ function postHref(
 <template>
     <Head title="Comunidad · Moderación" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-8">
-        <SecondaryNav :items="CONTENT_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
             <h1 class="flex items-center gap-2 text-xl font-semibold">
                 <MessagesSquare class="size-5 text-fl-gold-ink" />

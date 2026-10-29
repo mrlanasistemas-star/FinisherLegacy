@@ -126,7 +126,7 @@ const details = computed(() =>
 <template>
     <Head :title="collection.name" />
 
-    <div class="w-full p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <CatalogHeader
             eyebrow="Catálogo · Colección"
             :title="collection.name"

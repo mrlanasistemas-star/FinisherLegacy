@@ -95,7 +95,7 @@ function submitQrTest() {
 <template>
     <Head :title="`Producción — ${edition.name}`" />
 
-    <div class="space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <HistoricalPipelineNotice />
         <div>
             <p class="text-xs tracking-wide text-muted-foreground/80 uppercase">

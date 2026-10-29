@@ -19,13 +19,11 @@ import {
     Wallet,
 } from '@lucide/vue';
 import { ref } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CONTENT_AREA_NAV } from '@/config/areaNav';
 import { confirmAction } from '@/lib/swal';
 
 type Photographer = {
@@ -121,9 +119,7 @@ const shortDate = (iso: string | null) =>
 <template>
     <Head title="Fotógrafos" />
 
-    <div class="w-full space-y-6 p-4 md:p-8">
-        <SecondaryNav :items="CONTENT_AREA_NAV" />
-
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="flex flex-wrap items-center gap-3">
             <span
                 class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"

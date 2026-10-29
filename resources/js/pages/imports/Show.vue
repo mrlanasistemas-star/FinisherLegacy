@@ -43,7 +43,7 @@ onBeforeUnmount(() => {
 <template>
     <Head :title="`Importación — ${importData.filename}`" />
 
-    <div class="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div>
             <h1 class="text-xl font-bold text-foreground">
                 {{ importData.filename }}

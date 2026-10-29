@@ -86,7 +86,7 @@ function submit() {
 <template>
     <Head title="Portal aliado" />
 
-    <div class="w-full space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="fl-eyebrow">Portal aliado</p>

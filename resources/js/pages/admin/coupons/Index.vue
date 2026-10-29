@@ -195,7 +195,7 @@ function confirmDestroy() {
 <template>
     <Head title="Cupones" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-8 xl:px-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <CommerceSubTabs group="coupons" />
 
         <div class="mb-6 flex items-center justify-between">

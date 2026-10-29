@@ -146,12 +146,12 @@ function submit() {
 <template>
     <Head title="Nueva importación" />
 
-    <div class="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <h1 class="text-xl font-bold text-foreground">
             Importar participantes
         </h1>
 
-        <div class="grid gap-2">
+        <div class="grid max-w-xl gap-2">
             <Label>Evento</Label>
             <Select v-model="eventEditionId">
                 <SelectTrigger class="w-full">
@@ -189,8 +189,8 @@ function submit() {
             </div>
         </div>
 
-        <div v-else class="space-y-5">
-            <p class="text-sm text-muted-foreground">
+        <div v-else class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <p class="text-sm text-muted-foreground md:col-span-full">
                 {{ originalFilename }} — asigna cada columna de tu archivo:
             </p>
 
@@ -217,7 +217,7 @@ function submit() {
                 </Select>
             </div>
 
-            <div class="grid gap-2">
+            <div class="grid gap-2 md:col-span-full">
                 <Label class="flex items-center gap-1.5"
                     >Parciales (opcional)
                     <HelpPopover
@@ -275,7 +275,7 @@ function submit() {
             </div>
 
             <Button
-                class="w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
+                class="w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft md:col-span-full md:w-auto md:justify-self-start"
                 :disabled="submitting"
                 @click="submit"
             >

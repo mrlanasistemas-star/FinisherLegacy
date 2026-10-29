@@ -126,7 +126,7 @@ const statusLabel: Record<string, string> = {
 <template>
     <Head title="Plate Studio" />
 
-    <div class="p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <HistoricalPipelineNotice class="mb-6" />
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -202,7 +202,7 @@ const statusLabel: Record<string, string> = {
 
         <div
             v-else
-            class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
         >
             <div
                 v-for="template in templates"

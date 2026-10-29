@@ -260,8 +260,10 @@ function submitQuickPlate() {
 <template>
     <Head title="Event OS — Operador" />
 
-    <div class="min-h-svh bg-background p-4 md:p-8">
-        <div class="mx-auto max-w-2xl">
+    <div
+        class="min-h-svh w-full bg-background px-4 py-6 md:px-6 md:py-8 xl:px-8"
+    >
+        <div class="w-full">
             <div class="mb-6 flex items-center justify-between gap-4">
                 <div>
                     <p

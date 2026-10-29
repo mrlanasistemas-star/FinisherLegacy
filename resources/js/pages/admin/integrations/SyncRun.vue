@@ -81,7 +81,7 @@ const statusClass: Record<string, string> = {
 <template>
     <Head :title="`Sync #${run.id}`" />
 
-    <div class="p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <Link
             href="/admin/integrations"
             class="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"

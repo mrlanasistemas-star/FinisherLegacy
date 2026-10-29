@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * App shell for signed-in pages: sidebar + sticky topbar (breadcrumbs, ⌘K
+ * Back-office shell (admin, operator, imports, ally and photographer
+ * portals): sidebar + sticky topbar (breadcrumbs, ⌘K
  * search, bell) + the current workspace's tab bar (admin only) + content
  * at full width, and the bottom tab bar on phones.
  */
@@ -26,7 +27,10 @@ withDefaults(defineProps<Props>(), {
 <template>
     <AppShell variant="sidebar">
         <AppSidebar />
-        <AppContent variant="sidebar" class="overflow-x-hidden pb-20 lg:pb-0">
+        <AppContent
+            variant="sidebar"
+            class="min-w-0 overflow-x-hidden pb-20 lg:pb-0"
+        >
             <AppSidebarHeader :breadcrumbs="breadcrumbs" />
             <WorkspaceTabs />
             <slot />

@@ -155,7 +155,7 @@ const roleLabel = (role: string) =>
 <template>
     <Head :title="`${ally.name} · Aliados`" />
 
-    <div class="w-full space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div>
             <Link
                 :href="alliesIndex.url()"

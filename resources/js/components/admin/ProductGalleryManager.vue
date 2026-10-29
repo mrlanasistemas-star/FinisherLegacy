@@ -569,7 +569,7 @@ function formatSize(bytes?: number | null) {
         </p>
         <div
             v-if="ordered.length"
-            class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
         >
             <article
                 v-for="(item, index) in ordered"

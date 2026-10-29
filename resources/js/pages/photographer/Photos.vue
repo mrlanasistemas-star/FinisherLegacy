@@ -222,7 +222,7 @@ async function remove(photo: Photo) {
 <template>
     <Head title="Mis fotos en venta" />
 
-    <div class="mx-auto w-full max-w-[1400px] space-y-8 p-4 md:p-8">
+    <div class="w-full space-y-8 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="flex items-center gap-3">
             <span
                 class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
@@ -434,7 +434,7 @@ async function remove(photo: Photo) {
         <!-- Grid -->
         <div
             v-if="photos.data.length"
-            class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
         >
             <article
                 v-for="photo in photos.data"

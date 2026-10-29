@@ -63,7 +63,7 @@ function moduleCheckedCount(module: ModuleDef): number {
 </script>
 
 <template>
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         <div
             v-for="(module, moduleKey) in modules"
             :key="moduleKey"

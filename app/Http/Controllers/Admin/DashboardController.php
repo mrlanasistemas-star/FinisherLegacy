@@ -11,6 +11,7 @@ use App\Enums\PhotographerStatus;
 use App\Enums\PlateStatus;
 use App\Enums\ProductType;
 use App\Enums\ReportStatus;
+use App\Enums\SupportCaseStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AthleteProfile;
 use App\Models\ContactMessage;
@@ -22,6 +23,7 @@ use App\Models\EventPhoto;
 use App\Models\EventPreregistration;
 use App\Models\InventoryLevel;
 use App\Models\LegacyPlateEntitlement;
+use App\Models\LegacyTag;
 use App\Models\Order;
 use App\Models\PhotographerProfile;
 use App\Models\PhotoSale;
@@ -29,6 +31,7 @@ use App\Models\Plate;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Report;
+use App\Models\SupportCase;
 use App\Queries\Admin\CommerceDashboardMetrics;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -113,7 +116,66 @@ class DashboardController extends Controller
                 'open_incidents' => EventIncident::where('status', IncidentStatus::Open)->count(),
                 'new_messages' => ContactMessage::query()->where('status', 'new')->count(),
             ],
+            // Only for whoever can open the destination lists.
+            'recentActivations' => $request->user()->can('tags.view') ? $this->recentActivations() : null,
+            'support' => $request->user()->can('support.view') ? $this->supportSummary() : null,
         ]);
+    }
+
+    /**
+     * Latest tag activations (who activated which piece, and when).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function recentActivations(): array
+    {
+        return array_values(LegacyTag::query()
+            ->with(['productVariant:id,product_id', 'productVariant.product:id,name', 'owner:id,full_name'])
+            ->whereNotNull('activated_at')
+            ->latest('activated_at')
+            ->limit(6)
+            ->get()
+            ->map(fn (LegacyTag $tag) => [
+                'uuid' => $tag->uuid,
+                'display_code' => $tag->displayCode(),
+                'product' => $tag->productVariant?->product?->name,
+                'owner' => $tag->owner?->full_name,
+                'activated_at' => $tag->activated_at?->toIso8601String(),
+            ])
+            ->all());
+    }
+
+    /**
+     * Open support cases: counts by status and the most recent ones.
+     *
+     * @return array<string, mixed>
+     */
+    private function supportSummary(): array
+    {
+        $open = [SupportCaseStatus::Open->value, SupportCaseStatus::InProgress->value];
+        $counts = SupportCase::query()->toBase()->whereIn('status', $open)
+            ->groupBy('status')->pluck(DB::raw('count(*)'), 'status');
+
+        return [
+            'open' => (int) ($counts[SupportCaseStatus::Open->value] ?? 0),
+            'in_progress' => (int) ($counts[SupportCaseStatus::InProgress->value] ?? 0),
+            'recent' => array_values(SupportCase::query()
+                ->whereIn('status', $open)
+                ->latest('id')
+                ->limit(5)
+                ->get(['id', 'uuid', 'number', 'subject', 'type', 'status', 'priority', 'created_at'])
+                ->map(fn (SupportCase $case) => [
+                    'uuid' => $case->uuid,
+                    'number' => $case->number,
+                    'subject' => $case->subject,
+                    'type_label' => $case->type->label(),
+                    'status' => $case->status->value,
+                    'status_label' => $case->status->label(),
+                    'priority' => $case->priority,
+                    'created_at' => $case->created_at?->toIso8601String(),
+                ])
+                ->all()),
+        ];
     }
 
     /**

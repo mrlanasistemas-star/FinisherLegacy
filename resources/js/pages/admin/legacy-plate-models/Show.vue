@@ -27,7 +27,6 @@ import {
     ZoomIn,
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
 import PlateClipBack from '@/components/plates/PlateClipBack.vue';
@@ -37,7 +36,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 import type {
     LegacyPlateModelData,
     LegacyPlateModelField,
@@ -345,9 +343,7 @@ const sampleKeys = computed(() =>
 <template>
     <Head :title="`Layout · ${model.name}`" />
 
-    <div class="w-full p-4 md:p-8">
-        <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <!-- Top bar -->
         <div
             class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"

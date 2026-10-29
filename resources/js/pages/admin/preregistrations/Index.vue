@@ -124,7 +124,7 @@ function applyFilter(value: string) {
         "
     />
 
-    <div class="w-full px-4 py-5 sm:px-6 md:py-7 lg:px-8 xl:px-10">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <EventWorkspaceHeader
             v-if="workspace"
             :workspace="workspace"

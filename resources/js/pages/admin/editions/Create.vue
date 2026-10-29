@@ -62,7 +62,7 @@ function submit() {
 <template>
     <Head title="Nuevo evento" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-8 lg:px-8 xl:px-10">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6">
             <h1 class="text-xl font-bold text-foreground">
                 Crear evento manual

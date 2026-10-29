@@ -8,11 +8,12 @@
  * "Sin información todavía" — never a made-up number. The "Hoy" strip
  * (eventos de la semana, por atender, pedidos recientes) is kept.
  */
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Activity,
     ArrowRight,
     Boxes,
+    CheckCircle2,
     ChevronRight,
     Clock,
     Inbox,
@@ -142,7 +143,37 @@ const props = defineProps<{
         community_reports: number;
     };
     kpis: { photos_pending: number; pending_orders: number };
+    /** null when the viewer cannot open Legacy → Activaciones. */
+    recentActivations:
+        | {
+              uuid: string;
+              display_code: string;
+              product: string | null;
+              owner: string | null;
+              activated_at: string | null;
+          }[]
+        | null;
+    /** null when the viewer cannot open Soporte. */
+    support: {
+        open: number;
+        in_progress: number;
+        recent: {
+            uuid: string;
+            number: string;
+            subject: string;
+            type_label: string;
+            status: string;
+            status_label: string;
+            priority: string;
+            created_at: string | null;
+        }[];
+    } | null;
 }>();
+
+const page = usePage();
+const canSell = computed(() =>
+    (page.props.auth?.permissions ?? []).includes('pos.sell'),
+);
 
 const NA = '—';
 const nf = new Intl.NumberFormat('es-MX');
@@ -152,6 +183,29 @@ const pct = (r: number | null) =>
         ? NA
         : `${(r * 100).toLocaleString('es-MX', { maximumFractionDigits: 1 })}%`;
 
+const relativeFormatter = new Intl.RelativeTimeFormat('es-MX', {
+    numeric: 'auto',
+});
+
+/** "hace 3 h" style timestamps for the activity lists. */
+function ago(iso: string | null): string {
+    if (!iso) {
+        return NA;
+    }
+
+    const seconds = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
+    const abs = Math.abs(seconds);
+
+    if (abs < 3600) {
+        return relativeFormatter.format(Math.round(seconds / 60), 'minute');
+    }
+
+    if (abs < 86400) {
+        return relativeFormatter.format(Math.round(seconds / 3600), 'hour');
+    }
+
+    return relativeFormatter.format(Math.round(seconds / 86400), 'day');
+}
 function duration(seconds: number | null): string {
     if (seconds === null) {
         return NA;
@@ -280,7 +334,7 @@ const todayLabel = computed(() =>
 <template>
     <Head title="Inicio · Administración" />
 
-    <div class="w-full space-y-8 p-4 md:p-8">
+    <div class="w-full space-y-8 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <!-- Header -->
         <div
             class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
@@ -326,6 +380,14 @@ const todayLabel = computed(() =>
                         {{ option.label }}
                     </button>
                 </div>
+                <Link
+                    v-if="canSell"
+                    href="/admin/venta-rapida"
+                    class="inline-flex min-h-10 items-center gap-2 rounded-full bg-foreground px-4 text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fl-gold"
+                >
+                    <Zap class="size-4" />
+                    Venta rápida
+                </Link>
             </div>
         </div>
 
@@ -406,6 +468,191 @@ const todayLabel = computed(() =>
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
                         Productos físicos (sin fotos digitales).
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- HOY: pedidos recientes + por atender + eventos -->
+        <section
+            class="grid gap-3 sm:gap-4 xl:grid-cols-3"
+            aria-label="Operación de hoy"
+        >
+            <div class="fl-card overflow-hidden xl:col-span-2">
+                <div
+                    class="flex items-center justify-between gap-2 border-b border-border px-5 py-4"
+                >
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Pedidos recientes
+                    </h2>
+                    <Link
+                        href="/admin/orders"
+                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                    >
+                        Ver pedidos <ArrowRight class="size-3.5" />
+                    </Link>
+                </div>
+                <div v-if="recentOrders.length" class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr
+                                class="border-b border-border text-left text-xs text-muted-foreground"
+                            >
+                                <th class="px-5 py-2.5 font-medium">Pedido</th>
+                                <th class="px-3 py-2.5 font-medium">Cliente</th>
+                                <th
+                                    class="hidden px-3 py-2.5 font-medium md:table-cell"
+                                >
+                                    Fecha
+                                </th>
+                                <th class="px-3 py-2.5 font-medium">Pago</th>
+                                <th class="px-5 py-2.5 text-right font-medium">
+                                    Total
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            <tr
+                                v-for="order in recentOrders"
+                                :key="order.id"
+                                class="group transition-colors hover:bg-foreground/[0.02]"
+                            >
+                                <td class="px-5 py-2.5">
+                                    <Link
+                                        :href="`/admin/orders/${order.uuid}`"
+                                        class="legacy-numeric font-medium text-foreground group-hover:text-fl-gold-ink"
+                                    >
+                                        {{ order.number }}
+                                    </Link>
+                                    <span
+                                        class="block text-xs text-muted-foreground"
+                                        >{{ order.items }} artículo{{
+                                            order.items === 1 ? '' : 's'
+                                        }}</span
+                                    >
+                                </td>
+                                <td
+                                    class="max-w-[14rem] truncate px-3 py-2.5 text-foreground"
+                                >
+                                    {{ order.customer }}
+                                </td>
+                                <td
+                                    class="hidden px-3 py-2.5 whitespace-nowrap text-muted-foreground md:table-cell"
+                                >
+                                    {{ ago(order.created_at) }}
+                                </td>
+                                <td class="px-3 py-2.5">
+                                    <span
+                                        class="inline-flex rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap"
+                                        :class="
+                                            statusClass(
+                                                paymentStatus,
+                                                order.payment_status,
+                                            )
+                                        "
+                                        >{{
+                                            statusLabel(
+                                                paymentStatus,
+                                                order.payment_status,
+                                            )
+                                        }}</span
+                                    >
+                                </td>
+                                <td
+                                    class="legacy-numeric px-5 py-2.5 text-right whitespace-nowrap"
+                                >
+                                    <Money
+                                        :minor="order.total_minor"
+                                        :currency="order.currency"
+                                    />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div
+                    v-else
+                    class="flex flex-col items-center gap-2 px-6 py-12 text-center"
+                >
+                    <Receipt class="size-6 text-muted-foreground/70" />
+                    <p class="text-sm text-muted-foreground">
+                        Aún no hay pedidos.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid content-start gap-3 sm:gap-4">
+                <div class="fl-card p-5">
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Por atender
+                    </h2>
+                    <ul v-if="attention.length" class="mt-3 space-y-1">
+                        <li v-for="row in attention" :key="row.label">
+                            <Link
+                                :href="row.href"
+                                class="-mx-2 flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm hover:bg-foreground/[0.03]"
+                            >
+                                <Clock class="size-4 text-fl-gold-ink" />
+                                <span class="flex-1 text-foreground">{{
+                                    row.label
+                                }}</span>
+                                <span
+                                    class="legacy-numeric rounded-full bg-fl-cream px-2 py-0.5 text-xs font-semibold text-fl-gold-ink"
+                                    >{{ num(row.value) }}</span
+                                >
+                            </Link>
+                        </li>
+                    </ul>
+                    <p
+                        v-else
+                        class="mt-3 flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                        <CheckCircle2 class="size-4 text-emerald-600" />
+                        Todo al día.
+                    </p>
+                </div>
+
+                <div class="fl-card p-5">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-sm font-semibold text-foreground">
+                            Eventos de esta semana
+                        </h2>
+                        <Timer class="size-4 text-fl-gold-ink" />
+                    </div>
+                    <ul
+                        v-if="today.events.length"
+                        class="mt-3 divide-y divide-border"
+                    >
+                        <li v-for="event in today.events" :key="event.id">
+                            <Link
+                                :href="`/admin/events/${event.id}`"
+                                class="flex min-h-11 items-center gap-3 py-1.5 text-sm hover:text-fl-gold-ink"
+                            >
+                                <span
+                                    class="w-14 shrink-0 text-xs font-semibold uppercase"
+                                    :class="
+                                        event.is_today
+                                            ? 'text-emerald-700'
+                                            : 'text-muted-foreground'
+                                    "
+                                >
+                                    {{
+                                        event.is_today
+                                            ? 'Hoy'
+                                            : shortDate(event.event_date)
+                                    }}
+                                </span>
+                                <span class="min-w-0 flex-1 truncate">{{
+                                    event.name
+                                }}</span>
+                                <ChevronRight
+                                    class="size-4 shrink-0 text-muted-foreground"
+                                />
+                            </Link>
+                        </li>
+                    </ul>
+                    <p v-else class="mt-3 text-sm text-muted-foreground">
+                        No hay eventos en los próximos 7 días.
                     </p>
                 </div>
             </div>
@@ -577,6 +824,140 @@ const todayLabel = computed(() =>
             >
                 Sin información todavía: no se vendieron tags en este periodo.
             </p>
+        </section>
+
+        <!-- ACTIVACIONES RECIENTES + SOPORTE -->
+        <section
+            v-if="recentActivations !== null || support !== null"
+            class="grid gap-3 sm:gap-4 lg:grid-cols-2"
+        >
+            <div v-if="recentActivations !== null" class="fl-card p-5">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Activaciones recientes
+                    </h2>
+                    <Link
+                        href="/admin/activaciones"
+                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                    >
+                        Ver todas <ArrowRight class="size-3.5" />
+                    </Link>
+                </div>
+                <ul
+                    v-if="recentActivations.length"
+                    class="mt-3 divide-y divide-border"
+                >
+                    <li v-for="row in recentActivations" :key="row.uuid">
+                        <Link
+                            :href="`/admin/tags/${row.uuid}`"
+                            class="flex min-h-12 items-center gap-3 py-2 text-sm hover:text-fl-gold-ink"
+                        >
+                            <span
+                                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-fl-cream text-fl-gold-ink"
+                            >
+                                <Nfc class="size-4" />
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-foreground">{{
+                                    row.owner ?? 'Atleta sin nombre'
+                                }}</span>
+                                <span
+                                    class="block truncate text-xs text-muted-foreground"
+                                    >{{ row.display_code
+                                    }}{{
+                                        row.product ? ` · ${row.product}` : ''
+                                    }}</span
+                                >
+                            </span>
+                            <span
+                                class="shrink-0 text-xs whitespace-nowrap text-muted-foreground"
+                                >{{ ago(row.activated_at) }}</span
+                            >
+                        </Link>
+                    </li>
+                </ul>
+                <p v-else class="mt-3 text-sm text-muted-foreground">
+                    Ningún tag activado todavía.
+                </p>
+            </div>
+
+            <div v-if="support !== null" class="fl-card p-5">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Soporte
+                    </h2>
+                    <Link
+                        href="/admin/soporte"
+                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                    >
+                        Incidencias <ArrowRight class="size-3.5" />
+                    </Link>
+                </div>
+                <dl class="mt-3 grid grid-cols-2 gap-3">
+                    <div class="rounded-lg bg-muted/50 px-3 py-2">
+                        <dt class="text-xs text-muted-foreground">Abiertas</dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(support.open) }}
+                        </dd>
+                    </div>
+                    <div class="rounded-lg bg-muted/50 px-3 py-2">
+                        <dt class="text-xs text-muted-foreground">
+                            En proceso
+                        </dt>
+                        <dd class="legacy-numeric text-xl font-semibold">
+                            {{ num(support.in_progress) }}
+                        </dd>
+                    </div>
+                </dl>
+                <ul
+                    v-if="support.recent.length"
+                    class="mt-3 divide-y divide-border"
+                >
+                    <li v-for="row in support.recent" :key="row.uuid">
+                        <Link
+                            :href="`/admin/soporte/${row.uuid}`"
+                            class="flex min-h-12 items-center gap-3 py-2 text-sm hover:text-fl-gold-ink"
+                        >
+                            <LifeBuoy
+                                class="size-4 shrink-0 text-muted-foreground"
+                            />
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-foreground">{{
+                                    row.subject
+                                }}</span>
+                                <span
+                                    class="block truncate text-xs text-muted-foreground"
+                                    >{{ row.number }} · {{ row.type_label }} ·
+                                    {{ ago(row.created_at) }}</span
+                                >
+                            </span>
+                            <span
+                                v-if="
+                                    row.priority === 'high' ||
+                                    row.priority === 'urgent'
+                                "
+                                class="shrink-0 rounded-full border border-red-500/30 bg-red-50 px-2 py-0.5 text-[11px] text-red-800"
+                                >{{
+                                    row.priority === 'urgent'
+                                        ? 'Urgente'
+                                        : 'Alta'
+                                }}</span
+                            >
+                            <span
+                                class="hidden shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground sm:inline"
+                                >{{ row.status_label }}</span
+                            >
+                        </Link>
+                    </li>
+                </ul>
+                <p
+                    v-else
+                    class="mt-3 flex items-center gap-2 text-sm text-muted-foreground"
+                >
+                    <CheckCircle2 class="size-4 text-emerald-600" />
+                    Sin incidencias abiertas.
+                </p>
+            </div>
         </section>
 
         <!-- INVENTARIO + PRODUCTO -->
@@ -849,138 +1230,6 @@ const todayLabel = computed(() =>
                 Sin información todavía: ninguna pieza de colección vendida en
                 este periodo.
             </p>
-        </section>
-
-        <!-- HOY -->
-        <section
-            class="grid gap-3 sm:gap-4 lg:grid-cols-3"
-            aria-label="Operación de hoy"
-        >
-            <div class="fl-card p-5">
-                <h2 class="text-sm font-semibold text-foreground">
-                    Por atender
-                </h2>
-                <ul v-if="attention.length" class="mt-3 space-y-1">
-                    <li v-for="row in attention" :key="row.label">
-                        <Link
-                            :href="row.href"
-                            class="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm hover:bg-foreground/[0.03]"
-                        >
-                            <Clock class="size-4 text-fl-gold-ink" />
-                            <span class="flex-1 text-foreground">{{
-                                row.label
-                            }}</span>
-                            <span
-                                class="legacy-numeric font-semibold text-foreground"
-                                >{{ num(row.value) }}</span
-                            >
-                        </Link>
-                    </li>
-                </ul>
-                <p v-else class="mt-3 text-sm text-muted-foreground">
-                    Todo al día.
-                </p>
-            </div>
-
-            <div class="fl-card p-5">
-                <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-sm font-semibold text-foreground">
-                        Pedidos recientes
-                    </h2>
-                    <Link
-                        href="/admin/orders"
-                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
-                    >
-                        Pedidos <ArrowRight class="size-3.5" />
-                    </Link>
-                </div>
-                <ul
-                    v-if="recentOrders.length"
-                    class="mt-3 divide-y divide-border"
-                >
-                    <li
-                        v-for="order in recentOrders.slice(0, 5)"
-                        :key="order.id"
-                    >
-                        <Link
-                            :href="`/admin/orders/${order.uuid}`"
-                            class="flex min-h-11 items-center gap-3 py-1.5 text-sm hover:text-fl-gold-ink"
-                        >
-                            <Receipt class="size-4 text-muted-foreground" />
-                            <span class="min-w-0 flex-1 truncate">
-                                {{ order.number }} · {{ order.customer }}
-                            </span>
-                            <span
-                                class="hidden rounded-full border px-2 py-0.5 text-[11px] sm:inline"
-                                :class="
-                                    statusClass(
-                                        paymentStatus,
-                                        order.payment_status,
-                                    )
-                                "
-                                >{{
-                                    statusLabel(
-                                        paymentStatus,
-                                        order.payment_status,
-                                    )
-                                }}</span
-                            >
-                            <Money
-                                class="legacy-numeric shrink-0"
-                                :minor="order.total_minor"
-                                :currency="order.currency"
-                            />
-                        </Link>
-                    </li>
-                </ul>
-                <p v-else class="mt-3 text-sm text-muted-foreground">
-                    Aún no hay pedidos.
-                </p>
-            </div>
-
-            <div class="fl-card p-5">
-                <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-sm font-semibold text-foreground">
-                        Eventos de esta semana
-                    </h2>
-                    <Timer class="size-4 text-fl-gold-ink" />
-                </div>
-                <ul
-                    v-if="today.events.length"
-                    class="mt-3 divide-y divide-border"
-                >
-                    <li v-for="event in today.events" :key="event.id">
-                        <Link
-                            :href="`/admin/events/${event.id}`"
-                            class="flex min-h-11 items-center gap-3 py-1.5 text-sm hover:text-fl-gold-ink"
-                        >
-                            <span
-                                class="w-14 shrink-0 text-xs font-semibold uppercase"
-                                :class="
-                                    event.is_today
-                                        ? 'text-emerald-700'
-                                        : 'text-muted-foreground'
-                                "
-                            >
-                                {{
-                                    event.is_today
-                                        ? 'Hoy'
-                                        : shortDate(event.event_date)
-                                }}
-                            </span>
-                            <span class="min-w-0 flex-1 truncate">{{
-                                event.name
-                            }}</span>
-                            <ChevronRight
-                                class="size-4 shrink-0 text-muted-foreground"
-                            />
-                        </Link>
-                    </li>
-                </ul>
-                <p v-else class="mt-3 text-sm text-muted-foreground">
-                    No hay eventos en los próximos 7 días.
-                </p>
-            </div>
         </section>
     </div>
 </template>

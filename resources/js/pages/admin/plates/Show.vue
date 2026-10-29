@@ -154,7 +154,7 @@ function submitReprint() {
 <template>
     <Head :title="`Placa ${plate.serial_number}`" />
 
-    <div class="space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <Link
             href="/admin/plates"
             class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"

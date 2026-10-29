@@ -110,7 +110,7 @@ function save() {
 <template>
     <Head title="Máquinas" />
 
-    <div class="p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-1 flex items-center justify-between">
             <h1
                 class="flex items-center gap-1.5 text-xl font-bold text-foreground"
@@ -136,7 +136,7 @@ function save() {
             configuran aquí.
         </p>
 
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             <div
                 v-for="profile in profiles"
                 :key="profile.id"

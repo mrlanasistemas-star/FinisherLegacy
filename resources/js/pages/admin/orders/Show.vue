@@ -161,7 +161,7 @@ const addressLine = (delivery: Delivery) =>
 <template>
     <Head :title="order.order_number" />
 
-    <div class="p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6 flex flex-wrap items-center gap-3">
             <h1
                 class="flex items-center gap-2 text-xl font-bold text-foreground"

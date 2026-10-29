@@ -24,7 +24,7 @@ const { imports } = defineProps<{
 <template>
     <Head title="Importaciones" />
 
-    <div class="p-4 md:p-6">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6 flex items-center justify-between">
             <h1 class="text-xl font-bold text-foreground">Importaciones</h1>
             <Button

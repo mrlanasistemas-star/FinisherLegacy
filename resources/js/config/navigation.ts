@@ -6,9 +6,11 @@
  *
  * Two sides:
  * - "Mi espacio" (personal): Mi legado, Mis eventos, Mi equipo, Mis pedidos,
- *   Mi perfil (spec §7/§134) + an "Explorar" group of public pages and the
- *   photographer's own portal.
- * - Administración: sections by business domain (Commerce + Activation OS,
+ *   Mi perfil (spec §7/§134) + an "Explorar" group of public pages. These
+ *   live in the SITE top navbar; the sidebar shell (AppLayout) is back
+ *   office only and never renders them.
+ * - Back office (AppLayout sidebar): the photographer portal, the ally /
+ *   production staff screens and Administración: sections by business domain (Commerce + Activation OS,
  *   docs/architecture/commerce-os.md §Administración comercial): Inicio ·
  *   Comercial · Catálogo · Inventario · Legacy · Soporte · Eventos ·
  *   Comunidad · Personas · Configuración, plus "Operación (histórico)"
@@ -468,6 +470,7 @@ export const adminSections: AdminSection[] = [
         hrefPermission: 'dashboard.admin.view',
         match: [
             '/admin/settings',
+            '/admin/configuracion',
             '/admin/content',
             '/admin/organizers',
             '/admin/data-sources',
@@ -478,6 +481,13 @@ export const adminSections: AdminSection[] = [
             {
                 label: 'Ajustes',
                 href: '/admin/settings',
+                permission: 'dashboard.admin.view',
+            },
+            {
+                // Proveedores de pago (Mercado Pago, Stripe…) — page owned by
+                // the commerce module.
+                label: 'Pagos',
+                href: '/admin/configuracion/pagos',
                 permission: 'dashboard.admin.view',
             },
             {
@@ -726,4 +736,17 @@ export function isTabActive(tab: WorkspaceTab, path: string) {
 /** True for every URL that belongs to the staff side of the app. */
 export function isAdminPath(path: string): boolean {
     return /^\/(admin|operator|production|imports)(\/|$)/.test(path);
+}
+
+/** Where the sidebar logo should take this viewer: the admin home, else
+ * their first back-office screen, else the site. */
+export function backOfficeHome(permissions: string[]): string {
+    if (permissions.includes('dashboard.admin.view')) {
+        return '/admin';
+    }
+
+    return (
+        visibleItems([...staffNav, ...photographerNav], permissions)[0]?.href ??
+        '/'
+    );
 }

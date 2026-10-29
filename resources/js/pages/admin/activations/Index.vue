@@ -82,7 +82,7 @@ function send(uuid: string) {
 <template>
     <Head title="Activaciones · Legacy" />
 
-    <div class="w-full p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <p class="fl-eyebrow">Legacy</p>
         <h1 class="fl-display mt-1 text-3xl">Activaciones</h1>
         <p class="mt-1 text-sm text-muted-foreground">

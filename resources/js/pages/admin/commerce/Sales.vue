@@ -62,7 +62,7 @@ function setPeriod(days: number) {
 <template>
     <Head title="Ventas" />
 
-    <div class="w-full space-y-6 p-4 md:p-8">
+    <div class="w-full space-y-6 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <header class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="fl-eyebrow">Comercio</p>

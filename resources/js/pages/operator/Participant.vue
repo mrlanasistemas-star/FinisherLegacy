@@ -120,8 +120,8 @@ function generate() {
 <template>
     <Head :title="participant.full_name" />
 
-    <div class="min-h-svh p-4 md:p-8">
-        <div class="mx-auto max-w-4xl">
+    <div class="min-h-svh w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
+        <div class="w-full">
             <Link
                 :href="index().url"
                 class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"

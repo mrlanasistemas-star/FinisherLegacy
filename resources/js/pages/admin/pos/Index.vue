@@ -385,7 +385,7 @@ function newSale() {
 <template>
     <Head title="Venta rápida" />
 
-    <div class="mx-auto w-full max-w-5xl p-4 pb-40 md:p-8 md:pb-40">
+    <div class="w-full px-4 pt-6 pb-40 md:px-6 md:pt-8 xl:px-8">
         <!-- Success -->
         <section
             v-if="showSuccess && lastSale"
@@ -554,7 +554,7 @@ function newSale() {
                         </h2>
                         <div
                             v-if="tiles.length"
-                            class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+                            class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
                         >
                             <button
                                 v-for="tile in tiles"
@@ -797,7 +797,7 @@ function newSale() {
         v-if="!showSuccess && location"
         class="fixed inset-x-0 bottom-14 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm lg:bottom-0 lg:left-[var(--sidebar-width,16rem)]"
     >
-        <div class="mx-auto flex max-w-5xl items-center gap-3">
+        <div class="flex w-full items-center gap-3 md:px-2 xl:px-4">
             <div class="min-w-0 flex-1">
                 <p class="text-xs text-muted-foreground">
                     {{ units }} pieza{{ units === 1 ? '' : 's' }}

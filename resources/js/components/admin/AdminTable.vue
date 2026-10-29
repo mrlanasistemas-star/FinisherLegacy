@@ -130,7 +130,11 @@ const detailColumns = computed(() =>
         <div
             v-if="rows.data.length"
             class="grid gap-4 sm:grid-cols-2"
-            :class="density === 'compact' ? 'xl:grid-cols-4' : 'xl:grid-cols-3'"
+            :class="
+                density === 'compact'
+                    ? 'xl:grid-cols-4 2xl:grid-cols-5'
+                    : 'xl:grid-cols-3 2xl:grid-cols-4'
+            "
         >
             <article
                 v-for="(row, index) in rows.data"

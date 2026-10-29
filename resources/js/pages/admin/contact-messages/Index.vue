@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Archive, Inbox, Mail, MailOpen } from '@lucide/vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import { Button } from '@/components/ui/button';
-import { CONTENT_AREA_NAV } from '@/config/areaNav';
 import { shortDate } from '@/lib/datetime';
 
 type Message = {
@@ -61,9 +59,7 @@ function setStatus(message: Message, status: Message['status']) {
 <template>
     <Head title="Mensajes de contacto" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-8">
-        <SecondaryNav :items="CONTENT_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6">
             <h1 class="flex items-center gap-2 text-xl font-semibold">
                 <Inbox class="size-5 text-fl-gold-ink" />

@@ -20,7 +20,6 @@ import {
     Trash2,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -34,7 +33,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CONTENT_AREA_NAV } from '@/config/areaNav';
 import { confirmAction } from '@/lib/swal';
 
 type Field = {
@@ -244,9 +242,7 @@ async function deleteGallery(item: GalleryItem) {
 <template>
     <Head title="Nosotros y trayectoria" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-8">
-        <SecondaryNav :items="CONTENT_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="flex items-center gap-2 text-xl font-semibold">

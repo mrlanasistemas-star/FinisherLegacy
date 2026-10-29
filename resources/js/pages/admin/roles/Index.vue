@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Copy, Pencil, Plus, ShieldCheck } from '@lucide/vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { SYSTEM_AREA_NAV } from '@/config/areaNav';
 
 type RoleRow = {
     id: number;
@@ -26,9 +24,7 @@ function duplicate(role: RoleRow) {
 <template>
     <Head title="Roles y permisos" />
 
-    <div class="p-4 md:p-8">
-        <SecondaryNav :items="SYSTEM_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1 class="text-xl font-bold text-foreground">
@@ -50,7 +46,9 @@ function duplicate(role: RoleRow) {
             </Button>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+            class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+        >
             <div
                 v-for="role in roles"
                 :key="role.id"

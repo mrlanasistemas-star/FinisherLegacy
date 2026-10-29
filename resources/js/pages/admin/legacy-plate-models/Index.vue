@@ -17,7 +17,6 @@ import {
     Ruler,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import InputError from '@/components/InputError.vue';
 import PlateClipBack from '@/components/plates/PlateClipBack.vue';
 import PlatePrintFace from '@/components/plates/PlatePrintFace.vue';
@@ -32,7 +31,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 import type { LegacyPlateModelData, LegacyPlateSpec } from '@/types/plates';
 
 type LayoutCard = {
@@ -121,9 +119,7 @@ function saveSpec() {
 <template>
     <Head title="Layouts de Legacy Plate" />
 
-    <div class="w-full p-4 md:p-8">
-        <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-8 flex flex-wrap items-center gap-3">
             <span
                 class="flex size-11 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"

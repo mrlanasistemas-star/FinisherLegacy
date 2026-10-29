@@ -66,7 +66,7 @@ function submit() {
 <template>
     <Head title="Nuevo lote" />
 
-    <div class="w-full max-w-3xl p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <CatalogHeader
             eyebrow="Inventario · Lotes"
             title="Nuevo lote"
@@ -85,7 +85,7 @@ function submit() {
         </div>
 
         <form
-            class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6"
+            class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6 2xl:grid-cols-4"
             @submit.prevent="submit"
         >
             <div class="grid gap-1.5 md:col-span-2">

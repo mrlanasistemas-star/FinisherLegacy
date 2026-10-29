@@ -84,7 +84,7 @@ function dateParts(date: string) {
 <template>
     <Head title="Eventos" />
 
-    <div class="w-full px-4 py-5 sm:px-6 md:py-7 lg:px-8 xl:px-10">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
                 <p class="fl-eyebrow text-fl-gold-ink">Eventos</p>

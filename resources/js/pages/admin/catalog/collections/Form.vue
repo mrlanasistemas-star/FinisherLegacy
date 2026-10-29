@@ -159,7 +159,7 @@ function submit() {
 <template>
     <Head :title="c ? `Editar ${c.name}` : 'Nueva colección'" />
 
-    <div class="w-full max-w-5xl p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <CatalogHeader
             eyebrow="Catálogo · Colecciones"
             :title="c ? `Editar ${c.name}` : 'Nueva colección'"
@@ -167,7 +167,9 @@ function submit() {
         />
 
         <form class="space-y-6" @submit.prevent="submit">
-            <section class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6">
+            <section
+                class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6 2xl:grid-cols-4"
+            >
                 <h2
                     class="text-sm font-semibold text-muted-foreground uppercase md:col-span-2"
                 >
@@ -218,7 +220,9 @@ function submit() {
                 </div>
             </section>
 
-            <section class="fl-card grid gap-5 p-5 md:grid-cols-3 md:p-6">
+            <section
+                class="fl-card grid gap-5 p-5 md:grid-cols-3 md:p-6 2xl:grid-cols-6"
+            >
                 <h2
                     class="text-sm font-semibold text-muted-foreground uppercase md:col-span-3"
                 >
@@ -279,7 +283,9 @@ function submit() {
                 </div>
             </section>
 
-            <section class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6">
+            <section
+                class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6 2xl:grid-cols-4"
+            >
                 <h2
                     class="text-sm font-semibold text-muted-foreground uppercase md:col-span-2"
                 >
@@ -334,7 +340,9 @@ function submit() {
                 </div>
             </section>
 
-            <section class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6">
+            <section
+                class="fl-card grid gap-5 p-5 md:grid-cols-2 md:p-6 2xl:grid-cols-4"
+            >
                 <h2
                     class="text-sm font-semibold text-muted-foreground uppercase md:col-span-2"
                 >

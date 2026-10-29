@@ -87,7 +87,7 @@ function submit() {
 <template>
     <Head title="Productos conectados" />
 
-    <div class="w-full p-4 md:p-8">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div
             class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
         >
@@ -175,7 +175,7 @@ function submit() {
             </p>
         </form>
 
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             <article
                 v-for="item in items.data"
                 :key="item.id"

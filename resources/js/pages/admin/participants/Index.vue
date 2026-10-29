@@ -191,7 +191,7 @@ function exportUrl() {
 <template>
     <Head :title="`Participantes — ${workspace.name}`" />
 
-    <div class="w-full px-4 py-5 sm:px-6 md:py-7 lg:px-8 xl:px-10">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <EventWorkspaceHeader :workspace="workspace" active="participants" />
 
         <div

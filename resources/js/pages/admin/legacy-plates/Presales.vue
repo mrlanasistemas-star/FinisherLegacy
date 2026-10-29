@@ -3,7 +3,6 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Ticket } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import EventEditionSelector from '@/components/admin/EventEditionSelector.vue';
-import SecondaryNav from '@/components/admin/SecondaryNav.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
 import PaymentStatusBadge from '@/components/shared/PaymentStatusBadge.vue';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +14,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { LEGACY_PLATE_AREA_NAV } from '@/config/areaNav';
 
 type LinkCandidate = {
     id: number;
@@ -110,9 +108,7 @@ function linkParticipant(presaleId: number) {
 <template>
     <Head title="Preventas Legacy Plate" />
 
-    <div class="p-4 md:p-8">
-        <SecondaryNav :items="LEGACY_PLATE_AREA_NAV" />
-
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="mb-6">
             <h1
                 class="flex items-center gap-1.5 text-xl font-bold text-foreground"

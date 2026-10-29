@@ -172,7 +172,7 @@ function sendNotification() {
 <template>
     <Head :title="participant.full_name" />
 
-    <div class="w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8 xl:px-10">
+    <div class="w-full px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <Link
             href="/admin/participants"
             class="text-xs tracking-wide text-muted-foreground/80 uppercase hover:text-fl-gold-ink"
