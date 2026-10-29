@@ -1,23 +1,23 @@
 <script setup lang="ts">
 /**
- * Home — the Finisher Legacy Tag, told in three layers: the OBJECT
- * (a premium physical memory), the STORY (tap the phone / scan the QR)
- * and PERMANENCE (the story keeps growing). Dark cinematic chapters
- * alternate with warm paper ones. Real data only: published collections
- * and tag products from HomeController; illustrative pieces (the drawn
- * tag, the example Legacy) are labelled as such.
- * Map: docs/architecture/public-experience.md.
+ * Home — the Finisher Legacy Tag, explained on a light, warm-paper page
+ * (2026-10-29): hero with the interactive 3D tag → cómo funciona (3 steps)
+ * → frente y reverso → real collections → what the story page looks like
+ * → community → FAQ → final CTA. No dark sections.
+ *
+ * Real data only: published collections and tag products from
+ * HomeController; illustrative pieces (3D/SVG tag, example story) are
+ * labelled as such. Map: docs/architecture/public-experience.md.
  */
 import { computed } from 'vue';
 import CollectionsShowcase from '@/components/home/CollectionsShowcase.vue';
-import FinishStory from '@/components/home/FinishStory.vue';
+import CommunityTeaser from '@/components/home/CommunityTeaser.vue';
+import HomeFaq from '@/components/home/HomeFaq.vue';
 import HomeFinalCta from '@/components/home/HomeFinalCta.vue';
 import HomeHero from '@/components/home/HomeHero.vue';
-import LegacySequence from '@/components/home/LegacySequence.vue';
-import RecipientsBlock from '@/components/home/RecipientsBlock.vue';
+import HomeSteps from '@/components/home/HomeSteps.vue';
 import StoryPreview from '@/components/home/StoryPreview.vue';
-import TagObject from '@/components/home/TagObject.vue';
-import TapDemo from '@/components/home/TapDemo.vue';
+import TagFaces from '@/components/home/TagFaces.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import type { PublicProductCard } from '@/types';
 import type { CollectionCardData } from '@/types/collections';
@@ -28,7 +28,7 @@ const props = defineProps<{
     tagProducts: PublicProductCard[];
 }>();
 
-/** The drawn tag wears the first real collection; otherwise a neutral one. */
+/** The drawn / 3D tag wears the first real collection; otherwise a neutral one. */
 const tag = computed(() => {
     const first = props.collections[0];
 
@@ -60,22 +60,21 @@ const jsonLd = {
 
 <template>
     <SeoHead
-        title="Finisher Legacy — El recuerdo físico de tu logro"
-        description="El Finisher Legacy Tag: un tag de colección con NFC y QR para guardar la historia de tu carrera. Lo llevas a casa, lo activas y tu historia vive dentro."
+        title="Finisher Legacy — El tag que guarda la historia de tu carrera"
+        description="El Finisher Legacy Tag: un tag de colección con NFC y QR. Te llega listo con su correa; lo acercas a tu celular y se abre la historia de tu carrera."
         image="/images/brand/og-finisher-legacy.jpg"
         :json-ld="jsonLd"
     />
 
-    <HomeHero :featured="collections.length ? tag : null" />
-    <FinishStory />
-    <TagObject :tag="tag" />
-    <TapDemo :tag="tag" />
-    <StoryPreview />
+    <HomeHero :tag="tag" />
+    <HomeSteps />
+    <TagFaces :tag="tag" />
     <CollectionsShowcase
         :collections="collections"
         :tag-products="tagProducts"
     />
-    <RecipientsBlock />
-    <LegacySequence />
+    <StoryPreview :tag="tag" />
+    <CommunityTeaser />
+    <HomeFaq />
     <HomeFinalCta />
 </template>

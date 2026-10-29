@@ -1,206 +1,236 @@
 <script setup lang="ts">
 /**
- * Bloque D — "Guarda lo que ocurrió detrás del resultado." What a Legacy
- * holds, shown as one EXAMPLE story (clearly labelled; "Tu nombre", never
- * a real athlete). The waveform and certificate are drawings, not
- * controls — nothing here pretends to play or download.
+ * "Así se ve tu historia" — a phone mockup of the story page that opens
+ * when someone taps the tag (/t/{code}). It is ONE EXAMPLE, clearly
+ * labelled ("Ejemplo", "Tu nombre"); the photo is project imagery, the
+ * figures are illustrative and nothing in the mockup is a control.
  */
-import { Award, Play } from '@lucide/vue';
+import { Heart, MapPin, Play, Share2 } from '@lucide/vue';
 import Reveal from '@/components/motion/Reveal.vue';
+import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { MEDIA } from '@/config/media';
+
+defineProps<{
+    tag: {
+        name: string;
+        subtitle: string | null;
+        year: number | null;
+        accent: string | null;
+    };
+}>();
 
 const photo = MEDIA.photo.dawn;
 
 const holds = [
-    'Tu foto',
-    'La carrera',
-    'Tu tiempo',
-    'La fecha',
-    'El lugar',
-    'Una dedicatoria',
-    'Un audio',
-    'Tu certificado',
+    {
+        title: 'Tus fotos y tu tiempo',
+        body: 'La carrera, la fecha, el lugar y tu resultado.',
+    },
+    {
+        title: 'Dedicatorias y audio',
+        body: 'Las palabras de quienes te esperaron en la meta.',
+    },
+    {
+        title: 'Tú decides quién la ve',
+        body: 'Pública, solo con enlace o privada.',
+    },
 ];
 
 /** Deterministic bar heights for the illustrative waveform. */
-const bars = Array.from({ length: 42 }, (_, i) =>
-    Math.round(22 + 70 * Math.abs(Math.sin(i * 0.55) * Math.cos(i * 0.17))),
+const bars = Array.from({ length: 28 }, (_, i) =>
+    Math.round(25 + 70 * Math.abs(Math.sin(i * 0.55) * Math.cos(i * 0.17))),
 );
 </script>
 
 <template>
     <section
-        class="relative overflow-hidden bg-fl-cream py-20 sm:py-28 lg:py-36"
+        class="overflow-hidden bg-fl-cream/60 py-20 sm:py-24 lg:py-28"
         aria-labelledby="story-preview-title"
     >
         <div
-            class="fl-container grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-12"
+            class="fl-container grid items-center gap-14 lg:grid-cols-12 lg:gap-12"
         >
-            <div class="lg:col-span-5">
-                <p class="fl-eyebrow flex items-center gap-3">
-                    <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
-                    Tu Legacy
-                </p>
+            <Reveal class="lg:col-span-5">
+                <p class="fl-eyebrow">Tu historia</p>
                 <h2
                     id="story-preview-title"
-                    class="fl-display mt-5 text-[clamp(2.1rem,4.4vw,3.75rem)]"
+                    class="fl-display mt-4 text-[clamp(2rem,4.2vw,3.25rem)]"
                 >
-                    Guarda lo que ocurrió detrás del resultado.
+                    Acércalo al celular y esto es lo que se abre.
                 </h2>
                 <p
-                    class="mt-6 max-w-[30rem] text-lg leading-relaxed text-muted-foreground"
+                    class="mt-5 max-w-[30rem] text-lg leading-relaxed text-muted-foreground"
                 >
-                    El tiempo dice cuánto tardaste. Tu historia dice todo lo
-                    demás: quién te esperó, qué escuchabas, por qué no te
-                    detuviste.
+                    Tu página personal, sin instalar nada: se abre en el
+                    navegador desde el NFC, el QR o el código impreso.
                 </p>
-                <ul
-                    class="mt-9 grid max-w-md grid-cols-2 gap-x-6 gap-y-3 border-t border-foreground/10 pt-7"
-                >
+                <ul class="mt-9 space-y-5">
                     <li
-                        v-for="item in holds"
-                        :key="item"
-                        class="flex items-center gap-3 text-[15px] text-foreground"
+                        v-for="(item, index) in holds"
+                        :key="item.title"
+                        class="flex gap-4"
                     >
-                        <span class="h-px w-4 bg-fl-gold" aria-hidden="true" />
-                        {{ item }}
+                        <span
+                            class="legacy-numeric grid size-9 shrink-0 place-items-center rounded-full bg-white text-xs font-semibold text-fl-gold-ink shadow-fl-micro"
+                            aria-hidden="true"
+                            >{{ index + 1 }}</span
+                        >
+                        <div>
+                            <p class="font-medium text-foreground">
+                                {{ item.title }}
+                            </p>
+                            <p
+                                class="mt-0.5 text-[15px] leading-relaxed text-muted-foreground"
+                            >
+                                {{ item.body }}
+                            </p>
+                        </div>
                     </li>
                 </ul>
-            </div>
+            </Reveal>
 
-            <div class="relative lg:col-span-7">
-                <Reveal
-                    class="relative mx-auto max-w-xl overflow-hidden rounded-hero bg-card shadow-fl-overlay"
+            <div class="relative flex justify-center lg:col-span-7">
+                <!-- The tag approaching the phone -->
+                <div
+                    class="tap-tag absolute top-[18%] left-[2%] z-10 hidden w-24 sm:block lg:left-[6%] lg:w-28"
+                    aria-hidden="true"
                 >
-                    <!-- Photo -->
+                    <TagVisualizer
+                        :name="tag.name"
+                        :subtitle="tag.subtitle"
+                        :year="tag.year"
+                        :accent="tag.accent"
+                        :tilt="false"
+                    />
+                    <span
+                        class="tap-ring absolute top-[58%] right-[-30%] size-14 rounded-full border-2 border-fl-gold/70"
+                    />
+                </div>
+
+                <Reveal
+                    direction="up"
+                    :duration-ms="700"
+                    class="relative w-[17.5rem] sm:w-[19rem]"
+                >
+                    <!-- Phone frame -->
                     <div
-                        class="relative aspect-[16/10] overflow-hidden bg-fl-black"
-                    >
-                        <img
-                            :src="photo.src"
-                            :srcset="photo.srcset"
-                            sizes="(min-width: 1024px) 36rem, 92vw"
-                            :width="photo.width"
-                            :height="photo.height"
-                            alt="Ejemplo de foto de una historia: corredora entrenando junto al mar al amanecer"
-                            loading="lazy"
-                            decoding="async"
-                            class="size-full object-cover object-[50%_45%]"
-                        />
-                        <div
-                            class="absolute inset-0 bg-gradient-to-t from-fl-black/80 via-transparent to-transparent"
-                        />
-                        <span
-                            class="absolute top-4 left-4 rounded-full bg-fl-black/70 px-2.5 py-1 text-[10px] font-semibold tracking-[0.18em] text-fl-gold-soft uppercase"
-                        >
-                            Ejemplo
-                        </span>
-                        <div
-                            class="absolute inset-x-5 bottom-4 text-white sm:inset-x-7 sm:bottom-6"
-                        >
-                            <p
-                                class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
-                            >
-                                Mi Legacy
-                            </p>
-                            <p
-                                class="mt-1 font-serif text-3xl leading-tight sm:text-4xl"
-                            >
-                                Tu nombre
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Facts -->
-                    <dl
-                        class="grid grid-cols-2 gap-px bg-border sm:grid-cols-4"
+                        class="relative rounded-[2.75rem] border border-fl-line bg-white p-2.5 shadow-fl-overlay"
+                        aria-label="Ejemplo de la página de historia que abre el tag"
+                        role="img"
                     >
                         <div
-                            v-for="fact in [
-                                { k: 'Carrera', v: 'Tu carrera' },
-                                { k: 'Tiempo', v: '—:—:—' },
-                                { k: 'Fecha', v: 'El día' },
-                                { k: 'Lugar', v: 'Tu ciudad' },
-                            ]"
-                            :key="fact.k"
-                            class="bg-card px-5 py-4"
-                        >
-                            <dt
-                                class="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
-                            >
-                                {{ fact.k }}
-                            </dt>
-                            <dd
-                                class="legacy-numeric mt-1 text-[15px] font-medium text-foreground"
-                            >
-                                {{ fact.v }}
-                            </dd>
-                        </div>
-                    </dl>
-
-                    <div class="grid gap-6 p-5 sm:p-7">
-                        <!-- Dedication -->
-                        <blockquote
-                            class="border-l border-fl-gold pl-4 font-serif text-xl leading-snug text-foreground italic"
-                        >
-                            “Para quien me esperó en el último kilómetro.”
-                        </blockquote>
-
-                        <!-- Audio (drawing) -->
+                            class="absolute top-4 left-1/2 z-20 h-5 w-24 -translate-x-1/2 rounded-full bg-fl-black"
+                            aria-hidden="true"
+                        />
                         <div
-                            class="flex items-center gap-4 rounded-card bg-fl-paper px-4 py-3"
-                            aria-label="Ejemplo de nota de voz"
-                            role="img"
+                            class="relative overflow-hidden rounded-[2.2rem] bg-fl-paper"
+                            aria-hidden="true"
                         >
-                            <span
-                                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground text-background"
-                                aria-hidden="true"
-                            >
-                                <Play class="size-4 translate-x-px" />
-                            </span>
-                            <span
-                                class="flex h-9 min-w-0 flex-1 items-center gap-[2px] sm:gap-[3px]"
-                                aria-hidden="true"
-                            >
-                                <span
-                                    v-for="(h, i) in bars"
-                                    :key="i"
-                                    class="max-w-[3px] min-w-px flex-1 rounded-full"
-                                    :class="
-                                        i < 15
-                                            ? 'bg-fl-gold'
-                                            : 'bg-foreground/20'
-                                    "
-                                    :style="{ height: `${h}%` }"
+                            <div class="relative aspect-[4/3.4]">
+                                <img
+                                    :src="photo.src"
+                                    :srcset="photo.srcset"
+                                    sizes="300px"
+                                    alt=""
+                                    loading="lazy"
+                                    decoding="async"
+                                    class="absolute inset-0 size-full object-cover"
                                 />
-                            </span>
-                            <span
-                                class="legacy-numeric text-xs text-muted-foreground"
-                                aria-hidden="true"
-                                >0:42</span
-                            >
-                        </div>
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-t from-fl-black/70 via-transparent to-transparent"
+                                />
+                                <span
+                                    class="absolute top-11 right-4 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-fl-gold-ink uppercase"
+                                    >Ejemplo</span
+                                >
+                                <div
+                                    class="absolute inset-x-4 bottom-4 text-white"
+                                >
+                                    <p
+                                        class="text-[10px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
+                                    >
+                                        Finisher Legacy
+                                    </p>
+                                    <p
+                                        class="mt-1 font-serif text-2xl leading-tight"
+                                    >
+                                        Tu nombre
+                                    </p>
+                                    <p
+                                        class="mt-1 flex items-center gap-1 text-xs text-white/80"
+                                    >
+                                        <MapPin class="size-3" />
+                                        {{ tag.name
+                                        }}{{ tag.year ? ` · ${tag.year}` : '' }}
+                                    </p>
+                                </div>
+                            </div>
 
-                        <!-- Certificate (drawing) -->
-                        <div
-                            class="flex items-center gap-4 rounded-card border border-border px-4 py-3"
-                        >
-                            <span
-                                class="flex size-9 shrink-0 items-center justify-center rounded-full border border-fl-gold/60 text-fl-gold-ink"
-                                aria-hidden="true"
-                            >
-                                <Award class="size-4" />
-                            </span>
-                            <span class="min-w-0">
-                                <span
-                                    class="block text-sm font-semibold text-foreground"
-                                    >Certificado de tu historia</span
+                            <div class="space-y-3 p-4">
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div
+                                        v-for="fact in [
+                                            { k: 'Distancia', v: '21 km' },
+                                            { k: 'Tiempo', v: '1:58:42' },
+                                            { k: 'Lugar', v: '412' },
+                                        ]"
+                                        :key="fact.k"
+                                        class="rounded-xl bg-white px-1 py-2 shadow-fl-micro"
+                                    >
+                                        <p
+                                            class="text-[9px] tracking-[0.14em] text-muted-foreground uppercase"
+                                        >
+                                            {{ fact.k }}
+                                        </p>
+                                        <p
+                                            class="legacy-numeric mt-0.5 text-sm font-semibold text-foreground"
+                                        >
+                                            {{ fact.v }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div
+                                    class="rounded-xl bg-white p-3 shadow-fl-micro"
                                 >
-                                <span
-                                    class="block text-xs text-muted-foreground"
-                                    >Digital, para guardar o compartir</span
+                                    <p
+                                        class="font-serif text-[13px] leading-snug text-foreground italic"
+                                    >
+                                        “Para mamá, que me esperó en el
+                                        kilómetro 18.”
+                                    </p>
+                                </div>
+                                <div
+                                    class="flex items-center gap-2 rounded-xl bg-white p-2.5 shadow-fl-micro"
                                 >
-                            </span>
+                                    <span
+                                        class="grid size-7 shrink-0 place-items-center rounded-full bg-fl-black text-white"
+                                    >
+                                        <Play class="size-3 fill-current" />
+                                    </span>
+                                    <span
+                                        class="flex h-6 flex-1 items-center gap-[2px]"
+                                    >
+                                        <span
+                                            v-for="(h, i) in bars"
+                                            :key="i"
+                                            class="w-[3px] rounded-full bg-fl-gold/70"
+                                            :style="{ height: `${h}%` }"
+                                        />
+                                    </span>
+                                </div>
+                                <div class="flex gap-2 pb-1">
+                                    <span
+                                        class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-fl-black text-xs font-semibold text-white"
+                                    >
+                                        <Share2 class="size-3.5" /> Compartir
+                                    </span>
+                                    <span
+                                        class="grid size-9 place-items-center rounded-full border border-fl-line bg-white text-fl-gold-ink"
+                                    >
+                                        <Heart class="size-3.5" />
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </Reveal>
@@ -208,3 +238,48 @@ const bars = Array.from({ length: 42 }, (_, i) =>
         </div>
     </section>
 </template>
+
+<style scoped>
+.tap-tag {
+    animation: tap-approach 4.5s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+    transform: rotate(-12deg);
+}
+.tap-ring {
+    animation: tap-ring 4.5s ease-out infinite;
+    opacity: 0;
+}
+
+@keyframes tap-approach {
+    0%,
+    100% {
+        transform: translateX(0) rotate(-12deg);
+    }
+    40%,
+    60% {
+        transform: translateX(18px) rotate(-6deg);
+    }
+}
+
+@keyframes tap-ring {
+    0%,
+    38% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    45% {
+        opacity: 0.9;
+    }
+    70%,
+    100% {
+        opacity: 0;
+        transform: scale(1.6);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tap-tag,
+    .tap-ring {
+        animation: none;
+    }
+}
+</style>

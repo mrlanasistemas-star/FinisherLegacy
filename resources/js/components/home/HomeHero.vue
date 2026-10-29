@@ -1,230 +1,145 @@
 <script setup lang="ts">
 /**
- * Home hero — the concept in one screen: "El recuerdo físico de tu logro.
- * Tu historia vive dentro." over the real start-line footage.
- *
- * Media: the looping video only plays ≥md and without reduced motion
- * (mobile gets the poster — no heavy autoplay on phones); it pauses when
- * the hero leaves the viewport. The poster is an absolutely-filled
- * <picture>, so nothing shifts while it loads (no CLS). The tag on the
- * right is the illustrative TagVisualizer (no tag photography yet).
+ * Home hero (light, 2026-10-29) — what it is in one line, the two actions
+ * (buy / activate) and the interactive 3D tag right there. The 3D model
+ * wears the first real collection when one exists; otherwise a neutral
+ * "Tu colección". three.js loads lazily inside LegacyTag3D (poster first).
  */
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight } from '@lucide/vue';
-import { useIntersectionObserver, useMediaQuery } from '@vueuse/core';
-import { computed, onMounted, ref, useTemplateRef } from 'vue';
-import TagVisualizer from '@/components/tag/TagVisualizer.vue';
-import { useReducedMotion } from '@/composables/useReducedMotion';
+import { ArrowRight, Nfc, PackageCheck, Smartphone } from '@lucide/vue';
+import LegacyTag3D from '@/components/three/LegacyTag3D.vue';
 import { ACTIVATE_URL } from '@/config/public-links';
-import { howItWorks } from '@/routes';
-import { index as collectionsIndex } from '@/routes/collections';
+import { index as storeIndex } from '@/routes/store/products';
 
-const props = defineProps<{
-    /** First real collection, if any — the drawn tag wears its name. */
-    featured?: {
+defineProps<{
+    tag: {
         name: string;
         subtitle: string | null;
         year: number | null;
         accent: string | null;
-    } | null;
+    };
 }>();
 
-const POSTER = '/media/home/hero/finisher-hero-poster.webp';
-const POSTER_MOBILE = '/media/home/hero/finisher-hero-poster-mobile.webp';
-
-const reducedMotion = useReducedMotion();
-const wide = useMediaQuery('(min-width: 768px)');
-const videoFailed = ref(false);
-const mounted = ref(false);
-const root = useTemplateRef<HTMLElement>('root');
-const video = useTemplateRef<HTMLVideoElement>('video');
-
-const playVideo = computed(
-    () =>
-        mounted.value &&
-        wide.value &&
-        !reducedMotion.value &&
-        !videoFailed.value,
-);
-
-onMounted(() => {
-    mounted.value = true;
-});
-
-useIntersectionObserver(root, ([entry]) => {
-    if (!video.value) {
-        return;
-    }
-
-    if (entry?.isIntersecting) {
-        video.value.play().catch(() => {
-            videoFailed.value = true;
-        });
-    } else {
-        video.value.pause();
-    }
-});
-
-const tag = computed(() => ({
-    name: props.featured?.name ?? 'Tu colección',
-    subtitle: props.featured?.subtitle ?? 'Destino · Disciplina',
-    year: props.featured?.year ?? null,
-    accent: props.featured?.accent ?? null,
-}));
+const facts = [
+    { icon: Nfc, label: 'NFC y QR de respaldo' },
+    { icon: PackageCheck, label: 'Llega listo de fábrica' },
+    { icon: Smartphone, label: 'Sin instalar ninguna app' },
+];
 </script>
 
 <template>
     <section
-        ref="root"
-        class="relative -mt-16 flex min-h-[100svh] items-end overflow-hidden bg-fl-black text-white lg:items-center"
+        class="relative overflow-hidden bg-white"
         aria-labelledby="home-hero-title"
     >
-        <!-- Media layer -->
-        <div class="absolute inset-0" aria-hidden="true">
-            <picture>
-                <source media="(min-width: 768px)" :srcset="POSTER" />
-                <img
-                    :src="POSTER_MOBILE"
-                    alt=""
-                    width="750"
-                    height="422"
-                    fetchpriority="high"
-                    decoding="async"
-                    class="absolute inset-0 size-full object-cover object-[50%_60%]"
-                />
-            </picture>
-            <video
-                v-if="playVideo"
-                ref="video"
-                class="absolute inset-0 size-full object-cover"
-                :poster="POSTER"
-                autoplay
-                muted
-                loop
-                playsinline
-                preload="metadata"
-                @error="videoFailed = true"
-            >
-                <source
-                    src="/media/home/hero/finisher-hero-desktop.webm"
-                    type="video/webm"
-                />
-                <source
-                    src="/media/home/hero/finisher-hero-desktop.mp4"
-                    type="video/mp4"
-                />
-            </video>
-            <!-- Legibility: ink from the bottom-left, where the words are -->
+        <!-- Warm paper glow behind the object; no dark media -->
+        <div class="pointer-events-none absolute inset-0" aria-hidden="true">
             <div
-                class="absolute inset-0 bg-gradient-to-t from-fl-black via-fl-black/70 to-fl-black/30"
+                class="absolute -top-40 right-[-20%] h-[42rem] w-[42rem] rounded-full bg-fl-cream/80 blur-3xl lg:right-[-6%]"
             />
             <div
-                class="absolute inset-0 bg-gradient-to-r from-fl-black/80 via-fl-black/20 to-transparent"
+                class="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-fl-line to-transparent"
             />
         </div>
 
         <div
-            class="fl-container relative grid w-full items-center gap-10 pt-28 pb-14 sm:pb-20 lg:grid-cols-12 lg:pt-32 lg:pb-24"
+            class="fl-container relative grid items-center gap-6 pt-10 pb-14 sm:pt-14 lg:grid-cols-12 lg:gap-10 lg:pt-16 lg:pb-20"
         >
-            <div class="hero-copy lg:col-span-7">
+            <div class="hero-copy text-center lg:col-span-6 lg:text-left">
                 <p
-                    class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold uppercase"
+                    class="inline-flex items-center gap-2 rounded-full border border-fl-gold/40 bg-fl-paper px-3 py-1 text-[11px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                 >
-                    <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
+                    <span
+                        class="size-1.5 rounded-full bg-fl-gold"
+                        aria-hidden="true"
+                    />
                     Finisher Legacy Tag
                 </p>
                 <h1
                     id="home-hero-title"
-                    class="mt-6 font-serif text-[clamp(2.5rem,5.4vw,4.75rem)] leading-[1.04] font-medium tracking-[-0.025em] text-white"
+                    class="mt-6 font-serif text-[clamp(2.4rem,5.2vw,4.4rem)] leading-[1.04] font-medium tracking-[-0.025em] text-foreground"
                 >
-                    El recuerdo físico de tu logro.
-                    <span class="mt-1 block text-fl-gold-soft italic"
-                        >Tu historia vive dentro.</span
+                    El tag de colección que guarda
+                    <span class="text-fl-gold-ink italic"
+                        >la historia de tu carrera.</span
                     >
                 </h1>
                 <p
-                    class="mt-6 max-w-[34rem] text-base leading-relaxed text-white/75 sm:text-lg"
+                    class="mx-auto mt-6 max-w-[34rem] text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
                 >
-                    Un tag de colección con NFC y QR. Lo llevas a casa, lo
-                    activas y guardas ahí la historia de tu carrera.
+                    Lo compras, te llega listo con su correa y, cuando lo
+                    acercas a tu celular, se abre tu historia: tus fotos, tu
+                    tiempo y las dedicatorias de quienes te acompañaron.
                 </p>
 
-                <div class="mt-9 flex flex-wrap items-center gap-x-8 gap-y-3">
+                <div
+                    class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start"
+                >
                     <Link
-                        :href="collectionsIndex()"
-                        class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white px-6 text-sm font-semibold tracking-wide text-fl-black transition-colors hover:bg-fl-paper focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:ring-offset-fl-black focus-visible:outline-none"
+                        :href="storeIndex()"
+                        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-fl-black px-7 text-sm font-semibold text-white shadow-fl-float transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-fl-graphite focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
                     >
-                        Explorar colecciones
+                        Ver colecciones
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>
-                    <Link
-                        :href="howItWorks()"
-                        class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-white underline decoration-fl-gold decoration-1 underline-offset-[6px] transition-colors hover:decoration-2"
+                    <a
+                        :href="ACTIVATE_URL"
+                        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-foreground/15 bg-white px-7 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
                     >
-                        Cómo funciona
-                    </Link>
+                        Activar mi tag
+                    </a>
                 </div>
-                <a
-                    :href="ACTIVATE_URL"
-                    class="mt-6 inline-flex min-h-11 items-center gap-2 text-sm text-white/65 underline-offset-4 transition-colors hover:text-white hover:underline"
+
+                <ul
+                    class="mt-9 flex flex-wrap justify-center gap-x-6 gap-y-3 lg:justify-start"
                 >
-                    ¿Ya tienes tu tag?
-                    <span class="font-semibold text-fl-gold-soft"
-                        >Actívalo</span
+                    <li
+                        v-for="fact in facts"
+                        :key="fact.label"
+                        class="flex items-center gap-2 text-sm text-foreground/80"
                     >
-                    <ArrowRight class="size-3.5" aria-hidden="true" />
-                </a>
+                        <span
+                            class="grid size-7 place-items-center rounded-full bg-fl-paper text-fl-gold-ink"
+                            aria-hidden="true"
+                        >
+                            <component :is="fact.icon" class="size-3.5" />
+                        </span>
+                        {{ fact.label }}
+                    </li>
+                </ul>
             </div>
 
-            <div
-                class="hero-tag relative mx-auto hidden w-full max-w-[17rem] lg:col-span-5 lg:block lg:max-w-[19rem]"
-            >
-                <TagVisualizer
+            <div class="hero-tag relative lg:col-span-6">
+                <div
+                    class="pointer-events-none absolute inset-x-[12%] top-[8%] bottom-[22%] rounded-full bg-[radial-gradient(closest-side,var(--fl-cream),transparent)]"
+                    aria-hidden="true"
+                />
+                <LegacyTag3D
+                    class="relative mx-auto max-w-[26rem] lg:max-w-[30rem]"
                     :name="tag.name"
                     :subtitle="tag.subtitle"
                     :year="tag.year"
                     :accent="tag.accent"
+                    aspect="aspect-[5/6]"
                 />
-                <p
-                    class="mt-4 text-center text-[11px] tracking-[0.18em] text-white/40 uppercase"
-                >
-                    Render ilustrativo
-                </p>
             </div>
-        </div>
-
-        <!-- Scroll cue: a single hairline, no bouncing arrow -->
-        <div
-            class="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-5"
-            aria-hidden="true"
-        >
-            <span
-                class="hero-cue block h-10 w-px bg-gradient-to-b from-transparent to-fl-gold/70"
-            />
         </div>
     </section>
 </template>
 
 <style scoped>
 .hero-copy {
-    animation: hero-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: hero-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .hero-tag {
-    animation: hero-tag-in 1200ms 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: hero-rise 1000ms 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes hero-rise {
     from {
         opacity: 0;
-        transform: translateY(18px);
-    }
-}
-
-@keyframes hero-tag-in {
-    from {
-        opacity: 0;
-        transform: translateY(28px) rotate(-4deg);
+        transform: translateY(16px);
     }
 }
 

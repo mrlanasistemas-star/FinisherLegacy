@@ -1,76 +1,58 @@
 <script setup lang="ts">
 /**
- * Bloque H — the emotional close over the real finish photograph. The
- * page's one gold CTA (commercial) + the activation path for people who
- * already have their tag.
+ * Final CTA — a warm cream band (no dark section), the page's single gold
+ * commercial CTA and the activation link for people who already have one.
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from '@lucide/vue';
-import { MEDIA } from '@/config/media';
+import Reveal from '@/components/motion/Reveal.vue';
 import { ACTIVATE_URL } from '@/config/public-links';
-import { index as collectionsIndex } from '@/routes/collections';
-
-const photo = MEDIA.photo.triumph;
+import { index as storeIndex } from '@/routes/store/products';
 </script>
 
 <template>
-    <section
-        class="relative isolate overflow-hidden bg-fl-black text-white"
-        aria-labelledby="final-cta-title"
-    >
-        <img
-            :src="photo.src"
-            :srcset="photo.srcset"
-            sizes="100vw"
-            :width="photo.width"
-            :height="photo.height"
-            :alt="photo.alt"
-            loading="lazy"
-            decoding="async"
-            class="absolute inset-0 -z-10 size-full object-cover object-[50%_30%] opacity-70"
-        />
-        <div
-            class="absolute inset-0 -z-10 bg-gradient-to-t from-fl-black via-fl-black/60 to-fl-black/20"
-            aria-hidden="true"
-        />
-
-        <div
-            class="fl-container flex min-h-[80svh] flex-col items-center justify-end py-20 text-center sm:min-h-[88svh] sm:py-28"
-        >
-            <span
-                class="h-12 w-px bg-gradient-to-b from-transparent to-fl-gold"
-                aria-hidden="true"
-            />
-            <h2
-                id="final-cta-title"
-                class="mt-8 max-w-4xl font-serif text-[clamp(2.2rem,4.6vw,4rem)] leading-[1.02] font-medium tracking-[-0.025em]"
+    <section class="bg-white pb-20 sm:pb-24" aria-labelledby="final-cta-title">
+        <div class="fl-container">
+            <Reveal
+                class="relative overflow-hidden rounded-hero bg-fl-cream px-6 py-16 text-center sm:px-12 sm:py-20"
             >
-                Cada logro merece algo más
-                <span class="block text-fl-gold-soft italic"
-                    >que una foto en el carrete.</span
-                >
-            </h2>
-            <p class="mt-6 max-w-xl text-lg text-white/70">
-                Elige la colección de tu carrera y llévate el recuerdo que se
-                puede tocar.
-            </p>
-            <div
-                class="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row"
-            >
-                <Link
-                    :href="collectionsIndex()"
-                    class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-fl-gold px-6 text-sm font-semibold tracking-wide text-fl-black transition-colors hover:bg-fl-gold-soft focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-fl-black focus-visible:outline-none"
-                >
-                    Explorar colecciones
-                    <ArrowRight class="size-4" aria-hidden="true" />
-                </Link>
-                <a
-                    :href="ACTIVATE_URL"
-                    class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-white underline decoration-fl-gold decoration-1 underline-offset-[6px] transition-colors hover:decoration-2"
-                >
-                    Ya tengo mi tag: activarlo
-                </a>
-            </div>
+                <div
+                    class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgb(255_255_255/0.7),transparent_70%)]"
+                    aria-hidden="true"
+                />
+                <div class="relative">
+                    <p class="fl-eyebrow">Tu carrera termina</p>
+                    <h2
+                        id="final-cta-title"
+                        class="fl-display mx-auto mt-4 max-w-3xl text-[clamp(2.1rem,4.8vw,3.75rem)]"
+                    >
+                        Tu historia no tiene por qué terminar.
+                    </h2>
+                    <p
+                        class="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground"
+                    >
+                        Llévala contigo en un objeto que puedes tocar, y ábrela
+                        cada vez que quieras volver a esa meta.
+                    </p>
+                    <div
+                        class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+                    >
+                        <Link
+                            :href="storeIndex()"
+                            class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-fl-gold px-8 text-sm font-semibold text-fl-black shadow-fl-float transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-fl-gold-soft focus-visible:ring-2 focus-visible:ring-fl-black focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
+                        >
+                            Comprar mi tag
+                            <ArrowRight class="size-4" aria-hidden="true" />
+                        </Link>
+                        <a
+                            :href="ACTIVATE_URL"
+                            class="inline-flex min-h-11 items-center gap-2 px-4 text-sm font-semibold text-foreground underline decoration-fl-gold decoration-1 underline-offset-[6px] hover:decoration-2"
+                        >
+                            Ya tengo uno: activarlo
+                        </a>
+                    </div>
+                </div>
+            </Reveal>
         </div>
     </section>
 </template>
