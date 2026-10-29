@@ -11,6 +11,26 @@ export type CommunityAthlete = {
     city: string | null;
     sport?: string | null;
     is_following?: boolean;
+    /** People lists only (MutualConnections). */
+    follows_you?: boolean;
+    mutual_count?: number;
+    mutual_names?: string[];
+};
+
+/** One avatar of the story-style strip on top of the feed. */
+export type PeopleStripItem = {
+    username: string | null;
+    name: string;
+    photo_url: string | null;
+    /** Posted in the last days (gold ring). */
+    recent: boolean;
+    following: boolean;
+};
+
+export type CommentPreview = {
+    uuid: string;
+    body: string;
+    author: { username: string | null; name: string | null };
 };
 
 export type CommunityPost = {
@@ -62,6 +82,8 @@ export type CommunityPost = {
     reactions: { like: number; cheer: number; total: number };
     my_reactions: string[];
     comments_count: number;
+    /** Feed only: latest comments (oldest first). */
+    comments_preview?: CommentPreview[];
 };
 
 /** An Inertia::scroll() prop (cursor-paginated resource collection). */

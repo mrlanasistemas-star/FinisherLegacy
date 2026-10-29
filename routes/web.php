@@ -42,6 +42,7 @@ use App\Http\Controllers\AthleteEventMediaFileController;
 use App\Http\Controllers\AthleteHistoryController;
 use App\Http\Controllers\AthleteProfileController;
 use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityPeopleController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
@@ -157,7 +158,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('fotos/descargar/{sale}', [PhotosController::class, 'download'])->name('photos.download');
 
     Route::prefix('comunidad')->name('community.')->group(function () {
-        Route::get('conexiones', [CommunityController::class, 'connections'])->name('connections');
+        Route::get('personas', [CommunityPeopleController::class, 'index'])->name('people');
+        Route::get('conexiones', [CommunityPeopleController::class, 'legacy'])->name('connections');
         Route::post('publicaciones', [CommunityController::class, 'store'])->middleware('throttle:social-write')->name('posts.store');
         Route::patch('publicaciones/{moment}', [CommunityController::class, 'update'])->middleware('throttle:social-write')->name('posts.update');
         Route::delete('publicaciones/{moment}', [CommunityController::class, 'destroy'])->name('posts.destroy');

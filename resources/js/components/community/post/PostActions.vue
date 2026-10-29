@@ -1,76 +1,37 @@
 <script setup lang="ts">
 /**
- * Celebrar · Comentar · Compartir. Celebrar is optimistic (flips and
- * counts instantly, rolls back on error) and reloads no page props, so an
- * infinite feed never jumps. Share uses the Web Share API when present,
- * otherwise copies the link.
+ * Celebrar (heart) · Comentar · Compartir — the Instagram action row,
+ * plus the celebrations count. The celebrate state lives in
+ * useCelebrate() (shared with the double-tap on the photos). Share uses
+ * the Web Share API when present, otherwise copies the link.
  */
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { MessageCircle, PartyPopper, Share2 } from '@lucide/vue';
-import { computed, ref, watch } from 'vue';
+import { Link } from '@inertiajs/vue3';
+import { Heart, MessageCircle, Send } from '@lucide/vue';
+import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { login } from '@/routes';
-import { celebrate, show, uncelebrate } from '@/routes/community/posts';
+import { show } from '@/routes/community/posts';
 import type { CommunityPost } from '@/types';
+import type { Celebration } from './useCelebrate';
 
-const props = defineProps<{ post: CommunityPost }>();
+const props = defineProps<{
+    post: CommunityPost;
+    celebration: Celebration;
+    /** Detail page: "Comentar" focuses the box instead of navigating. */
+    detail?: boolean;
+}>();
 
-const page = usePage();
-const isGuest = computed(() => !page.props.auth.user);
+const emit = defineEmits<{ comment: [] }>();
 
-const celebrated = ref(props.post.my_reactions.length > 0);
-const count = ref(props.post.reactions.total);
-const busy = ref(false);
-const burst = ref(false);
+const pop = ref(false);
 
 watch(
-    () => props.post,
-    (post) => {
-        celebrated.value = post.my_reactions.length > 0;
-        count.value = post.reactions.total;
+    () => props.celebration.burst.value,
+    () => {
+        pop.value = false;
+        requestAnimationFrame(() => (pop.value = true));
+        window.setTimeout(() => (pop.value = false), 500);
     },
 );
-
-const celebrateLabel = computed(() => {
-    const action = celebrated.value ? 'Quitar celebración' : 'Celebrar';
-
-    return count.value > 0
-        ? `${action} · ${count.value} ${count.value === 1 ? 'celebración' : 'celebraciones'}`
-        : action;
-});
-
-function toggle() {
-    if (busy.value) {
-        return;
-    }
-
-    const was = celebrated.value;
-    celebrated.value = !was;
-    count.value = Math.max(0, count.value + (was ? -1 : 1));
-    burst.value = !was;
-    busy.value = true;
-
-    router.visit(
-        was ? uncelebrate(props.post.uuid) : celebrate(props.post.uuid),
-        {
-            preserveScroll: true,
-            preserveState: true,
-            // No page prop depends on this — keep the feed exactly as it is.
-            only: ['__reaction'],
-            onError: () => {
-                celebrated.value = was;
-                count.value = Math.max(0, count.value + (was ? 1 : -1));
-                toast.error(
-                    'No pudimos registrar tu celebración. Intenta de nuevo.',
-                );
-            },
-            onFinish: () => {
-                busy.value = false;
-                window.setTimeout(() => (burst.value = false), 500);
-            },
-        },
-    );
-}
 
 async function share() {
     const url =
@@ -102,86 +63,105 @@ async function share() {
 </script>
 
 <template>
-    <footer
-        class="flex items-center gap-1 border-t border-border px-2 py-1.5 sm:px-3"
-    >
-        <component
-            :is="isGuest ? Link : 'button'"
-            :href="isGuest ? login().url : undefined"
-            :type="isGuest ? undefined : 'button'"
-            class="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            :class="celebrated ? 'text-fl-gold-ink' : 'text-muted-foreground'"
-            :aria-pressed="isGuest ? undefined : celebrated"
-            :aria-label="celebrateLabel"
-            @click="isGuest ? undefined : toggle()"
-        >
-            <PartyPopper
-                class="size-[18px] transition-transform"
-                :class="[
-                    celebrated ? 'fill-fl-gold/30' : '',
-                    burst ? 'fl-celebrate-pop' : '',
-                ]"
-                aria-hidden="true"
-            />
-            <span aria-hidden="true">Celebrar</span>
-            <span
-                v-if="count > 0"
-                class="legacy-numeric text-xs tabular-nums"
-                aria-hidden="true"
-                >{{ count }}</span
+    <div>
+        <div class="-ml-2 flex items-center gap-0.5">
+            <button
+                type="button"
+                class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:scale-90"
+                :aria-pressed="celebration.celebrated.value"
+                :aria-label="celebration.label.value"
+                :title="
+                    celebration.celebrated.value
+                        ? 'Quitar celebración'
+                        : 'Celebrar'
+                "
+                @click="celebration.toggle()"
             >
-        </component>
+                <Heart
+                    class="size-6 transition-colors"
+                    :class="[
+                        celebration.celebrated.value
+                            ? 'fill-rose-500 text-rose-500'
+                            : 'text-foreground',
+                        pop ? 'fl-heart-pop' : '',
+                    ]"
+                    aria-hidden="true"
+                />
+            </button>
 
-        <Link
-            :href="`${show(post.uuid).url}#comentarios`"
-            class="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
-            :aria-label="
-                post.comments_count > 0
-                    ? `Comentar · ${post.comments_count} ${post.comments_count === 1 ? 'comentario' : 'comentarios'}`
-                    : 'Comentar'
-            "
-        >
-            <MessageCircle class="size-[18px]" aria-hidden="true" />
-            <span aria-hidden="true">Comentar</span>
-            <span
-                v-if="post.comments_count > 0"
-                class="legacy-numeric text-xs"
-                aria-hidden="true"
-                >{{ post.comments_count }}</span
+            <button
+                v-if="detail"
+                type="button"
+                class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                aria-label="Comentar"
+                @click="emit('comment')"
             >
-        </Link>
+                <MessageCircle class="size-6 -scale-x-100" aria-hidden="true" />
+            </button>
+            <Link
+                v-else
+                :href="`${show(post.uuid).url}#comentarios`"
+                class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                :aria-label="
+                    post.comments_count > 0
+                        ? `Comentar · ${post.comments_count} ${post.comments_count === 1 ? 'comentario' : 'comentarios'}`
+                        : 'Comentar'
+                "
+            >
+                <MessageCircle class="size-6 -scale-x-100" aria-hidden="true" />
+            </Link>
 
-        <button
-            type="button"
-            class="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
-            aria-label="Compartir publicación"
-            @click="share"
+            <button
+                type="button"
+                class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                aria-label="Compartir publicación"
+                title="Compartir"
+                @click="share"
+            >
+                <Send class="size-[22px]" aria-hidden="true" />
+            </button>
+        </div>
+
+        <p
+            class="mt-1 text-sm font-semibold text-foreground"
+            aria-live="polite"
         >
-            <Share2 class="size-[18px]" />
-            <span class="hidden sm:inline">Compartir</span>
-        </button>
-    </footer>
+            <template v-if="celebration.count.value > 0">
+                <span class="legacy-numeric">{{
+                    celebration.count.value.toLocaleString('es-MX')
+                }}</span>
+                {{
+                    celebration.count.value === 1
+                        ? 'celebración'
+                        : 'celebraciones'
+                }}
+            </template>
+            <span v-else class="font-normal text-muted-foreground"
+                >Sé el primero en celebrarlo</span
+            >
+        </p>
+    </div>
 </template>
 
 <style scoped>
-.fl-celebrate-pop {
-    animation: fl-celebrate-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+.fl-heart-pop {
+    animation: fl-heart-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes fl-celebrate-pop {
+@keyframes fl-heart-pop {
     0% {
-        transform: scale(1) rotate(0);
+        transform: scale(1);
     }
-    45% {
-        transform: scale(1.3) rotate(-12deg);
+    40% {
+        transform: scale(1.3);
     }
     100% {
-        transform: scale(1) rotate(0);
+        transform: scale(1);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .fl-celebrate-pop {
+    .fl-heart-pop {
         animation: none;
     }
 }

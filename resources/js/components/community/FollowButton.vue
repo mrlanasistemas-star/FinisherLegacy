@@ -6,11 +6,11 @@
  * (FollowAthlete re-checks privacy/blocks). While following, hovering or
  * focusing reads "Dejar de seguir" so unfollowing is never a surprise.
  */
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { Check, UserMinus, UserPlus } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { login } from '@/routes';
+import { useAuthGate } from '@/composables/useAuthGate';
 import { follow, unfollow } from '@/routes/athletes';
 
 const props = withDefaults(
@@ -18,17 +18,26 @@ const props = withDefaults(
         username: string;
         name?: string;
         following?: boolean;
+        /** They already follow you → "Seguir también". */
+        followsYou?: boolean;
         size?: 'sm' | 'md';
         /** Inertia partial reload keys after the change ([] = none). */
         only?: string[];
     }>(),
-    { name: '', following: false, size: 'md', only: () => [] },
+    {
+        name: '',
+        following: false,
+        followsYou: false,
+        size: 'md',
+        only: () => [],
+    },
 );
 
 const emit = defineEmits<{ change: [following: boolean] }>();
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
+const { requireAuth } = useAuthGate();
 const state = ref(props.following);
 const busy = ref(false);
 const pop = ref(false);
@@ -39,7 +48,7 @@ watch(
 );
 
 function toggle() {
-    if (busy.value) {
+    if (busy.value || !requireAuth()) {
         return;
     }
 
@@ -65,6 +74,9 @@ function toggle() {
         onError: () => {
             state.value = !next;
             emit('change', !next);
+            toast.error(
+                'No pudimos actualizar el seguimiento. Intenta de nuevo.',
+            );
         },
         onFinish: () => {
             busy.value = false;
@@ -74,20 +86,22 @@ function toggle() {
 }
 
 const sizing = computed(() =>
-    props.size === 'sm' ? 'h-8 px-3 text-xs gap-1' : 'h-10 px-5 text-sm gap-2',
+    props.size === 'sm' ? 'h-8 px-4 text-xs gap-1' : 'h-10 px-5 text-sm gap-2',
 );
 </script>
 
 <template>
-    <Link
+    <button
         v-if="isGuest"
-        :href="login()"
+        type="button"
         class="inline-flex shrink-0 items-center justify-center rounded-full bg-foreground font-semibold text-background transition-colors hover:bg-fl-graphite"
         :class="sizing"
+        :aria-label="`Seguir${name ? ` a ${name}` : ''}`"
+        @click="requireAuth()"
     >
         <UserPlus :class="size === 'sm' ? 'size-3' : 'size-4'" />
         Seguir
-    </Link>
+    </button>
     <button
         v-else
         type="button"
@@ -127,7 +141,7 @@ const sizing = computed(() =>
         </template>
         <template v-else>
             <UserPlus :class="size === 'sm' ? 'size-3' : 'size-4'" />
-            Seguir
+            {{ followsYou ? 'Seguir también' : 'Seguir' }}
         </template>
     </button>
 </template>

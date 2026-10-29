@@ -1,31 +1,38 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+/**
+ * "Sugerencias para ti" — right rail of the feed. Follow goes through
+ * FollowAthlete server-side; "Ver todo" opens the Personas hub (session
+ * required → guests sign in first and come back).
+ */
+import { Link } from '@inertiajs/vue3';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import FollowButton from '@/components/community/FollowButton.vue';
+import { mutualsLabel } from '@/components/community/mutuals';
+import { useAuthGate } from '@/composables/useAuthGate';
+import { people } from '@/routes/community';
 import type { CommunityAthlete } from '@/types';
 
-/** "Atletas sugeridos" — follow goes through FollowAthlete server-side. */
 defineProps<{ athletes: CommunityAthlete[] }>();
 
-const page = usePage();
-const isSignedIn = computed(() => !!page.props.auth.user);
+const { isAuthenticated, loginUrl } = useAuthGate();
 </script>
 
 <template>
-    <section class="fl-card p-5" aria-labelledby="sugeridos-title">
+    <section aria-labelledby="sugeridos-title">
         <div class="flex items-center justify-between gap-2">
-            <h2 id="sugeridos-title" class="font-semibold">
-                Atletas sugeridos
+            <h2
+                id="sugeridos-title"
+                class="text-sm font-semibold text-muted-foreground"
+            >
+                Sugerencias para ti
             </h2>
             <Link
-                v-if="isSignedIn"
-                href="/comunidad/conexiones"
-                class="text-xs font-medium text-muted-foreground hover:text-foreground"
-                >Mis conexiones →</Link
+                :href="isAuthenticated ? people().url : loginUrl(people().url)"
+                class="text-xs font-semibold text-foreground hover:text-muted-foreground"
+                >Ver todo</Link
             >
         </div>
-        <ul v-if="athletes.length" class="mt-4 space-y-4">
+        <ul v-if="athletes.length" class="mt-3 space-y-3">
             <li
                 v-for="athlete in athletes"
                 :key="athlete.username ?? athlete.name"
@@ -40,16 +47,19 @@ const isSignedIn = computed(() => !!page.props.auth.user);
                         :photo-url="athlete.photo_url"
                         size="sm"
                     />
-                    <span class="min-w-0">
-                        <span class="block truncate text-sm font-semibold">{{
-                            athlete.name
-                        }}</span>
+                    <span class="min-w-0 leading-tight">
+                        <span
+                            class="block truncate text-sm font-semibold hover:opacity-70"
+                            >{{ athlete.username ?? athlete.name }}</span
+                        >
                         <span
                             class="block truncate text-xs text-muted-foreground"
                             >{{
-                                [athlete.sport, athlete.city]
+                                mutualsLabel(athlete) ??
+                                ([athlete.sport, athlete.city]
                                     .filter(Boolean)
-                                    .join(' · ') || `@${athlete.username}`
+                                    .join(' · ') ||
+                                    athlete.name)
                             }}</span
                         >
                     </span>
@@ -59,6 +69,7 @@ const isSignedIn = computed(() => !!page.props.auth.user);
                     :username="athlete.username"
                     :name="athlete.name"
                     :following="athlete.is_following ?? false"
+                    :follows-you="athlete.follows_you ?? false"
                     size="sm"
                 />
             </li>

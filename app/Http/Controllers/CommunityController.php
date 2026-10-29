@@ -29,9 +29,12 @@ use App\Models\LegacyMoment;
 use App\Models\LegacyMomentComment;
 use App\Models\Medal;
 use App\Models\User;
-use App\Models\UserBlock;
+use App\Queries\Social\CommentPreviews;
 use App\Queries\Social\FeedQuery;
 use App\Queries\Social\MomentQuery;
+use App\Queries\Social\MutualConnections;
+use App\Queries\Social\PeopleQuery;
+use App\Queries\Social\PeopleStrip;
 use App\Queries\Social\SuggestedAthletes;
 use App\Services\EventCatalogService;
 use App\Services\Social\SocialVisibility;
@@ -41,6 +44,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -67,8 +71,15 @@ class CommunityController extends Controller
         private readonly SocialVisibility $visibility,
     ) {}
 
-    public function index(Request $request, FeedQuery $feed, SuggestedAthletes $suggested, EventCatalogService $events): Response
-    {
+    public function index(
+        Request $request,
+        FeedQuery $feed,
+        SuggestedAthletes $suggested,
+        EventCatalogService $events,
+        CommentPreviews $previews,
+        MutualConnections $mutuals,
+        PeopleStrip $strip,
+    ): Response {
         $viewer = $request->user();
         $tab = array_key_exists((string) $request->query('tab'), self::TABS) ? (string) $request->query('tab') : 'para-ti';
 
@@ -79,10 +90,23 @@ class CommunityController extends Controller
 
         return Inertia::render('community/Index', [
             'tab' => $tab,
-            'posts' => Inertia::scroll(fn () => MomentResource::collection(
-                $feed->paginate($viewer, self::TABS[$tab])
-            )),
-            'suggestedAthletes' => fn () => AthleteResource::collection($suggested->handle($viewer, 5))->resolve($request),
+            'posts' => Inertia::scroll(function () use ($feed, $previews, $viewer, $tab) {
+                $page = $feed->paginate($viewer, self::TABS[$tab]);
+                $previews->attach($page->items(), $viewer);
+
+                return MomentResource::collection($page);
+            }),
+            // Navbar "+" links to /comunidad?publicar=1.
+            'openComposer' => $request->boolean('publicar'),
+            'peopleStrip' => fn () => $strip->handle($viewer),
+            'me' => fn () => $viewer === null ? null : [
+                'posts' => LegacyMoment::query()->where('user_id', $viewer->id)->count(),
+                'followers' => AthleteFollow::query()->where('following_id', $viewer->id)->count(),
+                'following' => AthleteFollow::query()->where('follower_id', $viewer->id)->count(),
+            ],
+            'suggestedAthletes' => fn () => AthleteResource::collection(
+                $mutuals->annotate($viewer, $suggested->handle($viewer, 5))
+            )->resolve($request),
             'upcomingEvents' => fn () => EventEditionCardResource::collection(
                 $events->publishedEditions(['status' => 'upcoming'], perPage: 4)->getCollection()
             )->resolve($request),
@@ -98,52 +122,10 @@ class CommunityController extends Controller
     }
 
     /**
-     * "Siguiendo" / "Seguidores" of the signed-in athlete (kept route) —
-     * same privacy rules as the API lists.
-     */
-    public function connections(Request $request): Response
-    {
-        $viewer = $request->user();
-        $tab = in_array($request->query('tab'), ['seguidores', 'bloqueados'], true) ? (string) $request->query('tab') : 'siguiendo';
-        $following = $this->visibility->followingIds($viewer);
-
-        // Blocked people are listed by identity only (so you can unblock).
-        $query = $tab === 'bloqueados'
-            ? User::query()->whereIn('users.id', UserBlock::query()->where('blocker_id', $viewer->id)->select('blocked_id'))->whereHas('athleteProfile')
-            : $this->visibility->scopeListableUsers(User::query()->whereIn('users.id', $tab === 'siguiendo'
-                ? AthleteFollow::query()->where('follower_id', $viewer->id)->select('following_id')
-                : AthleteFollow::query()->where('following_id', $viewer->id)->select('follower_id')), $viewer);
-
-        $page = $query
-            ->with('athleteProfile.mainSport')
-            ->orderBy('first_name')
-            ->orderBy('id')
-            ->paginate(30)
-            ->withQueryString();
-
-        $page->getCollection()->each(fn (User $user) => $user->setAttribute('is_following', in_array($user->id, $following, true)));
-
-        return Inertia::render('community/Connections', [
-            'tab' => $tab,
-            'owner' => null,
-            'athletes' => [
-                'data' => AthleteResource::collection($page->getCollection())->resolve($request),
-                'links' => $page->linkCollection()->toArray(),
-                'total' => $page->total(),
-            ],
-            'counts' => [
-                'siguiendo' => AthleteFollow::query()->where('follower_id', $viewer->id)->count(),
-                'seguidores' => AthleteFollow::query()->where('following_id', $viewer->id)->count(),
-                'bloqueados' => UserBlock::query()->where('blocker_id', $viewer->id)->count(),
-            ],
-        ]);
-    }
-
-    /**
      * Followers / following of any athlete the viewer may fully see
      * (/@username/seguidores, /@username/siguiendo).
      */
-    public function profileConnections(Request $request, AthleteProfile $athleteProfile, string $list): Response
+    public function profileConnections(Request $request, AthleteProfile $athleteProfile, string $list, MutualConnections $mutuals, PeopleQuery $people): Response
     {
         $viewer = $request->user();
         $athleteProfile->loadMissing('user');
@@ -154,20 +136,25 @@ class CommunityController extends Controller
         $ids = $tab === 'siguiendo'
             ? AthleteFollow::query()->where('follower_id', $ownerId)->select('following_id')
             : AthleteFollow::query()->where('following_id', $ownerId)->select('follower_id');
-        $following = $this->visibility->followingIds($viewer);
+        $search = trim(mb_substr($request->string('q')->toString(), 0, 60));
 
-        $page = $this->visibility->scopeListableUsers(User::query()->whereIn('users.id', $ids), $viewer)
+        $page = $people->search($this->visibility->scopeListableUsers(User::query()->whereIn('users.id', $ids), $viewer), $search)
             ->with('athleteProfile.mainSport')
             ->orderBy('first_name')
             ->orderBy('id')
             ->paginate(30)
             ->withQueryString();
 
-        $page->getCollection()->each(fn (User $user) => $user->setAttribute('is_following', in_array($user->id, $following, true)));
+        $mutuals->annotate($viewer, $page->getCollection());
 
         return Inertia::render('community/Connections', [
             'tab' => $tab,
-            'owner' => ['username' => $athleteProfile->username, 'name' => $athleteProfile->user->name],
+            'q' => $search,
+            'owner' => [
+                'username' => $athleteProfile->username,
+                'name' => $athleteProfile->user->name,
+                'photo_url' => $athleteProfile->profile_photo_path ? Storage::disk('public')->url($athleteProfile->profile_photo_path) : null,
+            ],
             'athletes' => [
                 'data' => AthleteResource::collection($page->getCollection())->resolve($request),
                 'links' => $page->linkCollection()->toArray(),

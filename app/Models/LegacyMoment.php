@@ -6,6 +6,7 @@ use App\Enums\MomentType;
 use App\Enums\MomentVisibility;
 use App\Enums\PostKind;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -35,6 +36,7 @@ use Illuminate\Support\Str;
  * @property-read int|null $likes_count Set by MomentQuery::withCardData()
  * @property-read int|null $cheers_count Set by MomentQuery::withCardData()
  * @property-read int|null $comments_count Set by MomentQuery::withCardData()
+ * @property-read Collection<int, LegacyMomentComment> $previewComments Set by App\Queries\Social\CommentPreviews (feed only)
  */
 #[Fillable([
     'uuid', 'user_id', 'type', 'caption', 'visibility', 'event_participant_id',

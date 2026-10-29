@@ -33,6 +33,10 @@ class AthleteResource extends JsonResource
             // never a per-row query.
             'sport' => $profile !== null && $profile->relationLoaded('mainSport') ? $profile->mainSport?->name : null,
             'is_following' => $this->when(isset($this->resource->is_following), fn () => (bool) $this->resource->is_following),
+            // People hub / lists only (App\Queries\Social\MutualConnections).
+            'follows_you' => $this->when(isset($this->resource->follows_you), fn () => (bool) $this->resource->follows_you),
+            'mutual_count' => $this->when(isset($this->resource->mutual_count), fn () => (int) $this->resource->mutual_count),
+            'mutual_names' => $this->when(isset($this->resource->mutual_names), fn () => $this->resource->mutual_names),
         ];
     }
 }

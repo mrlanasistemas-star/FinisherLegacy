@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\LegacyMoment;
+use App\Models\LegacyMomentComment;
 use App\Models\LegacyMomentMedia;
 use App\Models\LegacyMomentReaction;
 use App\Support\RaceDistanceFormatter;
@@ -97,6 +98,16 @@ class MomentResource extends JsonResource
                 ? $this->viewerReactions->map(fn (LegacyMomentReaction $r) => $r->type->value)->values()
                 : [],
             'comments_count' => (int) ($this->comments_count ?? 0),
+            // Feed only (App\Queries\Social\CommentPreviews) — latest comments.
+            'comments_preview' => $this->whenLoaded('previewComments', fn () => $this->previewComments
+                ->map(fn (LegacyMomentComment $comment) => [
+                    'uuid' => $comment->uuid,
+                    'body' => $comment->body,
+                    'author' => [
+                        'username' => $comment->author?->athleteProfile?->username,
+                        'name' => $comment->author?->name,
+                    ],
+                ])->values()->all()),
         ];
     }
 }

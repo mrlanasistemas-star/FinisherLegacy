@@ -336,8 +336,8 @@ test('blocking from the web hides both people from each other', function () {
     $this->actingAs($beto)->get('/@ana')->assertInertia(fn ($page) => $page->component('profile/Private'));
     $this->actingAs($ana)->get('/comunidad')->assertInertia(fn ($page) => $page->has('posts.data', 0));
 
-    $this->actingAs($ana)->get('/comunidad/conexiones?tab=bloqueados')
-        ->assertInertia(fn ($page) => $page->has('athletes.data', 1)->where('counts.bloqueados', 1));
+    $this->actingAs($ana)->get('/comunidad/personas?tab=bloqueados')
+        ->assertInertia(fn ($page) => $page->has('people.data', 1)->where('counts.bloqueados', 1));
 
     $this->actingAs($ana)->delete('/atletas/beto/bloquear')->assertRedirect();
     expect(UserBlock::query()->count())->toBe(0);

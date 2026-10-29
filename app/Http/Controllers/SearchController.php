@@ -7,6 +7,7 @@ use App\Http\Resources\EventEditionCardResource;
 use App\Models\AthleteProfile;
 use App\Models\Product;
 use App\Queries\Commerce\GetFeaturedProducts;
+use App\Queries\Social\MutualConnections;
 use App\Services\EventCatalogService;
 use App\Services\Social\SocialVisibility;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,9 +23,9 @@ use Inertia\Response;
  */
 class SearchController extends Controller
 {
-    private const int PER_TYPE = 8;
+    private const int PER_TYPE = 12;
 
-    public function __invoke(Request $request, SocialVisibility $visibility, EventCatalogService $events): Response
+    public function __invoke(Request $request, SocialVisibility $visibility, EventCatalogService $events, MutualConnections $mutuals): Response
     {
         $viewer = $request->user();
         $term = trim(mb_substr($request->string('q')->toString(), 0, 60));
@@ -36,7 +37,6 @@ class SearchController extends Controller
 
         if ($searched) {
             $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
-            $following = $visibility->followingIds($viewer);
 
             $athletes = $visibility->scopeDiscoverableProfiles(AthleteProfile::query(), $viewer)
                 ->when($viewer !== null, fn (Builder $q) => $q->where('athlete_profiles.user_id', '!=', $viewer->id))
@@ -49,11 +49,9 @@ class SearchController extends Controller
                 ->orderBy('username')
                 ->limit(self::PER_TYPE)
                 ->get()
-                ->map(function (AthleteProfile $profile) use ($following) {
-                    $profile->user->setAttribute('is_following', in_array($profile->user_id, $following, true));
+                ->map(fn (AthleteProfile $profile) => $profile->user);
 
-                    return $profile->user;
-                });
+            $athletes = $mutuals->annotate($viewer, $athletes);
 
             $eventResults = $events->publishedEditions(['q' => $term], perPage: self::PER_TYPE)->getCollection();
 

@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { Lock } from '@lucide/vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
-import { login } from '@/routes';
+import { useAuthGate } from '@/composables/useAuthGate';
 import { index as communityIndex } from '@/routes/community';
 
 withDefaults(
@@ -14,6 +14,8 @@ withDefaults(
     }>(),
     { followersOnly: false },
 );
+
+const { loginUrl } = useAuthGate();
 </script>
 
 <template>
@@ -40,7 +42,7 @@ withDefaults(
                 Inicia sesión para seguir a @{{ username }} y ver su historia.
             </p>
             <Button as-child class="mt-8 rounded-full">
-                <Link :href="login()">Iniciar sesión</Link>
+                <Link :href="loginUrl()">Iniciar sesión</Link>
             </Button>
         </template>
         <template v-else>

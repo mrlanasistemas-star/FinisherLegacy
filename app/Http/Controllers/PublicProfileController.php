@@ -10,6 +10,7 @@ use App\Models\AthleteFollow;
 use App\Models\AthleteProfile;
 use App\Models\Medal;
 use App\Queries\Social\MomentQuery;
+use App\Queries\Social\MutualConnections;
 use App\Services\PublicAthleteProfileService;
 use App\Services\Social\SocialVisibility;
 use App\Support\Social\ReportReasons;
@@ -34,7 +35,7 @@ class PublicProfileController extends Controller
 {
     public function __construct(private readonly PublicAthleteProfileService $profiles) {}
 
-    public function show(Request $request, AthleteProfile $athleteProfile, MomentQuery $moments, SocialVisibility $visibility): Response
+    public function show(Request $request, AthleteProfile $athleteProfile, MomentQuery $moments, SocialVisibility $visibility, MutualConnections $mutuals): Response
     {
         $athleteProfile->load(['user', 'mainSport']);
         abort_if($athleteProfile->user === null, 404);
@@ -52,6 +53,12 @@ class PublicProfileController extends Controller
         }
 
         $ownerId = $athleteProfile->user_id;
+        $owner = $athleteProfile->user;
+
+        if (! $isOwner) {
+            $mutuals->annotate($viewer, collect([$owner]));
+        }
+
         $medals = $canView ? $this->profiles->publicMedals($athleteProfile) : (new Medal)->newCollection();
         $athleteId = $canView ? $athleteProfile->user->athlete()->value('id') : null;
 
@@ -85,6 +92,10 @@ class PublicProfileController extends Controller
                 'followers' => AthleteFollow::query()->where('following_id', $ownerId)->count(),
                 'following' => AthleteFollow::query()->where('follower_id', $ownerId)->count(),
                 'is_following' => $viewer !== null && $visibility->follows($viewer, $ownerId),
+                'follows_you' => (bool) $owner->getAttribute('follows_you'),
+                // "Seguido por Ana, Luis y 3 más" — people you follow.
+                'mutual_count' => (int) $owner->getAttribute('mutual_count'),
+                'mutual_names' => $owner->getAttribute('mutual_names') ?? [],
             ],
             'events' => $canView ? $this->profiles->recentEvents($athleteProfile, 20) : [],
             'posts' => $canView

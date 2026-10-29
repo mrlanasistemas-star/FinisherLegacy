@@ -236,23 +236,26 @@ test('Mis conexiones lists who I follow and who follows me, public profiles only
     $this->actingAs($fan->user)->post("/atletas/{$me->username}/seguir")->assertRedirect();
     AthleteFollow::create(['follower_id' => $me->user_id, 'following_id' => $private->user_id]);
 
-    $this->actingAs($me->user)->get('/comunidad/conexiones')
+    $this->actingAs($me->user)->get('/comunidad/conexiones')->assertRedirect('/comunidad/personas?tab=siguiendo');
+
+    $this->actingAs($me->user)->get('/comunidad/personas?tab=siguiendo')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('community/Connections')
+            ->component('community/People')
             ->where('tab', 'siguiendo')
-            ->has('athletes.data', 1)
-            ->where('athletes.data.0.username', $friend->username)
-            ->where('athletes.data.0.is_following', true)
+            ->has('people.data', 1)
+            ->where('people.data.0.username', $friend->username)
+            ->where('people.data.0.is_following', true)
             ->where('counts.seguidores', 1)
         );
 
-    $this->actingAs($me->user)->get('/comunidad/conexiones?tab=seguidores')
+    $this->actingAs($me->user)->get('/comunidad/personas?tab=seguidores')
         ->assertInertia(fn ($page) => $page
-            ->where('athletes.data.0.username', $fan->username)
-            ->where('athletes.data.0.is_following', false)
+            ->where('people.data.0.username', $fan->username)
+            ->where('people.data.0.is_following', false)
+            ->where('people.data.0.follows_you', true)
         );
 
     auth()->logout();
-    $this->get('/comunidad/conexiones')->assertRedirect('/login');
+    $this->get('/comunidad/personas')->assertRedirect('/login');
 });

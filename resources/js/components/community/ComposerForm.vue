@@ -10,6 +10,8 @@ import { useForm, usePage } from '@inertiajs/vue3';
 import {
     CalendarDays,
     Camera,
+    ChevronLeft,
+    ChevronRight,
     Globe2,
     ImagePlus,
     Lock,
@@ -29,6 +31,7 @@ import {
     ref,
     watch,
 } from 'vue';
+import { toast } from 'vue-sonner';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
@@ -74,7 +77,7 @@ const kinds: {
         value: 'photo',
         label: 'Foto',
         icon: Camera,
-        hint: 'Hasta 4 fotos de tu día.',
+        hint: 'Las fotos de tu día.',
     },
     {
         value: 'gear',
@@ -137,25 +140,44 @@ onMounted(() => {
     nextTick(() => captionInput.value?.focus());
 });
 
-function pickPhotos(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
-    const maxBytes = (props.limits.photo_max_kb ?? 8192) * 1024;
-    const tooBig = files.filter((file) => file.size > maxBytes);
-    sizeError.value = tooBig.length
-        ? 'Alguna foto pesa demasiado; elige una más ligera.'
-        : null;
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
+function addFiles(files: File[]) {
+    const maxBytes = (props.limits.photo_max_kb ?? 8192) * 1024;
+    const images = files.filter((file) => ACCEPTED_TYPES.includes(file.type));
+    const tooBig = images.filter((file) => file.size > maxBytes);
     const room = props.limits.max_photos - form.photos.length;
-    const accepted = files
-        .filter((file) => file.size <= maxBytes)
-        .slice(0, Math.max(room, 0));
+    const fitting = images.filter((file) => file.size <= maxBytes);
+    const accepted = fitting.slice(0, Math.max(room, 0));
+
+    if (images.length < files.length) {
+        sizeError.value = 'Solo puedes subir fotos JPG, PNG o WebP.';
+    } else if (tooBig.length) {
+        sizeError.value = `Alguna foto pesa más de ${Math.round(maxBytes / 1024 / 1024)} MB; elige una más ligera.`;
+    } else if (fitting.length > accepted.length) {
+        sizeError.value = `Puedes subir hasta ${props.limits.max_photos} fotos por publicación.`;
+    } else {
+        sizeError.value = null;
+    }
+
+    if (!accepted.length) {
+        return;
+    }
 
     form.photos = [...form.photos, ...accepted];
     previews.value = [
         ...previews.value,
         ...accepted.map((file) => URL.createObjectURL(file)),
     ];
+
+    if (kind.value === 'text') {
+        kind.value = 'photo';
+    }
+}
+
+function pickPhotos(event: Event) {
+    const input = event.target as HTMLInputElement;
+    addFiles(Array.from(input.files ?? []));
     input.value = '';
 }
 
@@ -163,6 +185,50 @@ function removePhoto(index: number) {
     URL.revokeObjectURL(previews.value[index]);
     form.photos = form.photos.filter((_, i) => i !== index);
     previews.value = previews.value.filter((_, i) => i !== index);
+    sizeError.value = null;
+}
+
+/** Reorder: the first photo is the cover of the post. */
+function movePhoto(from: number, to: number) {
+    if (to < 0 || to >= form.photos.length || from === to) {
+        return;
+    }
+
+    const photos = [...form.photos];
+    const urls = [...previews.value];
+    const [photo] = photos.splice(from, 1);
+    const [url] = urls.splice(from, 1);
+    photos.splice(to, 0, photo);
+    urls.splice(to, 0, url);
+    form.photos = photos;
+    previews.value = urls;
+}
+
+// Drag & drop: files from the desktop, or thumbnails to reorder.
+const dragOver = ref(false);
+const dragIndex = ref<number | null>(null);
+
+function onDragOver(event: DragEvent) {
+    if (event.dataTransfer?.types.includes('Files')) {
+        dragOver.value = true;
+    }
+}
+
+function onDrop(event: DragEvent) {
+    dragOver.value = false;
+    const files = Array.from(event.dataTransfer?.files ?? []);
+
+    if (files.length) {
+        addFiles(files);
+    }
+}
+
+function onThumbDrop(index: number) {
+    if (dragIndex.value !== null) {
+        movePhoto(dragIndex.value, index);
+    }
+
+    dragIndex.value = null;
 }
 
 onBeforeUnmount(() =>
@@ -171,10 +237,6 @@ onBeforeUnmount(() =>
 
 function selectKind(next: PostKind) {
     kind.value = next;
-
-    if (next === 'photo' && !form.photos.length) {
-        fileInput.value?.click();
-    }
 }
 
 // A race result belongs to its event: keep the related event in sync.
@@ -293,8 +355,10 @@ function submit() {
         preserveState: true,
         forceFormData: true,
         // Show the new post on top: refresh the feed from its first page.
-        only: ['posts'],
+        only: ['posts', 'me'],
         reset: ['posts'],
+        onError: () =>
+            toast.error('No pudimos publicar. Revisa los campos marcados.'),
         onSuccess: () => {
             previews.value.forEach((url) => URL.revokeObjectURL(url));
             previews.value = [];
@@ -342,8 +406,139 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
 </script>
 
 <template>
-    <form class="flex min-h-0 flex-1 flex-col" @submit.prevent="submit">
-        <div class="min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-4 sm:px-6">
+    <form
+        class="relative flex min-h-0 flex-1 flex-col"
+        @submit.prevent="submit"
+        @dragover.prevent="onDragOver"
+        @dragleave.self="dragOver = false"
+        @drop.prevent="onDrop"
+    >
+        <div
+            v-if="dragOver"
+            class="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center rounded-card border-2 border-dashed border-fl-gold bg-fl-cream/90 text-sm font-semibold text-fl-gold-ink"
+        >
+            <ImagePlus class="mb-2 size-8" />
+            Suelta tus fotos aquí
+        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-4 sm:px-6">
+            <!-- Photos: dropzone, or cover + reorderable thumbnails -->
+            <button
+                v-if="!previews.length"
+                type="button"
+                class="group mb-4 flex w-full flex-col items-center justify-center rounded-card border-2 border-dashed border-border bg-fl-paper text-center transition-colors hover:border-fl-gold/60 hover:bg-fl-cream/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                :class="kind === 'photo' ? 'py-12' : 'py-5'"
+                @click="fileInput?.click()"
+            >
+                <span
+                    class="flex items-center justify-center rounded-full bg-card shadow-fl-micro transition-transform group-hover:scale-105"
+                    :class="kind === 'photo' ? 'size-14' : 'size-10'"
+                >
+                    <ImagePlus
+                        class="text-fl-gold-ink"
+                        :class="kind === 'photo' ? 'size-6' : 'size-5'"
+                    />
+                </span>
+                <span class="mt-3 text-sm font-semibold text-foreground"
+                    >Arrastra tus fotos aquí</span
+                >
+                <span class="mt-0.5 text-xs text-muted-foreground"
+                    >o toca para elegirlas · hasta {{ limits.max_photos }} ·
+                    JPG, PNG o WebP</span
+                >
+            </button>
+            <div v-else class="mb-4">
+                <div
+                    class="relative aspect-[4/5] max-h-[46vh] w-full overflow-hidden rounded-card bg-fl-cream sm:aspect-square"
+                >
+                    <img
+                        :src="previews[0]"
+                        alt="Portada de la publicación"
+                        class="size-full object-cover"
+                    />
+                    <span
+                        class="absolute top-2 left-2 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white"
+                        >Portada</span
+                    >
+                </div>
+                <ul
+                    class="mt-2 flex gap-2 overflow-x-auto p-1"
+                    aria-label="Fotos seleccionadas (arrastra para reordenar)"
+                >
+                    <li
+                        v-for="(src, index) in previews"
+                        :key="src"
+                        class="group/thumb relative size-20 shrink-0 cursor-grab overflow-hidden rounded-control bg-muted ring-offset-2 active:cursor-grabbing"
+                        :class="[
+                            index === 0 ? 'ring-2 ring-foreground' : '',
+                            dragIndex === index ? 'opacity-40' : '',
+                        ]"
+                        draggable="true"
+                        @dragstart="dragIndex = index"
+                        @dragend="dragIndex = null"
+                        @dragover.prevent
+                        @drop.prevent.stop="onThumbDrop(index)"
+                    >
+                        <img
+                            :src="src"
+                            :alt="`Foto ${index + 1}`"
+                            class="size-full object-cover"
+                            draggable="false"
+                        />
+                        <button
+                            type="button"
+                            class="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                            :aria-label="`Quitar foto ${index + 1}`"
+                            @click="removePhoto(index)"
+                        >
+                            <X class="size-3.5" />
+                        </button>
+                        <span
+                            class="absolute inset-x-1 bottom-1 flex justify-between sm:opacity-0 sm:group-focus-within/thumb:opacity-100 sm:group-hover/thumb:opacity-100"
+                        >
+                            <button
+                                type="button"
+                                class="flex size-6 items-center justify-center rounded-full bg-white/90 text-foreground disabled:invisible"
+                                :disabled="index === 0"
+                                :aria-label="`Mover foto ${index + 1} a la izquierda`"
+                                @click="movePhoto(index, index - 1)"
+                            >
+                                <ChevronLeft class="size-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                class="flex size-6 items-center justify-center rounded-full bg-white/90 text-foreground disabled:invisible"
+                                :disabled="index === previews.length - 1"
+                                :aria-label="`Mover foto ${index + 1} a la derecha`"
+                                @click="movePhoto(index, index + 1)"
+                            >
+                                <ChevronRight class="size-3.5" />
+                            </button>
+                        </span>
+                    </li>
+                    <li
+                        v-if="previews.length < limits.max_photos"
+                        class="shrink-0"
+                    >
+                        <button
+                            type="button"
+                            class="flex size-20 flex-col items-center justify-center gap-1 rounded-control border-2 border-dashed border-border text-[11px] text-muted-foreground hover:border-fl-gold/60 hover:text-foreground"
+                            @click="fileInput?.click()"
+                        >
+                            <ImagePlus class="size-4" />
+                            Agregar
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <InputError
+                class="-mt-2 mb-3"
+                :message="
+                    sizeError ||
+                    form.errors.photos ||
+                    (form.errors as Record<string, string>)['photos.0']
+                "
+            />
+
             <div class="flex items-center gap-3">
                 <AthleteAvatar
                     :name="user.name"
@@ -369,7 +564,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                 v-model="form.caption"
                 rows="3"
                 :maxlength="limits.caption_max"
-                placeholder="¿Qué quieres guardar de hoy?"
+                placeholder="Escribe una descripción…"
                 class="mt-3 w-full resize-none rounded-control border border-input bg-card px-3.5 py-3 text-[15px] shadow-fl-micro placeholder:text-muted-foreground focus:border-foreground/30 focus:ring-2 focus:ring-ring/30 focus:outline-none"
                 aria-describedby="composer-caption-error"
             />
@@ -503,32 +698,6 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                         }}
                     </p>
                 </div>
-
-                <!-- Photo previews -->
-                <div v-if="previews.length" class="grid grid-cols-4 gap-2">
-                    <div
-                        v-for="(src, index) in previews"
-                        :key="src"
-                        class="relative aspect-square overflow-hidden rounded-control bg-muted"
-                    >
-                        <img :src="src" alt="" class="size-full object-cover" />
-                        <button
-                            type="button"
-                            class="absolute top-1 right-1 flex size-7 items-center justify-center rounded-full bg-fl-black/60 text-white"
-                            :aria-label="`Quitar foto ${index + 1}`"
-                            @click="removePhoto(index)"
-                        >
-                            <X class="size-3.5" />
-                        </button>
-                    </div>
-                </div>
-                <InputError
-                    :message="
-                        sizeError ||
-                        form.errors.photos ||
-                        (form.errors as Record<string, string>)['photos.0']
-                    "
-                />
 
                 <!-- Related event -->
                 <div

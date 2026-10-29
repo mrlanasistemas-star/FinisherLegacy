@@ -1,33 +1,36 @@
 <script setup lang="ts">
 /**
- * Public Legacy Profile (/@username) — header, stats, legacy highlights,
- * posts (grid or list, infinite), races, medals, photos. Shows only what
- * this viewer may see (the controller filtered everything); a
- * followers-only profile seen by a non-follower arrives `restricted`
- * (header + Seguir, no content).
+ * Public Legacy Profile (/@username), Instagram-style: cover + avatar,
+ * @username + Seguir / Editar perfil, stats (publicaciones · seguidores
+ * · siguiendo → lists), bio, "Seguido por …", then tabs: Publicaciones
+ * (3-column grid, infinite), Legado (highlights + race timeline),
+ * Medallas and Fotos when there are any. Shows only what this viewer may
+ * see (the controller filtered everything); a followers-only profile
+ * seen by a non-follower arrives `restricted` (header + Seguir only).
  */
 import { Head, InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Award,
     Ban,
+    Camera,
     Flag,
-    LayoutGrid,
-    List,
+    Grid3x3,
+    Images,
     Lock,
     MoreHorizontal,
-    PenLine,
     Share2,
     Timer,
+    Trophy,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
-import CommunityPost from '@/components/community/CommunityPost.vue';
 import CommunityReportDialog from '@/components/community/CommunityReportDialog.vue';
 import FollowButton from '@/components/community/FollowButton.vue';
-import StaggerGroup from '@/components/motion/StaggerGroup.vue';
+import { mutualsLabel } from '@/components/community/mutuals';
 import LegacyTimelineList from '@/components/profile/LegacyTimelineList.vue';
 import type { TimelineEntry } from '@/components/profile/LegacyTimelineList.vue';
-import ProfileHeader from '@/components/profile/ProfileHeader.vue';
+import ProfilePostGrid from '@/components/profile/ProfilePostGrid.vue';
+import PublicProfileHeader from '@/components/profile/PublicProfileHeader.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,16 +39,16 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuthGate } from '@/composables/useAuthGate';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 import { useCommunityReport } from '@/composables/useCommunityReport';
 import { shortDate } from '@/lib/datetime';
 import { confirmAction } from '@/lib/swal';
 import { block } from '@/routes/athletes';
-import { show as showPost } from '@/routes/community/posts';
+import { index as communityIndex } from '@/routes/community';
 import { edit as editProfile } from '@/routes/dashboard/profile';
 import { connections as profileConnections } from '@/routes/profile';
 import type {
-    CommunityPost as CommunityPostData,
     CommunityPostPage,
     PublicAthleteMedal,
     PublicAthleteProfile,
@@ -71,7 +74,14 @@ const props = defineProps<{
     };
     stats: { medals: number; events: number; posts: number };
     medals: PublicAthleteMedal[];
-    social: { followers: number; following: number; is_following: boolean };
+    social: {
+        followers: number;
+        following: number;
+        is_following: boolean;
+        follows_you?: boolean;
+        mutual_count?: number;
+        mutual_names?: string[];
+    };
     events: PublicEvent[];
     posts: CommunityPostPage;
     photos: { uuid: string; url: string; event: string | null }[];
@@ -82,38 +92,48 @@ const page = usePage();
 const signedIn = computed(() => !!page.props.auth.user);
 const canonicalUrl = useCanonicalUrl();
 const { openReport } = useCommunityReport();
+const { requireAuth } = useAuthGate();
 
-type Tab = 'publicaciones' | 'historia' | 'logros' | 'fotos';
+type Tab = 'publicaciones' | 'legado' | 'medallas' | 'fotos';
 const tabs = computed(() =>
     (
         [
             {
                 key: 'publicaciones',
                 label: 'Publicaciones',
-                count: props.stats.posts,
+                icon: Grid3x3,
+                show: true,
             },
-            { key: 'historia', label: 'Historia', count: props.events.length },
-            { key: 'logros', label: 'Logros', count: props.medals.length },
-            { key: 'fotos', label: 'Fotos', count: props.photos.length },
-        ] as { key: Tab; label: string; count: number }[]
-    ).filter(
-        (tab) =>
-            tab.key === 'publicaciones' ||
-            tab.key === 'historia' ||
-            tab.count > 0,
-    ),
+            { key: 'legado', label: 'Legado', icon: Trophy, show: true },
+            {
+                key: 'medallas',
+                label: 'Medallas',
+                icon: Award,
+                show: props.medals.length > 0,
+            },
+            {
+                key: 'fotos',
+                label: 'Fotos',
+                icon: Images,
+                show: props.photos.length > 0,
+            },
+        ] as { key: Tab; label: string; icon: typeof Grid3x3; show: boolean }[]
+    ).filter((tab) => tab.show),
 );
 const activeTab = ref<Tab>(
     props.stats.posts > 0 || props.events.length === 0
         ? 'publicaciones'
-        : 'historia',
+        : 'legado',
 );
-const layout = ref<'grid' | 'list'>('list');
 
 const removed = ref(new Set<string>());
 const visiblePosts = computed(() =>
     props.posts.data.filter((post) => !removed.value.has(post.uuid)),
 );
+
+function onDeleted(uuid: string) {
+    removed.value = new Set([...removed.value, uuid]);
+}
 
 const location = computed(() =>
     [props.profile.city, props.profile.state, props.profile.country]
@@ -121,13 +141,16 @@ const location = computed(() =>
         .join(', '),
 );
 
+const formatter = new Intl.NumberFormat('es-MX', { notation: 'compact' });
+
 const headerStats = computed(() => [
-    { label: 'Eventos', value: props.stats.events },
-    { label: 'Medallas', value: props.stats.medals },
-    { label: 'Publicaciones', value: props.stats.posts },
+    {
+        label: 'Publicaciones',
+        value: props.restricted ? '—' : formatter.format(props.stats.posts),
+    },
     {
         label: 'Seguidores',
-        value: props.social.followers,
+        value: formatter.format(props.social.followers),
         href: props.restricted
             ? null
             : profileConnections({
@@ -137,7 +160,7 @@ const headerStats = computed(() => [
     },
     {
         label: 'Siguiendo',
-        value: props.social.following,
+        value: formatter.format(props.social.following),
         href: props.restricted
             ? null
             : profileConnections({
@@ -145,19 +168,23 @@ const headerStats = computed(() => [
                   list: 'siguiendo',
               }).url,
     },
-    { label: 'Fotos', value: props.photos.length },
 ]);
+
+const mutuals = computed(() =>
+    props.isOwner
+        ? null
+        : mutualsLabel({
+              mutual_count: props.social.mutual_count,
+              mutual_names: props.social.mutual_names,
+          }),
+);
 
 // Legacy highlights: the three most recent races with an official time.
 const highlights = computed(() =>
     props.events.filter((event) => event.official_time).slice(0, 3),
 );
 
-// Real event context for the timeline, derived only from data already on the
-// page: the public photos array carries an event name per image, so we can
-// surface a genuine photo from each event + a truthful public-photo count.
-// (The events payload itself has no image/plate/position fields; we never
-// fabricate them — see §0 "real data only".)
+// A real photo per event, when the athlete made one public (never invented).
 const photosByEvent = computed(() => {
     const map = new Map<string, { url: string; count: number }>();
 
@@ -199,21 +226,6 @@ const timeline = computed<TimelineEntry[]>(() =>
     }),
 );
 
-// Deterministic editorial grid: every 5th tile becomes a 2-wide banner whose
-// height matches its square neighbours (2 cols wide, 2:1 ratio = one col tall),
-// so rows always align without fragile CSS masonry. Leads with a banner.
-function editorialTileClass(index: number): string {
-    return index % 5 === 0 ? 'col-span-2 aspect-[2/1]' : 'aspect-square';
-}
-
-function tileImage(post: CommunityPostData): string | null {
-    return (
-        post.media.find((item) => item.type !== 'video')?.url ??
-        post.medal?.image_url ??
-        null
-    );
-}
-
 async function share() {
     const url = canonicalUrl ?? window.location.href;
 
@@ -222,7 +234,7 @@ async function share() {
             await navigator.share({ title: props.profile.name, url });
         } else {
             await navigator.clipboard.writeText(url);
-            toast.success('Enlace copiado.');
+            toast.success('Enlace del perfil copiado.');
         }
     } catch {
         // Share sheet dismissed.
@@ -232,12 +244,20 @@ async function share() {
 async function blockAthlete() {
     const confirmed = await confirmAction({
         title: `¿Bloquear a ${props.profile.name}?`,
-        text: 'Ya no verán el perfil ni las publicaciones del otro, y se quitarán los seguimientos entre ustedes. Puedes desbloquear cuando quieras desde Mis conexiones.',
+        text: 'Ya no verán el perfil ni las publicaciones del otro, y se quitarán los seguimientos entre ustedes. Puedes desbloquear cuando quieras desde Personas → Bloqueados.',
         confirmButtonText: 'Bloquear',
     });
 
     if (confirmed) {
-        router.visit(block(props.profile.username));
+        router.visit(block(props.profile.username), {
+            onError: () => toast.error('No pudimos bloquear a este atleta.'),
+        });
+    }
+}
+
+function report() {
+    if (requireAuth()) {
+        openReport({ type: 'profile', id: props.profile.username });
     }
 }
 
@@ -301,128 +321,215 @@ const profileJsonLd = computed(() => {
         <!-- eslint-enable vue/no-v-text-v-html-on-component -->
     </Head>
 
-    <div class="fl-container py-6 sm:py-8">
-        <ProfileHeader
+    <div class="mx-auto max-w-[935px] pb-16 sm:px-6 sm:pt-6 lg:px-8">
+        <PublicProfileHeader
             :name="profile.name"
             :username="profile.username"
             :bio="restricted ? null : profile.bio"
             :location="restricted ? null : location"
-            :sports="profile.sport ? [profile.sport] : []"
+            :sport="profile.sport"
             :photo-url="profile.photo_url"
             :cover-url="restricted ? null : profile.cover_url"
             :is-finisher="!restricted && stats.medals > 0"
-            :stats="
-                restricted
-                    ? [
-                          { label: 'Publicaciones', value: '—' },
-                          ...headerStats.filter(
-                              (s) =>
-                                  s.label === 'Seguidores' ||
-                                  s.label === 'Siguiendo',
-                          ),
-                      ]
-                    : headerStats
-            "
+            :stats="headerStats"
+            :mutuals="mutuals"
+            :follows-you="!isOwner && social.follows_you"
         >
             <template #actions>
-                <Button
-                    v-if="isOwner"
-                    as-child
-                    variant="outline"
-                    class="rounded-full"
-                >
-                    <Link :href="editProfile()">
-                        <PenLine class="size-4" />
-                        Editar perfil
-                    </Link>
-                </Button>
-                <FollowButton
-                    v-else
-                    :username="profile.username"
-                    :name="profile.name"
-                    :following="social.is_following"
-                    :only="restricted ? [] : ['social']"
-                />
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    class="size-11 rounded-full"
-                    aria-label="Compartir perfil"
-                    @click="share"
-                >
-                    <Share2 class="size-4" />
-                </Button>
-                <DropdownMenu v-if="signedIn && !isOwner">
-                    <DropdownMenuTrigger as-child>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            class="size-11 rounded-full"
-                            aria-label="Más opciones"
-                        >
-                            <MoreHorizontal class="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" class="w-52">
-                        <DropdownMenuItem
-                            @select="
-                                openReport({
-                                    type: 'profile',
-                                    id: profile.username,
-                                })
-                            "
-                        >
-                            <Flag class="mr-2 size-4" />
-                            Reportar perfil
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            class="text-destructive focus:text-destructive"
-                            @select="blockAthlete"
-                        >
-                            <Ban class="mr-2 size-4" />
-                            Bloquear
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <template v-if="isOwner">
+                    <Button
+                        as-child
+                        variant="secondary"
+                        class="h-9 flex-1 rounded-full px-5 sm:flex-none"
+                    >
+                        <Link :href="editProfile()">Editar perfil</Link>
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        class="h-9 flex-1 rounded-full px-5 sm:flex-none"
+                        @click="share"
+                    >
+                        Compartir perfil
+                    </Button>
+                </template>
+                <template v-else>
+                    <FollowButton
+                        class="flex-1 sm:flex-none"
+                        :username="profile.username"
+                        :name="profile.name"
+                        :following="social.is_following"
+                        :follows-you="social.follows_you ?? false"
+                        :only="restricted ? [] : ['social']"
+                    />
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        class="size-10 rounded-full"
+                        aria-label="Compartir perfil"
+                        @click="share"
+                    >
+                        <Share2 class="size-4" />
+                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-10 rounded-full"
+                                aria-label="Más opciones"
+                            >
+                                <MoreHorizontal class="size-5" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" class="w-52">
+                            <DropdownMenuItem @select="report">
+                                <Flag class="mr-2 size-4" />
+                                Reportar perfil
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                v-if="signedIn"
+                                class="text-destructive focus:text-destructive"
+                                @select="blockAthlete"
+                            >
+                                <Ban class="mr-2 size-4" />
+                                Bloquear
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </template>
             </template>
-        </ProfileHeader>
+        </PublicProfileHeader>
 
         <!-- Followers-only, not following yet -->
         <section
             v-if="restricted"
-            class="mx-auto mt-12 max-w-md rounded-hero border border-border bg-card p-8 text-center shadow-fl-soft"
+            class="mt-10 border-t border-border px-6 pt-12 text-center"
         >
             <span
-                class="mx-auto flex size-14 items-center justify-center rounded-full bg-fl-cream"
+                class="mx-auto flex size-16 items-center justify-center rounded-full border-2 border-foreground"
             >
-                <Lock class="size-6 text-fl-gold-ink" />
+                <Lock class="size-7" />
             </span>
-            <h2 class="fl-display mt-5 text-2xl">
-                Su historia es para sus seguidores.
+            <h2 class="mt-5 text-lg font-semibold">
+                Esta cuenta es solo para sus seguidores
             </h2>
-            <p class="mt-2 text-sm text-muted-foreground">
+            <p class="mt-1 text-sm text-muted-foreground">
                 Sigue a {{ profile.name }} para ver sus carreras, medallas y
                 publicaciones.
             </p>
         </section>
 
         <template v-else>
-            <!--
-                Legacy highlights — an editorial, numbers-as-statement band:
-                top real results with the official time set BIG in the serif.
-                Deliberately distinct from the boxed medal/photo grids (one
-                seamless hairline-divided panel, no per-card chrome).
-            -->
-            <section
-                v-if="highlights.length"
-                class="mt-12"
-                aria-labelledby="highlights-title"
+            <!-- Tabs -->
+            <div
+                class="sticky top-16 z-30 mt-8 border-t border-border bg-background/90 backdrop-blur-sm"
+                role="tablist"
+                aria-label="Secciones del perfil"
             >
-                <h2 id="highlights-title" class="fl-eyebrow">
-                    Destacados de su legado
-                </h2>
-                <StaggerGroup
-                    class="mt-4 grid gap-px overflow-hidden rounded-media border border-border bg-border sm:grid-cols-3"
+                <div class="flex justify-center gap-2 sm:gap-12">
+                    <button
+                        v-for="tab in tabs"
+                        :id="`tab-${tab.key}`"
+                        :key="tab.key"
+                        type="button"
+                        role="tab"
+                        :aria-selected="activeTab === tab.key"
+                        :aria-controls="`panel-${tab.key}`"
+                        class="-mt-px inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 border-t text-xs font-semibold tracking-[0.12em] uppercase transition-colors sm:flex-none"
+                        :class="
+                            activeTab === tab.key
+                                ? 'border-foreground text-foreground'
+                                : 'border-transparent text-muted-foreground hover:text-foreground'
+                        "
+                        @click="activeTab = tab.key"
+                    >
+                        <component
+                            :is="tab.icon"
+                            class="size-4 sm:size-3.5"
+                            aria-hidden="true"
+                        />
+                        <span class="hidden sm:inline">{{ tab.label }}</span>
+                        <span class="sr-only sm:hidden">{{ tab.label }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Publicaciones -->
+            <section
+                v-show="activeTab === 'publicaciones'"
+                id="panel-publicaciones"
+                role="tabpanel"
+                aria-labelledby="tab-publicaciones"
+            >
+                <InfiniteScroll
+                    data="posts"
+                    :buffer="600"
+                    items-element="#profile-posts"
+                >
+                    <div id="profile-posts">
+                        <ProfilePostGrid
+                            v-if="visiblePosts.length"
+                            :posts="visiblePosts"
+                            @deleted="onDeleted"
+                        />
+                    </div>
+                    <div
+                        v-if="!visiblePosts.length"
+                        class="flex flex-col items-center px-6 py-16 text-center"
+                    >
+                        <span
+                            class="flex size-16 items-center justify-center rounded-full border-2 border-foreground"
+                        >
+                            <Camera class="size-7" />
+                        </span>
+                        <p class="mt-4 text-xl font-semibold">
+                            {{
+                                isOwner
+                                    ? 'Comparte tu primer momento'
+                                    : 'Aún no hay publicaciones'
+                            }}
+                        </p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{
+                                isOwner
+                                    ? 'Tus fotos y logros aparecerán en tu perfil.'
+                                    : `Cuando ${profile.name} publique, lo verás aquí.`
+                            }}
+                        </p>
+                        <Link
+                            v-if="isOwner"
+                            :href="communityIndex({ query: { publicar: 1 } })"
+                            class="mt-4 text-sm font-semibold text-fl-gold-ink hover:text-foreground"
+                            >Publicar ahora</Link
+                        >
+                    </div>
+                    <template #loading>
+                        <div
+                            class="mt-0.5 grid grid-cols-3 gap-0.5 sm:mt-1 sm:gap-1"
+                            aria-live="polite"
+                        >
+                            <span
+                                v-for="n in 3"
+                                :key="n"
+                                class="aspect-square animate-pulse bg-muted"
+                            />
+                            <span class="sr-only">Cargando publicaciones…</span>
+                        </div>
+                    </template>
+                </InfiniteScroll>
+            </section>
+
+            <!-- Legado -->
+            <section
+                v-show="activeTab === 'legado'"
+                id="panel-legado"
+                role="tabpanel"
+                aria-labelledby="tab-legado"
+                class="px-4 pt-6 sm:px-0"
+            >
+                <div
+                    v-if="highlights.length"
+                    class="grid gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-3"
                 >
                     <component
                         :is="item.event_slug ? Link : 'div'"
@@ -433,12 +540,11 @@ const profileJsonLd = computed(() => {
                                 ? `/events/${item.event_slug}`
                                 : undefined
                         "
-                        class="group relative flex flex-col bg-card p-6 transition-colors sm:p-7"
+                        class="flex flex-col bg-card p-5 transition-colors"
                         :class="item.event_slug ? 'hover:bg-fl-cream/40' : ''"
                     >
-                        <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
                         <p
-                            class="mt-4 truncate text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase"
+                            class="truncate text-[11px] font-medium tracking-[0.14em] text-muted-foreground uppercase"
                         >
                             {{
                                 [item.distance, shortDate(item.event_date)]
@@ -447,12 +553,12 @@ const profileJsonLd = computed(() => {
                             }}
                         </p>
                         <p
-                            class="mt-1 line-clamp-2 font-serif text-lg leading-tight text-foreground"
+                            class="mt-1 line-clamp-2 font-serif text-lg leading-tight"
                         >
                             {{ item.event }}
                         </p>
                         <p
-                            class="legacy-numeric mt-5 font-serif text-4xl leading-none text-foreground sm:text-5xl"
+                            class="legacy-numeric mt-4 font-serif text-4xl leading-none"
                         >
                             {{ item.official_time }}
                         </p>
@@ -466,268 +572,98 @@ const profileJsonLd = computed(() => {
                             Tiempo oficial
                         </p>
                     </component>
-                </StaggerGroup>
+                </div>
+                <div v-if="timeline.length" class="mt-8">
+                    <LegacyTimelineList :entries="timeline" />
+                </div>
+                <p
+                    v-else
+                    class="py-14 text-center text-sm text-muted-foreground"
+                >
+                    {{ profile.name }} aún no tiene participaciones públicas.
+                </p>
             </section>
 
-            <div class="mt-10">
-                <div
-                    class="sticky top-16 z-30 -mx-4 flex items-center gap-1 border-b border-border bg-background/90 px-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
-                >
+            <!-- Medallas -->
+            <section
+                v-show="activeTab === 'medallas'"
+                id="panel-medallas"
+                role="tabpanel"
+                aria-labelledby="tab-medallas"
+                class="px-4 pt-6 sm:px-0"
+            >
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     <div
-                        class="flex flex-1 gap-1 overflow-x-auto"
-                        role="tablist"
-                        aria-label="Secciones del perfil"
+                        v-for="medal in medals"
+                        :key="medal.id"
+                        class="overflow-hidden rounded-card border border-border bg-card"
                     >
-                        <button
-                            v-for="tab in tabs"
-                            :id="`tab-${tab.key}`"
-                            :key="tab.key"
-                            type="button"
-                            role="tab"
-                            :aria-selected="activeTab === tab.key"
-                            :aria-controls="`panel-${tab.key}`"
-                            class="-mb-px min-h-11 shrink-0 border-b-2 px-4 text-sm font-medium transition-colors"
-                            :class="
-                                activeTab === tab.key
-                                    ? 'border-fl-gold text-foreground'
-                                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                            "
-                            @click="activeTab = tab.key"
-                        >
-                            {{ tab.label }}
-                            <span
-                                v-if="tab.count"
-                                class="ml-1 text-xs text-muted-foreground"
-                                >{{ tab.count }}</span
+                        <div class="aspect-square bg-fl-cream">
+                            <img
+                                v-if="medal.thumbnail_url"
+                                :src="medal.thumbnail_url"
+                                :alt="medal.title"
+                                loading="lazy"
+                                class="size-full object-cover"
+                            />
+                            <div
+                                v-else
+                                class="flex size-full items-center justify-center"
                             >
-                        </button>
-                    </div>
-                    <div
-                        v-if="
-                            activeTab === 'publicaciones' && visiblePosts.length
-                        "
-                        class="flex shrink-0 gap-1 pb-1"
-                        role="group"
-                        aria-label="Vista"
-                    >
-                        <button
-                            type="button"
-                            class="flex size-10 items-center justify-center rounded-full"
-                            :class="
-                                layout === 'list'
-                                    ? 'bg-muted text-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            "
-                            :aria-pressed="layout === 'list'"
-                            aria-label="Ver como lista"
-                            @click="layout = 'list'"
-                        >
-                            <List class="size-4" />
-                        </button>
-                        <button
-                            type="button"
-                            class="flex size-10 items-center justify-center rounded-full"
-                            :class="
-                                layout === 'grid'
-                                    ? 'bg-muted text-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            "
-                            :aria-pressed="layout === 'grid'"
-                            aria-label="Ver como cuadrícula"
-                            @click="layout = 'grid'"
-                        >
-                            <LayoutGrid class="size-4" />
-                        </button>
+                                <Award class="size-8 text-fl-gold-ink/60" />
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <p class="truncate text-sm font-semibold">
+                                {{ medal.title }}
+                            </p>
+                            <p class="truncate text-xs text-muted-foreground">
+                                {{
+                                    [
+                                        medal.distance_label,
+                                        shortDate(medal.event_date),
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' · ')
+                                }}
+                            </p>
+                        </div>
                     </div>
                 </div>
+            </section>
 
-                <section
-                    v-show="activeTab === 'publicaciones'"
-                    id="panel-publicaciones"
-                    role="tabpanel"
-                    aria-labelledby="tab-publicaciones"
-                    class="pt-6"
-                >
-                    <InfiniteScroll
-                        data="posts"
-                        :buffer="500"
-                        items-element="#profile-posts"
+            <!-- Fotos -->
+            <section
+                v-show="activeTab === 'fotos'"
+                id="panel-fotos"
+                role="tabpanel"
+                aria-labelledby="tab-fotos"
+            >
+                <div class="grid grid-cols-3 gap-0.5 sm:gap-1">
+                    <div
+                        v-for="photo in photos"
+                        :key="photo.uuid"
+                        class="group/photo relative aspect-square overflow-hidden bg-muted"
                     >
-                        <div
-                            id="profile-posts"
-                            :class="
-                                layout === 'grid'
-                                    ? '-mx-4 grid [grid-auto-flow:dense] grid-cols-2 gap-1 sm:mx-0 sm:grid-cols-3 sm:gap-2'
-                                    : 'mx-auto max-w-2xl space-y-5'
+                        <img
+                            :src="photo.url"
+                            :alt="
+                                photo.event
+                                    ? `${profile.name} en ${photo.event}`
+                                    : `Foto de ${profile.name}`
                             "
+                            loading="lazy"
+                            decoding="async"
+                            class="size-full object-cover"
+                        />
+                        <span
+                            v-if="photo.event"
+                            class="absolute inset-x-0 bottom-0 hidden truncate bg-gradient-to-t from-black/60 to-transparent px-2 pt-6 pb-1.5 text-[11px] font-medium text-white sm:block sm:opacity-0 sm:transition-opacity sm:group-hover/photo:opacity-100"
+                            >{{ photo.event }}</span
                         >
-                            <template v-if="layout === 'grid'">
-                                <Link
-                                    v-for="(post, index) in visiblePosts"
-                                    :key="post.uuid"
-                                    :href="showPost(post.uuid)"
-                                    class="group/tile relative block overflow-hidden bg-fl-cream sm:rounded-card"
-                                    :class="editorialTileClass(index)"
-                                    :aria-label="`Publicación: ${post.kind_label}`"
-                                >
-                                    <img
-                                        v-if="tileImage(post)"
-                                        :src="tileImage(post)!"
-                                        alt=""
-                                        loading="lazy"
-                                        class="size-full object-cover transition-transform duration-500 group-hover/tile:scale-105 motion-reduce:transition-none"
-                                    />
-                                    <span
-                                        v-else
-                                        class="flex size-full flex-col justify-between p-3 sm:p-4"
-                                    >
-                                        <span class="fl-eyebrow">{{
-                                            post.kind_label
-                                        }}</span>
-                                        <span
-                                            v-if="post.activity?.official_time"
-                                            class="legacy-numeric font-serif text-xl sm:text-3xl"
-                                            >{{
-                                                post.activity.official_time
-                                            }}</span
-                                        >
-                                        <span
-                                            v-else
-                                            class="line-clamp-4 font-serif text-sm leading-snug sm:text-lg"
-                                            >{{ post.caption }}</span
-                                        >
-                                    </span>
-                                </Link>
-                            </template>
-                            <template v-else>
-                                <CommunityPost
-                                    v-for="post in visiblePosts"
-                                    :key="post.uuid"
-                                    :post="post"
-                                    @deleted="
-                                        (uuid) =>
-                                            (removed = new Set([
-                                                ...removed,
-                                                uuid,
-                                            ]))
-                                    "
-                                />
-                            </template>
-                        </div>
-                        <p
-                            v-if="!visiblePosts.length"
-                            class="py-10 text-center text-muted-foreground"
-                        >
-                            {{
-                                isOwner
-                                    ? 'Aún no publicas nada. Comparte tu primer momento en Comunidad.'
-                                    : `${profile.name} aún no tiene publicaciones visibles.`
-                            }}
-                        </p>
-                    </InfiniteScroll>
-                </section>
-
-                <section
-                    v-show="activeTab === 'historia'"
-                    id="panel-historia"
-                    role="tabpanel"
-                    aria-labelledby="tab-historia"
-                    class="max-w-4xl pt-8"
-                >
-                    <h2 class="fl-display text-3xl sm:text-4xl">
-                        Cada logro cuenta.
-                    </h2>
-                    <div v-if="timeline.length" class="mt-8">
-                        <LegacyTimelineList :entries="timeline" />
                     </div>
-                    <p v-else class="mt-4 text-muted-foreground">
-                        {{ profile.name }} aún no tiene participaciones
-                        públicas.
-                    </p>
-                </section>
-
-                <section
-                    v-show="activeTab === 'logros'"
-                    id="panel-logros"
-                    role="tabpanel"
-                    aria-labelledby="tab-logros"
-                    class="pt-8"
-                >
-                    <div
-                        class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
-                    >
-                        <div
-                            v-for="medal in medals"
-                            :key="medal.id"
-                            class="fl-card overflow-hidden"
-                        >
-                            <div class="aspect-square bg-fl-cream">
-                                <img
-                                    v-if="medal.thumbnail_url"
-                                    :src="medal.thumbnail_url"
-                                    :alt="medal.title"
-                                    loading="lazy"
-                                    class="size-full object-cover"
-                                />
-                                <div
-                                    v-else
-                                    class="flex size-full items-center justify-center"
-                                >
-                                    <Award class="size-8 text-fl-gold-ink/60" />
-                                </div>
-                            </div>
-                            <div class="p-3">
-                                <p class="truncate text-sm font-semibold">
-                                    {{ medal.title }}
-                                </p>
-                                <p
-                                    class="truncate text-xs text-muted-foreground"
-                                >
-                                    {{
-                                        [
-                                            medal.distance_label,
-                                            shortDate(medal.event_date),
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' · ')
-                                    }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section
-                    v-show="activeTab === 'fotos'"
-                    id="panel-fotos"
-                    role="tabpanel"
-                    aria-labelledby="tab-fotos"
-                    class="pt-8"
-                >
-                    <div
-                        class="-mx-4 grid [grid-auto-flow:dense] grid-cols-2 gap-1 sm:mx-0 sm:grid-cols-3 sm:gap-2"
-                    >
-                        <div
-                            v-for="(photo, index) in photos"
-                            :key="photo.uuid"
-                            class="group/photo relative overflow-hidden bg-muted sm:rounded-card"
-                            :class="editorialTileClass(index)"
-                        >
-                            <img
-                                :src="photo.url"
-                                :alt="
-                                    photo.event
-                                        ? `${profile.name} en ${photo.event}`
-                                        : `Foto de ${profile.name}`
-                                "
-                                loading="lazy"
-                                decoding="async"
-                                class="size-full object-cover transition-transform duration-500 group-hover/photo:scale-105 motion-reduce:transition-none"
-                            />
-                        </div>
-                    </div>
-                </section>
-            </div>
+                </div>
+            </section>
         </template>
     </div>
 
