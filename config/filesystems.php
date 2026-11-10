@@ -168,6 +168,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Storage health probe (`php artisan storage:health`)
+    |--------------------------------------------------------------------------
+    |
+    | Disks probed (write/read/delete + free space). Empty = the media disk
+    | (finisher.media_disk) and the temp disk (finisher.media.tmp_disk).
+    | `media_sentinel`: a file name that must already exist at the media
+    | disk root ON THE NAS. If the SMB share is not mounted, the mount point
+    | is an empty local folder: the probe would still "work" and files would
+    | silently land on the VPS disk — the sentinel catches that. Create it
+    | once on the share (e.g. `touch /mnt/fl-media/.fl-media-mounted`).
+    | `require_mount_point`: also require the root to be a Linux mount point
+    | (device differs from its parent). Off by default (dev/Windows).
+    |
+    */
+
+    'health' => [
+        'disks' => array_values(array_filter(array_map('trim', explode(',', (string) env('STORAGE_HEALTH_DISKS', ''))))),
+        'min_free_mb' => (int) env('STORAGE_HEALTH_MIN_FREE_MB', 2048),
+        'media_sentinel' => (string) env('FINISHER_MEDIA_SENTINEL', ''),
+        'require_mount_point' => (bool) env('FINISHER_MEDIA_REQUIRE_MOUNT', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Symbolic Links
     |--------------------------------------------------------------------------
     |

@@ -21,3 +21,10 @@ Schedule::command(ExpirePendingOrders::class)
 Schedule::command('sanctum:prune-expired --hours=24')
     ->daily()
     ->withoutOverlapping();
+
+// Synology/SMB media mount probe (docs/renovacion/synology-smb.md): logs
+// `storage.health_failed` and exits non-zero when the mount is missing,
+// read-only or low on space.
+Schedule::command('storage:health')
+    ->everyTenMinutes()
+    ->withoutOverlapping();
