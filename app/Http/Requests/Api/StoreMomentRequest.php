@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api;
 
 use App\Enums\MomentType;
 use App\Enums\MomentVisibility;
+use App\Rules\NoObjectionableContent;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,7 +25,7 @@ class StoreMomentRequest extends FormRequest
 
         return [
             'type' => ['required', Rule::enum(MomentType::class)],
-            'caption' => ['nullable', 'string', 'max:'.config('finisher.social.moment_caption_max')],
+            'caption' => ['nullable', 'string', 'max:'.config('finisher.social.moment_caption_max'), new NoObjectionableContent],
             'visibility' => ['required', Rule::enum(MomentVisibility::class)],
             'event_participant_id' => ['nullable', 'integer'],
             'event_edition_id' => ['nullable', 'integer', 'exists:event_editions,id'],

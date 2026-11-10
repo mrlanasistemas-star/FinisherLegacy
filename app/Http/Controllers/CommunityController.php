@@ -36,6 +36,7 @@ use App\Queries\Social\MutualConnections;
 use App\Queries\Social\PeopleQuery;
 use App\Queries\Social\PeopleStrip;
 use App\Queries\Social\SuggestedAthletes;
+use App\Rules\NoObjectionableContent;
 use App\Services\EventCatalogService;
 use App\Services\Social\SocialVisibility;
 use App\Support\Social\ReportReasons;
@@ -222,7 +223,7 @@ class CommunityController extends Controller
         abort_unless(Gate::forUser($request->user())->allows('update', $moment), 404);
 
         $moment->update($request->validate([
-            'caption' => ['sometimes', 'nullable', 'string', 'max:'.config('finisher.social.moment_caption_max')],
+            'caption' => ['sometimes', 'nullable', 'string', 'max:'.config('finisher.social.moment_caption_max'), new NoObjectionableContent],
             'visibility' => ['sometimes', Rule::enum(MomentVisibility::class)],
         ]));
 
@@ -267,7 +268,7 @@ class CommunityController extends Controller
         $this->authorizeInteraction($request->user(), $moment);
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'min:1', 'max:'.config('finisher.social.comment_max')],
+            'body' => ['required', 'string', 'min:1', 'max:'.config('finisher.social.comment_max'), new NoObjectionableContent],
         ], [
             'body.required' => 'Escribe un mensaje antes de enviarlo.',
             'body.max' => 'Tu mensaje es demasiado largo (máximo :max caracteres).',
