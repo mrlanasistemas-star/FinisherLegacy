@@ -8,6 +8,7 @@ import type { LucideIcon } from '@lucide/vue';
 import {
     Bell,
     Camera,
+    Headphones,
     LayoutGrid,
     Nfc,
     Receipt,
@@ -37,6 +38,7 @@ import { index as photosIndex } from '@/routes/photos';
 import { edit as editSettingsProfile } from '@/routes/profile';
 import { index as ordersIndex } from '@/routes/store/orders';
 import { index as storeIndex } from '@/routes/store/products';
+import { index as trainingIndex } from '@/routes/training';
 
 export const ACTIVATE_URL = activateIndex.url();
 export const MI_LEGACY_URL = myLegacyIndex.url();
@@ -101,6 +103,12 @@ export function accountLinks(options: {
                   group: 'me',
               },
         { label: 'Mi Legacy', href: MI_LEGACY_URL, icon: Nfc, group: 'me' },
+        {
+            label: 'Mi entrenamiento',
+            href: trainingIndex.url(),
+            icon: Headphones,
+            group: 'me',
+        },
         {
             label: 'Mi legado',
             href: dashboard.url(),
@@ -183,4 +191,3 @@ export const footerColumns: { title: string; links: SiteLink[] }[] = [
         ],
     },
 ];
-

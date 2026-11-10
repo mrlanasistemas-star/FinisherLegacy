@@ -7,6 +7,7 @@ use App\Providers\LegacyTagServiceProvider;
 use App\Providers\NfcServiceProvider;
 use App\Providers\PaymentSettingsServiceProvider;
 use App\Providers\TrackingServiceProvider;
+use App\Providers\TrainingServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -16,4 +17,5 @@ return [
     NfcServiceProvider::class,
     LegacyTagServiceProvider::class,
     PaymentSettingsServiceProvider::class,
+    TrainingServiceProvider::class,
 ];

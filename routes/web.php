@@ -446,3 +446,5 @@ require __DIR__.'/web/legacy.php';
 require __DIR__.'/web/admin-catalog.php';
 require __DIR__.'/web/admin-commercial.php';
 require __DIR__.'/web/admin-quotas.php';
+
+require __DIR__.'/web/training.php';

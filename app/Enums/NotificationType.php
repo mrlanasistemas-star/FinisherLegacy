@@ -24,6 +24,9 @@ enum NotificationType: string
     case MomentReaction = 'moment_reaction';
     case MomentComment = 'moment_comment';
 
+    // Entrenamientos: someone left a cheer through an "Envíame ánimo" link.
+    case TrainingCheer = 'training_cheer';
+
     /**
      * @return list<self>
      */
