@@ -7,7 +7,7 @@
  * launch (docs/store/pendientes-externos.md in the mobile repo).
  */
 import { Link } from '@inertiajs/vue3';
-import SectionHeading from '@/components/public/SectionHeading.vue';
+import LegalDocument from '@/components/marketing/LegalDocument.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { contact, privacy } from '@/routes';
 import { show as accountDeletion } from '@/routes/account-deletion';
@@ -111,6 +111,11 @@ const sections: Section[] = [
         ],
     },
 ];
+
+const toc = [
+    ...sections.map(({ id, title }) => ({ id, title })),
+    { id: 'contacto', title: '12. Contacto' },
+];
 </script>
 
 <template>
@@ -119,68 +124,34 @@ const sections: Section[] = [
         description="Términos y condiciones de Finisher Legacy en la web y en la app, incluidas las reglas de la comunidad."
     />
 
-    <section class="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
-        <SectionHeading
-            align="left"
-            eyebrow="Legal"
-            title="Términos y condiciones"
-            class="mb-4"
-        />
-        <p class="mb-10 text-sm text-muted-foreground">
-            Aplican al sitio finisherlegacy.com y a la app Finisher Legacy.
-        </p>
+    <LegalDocument
+        eyebrow="Legal"
+        title="Términos y condiciones"
+        intro="Aplican al sitio finisherlegacy.com y a la app Finisher Legacy."
+        :toc="toc"
+    >
+        <section v-for="section in sections" :id="section.id" :key="section.id">
+            <h2>{{ section.title }}</h2>
+            <p v-for="paragraph in section.paragraphs ?? []" :key="paragraph">
+                {{ paragraph }}
+            </p>
+            <ul v-if="section.items">
+                <li v-for="item in section.items" :key="item">
+                    {{ item }}
+                </li>
+            </ul>
+        </section>
 
-        <div class="space-y-10">
-            <div
-                v-for="section in sections"
-                :id="section.id"
-                :key="section.id"
-                class="scroll-mt-24"
-            >
-                <h2 class="text-lg font-semibold text-foreground">
-                    {{ section.title }}
-                </h2>
-                <p
-                    v-for="paragraph in section.paragraphs ?? []"
-                    :key="paragraph"
-                    class="mt-3 leading-relaxed text-muted-foreground"
-                >
-                    {{ paragraph }}
-                </p>
-                <ul
-                    v-if="section.items"
-                    class="mt-3 list-disc space-y-2 pl-5 leading-relaxed text-muted-foreground"
-                >
-                    <li v-for="item in section.items" :key="item">
-                        {{ item }}
-                    </li>
-                </ul>
-            </div>
-
-            <div id="contacto" class="scroll-mt-24">
-                <h2 class="text-lg font-semibold text-foreground">
-                    12. Contacto
-                </h2>
-                <p class="mt-3 leading-relaxed text-muted-foreground">
-                    Dudas o reportes urgentes: escríbenos desde la
-                    <Link
-                        :href="contact()"
-                        class="font-medium text-foreground underline underline-offset-2"
-                        >página de contacto</Link
-                    >. Consulta también el
-                    <Link
-                        :href="privacy()"
-                        class="font-medium text-foreground underline underline-offset-2"
-                        >Aviso de privacidad</Link
-                    >
-                    y cómo
-                    <Link
-                        :href="accountDeletion()"
-                        class="font-medium text-foreground underline underline-offset-2"
-                        >eliminar tu cuenta</Link
-                    >.
-                </p>
-            </div>
-        </div>
-    </section>
+        <section id="contacto">
+            <h2>12. Contacto</h2>
+            <p>
+                Dudas o reportes urgentes: escríbenos desde la
+                <Link :href="contact()">página de contacto</Link>. Consulta
+                también el
+                <Link :href="privacy()">Aviso de privacidad</Link>
+                y cómo
+                <Link :href="accountDeletion()">eliminar tu cuenta</Link>.
+            </p>
+        </section>
+    </LegalDocument>
 </template>

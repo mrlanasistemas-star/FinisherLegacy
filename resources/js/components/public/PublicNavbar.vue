@@ -1,26 +1,40 @@
 <script setup lang="ts">
 /**
  * The one top navbar for every non-admin page, signed in or not. Always
- * light: a white translucent bar with a blur that gains a hairline shadow
- * once the page scrolls. Links come from config/public-links.ts.
+ * light: a white translucent bar with a blur that shrinks and gains a
+ * hairline shadow once the page scrolls.
+ *
+ * Desktop (lg+): "Producto" and "Comunidad" open animated panels (reka-ui
+ * NavigationMenu: hover or click, arrow keys, Escape, focus management);
+ * the rest are plain links. Phones and tablets get a full-height drawer
+ * with the same structure. Every link comes from config/public-links.ts.
  */
 import { Link, router, usePage } from '@inertiajs/vue3';
 import {
+    ArrowRight,
     Bell,
     ChevronDown,
     Menu,
+    Nfc,
     Plus,
     Search,
     ShoppingBag,
 } from '@lucide/vue';
+import {
+    NavigationMenuContent,
+    NavigationMenuItem,
+    NavigationMenuLink,
+    NavigationMenuList,
+    NavigationMenuRoot,
+    NavigationMenuTrigger,
+    NavigationMenuViewport,
+} from 'reka-ui';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -39,10 +53,10 @@ import {
     ACTIVATE_URL,
     COMPOSE_URL,
     accountLinks,
-    moreLinks,
-    primaryLinks,
+    navEntries,
+    secondaryLinks,
 } from '@/config/public-links';
-import type { SiteLink } from '@/config/public-links';
+import type { NavEntry, SiteLink } from '@/config/public-links';
 import { home, logout, search } from '@/routes';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { show as cartShow } from '@/routes/store/cart';
@@ -70,10 +84,11 @@ function isActive(link: SiteLink): boolean {
         : isCurrentOrParentUrl(link.href);
 }
 
-const narrowMore = primaryLinks.filter((link) => link.wide);
-const moreActive = computed(() =>
-    [...moreLinks, ...narrowMore].some((link) => isActive(link)),
-);
+function entryActive(entry: NavEntry): boolean {
+    return entry.kind === 'menu'
+        ? entry.links.some((link) => isActive(link))
+        : isActive(entry);
+}
 
 const mobileAccount = computed(() =>
     accountLinks({
@@ -86,9 +101,10 @@ const mobileAccount = computed(() =>
 );
 
 const scrolled = ref(false);
+const openMenu = ref('');
 
 function handleScroll() {
-    scrolled.value = window.scrollY > 4;
+    scrolled.value = window.scrollY > 12;
 }
 
 onMounted(() => {
@@ -104,98 +120,200 @@ const badge = (count: number) => (count > 9 ? '9+' : String(count));
 
 const iconButton =
     'relative flex size-10 items-center justify-center rounded-full text-foreground/70 transition-colors duration-200 hover:bg-foreground/[0.05] hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+
+const navItem =
+    'fl-nav-link group relative inline-flex items-center gap-1 rounded-full px-2.5 py-2 text-[13.5px] xl:px-3 font-medium whitespace-nowrap transition-colors duration-200 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[state=open]:text-foreground';
 </script>
 
 <template>
     <header
-        class="fixed inset-x-0 top-0 z-50 border-b bg-white/80 backdrop-blur-xl backdrop-saturate-150 transition-[border-color,box-shadow] duration-300 supports-[backdrop-filter]:bg-white/70 motion-reduce:transition-none"
+        class="fl-header fixed inset-x-0 top-0 z-50 border-b bg-white/80 backdrop-blur-xl backdrop-saturate-150 transition-[border-color,box-shadow,background-color] duration-300 supports-[backdrop-filter]:bg-white/70 motion-reduce:transition-none"
         :class="
-            scrolled
-                ? 'border-border/80 shadow-[0_1px_12px_-6px_rgb(23_23_20/0.12)]'
+            scrolled || openMenu
+                ? 'border-border/80 shadow-[0_1px_14px_-6px_rgb(23_23_20/0.14)] supports-[backdrop-filter]:bg-white/85'
                 : 'border-transparent'
         "
+        :data-scrolled="scrolled ? '' : undefined"
     >
-        <div class="fl-container flex h-16 items-center gap-3 lg:gap-6">
+        <div
+            class="fl-header__bar fl-container flex items-center gap-2 sm:gap-3 xl:gap-5"
+        >
             <Link
                 :href="home()"
-                class="shrink-0 rounded-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                class="fl-header__logo shrink-0 rounded-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 aria-label="Finisher Legacy — Inicio"
             >
                 <FinisherLegacyLogo variant="wordmark" size="sm" tone="dark" />
             </Link>
 
-            <nav
-                class="hidden flex-1 items-center justify-center gap-1 lg:flex"
+            <NavigationMenuRoot
+                v-model="openMenu"
+                :delay-duration="60"
+                :skip-delay-duration="250"
+                class="relative hidden flex-1 justify-center lg:flex"
                 aria-label="Navegación principal"
             >
-                <Link
-                    v-for="link in primaryLinks"
-                    :key="link.label"
-                    :href="link.href"
-                    class="fl-nav-link relative rounded-full px-3 py-2 text-[13.5px] font-medium whitespace-nowrap transition-colors duration-200 hover:text-foreground"
-                    :class="[
-                        isActive(link)
-                            ? 'fl-nav-link--active text-foreground'
-                            : 'text-foreground/60',
-                        link.wide ? 'hidden xl:inline-flex' : 'inline-flex',
-                    ]"
-                    :aria-current="isActive(link) ? 'page' : undefined"
-                >
-                    {{ link.label }}
-                </Link>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <button
-                            type="button"
-                            class="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[13.5px] font-medium transition-colors duration-200 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[state=open]:text-foreground"
-                            :class="
-                                moreActive
-                                    ? 'text-foreground'
-                                    : 'text-foreground/60'
-                            "
-                        >
-                            Más
-                            <ChevronDown class="size-3.5" aria-hidden="true" />
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        align="center"
-                        :side-offset="10"
-                        class="w-56 rounded-2xl p-1.5 shadow-fl-float"
+                <NavigationMenuList class="flex items-center gap-0.5">
+                    <NavigationMenuItem
+                        v-for="entry in navEntries"
+                        :key="entry.label"
+                        :value="entry.label"
+                        :class="
+                            entry.kind === 'link' && entry.from === 'xl'
+                                ? 'hidden xl:block'
+                                : entry.kind === 'link' && entry.from === 'wide'
+                                  ? 'hidden min-[1400px]:block'
+                                  : ''
+                        "
                     >
-                        <DropdownMenuItem
-                            v-for="link in narrowMore"
-                            :key="link.label"
+                        <template v-if="entry.kind === 'menu'">
+                            <NavigationMenuTrigger
+                                :class="[
+                                    navItem,
+                                    entryActive(entry)
+                                        ? 'fl-nav-link--active text-foreground'
+                                        : 'text-foreground/65',
+                                ]"
+                            >
+                                {{ entry.label }}
+                                <ChevronDown
+                                    class="size-3.5 transition-transform duration-300 group-data-[state=open]:rotate-180 motion-reduce:transition-none"
+                                    aria-hidden="true"
+                                />
+                            </NavigationMenuTrigger>
+                            <NavigationMenuContent
+                                class="fl-mega__content absolute top-0 left-0 w-[46rem] max-w-[calc(100vw-3rem)] p-3"
+                            >
+                                <div
+                                    class="grid grid-cols-[minmax(0,1fr)_15.5rem] gap-3"
+                                >
+                                    <ul class="grid content-start gap-0.5">
+                                        <li
+                                            v-for="link in entry.links"
+                                            :key="link.label"
+                                        >
+                                            <NavigationMenuLink
+                                                as-child
+                                                :active="isActive(link)"
+                                            >
+                                                <Link
+                                                    :href="link.href"
+                                                    class="fl-mega__link group/link flex items-start gap-3.5 rounded-2xl p-3 transition-colors duration-200 hover:bg-fl-paper focus-visible:bg-fl-paper focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                                >
+                                                    <span
+                                                        class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink transition-[transform,background-color,color] duration-300 group-hover/link:-translate-y-0.5 group-hover/link:bg-fl-black group-hover/link:text-fl-gold-soft motion-reduce:transform-none"
+                                                        aria-hidden="true"
+                                                    >
+                                                        <component
+                                                            :is="link.icon"
+                                                            class="size-[18px]"
+                                                            :stroke-width="1.7"
+                                                        />
+                                                    </span>
+                                                    <span class="min-w-0">
+                                                        <span
+                                                            class="flex items-center gap-1.5 text-sm font-semibold text-foreground"
+                                                        >
+                                                            {{ link.label }}
+                                                            <ArrowRight
+                                                                class="size-3.5 -translate-x-1 text-fl-gold-ink opacity-0 transition-[opacity,transform] duration-300 group-hover/link:translate-x-0 group-hover/link:opacity-100 motion-reduce:transition-none"
+                                                                aria-hidden="true"
+                                                            />
+                                                        </span>
+                                                        <span
+                                                            class="mt-0.5 block text-[12.5px] leading-snug text-muted-foreground"
+                                                            >{{
+                                                                link.description
+                                                            }}</span
+                                                        >
+                                                    </span>
+                                                </Link>
+                                            </NavigationMenuLink>
+                                        </li>
+                                    </ul>
+
+                                    <NavigationMenuLink as-child>
+                                        <Link
+                                            :href="entry.feature.href"
+                                            class="group/feature relative isolate flex min-h-[17rem] flex-col justify-end overflow-hidden rounded-2xl bg-fl-black p-5 text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                        >
+                                            <img
+                                                :src="entry.feature.image"
+                                                alt=""
+                                                width="640"
+                                                height="800"
+                                                loading="lazy"
+                                                class="absolute inset-0 -z-10 size-full object-cover opacity-70 transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/feature:scale-105 motion-reduce:transform-none"
+                                            />
+                                            <span
+                                                class="absolute inset-0 -z-10 bg-gradient-to-t from-fl-black via-fl-black/55 to-transparent"
+                                                aria-hidden="true"
+                                            />
+                                            <span
+                                                class="text-[10px] font-semibold tracking-[0.22em] text-fl-gold-soft uppercase"
+                                                >{{
+                                                    entry.feature.eyebrow
+                                                }}</span
+                                            >
+                                            <span
+                                                class="mt-1.5 font-serif text-lg leading-tight font-semibold"
+                                                >{{ entry.feature.title }}</span
+                                            >
+                                            <span
+                                                class="mt-1.5 text-[12.5px] leading-snug text-white/75"
+                                                >{{ entry.feature.text }}</span
+                                            >
+                                            <span
+                                                class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-fl-gold-soft"
+                                            >
+                                                {{ entry.feature.cta }}
+                                                <ArrowRight
+                                                    class="size-3.5 transition-transform duration-300 group-hover/feature:translate-x-1 motion-reduce:transform-none"
+                                                    aria-hidden="true"
+                                                />
+                                            </span>
+                                        </Link>
+                                    </NavigationMenuLink>
+                                </div>
+                            </NavigationMenuContent>
+                        </template>
+
+                        <NavigationMenuLink
+                            v-else
                             as-child
-                            class="xl:hidden"
+                            :active="isActive(entry)"
                         >
                             <Link
-                                :href="link.href"
-                                class="w-full cursor-pointer rounded-xl px-3 py-2"
-                                >{{ link.label }}</Link
+                                :href="entry.href"
+                                :class="[
+                                    navItem,
+                                    isActive(entry)
+                                        ? 'fl-nav-link--active text-foreground'
+                                        : 'text-foreground/65',
+                                ]"
+                                :aria-current="
+                                    isActive(entry) ? 'page' : undefined
+                                "
                             >
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator class="xl:hidden" />
-                        <DropdownMenuItem
-                            v-for="link in moreLinks"
-                            :key="link.label"
-                            as-child
-                        >
-                            <Link
-                                :href="link.href"
-                                class="w-full cursor-pointer rounded-xl px-3 py-2"
-                                >{{ link.label }}</Link
-                            >
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </nav>
+                                {{ entry.label }}
+                            </Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
+                </NavigationMenuList>
+
+                <div
+                    class="absolute top-full left-1/2 flex -translate-x-1/2 justify-center pt-4"
+                >
+                    <NavigationMenuViewport
+                        class="fl-mega__viewport relative overflow-hidden rounded-[1.4rem] border border-border/80 bg-white shadow-fl-overlay"
+                    />
+                </div>
+            </NavigationMenuRoot>
 
             <div class="ml-auto flex items-center gap-0.5 sm:gap-1 lg:ml-0">
                 <Link
                     :href="search()"
-                    :class="iconButton"
+                    :class="[iconButton, 'max-[399px]:hidden']"
                     aria-label="Buscar atletas, eventos y productos"
                 >
                     <Search class="size-[19px]" />
@@ -266,7 +384,7 @@ const iconButton =
                                     </AvatarFallback>
                                 </Avatar>
                                 <span
-                                    class="hidden max-w-24 truncate font-medium text-foreground xl:inline"
+                                    class="hidden max-w-24 truncate font-medium text-foreground 2xl:inline"
                                     >{{ firstName }}</span
                                 >
                                 <ChevronDown
@@ -288,9 +406,10 @@ const iconButton =
                 <template v-else>
                     <Link
                         :href="ACTIVATE_URL"
-                        class="hidden rounded-full px-3 py-2 text-[13px] font-medium whitespace-nowrap text-fl-gold-ink transition-colors hover:bg-fl-cream/60 xl:inline-flex"
+                        class="ml-1 hidden h-9 items-center gap-1.5 rounded-full border border-fl-gold/70 px-3.5 text-[13px] font-medium whitespace-nowrap text-fl-gold-ink transition-colors duration-200 hover:border-fl-gold-dim hover:bg-fl-cream/60 xl:inline-flex"
                     >
-                        Activar tag
+                        <Nfc class="size-4" aria-hidden="true" />
+                        Activar
                     </Link>
                     <Link
                         :href="signInHref"
@@ -318,13 +437,15 @@ const iconButton =
                     </SheetTrigger>
                     <SheetContent
                         side="right"
-                        class="flex w-[88vw] max-w-sm flex-col gap-0 overflow-y-auto bg-white p-0 shadow-fl-overlay"
+                        class="flex w-[90vw] max-w-sm flex-col gap-0 overflow-y-auto overscroll-contain bg-white p-0 shadow-fl-overlay"
                     >
                         <SheetTitle class="sr-only">Menú</SheetTitle>
                         <SheetDescription class="sr-only"
                             >Navegación principal y tu cuenta.</SheetDescription
                         >
-                        <div class="flex h-16 items-center px-5">
+                        <div
+                            class="flex h-16 shrink-0 items-center px-5 pt-[env(safe-area-inset-top)]"
+                        >
                             <FinisherLegacyLogo variant="wordmark" size="sm" />
                         </div>
 
@@ -360,48 +481,120 @@ const iconButton =
                             </div>
                         </div>
 
+                        <SheetClose as-child>
+                            <Link
+                                :href="ACTIVATE_URL"
+                                class="mx-4 mt-3 flex items-center gap-3.5 rounded-2xl bg-fl-black px-4 py-3.5 text-white"
+                            >
+                                <span
+                                    class="flex size-10 shrink-0 items-center justify-center rounded-full border border-fl-gold/50 text-fl-gold-soft"
+                                    aria-hidden="true"
+                                >
+                                    <Nfc class="size-[18px]" />
+                                </span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block text-sm font-semibold"
+                                        >Activar mi tag</span
+                                    >
+                                    <span class="block text-xs text-white/65"
+                                        >Acerca tu teléfono o escribe el
+                                        código</span
+                                    >
+                                </span>
+                                <ArrowRight
+                                    class="size-4 text-fl-gold-soft"
+                                    aria-hidden="true"
+                                />
+                            </Link>
+                        </SheetClose>
+
                         <nav
-                            class="flex flex-col px-3 pt-3"
+                            class="flex flex-col px-3 pt-4"
                             aria-label="Navegación principal"
                         >
-                            <SheetClose
-                                v-for="link in primaryLinks"
-                                :key="link.label"
-                                as-child
+                            <template
+                                v-for="entry in navEntries"
+                                :key="entry.label"
                             >
-                                <Link
-                                    :href="link.href"
-                                    class="flex min-h-12 items-center justify-between rounded-xl px-3 font-serif text-[1.5rem] leading-tight transition-colors hover:bg-foreground/[0.04]"
-                                    :class="
-                                        isActive(link)
-                                            ? 'text-foreground'
-                                            : 'text-foreground/60'
-                                    "
-                                    :aria-current="
-                                        isActive(link) ? 'page' : undefined
-                                    "
+                                <div v-if="entry.kind === 'menu'" class="pb-2">
+                                    <p class="fl-eyebrow px-3 pt-3 pb-1.5">
+                                        {{ entry.label }}
+                                    </p>
+                                    <SheetClose
+                                        v-for="link in entry.links"
+                                        :key="link.label"
+                                        as-child
+                                    >
+                                        <Link
+                                            :href="link.href"
+                                            class="flex min-h-12 items-center gap-3.5 rounded-xl px-3 py-1.5 transition-colors hover:bg-foreground/[0.04]"
+                                            :aria-current="
+                                                isActive(link)
+                                                    ? 'page'
+                                                    : undefined
+                                            "
+                                        >
+                                            <span
+                                                class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
+                                                aria-hidden="true"
+                                            >
+                                                <component
+                                                    :is="link.icon"
+                                                    class="size-[17px]"
+                                                    :stroke-width="1.7"
+                                                />
+                                            </span>
+                                            <span
+                                                class="text-[15px] font-medium text-foreground"
+                                                >{{ link.label }}</span
+                                            >
+                                        </Link>
+                                    </SheetClose>
+                                </div>
+                                <SheetClose
+                                    v-else-if="entry.from !== 'wide'"
+                                    as-child
                                 >
-                                    {{ link.label }}
-                                    <span
-                                        v-if="isActive(link)"
-                                        class="size-1.5 rounded-full bg-fl-gold"
-                                        aria-hidden="true"
-                                    />
-                                </Link>
-                            </SheetClose>
+                                    <Link
+                                        :href="entry.href"
+                                        class="flex min-h-12 items-center justify-between rounded-xl px-3 font-serif text-[1.3rem] leading-tight font-medium transition-colors hover:bg-foreground/[0.04]"
+                                        :class="
+                                            isActive(entry)
+                                                ? 'text-foreground'
+                                                : 'text-foreground/75'
+                                        "
+                                        :aria-current="
+                                            isActive(entry) ? 'page' : undefined
+                                        "
+                                    >
+                                        {{ entry.label }}
+                                        <span
+                                            v-if="isActive(entry)"
+                                            class="size-1.5 rounded-full bg-fl-gold"
+                                            aria-hidden="true"
+                                        />
+                                    </Link>
+                                </SheetClose>
+                            </template>
                         </nav>
 
-                        <div class="flex flex-wrap gap-2 px-6 pt-4 pb-2">
+                        <div class="flex flex-wrap gap-2 px-6 pt-3 pb-4">
                             <SheetClose
-                                v-for="link in moreLinks"
+                                v-for="link in secondaryLinks"
                                 :key="link.label"
                                 as-child
                             >
                                 <Link
                                     :href="link.href"
-                                    class="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground/75 transition-colors hover:border-foreground/30 hover:text-foreground"
-                                    >{{ link.label }}</Link
+                                    class="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium text-foreground/75 transition-colors hover:border-foreground/30 hover:text-foreground"
                                 >
+                                    <component
+                                        :is="link.icon"
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                    {{ link.label }}
+                                </Link>
                             </SheetClose>
                         </div>
 
@@ -448,14 +641,7 @@ const iconButton =
                                 </div>
                             </template>
                             <template v-else>
-                                <div class="grid gap-2">
-                                    <SheetClose as-child>
-                                        <Link
-                                            :href="signUpHref"
-                                            class="flex h-12 items-center justify-center rounded-full bg-foreground text-sm font-medium text-background"
-                                            >Crear cuenta</Link
-                                        >
-                                    </SheetClose>
+                                <div class="grid grid-cols-2 gap-2">
                                     <SheetClose as-child>
                                         <Link
                                             :href="signInHref"
@@ -465,9 +651,9 @@ const iconButton =
                                     </SheetClose>
                                     <SheetClose as-child>
                                         <Link
-                                            :href="ACTIVATE_URL"
-                                            class="flex min-h-11 items-center justify-center text-sm font-medium text-fl-gold-ink underline-offset-4 hover:underline"
-                                            >Activar mi tag</Link
+                                            :href="signUpHref"
+                                            class="flex h-12 items-center justify-center rounded-full bg-foreground text-sm font-medium text-background"
+                                            >Crear cuenta</Link
                                         >
                                     </SheetClose>
                                 </div>
@@ -481,6 +667,23 @@ const iconButton =
 </template>
 
 <style scoped>
+/* Sticky bar that shrinks once the page scrolls (height only on the bar;
+   the page keeps its own top padding, so nothing below reflows). */
+.fl-header__bar {
+    height: 4.25rem;
+    transition: height 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fl-header__logo {
+    transform-origin: left center;
+    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fl-header[data-scrolled] .fl-header__bar {
+    height: 3.5rem;
+}
+.fl-header[data-scrolled] .fl-header__logo {
+    transform: scale(0.93);
+}
+
 /* Gold dot under the active route; a soft graphite one on hover. */
 .fl-nav-link::after {
     content: '';
@@ -497,12 +700,11 @@ const iconButton =
         opacity 200ms ease,
         transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-.fl-nav-link:hover::after {
+.fl-nav-link:hover::after,
+.fl-nav-link[data-state='open']::after {
     opacity: 0.25;
     transform: translate(-50%, 0) scale(1);
 }
-
 .fl-nav-link--active::after,
 .fl-nav-link--active:hover::after {
     background: var(--fl-gold);
@@ -511,8 +713,88 @@ const iconButton =
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .fl-header__bar,
+    .fl-header__logo,
     .fl-nav-link::after {
         transition: none;
+    }
+}
+</style>
+
+<!-- Unscoped: reka-ui renders the panel contents inside its own viewport. -->
+<style>
+/* Panel: the viewport morphs between panel sizes; contents slide in from
+   the side the pointer came from. */
+.fl-mega__viewport {
+    width: var(--reka-navigation-menu-viewport-width);
+    height: var(--reka-navigation-menu-viewport-height);
+    transform-origin: top center;
+    transition:
+        width 320ms cubic-bezier(0.16, 1, 0.3, 1),
+        height 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fl-mega__viewport[data-state='open'] {
+    animation: fl-mega-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fl-mega__viewport[data-state='closed'] {
+    animation: fl-mega-out 160ms ease-in forwards;
+}
+.fl-mega__content[data-motion='from-start'] {
+    animation: fl-mega-from-start 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fl-mega__content[data-motion='from-end'] {
+    animation: fl-mega-from-end 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fl-mega__content[data-motion='to-start'] {
+    animation: fl-mega-to-start 200ms ease-in forwards;
+}
+.fl-mega__content[data-motion='to-end'] {
+    animation: fl-mega-to-end 200ms ease-in forwards;
+}
+@keyframes fl-mega-in {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -8px, 0) scale(0.98);
+    }
+}
+@keyframes fl-mega-out {
+    to {
+        opacity: 0;
+        transform: translate3d(0, -6px, 0) scale(0.985);
+    }
+}
+@keyframes fl-mega-from-start {
+    from {
+        opacity: 0;
+        transform: translate3d(-28px, 0, 0);
+    }
+}
+@keyframes fl-mega-from-end {
+    from {
+        opacity: 0;
+        transform: translate3d(28px, 0, 0);
+    }
+}
+@keyframes fl-mega-to-start {
+    to {
+        opacity: 0;
+        transform: translate3d(-28px, 0, 0);
+    }
+}
+@keyframes fl-mega-to-end {
+    to {
+        opacity: 0;
+        transform: translate3d(28px, 0, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fl-mega__viewport {
+        transition: none;
+    }
+    .fl-mega__viewport,
+    .fl-mega__content {
+        animation: none !important;
     }
 }
 </style>

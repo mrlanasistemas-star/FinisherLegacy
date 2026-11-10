@@ -1,125 +1,204 @@
 <script setup lang="ts">
 /**
- * /como-funciona — the Finisher Legacy Tag from purchase to return:
- * compras → recibes → acercas → activas → construyes → compartes →
- * regresas. Desktop: a pinned visual that changes as the steps scroll
- * past (no scroll hijacking — plain sticky + IntersectionObserver);
- * phones: each step carries its own visual inline. Illustrative pieces
- * (drawn tag, example story) are labelled.
+ * /como-funciona — the Finisher Legacy Tag journey, step by step:
+ * compra → recibe → activa tocando → completa tu recuerdo → comparte →
+ * tu familia lo abre sin app. Every step is a row with its own visual
+ * (collection tag art, real app screenshots in a phone frame, brand
+ * photos, CSS illustrations) so no half of the page is ever blank. A gold
+ * rail fills as the journey scrolls (transform only; static under
+ * prefers-reduced-motion). Illustrative pieces are labelled as examples.
  */
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight, Link2, Nfc, Type } from '@lucide/vue';
+import {
+    ArrowRight,
+    BookHeart,
+    Check,
+    Globe,
+    Image as ImageIcon,
+    KeyRound,
+    Link2,
+    Lock,
+    Mic,
+    Nfc,
+    Timer,
+} from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import CtaBand from '@/components/marketing/CtaBand.vue';
+import EcosystemGrid from '@/components/marketing/EcosystemGrid.vue';
+import FaqList from '@/components/marketing/FaqList.vue';
+import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
+import PageHero from '@/components/marketing/PageHero.vue';
+import PhoneFrame from '@/components/marketing/PhoneFrame.vue';
+import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import NfcTapVisual from '@/components/public/NfcTapVisual.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
-import { MEDIA } from '@/config/media';
-import { ACTIVATE_URL } from '@/config/public-links';
-import { contact } from '@/routes';
-import { index as collectionsIndex } from '@/routes/collections';
+import { vReveal } from '@/composables/useReveal';
+import {
+    ACTIVATE_URL,
+    COLLECTIONS_URL,
+    CONTACT_URL,
+    MEMORIES_URL,
+} from '@/config/public-links';
 
-type Visual = 'tag' | 'hand' | 'phone' | 'back' | 'story' | 'share' | 'return';
+type StepKey = 'buy' | 'receive' | 'tap' | 'memory' | 'share' | 'family';
 
-const steps: { verb: string; title: string; body: string; visual: Visual }[] = [
+const steps: {
+    key: StepKey;
+    verb: string;
+    title: string;
+    body: string;
+    points: string[];
+}[] = [
     {
-        verb: 'Compras',
-        title: 'Eliges la colección de tu carrera.',
-        body: 'Cada destino, disciplina y edición tiene su diseño. Lo compras en la tienda, en un evento o con un aliado.',
-        visual: 'tag',
+        key: 'buy',
+        verb: 'Compra',
+        title: 'Eliges el tag de tu carrera.',
+        body: 'Cada colección tiene el diseño de su destino y su disciplina. Lo compras en la tienda en línea, en un evento o con un aliado.',
+        points: [
+            'Un diseño por carrera y por destino',
+            'Running, triatlón, ciclismo, HYROX y más',
+        ],
     },
     {
-        verb: 'Recibes',
-        title: 'Te lo llevas listo.',
-        body: 'El tag llega terminado de fábrica, con su correa y su chip NFC. No hay que esperar a que lo personalicen.',
-        visual: 'hand',
+        key: 'receive',
+        verb: 'Recibe',
+        title: 'Llega listo para usarse.',
+        body: 'El tag viene terminado de fábrica, con su correa y su chip NFC dentro. No hay que esperar a que lo personalicen ni configurar nada.',
+        points: [
+            'Frente con el arte de tu colección',
+            'Reverso con el monograma y la marca NFC',
+        ],
     },
     {
-        verb: 'Acercas',
+        key: 'tap',
+        verb: 'Activa tocando',
         title: 'Acerca tu teléfono. Eso es todo.',
-        body: 'El chip NFC abre la página de tu tag en el navegador, sin apps. Si tu teléfono no lee NFC, escribe en Activar el código de tu tag y llegas al mismo lugar.',
-        visual: 'phone',
+        body: 'El chip NFC abre tu tag en el teléfono. Inicias sesión o creas tu cuenta, confirmas, y desde ese momento el tag es tuyo.',
+        points: [
+            'Desde la app o desde el navegador',
+            '¿Tu teléfono no lee NFC? Escribe el código del tag',
+        ],
     },
     {
-        verb: 'Activas',
-        title: 'Lo haces tuyo.',
-        body: 'Inicias sesión o creas tu cuenta y confirmas. Desde ese momento, el tag queda ligado a ti y a tu historia.',
-        visual: 'back',
-    },
-    {
-        verb: 'Construyes',
+        key: 'memory',
+        verb: 'Completa tu recuerdo',
         title: 'Guardas lo que pasó detrás del resultado.',
-        body: 'Tu foto, la carrera, tu tiempo, la fecha, el lugar, una dedicatoria, un audio y tu certificado. Lo completas hoy o poco a poco.',
-        visual: 'story',
+        body: 'Tus fotos, tu historia, tu resultado y un mensaje de voz. Lo completas el mismo día o poco a poco: tu recuerdo siempre se puede seguir escribiendo.',
+        points: ['Fotos', 'Historia', 'Resultado', 'Mensaje de voz'],
     },
     {
-        verb: 'Compartes',
+        key: 'share',
+        verb: 'Comparte',
         title: 'Con quienes estuvieron contigo.',
-        body: 'Crea un enlace para cada persona: “Para mamá”, “Para mi coach”. Lo abren en el navegador, sin instalar una app. Tú decides si tu historia es pública, solo con enlace o privada.',
-        visual: 'share',
+        body: 'Creas un enlace para cada persona y decides quién puede ver tu recuerdo. Si cambias de opinión, revocas el enlace cuando quieras.',
+        points: [
+            'Público, solo con enlace o privado',
+            'Enlaces que puedes revocar',
+        ],
     },
     {
-        verb: 'Regresas',
-        title: 'Acercas el teléfono y vuelves al momento.',
-        body: 'Tu historia sigue creciendo: regresa a ella, agrega lo que falte y vuelve a ese día cada vez que lo toques.',
-        visual: 'return',
+        key: 'family',
+        verb: 'Tu familia lo abre',
+        title: 'Sin instalar nada.',
+        body: 'Quien recibe tu enlace, o acerca su teléfono a tu tag, ve tu recuerdo en el navegador. No necesita la app ni una cuenta.',
+        points: ['Se abre en cualquier teléfono', 'Sin app y sin registro'],
     },
 ];
 
-const active = ref(0);
-const stepEls = ref<HTMLElement[]>([]);
-let observer: IntersectionObserver | null = null;
+const collectionArt = [
+    {
+        name: 'Valle de Bravo',
+        art: '/images/collections/tag-art/valle-de-bravo.webp',
+    },
+    {
+        name: 'Cozumel',
+        art: '/images/collections/tag-art/cozumel-arrecife.webp',
+    },
+    { name: 'Veracruz', art: '/images/collections/tag-art/veracruz.webp' },
+];
 
-onMounted(() => {
-    if (!('IntersectionObserver' in window)) {
-        return;
-    }
+const memoryChips = [
+    { icon: ImageIcon, label: 'Fotos' },
+    { icon: BookHeart, label: 'Historia' },
+    { icon: Timer, label: 'Resultado' },
+    { icon: Mic, label: 'Mensaje de voz' },
+];
 
-    observer = new IntersectionObserver(
-        (entries) => {
-            for (const entry of entries) {
-                if (entry.isIntersecting) {
-                    active.value = Number(
-                        (entry.target as HTMLElement).dataset.index ?? 0,
-                    );
-                }
-            }
-        },
-        { rootMargin: '-45% 0px -45% 0px' },
-    );
-    stepEls.value.forEach((el) => observer?.observe(el));
-});
-
-onBeforeUnmount(() => observer?.disconnect());
+const privacyLevels = [
+    { icon: Globe, label: 'Público' },
+    { icon: Link2, label: 'Solo con enlace' },
+    { icon: Lock, label: 'Privado' },
+];
 
 const ways = [
     {
         icon: Nfc,
-        title: 'NFC',
-        body: 'Acerca la parte de atrás de tu teléfono al tag.',
+        eyebrow: 'Así se abre',
+        title: 'Con un toque',
+        body: 'Acerca la parte de atrás de tu teléfono al tag. El chip NFC hace el resto.',
     },
     {
-        icon: Type,
-        title: 'Código',
-        body: 'Escribe en Activar el código de tu tag y llegas al mismo lugar.',
+        icon: KeyRound,
+        eyebrow: 'Si tu teléfono no lee NFC',
+        title: 'Con su código',
+        body: 'Entra a Activar y escribe el código que viene con tu tag. Llegas al mismo lugar.',
+    },
+];
+
+const inside = [
+    {
+        icon: ImageIcon,
+        title: 'Fotos',
+        text: 'Las de la salida, la ruta y la meta, en un solo álbum.',
+    },
+    {
+        icon: BookHeart,
+        title: 'Tu historia',
+        text: 'Lo que sentiste, a quién se lo dedicas y por qué importó.',
+    },
+    {
+        icon: Timer,
+        title: 'Tu resultado',
+        text: 'Carrera, distancia, tiempo, fecha y lugar.',
+    },
+    {
+        icon: Mic,
+        title: 'Mensaje de voz',
+        text: 'Una voz que quieres volver a escuchar cada vez que lo toques.',
+    },
+    {
+        icon: Lock,
+        title: 'Privacidad',
+        text: 'Tú decides si es público, solo con enlace o privado.',
+    },
+    {
+        icon: Link2,
+        title: 'Enlaces revocables',
+        text: 'Un enlace por persona, que puedes desactivar cuando quieras.',
     },
 ];
 
 const faqs = [
     {
         q: '¿Necesito instalar una app?',
-        a: 'No. Tu historia se abre en el navegador del teléfono, con solo acercarlo al tag o desde un enlace.',
+        a: 'No es obligatorio. Puedes activar tu tag y completar tu recuerdo desde el navegador o desde la app. Tu familia nunca necesita la app: abre tu recuerdo en el navegador.',
     },
     {
         q: '¿Mi teléfono lo va a leer?',
         a: 'La mayoría de los teléfonos recientes leen NFC, pero no todos. Si el tuyo no lo hace, entra a Activar y escribe el código de tu tag: llegas al mismo lugar.',
     },
     {
-        q: '¿Puedo regalarlo?',
-        a: 'Sí. Quien lo activa es quien construye la historia.',
+        q: '¿El tag trae un código QR?',
+        a: 'No. El tag funciona con NFC: basta con acercar el teléfono. Como respaldo, cada tag trae un código escrito para activarlo a mano.',
     },
     {
-        q: '¿Quién puede ver mi historia?',
-        a: 'Tú decides: pública, solo para quien tenga el enlace o privada. Los enlaces para tus personas se pueden revocar.',
+        q: '¿Puedo regalarlo?',
+        a: 'Sí. Quien lo activa es quien construye el recuerdo.',
+    },
+    {
+        q: '¿Quién puede ver mi recuerdo?',
+        a: 'Tú decides: público, solo para quien tenga el enlace o privado. Los enlaces que compartes se pueden revocar.',
     },
     {
         q: '¿Y si tengo un problema con mi tag?',
@@ -127,353 +206,546 @@ const faqs = [
     },
 ];
 
-const photo = MEDIA.photo;
+// Gold rail: fills with the scroll progress of the journey (scaleY only).
+const journey = ref<HTMLElement | null>(null);
+const progress = ref(0);
+let frame = 0;
+
+function measure() {
+    frame = 0;
+    const el = journey.value;
+
+    if (!el) {
+        return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    const travelled = window.innerHeight * 0.6 - rect.top;
+    progress.value = Math.min(1, Math.max(0, travelled / rect.height));
+}
+
+function onScroll() {
+    if (!frame) {
+        frame = requestAnimationFrame(measure);
+    }
+}
+
+onMounted(() => {
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onScroll);
+
+    if (frame) {
+        cancelAnimationFrame(frame);
+    }
+});
 </script>
 
 <template>
     <SeoHead
         title="Cómo funciona"
-        description="Compras tu Finisher Legacy Tag, lo recibes listo, acercas tu teléfono, lo activas y guardas la historia de tu carrera. Así funciona, paso a paso."
+        description="Compras tu Finisher Legacy Tag, lo recibes listo, lo activas acercando tu teléfono, completas tu recuerdo y lo compartes. Tu familia lo abre sin instalar nada."
     />
 
-    <!-- Hero -->
-    <section
-        class="relative overflow-hidden bg-background pt-12 pb-16 text-foreground sm:pt-20 sm:pb-24"
-        aria-labelledby="how-title"
+    <PageHero
+        eyebrow="Cómo funciona"
+        title="Del logro físico"
+        accent="a tu historia."
+        lede="El Finisher Legacy Tag es el recuerdo de tu carrera que puedes tocar. Acercas tu teléfono y se abre todo lo que viviste ese día."
     >
-        <div
-            class="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_60%_at_80%_30%,color-mix(in_srgb,var(--fl-gold)_14%,transparent),transparent_70%)]"
-            aria-hidden="true"
-        />
-        <div class="fl-container relative">
-            <p
-                class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
-            >
-                <span class="h-px w-10 bg-fl-gold" aria-hidden="true" />
-                Cómo funciona
-            </p>
-            <h1
-                id="how-title"
-                class="mt-6 max-w-5xl font-serif text-[clamp(2.6rem,7vw,6rem)] leading-[1.02] font-medium tracking-[-0.025em]"
-            >
-                Del logro físico
-                <span class="block text-fl-gold-ink italic"
-                    >a tu historia.</span
-                >
-            </h1>
-            <p
-                class="mt-6 max-w-[36rem] text-lg leading-relaxed text-muted-foreground"
-            >
-                El Finisher Legacy Tag es el recuerdo que puedes tocar. Tu
-                historia vive dentro y se abre con tu teléfono.
-            </p>
-            <ol
-                class="mt-12 flex flex-wrap items-center gap-x-3 gap-y-3 text-sm font-medium"
-                aria-label="Los siete momentos"
-            >
-                <template v-for="(step, i) in steps" :key="step.verb">
-                    <li class="text-foreground/85">{{ step.verb }}</li>
-                    <li
-                        v-if="i < steps.length - 1"
-                        class="h-px w-6 bg-fl-gold/60"
-                        aria-hidden="true"
-                    />
-                </template>
-            </ol>
-        </div>
-    </section>
+        <template #actions>
+            <Link :href="COLLECTIONS_URL" class="fl-btn-primary">
+                Ver colecciones
+                <ArrowRight class="size-4" aria-hidden="true" />
+            </Link>
+            <Link :href="ACTIVATE_URL" class="fl-btn-secondary">
+                Ya tengo mi tag
+            </Link>
+        </template>
 
-    <!-- The seven moments -->
-    <section class="bg-fl-paper py-16 sm:py-24" aria-label="Paso a paso">
-        <div class="fl-container grid gap-10 lg:grid-cols-12 lg:gap-16">
-            <!-- Pinned visual (desktop) -->
-            <div class="hidden lg:col-span-5 lg:block">
-                <div
-                    class="sticky top-24 aspect-[4/5] overflow-hidden rounded-hero bg-fl-cream shadow-fl-soft"
+        <ol
+            class="flex flex-wrap items-center gap-x-2 gap-y-2"
+            aria-label="Los pasos"
+        >
+            <li
+                v-for="(step, index) in steps"
+                :key="step.key"
+                class="flex items-center gap-2"
+            >
+                <a
+                    :href="`#paso-${index + 1}`"
+                    class="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-white/80 px-3 text-[12.5px] font-medium text-foreground/80 transition-colors duration-200 hover:border-fl-gold hover:text-foreground"
                 >
-                    <div
-                        v-for="(step, index) in steps"
-                        :key="step.visual"
-                        class="how-visual absolute inset-0"
-                        :class="{ 'is-on': active === index }"
-                        :aria-hidden="active !== index"
+                    <span class="text-[10px] text-fl-gold-ink tabular-nums"
+                        >0{{ index + 1 }}</span
                     >
-                        <template
-                            v-if="
-                                step.visual === 'tag' ||
-                                step.visual === 'hand' ||
-                                step.visual === 'back'
-                            "
-                        >
-                            <div
-                                class="absolute inset-0 bg-[radial-gradient(55%_55%_at_50%_50%,color-mix(in_srgb,var(--fl-gold)_18%,transparent),transparent_70%)]"
-                            />
-                            <div
-                                class="absolute inset-x-0 top-[10%] mx-auto w-[44%]"
-                                :class="
-                                    step.visual === 'hand'
-                                        ? 'rotate-[-8deg]'
-                                        : ''
-                                "
-                            >
-                                <TagVisualizer
-                                    name="Tu colección"
-                                    subtitle="Destino · Disciplina"
-                                    :face="
-                                        step.visual === 'back'
-                                            ? 'back'
-                                            : 'front'
-                                    "
-                                    :tilt="false"
-                                />
-                            </div>
-                        </template>
-                        <template v-else-if="step.visual === 'phone'">
-                            <div
-                                class="absolute inset-0 bg-[radial-gradient(60%_55%_at_50%_50%,color-mix(in_srgb,var(--fl-gold)_16%,transparent),transparent_72%)]"
-                            />
-                            <div class="absolute inset-0 m-auto size-[86%]">
-                                <NfcTapVisual />
-                            </div>
-                        </template>
-                        <template v-else-if="step.visual === 'story'">
-                            <img
-                                :src="photo.dawn.src"
-                                :srcset="photo.dawn.srcset"
-                                sizes="34vw"
-                                alt=""
-                                loading="lazy"
-                                decoding="async"
-                                class="absolute inset-0 size-full object-cover"
-                            />
-                            <div
-                                class="absolute inset-0 bg-gradient-to-t from-fl-black/80 via-fl-black/25 to-transparent"
-                            />
-                            <div class="absolute inset-x-8 bottom-8 text-white">
-                                <span
-                                    class="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold tracking-[0.18em] text-fl-gold-ink uppercase"
-                                    >Ejemplo</span
-                                >
-                                <p class="mt-4 font-serif text-4xl">
-                                    Tu nombre
-                                </p>
-                                <p class="mt-1 text-sm text-white/70">
-                                    Tu carrera · Tu ciudad · El día
-                                </p>
-                                <p
-                                    class="mt-5 border-l border-fl-gold pl-4 font-serif text-lg italic"
-                                >
-                                    “Para quien me esperó en el último
-                                    kilómetro.”
-                                </p>
-                            </div>
-                        </template>
-                        <template v-else-if="step.visual === 'share'">
-                            <div
-                                class="absolute inset-0 flex flex-col items-start justify-center gap-4 px-10"
-                            >
-                                <span
-                                    v-for="(who, i) in [
-                                        'Para mamá',
-                                        'Para mi coach',
-                                        'Para mis amigos',
-                                    ]"
-                                    :key="who"
-                                    class="inline-flex items-center gap-3 rounded-full border border-foreground/10 bg-white px-5 py-3 font-serif text-2xl text-foreground shadow-fl-micro"
-                                    :style="{ marginLeft: `${i * 1.5}rem` }"
-                                >
-                                    <Link2
-                                        class="size-4 text-fl-gold-ink"
-                                        aria-hidden="true"
-                                    />
-                                    {{ who }}
-                                </span>
-                                <span
-                                    class="mt-4 text-[11px] tracking-[0.18em] text-muted-foreground uppercase"
-                                    >Ejemplo de enlaces</span
-                                >
-                            </div>
-                        </template>
-                        <template v-else>
-                            <img
-                                :src="photo.celebration.src"
-                                :srcset="photo.celebration.srcset"
-                                sizes="34vw"
-                                alt=""
-                                loading="lazy"
-                                decoding="async"
-                                class="absolute inset-0 size-full object-cover"
-                            />
-                        </template>
+                    {{ step.verb }}
+                </a>
+            </li>
+        </ol>
+
+        <template #visual>
+            <div class="hiw-hero relative w-full max-w-[30rem]">
+                <div class="hiw-hero__ring" aria-hidden="true" />
+                <div
+                    class="hiw-hero__ring hiw-hero__ring--b"
+                    aria-hidden="true"
+                />
+                <div class="relative flex items-end justify-center gap-2">
+                    <div class="hiw-hero__tag w-[38%] shrink-0 pb-6">
+                        <TagVisualizer
+                            name="Cozumel"
+                            front-art="/images/collections/tag-art/cozumel-arrecife.webp"
+                            label="Finisher Legacy Tag de la colección Cozumel"
+                        />
+                    </div>
+                    <div class="w-[52%] shrink-0">
+                        <PhoneFrame
+                            src="/images/app/coleccion.webp"
+                            alt="Pantalla de la app Finisher Legacy con la colección Cozumel"
+                            float
+                            eager
+                        />
                     </div>
                 </div>
             </div>
+        </template>
+    </PageHero>
 
-            <!-- Steps -->
-            <ol class="lg:col-span-6 lg:col-start-7">
-                <li
-                    v-for="(step, index) in steps"
-                    :key="step.verb"
-                    ref="stepEls"
-                    :data-index="index"
-                    class="how-step border-t border-foreground/10 py-12 lg:flex lg:min-h-[70vh] lg:flex-col lg:justify-center lg:py-16"
-                    :class="{ 'is-on': active === index }"
+    <!-- The journey -->
+    <section class="bg-white py-16 sm:py-24">
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="El recorrido"
+                title="Seis pasos,"
+                accent="un solo gesto."
+                text="De la tienda a las manos de tu familia. Así se vive un Finisher Legacy Tag."
+                align="center"
+            />
+
+            <div ref="journey" class="relative mt-14 sm:mt-20">
+                <div
+                    class="hiw-rail absolute top-0 bottom-0 left-[19px] w-px bg-border lg:left-1/2"
+                    aria-hidden="true"
                 >
-                    <p class="flex items-center gap-4">
-                        <span class="legacy-numeric text-xs text-fl-gold-ink"
+                    <span
+                        class="hiw-rail__fill"
+                        :style="{ transform: `scaleY(${progress})` }"
+                    />
+                </div>
+
+                <ol class="space-y-16 sm:space-y-24 lg:space-y-28">
+                    <li
+                        v-for="(step, index) in steps"
+                        :id="`paso-${index + 1}`"
+                        :key="step.key"
+                        class="relative scroll-mt-28 pl-14 lg:grid lg:grid-cols-2 lg:items-center lg:gap-24 lg:pl-0"
+                    >
+                        <span
+                            class="hiw-node absolute top-0 left-0 flex size-10 items-center justify-center rounded-full border border-fl-gold/60 bg-white font-serif text-sm font-semibold text-fl-gold-ink tabular-nums shadow-fl-soft lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2"
+                            aria-hidden="true"
                             >0{{ index + 1 }}</span
                         >
-                        <span
-                            class="text-[12px] font-semibold tracking-[0.22em] text-foreground uppercase"
-                            >{{ step.verb }}</span
-                        >
-                    </p>
-                    <h2
-                        class="fl-display mt-5 text-[clamp(1.9rem,3.4vw,2.9rem)]"
-                    >
-                        {{ step.title }}
-                    </h2>
-                    <p
-                        class="mt-5 max-w-[34rem] text-lg leading-relaxed text-muted-foreground"
-                    >
-                        {{ step.body }}
-                    </p>
 
-                    <!-- Inline visual on phones/tablets -->
-                    <div class="mt-8 lg:hidden">
                         <div
-                            v-if="
-                                step.visual === 'tag' ||
-                                step.visual === 'hand' ||
-                                step.visual === 'back'
+                            v-reveal="{ y: 24 }"
+                            :class="
+                                index % 2 === 1
+                                    ? 'lg:order-2 lg:pl-4'
+                                    : 'lg:pr-4 lg:text-right'
                             "
-                            class="flex justify-center rounded-hero bg-fl-cream py-8"
                         >
-                            <div class="w-[40%] max-w-[11rem]">
-                                <TagVisualizer
-                                    name="Tu colección"
-                                    subtitle="Destino · Disciplina"
-                                    :face="
-                                        step.visual === 'back'
-                                            ? 'back'
-                                            : 'front'
-                                    "
-                                    :tilt="false"
-                                />
-                            </div>
-                        </div>
-                        <div
-                            v-else-if="step.visual === 'phone'"
-                            class="mx-auto aspect-square w-[86%] max-w-sm rounded-hero bg-fl-cream/60"
-                        >
-                            <NfcTapVisual
-                                label="Un teléfono se acerca al tag y se abre la historia por NFC"
-                            />
-                        </div>
-                        <img
-                            v-else-if="
-                                step.visual === 'story' ||
-                                step.visual === 'return'
-                            "
-                            :src="
-                                step.visual === 'story'
-                                    ? photo.dawn.src
-                                    : photo.celebration.src
-                            "
-                            :srcset="
-                                step.visual === 'story'
-                                    ? photo.dawn.srcset
-                                    : photo.celebration.srcset
-                            "
-                            sizes="92vw"
-                            :alt="
-                                step.visual === 'story'
-                                    ? photo.dawn.alt
-                                    : photo.celebration.alt
-                            "
-                            :width="
-                                step.visual === 'story'
-                                    ? photo.dawn.width
-                                    : photo.celebration.width
-                            "
-                            :height="
-                                step.visual === 'story'
-                                    ? photo.dawn.height
-                                    : photo.celebration.height
-                            "
-                            loading="lazy"
-                            decoding="async"
-                            class="aspect-[4/3] w-full rounded-hero object-cover"
-                        />
-                        <div v-else class="flex flex-wrap gap-2">
-                            <span
-                                v-for="who in ['Para mamá', 'Para mi coach']"
-                                :key="who"
-                                class="inline-flex items-center gap-2 rounded-full border border-foreground/12 bg-card px-4 py-2 font-serif text-lg"
+                            <p class="fl-eyebrow">
+                                Paso {{ index + 1 }} · {{ step.verb }}
+                            </p>
+                            <h3
+                                class="fl-display mt-3 text-[1.7rem] leading-[1.12] sm:text-[2.2rem]"
                             >
-                                <Link2
-                                    class="size-4 text-fl-gold-ink"
+                                {{ step.title }}
+                            </h3>
+                            <p
+                                class="mt-4 text-base leading-relaxed text-muted-foreground"
+                                :class="
+                                    index % 2 === 1
+                                        ? 'max-w-md'
+                                        : 'max-w-md lg:ml-auto'
+                                "
+                            >
+                                {{ step.body }}
+                            </p>
+                            <ul
+                                class="mt-5 flex flex-wrap gap-2"
+                                :class="index % 2 === 1 ? '' : 'lg:justify-end'"
+                            >
+                                <li
+                                    v-for="point in step.points"
+                                    :key="point"
+                                    class="inline-flex items-center gap-1.5 rounded-full bg-fl-paper px-3 py-1.5 text-[12.5px] font-medium text-foreground/80"
+                                >
+                                    <Check
+                                        class="size-3.5 text-fl-gold-ink"
+                                        aria-hidden="true"
+                                    />
+                                    {{ point }}
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div
+                            v-reveal="{ y: 32, delay: 100 }"
+                            class="mt-8 lg:mt-0"
+                            :class="index % 2 === 1 ? 'lg:order-1' : ''"
+                        >
+                            <div
+                                class="hiw-stage relative mx-auto aspect-square w-full max-w-[34rem] overflow-hidden rounded-hero border border-border/70 bg-fl-cream/70 sm:aspect-[5/4]"
+                            >
+                                <div
+                                    class="hiw-stage__glow"
                                     aria-hidden="true"
                                 />
-                                {{ who }}
-                            </span>
+
+                                <!-- 01 Compra: three collection designs -->
+                                <template v-if="step.key === 'buy'">
+                                    <div
+                                        v-for="(item, i) in collectionArt"
+                                        :key="item.name"
+                                        class="hiw-fan absolute bottom-[-6%] w-[30%]"
+                                        :class="`hiw-fan--${i}`"
+                                    >
+                                        <TagVisualizer
+                                            :name="item.name"
+                                            :front-art="item.art"
+                                            :tilt="false"
+                                            :label="`Tag de la colección ${item.name}`"
+                                        />
+                                    </div>
+                                </template>
+
+                                <!-- 02 Recibe: front and back -->
+                                <template v-else-if="step.key === 'receive'">
+                                    <div
+                                        class="absolute inset-0 flex items-end justify-center gap-[9%] px-[10%]"
+                                    >
+                                        <figure class="w-[30%] pb-[4%]">
+                                            <TagVisualizer
+                                                name="Veracruz"
+                                                front-art="/images/collections/tag-art/veracruz.webp"
+                                                :tilt="false"
+                                                label="Frente del tag: arte de la colección Veracruz"
+                                            />
+                                            <figcaption
+                                                class="mt-1 text-center text-[10px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
+                                            >
+                                                Frente
+                                            </figcaption>
+                                        </figure>
+                                        <figure class="w-[30%] pb-[4%]">
+                                            <TagVisualizer
+                                                name="Veracruz"
+                                                face="back"
+                                                :tilt="false"
+                                                label="Reverso del tag: monograma y marca NFC"
+                                            />
+                                            <figcaption
+                                                class="mt-1 text-center text-[10px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
+                                            >
+                                                Reverso
+                                            </figcaption>
+                                        </figure>
+                                    </div>
+                                </template>
+
+                                <!-- 03 Activa tocando: NFC gesture + real app screen -->
+                                <template v-else-if="step.key === 'tap'">
+                                    <div
+                                        class="absolute top-1/2 left-[4%] w-[52%] -translate-y-1/2"
+                                    >
+                                        <NfcTapVisual />
+                                    </div>
+                                    <div
+                                        class="absolute top-[8%] right-[7%] w-[36%] sm:top-[6%] sm:w-[31%]"
+                                    >
+                                        <PhoneFrame
+                                            src="/images/app/activar.webp"
+                                            alt="Pantalla de activación en la app: acerca el tag a tu teléfono"
+                                        />
+                                    </div>
+                                </template>
+
+                                <!-- 04 Completa tu recuerdo -->
+                                <template v-else-if="step.key === 'memory'">
+                                    <img
+                                        src="/media/home/story/medal-closeup-667.webp"
+                                        srcset="
+                                            /media/home/story/medal-closeup-640.webp 640w,
+                                            /media/home/story/medal-closeup-667.webp 667w
+                                        "
+                                        sizes="(min-width: 1024px) 34rem, 90vw"
+                                        alt="Atleta celebrando con su medalla después de cruzar la meta"
+                                        width="667"
+                                        height="1000"
+                                        loading="lazy"
+                                        class="absolute inset-0 size-full object-cover object-[50%_22%]"
+                                    />
+                                    <div
+                                        class="absolute inset-0 bg-gradient-to-t from-fl-black/75 via-fl-black/10 to-transparent"
+                                        aria-hidden="true"
+                                    />
+                                    <ul
+                                        class="absolute inset-x-4 bottom-4 flex flex-wrap gap-2 sm:inset-x-6 sm:bottom-6"
+                                    >
+                                        <li
+                                            v-for="(chip, i) in memoryChips"
+                                            :key="chip.label"
+                                            class="hiw-chip inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[12.5px] font-semibold text-fl-black shadow-fl-float"
+                                            :style="{
+                                                animationDelay: `${i * 0.6}s`,
+                                            }"
+                                        >
+                                            <component
+                                                :is="chip.icon"
+                                                class="size-3.5 text-fl-gold-ink"
+                                                aria-hidden="true"
+                                            />
+                                            {{ chip.label }}
+                                        </li>
+                                    </ul>
+                                    <div
+                                        class="hiw-wave absolute top-4 right-4 flex h-9 items-center gap-[3px] rounded-full bg-fl-black/70 px-3.5 backdrop-blur sm:top-6 sm:right-6"
+                                        aria-hidden="true"
+                                    >
+                                        <Mic
+                                            class="mr-1 size-3.5 text-fl-gold-soft"
+                                        />
+                                        <span
+                                            v-for="n in 9"
+                                            :key="n"
+                                            class="hiw-wave__bar"
+                                            :style="{
+                                                animationDelay: `${n * 0.11}s`,
+                                            }"
+                                        />
+                                    </div>
+                                </template>
+
+                                <!-- 05 Comparte: links + privacy (illustration) -->
+                                <template v-else-if="step.key === 'share'">
+                                    <div
+                                        class="absolute inset-0 flex flex-col justify-center gap-3 px-[9%] py-[7%]"
+                                        role="img"
+                                        aria-label="Ejemplo ilustrativo: un enlace para cada persona y tres niveles de privacidad"
+                                    >
+                                        <div
+                                            v-for="(person, i) in [
+                                                'Para mamá',
+                                                'Para mi coach',
+                                            ]"
+                                            :key="person"
+                                            class="hiw-linkcard flex items-center gap-3 rounded-2xl border border-border bg-white px-4 py-3 shadow-fl-soft"
+                                            :class="
+                                                i === 1 ? 'ml-[8%]' : 'mr-[8%]'
+                                            "
+                                            aria-hidden="true"
+                                        >
+                                            <span
+                                                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-fl-black text-fl-gold-soft"
+                                            >
+                                                <Link2 class="size-4" />
+                                            </span>
+                                            <span class="min-w-0 flex-1">
+                                                <span
+                                                    class="block text-sm font-semibold text-foreground"
+                                                    >{{ person }}</span
+                                                >
+                                                <span
+                                                    class="block truncate text-xs text-muted-foreground"
+                                                    >Enlace personal ·
+                                                    activo</span
+                                                >
+                                            </span>
+                                            <span
+                                                class="hiw-toggle"
+                                                :class="
+                                                    i === 0
+                                                        ? ''
+                                                        : 'hiw-toggle--b'
+                                                "
+                                            />
+                                        </div>
+                                        <div
+                                            class="mt-1 grid grid-cols-3 gap-2"
+                                            aria-hidden="true"
+                                        >
+                                            <span
+                                                v-for="(
+                                                    level, i
+                                                ) in privacyLevels"
+                                                :key="level.label"
+                                                class="flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center text-[11.5px] leading-tight font-medium"
+                                                :class="
+                                                    i === 1
+                                                        ? 'border-fl-gold bg-white text-foreground shadow-fl-soft'
+                                                        : 'border-border/80 bg-white/60 text-muted-foreground'
+                                                "
+                                            >
+                                                <component
+                                                    :is="level.icon"
+                                                    class="size-4"
+                                                    :class="
+                                                        i === 1
+                                                            ? 'text-fl-gold-ink'
+                                                            : ''
+                                                    "
+                                                />
+                                                {{ level.label }}
+                                            </span>
+                                        </div>
+                                        <p
+                                            class="text-center text-[10px] tracking-[0.18em] text-muted-foreground uppercase"
+                                            aria-hidden="true"
+                                        >
+                                            Ejemplo ilustrativo
+                                        </p>
+                                    </div>
+                                </template>
+
+                                <!-- 06 Tu familia lo abre sin app -->
+                                <template v-else>
+                                    <img
+                                        src="/media/home/story/finish-emotion-1000.webp"
+                                        srcset="
+                                            /media/home/story/finish-emotion-640.webp   640w,
+                                            /media/home/story/finish-emotion-1000.webp 1000w
+                                        "
+                                        sizes="(min-width: 1024px) 34rem, 90vw"
+                                        alt="Ciclista en plena competencia"
+                                        width="1000"
+                                        height="1250"
+                                        loading="lazy"
+                                        class="absolute inset-0 size-full object-cover object-[50%_30%]"
+                                    />
+                                    <div
+                                        class="absolute inset-0 bg-gradient-to-r from-fl-black/55 via-fl-black/10 to-transparent"
+                                        aria-hidden="true"
+                                    />
+                                    <div
+                                        class="absolute top-[8%] right-[7%] w-[36%] sm:top-[7%] sm:w-[31%]"
+                                    >
+                                        <PhoneFrame>
+                                            <div
+                                                class="flex h-full flex-col bg-white"
+                                                role="img"
+                                                aria-label="Ejemplo ilustrativo de un recuerdo abierto en el navegador del teléfono"
+                                            >
+                                                <div
+                                                    class="mx-2 flex items-center gap-1 rounded-full bg-fl-paper px-2 py-1 text-[7px] text-muted-foreground"
+                                                >
+                                                    <Lock class="size-2" />
+                                                    finisherlegacy.com
+                                                </div>
+                                                <img
+                                                    src="/media/home/story/medal-closeup-640.webp"
+                                                    alt=""
+                                                    width="640"
+                                                    height="960"
+                                                    loading="lazy"
+                                                    class="mt-2 aspect-[4/3] w-full object-cover object-[50%_20%]"
+                                                />
+                                                <div class="space-y-1.5 p-2.5">
+                                                    <span
+                                                        class="block h-1.5 w-1/3 rounded-full bg-fl-gold/70"
+                                                    />
+                                                    <span
+                                                        class="block h-2.5 w-4/5 rounded-full bg-fl-black/85"
+                                                    />
+                                                    <span
+                                                        class="block h-1.5 w-full rounded-full bg-fl-line"
+                                                    />
+                                                    <span
+                                                        class="block h-1.5 w-2/3 rounded-full bg-fl-line"
+                                                    />
+                                                    <span
+                                                        class="mt-2 flex h-6 items-center gap-[2px] rounded-full bg-fl-black px-2"
+                                                    >
+                                                        <span
+                                                            v-for="n in 12"
+                                                            :key="n"
+                                                            class="hiw-wave__bar"
+                                                            :style="{
+                                                                animationDelay: `${n * 0.09}s`,
+                                                            }"
+                                                        />
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </PhoneFrame>
+                                    </div>
+                                    <p
+                                        class="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/95 px-3.5 py-2 text-[12.5px] font-semibold text-fl-black shadow-fl-float sm:bottom-6 sm:left-6"
+                                    >
+                                        <Globe
+                                            class="size-3.5 text-fl-gold-ink"
+                                            aria-hidden="true"
+                                        />
+                                        Se abre en el navegador
+                                    </p>
+                                </template>
+                            </div>
                         </div>
-                    </div>
-                </li>
-            </ol>
+                    </li>
+                </ol>
+            </div>
         </div>
     </section>
 
-    <!-- How it opens: NFC, with the typed code as the fallback -->
-    <section
-        class="border-y border-fl-line bg-white py-16 text-foreground sm:py-24"
-        aria-labelledby="ways-title"
-    >
-        <div class="fl-container">
-            <p
-                class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
-            >
-                Un gesto, una historia
-            </p>
-            <h2
-                id="ways-title"
-                class="mt-4 max-w-3xl font-serif text-[clamp(2rem,4vw,3.5rem)] leading-tight"
-            >
-                Acerca tu teléfono.
-                <span class="text-fl-gold-ink italic">Vuelve al momento.</span>
-            </h2>
-            <ul class="mt-12 grid max-w-4xl gap-5 sm:grid-cols-2">
+    <!-- NFC or code -->
+    <section class="fl-section bg-fl-paper">
+        <div
+            class="fl-container grid items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20"
+        >
+            <div>
+                <SectionIntro
+                    eyebrow="Dos formas de abrirlo"
+                    title="Acerca tu teléfono."
+                    accent="Vuelve al momento."
+                    text="El tag no lleva código QR ni batería. Funciona con el chip NFC que trae dentro, y siempre tienes un código escrito de respaldo."
+                />
+                <Link
+                    v-reveal="{ delay: 120 }"
+                    :href="ACTIVATE_URL"
+                    class="fl-btn-primary mt-8"
+                >
+                    Activar mi tag
+                    <ArrowRight class="size-4" aria-hidden="true" />
+                </Link>
+            </div>
+            <ul class="grid gap-4 sm:grid-cols-2">
                 <li
-                    v-for="(way, i) in ways"
+                    v-for="(way, index) in ways"
                     :key="way.title"
-                    class="group rounded-card border p-6 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-fl-float sm:p-8"
-                    :class="
-                        i === 0
-                            ? 'border-fl-gold/40 bg-fl-cream/50'
-                            : 'border-fl-line bg-fl-paper'
-                    "
+                    v-reveal="{ index }"
+                    class="fl-card fl-card-hover flex flex-col p-6 sm:p-7"
                 >
                     <span
-                        class="flex size-12 items-center justify-center rounded-full bg-white text-fl-gold-ink shadow-fl-micro ring-1 ring-fl-line transition-transform duration-300 group-hover:scale-105"
+                        class="hiw-way-icon flex size-12 items-center justify-center rounded-full bg-fl-black text-fl-gold-soft"
+                        :class="index === 0 ? 'hiw-way-icon--pulse' : ''"
+                        aria-hidden="true"
                     >
-                        <component
-                            :is="way.icon"
-                            class="size-6"
-                            aria-hidden="true"
-                        />
+                        <component :is="way.icon" class="size-5" />
                     </span>
-                    <p
-                        class="mt-6 text-[11px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
+                    <p class="fl-eyebrow mt-6">{{ way.eyebrow }}</p>
+                    <h3
+                        class="mt-2 font-serif text-xl font-semibold text-foreground"
                     >
-                        {{
-                            i === 0
-                                ? 'Así se abre'
-                                : 'Si tu teléfono no lee NFC'
-                        }}
-                    </p>
-                    <p class="mt-2 font-serif text-3xl">{{ way.title }}</p>
+                        {{ way.title }}
+                    </h3>
                     <p
-                        class="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground"
+                        class="mt-2 text-sm leading-relaxed text-muted-foreground"
                     >
                         {{ way.body }}
                     </p>
@@ -482,101 +754,289 @@ const photo = MEDIA.photo;
         </div>
     </section>
 
-    <!-- Questions -->
-    <section class="bg-fl-paper py-16 sm:py-24" aria-labelledby="faq-title">
-        <div class="fl-container grid gap-10 lg:grid-cols-12">
-            <h2
-                id="faq-title"
-                class="fl-display text-[clamp(1.9rem,3.4vw,2.75rem)] lg:col-span-4"
+    <!-- What a memory holds -->
+    <section class="fl-section bg-white">
+        <div class="fl-container">
+            <div
+                class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
             >
-                Preguntas que nos hacen.
-            </h2>
-            <dl class="lg:col-span-7 lg:col-start-6">
-                <div
-                    v-for="item in faqs"
-                    :key="item.q"
-                    class="border-t border-foreground/10 py-6 last:border-b"
-                >
-                    <dt class="font-serif text-xl text-foreground">
-                        {{ item.q }}
-                    </dt>
-                    <dd
-                        class="mt-2 max-w-[60ch] text-[15px] leading-relaxed text-muted-foreground"
-                    >
-                        {{ item.a }}
-                    </dd>
-                </div>
+                <SectionIntro
+                    eyebrow="Qué guarda tu recuerdo"
+                    title="Todo lo que no cabe"
+                    accent="en una medalla."
+                />
                 <Link
-                    :href="contact()"
-                    class="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
+                    :href="MEMORIES_URL"
+                    class="group inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    Ayuda y contacto
-                    <ArrowRight class="size-4" aria-hidden="true" />
+                    <span class="fl-link fl-link--gold">Conocer Recuerdos</span>
+                    <ArrowRight
+                        class="size-4 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none"
+                        aria-hidden="true"
+                    />
                 </Link>
-            </dl>
+            </div>
+            <FeatureGrid :items="inside" class="mt-10" />
         </div>
     </section>
 
-    <!-- Close -->
-    <section
-        class="border-t border-fl-line bg-fl-cream py-20 text-center text-foreground sm:py-28"
-        aria-labelledby="how-cta-title"
-    >
-        <div class="fl-container">
-            <h2
-                id="how-cta-title"
-                class="mx-auto max-w-3xl font-serif text-[clamp(2.2rem,5vw,4.25rem)] leading-[1.04]"
-            >
-                Tu carrera termina.
-                <span class="block text-fl-gold-ink italic"
-                    >Tu historia no.</span
-                >
-            </h2>
-            <div
-                class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8"
-            >
+    <!-- FAQ -->
+    <section class="fl-section bg-fl-paper">
+        <div
+            class="fl-container grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20"
+        >
+            <div>
+                <SectionIntro
+                    eyebrow="Preguntas frecuentes"
+                    title="Lo que más"
+                    accent="nos preguntan."
+                />
                 <Link
-                    :href="collectionsIndex()"
-                    class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold tracking-wide text-background transition-colors hover:bg-fl-graphite"
+                    :href="CONTACT_URL"
+                    class="group mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    Explorar colecciones
-                    <ArrowRight class="size-4" aria-hidden="true" />
+                    <span class="fl-link fl-link--gold">Ayuda y contacto</span>
+                    <ArrowRight
+                        class="size-4 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none"
+                        aria-hidden="true"
+                    />
                 </Link>
-                <a
-                    :href="ACTIVATE_URL"
-                    class="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-foreground underline decoration-fl-gold decoration-1 underline-offset-[6px] transition-colors hover:decoration-2"
-                >
-                    Activar mi tag
-                </a>
             </div>
+            <FaqList :items="faqs" />
         </div>
     </section>
+
+    <CtaBand
+        title="Tu carrera termina."
+        accent="Tu historia no."
+        text="Elige el tag de tu carrera o activa el que ya tienes."
+    >
+        <template #actions>
+            <Link :href="COLLECTIONS_URL" class="mk-cta-primary">
+                Ver colecciones
+                <ArrowRight class="size-4" aria-hidden="true" />
+            </Link>
+            <Link :href="ACTIVATE_URL" class="mk-cta-secondary">
+                Activar mi tag
+            </Link>
+        </template>
+    </CtaBand>
+
+    <EcosystemGrid />
 </template>
 
 <style scoped>
-.how-visual {
+/* Hero: tag + phone over two slow NFC rings. */
+.hiw-hero__ring {
+    position: absolute;
+    top: 50%;
+    left: 30%;
+    width: 78%;
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    border: 1px solid rgb(201 174 139 / 0.55);
+    transform: translate(-50%, -50%) scale(0.6);
     opacity: 0;
-    transform: scale(0.98);
-    transition:
-        opacity 600ms ease,
-        transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: hiw-ring 5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    pointer-events: none;
 }
-.how-visual.is-on {
-    opacity: 1;
-    transform: none;
+.hiw-hero__ring--b {
+    animation-delay: 2.5s;
 }
-@media (min-width: 1024px) {
-    .how-step {
-        opacity: 0.4;
-        transition: opacity 500ms ease;
+.hiw-hero__tag {
+    animation: hiw-sway 8s ease-in-out infinite;
+    transform-origin: 50% 0%;
+}
+@keyframes hiw-ring {
+    0% {
+        transform: translate(-50%, -50%) scale(0.45);
+        opacity: 0;
     }
-    .how-step.is-on {
-        opacity: 1;
+    25% {
+        opacity: 0.9;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.15);
+        opacity: 0;
     }
 }
+@keyframes hiw-sway {
+    0%,
+    100% {
+        transform: rotate(-2.5deg);
+    }
+    50% {
+        transform: rotate(2.5deg);
+    }
+}
+
+/* Journey rail. */
+.hiw-rail__fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        var(--fl-gold-soft),
+        var(--fl-gold) 40%,
+        var(--fl-gold-dim)
+    );
+    transform-origin: top;
+    transform: scaleY(0);
+    will-change: transform;
+}
+
+/* Stage glow shared by the step visuals. */
+.hiw-stage__glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        60% 55% at 50% 45%,
+        rgb(201 174 139 / 0.28),
+        transparent 72%
+    );
+    pointer-events: none;
+}
+
+/* 01 — fanned tags. */
+.hiw-fan {
+    transform-origin: 50% 100%;
+    transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hiw-fan--0 {
+    left: 13%;
+    transform: rotate(-9deg);
+}
+.hiw-fan--1 {
+    left: 35%;
+    bottom: 2%;
+    z-index: 1;
+}
+.hiw-fan--2 {
+    left: 57%;
+    transform: rotate(9deg);
+}
+.hiw-stage:hover .hiw-fan--0 {
+    transform: rotate(-13deg) translate3d(-6%, -2%, 0);
+}
+.hiw-stage:hover .hiw-fan--1 {
+    transform: translate3d(0, -4%, 0);
+}
+.hiw-stage:hover .hiw-fan--2 {
+    transform: rotate(13deg) translate3d(6%, -2%, 0);
+}
+
+/* 04 — floating chips and voice wave. */
+.hiw-chip {
+    animation: hiw-bob 5s ease-in-out infinite;
+}
+@keyframes hiw-bob {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(0, -5px, 0);
+    }
+}
+.hiw-wave__bar {
+    display: block;
+    width: 2px;
+    height: 60%;
+    border-radius: 2px;
+    background: var(--fl-gold-soft);
+    transform: scaleY(0.35);
+    animation: hiw-wave 1.2s ease-in-out infinite;
+}
+@keyframes hiw-wave {
+    0%,
+    100% {
+        transform: scaleY(0.3);
+    }
+    50% {
+        transform: scaleY(1);
+    }
+}
+
+/* 05 — toggles. */
+.hiw-toggle {
+    position: relative;
+    width: 2.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: var(--fl-gold);
+}
+.hiw-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: #fff;
+    transform: translateX(1rem);
+    animation: hiw-toggle 6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.hiw-toggle--b::after {
+    animation-delay: 3s;
+}
+@keyframes hiw-toggle {
+    0%,
+    40%,
+    100% {
+        transform: translateX(1rem);
+    }
+    50%,
+    90% {
+        transform: translateX(0);
+        opacity: 0.75;
+    }
+}
+
+/* NFC icon pulse. */
+.hiw-way-icon--pulse {
+    position: relative;
+}
+.hiw-way-icon--pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 1px solid var(--fl-gold);
+    animation: hiw-pulse 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes hiw-pulse {
+    from {
+        transform: scale(1);
+        opacity: 0.9;
+    }
+    to {
+        transform: scale(1.9);
+        opacity: 0;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .how-visual,
-    .how-step {
+    .hiw-hero__ring,
+    .hiw-hero__tag,
+    .hiw-chip,
+    .hiw-wave__bar,
+    .hiw-toggle::after,
+    .hiw-way-icon--pulse::after {
+        animation: none;
+    }
+    .hiw-hero__ring {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    .hiw-wave__bar {
+        transform: scaleY(0.7);
+    }
+    .hiw-rail__fill {
+        transform: scaleY(1) !important;
+    }
+    .hiw-fan {
         transition: none;
     }
 }

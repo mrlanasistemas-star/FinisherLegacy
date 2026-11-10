@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { Clock } from '@lucide/vue';
+/**
+ * Preregistration form for an event edition (guests welcome). Shows a
+ * friendly closed state when the edition is not taking registrations.
+ * Fields and submit are owned by EventController@storePreregistration.
+ */
+import { Link, useForm } from '@inertiajs/vue3';
+import { ChevronLeft, Clock } from '@lucide/vue';
 import { storePreregistration } from '@/actions/App/Http/Controllers/EventController';
 import InputError from '@/components/InputError.vue';
 import Reveal from '@/components/motion/Reveal.vue';
@@ -16,6 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { show as eventShow } from '@/routes/events';
 import type { EventEditionDetail } from '@/types';
 
 const { event, edition, isOpen, prefill } = defineProps<{
@@ -53,43 +59,70 @@ function submit() {
         noindex
     />
 
-    <section class="fl-section">
-        <div class="fl-container mx-auto max-w-lg">
+    <section class="relative overflow-hidden py-10 sm:py-16">
+        <div
+            class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,#f4eedf,transparent_70%)]"
+            aria-hidden="true"
+        />
+        <div class="fl-container relative mx-auto max-w-lg">
+            <Link
+                :href="eventShow(event.slug)"
+                class="group mb-6 inline-flex min-h-10 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+                <ChevronLeft
+                    class="size-4 transition-transform duration-300 group-hover:-translate-x-0.5 motion-reduce:transform-none"
+                    aria-hidden="true"
+                />
+                Volver al evento
+            </Link>
             <template v-if="!edition || !isOpen">
                 <div
-                    class="mx-auto flex size-16 items-center justify-center rounded-full border border-fl-gold/30 bg-card/60 text-fl-gold-ink"
+                    class="mx-auto flex size-16 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
                 >
                     <Clock class="size-7" />
                 </div>
 
-                <h1 class="mt-6 text-center text-3xl font-bold text-foreground">
+                <h1
+                    class="fl-display mt-6 text-center text-3xl text-foreground sm:text-4xl"
+                >
                     Prerregistro no disponible
                 </h1>
                 <p
                     class="mx-auto mt-4 max-w-md text-center text-muted-foreground"
                 >
                     El prerregistro para
-                    <span class="text-foreground">{{ event.name }}</span> no
-                    está abierto en este momento.
+                    <span class="font-medium text-foreground">{{
+                        event.name
+                    }}</span>
+                    no está abierto en este momento.
                 </p>
+                <div class="mt-8 flex justify-center">
+                    <Link
+                        :href="eventShow(event.slug)"
+                        class="fl-btn-secondary"
+                    >
+                        Ver el evento
+                    </Link>
+                </div>
             </template>
 
             <Reveal v-else>
                 <div class="mb-8 text-center">
-                    <p
-                        class="text-xs font-semibold tracking-widest text-fl-gold-ink uppercase"
+                    <p class="fl-eyebrow">Prerregistro</p>
+                    <h1
+                        class="fl-display mt-3 text-3xl text-foreground sm:text-4xl"
                     >
-                        Prerregistro
-                    </p>
-                    <h1 class="mt-2 text-2xl font-bold text-foreground">
                         {{ event.name }}
                     </h1>
-                    <p class="mt-1 text-sm text-muted-foreground">
+                    <p class="mt-2 text-sm text-muted-foreground">
                         {{ edition.name }}
                     </p>
                 </div>
 
-                <form class="fl-card space-y-5 p-6" @submit.prevent="submit">
+                <form
+                    class="fl-card space-y-5 p-6 shadow-fl-float sm:p-8"
+                    @submit.prevent="submit"
+                >
                     <div class="grid gap-2">
                         <Label>Distancia</Label>
                         <Select v-model="form.event_race_id">
@@ -141,7 +174,7 @@ function submit() {
                         <InputError :message="form.errors.email" />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="phone">Teléfono (opcional)</Label>
                             <Input id="phone" v-model="form.phone" />
@@ -157,7 +190,7 @@ function submit() {
                     <Button
                         type="submit"
                         size="lg"
-                        class="w-full"
+                        class="h-12 w-full rounded-full"
                         :disabled="form.processing"
                     >
                         <Spinner v-if="form.processing" />

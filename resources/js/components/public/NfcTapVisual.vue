@@ -101,27 +101,15 @@ const id = (name: string) => `${uid}-${name}`;
                     fill="#C9A45C"
                     opacity="0.7"
                 />
-                <text
-                    x="111"
-                    y="232"
-                    text-anchor="middle"
-                    font-family="Fraunces, Georgia, serif"
-                    font-size="17"
-                    fill="#FFFFFF"
-                >
-                    Finisher
-                </text>
-                <text
-                    x="111"
-                    y="252"
-                    text-anchor="middle"
-                    font-family="Fraunces, Georgia, serif"
-                    font-size="17"
-                    font-style="italic"
-                    fill="#E8D6AD"
-                >
-                    Legacy
-                </text>
+                <!-- Official FL monogram IMAGE (never typed lettering). -->
+                <image
+                    href="/images/brand/logo/fl-monograma.png"
+                    x="79"
+                    y="212"
+                    width="64"
+                    height="29"
+                    preserveAspectRatio="xMidYMid meet"
+                />
                 <!-- NFC mark -->
                 <g
                     transform="translate(103 268)"
@@ -194,7 +182,7 @@ const id = (name: string) => `${uid}-${name}`;
                     font-size="16"
                     fill="#171714"
                 >
-                    Mi primer
+                    Lo que pasó
                 </text>
                 <text
                     x="250"
@@ -204,7 +192,7 @@ const id = (name: string) => `${uid}-${name}`;
                     font-style="italic"
                     fill="#171714"
                 >
-                    maratón
+                    ese día
                 </text>
                 <rect
                     x="250"
@@ -245,22 +233,22 @@ const id = (name: string) => `${uid}-${name}`;
                     y="287"
                     text-anchor="middle"
                     font-family="Instrument Sans, system-ui, sans-serif"
-                    font-size="8"
+                    font-size="7"
                     font-weight="600"
                     fill="#171714"
                 >
-                    3:41:07
+                    Tiempo
                 </text>
                 <text
                     x="322"
                     y="287"
                     text-anchor="middle"
                     font-family="Instrument Sans, system-ui, sans-serif"
-                    font-size="8"
+                    font-size="7"
                     font-weight="600"
                     fill="#171714"
                 >
-                    42K
+                    Fotos
                 </text>
                 <rect
                     x="282"

@@ -16,25 +16,38 @@
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     ArrowRight,
+    BookOpen,
+    Check,
     ChevronRight,
+    Images,
+    Lock,
+    Mic,
     Minus,
     Plus,
     Rotate3d,
     ShieldCheck,
+    Timer,
     Truck,
+    Users,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
+import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import Money from '@/components/shared/Money.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
 import ProductGallery from '@/components/store/ProductGallery.vue';
 import type { GalleryEntry } from '@/components/store/ProductGallery.vue';
 import ProductStorySections from '@/components/store/ProductStorySections.vue';
 import type { ContentSection } from '@/components/store/ProductStorySections.vue';
+import StickyBuyBar from '@/components/store/StickyBuyBar.vue';
+import StoreTrustNotes from '@/components/store/StoreTrustNotes.vue';
+import { useStickyBuyBar } from '@/components/store/useStickyBuyBar';
 import VariantPicker from '@/components/store/VariantPicker.vue';
 import type { Variant } from '@/components/store/VariantPicker.vue';
 import LegacyTag3D from '@/components/three/LegacyTag3D.vue';
 import { Button } from '@/components/ui/button';
 import { useAuthGate } from '@/composables/useAuthGate';
+import { vReveal } from '@/composables/useReveal';
 import { ACTIVATE_URL } from '@/config/public-links';
 import { productCardProps } from '@/lib/store';
 import { howItWorks } from '@/routes';
@@ -117,6 +130,11 @@ function showFace(next: 'front' | 'back') {
 }
 const faces = ['front', 'back'] as const;
 
+// Mobile sticky buy bar (visual): shows once the buy button scrolls away.
+const buyAnchor = ref<HTMLElement | null>(null);
+const barEnabled = computed(() => props.product.is_purchasable);
+const { visible: barVisible } = useStickyBuyBar(buyAnchor, barEnabled);
+
 const selectedVariantId = ref<number | null>(
     props.product.variants.find((v) => v.in_stock)?.id ??
         props.product.variants[0]?.id ??
@@ -157,11 +175,19 @@ const ctaLabel = computed(() => {
     return form.processing ? 'Agregando…' : 'Agregar al carrito';
 });
 
-const specRows = computed(() =>
+/** Only what the admin filled, plus the facts every tag shares. */
+const sheetRows = computed(() =>
     [
+        { label: 'Colección', value: props.product.collection?.name ?? null },
+        {
+            label: 'Destino',
+            value: props.product.collection?.destination ?? null,
+        },
         { label: 'Material', value: props.product.specs.material },
         { label: 'Correa', value: props.product.specs.strap_type },
         { label: 'Medidas', value: props.product.specs.dimensions },
+        { label: 'Conexión', value: 'Chip NFC, sin batería' },
+        { label: 'Para abrirlo', value: 'Un teléfono con NFC o su código' },
     ].filter((row): row is { label: string; value: string } => !!row.value),
 );
 
@@ -174,18 +200,36 @@ const includes = computed(() => [
     'Tu Legacy digital, listo para activarlo cuando quieras',
 ]);
 
-const how = [
+const keeps = [
     {
-        title: 'Acerca tu teléfono',
-        body: 'El chip NFC del tag abre su página en el navegador, sin instalar nada.',
+        icon: Images,
+        title: 'Tus fotos',
+        text: 'Las de la carrera, la meta y todo lo que quieras conservar de ese día.',
     },
     {
-        title: 'Actívalo',
-        body: 'Inicia sesión y confírmalo: a partir de ahí, el tag es tuyo.',
+        icon: BookOpen,
+        title: 'Tu historia',
+        text: 'Lo que viviste, contado con tus palabras, y una dedicatoria si quieres.',
     },
     {
-        title: 'Construye tu historia',
-        body: 'Foto, carrera, tiempo, fecha, lugar, dedicatoria, audio.',
+        icon: Timer,
+        title: 'Tu resultado',
+        text: 'La carrera, la fecha, el lugar y tu tiempo.',
+    },
+    {
+        icon: Mic,
+        title: 'Un mensaje de voz',
+        text: 'Tu voz o la de alguien que estuvo contigo, para volver a escucharla.',
+    },
+    {
+        icon: Lock,
+        title: 'Tú decides quién lo ve',
+        text: 'Público, solo con enlace o privado. Los enlaces que compartes se pueden revocar.',
+    },
+    {
+        icon: Users,
+        title: 'Tu familia no necesita app',
+        text: 'Quien toca el tag o recibe tu enlace lo abre en el navegador de su teléfono.',
     },
 ];
 
@@ -213,7 +257,7 @@ const after = computed(() => [
 <template>
     <!-- Hero: the object on warm paper, the purchase on a white card -->
     <section
-        class="relative overflow-hidden bg-fl-paper pt-6 pb-14 text-foreground sm:pt-8 lg:pb-24"
+        class="relative overflow-hidden bg-fl-paper pt-6 pb-14 text-foreground sm:pt-8 lg:pb-20"
     >
         <div
             class="pointer-events-none absolute inset-0"
@@ -254,7 +298,7 @@ const after = computed(() => [
                 <div class="min-w-0 lg:col-span-7">
                     <div
                         v-if="hasMedia && !show3d"
-                        class="rounded-hero bg-white p-2 text-foreground shadow-fl-overlay sm:p-3"
+                        class="rounded-hero border border-border bg-white p-2 text-foreground shadow-fl-float sm:p-3"
                     >
                         <ProductGallery
                             :items="galleryItems"
@@ -330,7 +374,7 @@ const after = computed(() => [
                 <!-- Purchase -->
                 <div class="min-w-0 lg:col-span-5">
                     <div
-                        class="rounded-hero border border-border bg-white p-6 text-foreground shadow-fl-overlay sm:p-8 lg:sticky lg:top-24"
+                        class="rounded-hero border border-border bg-white p-6 text-foreground shadow-fl-float sm:p-8 lg:sticky lg:top-24"
                     >
                         <p class="fl-eyebrow">
                             Finisher Legacy Tag<template
@@ -415,7 +459,7 @@ const after = computed(() => [
                             }}
                         </p>
 
-                        <div class="mt-6">
+                        <div ref="buyAnchor" class="mt-6">
                             <div
                                 v-if="!product.is_purchasable"
                                 class="rounded-card border border-border bg-card p-5"
@@ -441,7 +485,7 @@ const after = computed(() => [
                                 v-else-if="isGuest"
                                 as-child
                                 size="lg"
-                                class="h-11 w-full rounded-full"
+                                class="h-12 w-full rounded-full"
                             >
                                 <Link :href="loginUrl()"
                                     >Inicia sesión para comprar</Link
@@ -542,137 +586,162 @@ const after = computed(() => [
         </div>
     </section>
 
+    <!-- What the tag keeps -->
+    <section
+        class="fl-section border-t border-border bg-white"
+        aria-label="Qué guarda tu tag"
+    >
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="Qué guarda tu tag"
+                title="Todo lo que pasó"
+                accent="detrás del resultado."
+                text="El tag es la llave. Dentro vive tu recuerdo, y lo completas hoy o poco a poco."
+            />
+            <div class="mt-10">
+                <FeatureGrid :items="keeps" :columns="3" />
+            </div>
+        </div>
+    </section>
+
     <!-- What's included + specs -->
     <section
-        class="bg-fl-paper py-16 sm:py-24"
+        class="fl-section bg-fl-paper"
         aria-labelledby="tag-includes-title"
     >
-        <div class="fl-container grid gap-14 lg:grid-cols-12">
-            <div class="lg:col-span-5">
-                <p class="fl-eyebrow">Qué incluye</p>
+        <div class="fl-container grid gap-10 lg:grid-cols-2 lg:gap-16">
+            <div>
+                <p class="fl-eyebrow inline-flex items-center gap-3">
+                    <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
+                    Qué incluye
+                </p>
                 <h2
                     id="tag-includes-title"
-                    class="fl-display mt-4 text-[clamp(1.9rem,3.4vw,2.75rem)]"
+                    v-reveal
+                    class="fl-display mt-4 text-[1.9rem] leading-[1.1] sm:text-[2.6rem]"
                 >
-                    Un recuerdo que puedes tocar.
+                    Un recuerdo que
+                    <span class="block font-medium text-fl-gold-ink italic"
+                        >puedes tocar.</span
+                    >
                 </h2>
-                <ul class="mt-8 grid gap-4">
+                <ul class="mt-8 grid gap-3">
                     <li
-                        v-for="item in includes"
+                        v-for="(item, index) in includes"
                         :key="item"
-                        class="flex gap-4 border-t border-foreground/10 pt-4 text-[15px] text-foreground"
+                        v-reveal="{ index }"
+                        class="flex items-start gap-3.5 text-[15px] leading-relaxed text-foreground"
                     >
                         <span
-                            class="mt-2.5 h-px w-4 shrink-0 bg-fl-gold"
+                            class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
                             aria-hidden="true"
-                        />
+                        >
+                            <Check class="size-3.5" :stroke-width="2.4" />
+                        </span>
                         {{ item }}
                     </li>
                 </ul>
             </div>
 
-            <div class="lg:col-span-6 lg:col-start-7">
-                <dl
-                    v-if="specRows.length"
-                    class="grid gap-px overflow-hidden rounded-card border border-border bg-border sm:grid-cols-3"
-                >
+            <div
+                v-reveal="{ delay: 100 }"
+                class="fl-card self-start p-6 sm:p-8"
+            >
+                <p class="fl-eyebrow">Ficha del tag</p>
+                <dl class="mt-4 divide-y divide-border">
                     <div
-                        v-for="row in specRows"
+                        v-for="row in sheetRows"
                         :key="row.label"
-                        class="bg-card px-5 py-4"
+                        class="flex items-baseline justify-between gap-6 py-3.5"
                     >
-                        <dt
-                            class="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
-                        >
+                        <dt class="shrink-0 text-sm text-muted-foreground">
                             {{ row.label }}
                         </dt>
-                        <dd class="mt-1 font-medium text-foreground">
+                        <dd
+                            class="text-right text-sm font-medium text-foreground"
+                        >
                             {{ row.value }}
                         </dd>
                     </div>
                 </dl>
-                <div v-if="product.specs.instructions" class="mt-8">
+                <div
+                    v-if="product.specs.instructions"
+                    class="mt-5 border-t border-border pt-5"
+                >
                     <p class="fl-eyebrow">Cuidados e instrucciones</p>
                     <p
-                        class="mt-3 text-[15px] leading-relaxed whitespace-pre-line text-muted-foreground"
+                        class="mt-3 text-sm leading-relaxed whitespace-pre-line text-muted-foreground"
                     >
                         {{ product.specs.instructions }}
                     </p>
-                </div>
-
-                <div
-                    :class="{
-                        'mt-12': specRows.length || product.specs.instructions,
-                    }"
-                >
-                    <p class="fl-eyebrow">Cómo funciona</p>
-                    <ol class="mt-6 grid gap-8 sm:grid-cols-3">
-                        <li v-for="(step, index) in how" :key="step.title">
-                            <span
-                                class="legacy-numeric text-xs text-fl-gold-ink"
-                                >0{{ index + 1 }}</span
-                            >
-                            <p class="mt-2 font-serif text-xl text-foreground">
-                                {{ step.title }}
-                            </p>
-                            <p
-                                class="mt-2 text-sm leading-relaxed text-muted-foreground"
-                            >
-                                {{ step.body }}
-                            </p>
-                        </li>
-                    </ol>
-                    <Link
-                        :href="howItWorks()"
-                        class="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
-                    >
-                        Ver cómo funciona completo
-                        <ArrowRight class="size-4" aria-hidden="true" />
-                    </Link>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- After buying -->
+    <!-- After buying: the three steps -->
     <section
-        class="border-y border-border bg-white py-16 text-foreground sm:py-24"
+        class="fl-section border-y border-border bg-white"
         aria-labelledby="tag-after-title"
     >
         <div class="fl-container">
-            <p
-                class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
+            <div
+                class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
             >
-                Qué pasa después de comprarlo
-            </p>
-            <h2
-                id="tag-after-title"
-                class="mt-4 max-w-2xl font-serif text-[clamp(1.9rem,3.6vw,3rem)] leading-tight"
-            >
-                Tu carrera termina.
-                <span class="text-muted-foreground italic"
-                    >Tu historia no.</span
+                <div>
+                    <p class="fl-eyebrow inline-flex items-center gap-3">
+                        <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
+                        Cómo funciona
+                    </p>
+                    <h2
+                        id="tag-after-title"
+                        v-reveal
+                        class="fl-display mt-4 text-[1.9rem] leading-[1.1] sm:text-[2.6rem]"
+                    >
+                        Tu carrera termina.
+                        <span class="block font-medium text-fl-gold-ink italic"
+                            >Tu historia no.</span
+                        >
+                    </h2>
+                </div>
+                <Link
+                    :href="howItWorks()"
+                    class="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-            </h2>
-            <ol class="mt-12 grid gap-10 sm:grid-cols-3">
+                    <span class="fl-link fl-link--gold"
+                        >Ver el paso a paso completo</span
+                    >
+                    <ArrowRight class="size-4" aria-hidden="true" />
+                </Link>
+            </div>
+            <ol class="mt-10 grid gap-4 sm:grid-cols-3 sm:gap-5">
                 <li
                     v-for="(step, index) in after"
                     :key="step.title"
-                    class="border-t border-border pt-6"
+                    v-reveal="{ index }"
+                    class="fl-card fl-card-hover relative flex flex-col p-6 sm:p-7"
                 >
-                    <span class="legacy-numeric text-xs text-fl-gold-ink"
-                        >0{{ index + 1 }}</span
+                    <span
+                        class="legacy-numeric flex size-10 items-center justify-center rounded-full bg-fl-black font-serif text-sm font-semibold text-fl-gold-soft"
+                        aria-hidden="true"
+                        >{{ index + 1 }}</span
                     >
-                    <p class="mt-3 font-serif text-2xl">{{ step.title }}</p>
-                    <p class="mt-2 text-[15px] text-muted-foreground">
+                    <p
+                        class="mt-5 font-serif text-xl font-semibold text-foreground"
+                    >
+                        {{ step.title }}
+                    </p>
+                    <p
+                        class="mt-2 text-[15px] leading-relaxed text-muted-foreground"
+                    >
                         {{ step.body }}
                     </p>
                     <a
                         v-if="step.link"
                         :href="ACTIVATE_URL"
-                        class="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fl-gold-ink underline-offset-4 hover:underline"
+                        class="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fl-gold-ink"
                     >
-                        Ir a Activar
+                        <span class="fl-link">Ir a Activar</span>
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </a>
                 </li>
@@ -680,9 +749,16 @@ const after = computed(() => [
         </div>
     </section>
 
+    <!-- Trust -->
+    <section class="bg-fl-paper" aria-label="Comprar con confianza">
+        <div class="fl-container py-12 sm:py-14">
+            <StoreTrustNotes :shipping="product.requires_shipping" />
+        </div>
+    </section>
+
     <section
         v-if="product.contentSections.length"
-        class="bg-fl-paper py-16 sm:py-24"
+        class="fl-section border-t border-border bg-fl-paper"
         aria-label="Sobre este tag"
     >
         <div class="fl-container">
@@ -695,22 +771,64 @@ const after = computed(() => [
 
     <section
         v-if="relatedProducts.length"
-        class="bg-fl-paper pb-20 sm:pb-28"
-        :class="{ 'pt-16 sm:pt-24': !product.contentSections.length }"
+        class="fl-section border-t border-border bg-white"
     >
         <div class="fl-container">
-            <h2 class="fl-display text-3xl sm:text-4xl">
-                También te puede gustar
-            </h2>
+            <div class="flex items-end justify-between gap-4">
+                <h2 class="fl-display text-[1.9rem] sm:text-4xl">
+                    También te puede gustar
+                </h2>
+                <Link
+                    :href="collectionsIndex()"
+                    class="hidden shrink-0 items-center gap-2 text-sm font-semibold sm:inline-flex"
+                >
+                    <span class="fl-link fl-link--gold">Ver colecciones</span>
+                    <ArrowRight class="size-4" aria-hidden="true" />
+                </Link>
+            </div>
             <div
                 class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-4"
             >
                 <ProductCard
-                    v-for="related in relatedProducts"
+                    v-for="(related, index) in relatedProducts"
                     :key="related.uuid"
+                    v-reveal="{ index }"
                     v-bind="productCardProps(related)"
                 />
             </div>
         </div>
     </section>
+
+    <!-- Mobile sticky buy bar -->
+    <StickyBuyBar
+        v-if="selectedVariant && product.is_purchasable"
+        :visible="barVisible"
+        :label="product.name"
+    >
+        <Money
+            :minor="
+                selectedVariant.sale_price_minor ??
+                selectedVariant.base_price_minor
+            "
+            :currency="selectedVariant.currency"
+        />
+        <template #action>
+            <span
+                v-if="isGuest && !selectedVariant.in_stock"
+                class="text-sm text-muted-foreground"
+                >Agotado por ahora</span
+            >
+            <Button v-else-if="isGuest" as-child class="h-11 rounded-full px-5">
+                <Link :href="loginUrl()">Inicia sesión</Link>
+            </Button>
+            <Button
+                v-else
+                class="h-11 rounded-full px-5"
+                :disabled="!selectedVariant.in_stock || form.processing"
+                @click="addToCart"
+            >
+                {{ ctaLabel }}
+            </Button>
+        </template>
+    </StickyBuyBar>
 </template>

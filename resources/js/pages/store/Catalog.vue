@@ -132,14 +132,15 @@ const sortOptions = [
 
 const typeOptions = computed<{ value: string | null; label: string }[]>(() => [
     { value: null, label: 'Todos los tipos' },
-    ...props.types,
+    // The retired plate line is no longer offered as a filter.
+    ...props.types.filter((type) => type.value !== 'legacy_plate'),
 ]);
 
 const title = computed(() => props.category?.name ?? 'Todo el catálogo');
 const lede = computed(
     () =>
         props.category?.description ??
-        'Finisher Legacy Tag, ropa técnica y accesorios pensados para correr, terminar y recordar.',
+        'Tags de colección, Racepack, Trisuit, Chill Band y más para tu carrera.',
 );
 </script>
 

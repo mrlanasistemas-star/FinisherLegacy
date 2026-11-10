@@ -1,8 +1,22 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
-import { Search } from '@lucide/vue';
+/**
+ * Eventos — the public race calendar: editorial header, search + sport +
+ * status filters (server-side, debounced), one featured card and a grid,
+ * an honest empty state, and links to what happens after the race (photos,
+ * memories, the tag). Data and filtering come from EventController@index.
+ */
+import { Link, router } from '@inertiajs/vue3';
+import {
+    ArrowUpRight,
+    BookHeart,
+    CalendarSearch,
+    Images,
+    Nfc,
+    Search,
+} from '@lucide/vue';
 import { useDebounceFn } from '@vueuse/core';
-import { reactive } from 'vue';
+import { computed, reactive } from 'vue';
+import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import StaggerGroup from '@/components/motion/StaggerGroup.vue';
 import EventCard from '@/components/public/EventCard.vue';
@@ -17,7 +31,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { vReveal } from '@/composables/useReveal';
 import { MEDIA } from '@/config/media';
+import {
+    COLLECTIONS_URL,
+    MEMORIES_URL,
+    PHOTOS_URL,
+} from '@/config/public-links';
 import { index as eventsIndex } from '@/routes/events';
 import type { EventEditionCard } from '@/types';
 
@@ -65,9 +85,9 @@ const mascotTips = [
 
 const statusOptions = [
     { value: 'available', label: 'Disponibles' },
-    { value: 'upcoming', label: 'Próximo' },
+    { value: 'upcoming', label: 'Próximos' },
     { value: 'ongoing', label: 'En curso' },
-    { value: 'finished', label: 'Finalizado' },
+    { value: 'finished', label: 'Finalizados' },
 ];
 
 function selectStatus(value: string) {
@@ -75,13 +95,63 @@ function selectStatus(value: string) {
     applyFilters();
 }
 
+const hasFilters = computed(
+    () => form.q !== '' || form.sport !== 'all' || form.status !== 'available',
+);
+
+function resetFilters() {
+    form.q = '';
+    form.sport = 'all';
+    form.status = 'available';
+    applyFilters();
+}
+
+const listTitle = computed(() => {
+    if (form.status === 'finished') {
+        return 'Eventos finalizados';
+    }
+
+    if (form.status === 'ongoing') {
+        return 'Eventos en curso';
+    }
+
+    return form.status === 'upcoming'
+        ? 'Próximos eventos'
+        : 'Eventos disponibles';
+});
+
+// What Finisher Legacy does once the race is over.
+const afterRace = [
+    {
+        icon: Images,
+        title: 'Encuentra tus fotos',
+        text: 'Busca tus fotos de carrera por evento y número de competidor.',
+        href: PHOTOS_URL,
+        cta: 'Buscar mis fotos',
+    },
+    {
+        icon: BookHeart,
+        title: 'Guarda tu recuerdo',
+        text: 'Tu resultado, tus fotos, tu historia y la voz de los tuyos en un solo lugar.',
+        href: MEMORIES_URL,
+        cta: 'Conocer Recuerdos',
+    },
+    {
+        icon: Nfc,
+        title: 'Llévate el tag de tu carrera',
+        text: 'Un tag coleccionable por destino. Lo tocas con tu teléfono y vuelves a ese día.',
+        href: COLLECTIONS_URL,
+        cta: 'Ver colecciones',
+    },
+];
+
 const heroImage = MEDIA.photo.start;
 </script>
 
 <template>
     <SeoHead
         title="Eventos"
-        description="Explora próximos eventos deportivos, filtra por deporte o ciudad y prerregístrate para tu próxima carrera en Finisher Legacy."
+        description="Calendario de eventos deportivos: running, triatlón, ciclismo, HYROX y más. Filtra por deporte o ciudad y prerregístrate para tu próxima carrera en Finisher Legacy."
     />
 
     <!-- Editorial hero -->
@@ -90,27 +160,38 @@ const heroImage = MEDIA.photo.start;
             class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_70%_at_88%_8%,#f4eedf,transparent_70%)]"
             aria-hidden="true"
         />
-        <div class="fl-container relative pt-14 pb-10 sm:pt-20">
-            <div class="grid items-end gap-10 lg:grid-cols-12">
+        <div class="fl-container relative pt-12 pb-8 sm:pt-16">
+            <div class="grid items-end gap-8 lg:grid-cols-12 lg:gap-10">
                 <div class="lg:col-span-7">
-                    <p class="fl-eyebrow inline-flex items-center gap-3">
+                    <p
+                        v-reveal
+                        class="fl-eyebrow inline-flex items-center gap-3"
+                    >
                         <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
                         Eventos
                     </p>
-                    <h1 class="fl-display fl-h1 mt-6 max-w-2xl">
-                        Encuentra tu próxima meta.
+                    <h1
+                        v-reveal="{ delay: 60 }"
+                        class="fl-display mt-5 max-w-2xl text-[2.4rem] leading-[1.04] sm:text-6xl"
+                    >
+                        Encuentra tu
+                        <span class="block font-medium text-fl-gold-ink italic"
+                            >próxima meta.</span
+                        >
                     </h1>
                     <p
-                        class="mt-6 max-w-[55ch] text-lg leading-relaxed text-muted-foreground"
+                        v-reveal="{ delay: 140 }"
+                        class="mt-6 max-w-[52ch] text-base leading-relaxed text-muted-foreground sm:text-lg"
                     >
-                        Carreras, trails, triatlones y más: fechas, distancias y
-                        todo lo que necesitas saber antes de vivirlo.
+                        Running, triatlón, ciclismo, HYROX y más: fechas, sedes
+                        y distancias de las carreras que vienen, y el detalle de
+                        las que ya pasaron.
                     </p>
                 </div>
 
-                <div class="lg:col-span-5">
+                <div v-reveal="{ delay: 180, y: 28 }" class="lg:col-span-5">
                     <div
-                        class="relative aspect-[5/4] overflow-hidden rounded-media bg-fl-cream shadow-fl-soft sm:aspect-[16/10] lg:aspect-[4/3]"
+                        class="fl-zoom relative aspect-[16/10] overflow-hidden rounded-media bg-fl-cream shadow-fl-float lg:aspect-[4/3]"
                     >
                         <img
                             :src="heroImage.src"
@@ -128,15 +209,20 @@ const heroImage = MEDIA.photo.start;
             </div>
 
             <!-- Filters -->
-            <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div
+                v-reveal="{ delay: 220 }"
+                class="mt-10 flex flex-col gap-2 rounded-[1.6rem] border border-border bg-white/85 p-2.5 shadow-fl-soft sm:flex-row sm:items-center sm:rounded-full sm:p-2"
+            >
                 <div class="relative flex-1">
                     <Search
-                        class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/80"
+                        class="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground/80"
+                        aria-hidden="true"
                     />
                     <Input
                         v-model="form.q"
                         placeholder="Buscar por evento o ciudad…"
-                        class="h-11 rounded-full border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground"
+                        aria-label="Buscar por evento o ciudad"
+                        class="h-11 rounded-full border-transparent bg-fl-paper pl-10 text-foreground shadow-none placeholder:text-muted-foreground sm:bg-transparent"
                         @input="debouncedApply"
                     />
                 </div>
@@ -151,7 +237,8 @@ const heroImage = MEDIA.photo.start;
                     "
                 >
                     <SelectTrigger
-                        class="h-11 w-full rounded-full border-border bg-card text-foreground sm:w-48"
+                        aria-label="Filtrar por deporte"
+                        class="h-11 w-full rounded-full border-border bg-card text-foreground sm:w-56"
                     >
                         <SelectValue placeholder="Deporte" />
                     </SelectTrigger>
@@ -170,7 +257,7 @@ const heroImage = MEDIA.photo.start;
 
             <!-- Status segmented chips -->
             <div
-                class="mt-3 flex flex-wrap gap-2"
+                class="-mx-4 mt-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden"
                 role="radiogroup"
                 aria-label="Filtrar por estado"
             >
@@ -180,7 +267,7 @@ const heroImage = MEDIA.photo.start;
                     type="button"
                     role="radio"
                     :aria-checked="form.status === option.value"
-                    class="inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    class="inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     :class="
                         form.status === option.value
                             ? 'border-foreground bg-foreground text-background shadow-fl-micro'
@@ -194,18 +281,48 @@ const heroImage = MEDIA.photo.start;
         </div>
     </section>
 
-    <section data-mascot-tip="results" class="fl-section">
+    <section data-mascot-tip="results" class="pt-6 pb-16 sm:pt-8 sm:pb-24">
         <div class="fl-container">
             <div
                 v-if="editions.data.length === 0"
-                class="rounded-card border border-dashed border-foreground/15 bg-card py-20 text-center"
+                class="flex flex-col items-center rounded-card border border-dashed border-fl-gold/40 bg-card bg-[radial-gradient(70%_60%_at_50%_0%,rgb(201_174_139/0.14),transparent_70%)] px-6 py-16 text-center"
             >
-                <p class="text-muted-foreground">
-                    No encontramos eventos con esos filtros.
+                <span
+                    class="flex size-14 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
+                    aria-hidden="true"
+                >
+                    <CalendarSearch class="size-6" :stroke-width="1.6" />
+                </span>
+                <h2 class="mt-5 font-serif text-xl font-semibold">
+                    {{
+                        hasFilters
+                            ? 'No encontramos eventos con esos filtros.'
+                            : 'Todavía no hay eventos publicados.'
+                    }}
+                </h2>
+                <p class="mt-2 max-w-sm text-sm text-muted-foreground">
+                    {{
+                        hasFilters
+                            ? 'Prueba con otro nombre, deporte o estado.'
+                            : 'Vuelve pronto: aquí aparecerán las próximas carreras.'
+                    }}
                 </p>
+                <button
+                    v-if="hasFilters"
+                    type="button"
+                    class="fl-btn-secondary mt-6 !min-h-11 !px-5 !text-sm"
+                    @click="resetFilters"
+                >
+                    Quitar filtros
+                </button>
             </div>
 
             <template v-else>
+                <h2
+                    class="mb-5 font-serif text-lg font-semibold text-foreground sm:text-xl"
+                >
+                    {{ listTitle }}
+                </h2>
                 <Reveal>
                     <EventCard :edition="editions.data[0]" featured />
                 </Reveal>
@@ -224,9 +341,61 @@ const heroImage = MEDIA.photo.start;
                 </StaggerGroup>
             </template>
 
-            <div class="mt-14">
+            <div class="mt-12">
                 <Pagination :links="editions.links" />
             </div>
+        </div>
+    </section>
+
+    <!-- After the race -->
+    <section class="fl-section border-t border-border bg-card">
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="Después de la meta"
+                title="La carrera termina."
+                accent="Lo que viviste se queda."
+                text="Finisher Legacy acompaña tu evento antes y después: tus fotos, tu resultado y un recuerdo que puedes tocar."
+            />
+            <ul class="mt-10 grid gap-4 sm:gap-5 md:grid-cols-3">
+                <li
+                    v-for="(item, index) in afterRace"
+                    :key="item.title"
+                    v-reveal="{ index }"
+                >
+                    <Link
+                        :href="item.href"
+                        class="group fl-card fl-card-hover flex h-full flex-col bg-background p-6 sm:p-7"
+                    >
+                        <span
+                            class="flex size-11 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink transition-colors duration-300 group-hover:bg-fl-black group-hover:text-fl-gold-soft"
+                            aria-hidden="true"
+                        >
+                            <component
+                                :is="item.icon"
+                                class="size-5"
+                                :stroke-width="1.6"
+                            />
+                        </span>
+                        <span
+                            class="mt-5 font-serif text-lg leading-snug font-semibold text-foreground"
+                            >{{ item.title }}</span
+                        >
+                        <span
+                            class="mt-2 text-sm leading-relaxed text-muted-foreground"
+                            >{{ item.text }}</span
+                        >
+                        <span
+                            class="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-semibold text-foreground"
+                        >
+                            <span class="fl-link">{{ item.cta }}</span>
+                            <ArrowUpRight
+                                class="size-4 text-fl-gold-ink transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+                                aria-hidden="true"
+                            />
+                        </span>
+                    </Link>
+                </li>
+            </ul>
         </div>
     </section>
 

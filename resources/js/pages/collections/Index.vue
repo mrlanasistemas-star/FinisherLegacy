@@ -5,13 +5,16 @@
  * catalogue on warm paper. No collection yet → an honest empty state.
  */
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight } from '@lucide/vue';
+import { ArrowRight, Images, Lock, Nfc, Users } from '@lucide/vue';
 import CollectionCard from '@/components/collections/CollectionCard.vue';
+import CtaBand from '@/components/marketing/CtaBand.vue';
+import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
+import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
-import { ACTIVATE_URL } from '@/config/public-links';
+import { ACTIVATE_URL, STORE_URL } from '@/config/public-links';
 import { howItWorks } from '@/routes';
 import type { CollectionCardData } from '@/types/collections';
 import { collectionTagArts } from '@/types/collections';
@@ -23,6 +26,29 @@ const props = defineProps<{
 const lead = props.collections[0] ?? null;
 /** The lead collection's primary tag design (front ↔ back). */
 const leadArt = lead ? collectionTagArts(lead)[0] : null;
+
+const tagFeatures = [
+    {
+        icon: Nfc,
+        title: 'Se abre con un toque',
+        text: 'Acercas tu teléfono al tag y tu recuerdo aparece. Si tu teléfono no lee NFC, escribes su código.',
+    },
+    {
+        icon: Images,
+        title: 'Guarda tu recuerdo',
+        text: 'Fotos, tu historia, tu resultado y un mensaje de voz de ese día.',
+    },
+    {
+        icon: Lock,
+        title: 'Tú decides quién lo ve',
+        text: 'Público, solo con enlace o privado. Los enlaces que compartes se pueden revocar.',
+    },
+    {
+        icon: Users,
+        title: 'Tu familia no necesita app',
+        text: 'Quien toca el tag o recibe tu enlace lo abre en el navegador de su teléfono.',
+    },
+];
 </script>
 
 <template>
@@ -32,7 +58,7 @@ const leadArt = lead ? collectionTagArts(lead)[0] : null;
     />
 
     <section
-        class="relative overflow-hidden bg-background pt-12 pb-16 text-foreground sm:pt-20 sm:pb-24"
+        class="relative overflow-hidden bg-background pt-12 pb-14 text-foreground sm:pt-16 sm:pb-20"
         aria-labelledby="collections-index-title"
     >
         <div
@@ -40,7 +66,7 @@ const leadArt = lead ? collectionTagArts(lead)[0] : null;
             aria-hidden="true"
         />
         <div
-            class="fl-container relative grid items-end gap-10 lg:grid-cols-12"
+            class="fl-container relative grid items-center gap-10 lg:grid-cols-12"
         >
             <div class="lg:col-span-8">
                 <p
@@ -51,7 +77,7 @@ const leadArt = lead ? collectionTagArts(lead)[0] : null;
                 </p>
                 <h1
                     id="collections-index-title"
-                    class="mt-6 font-serif text-[clamp(2.6rem,7vw,6rem)] leading-[1.02] font-medium tracking-[-0.025em]"
+                    class="mt-6 font-serif text-[clamp(2.5rem,6.4vw,5rem)] leading-[1.03] font-semibold tracking-[-0.025em]"
                 >
                     Una colección
                     <span class="block text-fl-gold-ink italic"
@@ -62,11 +88,26 @@ const leadArt = lead ? collectionTagArts(lead)[0] : null;
                     class="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground"
                 >
                     Cada destino, disciplina y edición tiene su propio Finisher
-                    Legacy Tag. Elige el de tu carrera: lo llevas a casa, lo
-                    activas y tu historia vive dentro.
+                    Legacy Tag. Elige el de tu carrera: lo recibes, lo tocas con
+                    tu teléfono y se abre tu recuerdo.
                 </p>
+                <div class="mt-8 flex flex-wrap items-center gap-3">
+                    <a
+                        v-if="collections.length"
+                        href="#colecciones"
+                        class="fl-btn-primary"
+                    >
+                        Ver colecciones
+                        <ArrowRight class="size-4" aria-hidden="true" />
+                    </a>
+                    <Link :href="howItWorks()" class="fl-btn-secondary">
+                        Cómo funciona
+                    </Link>
+                </div>
             </div>
-            <div class="hidden lg:col-span-3 lg:col-start-10 lg:block">
+            <div
+                class="mx-auto w-[46%] max-w-[13rem] lg:col-span-3 lg:col-start-10 lg:w-full lg:max-w-none"
+            >
                 <TagFlipCard v-if="leadArt" :art="leadArt" />
                 <TagVisualizer
                     v-else
@@ -78,13 +119,14 @@ const leadArt = lead ? collectionTagArts(lead)[0] : null;
     </section>
 
     <section
-        class="border-t border-fl-line bg-fl-paper py-16 sm:py-24"
+        id="colecciones"
+        class="scroll-mt-20 border-t border-fl-line bg-fl-paper py-14 sm:py-20"
         aria-label="Todas las colecciones"
     >
         <div class="fl-container">
             <ul
                 v-if="collections.length"
-                class="grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3"
+                class="grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-8 sm:gap-y-16 lg:grid-cols-3"
             >
                 <Reveal
                     v-for="(collection, index) in collections"
@@ -137,4 +179,36 @@ const leadArt = lead ? collectionTagArts(lead)[0] : null;
             </div>
         </div>
     </section>
+
+    <section
+        class="fl-section border-t border-fl-line bg-white"
+        aria-label="Qué hace tu tag"
+    >
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="Qué hace tu tag"
+                title="Un objeto de colección."
+                accent="Y la llave de tu recuerdo."
+            />
+            <div class="mt-10">
+                <FeatureGrid :items="tagFeatures" :columns="4" />
+            </div>
+        </div>
+    </section>
+
+    <CtaBand
+        title="¿Ya tienes tu tag?"
+        accent="Actívalo en un toque."
+        text="Acerca tu teléfono al tag o escribe su código para empezar tu recuerdo."
+    >
+        <template #actions>
+            <a :href="ACTIVATE_URL" class="mk-cta-primary">
+                Activar mi tag
+                <ArrowRight class="size-4" aria-hidden="true" />
+            </a>
+            <Link :href="STORE_URL" class="mk-cta-secondary">
+                Ir a la tienda
+            </Link>
+        </template>
+    </CtaBand>
 </template>

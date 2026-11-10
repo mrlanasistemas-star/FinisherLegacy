@@ -118,19 +118,12 @@ const location = computed(() =>
                     decoding="async"
                     class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                 />
+                <!-- Soft vignette only: the name and sport live in the card
+                     body, so they are not repeated over the photo. -->
                 <div
-                    class="absolute inset-0 flex flex-col items-start justify-end bg-gradient-to-t from-black/80 via-black/25 to-transparent p-5"
+                    class="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10"
                     aria-hidden="true"
-                >
-                    <span
-                        class="text-[10px] font-semibold tracking-[0.2em] text-fl-gold uppercase"
-                        >{{ edition.event.sport.name }}</span
-                    >
-                    <span
-                        class="mt-1 font-serif text-2xl leading-tight text-white"
-                        >{{ edition.event.name }}</span
-                    >
-                </div>
+                />
             </template>
 
             <span
@@ -143,7 +136,7 @@ const location = computed(() =>
 
         <div
             class="flex flex-1 gap-4"
-            :class="featured ? 'p-6 sm:p-7 md:items-center' : 'p-5'"
+            :class="featured ? 'p-6 sm:p-8 md:items-center md:px-10' : 'p-5'"
         >
             <div
                 class="legacy-numeric flex w-12 shrink-0 flex-col items-center border-r border-border pr-4 text-center leading-none"
@@ -164,8 +157,10 @@ const location = computed(() =>
             <div class="flex min-w-0 flex-1 flex-col">
                 <p class="fl-eyebrow">{{ edition.event.sport.name }}</p>
                 <h3
-                    class="mt-1 leading-snug font-semibold text-foreground"
-                    :class="featured ? 'text-xl sm:text-2xl' : 'text-[17px]'"
+                    class="mt-1.5 font-serif leading-snug font-semibold text-foreground"
+                    :class="
+                        featured ? 'text-2xl sm:text-[1.75rem]' : 'text-[17px]'
+                    "
                 >
                     {{ edition.event.name }}
                 </h3>
@@ -193,7 +188,7 @@ const location = computed(() =>
                 <span
                     class="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-medium text-foreground"
                 >
-                    Ver evento
+                    <span class="fl-link">Ver evento</span>
                     <ArrowRight
                         class="size-4 transition-transform duration-300 group-hover:translate-x-0.5"
                         aria-hidden="true"

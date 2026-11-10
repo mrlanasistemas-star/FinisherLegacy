@@ -23,8 +23,8 @@ import {
     Smartphone,
     Truck,
 } from '@lucide/vue';
-import { useMediaQuery } from '@vueuse/core';
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue';
+import { computed, ref } from 'vue';
+import NfcTapVisual from '@/components/public/NfcTapVisual.vue';
 import PlateClipSteps from '@/components/public/PlateClipSteps.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import Money from '@/components/shared/Money.vue';
@@ -33,12 +33,16 @@ import ProductGallery from '@/components/store/ProductGallery.vue';
 import type { GalleryEntry } from '@/components/store/ProductGallery.vue';
 import ProductStorySections from '@/components/store/ProductStorySections.vue';
 import type { ContentSection } from '@/components/store/ProductStorySections.vue';
+import StickyBuyBar from '@/components/store/StickyBuyBar.vue';
+import StoreTrustNotes from '@/components/store/StoreTrustNotes.vue';
 import TagProductDetail from '@/components/store/TagProductDetail.vue';
 import type { TagProduct } from '@/components/store/TagProductDetail.vue';
+import { useStickyBuyBar } from '@/components/store/useStickyBuyBar';
 import VariantPicker from '@/components/store/VariantPicker.vue';
 import type { Variant } from '@/components/store/VariantPicker.vue';
 import { Button } from '@/components/ui/button';
 import { useAuthGate } from '@/composables/useAuthGate';
+import { vReveal } from '@/composables/useReveal';
 import { productCardProps, PRODUCT_TYPE_LABELS } from '@/lib/store';
 import { howItWorks } from '@/routes';
 import { index as eventsIndex } from '@/routes/events';
@@ -259,7 +263,7 @@ const stockHint = computed(() => {
 
 const showPlateHelp = ref(false);
 
-// Mobile purchase bar: lift floating buttons (BackToTop) above it.
+// Mobile sticky buy bar (visual): shows once the buy button scrolls away.
 const showBar = computed(
     () =>
         !isLegacyPlate.value &&
@@ -267,17 +271,32 @@ const showBar = computed(
         props.product.is_purchasable &&
         selectedVariant.value !== null,
 );
-const belowLg = useMediaQuery('(max-width: 1023.98px)');
-onMounted(() =>
-    watchEffect(() =>
-        document.documentElement.style.setProperty(
-            '--fl-bottom-bar',
-            showBar.value && belowLg.value ? '72px' : '0px',
-        ),
+const buyAnchor = ref<HTMLElement | null>(null);
+const { visible: barVisible } = useStickyBuyBar(buyAnchor, showBar);
+
+/** Real facts only: what the catalog knows about this product. */
+const uniqueAttr = (...keys: string[]) => [
+    ...new Set(
+        props.product.variants
+            .map((v) => keys.map((k) => v.attributes?.[k]).find(Boolean))
+            .filter((value): value is string => !!value),
     ),
-);
-onBeforeUnmount(() =>
-    document.documentElement.style.removeProperty('--fl-bottom-bar'),
+];
+const detailRows = computed(() =>
+    [
+        { label: 'Categoría', value: typeLabel.value ?? null },
+        { label: 'Marca', value: props.product.brand },
+        { label: 'Colores', value: uniqueAttr('color', 'colour').join(', ') },
+        { label: 'Tallas', value: uniqueAttr('size', 'talla').join(' · ') },
+        {
+            label: 'Entrega',
+            value: props.product.requires_shipping ? 'Envío a domicilio' : null,
+        },
+        {
+            label: 'Conexión',
+            value: props.product.is_nfc ? 'NFC: se abre con tu teléfono' : null,
+        },
+    ].filter((row): row is { label: string; value: string } => !!row.value),
 );
 
 const plateSteps = [
@@ -332,7 +351,7 @@ const savedInMiEquipo = [
         :related-products="relatedProducts"
     />
 
-    <div v-else class="fl-container pt-6 pb-28 sm:pt-8 lg:pb-20">
+    <div v-else class="fl-container pt-6 pb-16 sm:pt-8 lg:pb-20">
         <nav
             aria-label="Ruta de navegación"
             class="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
@@ -590,7 +609,7 @@ const savedInMiEquipo = [
                             {{ stockHint.text }}
                         </p>
 
-                        <div class="mt-6">
+                        <div ref="buyAnchor" class="mt-6">
                             <div
                                 v-if="!product.is_purchasable"
                                 class="rounded-card border border-border bg-card p-5"
@@ -824,26 +843,65 @@ const savedInMiEquipo = [
                         <ArrowRight class="size-4" />
                     </Link>
                 </div>
-                <div class="relative min-h-72 bg-[#efece5]">
-                    <img
-                        src="/media/brand/plate/legacy-plate-nfc-900.webp"
-                        srcset="
-                            /media/brand/plate/legacy-plate-nfc-600.webp   600w,
-                            /media/brand/plate/legacy-plate-nfc-900.webp   900w,
-                            /media/brand/plate/legacy-plate-nfc-1400.webp 1400w
-                        "
-                        sizes="(min-width: 1024px) 40vw, 100vw"
-                        alt="Un teléfono acercándose a un producto Finisher Legacy para abrir su página por NFC"
-                        loading="lazy"
-                        decoding="async"
-                        class="absolute inset-0 size-full object-cover"
-                    />
+                <div
+                    class="relative flex min-h-72 items-center justify-center bg-fl-cream p-8"
+                >
+                    <div class="w-full max-w-xs">
+                        <NfcTapVisual
+                            label="Un teléfono acercándose a un producto Finisher Legacy para abrir su página"
+                        />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Details + trust (generic products) -->
+        <section
+            v-if="!isLegacyPlate"
+            class="mt-16 grid gap-10 border-t border-border pt-12 sm:mt-20 sm:pt-14 lg:grid-cols-12 lg:gap-12"
+            aria-label="Detalles y compra segura"
+        >
+            <div v-if="detailRows.length" v-reveal class="lg:col-span-5">
+                <p class="fl-eyebrow inline-flex items-center gap-3">
+                    <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
+                    Detalles
+                </p>
+                <dl class="mt-4 divide-y divide-border">
+                    <div
+                        v-for="row in detailRows"
+                        :key="row.label"
+                        class="flex items-baseline justify-between gap-6 py-3.5"
+                    >
+                        <dt class="shrink-0 text-sm text-muted-foreground">
+                            {{ row.label }}
+                        </dt>
+                        <dd
+                            class="text-right text-sm font-medium text-foreground"
+                        >
+                            {{ row.value }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+            <div
+                :class="
+                    detailRows.length
+                        ? 'lg:col-span-6 lg:col-start-7'
+                        : 'lg:col-span-12'
+                "
+            >
+                <p class="fl-eyebrow inline-flex items-center gap-3">
+                    <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
+                    Comprar con confianza
+                </p>
+                <div class="fl-trust-two mt-7">
+                    <StoreTrustNotes :shipping="product.requires_shipping" />
                 </div>
             </div>
         </section>
 
         <!-- Related -->
-        <section v-if="relatedProducts.length" class="mt-20">
+        <section v-if="relatedProducts.length" class="mt-16 sm:mt-20">
             <div class="flex items-end justify-between gap-4">
                 <h2 class="fl-display text-3xl sm:text-4xl">
                     Completa tu equipo
@@ -859,34 +917,29 @@ const savedInMiEquipo = [
                 class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-4"
             >
                 <ProductCard
-                    v-for="related in relatedProducts"
+                    v-for="(related, index) in relatedProducts"
                     :key="related.uuid"
+                    v-reveal="{ index }"
                     v-bind="productCardProps(related)"
                 />
             </div>
         </section>
     </div>
 
-    <!-- Mobile purchase bar -->
-    <div
+    <!-- Mobile sticky buy bar -->
+    <StickyBuyBar
         v-if="showBar && selectedVariant"
-        class="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden"
-        style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom))"
+        :visible="barVisible"
+        :label="selectedVariant.name || product.name"
     >
-        <div class="flex items-center gap-3">
-            <div class="min-w-0 flex-1">
-                <p class="truncate text-xs text-muted-foreground">
-                    {{ selectedVariant.name }}
-                </p>
-                <Money
-                    :minor="
-                        selectedVariant.sale_price_minor ??
-                        selectedVariant.base_price_minor
-                    "
-                    :currency="selectedVariant.currency"
-                    class="font-semibold"
-                />
-            </div>
+        <Money
+            :minor="
+                selectedVariant.sale_price_minor ??
+                selectedVariant.base_price_minor
+            "
+            :currency="selectedVariant.currency"
+        />
+        <template #action>
             <Button v-if="isGuest" as-child class="h-11 rounded-full px-5">
                 <Link :href="loginUrl()">Inicia sesión</Link>
             </Button>
@@ -898,11 +951,17 @@ const savedInMiEquipo = [
             >
                 {{ ctaLabel }}
             </Button>
-        </div>
-    </div>
+        </template>
+    </StickyBuyBar>
 </template>
 
 <style scoped>
+/* Trust notes sit in a half-width column here: two per row from lg up. */
+@media (min-width: 1024px) {
+    .fl-trust-two :deep(ul) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
 .fl-step {
     display: flex;
     width: 1.75rem;

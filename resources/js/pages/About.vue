@@ -1,20 +1,39 @@
 <script setup lang="ts">
+/**
+ * /nosotros — who is behind Finisher Legacy and what the brand stands for.
+ * The brand promise (MAKE IT LAST — Haz que perdure, mission, the three
+ * verbs conservar / revivir / compartir) comes from the identity manual;
+ * everything about the company itself (intro, story, milestones, gallery,
+ * vision, location, channels) is admin-driven and simply does not render
+ * when it is empty — nothing is invented here.
+ */
 import { Link, usePage } from '@inertiajs/vue3';
-import { ArrowRight } from '@lucide/vue';
+import {
+    ArrowRight,
+    Archive,
+    HeartHandshake,
+    Medal,
+    RotateCcw,
+    Share2,
+    Users,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import AboutGallery from '@/components/about/AboutGallery.vue';
 import AboutLocation from '@/components/about/AboutLocation.vue';
 import AboutTimeline from '@/components/about/AboutTimeline.vue';
-import Reveal from '@/components/motion/Reveal.vue';
-import StaggerGroup from '@/components/motion/StaggerGroup.vue';
-import SectionHeading from '@/components/public/SectionHeading.vue';
+import EcosystemGrid from '@/components/marketing/EcosystemGrid.vue';
+import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
+import PageHero from '@/components/marketing/PageHero.vue';
+import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
-import { Button } from '@/components/ui/button';
-import { MEDIA } from '@/config/media';
-import { contact } from '@/routes';
-import { index as communityIndex } from '@/routes/community';
-import { index as storeIndex } from '@/routes/store/products';
+import { vReveal } from '@/composables/useReveal';
+import {
+    COMMUNITY_URL,
+    CONTACT_URL,
+    HOW_IT_WORKS_URL,
+    STORE_URL,
+} from '@/config/public-links';
 import type {
     CompanyChannels,
     CompanyGalleryItem,
@@ -43,40 +62,49 @@ const canEdit = computed(() =>
     (page.props.auth.permissions ?? []).includes('content.manage'),
 );
 
-// What Finisher Legacy preserves and connects — a description of the
-// product, not a claim about the company's past.
-const pillars = [
+// The brand promise in three verbs (identity manual, "La marca").
+const promise = [
     {
-        title: 'Esfuerzo',
-        text: 'Cada kilómetro y cada entrenamiento merecen quedar registrados.',
+        icon: Archive,
+        verb: 'Conservar',
+        text: 'Lo que viviste queda guardado en un lugar que es tuyo: fotos, resultado, historia y voz.',
     },
     {
-        title: 'Recuerdos',
-        text: 'Fotografías, resultados y momentos reunidos en un solo lugar.',
+        icon: RotateCcw,
+        verb: 'Revivir',
+        text: 'Acercas tu teléfono al tag y vuelves a ese día, las veces que quieras.',
     },
     {
-        title: 'Comunidad',
-        text: 'Atletas que se inspiran, se siguen y celebran juntos.',
+        icon: Share2,
+        verb: 'Compartir',
+        text: 'Con quienes estuvieron contigo, y con la comunidad que entiende lo que costó.',
+    },
+];
+
+// What Finisher Legacy cares about — a description of the product, not a
+// claim about the company's past.
+const values = [
+    {
+        icon: Medal,
+        title: 'Honrar el esfuerzo',
+        text: 'Cada kilómetro y cada entrenamiento merecen quedar registrados, no solo el tiempo final.',
     },
     {
-        title: 'Tecnología',
-        text: 'El chip NFC del Finisher Legacy Tag conecta lo físico con tu historia.',
+        icon: HeartHandshake,
+        title: 'Lo físico importa',
+        text: 'Un recuerdo que puedes tocar, colgar y regalar: el tag de tu carrera, con tu historia dentro.',
     },
     {
-        title: 'Productos físicos',
-        text: 'El tag de colección y el equipo, diseñados para acompañar cada meta.',
-    },
-    {
-        title: 'Identidad deportiva',
-        text: 'Tu trayectoria convertida en una historia que te representa.',
+        icon: Users,
+        title: 'Nadie llega solo',
+        text: 'Familia, equipo y comunidad son parte del logro, y tienen su lugar en él.',
     },
 ];
 
 const products = [
+    { key: 'racepack', label: 'Racepack' },
+    { key: 'trisuit', label: 'Trisuit' },
     { key: 'chill-band', label: 'Chill Band' },
-    { key: 'trisuit', label: 'Tri Suit' },
-    { key: 'cap', label: 'Gorra' },
-    { key: 'jersey', label: 'Jersey' },
 ];
 
 const story = computed(() =>
@@ -94,241 +122,296 @@ const story = computed(() =>
 <template>
     <SeoHead
         title="Nosotros"
-        description="Quiénes somos, por qué nace Finisher Legacy y el camino que estamos construyendo alrededor del deporte en México."
+        description="Finisher Legacy transforma cada logro deportivo en una historia que se puede conservar, revivir y compartir. Conoce quiénes somos y por qué existimos."
     />
 
-    <!-- Hero -->
-    <section class="fl-container pt-12 pb-16 sm:pt-16 lg:pb-24">
-        <div class="grid items-end gap-10 lg:grid-cols-12">
-            <Reveal class="lg:col-span-7">
-                <p class="fl-eyebrow flex items-center gap-3">
-                    <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
-                    Nosotros
-                </p>
-                <h1
-                    class="fl-display mt-6 text-[2.6rem] sm:text-6xl lg:text-7xl"
-                >
-                    Conocemos la meta porque también hemos estado
-                    <span class="text-fl-gold-ink italic">ahí.</span>
-                </h1>
-            </Reveal>
-            <Reveal
-                v-if="company.intro"
-                :delay-ms="120"
-                class="lg:col-span-5 lg:pb-3"
-            >
-                <p class="text-lg leading-relaxed text-muted-foreground">
-                    {{ company.intro }}
-                </p>
-            </Reveal>
-        </div>
+    <PageHero
+        eyebrow="Nosotros"
+        title="Conocemos la meta"
+        accent="porque también hemos estado ahí."
+        :lede="
+            company.intro ??
+            'Finisher Legacy transforma cada logro deportivo en una historia que se puede conservar, revivir y compartir.'
+        "
+    >
+        <template #actions>
+            <Link :href="HOW_IT_WORKS_URL" class="fl-btn-primary">
+                Cómo funciona
+                <ArrowRight class="size-4" aria-hidden="true" />
+            </Link>
+            <Link :href="CONTACT_URL" class="fl-btn-secondary">
+                Escríbenos
+            </Link>
+        </template>
 
-        <div class="mt-12 grid gap-4 sm:grid-cols-3">
-            <div
-                class="relative aspect-[4/3] overflow-hidden rounded-media bg-fl-cream sm:col-span-2 sm:aspect-[16/9]"
-            >
-                <img
-                    src="/media/home/story/race-effort-640.webp"
-                    srcset="
-                        /media/home/story/race-effort-640.webp   640w,
-                        /media/home/story/race-effort-1000.webp 1000w
-                    "
-                    sizes="(min-width: 640px) 66vw, 100vw"
-                    width="1000"
-                    height="667"
-                    alt="Atleta en plena carrera"
-                    fetchpriority="high"
-                    class="size-full object-cover"
-                />
-            </div>
-            <div
-                class="relative hidden overflow-hidden rounded-media bg-fl-cream sm:block"
-            >
-                <img
-                    src="/media/home/story/finish-emotion-640.webp"
-                    width="640"
-                    height="427"
-                    alt="Ciclista en competencia bajo la lluvia"
-                    loading="lazy"
-                    class="size-full object-cover object-[60%_center]"
-                />
-            </div>
-        </div>
-    </section>
-
-    <!-- Whitespace statement — why Finisher Legacy exists -->
-    <section class="fl-section-lg fl-container">
-        <Reveal class="mx-auto max-w-[46rem] text-center">
-            <p class="fl-eyebrow">Por qué existimos</p>
-            <p
-                class="mt-6 font-serif text-3xl leading-[1.2] text-foreground sm:text-4xl lg:text-[2.75rem]"
-            >
-                El cronómetro se detiene, pero lo que viviste no.
-                <span class="text-muted-foreground">
-                    Finisher Legacy existe para preservar el esfuerzo, los
-                    recuerdos y la comunidad que rodean cada meta.</span
-                >
-            </p>
-        </Reveal>
-    </section>
-
-    <!-- Desde el deporte -->
-    <section class="fl-section bg-accent">
-        <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
-            <Reveal class="lg:col-span-5">
+        <template #visual>
+            <div class="about-collage relative w-full max-w-[32rem]">
                 <div
-                    class="relative aspect-[4/5] overflow-hidden rounded-media bg-fl-cream shadow-fl-soft"
+                    class="fl-zoom relative ml-auto aspect-[4/5] w-[72%] overflow-hidden rounded-hero bg-fl-cream shadow-fl-float"
                 >
                     <img
-                        :src="MEDIA.photo.celebration.src"
-                        :srcset="MEDIA.photo.celebration.srcset"
-                        sizes="(min-width: 1024px) 40vw, 100vw"
-                        :width="MEDIA.photo.celebration.width"
-                        :height="MEDIA.photo.celebration.height"
-                        :alt="MEDIA.photo.celebration.alt"
-                        loading="lazy"
-                        decoding="async"
-                        class="size-full object-cover"
+                        src="/media/home/story/race-effort-1000.webp"
+                        srcset="
+                            /media/home/story/race-effort-640.webp   640w,
+                            /media/home/story/race-effort-1000.webp 1000w
+                        "
+                        sizes="(min-width: 1024px) 24rem, 70vw"
+                        width="1000"
+                        height="667"
+                        alt="Atleta en plena carrera"
+                        fetchpriority="high"
+                        class="size-full object-cover object-[35%_center]"
                     />
                 </div>
-            </Reveal>
-            <div class="lg:col-span-7">
-                <SectionHeading
-                    eyebrow="Quiénes somos"
-                    title="Construimos Finisher Legacy desde el deporte."
-                    description="Buscamos preservar y conectar todo lo que rodea a un atleta: lo que siente al cruzar la meta, lo que guarda después y la comunidad con la que lo comparte."
-                />
-                <StaggerGroup
-                    as="ol"
-                    item-selector="li"
-                    class="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2"
+                <div
+                    class="about-collage__small fl-zoom absolute bottom-[-7%] left-0 aspect-square w-[46%] overflow-hidden rounded-media border-4 border-background bg-fl-cream shadow-fl-float"
                 >
-                    <li
-                        v-for="(pillar, index) in pillars"
-                        :key="pillar.title"
-                        class="border-t border-border pt-4"
-                    >
-                        <p class="flex items-baseline gap-3">
-                            <span
-                                class="font-serif text-sm text-fl-gold-ink italic"
-                                >{{ String(index + 1).padStart(2, '0') }}</span
-                            >
-                            <span class="text-lg font-semibold">{{
-                                pillar.title
-                            }}</span>
-                        </p>
-                        <p class="mt-1.5 text-[15px] text-muted-foreground">
-                            {{ pillar.text }}
-                        </p>
-                    </li>
-                </StaggerGroup>
+                    <img
+                        src="/media/home/story/medal-closeup-640.webp"
+                        width="640"
+                        height="960"
+                        alt="Atleta celebrando con su medalla"
+                        loading="lazy"
+                        class="size-full object-cover object-[50%_18%]"
+                    />
+                </div>
+                <img
+                    src="/images/brand/logo/fl-monograma.png"
+                    alt=""
+                    width="320"
+                    height="320"
+                    loading="lazy"
+                    class="absolute top-[6%] left-[4%] w-[17%] opacity-90"
+                />
             </div>
+        </template>
+    </PageHero>
+
+    <!-- MAKE IT LAST manifesto -->
+    <section class="fl-container pt-6 pb-4 sm:pt-10">
+        <div
+            v-reveal="{ y: 28 }"
+            class="about-manifesto relative isolate overflow-hidden rounded-hero bg-fl-black px-6 py-14 text-white sm:px-12 sm:py-20 lg:px-20"
+        >
+            <div class="about-manifesto__glow" aria-hidden="true" />
+            <div
+                class="grid items-center gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20"
+            >
+                <div>
+                    <img
+                        src="/images/brand/logo/fl-firma-make-it-last.png"
+                        alt="MAKE IT LAST"
+                        width="1200"
+                        height="98"
+                        loading="lazy"
+                        class="h-auto w-full max-w-[22rem]"
+                    />
+                    <p
+                        class="mt-4 font-serif text-2xl font-medium text-fl-gold-soft italic sm:text-3xl"
+                    >
+                        Haz que perdure.
+                    </p>
+                </div>
+                <div>
+                    <p
+                        class="font-serif text-[1.45rem] leading-[1.3] font-medium text-white sm:text-[1.9rem]"
+                    >
+                        Cruzar la meta es solo el principio.
+                        <span class="text-white/60"
+                            >Lo que permanece es el legado.</span
+                        >
+                    </p>
+                    <p
+                        class="mt-6 max-w-xl text-[0.95rem] leading-relaxed text-white/70 sm:text-base"
+                    >
+                        Nuestra firma resume la promesa de la marca: que el
+                        esfuerzo de cada finisher dure mucho más que el día de
+                        la carrera.
+                    </p>
+                </div>
+            </div>
+
+            <ul
+                class="mt-12 grid gap-px overflow-hidden rounded-2xl bg-white/10 sm:mt-16 sm:grid-cols-3"
+            >
+                <li
+                    v-for="(item, index) in promise"
+                    :key="item.verb"
+                    v-reveal="{ index, delay: 120 }"
+                    class="bg-fl-black p-6 sm:p-7"
+                >
+                    <component
+                        :is="item.icon"
+                        class="size-5 text-fl-gold"
+                        :stroke-width="1.6"
+                        aria-hidden="true"
+                    />
+                    <h2
+                        class="mt-4 font-serif text-xl font-semibold text-white"
+                    >
+                        {{ item.verb }}
+                    </h2>
+                    <p class="mt-2 text-sm leading-relaxed text-white/65">
+                        {{ item.text }}
+                    </p>
+                </li>
+            </ul>
         </div>
     </section>
 
-    <!-- Historia: problema / origen / experiencia -->
-    <section v-if="story.length" class="fl-section-sm fl-container">
-        <p class="fl-eyebrow">Nuestra historia</p>
-        <StaggerGroup
-            as="div"
-            item-selector="article"
-            class="mt-8 grid gap-10 md:grid-cols-2 lg:grid-cols-3"
+    <!-- Mission + values -->
+    <section class="fl-section">
+        <div
+            class="fl-container grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20"
         >
-            <article v-for="block in story" :key="block.title">
-                <span class="block h-px w-10 bg-fl-gold" aria-hidden="true" />
-                <h2
-                    class="mt-5 font-serif text-2xl text-foreground sm:text-3xl"
+            <div>
+                <SectionIntro
+                    eyebrow="Nuestra misión"
+                    title="Honrar el esfuerzo"
+                    accent="de quien cruza la meta."
+                    text="Convertimos cada logro de corredores, ciclistas y atletas en una pieza de historia: productos y experiencias que se conservan, se reviven y se comparten."
+                />
+                <div
+                    v-if="sports.length"
+                    v-reveal="{ delay: 120 }"
+                    class="mt-8"
                 >
-                    {{ block.title }}
-                </h2>
-                <p
-                    class="mt-4 text-[15px] leading-relaxed whitespace-pre-line text-muted-foreground"
+                    <p class="fl-eyebrow">Disciplinas</p>
+                    <ul class="mt-3 flex flex-wrap gap-2">
+                        <li
+                            v-for="sport in sports"
+                            :key="sport"
+                            class="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm text-foreground/80"
+                        >
+                            {{ sport }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <FeatureGrid
+                :items="values"
+                :columns="2"
+                class="lg:[&>li:last-child]:col-span-2"
+            />
+        </div>
+    </section>
+
+    <!-- Historia: problema / origen / experiencia (admin) -->
+    <section v-if="story.length" class="fl-section bg-white">
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="Nuestra historia"
+                title="De dónde venimos."
+            />
+            <div
+                class="mt-10 grid gap-5"
+                :class="{
+                    'md:grid-cols-2': story.length > 1,
+                    'lg:grid-cols-3': story.length > 2,
+                    'max-w-3xl': story.length === 1,
+                }"
+            >
+                <article
+                    v-for="(block, index) in story"
+                    :key="block.title"
+                    v-reveal="{ index }"
+                    class="rounded-card border border-border bg-fl-paper p-6 sm:p-8"
                 >
-                    {{ block.text }}
-                </p>
-            </article>
-        </StaggerGroup>
+                    <span
+                        class="font-serif text-sm font-semibold text-fl-gold-ink tabular-nums"
+                        >0{{ index + 1 }}</span
+                    >
+                    <h3
+                        class="mt-3 font-serif text-xl leading-snug font-semibold text-foreground sm:text-2xl"
+                    >
+                        {{ block.title }}
+                    </h3>
+                    <p
+                        class="mt-4 text-[15px] leading-relaxed whitespace-pre-line text-muted-foreground"
+                    >
+                        {{ block.text }}
+                    </p>
+                </article>
+            </div>
+        </div>
     </section>
 
     <!-- Nuestro camino -->
-    <section class="fl-section bg-card">
+    <section class="fl-section bg-fl-paper">
         <div class="fl-container">
-            <SectionHeading
+            <SectionIntro
                 eyebrow="Trayectoria"
                 title="Nuestro camino."
-                description="Los eventos, carreras y proyectos que han construido la experiencia detrás de Finisher Legacy."
+                text="Los eventos, carreras y proyectos que han construido la experiencia detrás de Finisher Legacy."
             />
-            <Reveal class="mt-14">
+            <div v-reveal class="mt-12">
                 <AboutTimeline :milestones="milestones" :can-edit="canEdit" />
-            </Reveal>
+            </div>
         </div>
     </section>
 
     <!-- Del deporte al producto -->
-    <section
-        class="fl-section relative overflow-hidden border-y border-fl-line bg-fl-cream text-foreground"
-    >
-        <div class="fl-container grid items-center gap-12 lg:grid-cols-12">
-            <Reveal class="lg:col-span-5">
-                <p
-                    class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold-ink uppercase"
+    <section class="fl-section relative overflow-hidden bg-fl-cream/70">
+        <div
+            class="fl-container grid items-center gap-12 lg:grid-cols-12 lg:gap-16"
+        >
+            <div class="lg:col-span-5">
+                <SectionIntro
+                    eyebrow="Lo que hacemos"
+                    title="Del deporte a algo"
+                    accent="que puedes tocar."
+                    text="El Finisher Legacy Tag es un tag de colección con NFC que abre tu recuerdo con un toque. Alrededor de él: portarretrato, entrenamientos con la voz de los tuyos, comunidad, fotos de evento y equipo para el camino."
+                />
+                <Link
+                    v-reveal="{ delay: 120 }"
+                    :href="STORE_URL"
+                    class="fl-btn-primary mt-8"
                 >
-                    Producto
-                </p>
-                <h2 class="mt-4 font-serif text-4xl leading-tight sm:text-5xl">
-                    Del deporte a algo que puedes tocar.
-                </h2>
-                <p class="mt-5 max-w-md text-muted-foreground">
-                    El Finisher Legacy Tag y la línea Finisher Legacy nacen para
-                    acompañar cada meta: un tag de colección con NFC que abre tu
-                    historia, y textil técnico para el camino.
-                </p>
-                <Button
-                    as-child
-                    class="mt-8 h-11 rounded-full bg-foreground px-6 text-background hover:bg-fl-graphite"
-                >
-                    <Link :href="storeIndex()">
-                        Ver la tienda
-                        <ArrowRight class="size-4" />
-                    </Link>
-                </Button>
-            </Reveal>
-            <Reveal :delay-ms="120" class="grid gap-3 lg:col-span-7">
+                    Ver la tienda
+                    <ArrowRight class="size-4" aria-hidden="true" />
+                </Link>
+            </div>
+            <div
+                v-reveal="{ delay: 120, y: 28 }"
+                class="grid gap-3 lg:col-span-7"
+            >
                 <div
-                    class="relative flex aspect-[16/10] items-center justify-center gap-[7%] overflow-hidden rounded-hero border border-fl-gold/20 bg-white shadow-fl-soft"
+                    class="about-tags relative flex aspect-[16/10] items-end justify-center gap-[6%] overflow-hidden rounded-hero border border-fl-gold/20 bg-white shadow-fl-soft"
                 >
                     <div
-                        class="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_65%_at_50%_50%,color-mix(in_srgb,var(--fl-gold)_16%,transparent),transparent_72%)]"
+                        class="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_65%_at_50%_50%,color-mix(in_srgb,var(--fl-gold)_18%,transparent),transparent_72%)]"
                         aria-hidden="true"
                     />
-                    <div class="relative w-[24%] -rotate-6">
+                    <div class="about-tags__a relative w-[21%] pb-[2%]">
                         <TagVisualizer
-                            name="Tu colección"
-                            subtitle="Destino · Disciplina"
-                            face="front"
+                            name="Valle de Bravo"
+                            front-art="/images/collections/tag-art/valle-de-bravo.webp"
                             :tilt="false"
-                            label="Finisher Legacy Tag, frente (render ilustrativo)"
+                            label="Finisher Legacy Tag de la colección Valle de Bravo"
                         />
                     </div>
-                    <div class="relative mt-[6%] w-[24%] rotate-3">
+                    <div class="relative w-[24%] pb-[5%]">
                         <TagVisualizer
-                            name="Tu colección"
-                            subtitle="Destino · Disciplina"
+                            name="Cozumel"
+                            front-art="/images/collections/tag-art/cozumel-arrecife.webp"
+                            :tilt="false"
+                            label="Finisher Legacy Tag de la colección Cozumel"
+                        />
+                    </div>
+                    <div class="about-tags__c relative w-[21%] pb-[2%]">
+                        <TagVisualizer
+                            name="Veracruz"
                             face="back"
                             :tilt="false"
-                            label="Finisher Legacy Tag, reverso (render ilustrativo)"
+                            label="Reverso del Finisher Legacy Tag con la marca NFC"
                         />
                     </div>
-                    <span
-                        class="absolute right-4 bottom-3 text-[10px] tracking-[0.16em] text-muted-foreground uppercase"
-                        >Render ilustrativo</span
-                    >
                 </div>
-                <ul class="grid grid-cols-4 gap-3">
+                <ul class="grid grid-cols-3 gap-3">
                     <li
                         v-for="product in products"
                         :key="product.key"
-                        class="overflow-hidden rounded-media bg-white shadow-fl-micro"
+                        class="fl-zoom relative overflow-hidden rounded-media bg-white shadow-fl-micro"
                     >
                         <img
                             :src="`/media/products/concepts/${product.key}-480.webp`"
@@ -339,60 +422,55 @@ const story = computed(() =>
                             decoding="async"
                             class="aspect-[4/5] w-full object-cover"
                         />
+                        <span
+                            class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/85 to-transparent px-3 pt-6 pb-2.5 text-[11px] font-semibold tracking-[0.14em] text-foreground uppercase"
+                            >{{ product.label }}</span
+                        >
                     </li>
                 </ul>
-            </Reveal>
+            </div>
         </div>
     </section>
 
-    <!-- Galería -->
-    <section v-if="gallery.length" class="fl-section-sm fl-container">
-        <SectionHeading eyebrow="Galería" title="Detrás de Finisher Legacy." />
-        <Reveal class="mt-10">
-            <AboutGallery :items="gallery" />
-        </Reveal>
+    <!-- Galería (admin) -->
+    <section v-if="gallery.length" class="fl-section bg-white">
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="Galería"
+                title="Detrás de Finisher Legacy."
+            />
+            <div v-reveal class="mt-10">
+                <AboutGallery :items="gallery" />
+            </div>
+        </div>
     </section>
 
-    <!-- Visión -->
-    <section v-if="company.vision" class="fl-section-lg">
-        <div class="fl-container max-w-4xl text-center">
+    <!-- Visión (admin) -->
+    <section v-if="company.vision" class="fl-section-lg bg-white">
+        <div v-reveal class="fl-container max-w-4xl text-center">
             <p class="fl-eyebrow">Visión</p>
             <p
-                class="mt-6 font-serif text-3xl leading-snug text-foreground sm:text-4xl"
+                class="mt-6 font-serif text-[1.6rem] leading-snug font-medium text-foreground sm:text-4xl"
             >
                 “{{ company.vision }}”
             </p>
             <div
-                v-if="sports.length"
-                class="mt-10 flex flex-wrap justify-center gap-2"
-                aria-label="Disciplinas"
-            >
-                <span
-                    v-for="sport in sports"
-                    :key="sport"
-                    class="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm text-muted-foreground"
-                    >{{ sport }}</span
-                >
-            </div>
-            <div
                 class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
             >
-                <Button as-child class="h-11 rounded-full px-6">
-                    <Link :href="communityIndex()">
-                        Conoce la comunidad
-                        <ArrowRight class="size-4" />
-                    </Link>
-                </Button>
-                <Button as-child variant="ghost" class="h-11 rounded-full px-6">
-                    <Link :href="contact()">Escríbenos</Link>
-                </Button>
+                <Link :href="COMMUNITY_URL" class="fl-btn-primary">
+                    Conoce la comunidad
+                    <ArrowRight class="size-4" aria-hidden="true" />
+                </Link>
+                <Link :href="CONTACT_URL" class="fl-btn-secondary">
+                    Escríbenos
+                </Link>
             </div>
         </div>
     </section>
 
     <!-- Dónde estamos + colaboración -->
-    <section class="fl-section bg-accent">
-        <div class="fl-container">
+    <section class="fl-section bg-fl-cream/70">
+        <div v-reveal class="fl-container">
             <AboutLocation
                 :country="company.country"
                 :city="company.city"
@@ -401,4 +479,73 @@ const story = computed(() =>
             />
         </div>
     </section>
+
+    <EcosystemGrid />
 </template>
+
+<style scoped>
+.about-collage {
+    padding-bottom: 7%;
+}
+.about-collage__small {
+    animation: about-float 8s ease-in-out infinite;
+}
+@keyframes about-float {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(0, -10px, 0);
+    }
+}
+.about-manifesto::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        #c9ae8b 35%,
+        #e6d1b5 50%,
+        #c9ae8b 65%,
+        transparent
+    );
+}
+.about-manifesto__glow {
+    position: absolute;
+    z-index: -1;
+    top: -50%;
+    left: -10%;
+    width: min(52rem, 120%);
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    background: radial-gradient(
+        closest-side,
+        rgb(201 174 139 / 0.2),
+        transparent
+    );
+    animation: about-breathe 10s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+@keyframes about-breathe {
+    to {
+        transform: translate3d(6%, 4%, 0) scale(1.12);
+    }
+}
+.about-tags__a {
+    transform: rotate(-7deg);
+    transform-origin: 50% 100%;
+}
+.about-tags__c {
+    transform: rotate(7deg);
+    transform-origin: 50% 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+    .about-collage__small,
+    .about-manifesto__glow {
+        animation: none;
+    }
+}
+</style>

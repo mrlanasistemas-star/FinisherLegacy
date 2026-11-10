@@ -8,7 +8,7 @@
  */
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import SectionHeading from '@/components/public/SectionHeading.vue';
+import LegalDocument from '@/components/marketing/LegalDocument.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { contact } from '@/routes';
 import { show as accountDeletion } from '@/routes/account-deletion';
@@ -135,6 +135,11 @@ const sections: Section[] = [
         ],
     },
 ];
+
+const toc = [
+    ...sections.map(({ id, title }) => ({ id, title })),
+    { id: 'contacto', title: '12. Contacto' },
+];
 </script>
 
 <template>
@@ -143,73 +148,35 @@ const sections: Section[] = [
         description="Aviso de privacidad de Finisher Legacy: qué datos recopilamos en la web y en la app, para qué, con quién los compartimos y cómo eliminar tu cuenta."
     />
 
-    <section class="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
-        <SectionHeading
-            align="left"
-            eyebrow="Legal"
-            title="Aviso de privacidad"
-            class="mb-4"
-        />
-        <p class="mb-10 text-sm text-muted-foreground">
-            Aplica al sitio finisherlegacy.com y a la app Finisher Legacy.
-        </p>
+    <LegalDocument
+        eyebrow="Legal"
+        title="Aviso de privacidad"
+        intro="Aplica al sitio finisherlegacy.com y a la app Finisher Legacy."
+        :toc="toc"
+    >
+        <section v-for="section in sections" :id="section.id" :key="section.id">
+            <h2>{{ section.title }}</h2>
+            <ul v-if="section.items">
+                <li v-for="item in section.items" :key="item">
+                    {{ item }}
+                </li>
+            </ul>
+            <p v-for="paragraph in section.paragraphs ?? []" :key="paragraph">
+                {{ paragraph }}
+            </p>
+            <p v-if="section.id === 'eliminacion'">
+                <Link :href="accountDeletion()">Ir a «Eliminar tu cuenta»</Link>
+            </p>
+        </section>
 
-        <div class="space-y-10">
-            <div
-                v-for="section in sections"
-                :id="section.id"
-                :key="section.id"
-                class="scroll-mt-24"
-            >
-                <h2 class="text-lg font-semibold text-foreground">
-                    {{ section.title }}
-                </h2>
-                <ul
-                    v-if="section.items"
-                    class="mt-3 list-disc space-y-2 pl-5 leading-relaxed text-muted-foreground"
-                >
-                    <li v-for="item in section.items" :key="item">
-                        {{ item }}
-                    </li>
-                </ul>
-                <p
-                    v-for="paragraph in section.paragraphs ?? []"
-                    :key="paragraph"
-                    class="mt-3 leading-relaxed text-muted-foreground"
-                >
-                    {{ paragraph }}
-                </p>
-                <p
-                    v-if="section.id === 'eliminacion'"
-                    class="mt-3 leading-relaxed"
-                >
-                    <Link
-                        :href="accountDeletion()"
-                        class="font-medium text-foreground underline underline-offset-2"
-                        >Ir a «Eliminar tu cuenta»</Link
-                    >
-                </p>
-            </div>
-
-            <div id="contacto" class="scroll-mt-24">
-                <h2 class="text-lg font-semibold text-foreground">
-                    12. Contacto
-                </h2>
-                <p class="mt-3 leading-relaxed text-muted-foreground">
-                    Para cualquier duda sobre tus datos escríbenos a
-                    <a
-                        :href="`mailto:${email}`"
-                        class="font-medium text-foreground underline underline-offset-2"
-                        >{{ email }}</a
-                    >
-                    o desde la
-                    <Link
-                        :href="contact()"
-                        class="font-medium text-foreground underline underline-offset-2"
-                        >página de contacto</Link
-                    >.
-                </p>
-            </div>
-        </div>
-    </section>
+        <section id="contacto">
+            <h2>12. Contacto</h2>
+            <p>
+                Para cualquier duda sobre tus datos escríbenos a
+                <a :href="`mailto:${email}`">{{ email }}</a>
+                o desde la
+                <Link :href="contact()">página de contacto</Link>.
+            </p>
+        </section>
+    </LegalDocument>
 </template>

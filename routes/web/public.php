@@ -14,6 +14,20 @@ Route::inertia('como-funciona', 'HowItWorks')->name('how-it-works');
 // The page used to live at /how-it-works — keep old links working.
 Route::permanentRedirect('how-it-works', '/como-funciona');
 
+// Ecosystem landing pages: one public explainer per pillar (the private
+// counterparts live behind auth: /mi-legacy, /mi-entrenamiento…).
+Route::inertia('recuerdos', 'landing/Memories')->name('landing.memories');
+Route::inertia('portarretrato', 'landing/Portrait')->name('landing.portrait');
+Route::inertia('entrenamientos', 'landing/Training')->name('landing.training');
+Route::inertia('app', 'landing/App')->name('landing.app');
+
+// Spanish aliases people type by hand; the canonical URLs stay as they are.
+Route::permanentRedirect('privacidad', '/privacy');
+Route::permanentRedirect('terminos', '/terms');
+Route::permanentRedirect('contacto', '/contact');
+Route::permanentRedirect('ayuda', '/contact');
+Route::permanentRedirect('eventos', '/events');
+
 // Guest gate for social actions (useAuthGate): remembers where the visitor
 // was (same-site relative paths only) and sends them to sign in. Fortify's
 // redirect()->intended() brings them back afterwards.

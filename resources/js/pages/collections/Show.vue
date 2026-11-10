@@ -7,15 +7,25 @@
  * and other collections. Product CTA → /tienda/{slug}.
  */
 import { Link } from '@inertiajs/vue3';
-import { ArrowRight, ChevronRight } from '@lucide/vue';
+import {
+    ArrowRight,
+    ChevronRight,
+    Images,
+    Lock,
+    Nfc,
+    Users,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import CollectionCard from '@/components/collections/CollectionCard.vue';
 import TagProductTile from '@/components/collections/TagProductTile.vue';
+import CtaBand from '@/components/marketing/CtaBand.vue';
+import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
+import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import { vReveal } from '@/composables/useReveal';
-import { ACTIVATE_URL } from '@/config/public-links';
+import { ACTIVATE_URL, STORE_URL } from '@/config/public-links';
 import { howItWorks } from '@/routes';
 import { index as collectionsIndex } from '@/routes/collections';
 import { show as productShow } from '@/routes/store/products';
@@ -76,11 +86,34 @@ const jsonLd = computed(() => ({
     })),
 }));
 
+const tagFeatures = [
+    {
+        icon: Nfc,
+        title: 'Se abre con un toque',
+        text: 'Acercas tu teléfono al tag y tu recuerdo aparece. Si tu teléfono no lee NFC, escribes su código.',
+    },
+    {
+        icon: Images,
+        title: 'Guarda tu recuerdo',
+        text: 'Fotos, tu historia, tu resultado y un mensaje de voz de ese día.',
+    },
+    {
+        icon: Lock,
+        title: 'Tú decides quién lo ve',
+        text: 'Público, solo con enlace o privado. Los enlaces que compartes se pueden revocar.',
+    },
+    {
+        icon: Users,
+        title: 'Tu familia no necesita app',
+        text: 'Quien toca el tag o recibe tu enlace lo abre en el navegador de su teléfono.',
+    },
+];
+
 const steps = [
     {
         n: '01',
         title: 'Lo compras',
-        body: 'Eliges tu tag y te lo llevas listo.',
+        body: 'Eliges tu diseño y lo recibes listo, con su correa.',
     },
     {
         n: '02',
@@ -90,7 +123,7 @@ const steps = [
     {
         n: '03',
         title: 'Guardas tu historia',
-        body: 'Foto, tiempo, lugar, dedicatoria, audio.',
+        body: 'Fotos, resultado, lugar, dedicatoria y mensaje de voz.',
     },
 ];
 </script>
@@ -135,7 +168,7 @@ const steps = [
         />
 
         <div
-            class="fl-container relative grid min-h-[70svh] items-center gap-12 pt-12 pb-16 sm:pt-20 lg:grid-cols-12"
+            class="fl-container relative grid items-center gap-12 pt-10 pb-16 sm:pt-14 lg:min-h-[34rem] lg:grid-cols-12 lg:pb-20"
         >
             <div class="lg:col-span-7">
                 <nav
@@ -163,7 +196,7 @@ const steps = [
                 </p>
                 <h1
                     id="collection-title"
-                    class="mt-5 font-serif text-[clamp(2.75rem,8vw,6.5rem)] leading-[0.98] font-medium tracking-[-0.03em]"
+                    class="mt-5 font-serif text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.98] font-semibold tracking-[-0.03em]"
                 >
                     {{ baseName }}
                     <span
@@ -173,10 +206,12 @@ const steps = [
                     >
                 </h1>
                 <p
-                    v-if="collection.tagline"
                     class="mt-6 max-w-[32rem] text-lg leading-relaxed text-muted-foreground"
                 >
-                    {{ collection.tagline }}
+                    {{
+                        collection.tagline ||
+                        `El Finisher Legacy Tag de ${baseName}: lo tocas con tu teléfono y se abre el recuerdo de tu carrera.`
+                    }}
                 </p>
                 <p
                     v-if="collection.edition || collection.season"
@@ -188,17 +223,24 @@ const steps = [
                             .join(' · ')
                     }}
                 </p>
-                <a
-                    v-if="collection.products.length"
-                    href="#piezas"
-                    class="mt-9 inline-flex h-11 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold tracking-wide text-background transition-colors hover:bg-fl-graphite"
-                >
-                    Ver
-                    {{
-                        collection.products.length === 1 ? 'el tag' : 'los tags'
-                    }}
-                    <ArrowRight class="size-4" aria-hidden="true" />
-                </a>
+                <div class="mt-9 flex flex-wrap items-center gap-3">
+                    <a
+                        v-if="collection.products.length"
+                        href="#piezas"
+                        class="fl-btn-primary"
+                    >
+                        Ver
+                        {{
+                            collection.products.length === 1
+                                ? 'el tag'
+                                : 'los tags'
+                        }}
+                        <ArrowRight class="size-4" aria-hidden="true" />
+                    </a>
+                    <Link :href="howItWorks()" class="fl-btn-secondary">
+                        Cómo funciona
+                    </Link>
+                </div>
             </div>
             <div
                 class="mx-auto w-[56%] max-w-[18rem] sm:w-[40%] lg:col-span-4 lg:col-start-9 lg:w-full"
@@ -215,8 +257,8 @@ const steps = [
 
     <!-- Designs: every tag front of the collection (data-driven) -->
     <section
-        v-if="designs.length > 1"
-        class="bg-fl-paper py-16 sm:py-20"
+        v-if="designs.length > 1 && !collection.products.length"
+        class="border-t border-fl-line bg-fl-paper py-14 sm:py-20"
         aria-labelledby="designs-title"
     >
         <div class="fl-container">
@@ -274,17 +316,22 @@ const steps = [
     <!-- Products -->
     <section
         id="piezas"
-        class="scroll-mt-20 bg-fl-paper py-16 sm:py-24"
-        :class="{ 'pt-0 sm:pt-0': collection.description }"
+        class="scroll-mt-20 bg-fl-paper pb-16 sm:pb-24"
         aria-labelledby="pieces-title"
     >
         <div class="fl-container">
-            <div
-                class="flex items-end justify-between gap-6 border-t border-foreground/10 pt-12"
-            >
+            <div class="border-t border-foreground/10 pt-12">
+                <p class="fl-eyebrow inline-flex items-center gap-3">
+                    <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
+                    {{
+                        collection.products.length > 1
+                            ? `${collection.products.length} diseños`
+                            : 'Disponible en la tienda'
+                    }}
+                </p>
                 <h2
                     id="pieces-title"
-                    class="fl-display text-[clamp(1.9rem,3.6vw,3rem)]"
+                    class="fl-display mt-4 text-[1.9rem] leading-[1.1] sm:text-[2.6rem]"
                 >
                     {{
                         collection.products.length === 1
@@ -296,7 +343,7 @@ const steps = [
 
             <ul
                 v-if="collection.products.length"
-                class="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3"
+                class="mt-10 grid gap-x-8 gap-y-12 min-[520px]:grid-cols-2 lg:grid-cols-3"
             >
                 <Reveal
                     v-for="(product, index) in collection.products"
@@ -327,11 +374,11 @@ const steps = [
                     />
                     <Link
                         :href="productShow(product.slug)"
-                        class="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground underline-offset-4 hover:underline"
+                        class="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground"
                     >
-                        {{
+                        <span class="fl-link fl-link--gold">{{
                             product.available ? 'Ver y comprar' : 'Ver detalles'
-                        }}
+                        }}</span>
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>
                 </Reveal>
@@ -342,56 +389,43 @@ const steps = [
         </div>
     </section>
 
-    <!-- How it works, briefly -->
+    <!-- What the tag does -->
     <section
-        class="border-y border-fl-line bg-white py-16 text-foreground sm:py-24"
-        aria-labelledby="collection-how-title"
+        class="fl-section border-y border-fl-line bg-white text-foreground"
+        aria-label="Qué hace tu tag"
     >
-        <div class="fl-container grid gap-12 lg:grid-cols-12">
-            <div class="lg:col-span-4">
-                <p
-                    class="text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
-                >
-                    Después de comprarlo
-                </p>
-                <h2
-                    id="collection-how-title"
-                    class="mt-4 font-serif text-[clamp(1.9rem,3.6vw,3rem)] leading-tight"
-                >
-                    Tu carrera termina.
-                    <span class="text-fl-gold-ink italic">Tu historia no.</span>
-                </h2>
-                <div class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                    <Link
-                        :href="howItWorks()"
-                        class="inline-flex min-h-11 items-center gap-2 font-semibold text-foreground underline-offset-4 hover:underline"
-                    >
-                        Cómo funciona
-                        <ArrowRight class="size-4" aria-hidden="true" />
-                    </Link>
-                    <a
-                        :href="ACTIVATE_URL"
-                        class="inline-flex min-h-11 items-center text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                        >¿Ya lo tienes? Actívalo</a
-                    >
-                </div>
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="Qué hace tu tag"
+                title="Tu carrera termina."
+                accent="Tu historia no."
+                text="El tag es un objeto de colección y, a la vez, la llave de tu recuerdo."
+            />
+            <div class="mt-10">
+                <FeatureGrid :items="tagFeatures" :columns="4" />
             </div>
+
             <ol
                 v-reveal.stagger
-                class="grid gap-10 sm:grid-cols-3 lg:col-span-7 lg:col-start-6"
+                class="mt-12 grid gap-8 border-t border-border pt-10 sm:grid-cols-3"
+                aria-label="Después de comprarlo"
             >
-                <li
-                    v-for="step in steps"
-                    :key="step.n"
-                    class="border-t border-foreground/10 pt-6"
-                >
-                    <span class="legacy-numeric text-xs text-fl-gold-ink">{{
-                        step.n
-                    }}</span>
-                    <p class="mt-3 font-serif text-2xl">{{ step.title }}</p>
-                    <p class="mt-2 text-[15px] text-muted-foreground">
-                        {{ step.body }}
-                    </p>
+                <li v-for="step in steps" :key="step.n" class="flex gap-4">
+                    <span
+                        class="legacy-numeric flex size-10 shrink-0 items-center justify-center rounded-full bg-fl-black font-serif text-sm font-semibold text-fl-gold-soft"
+                        aria-hidden="true"
+                        >{{ Number(step.n) }}</span
+                    >
+                    <div>
+                        <p class="font-serif text-lg font-semibold">
+                            {{ step.title }}
+                        </p>
+                        <p
+                            class="mt-1 text-[15px] leading-relaxed text-muted-foreground"
+                        >
+                            {{ step.body }}
+                        </p>
+                    </div>
                 </li>
             </ol>
         </div>
@@ -423,7 +457,7 @@ const steps = [
                 </Link>
             </div>
             <ul
-                class="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3"
+                class="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-8 lg:grid-cols-3"
             >
                 <li
                     v-for="(other, index) in otherCollections"
@@ -435,4 +469,20 @@ const steps = [
             </ul>
         </div>
     </section>
+
+    <CtaBand
+        title="¿Ya tienes tu tag?"
+        accent="Actívalo en un toque."
+        text="Acerca tu teléfono al tag o escribe su código para empezar tu recuerdo."
+    >
+        <template #actions>
+            <a :href="ACTIVATE_URL" class="mk-cta-primary">
+                Activar mi tag
+                <ArrowRight class="size-4" aria-hidden="true" />
+            </a>
+            <Link :href="STORE_URL" class="mk-cta-secondary">
+                Ir a la tienda
+            </Link>
+        </template>
+    </CtaBand>
 </template>

@@ -1,12 +1,28 @@
 <script setup lang="ts">
+/**
+ * Branded error page (404 / 403 / 419 / 429 / 500 / 503), rendered by the
+ * exception handler in bootstrap/app.php with a `status` prop (outside
+ * local/testing). Official monogram image, a clear headline in Spanish, a
+ * way home and a few useful destinations. Never indexed.
+ */
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
-import Reveal from '@/components/motion/Reveal.vue';
-import FinisherMascot from '@/components/public/FinisherMascot.vue';
-import { Button } from '@/components/ui/button';
+import {
+    ArrowLeft,
+    ArrowUpRight,
+    LifeBuoy,
+    Route,
+    ShoppingBag,
+} from '@lucide/vue';
+import { computed } from 'vue';
+import { vReveal } from '@/composables/useReveal';
+import {
+    CONTACT_URL,
+    HOW_IT_WORKS_URL,
+    STORE_URL,
+} from '@/config/public-links';
 import { home } from '@/routes';
 
-const { status } = defineProps<{
+const props = defineProps<{
     status: number;
 }>();
 
@@ -14,11 +30,11 @@ const copy: Record<number, { title: string; description: string }> = {
     404: {
         title: 'Esta meta no existe.',
         description:
-            'La página que buscas no está aquí. Puede que el enlace haya cambiado o que la ruta ya no exista.',
+            'La página que buscas no está aquí. Puede que el enlace haya cambiado o que ya no exista.',
     },
     403: {
         title: 'Acceso restringido.',
-        description: 'No tienes permiso para ver esta parte de tu Legacy.',
+        description: 'No tienes permiso para ver esta página.',
     },
     419: {
         title: 'Tu sesión expiró.',
@@ -29,59 +45,180 @@ const copy: Record<number, { title: string; description: string }> = {
         description: 'Espera un momento antes de intentarlo de nuevo.',
     },
     500: {
-        title: 'Algo se rompió en la pista.',
+        title: 'Tropezamos en la ruta.',
         description:
-            'Tuvimos un problema de nuestro lado. Ya estamos trabajando en ello.',
+            'Tuvimos un problema de nuestro lado. Ya estamos trabajando en ello; inténtalo de nuevo en unos minutos.',
     },
     503: {
-        title: 'En mantenimiento.',
+        title: 'Estamos en mantenimiento.',
         description:
             'Finisher Legacy vuelve en un momento. Gracias por tu paciencia.',
     },
 };
 
-const content = copy[status] ?? {
-    title: 'Algo no salió como esperábamos.',
-    description: 'Intenta de nuevo o vuelve al inicio.',
-};
+const content = computed(
+    () =>
+        copy[props.status] ?? {
+            title: 'Algo no salió como esperábamos.',
+            description: 'Intenta de nuevo o vuelve al inicio.',
+        },
+);
+
+const links = [
+    {
+        icon: ShoppingBag,
+        label: 'Tienda',
+        text: 'Tags, Racepack, Trisuit y Chill Band',
+        href: STORE_URL,
+    },
+    {
+        icon: Route,
+        label: 'Cómo funciona',
+        text: 'El recorrido del tag, paso a paso',
+        href: HOW_IT_WORKS_URL,
+    },
+    {
+        icon: LifeBuoy,
+        label: 'Ayuda y contacto',
+        text: 'Preguntas frecuentes y soporte',
+        href: CONTACT_URL,
+    },
+];
 </script>
 
 <template>
-    <Head :title="`Error ${status}`" />
+    <Head :title="`Error ${status}`">
+        <meta name="robots" content="noindex" />
+    </Head>
 
-    <div
-        class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-6 py-24 text-center"
+    <section
+        class="err relative isolate flex min-h-[calc(100svh-4.25rem)] flex-col items-center justify-center overflow-hidden px-4 py-16 text-center sm:px-6 sm:py-24"
     >
-        <Reveal>
-            <p
-                class="bg-gradient-to-r from-fl-gold-soft via-fl-gold to-fl-gold-dim bg-clip-text text-7xl font-black tracking-tighter text-transparent sm:text-8xl"
+        <div class="err__aura" aria-hidden="true" />
+        <p
+            class="err__code pointer-events-none absolute top-1/2 left-1/2 -z-10 font-serif font-bold tracking-tighter select-none"
+            aria-hidden="true"
+        >
+            {{ status }}
+        </p>
+
+        <img
+            v-reveal
+            src="/images/brand/logo/fl-monograma.png"
+            alt="Finisher Legacy"
+            width="160"
+            height="160"
+            class="err__mark h-16 w-auto sm:h-20"
+        />
+        <p v-reveal="{ delay: 60 }" class="fl-eyebrow mt-8">
+            Error {{ status }}
+        </p>
+        <h1
+            v-reveal="{ delay: 120 }"
+            class="fl-display mt-4 max-w-2xl text-[2.2rem] leading-[1.06] sm:text-6xl"
+        >
+            {{ content.title }}
+        </h1>
+        <p
+            v-reveal="{ delay: 180 }"
+            class="mx-auto mt-5 max-w-md text-base leading-relaxed text-muted-foreground"
+        >
+            {{ content.description }}
+        </p>
+
+        <div v-reveal="{ delay: 240 }" class="mt-8">
+            <Link :href="home()" class="fl-btn-primary">
+                <ArrowLeft class="size-4" aria-hidden="true" />
+                Volver al inicio
+            </Link>
+        </div>
+
+        <ul
+            class="mt-12 grid w-full max-w-3xl gap-3 text-left sm:grid-cols-3"
+            aria-label="Otros lugares útiles"
+        >
+            <li
+                v-for="(item, index) in links"
+                :key="item.label"
+                v-reveal="{ index, delay: 300 }"
             >
-                {{ status }}
-            </p>
-        </Reveal>
-
-        <Reveal :delay-ms="80">
-            <div v-if="status === 404" class="mt-6 flex justify-center">
-                <FinisherMascot variant="empty" alt="" />
-            </div>
-        </Reveal>
-
-        <Reveal :delay-ms="120">
-            <h1 class="mt-6 text-2xl font-bold text-foreground sm:text-3xl">
-                {{ content.title }}
-            </h1>
-            <p class="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-                {{ content.description }}
-            </p>
-        </Reveal>
-
-        <Reveal :delay-ms="200">
-            <Button as-child size="lg" class="fl-hover-lift mt-8 rounded-full">
-                <Link :href="home()">
-                    <ArrowLeft class="size-4" />
-                    Volver al inicio
+                <Link
+                    :href="item.href"
+                    class="group fl-card fl-card-hover flex h-full items-center gap-3.5 p-4"
+                >
+                    <span
+                        class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
+                        aria-hidden="true"
+                    >
+                        <component :is="item.icon" class="size-[18px]" />
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span
+                            class="block text-sm font-semibold text-foreground"
+                            >{{ item.label }}</span
+                        >
+                        <span
+                            class="block text-xs leading-snug text-muted-foreground"
+                            >{{ item.text }}</span
+                        >
+                    </span>
+                    <ArrowUpRight
+                        class="size-4 shrink-0 text-muted-foreground transition-[transform,color] duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-fl-gold-ink motion-reduce:transform-none"
+                        aria-hidden="true"
+                    />
                 </Link>
-            </Button>
-        </Reveal>
-    </div>
+            </li>
+        </ul>
+    </section>
 </template>
+
+<style scoped>
+.err__aura {
+    position: absolute;
+    z-index: -2;
+    top: 50%;
+    left: 50%;
+    width: min(52rem, 130vw);
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    background: radial-gradient(
+        closest-side,
+        rgb(201 174 139 / 0.26),
+        rgb(201 174 139 / 0.06) 60%,
+        transparent
+    );
+    transform: translate(-50%, -55%);
+    animation: err-breathe 9s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+.err__code {
+    font-size: clamp(11rem, 44vw, 30rem);
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 1px rgb(140 116 84 / 0.2);
+    transform: translate(-50%, -58%);
+}
+.err__mark {
+    animation: err-float 6s ease-in-out infinite;
+}
+@keyframes err-breathe {
+    to {
+        transform: translate(-50%, -55%) scale(1.12);
+    }
+}
+@keyframes err-float {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(0, -8px, 0);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .err__aura,
+    .err__mark {
+        animation: none;
+    }
+}
+</style>

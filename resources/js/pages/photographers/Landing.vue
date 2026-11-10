@@ -3,9 +3,8 @@
  * Public "Fotógrafos" zone — why and how to sell event photos on Finisher
  * Legacy: photographic hero, publish with no upfront cost (never "free
  * forever"), your price, transparent commission (live calculator with the
- * real formula), athletes find their photos by event and bib.
- * The hero uses a project photograph until the dedicated one in
- * PROMPTS-IMAGES.md exists.
+ * real formula and the real configured rates), athletes find their photos
+ * by event and bib. Counters only render when there is real activity.
  */
 import { Link, usePage } from '@inertiajs/vue3';
 import {
@@ -15,18 +14,21 @@ import {
     CircleDollarSign,
     Hash,
     LineChart,
+    Search,
     Send,
     ShieldCheck,
     Upload,
     Users,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
-import Reveal from '@/components/motion/Reveal.vue';
-import StaggerGroup from '@/components/motion/StaggerGroup.vue';
+import CtaBand from '@/components/marketing/CtaBand.vue';
+import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
+import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import FeeBreakdown from '@/components/photos/FeeBreakdown.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
-import { Button } from '@/components/ui/button';
+import { vReveal } from '@/composables/useReveal';
 import { MEDIA } from '@/config/media';
+import { PHOTOS_URL } from '@/config/public-links';
 import type { PhotoFeeRules } from '@/lib/photoFees';
 import { dashboard as photographerDashboard } from '@/routes/photographer';
 import { register as photographerRegister } from '@/routes/photographers';
@@ -57,18 +59,18 @@ const steps = [
     },
     {
         icon: Hash,
-        title: 'Asigna evento y dorsal',
+        title: 'Asigna evento y número',
         text: 'Elige el evento y escribe los números de participante que aparecen.',
     },
     {
         icon: Send,
         title: 'Publica',
-        text: 'Tras una revisión rápida tus fotos aparecen en Mis Fotos con marca de agua.',
+        text: 'Tras una revisión rápida, tus fotos aparecen en Fotos de evento con marca de agua.',
     },
     {
         icon: CircleDollarSign,
         title: 'Vende',
-        text: 'Cada atleta compra su momento; ves el desglose y te pagamos a tu cuenta.',
+        text: 'Cada atleta compra su momento; ves el desglose de cada venta en tu portal.',
     },
 ];
 
@@ -81,12 +83,12 @@ const benefits = [
     {
         icon: LineChart,
         title: 'Tus números claros',
-        text: 'Panel con ventas, comisiones y pagos pendientes en tiempo real.',
+        text: 'Un portal con tus ventas, comisiones y pagos pendientes.',
     },
     {
         icon: Users,
         title: 'Atletas que buscan su momento',
-        text: 'La comunidad de Finisher Legacy llega a sus fotos desde su perfil y sus carreras.',
+        text: 'Los atletas llegan a sus fotos desde el evento y su número de participante.',
     },
 ];
 </script>
@@ -98,62 +100,67 @@ const benefits = [
     />
 
     <!-- Photographic hero -->
-    <section class="relative overflow-hidden bg-background text-foreground">
+    <section class="relative isolate overflow-hidden bg-background">
         <div
-            class="fl-container grid items-center gap-10 pt-12 pb-16 sm:pt-20 sm:pb-24 lg:grid-cols-12 lg:gap-14"
+            class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(55%_65%_at_90%_0%,#f4eedf,transparent_70%)]"
+            aria-hidden="true"
+        />
+        <div
+            class="fl-container grid items-center gap-10 pt-12 pb-12 sm:pt-16 sm:pb-16 lg:grid-cols-12 lg:gap-14"
         >
             <div class="lg:col-span-7">
-                <p
-                    class="flex items-center gap-3 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
-                >
+                <p v-reveal class="fl-eyebrow inline-flex items-center gap-3">
                     <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
                     Para fotógrafos deportivos
                 </p>
                 <h1
-                    class="mt-5 max-w-3xl font-serif text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-7xl"
+                    v-reveal="{ delay: 60 }"
+                    class="fl-display mt-5 max-w-3xl text-[2.4rem] leading-[1.04] sm:text-6xl lg:text-[4.1rem]"
                 >
                     Tu cámara captura la meta.
-                    <span class="text-fl-gold-ink italic"
-                        >Finisher Legacy te ayuda a venderla.</span
+                    <span class="block font-medium text-fl-gold-ink italic"
+                        >Nosotros te ayudamos a venderla.</span
                     >
                 </h1>
-                <p class="mt-6 max-w-xl text-lg text-muted-foreground">
-                    Publicar sin costo inicial. Tú pones el precio, cada atleta
-                    encuentra su foto por evento y número de participante, y ves
-                    cada venta con su desglose.
+                <p
+                    v-reveal="{ delay: 140 }"
+                    class="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+                >
+                    Publicar no tiene costo inicial. Tú pones el precio, cada
+                    atleta encuentra su foto por evento y número de
+                    participante, y ves cada venta con su desglose.
                 </p>
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <Button
-                        as-child
-                        size="lg"
-                        class="h-12 rounded-full bg-foreground px-7 text-background hover:bg-fl-graphite"
-                    >
-                        <Link :href="photographerRegister()">
-                            <Camera class="size-4" />
-                            Quiero vender mis fotos
-                        </Link>
-                    </Button>
-                    <Button
+                <div
+                    v-reveal="{ delay: 220 }"
+                    class="mt-8 flex flex-col gap-3 sm:flex-row"
+                >
+                    <Link :href="photographerRegister()" class="fl-btn-primary">
+                        <Camera class="size-4" aria-hidden="true" />
+                        Quiero vender mis fotos
+                    </Link>
+                    <Link
                         v-if="user"
-                        as-child
-                        size="lg"
-                        variant="outline"
-                        class="h-12 rounded-full border-foreground/20 bg-transparent px-7 text-foreground hover:bg-foreground/5 hover:text-foreground"
+                        :href="photographerDashboard()"
+                        class="fl-btn-secondary"
+                        >Ir a mi portal</Link
                     >
-                        <Link :href="photographerDashboard()"
-                            >Ir a mi portal</Link
-                        >
-                    </Button>
+                    <Link v-else :href="PHOTOS_URL" class="fl-btn-secondary">
+                        <Search class="size-4" aria-hidden="true" />
+                        Soy atleta: buscar mis fotos
+                    </Link>
                 </div>
                 <dl
                     v-if="stats.photographers > 0 && stats.photos > 0"
+                    v-reveal="{ delay: 300 }"
                     class="mt-10 flex gap-10 border-t border-foreground/10 pt-6"
                 >
                     <div>
                         <dt class="text-xs text-muted-foreground">
                             Fotógrafos activos
                         </dt>
-                        <dd class="legacy-numeric mt-1 text-3xl font-semibold">
+                        <dd
+                            class="legacy-numeric mt-1 font-serif text-3xl font-semibold"
+                        >
                             {{ stats.photographers }}
                         </dd>
                     </div>
@@ -161,148 +168,221 @@ const benefits = [
                         <dt class="text-xs text-muted-foreground">
                             Fotos publicadas
                         </dt>
-                        <dd class="legacy-numeric mt-1 text-3xl font-semibold">
+                        <dd
+                            class="legacy-numeric mt-1 font-serif text-3xl font-semibold"
+                        >
                             {{ stats.photos }}
                         </dd>
                     </div>
                 </dl>
             </div>
-            <div class="lg:col-span-5">
-                <div
-                    class="relative aspect-[4/5] overflow-hidden rounded-hero bg-fl-cream shadow-fl-float"
-                >
-                    <img
-                        :src="hero.src"
-                        :srcset="hero.srcset"
-                        sizes="(min-width: 1024px) 40vw, 100vw"
-                        :width="hero.width"
-                        :height="hero.height"
-                        alt="Corredora en plena zancada fotografiada durante una carrera"
-                        class="size-full object-cover object-[70%_center]"
-                        fetchpriority="high"
-                        decoding="async"
-                    />
+            <div v-reveal="{ delay: 180, y: 32 }" class="lg:col-span-5">
+                <div class="relative mx-auto max-w-md lg:max-w-none">
+                    <div
+                        class="fl-zoom relative aspect-[4/5] overflow-hidden rounded-hero bg-fl-cream shadow-fl-overlay"
+                    >
+                        <img
+                            :src="hero.src"
+                            :srcset="hero.srcset"
+                            sizes="(min-width: 1024px) 40vw, 100vw"
+                            :width="hero.width"
+                            :height="hero.height"
+                            alt="Corredora en plena zancada fotografiada durante una carrera"
+                            class="size-full object-cover object-[70%_center]"
+                            fetchpriority="high"
+                            decoding="async"
+                        />
+                        <!-- Viewfinder corners (decorative) -->
+                        <span
+                            class="ph-corner top-5 left-5 border-t-2 border-l-2"
+                            aria-hidden="true"
+                        />
+                        <span
+                            class="ph-corner top-5 right-5 border-t-2 border-r-2"
+                            aria-hidden="true"
+                        />
+                        <span
+                            class="ph-corner bottom-5 left-5 border-b-2 border-l-2"
+                            aria-hidden="true"
+                        />
+                        <span
+                            class="ph-corner right-5 bottom-5 border-r-2 border-b-2"
+                            aria-hidden="true"
+                        />
+                    </div>
+                    <div
+                        class="ph-chip absolute -bottom-5 left-4 flex items-center gap-3 rounded-2xl border border-border bg-white px-4 py-3 shadow-fl-float sm:-left-6"
+                        aria-hidden="true"
+                    >
+                        <span
+                            class="flex size-9 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
+                        >
+                            <Hash class="size-4" />
+                        </span>
+                        <span class="text-left leading-tight">
+                            <span
+                                class="block text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase"
+                                >Se busca por</span
+                            >
+                            <span class="block text-sm font-semibold"
+                                >Evento + número</span
+                            >
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Calculator -->
-    <section
-        class="fl-section fl-container grid items-center gap-10 lg:grid-cols-12"
-    >
-        <Reveal class="lg:col-span-6">
-            <p class="fl-eyebrow">Tus números, claros</p>
-            <h2 class="fl-display mt-3 text-3xl sm:text-4xl">
-                Sabes cuánto ganas antes de subir una sola foto.
-            </h2>
-            <p class="mt-4 text-muted-foreground">
-                Finisher Legacy cobra una comisión por foto vendida y el
-                procesamiento de pago se descuenta como estimado (el real
-                depende de la pasarela del cliente y queda registrado en cada
-                venta). No hay cuota de alta ni mensualidad.
-            </p>
-        </Reveal>
-        <!-- Calculator -->
-        <Reveal :delay-ms="120" class="lg:col-span-5 lg:col-start-8">
-            <div class="fl-card p-6 shadow-fl-float sm:p-7">
-                <p class="flex items-center gap-2 text-sm font-semibold">
-                    <CircleDollarSign class="size-4 text-fl-gold-ink" />
-                    Calcula lo que ganas por foto
-                </p>
-                <label class="mt-5 block">
-                    <span class="text-xs text-muted-foreground"
-                        >Tu precio por foto (MXN)</span
-                    >
-                    <span class="relative mt-1.5 block">
-                        <span
-                            class="absolute top-1/2 left-4 -translate-y-1/2 font-serif text-2xl text-muted-foreground"
-                            >$</span
-                        >
-                        <input
-                            v-model.number="price"
-                            type="number"
-                            :min="fees.min_price_minor / 100"
-                            step="1"
-                            class="legacy-numeric h-16 w-full rounded-control border border-input bg-card pr-4 pl-10 font-serif text-3xl outline-none focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
-                            aria-label="Precio por foto"
+    <section class="fl-section">
+        <div class="fl-container grid items-center gap-10 lg:grid-cols-12">
+            <div class="lg:col-span-6">
+                <SectionIntro
+                    eyebrow="Tus números, claros"
+                    title="Sabes cuánto ganas"
+                    accent="antes de subir una sola foto."
+                    text="Finisher Legacy cobra una comisión por foto vendida y el procesamiento de pago se descuenta como estimado (el costo real queda registrado en cada venta). No hay cuota de alta ni mensualidad."
+                />
+            </div>
+            <div
+                v-reveal="{ delay: 120, y: 28 }"
+                class="lg:col-span-5 lg:col-start-8"
+            >
+                <div class="fl-card p-6 shadow-fl-float sm:p-7">
+                    <p class="flex items-center gap-2 text-sm font-semibold">
+                        <CircleDollarSign
+                            class="size-4 text-fl-gold-ink"
+                            aria-hidden="true"
                         />
-                    </span>
-                </label>
-                <div class="mt-5">
-                    <FeeBreakdown :rules="fees" :price-minor="priceMinor" />
+                        Calcula lo que ganas por foto
+                    </p>
+                    <label class="mt-5 block">
+                        <span class="text-xs text-muted-foreground"
+                            >Tu precio por foto (MXN)</span
+                        >
+                        <span class="relative mt-1.5 block">
+                            <span
+                                class="absolute top-1/2 left-4 -translate-y-1/2 font-serif text-2xl text-muted-foreground"
+                                >$</span
+                            >
+                            <input
+                                v-model.number="price"
+                                type="number"
+                                :min="fees.min_price_minor / 100"
+                                step="1"
+                                class="legacy-numeric h-16 w-full rounded-control border border-input bg-card pr-4 pl-10 font-serif text-3xl outline-none focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
+                                aria-label="Precio por foto"
+                            />
+                        </span>
+                    </label>
+                    <div class="mt-5">
+                        <FeeBreakdown :rules="fees" :price-minor="priceMinor" />
+                    </div>
                 </div>
             </div>
-        </Reveal>
+        </div>
     </section>
 
     <!-- Así funciona: sube → asigna → publica → vende -->
-    <section class="fl-section-sm border-y border-border bg-card">
+    <section class="fl-section border-y border-border bg-card">
         <div class="fl-container">
-            <h2 class="fl-display text-3xl sm:text-4xl">Así funciona</h2>
-            <StaggerGroup
-                as="ol"
-                item-selector="li"
-                class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-5"
-            >
+            <SectionIntro
+                eyebrow="Así funciona"
+                title="De tu tarjeta de memoria"
+                accent="a la galería del atleta."
+            />
+            <ol class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
                 <li
                     v-for="(step, index) in steps"
                     :key="step.title"
-                    class="relative"
+                    v-reveal="{ index }"
+                    class="relative flex gap-4 lg:block"
                 >
                     <span
                         aria-hidden="true"
-                        class="absolute top-6 left-12 hidden h-px w-[calc(100%-2rem)] bg-border lg:block"
+                        class="absolute top-6 left-14 hidden h-px w-[calc(100%-3rem)] bg-gradient-to-r from-fl-gold/60 to-border lg:block"
                         :class="index === steps.length - 1 ? 'lg:hidden' : ''"
                     />
                     <span
-                        class="relative flex size-12 items-center justify-center rounded-media bg-fl-cream text-fl-gold-ink"
+                        class="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
+                        aria-hidden="true"
                     >
-                        <component :is="step.icon" class="size-5" />
+                        <component
+                            :is="step.icon"
+                            class="size-5"
+                            :stroke-width="1.6"
+                        />
                     </span>
-                    <p
-                        class="legacy-numeric mt-5 text-xs font-semibold text-muted-foreground"
-                    >
-                        0{{ index + 1 }}
-                    </p>
-                    <h3 class="mt-1 text-lg font-semibold">{{ step.title }}</h3>
-                    <p class="mt-1.5 text-sm text-muted-foreground">
-                        {{ step.text }}
-                    </p>
+                    <div>
+                        <p
+                            class="legacy-numeric text-xs font-semibold tracking-[0.18em] text-fl-gold-ink lg:mt-5"
+                        >
+                            0{{ index + 1 }}
+                        </p>
+                        <h3 class="mt-1 font-serif text-lg font-semibold">
+                            {{ step.title }}
+                        </h3>
+                        <p
+                            class="mt-1.5 text-sm leading-relaxed text-muted-foreground"
+                        >
+                            {{ step.text }}
+                        </p>
+                    </div>
                 </li>
-            </StaggerGroup>
+            </ol>
         </div>
     </section>
 
-    <section class="fl-section fl-container">
-        <StaggerGroup class="grid gap-6 md:grid-cols-3">
-            <div v-for="b in benefits" :key="b.title" class="fl-card p-6">
-                <component :is="b.icon" class="size-6 text-fl-gold-ink" />
-                <h3 class="mt-4 font-semibold">{{ b.title }}</h3>
-                <p class="mt-1.5 text-sm text-muted-foreground">{{ b.text }}</p>
+    <section class="fl-section">
+        <div class="fl-container">
+            <SectionIntro
+                eyebrow="Por qué aquí"
+                title="Tu trabajo, cuidado."
+                accent="Tus ventas, a la vista."
+            />
+            <div class="mt-10">
+                <FeatureGrid :items="benefits" />
             </div>
-        </StaggerGroup>
-        <div
-            class="mt-12 flex flex-col items-start gap-5 rounded-hero border border-fl-line bg-fl-cream p-8 text-foreground sm:flex-row sm:items-center sm:justify-between sm:p-10"
-        >
-            <div>
-                <p class="font-serif text-3xl">
-                    ¿Cubres carreras, trails o triatlones?
-                </p>
-                <p class="mt-2 text-sm text-muted-foreground">
-                    Únete y empieza a vender en tu próximo evento.
-                </p>
-            </div>
-            <Button
-                as-child
-                size="lg"
-                class="h-12 rounded-full bg-foreground px-7 text-background hover:bg-fl-graphite"
-            >
-                <Link :href="photographerRegister()">
-                    Registrarme como fotógrafo
-                    <ArrowRight class="size-4" />
-                </Link>
-            </Button>
         </div>
     </section>
+
+    <CtaBand
+        title="¿Cubres carreras, triatlones o ciclismo?"
+        accent="Vende en tu próximo evento."
+        text="Regístrate, comparte tu portafolio y empieza a publicar en cuanto te demos acceso."
+    >
+        <template #actions>
+            <Link :href="photographerRegister()" class="mk-cta-primary">
+                Registrarme como fotógrafo
+                <ArrowRight class="size-4" aria-hidden="true" />
+            </Link>
+            <Link :href="PHOTOS_URL" class="mk-cta-secondary">
+                Ver Fotos de evento
+            </Link>
+        </template>
+    </CtaBand>
 </template>
+
+<style scoped>
+.ph-corner {
+    position: absolute;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-color: rgb(230 209 181 / 0.9);
+    border-radius: 2px;
+}
+.ph-chip {
+    animation: ph-float 6s ease-in-out infinite alternate;
+}
+@keyframes ph-float {
+    to {
+        transform: translate3d(0, -8px, 0);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ph-chip {
+        animation: none;
+    }
+}
+</style>

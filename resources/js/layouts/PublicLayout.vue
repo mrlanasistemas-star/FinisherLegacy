@@ -42,7 +42,7 @@ const showTabBar = computed(
             >Saltar al contenido</a
         >
         <PublicNavbar />
-        <main id="contenido" class="relative flex-1 pt-16">
+        <main id="contenido" class="relative flex-1 pt-[4.25rem]">
             <!--
                 Page enter: keyed by component only, so filters/pagination
                 (same component) keep their state; the animation uses

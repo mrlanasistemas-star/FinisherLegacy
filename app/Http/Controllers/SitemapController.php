@@ -8,6 +8,7 @@ use App\Enums\ProductType;
 use App\Models\Event;
 use App\Models\Product;
 use App\Queries\Store\PublicCollections;
+use App\Support\I18n\LocalizedUrls;
 use Illuminate\Http\Response;
 
 /**
@@ -25,7 +26,13 @@ class SitemapController extends Controller
             ['loc' => route('collections.index'), 'changefreq' => 'weekly', 'priority' => '0.9'],
             ['loc' => route('how-it-works'), 'changefreq' => 'monthly', 'priority' => '0.8'],
             ['loc' => route('store.products.index'), 'changefreq' => 'weekly', 'priority' => '0.7'],
+            ['loc' => route('landing.memories'), 'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['loc' => route('landing.portrait'), 'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['loc' => route('landing.training'), 'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['loc' => route('landing.app'), 'changefreq' => 'monthly', 'priority' => '0.7'],
             ['loc' => route('events.index'), 'changefreq' => 'daily', 'priority' => '0.6'],
+            ['loc' => route('community.index'), 'changefreq' => 'daily', 'priority' => '0.6'],
+            ['loc' => route('photographers.landing'), 'changefreq' => 'monthly', 'priority' => '0.5'],
             ['loc' => route('about'), 'changefreq' => 'monthly', 'priority' => '0.4'],
             ['loc' => route('contact'), 'changefreq' => 'yearly', 'priority' => '0.3'],
         ];
@@ -54,10 +61,12 @@ class SitemapController extends Controller
                 $urls[] = ['loc' => route('events.show', $event), 'lastmod' => $event->updated_at?->toAtomString(), 'changefreq' => 'weekly', 'priority' => '0.5'];
             });
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'."\n";
 
         foreach ($urls as $url) {
             $xml .= '  <url><loc>'.e($url['loc']).'</loc>'
+                // hreflang twins of every language (docs/renovacion/idiomas.md).
+                .app(LocalizedUrls::class)->sitemapAlternates($url['loc'])
                 .(isset($url['lastmod']) ? '<lastmod>'.e($url['lastmod']).'</lastmod>' : '')
                 .'<changefreq>'.$url['changefreq'].'</changefreq><priority>'.$url['priority'].'</priority></url>'."\n";
         }
