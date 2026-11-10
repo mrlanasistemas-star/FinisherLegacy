@@ -10,6 +10,8 @@ enum ContactMessageType: string
     case Brands = 'brands';
     case Photographers = 'photographers';
     case Support = 'support';
+    /** Requests from the public /eliminar-cuenta page (Play account-deletion policy). */
+    case AccountDeletion = 'account_deletion';
 
     public function label(): string
     {
@@ -20,6 +22,7 @@ enum ContactMessageType: string
             self::Brands => 'Marcas y patrocinadores',
             self::Photographers => 'Fotógrafos',
             self::Support => 'Soporte',
+            self::AccountDeletion => 'Eliminación de cuenta',
         };
     }
 

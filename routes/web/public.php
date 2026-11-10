@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,14 @@ Route::get('entrar', function (Request $request) {
 
     return redirect()->route($request->query('modo') === 'registro' ? 'register' : 'login');
 })->name('auth.gate');
+
+// Account deletion web resource (Google Play / App Store policy): explains
+// in-app deletion and takes requests from people without the app. Never
+// deletes on its own — see AccountDeletionController.
+Route::get('eliminar-cuenta', [AccountDeletionController::class, 'show'])->name('account-deletion.show');
+Route::post('eliminar-cuenta', [AccountDeletionController::class, 'store'])
+    ->middleware('throttle:3,10')
+    ->name('account-deletion.store');
 
 Route::prefix('tienda')->group(function () {
     Route::get('/', [StoreProductController::class, 'index'])->name('store.products.index');
