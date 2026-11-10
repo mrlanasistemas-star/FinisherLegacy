@@ -5,7 +5,7 @@
  * ./navigation.ts.
  *
  * Information architecture (first-time visitor first):
- *   Producto ▾ · Cómo funciona · Recuerdos · Entrenamientos · Comunidad ▾ · App
+ *   Producto ▾ · Cómo funciona · Recuerdos · Entrenamientos · Comunidad ▾
  * with "Activar", "Entrar" and "Crear cuenta" on the right.
  */
 import type { LucideIcon } from '@lucide/vue';
@@ -17,7 +17,6 @@ import {
     Frame,
     Headphones,
     Images,
-    Layers,
     LayoutGrid,
     Nfc,
     Receipt,
@@ -96,7 +95,7 @@ export type NavEntry =
     | (SiteLink & {
           kind: 'link';
           /** First desktop width the link fits at (default: lg). */
-          from?: 'xl' | 'wide';
+          from?: 'xl';
       })
     | {
           kind: 'menu';
@@ -114,7 +113,7 @@ export type NavEntry =
       };
 
 /** Top navbar, left to right. `from` delays a link until the bar has room
- * for it (xl = 1280px, wide = 1400px); every link is always in the mobile
+ * for it (xl = 1280px); every link is always in the mobile
  * sheet and the footer. */
 export const navEntries: NavEntry[] = [
     {
@@ -143,11 +142,11 @@ export const navEntries: NavEntry[] = [
                     'Colecciones de tags, Racepack, Trisuit y Chill Band.',
             },
             {
-                label: 'Colecciones',
-                href: COLLECTIONS_URL,
-                icon: Layers,
+                label: 'App',
+                href: APP_URL,
+                icon: Smartphone,
                 description:
-                    'Un diseño por carrera y por destino. Elige el tuyo.',
+                    'Activa tocando, guarda recuerdos y entrena con tu equipo desde el teléfono.',
             },
         ],
         feature: {
@@ -207,7 +206,6 @@ export const navEntries: NavEntry[] = [
             image: '/media/home/story/training-dawn-640.webp',
         },
     },
-    { kind: 'link', label: 'App', href: APP_URL, from: 'wide' },
 ];
 
 /** Extra destinations of the mobile sheet (not in the desktop bar). */

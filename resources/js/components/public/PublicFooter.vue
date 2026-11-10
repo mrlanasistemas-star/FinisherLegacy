@@ -9,6 +9,7 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowUpRight, Mail, MapPin, Phone, Smartphone } from '@lucide/vue';
 import { computed } from 'vue';
+import LocaleSwitcher from '@/components/i18n/LocaleSwitcher.vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import {
     APP_URL,
@@ -77,9 +78,10 @@ const location = computed(() =>
                     <p
                         class="mt-6 max-w-sm font-serif text-[1.6rem] leading-[1.15] font-semibold tracking-tight text-foreground"
                     >
-                        Un recuerdo que puedes tocar.
-                        <span class="block font-medium text-fl-gold-ink italic"
-                            >Una historia que vuelves a abrir.</span
+                        {{ $t('Un recuerdo que puedes tocar.') }}
+                        <span
+                            class="block font-medium text-fl-gold-ink italic"
+                            >{{ $t('Una historia que vuelves a abrir.') }}</span
                         >
                     </p>
                     <p
@@ -151,11 +153,15 @@ const location = computed(() =>
                                 class="block text-[13px] font-semibold text-foreground"
                                 >App Finisher Legacy</span
                             >
-                            <span class="block text-xs text-muted-foreground"
-                                >Muy pronto en App Store y Google Play</span
-                            >
+                            <span class="block text-xs text-muted-foreground">{{
+                                $t('Muy pronto en App Store y Google Play')
+                            }}</span>
                         </span>
                     </Link>
+
+                    <div class="mt-4">
+                        <LocaleSwitcher variant="full" align="start" />
+                    </div>
                 </div>
 
                 <nav
@@ -196,7 +202,7 @@ const location = computed(() =>
                     :href="contact()"
                     class="fl-btn-secondary !min-h-11 shrink-0 self-start !px-5 !text-sm sm:self-auto"
                 >
-                    Escríbenos
+                    {{ $t('Escríbenos') }}
                     <ArrowUpRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -218,7 +224,7 @@ const location = computed(() =>
                     <p
                         class="text-xs tracking-[0.18em] text-white/55 uppercase"
                     >
-                        Haz que perdure
+                        {{ $t('Haz que perdure') }}
                     </p>
                 </div>
 

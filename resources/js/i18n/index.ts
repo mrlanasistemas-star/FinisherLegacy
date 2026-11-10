@@ -302,6 +302,15 @@ export function installI18n(
         state.regional = props.i18n?.regional ?? locale;
         state.messages = bundled[`../../../lang/web/${locale}.json`] ?? {};
         instance = createI18n(state);
+    } else {
+        // Same regional tag the server rendered with ("es-MX", not the bare
+        // <html lang="es">), or Intl output — prices, dates — would differ
+        // after hydration ("$400.00" vs "400,00 MXN").
+        const regional = (options.page.props as SharedI18nProps).i18n?.regional;
+
+        if (regional) {
+            browserState.regional = regional;
+        }
     }
 
     app.provide(KEY, instance);

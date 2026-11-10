@@ -30,6 +30,7 @@ import {
     NavigationMenuViewport,
 } from 'reka-ui';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import LocaleSwitcher from '@/components/i18n/LocaleSwitcher.vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -161,9 +162,7 @@ const navItem =
                         :class="
                             entry.kind === 'link' && entry.from === 'xl'
                                 ? 'hidden xl:block'
-                                : entry.kind === 'link' && entry.from === 'wide'
-                                  ? 'hidden min-[1400px]:block'
-                                  : ''
+                                : ''
                         "
                     >
                         <template v-if="entry.kind === 'menu'">
@@ -337,6 +336,10 @@ const navItem =
                     >
                 </Link>
 
+                <span class="hidden sm:inline-flex lg:hidden xl:inline-flex">
+                    <LocaleSwitcher />
+                </span>
+
                 <template v-if="user">
                     <Link
                         :href="notificationsIndex()"
@@ -361,7 +364,7 @@ const navItem =
                         class="ml-1.5 hidden h-9 items-center gap-1.5 rounded-full bg-foreground pr-4 pl-3 text-[13px] font-medium text-background shadow-[0_6px_16px_-10px_rgb(23_23_20/0.6)] transition-[transform,background-color] duration-200 hover:-translate-y-px hover:bg-fl-graphite active:translate-y-0 md:inline-flex"
                     >
                         <Plus class="size-4" aria-hidden="true" />
-                        Publicar
+                        {{ $t('Publicar') }}
                     </Link>
 
                     <DropdownMenu>
@@ -406,22 +409,22 @@ const navItem =
                 <template v-else>
                     <Link
                         :href="ACTIVATE_URL"
-                        class="ml-1 hidden h-9 items-center gap-1.5 rounded-full border border-fl-gold/70 px-3.5 text-[13px] font-medium whitespace-nowrap text-fl-gold-ink transition-colors duration-200 hover:border-fl-gold-dim hover:bg-fl-cream/60 xl:inline-flex"
+                        class="ml-1 hidden h-9 items-center gap-1.5 rounded-full border border-fl-gold/70 px-3.5 text-[13px] font-medium whitespace-nowrap text-fl-gold-ink transition-colors duration-200 hover:border-fl-gold-dim hover:bg-fl-cream/60 min-[1400px]:inline-flex"
                     >
                         <Nfc class="size-4" aria-hidden="true" />
-                        Activar
+                        {{ $t('Activar') }}
                     </Link>
                     <Link
                         :href="signInHref"
                         class="ml-1 hidden rounded-full px-3.5 py-2 text-[13px] font-medium whitespace-nowrap text-foreground transition-colors hover:bg-foreground/[0.05] sm:inline-flex"
                     >
-                        Entrar
+                        {{ $t('Entrar') }}
                     </Link>
                     <Link
                         :href="signUpHref"
                         class="hidden h-9 shrink-0 items-center rounded-full bg-foreground px-4 text-[13px] font-medium whitespace-nowrap text-background transition-[transform,background-color] duration-200 hover:-translate-y-px hover:bg-fl-graphite sm:inline-flex"
                     >
-                        Crear cuenta
+                        {{ $t('Crear cuenta') }}
                     </Link>
                 </template>
 
@@ -493,13 +496,14 @@ const navItem =
                                     <Nfc class="size-[18px]" />
                                 </span>
                                 <span class="min-w-0 flex-1">
-                                    <span class="block text-sm font-semibold"
-                                        >Activar mi tag</span
-                                    >
-                                    <span class="block text-xs text-white/65"
-                                        >Acerca tu teléfono o escribe el
-                                        código</span
-                                    >
+                                    <span class="block text-sm font-semibold">{{
+                                        $t('Activar mi tag')
+                                    }}</span>
+                                    <span class="block text-xs text-white/65">{{
+                                        $t(
+                                            'Acerca tu teléfono o escribe el código',
+                                        )
+                                    }}</span>
                                 </span>
                                 <ArrowRight
                                     class="size-4 text-fl-gold-soft"
@@ -551,10 +555,7 @@ const navItem =
                                         </Link>
                                     </SheetClose>
                                 </div>
-                                <SheetClose
-                                    v-else-if="entry.from !== 'wide'"
-                                    as-child
-                                >
+                                <SheetClose v-else as-child>
                                     <Link
                                         :href="entry.href"
                                         class="flex min-h-12 items-center justify-between rounded-xl px-3 font-serif text-[1.3rem] leading-tight font-medium transition-colors hover:bg-foreground/[0.04]"
@@ -577,6 +578,10 @@ const navItem =
                                 </SheetClose>
                             </template>
                         </nav>
+
+                        <div class="px-6 pt-3">
+                            <LocaleSwitcher variant="full" align="start" />
+                        </div>
 
                         <div class="flex flex-wrap gap-2 px-6 pt-3 pb-4">
                             <SheetClose
@@ -602,7 +607,9 @@ const navItem =
                             class="mt-auto border-t border-border px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
                         >
                             <template v-if="user">
-                                <p class="fl-eyebrow mb-2">Tu cuenta</p>
+                                <p class="fl-eyebrow mb-2">
+                                    {{ $t('Tu cuenta') }}
+                                </p>
                                 <div class="-mx-3 grid grid-cols-1">
                                     <SheetClose
                                         v-for="item in mobileAccount"
@@ -635,7 +642,7 @@ const navItem =
                                             class="flex min-h-11 items-center rounded-xl px-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.04]"
                                             @click="router.flushAll()"
                                         >
-                                            Cerrar sesión
+                                            {{ $t('Cerrar sesión') }}
                                         </Link>
                                     </SheetClose>
                                 </div>
@@ -646,14 +653,14 @@ const navItem =
                                         <Link
                                             :href="signInHref"
                                             class="flex h-12 items-center justify-center rounded-full border border-border text-sm font-medium text-foreground"
-                                            >Entrar</Link
+                                            >{{ $t('Entrar') }}</Link
                                         >
                                     </SheetClose>
                                     <SheetClose as-child>
                                         <Link
                                             :href="signUpHref"
                                             class="flex h-12 items-center justify-center rounded-full bg-foreground text-sm font-medium text-background"
-                                            >Crear cuenta</Link
+                                            >{{ $t('Crear cuenta') }}</Link
                                         >
                                     </SheetClose>
                                 </div>
