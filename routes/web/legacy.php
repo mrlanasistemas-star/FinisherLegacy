@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\LegacyTags\ActivationController;
+use App\Http\Controllers\LegacyTags\ActivationNfcController;
 use App\Http\Controllers\LegacyTags\MyLegacyController;
 use App\Http\Controllers\LegacyTags\StoryController;
 use App\Http\Controllers\LegacyTags\StoryEditorController;
@@ -25,6 +26,15 @@ Route::get('t/{code}', TagOpenController::class)
     ->where('code', TagCode::PATTERN)
     ->middleware('throttle:tag-open')
     ->name('tag.open');
+
+// Web NFC (Android Chrome): write a blank chip with the same actions as the
+// app API (docs/renovacion/manual-activacion-nfc.md). Before activar/{code}.
+Route::middleware(['auth', 'verified'])->prefix('activar/nfc')->name('activate.nfc.')->group(function () {
+    Route::get('/', [ActivationNfcController::class, 'show'])->name('show');
+    Route::post('start', [ActivationNfcController::class, 'start'])->middleware('throttle:api-claim')->name('start');
+    Route::post('{intent}/confirm', [ActivationNfcController::class, 'confirm'])->whereUuid('intent')->middleware('throttle:api-claim')->name('confirm');
+    Route::post('{intent}/fail', [ActivationNfcController::class, 'fail'])->whereUuid('intent')->middleware('throttle:api-claim')->name('fail');
+});
 
 Route::get('activar', [ActivationController::class, 'index'])->name('activate.index');
 Route::post('activar', [ActivationController::class, 'lookup'])
@@ -79,5 +89,9 @@ Route::middleware('auth')->group(function () use ($legacyStoryId) {
 
         Route::get('imprimir', [StoryPrintController::class, 'show'])->name('print');
         Route::post('imprimir', [StoryPrintController::class, 'download'])->middleware('throttle:20,1')->name('print.download');
+
+        Route::get('portarretrato', [StoryPrintController::class, 'portrait'])->name('portrait');
+        Route::post('portarretrato', [StoryPrintController::class, 'downloadPortrait'])->middleware('throttle:20,1')->name('portrait.download');
+        Route::get('descargar', [StoryEditorController::class, 'archive'])->middleware('throttle:10,1')->name('archive');
     });
 });

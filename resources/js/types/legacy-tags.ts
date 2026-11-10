@@ -28,6 +28,8 @@ export type StoryRace = {
     race: string | null;
     distance: string | null;
     time: string | null;
+    /** Overall place (official) or what the athlete typed. */
+    position?: string | null;
     date: string | null;
     location: string | null;
 };

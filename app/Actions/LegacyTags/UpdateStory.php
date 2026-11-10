@@ -70,6 +70,7 @@ class UpdateStory
                 'event_name' => null,
                 'distance' => null,
                 'result_time' => null,
+                'result_position' => null,
                 'race_date' => null,
                 'location' => null,
             ]);
@@ -84,6 +85,7 @@ class UpdateStory
                 'event_name' => $this->clean($data['event_name'] ?? null),
                 'distance' => $this->clean($data['distance'] ?? null),
                 'result_time' => $this->clean($data['result_time'] ?? null),
+                'result_position' => $this->clean($data['result_position'] ?? null),
                 'race_date' => $this->clean($data['race_date'] ?? null),
                 'location' => $this->clean($data['location'] ?? null),
             ]);

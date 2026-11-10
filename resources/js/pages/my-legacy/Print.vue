@@ -9,7 +9,7 @@ import { ArrowLeft, Download, ImagePlus } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Spinner } from '@/components/ui/spinner';
-import { edit } from '@/routes/my-legacy';
+import { edit, portrait } from '@/routes/my-legacy';
 import { download as downloadRoute } from '@/routes/my-legacy/print';
 import { formatStoryDate, forRecipient } from '@/types/legacy-tags';
 import type { StoryMediaItem, StoryView } from '@/types/legacy-tags';
@@ -176,6 +176,22 @@ async function download() {
                 Elige una foto y un diseño. Descargas un PDF listo para imprimir
                 en cualquier imprenta.
             </p>
+            <Link
+                :href="portrait(story.public_id).url"
+                class="mt-4 flex items-center justify-between gap-3 rounded-xl border border-fl-gold/40 bg-fl-paper px-4 py-3 text-sm transition hover:border-fl-gold hover:shadow-sm"
+            >
+                <span>
+                    <span class="block font-semibold"
+                        >¿Tienes el marco Finisher Legacy?</span
+                    >
+                    <span class="block text-muted-foreground"
+                        >Prepara la foto exacta para tu portarretrato.</span
+                    >
+                </span>
+                <span class="shrink-0 font-semibold text-fl-gold-ink"
+                    >Portarretrato →</span
+                >
+            </Link>
 
             <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_minmax(0,420px)]">
                 <!-- Preview -->

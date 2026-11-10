@@ -27,7 +27,12 @@ import InputError from '@/components/InputError.vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
 import { Toaster } from '@/components/ui/sonner';
 import { home } from '@/routes';
-import { index as myLegacyIndex, edit, print } from '@/routes/my-legacy';
+import {
+    index as myLegacyIndex,
+    edit,
+    portrait,
+    print,
+} from '@/routes/my-legacy';
 import {
     destroy as destroyShare,
     store as storeShare,
@@ -64,6 +69,7 @@ const facts = computed(() =>
         { label: 'Carrera', value: race.value.race },
         { label: 'Distancia', value: race.value.distance },
         { label: 'Tiempo', value: race.value.time },
+        { label: 'Posición', value: race.value.position ?? null },
         { label: 'Fecha', value: date.value },
         { label: 'Lugar', value: race.value.location },
     ].filter((f) => f.value),
@@ -620,6 +626,13 @@ async function nativeShare() {
                             copied === story.url ? '¡Copiado!' : 'Copiar enlace'
                         }}
                     </button>
+                    <Link
+                        :href="portrait(story.public_id).url"
+                        class="owner-chip"
+                    >
+                        <Printer class="size-4" aria-hidden="true" />
+                        Portarretrato
+                    </Link>
                     <Link :href="print(story.public_id).url" class="owner-chip">
                         <Printer class="size-4" aria-hidden="true" />
                         Imprimir

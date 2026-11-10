@@ -9,28 +9,39 @@ import {
     ArrowDown,
     ArrowLeft,
     ArrowUp,
+    Download,
     Eye,
     FileText,
+    Frame,
     Globe,
     ImagePlus,
+    LifeBuoy,
     Link2,
     Lock,
     Mic,
+    Sparkles,
     Trash2,
     Upload,
 } from '@lucide/vue';
 import { computed, reactive, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import InputError from '@/components/InputError.vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { show as storyShow } from '@/routes/legacy/story';
-import { index as myLegacyIndex, print, update } from '@/routes/my-legacy';
+import {
+    archive,
+    index as myLegacyIndex,
+    portrait,
+    update,
+} from '@/routes/my-legacy';
 import {
     destroy as destroyMedia,
     reorder as reorderMedia,
     store as storeMedia,
     update as updateMedia,
 } from '@/routes/my-legacy/media';
+import { store as buyExpansion } from '@/routes/my-legacy/photo-expansion';
 import { formatStoryDate } from '@/types/legacy-tags';
 import type {
     ParticipationOption,
@@ -40,6 +51,21 @@ import type {
 } from '@/types/legacy-tags';
 
 type RaceMode = 'participation' | 'manual' | 'later';
+
+/** App\Services\Media\StoryPhotoQuota::summary() */
+type PhotoQuota = {
+    limit: number;
+    used: number;
+    remaining: number;
+    can_expand: boolean;
+    expansion: {
+        id: number;
+        name: string;
+        photos: number;
+        price: string;
+        currency: string;
+    } | null;
+};
 
 const props = defineProps<{
     story: StoryView;
@@ -55,9 +81,12 @@ const props = defineProps<{
         event_name: string | null;
         distance: string | null;
         result_time: string | null;
+        result_position: string | null;
         race_date: string | null;
         location: string | null;
     };
+    photoQuota: PhotoQuota;
+    supportUrl: string;
     participations: ParticipationOption[];
     visibilityOptions: {
         value: StoryVisibilityValue;
@@ -87,6 +116,7 @@ const form = useForm({
     event_name: props.fields.event_name ?? '',
     distance: props.fields.distance ?? '',
     result_time: props.fields.result_time ?? '',
+    result_position: props.fields.result_position ?? '',
     race_date: props.fields.race_date ?? '',
     location: props.fields.location ?? '',
 });
@@ -129,12 +159,26 @@ function uploadOne(file: File, item: UploadItem): Promise<void> {
                 forceFormData: true,
                 preserveScroll: true,
                 preserveState: true,
-                only: ['story'],
+                only: ['story', 'photoQuota'],
                 onProgress: (p) => {
                     item.progress = p?.percentage ?? 0;
                 },
-                onSuccess: () => {
+                onSuccess: (page) => {
+                    // A validation error comes back as a 302 with errors.
+                    const errs = (page.props.errors ?? {}) as Record<
+                        string,
+                        string
+                    >;
+
+                    if (errs.file) {
+                        item.state = 'error';
+                        item.error = errs.file;
+
+                        return;
+                    }
+
                     item.state = 'done';
+                    item.progress = 100;
                 },
                 onError: (errors) => {
                     item.state = 'error';
@@ -182,7 +226,7 @@ async function enqueue(files: FileList | null, role: Role) {
     const list = Array.from(files);
     const room =
         role === 'photo'
-            ? Math.max(0, props.limits.max_photos - props.story.photos.length)
+            ? Math.max(0, props.photoQuota.limit - props.photoQuota.used)
             : 1;
     const maxMb =
         role === 'photo'
@@ -206,7 +250,7 @@ async function enqueue(files: FileList | null, role: Role) {
 
         if (i >= room) {
             item.state = 'error';
-            item.error = `Máximo ${props.limits.max_photos} fotos por recuerdo.`;
+            item.error = `Llegaste al límite de ${props.photoQuota.limit} fotos.`;
             continue;
         }
 
@@ -233,6 +277,20 @@ async function enqueue(files: FileList | null, role: Role) {
         await uploadOne(file, item);
     }
 
+    const done = items.filter(([, item]) => item.state === 'done').length;
+
+    if (done > 0) {
+        toast.success(
+            role === 'photo'
+                ? done === 1
+                    ? 'Foto agregada.'
+                    : `${done} fotos agregadas.`
+                : role === 'audio'
+                  ? 'Mensaje de voz guardado.'
+                  : 'Certificado guardado.',
+        );
+    }
+
     setTimeout(() => {
         for (let i = uploads.length - 1; i >= 0; i--) {
             if (uploads[i].state === 'done') {
@@ -246,6 +304,52 @@ function onPick(event: Event, role: Role) {
     const input = event.target as HTMLInputElement;
     void enqueue(input.files, role);
     input.value = '';
+}
+
+// Drag & drop: the whole photo card / voice block is a drop zone.
+const dropTarget = ref<Role | null>(null);
+
+function onDrop(event: DragEvent, role: Role) {
+    dropTarget.value = null;
+    void enqueue(event.dataTransfer?.files ?? null, role);
+}
+
+const quotaFull = computed(() => props.photoQuota.remaining <= 0);
+const quotaPercent = computed(() =>
+    props.photoQuota.limit > 0
+        ? Math.min(
+              100,
+              Math.round(
+                  (props.photoQuota.used / props.photoQuota.limit) * 100,
+              ),
+          )
+        : 100,
+);
+const buyingExpansion = ref(false);
+
+function expand() {
+    if (!props.photoQuota.can_expand) {
+        return;
+    }
+
+    // Redirects to the order page, where payment happens; only a
+    // confirmed payment grants the extra space.
+    buyingExpansion.value = true;
+    router.post(
+        buyExpansion(props.story.public_id).url,
+        props.photoQuota.expansion
+            ? { pack: props.photoQuota.expansion.id }
+            : {},
+        { onFinish: () => (buyingExpansion.value = false) },
+    );
+}
+
+function money(amount: string, currency: string): string {
+    const value = Number(amount);
+
+    return Number.isFinite(value)
+        ? value.toLocaleString('es-MX', { style: 'currency', currency })
+        : `${amount} ${currency}`;
 }
 
 // ── Photo management ────────────────────────────────────────────────────
@@ -262,7 +366,7 @@ function move(photo: StoryMediaItem, delta: number) {
     router.patch(
         reorderMedia(props.story.public_id).url,
         { order: ids },
-        { preserveScroll: true, only: ['story'] },
+        { preserveScroll: true, only: ['story', 'photoQuota'] },
     );
 }
 
@@ -290,7 +394,11 @@ function remove(item: StoryMediaItem) {
     confirmingRemove.value = null;
     router.delete(
         destroyMedia({ story: props.story.public_id, media: item.id }).url,
-        { preserveScroll: true, only: ['story'] },
+        {
+            preserveScroll: true,
+            only: ['story', 'photoQuota'],
+            onSuccess: () => toast.success('Listo, lo quitamos.'),
+        },
     );
 }
 
@@ -312,12 +420,14 @@ function isProcessing(item: StoryMediaItem): boolean {
                     <ArrowLeft class="size-4" aria-hidden="true" />
                     Mi Legacy
                 </Link>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap justify-end gap-2">
                     <Link
-                        :href="print(story.public_id).url"
-                        class="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-semibold"
-                        >Imprimir</Link
+                        :href="portrait(story.public_id).url"
+                        class="inline-flex h-10 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-semibold transition hover:border-fl-gold hover:bg-fl-paper"
                     >
+                        <Frame class="size-4" aria-hidden="true" />
+                        Portarretrato
+                    </Link>
                     <Link
                         :href="storyShow(story.public_id).url"
                         class="inline-flex h-10 items-center gap-1.5 rounded-full bg-fl-black px-4 text-sm font-semibold text-white"
@@ -349,23 +459,34 @@ function isProcessing(item: StoryMediaItem): boolean {
             </header>
 
             <!-- Photos -->
-            <section class="fl-card mt-8 p-5 sm:p-6" aria-labelledby="photos-h">
+            <section
+                class="fl-card mt-8 p-5 transition sm:p-6"
+                :class="{
+                    'ring-2 ring-fl-gold ring-offset-2':
+                        dropTarget === 'photo' && !quotaFull,
+                }"
+                aria-labelledby="photos-h"
+                @dragover.prevent="dropTarget = 'photo'"
+                @dragleave.self="dropTarget = null"
+                @drop.prevent="onDrop($event, 'photo')"
+            >
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <h2 id="photos-h" class="text-lg font-semibold">
                             Fotos
                         </h2>
                         <p class="text-xs text-muted-foreground">
-                            La primera es la portada. Hasta
-                            {{ limits.max_photos }} fotos JPG, PNG o WebP.
+                            La primera es la portada. JPG, PNG o WebP de hasta
+                            {{ limits.max_photo_mb }} MB · arrastra aquí tus
+                            fotos.
                         </p>
                     </div>
                     <label
-                        class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full bg-fl-black px-4 text-sm font-semibold text-white focus-within:ring-4 focus-within:ring-fl-gold/40"
+                        class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full bg-fl-black px-4 text-sm font-semibold text-white transition focus-within:ring-4 focus-within:ring-fl-gold/40 hover:bg-fl-graphite"
                         :class="{
-                            'pointer-events-none opacity-50':
-                                story.photos.length >= limits.max_photos,
+                            'pointer-events-none opacity-50': quotaFull,
                         }"
+                        :aria-disabled="quotaFull"
                     >
                         <ImagePlus class="size-4" aria-hidden="true" />
                         Agregar
@@ -374,27 +495,124 @@ function isProcessing(item: StoryMediaItem): boolean {
                             class="sr-only"
                             accept="image/jpeg,image/png,image/webp"
                             multiple
+                            :disabled="quotaFull"
                             @change="onPick($event, 'photo')"
                         />
                     </label>
                 </div>
 
-                <ul
+                <!-- Photo space (StoryPhotoQuota) -->
+                <div class="mt-4" aria-live="polite">
+                    <div
+                        class="flex items-center justify-between text-xs font-medium"
+                    >
+                        <span>
+                            {{ photoQuota.used }} de
+                            {{ photoQuota.limit }} fotos
+                        </span>
+                        <span
+                            class="flex items-center gap-3 text-muted-foreground"
+                        >
+                            {{
+                                quotaFull
+                                    ? 'Límite alcanzado'
+                                    : `Te quedan ${photoQuota.remaining}`
+                            }}
+                            <button
+                                v-if="photoQuota.can_expand && !quotaFull"
+                                type="button"
+                                class="font-semibold text-fl-gold-ink underline-offset-4 hover:underline disabled:opacity-60"
+                                :disabled="buyingExpansion"
+                                @click="expand"
+                            >
+                                Ampliar espacio
+                            </button>
+                        </span>
+                    </div>
+                    <div
+                        class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"
+                        role="progressbar"
+                        :aria-valuenow="photoQuota.used"
+                        :aria-valuemax="photoQuota.limit"
+                        aria-label="Espacio de fotos usado"
+                    >
+                        <div
+                            class="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+                            :class="quotaFull ? 'bg-fl-gold-ink' : 'bg-fl-gold'"
+                            :style="{ width: `${quotaPercent}%` }"
+                        />
+                    </div>
+                    <div
+                        v-if="quotaFull"
+                        class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fl-gold/40 bg-fl-paper p-3 text-sm"
+                    >
+                        <p class="min-w-0">
+                            <span class="block font-semibold"
+                                >Tu recuerdo está completo</span
+                            >
+                            <span class="block text-xs text-muted-foreground">
+                                Tus fotos siguen aquí, todas visibles.
+                                {{
+                                    photoQuota.can_expand
+                                        ? photoQuota.expansion
+                                            ? `Amplía con ${photoQuota.expansion.photos} fotos más o quita una para subir otra.`
+                                            : 'Amplía tu espacio o quita una foto para subir otra.'
+                                        : 'Quita una foto para subir otra.'
+                                }}
+                            </span>
+                        </p>
+                        <button
+                            v-if="photoQuota.can_expand"
+                            type="button"
+                            class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-fl-black px-4 text-sm font-semibold text-white transition hover:bg-fl-graphite disabled:opacity-60"
+                            :disabled="buyingExpansion"
+                            @click="expand"
+                        >
+                            <Spinner v-if="buyingExpansion" class="size-4" />
+                            <Sparkles
+                                v-else
+                                class="size-4"
+                                aria-hidden="true"
+                            />
+                            Ampliar espacio
+                            <template v-if="photoQuota.expansion">
+                                ·
+                                {{
+                                    money(
+                                        photoQuota.expansion.price,
+                                        photoQuota.expansion.currency,
+                                    )
+                                }}
+                            </template>
+                        </button>
+                    </div>
+                </div>
+
+                <TransitionGroup
                     v-if="story.photos.length"
+                    tag="ul"
+                    name="photo"
                     class="mt-5 grid gap-4 sm:grid-cols-2"
                 >
                     <li
                         v-for="(photo, i) in story.photos"
                         :key="photo.id"
-                        class="overflow-hidden rounded-xl border border-border"
+                        class="group overflow-hidden rounded-xl border border-border bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                     >
-                        <div class="relative aspect-[4/3] bg-fl-cream">
+                        <div
+                            class="relative aspect-[4/3] overflow-hidden bg-fl-cream"
+                        >
                             <img
                                 v-if="photo.thumb_url"
                                 :src="photo.thumb_url"
                                 :alt="photo.caption ?? `Foto ${i + 1}`"
-                                class="size-full object-cover"
+                                class="size-full object-cover transition duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                                 loading="lazy"
+                            />
+                            <div
+                                v-else
+                                class="size-full animate-pulse bg-muted motion-reduce:animate-none"
+                                aria-hidden="true"
                             />
                             <span
                                 v-if="i === 0"
@@ -469,14 +687,33 @@ function isProcessing(item: StoryMediaItem): boolean {
                             </button>
                         </div>
                     </li>
-                </ul>
-                <p
+                </TransitionGroup>
+                <label
                     v-else
-                    class="mt-5 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+                    class="mt-5 flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-8 text-center text-sm text-muted-foreground transition focus-within:ring-4 focus-within:ring-fl-gold/30 hover:border-fl-gold/60 hover:bg-fl-paper"
+                    :class="
+                        dropTarget === 'photo'
+                            ? 'border-fl-gold bg-fl-gold/10'
+                            : 'border-border'
+                    "
                 >
-                    Sube la foto que mejor cuente tu carrera. Será la portada de
-                    tu recuerdo.
-                </p>
+                    <ImagePlus
+                        class="size-6 text-fl-gold-ink"
+                        aria-hidden="true"
+                    />
+                    <span class="font-semibold text-foreground"
+                        >Sube la foto que mejor cuente tu carrera</span
+                    >
+                    Arrastra tus fotos aquí o toca para elegirlas. La primera
+                    será la portada.
+                    <input
+                        type="file"
+                        class="sr-only"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        @change="onPick($event, 'photo')"
+                    />
+                </label>
             </section>
 
             <!-- Upload states -->
@@ -501,7 +738,19 @@ function isProcessing(item: StoryMediaItem): boolean {
                         class="size-4 opacity-60"
                         aria-hidden="true"
                     />
-                    <span class="min-w-0 flex-1 truncate">{{ u.name }}</span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate">{{ u.name }}</span>
+                        <span
+                            v-if="u.state === 'uploading' || u.state === 'done'"
+                            class="mt-1 block h-1 overflow-hidden rounded-full bg-muted"
+                            aria-hidden="true"
+                        >
+                            <span
+                                class="block h-full rounded-full bg-fl-gold transition-[width] duration-200 motion-reduce:transition-none"
+                                :style="{ width: `${u.progress}%` }"
+                            />
+                        </span>
+                    </span>
                     <span class="shrink-0 text-xs">{{
                         u.state === 'uploading'
                             ? `${u.progress}%`
@@ -655,6 +904,26 @@ function isProcessing(item: StoryMediaItem): boolean {
                                     :message="form.errors.result_time"
                                 />
                             </div>
+                            <div class="col-span-2">
+                                <label for="pos" class="text-sm font-medium"
+                                    >Lugar en la clasificación
+                                    <span
+                                        class="font-normal text-muted-foreground"
+                                        >(opcional)</span
+                                    ></label
+                                >
+                                <input
+                                    id="pos"
+                                    v-model="form.result_position"
+                                    type="text"
+                                    maxlength="60"
+                                    placeholder="12 de 340 · 3º en mi categoría"
+                                    :class="inputClass"
+                                />
+                                <InputError
+                                    :message="form.errors.result_position"
+                                />
+                            </div>
                             <div>
                                 <label for="date" class="text-sm font-medium"
                                     >Fecha</label
@@ -761,7 +1030,16 @@ function isProcessing(item: StoryMediaItem): boolean {
                         Voz y certificado
                     </h2>
 
-                    <div>
+                    <div
+                        class="-m-2 rounded-xl p-2 transition"
+                        :class="{
+                            'bg-fl-gold/10 ring-2 ring-fl-gold':
+                                dropTarget === 'audio',
+                        }"
+                        @dragover.prevent="dropTarget = 'audio'"
+                        @dragleave.self="dropTarget = null"
+                        @drop.prevent="onDrop($event, 'audio')"
+                    >
                         <div class="flex items-center justify-between gap-3">
                             <p
                                 class="flex items-center gap-2 text-sm font-medium"
@@ -787,7 +1065,8 @@ function isProcessing(item: StoryMediaItem): boolean {
                         <p class="mt-1 text-xs text-muted-foreground">
                             Hasta
                             {{ Math.round(limits.max_audio_seconds / 60) }}
-                            minutos · M4A, MP3, AAC, WebM u OGG.
+                            minutos y {{ limits.max_audio_mb }} MB · M4A, MP3,
+                            AAC, WebM u OGG. Puedes arrastrarlo aquí.
                         </p>
                         <div
                             v-if="story.audio"
@@ -913,6 +1192,50 @@ function isProcessing(item: StoryMediaItem): boolean {
                     </div>
                 </section>
 
+                <!-- Keep it / get help -->
+                <section
+                    class="fl-card grid gap-3 p-5 sm:grid-cols-2 sm:p-6"
+                    aria-label="Descargar y ayuda"
+                >
+                    <a
+                        :href="archive(story.public_id).url"
+                        class="flex items-start gap-3 rounded-xl border border-border p-4 transition hover:border-fl-gold hover:bg-fl-paper"
+                    >
+                        <Download
+                            class="mt-0.5 size-5 shrink-0 text-fl-gold-ink"
+                            aria-hidden="true"
+                        />
+                        <span>
+                            <span class="block text-sm font-semibold"
+                                >Descargar mi recuerdo</span
+                            >
+                            <span class="block text-xs text-muted-foreground"
+                                >Fotos en calidad original, voz, certificado y
+                                tus palabras en un ZIP.</span
+                            >
+                        </span>
+                    </a>
+                    <a
+                        :href="supportUrl"
+                        class="flex items-start gap-3 rounded-xl border border-border p-4 transition hover:border-fl-gold hover:bg-fl-paper"
+                    >
+                        <LifeBuoy
+                            class="mt-0.5 size-5 shrink-0 text-fl-gold-ink"
+                            aria-hidden="true"
+                        />
+                        <span>
+                            <span class="block text-sm font-semibold"
+                                >¿Necesitas ayuda?</span
+                            >
+                            <span class="block text-xs text-muted-foreground"
+                                >Escríbenos sobre tu tag o tu recuerdo ({{
+                                    story.display_code ?? story.public_id
+                                }}).</span
+                            >
+                        </span>
+                    </a>
+                </section>
+
                 <div
                     class="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 lg:bottom-4"
                 >
@@ -931,3 +1254,25 @@ function isProcessing(item: StoryMediaItem): boolean {
         </div>
     </div>
 </template>
+
+<style scoped>
+@media (prefers-reduced-motion: no-preference) {
+    .photo-move,
+    .photo-enter-active,
+    .photo-leave-active {
+        transition:
+            transform 280ms ease,
+            opacity 220ms ease;
+    }
+
+    .photo-enter-from,
+    .photo-leave-to {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    .photo-leave-active {
+        position: absolute;
+    }
+}
+</style>

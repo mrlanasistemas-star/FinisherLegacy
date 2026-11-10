@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 #[Fillable([
     'uuid', 'public_id', 'athlete_id', 'legacy_tag_id', 'event_participant_id', 'event_edition_id', 'title',
-    'event_name', 'distance', 'result_time', 'race_date', 'location', 'recipient_label', 'dedication', 'body',
+    'event_name', 'distance', 'result_time', 'result_position', 'race_date', 'location', 'recipient_label', 'dedication', 'body',
     'external_url', 'visibility', 'completed_at',
 ])]
 class LegacyStory extends Model implements OwnsMediaFiles

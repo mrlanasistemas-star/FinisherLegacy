@@ -66,7 +66,7 @@ class StoryPresenter
      * Race data: the real participation when there is one (event, race,
      * official time from results), else what the athlete typed.
      *
-     * @return array{source: string, event_name: ?string, edition: ?string, race: ?string, distance: ?string, time: ?string, date: ?string, location: ?string}
+     * @return array{source: string, event_name: ?string, edition: ?string, race: ?string, distance: ?string, time: ?string, position: ?string, date: ?string, location: ?string}
      */
     public function race(LegacyStory $story): array
     {
@@ -83,6 +83,7 @@ class StoryPresenter
                 'race' => $participant->eventRace?->name,
                 'distance' => RaceDistanceFormatter::format($participant->eventRace) ?? $story->distance,
                 'time' => $result->official_time ?? $result->chip_time ?? $story->result_time,
+                'position' => $result?->overall_position !== null ? (string) $result->overall_position : $story->result_position,
                 'date' => $edition?->event_date?->toDateString() ?? $story->race_date?->toDateString(),
                 'location' => $this->place($edition?->city, $edition?->state, $edition?->country) ?? $story->location,
             ];
@@ -95,6 +96,7 @@ class StoryPresenter
             'race' => null,
             'distance' => $story->distance,
             'time' => $story->result_time,
+            'position' => $story->result_position,
             'date' => $story->race_date?->toDateString(),
             'location' => $story->location,
         ];
