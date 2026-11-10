@@ -45,7 +45,8 @@ import {
 import { store as addToCartRoute } from '@/routes/store/cart/items';
 import { index as storeIndex } from '@/routes/store/products';
 import type { ProductAvailability, PublicProductCard } from '@/types';
-import { collectionSubtitle } from '@/types/collections';
+import type { TagDesign } from '@/types/collections';
+import { tagArt } from '@/types/collections';
 
 export type TagProduct = {
     uuid: string;
@@ -75,6 +76,8 @@ export type TagProduct = {
         year: number | null;
         accent_color: string | null;
     } | null;
+    /** The tag's design (deck pp. 7–8): artwork + header/back lines. */
+    tag_design?: TagDesign | null;
 };
 
 const props = defineProps<{
@@ -88,14 +91,12 @@ const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 const { requireAuth, loginUrl } = useAuthGate();
 
-const art = computed(() => ({
-    name: props.product.collection?.name ?? props.product.name,
-    subtitle: props.product.collection
-        ? collectionSubtitle(props.product.collection)
-        : null,
-    year: props.product.collection?.year ?? null,
-    accent: props.product.collection?.accent_color ?? null,
-}));
+const art = computed(() =>
+    tagArt(
+        props.product.collection ?? { name: props.product.name },
+        props.product.tag_design ?? null,
+    ),
+);
 
 /** Real photography wins; until it exists, the illustrative tag. */
 const hasMedia = computed(
@@ -284,10 +285,7 @@ const after = computed(() => [
                         >
                             <LegacyTag3D
                                 ref="tag3d"
-                                :name="art.name"
-                                :subtitle="art.subtitle"
-                                :year="art.year"
-                                :accent="art.accent"
+                                v-bind="art"
                                 :label="`${product.name} en 3D`"
                                 @face-change="(f) => (face = f)"
                             />

@@ -16,6 +16,7 @@ import CatalogHeader from '@/components/admin/catalog/CatalogHeader.vue';
 import DatePicker from '@/components/DatePicker.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
+import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +43,10 @@ type CollectionData = {
     seo_description: string | null;
     cover_url: string | null;
     hero_url: string | null;
+    tag_accent?: string | null;
+    tag_discipline_line?: string | null;
+    tag_back_line?: string | null;
+    tag_front_art_url?: string | null;
 };
 
 const props = defineProps<{
@@ -86,6 +91,12 @@ const form = useForm({
     hero: null as File | null,
     remove_cover: false,
     remove_hero: false,
+    // Tag design (deck pp. 7–8).
+    tag_art: null as File | null,
+    remove_tag_art: false,
+    tag_accent: c?.tag_accent ?? '',
+    tag_discipline_line: c?.tag_discipline_line ?? '',
+    tag_back_line: c?.tag_back_line ?? 'TU HISTORIA SIGUE VIVA',
 });
 
 // Auto slug while creating, until the person edits it by hand.
@@ -132,6 +143,35 @@ function clear(field: 'cover' | 'hero') {
     }
 }
 
+// Tag design: front artwork (deck pp. 7–8) + live preview of both faces.
+const tagArtPreview = ref<string | null>(c?.tag_front_art_url ?? null);
+
+function pickTagArt(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    form.tag_art = file;
+    form.remove_tag_art = false;
+    tagArtPreview.value = file ? URL.createObjectURL(file) : null;
+}
+
+function clearTagArt() {
+    form.tag_art = null;
+    form.remove_tag_art = true;
+    tagArtPreview.value = null;
+}
+
+const tagPreview = computed(() => ({
+    name: form.name || 'Tu colección',
+    subtitle: form.discipline || null,
+    year: form.year === '' ? null : form.year,
+    accent: form.tag_accent || form.accent_color || null,
+    frontArt: tagArtPreview.value,
+    nameLine: form.destination || null,
+    disciplineLine:
+        form.tag_discipline_line ||
+        [form.discipline, form.year].filter(Boolean).join(' ') ||
+        null,
+    backLine: form.tag_back_line || null,
+}));
 const statusOptions = [
     { value: 'draft', label: 'Borrador', description: 'No se ve en público' },
     {
@@ -399,6 +439,124 @@ function submit() {
                         </button>
                     </div>
                     <InputError :message="form.errors[field]" />
+                </div>
+            </section>
+
+            <section
+                class="fl-card grid gap-5 p-5 md:grid-cols-[1fr_auto] md:p-6"
+            >
+                <div class="grid content-start gap-5 md:grid-cols-2">
+                    <h2
+                        class="text-sm font-semibold text-muted-foreground uppercase md:col-span-2"
+                    >
+                        Diseño del tag
+                    </h2>
+                    <div class="grid gap-1.5 md:col-span-2">
+                        <Label
+                            >Arte del frente · JPG, PNG o WEBP · máx. 5
+                            MB</Label
+                        >
+                        <div
+                            class="relative flex h-40 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-fl-cream/50"
+                        >
+                            <img
+                                v-if="tagArtPreview"
+                                :src="tagArtPreview"
+                                alt=""
+                                class="h-full object-contain"
+                            />
+                            <label
+                                v-else
+                                class="flex cursor-pointer flex-col items-center gap-2 text-sm text-muted-foreground"
+                            >
+                                <ImagePlus class="size-6 text-fl-gold-ink" />
+                                Ilustración del destino (vertical, sin texto)
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    class="sr-only"
+                                    @change="pickTagArt"
+                                />
+                            </label>
+                            <button
+                                v-if="tagArtPreview"
+                                type="button"
+                                class="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-card/90 shadow"
+                                aria-label="Quitar arte del tag"
+                                @click="clearTagArt"
+                            >
+                                <X class="size-4" />
+                            </button>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            Va debajo de la ranura; el monograma FL, el nombre y
+                            la línea de disciplina se dibujan encima.
+                        </p>
+                        <InputError :message="form.errors.tag_art" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="c-tag-discipline"
+                            >Línea de disciplina</Label
+                        >
+                        <Input
+                            id="c-tag-discipline"
+                            v-model="form.tag_discipline_line"
+                            maxlength="60"
+                            placeholder="TRIATLÓN 2026 (se arma sola si la dejas vacía)"
+                        />
+                        <InputError
+                            :message="form.errors.tag_discipline_line"
+                        />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="c-tag-back">Frase del reverso</Label>
+                        <Input
+                            id="c-tag-back"
+                            v-model="form.tag_back_line"
+                            maxlength="80"
+                            placeholder="TU HISTORIA SIGUE VIVA"
+                        />
+                        <InputError :message="form.errors.tag_back_line" />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <Label for="c-tag-accent">Acento del tag</Label>
+                        <div class="flex items-center gap-2">
+                            <input
+                                type="color"
+                                :value="form.tag_accent || '#c9ae8b'"
+                                aria-label="Elegir acento del tag"
+                                class="size-10 shrink-0 cursor-pointer rounded-md border border-input bg-card p-1"
+                                @input="
+                                    form.tag_accent = (
+                                        $event.target as HTMLInputElement
+                                    ).value
+                                "
+                            />
+                            <Input
+                                id="c-tag-accent"
+                                v-model="form.tag_accent"
+                                placeholder="#C9AE8B"
+                                maxlength="7"
+                            />
+                        </div>
+                        <InputError :message="form.errors.tag_accent" />
+                    </div>
+                </div>
+                <div
+                    class="flex justify-center gap-3 md:w-72"
+                    aria-label="Vista previa del tag"
+                >
+                    <TagVisualizer
+                        v-bind="tagPreview"
+                        class="w-1/2"
+                        :tilt="false"
+                    />
+                    <TagVisualizer
+                        v-bind="tagPreview"
+                        face="back"
+                        class="w-1/2"
+                        :tilt="false"
+                    />
                 </div>
             </section>
 

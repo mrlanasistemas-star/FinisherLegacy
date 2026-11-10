@@ -16,8 +16,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { TagArtworkOptions } from './tagArtwork';
-import { drawShadow, loadArtworkFonts } from './tagArtwork';
-import { H, addStudioLighting, createTagModel } from './tagModel';
+import { drawShadow, loadArtworkFonts, loadTagImages } from './tagArtwork';
+import { H, STRAP_TOP, addStudioLighting, createTagModel } from './tagModel';
 
 export type TagFace = 'front' | 'back';
 
@@ -37,7 +37,8 @@ export type TagSceneHandle = {
     dispose: () => void;
 };
 
-const TARGET = new THREE.Vector3(0, 0.55, 0);
+/** Center of the whole object (body bottom … top of the loop). */
+const TARGET = new THREE.Vector3(0, (STRAP_TOP - H / 2) / 2, 0);
 
 const easeInOutCubic = (t: number) =>
     t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -47,14 +48,18 @@ export async function createTagScene(
     host: HTMLElement,
     options: TagSceneOptions,
 ): Promise<TagSceneHandle> {
-    await loadArtworkFonts();
+    // Bounded: fonts + the artwork, so the first frame is the final one.
+    await Promise.race([
+        Promise.all([loadArtworkFonts(), loadTagImages(options)]),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);
 
     const renderer = new THREE.WebGLRenderer({
         antialias: true,
         alpha: true,
         powerPreference: 'high-performance',
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.05;
@@ -72,10 +77,10 @@ export async function createTagScene(
     const disposeLighting = addStudioLighting(renderer, scene);
 
     const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-    camera.position.set(0, TARGET.y + 0.4, 10.6);
+    camera.position.set(0, TARGET.y + 0.4, 11.8);
 
     // ---- The tag ---------------------------------------------------------
-    const model = createTagModel(renderer, options);
+    const model = createTagModel(renderer, options, () => requestRender());
     const tag = model.group;
     scene.add(tag);
 
@@ -102,8 +107,8 @@ export async function createTagScene(
     controls.dampingFactor = 0.08;
     controls.enablePan = false;
     controls.enableZoom = true;
-    controls.minDistance = 8;
-    controls.maxDistance = 13;
+    controls.minDistance = 9;
+    controls.maxDistance = 14.5;
     controls.rotateSpeed = 0.7;
     controls.minPolarAngle = Math.PI / 2 - 0.55;
     controls.maxPolarAngle = Math.PI / 2 + 0.3;

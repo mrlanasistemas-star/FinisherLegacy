@@ -1,18 +1,13 @@
 /**
- * Renderer for the Home's travelling tag (TagStage.vue): ONE WebGL context
- * whose small canvas is moved around the page with CSS transforms, so the
- * GPU only renders a tag-sized frame (never a full-viewport canvas) and the
- * perspective stays centered wherever the tag goes.
- *
- * It only draws what it is told: the director in TagStage.vue decides the
- * position (CSS), rotation and artwork every frame. No controls here — the
- * hero's drag is handled by the DOM anchor, so the canvas never needs
- * pointer events and never blocks text or buttons.
+ * Directed renderer for the Home hero tag (HeroTag3D.vue): ONE WebGL
+ * context on a canvas that fills the hero stage. It only draws what it is
+ * told — the director in HeroTag3D.vue decides rotation and artwork every
+ * frame. No controls here: drag/keys are handled by the DOM wrapper.
  *
  * Loaded through a dynamic import only, like tagScene.ts.
  */
 import * as THREE from 'three';
-import { loadArtworkFonts, mix } from './tagArtwork';
+import { loadArtworkFonts, loadTagImages } from './tagArtwork';
 import type { TagModelOptions } from './tagModel';
 import { H, STRAP_TOP, addStudioLighting, createTagModel } from './tagModel';
 import type { TagArt } from './tagStageContext';
@@ -32,16 +27,18 @@ export type TagStageHandle = {
 };
 
 /** Visible frame around the object (world units). */
-const FRAME_H = 5.15;
-const FRAME_W = 2.9;
+const FRAME_H = STRAP_TOP + H / 2 + 0.45;
+const FRAME_W = 3;
 const CENTER_Y = (-H / 2 + STRAP_TOP) / 2;
 
 const HEX = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i;
-const GRAPHITE = '#2a2925';
+/** Negro Carbono (brand manual §5.2) — the resin body; the loop is black silicone. */
+const CARBON = '#0b0b0c';
+const LOOP = '#111113';
 
-/** A collection's artwork → model colors (graphite body warmed by the accent). */
+/** A collection's artwork → model options (carbon body + its tag design). */
 function modelOptions(art: TagArt): TagModelOptions {
-    const accent = art.accent && HEX.test(art.accent) ? art.accent : '#c9a45c';
+    const accent = art.accent && HEX.test(art.accent) ? art.accent : '#c9ae8b';
 
     return {
         name: art.name,
@@ -51,10 +48,14 @@ function modelOptions(art: TagArt): TagModelOptions {
                 ? null
                 : String(art.year),
         accent,
-        bodyColor: mix(GRAPHITE, accent, 0.1),
-        backColor: '#f8f7f3',
-        strapColor: GRAPHITE,
-        metalColor: '#c9a45c',
+        bodyColor: '#141416',
+        backColor: CARBON,
+        frontArt: art.frontArt ?? null,
+        nameLine: art.nameLine ?? null,
+        disciplineLine: art.disciplineLine ?? null,
+        backLine: art.backLine ?? null,
+        strapColor: LOOP,
+        metalColor: '#c9ae8b',
     };
 }
 
@@ -62,15 +63,23 @@ function modelOptions(art: TagArt): TagModelOptions {
 export async function createTagStage(
     host: HTMLElement,
     art: TagArt,
+    /** A late redraw happened (artwork loaded): render a frame. */
+    onRedraw?: () => void,
 ): Promise<TagStageHandle> {
-    await loadArtworkFonts();
+    const first = modelOptions(art);
+    // Bounded: fonts + the first design's artwork, so frame one is final.
+    await Promise.race([
+        Promise.all([loadArtworkFonts(), loadTagImages(first)]),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);
 
     const renderer = new THREE.WebGLRenderer({
         antialias: true,
         alpha: true,
         powerPreference: 'high-performance',
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // DPR capped: the hero canvas is large; 1.75 keeps it crisp and cheap.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.05;
@@ -86,7 +95,7 @@ export async function createTagStage(
     const scene = new THREE.Scene();
     const disposeLighting = addStudioLighting(renderer, scene);
     const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
-    const model = createTagModel(renderer, modelOptions(art));
+    const model = createTagModel(renderer, first, onRedraw);
     const pivot = new THREE.Group();
     pivot.add(model.group);
     scene.add(pivot);

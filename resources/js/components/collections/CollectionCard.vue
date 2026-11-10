@@ -8,10 +8,10 @@ import { Link } from '@inertiajs/vue3';
 import { ArrowUpRight } from '@lucide/vue';
 import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
-import TagVisualizer from '@/components/tag/TagVisualizer.vue';
+import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import { show as collectionShow } from '@/routes/collections';
 import type { CollectionCardData } from '@/types/collections';
-import { collectionSubtitle } from '@/types/collections';
+import { collectionSubtitle, collectionTagArts } from '@/types/collections';
 
 const props = withDefaults(
     defineProps<{
@@ -24,6 +24,8 @@ const props = withDefaults(
 
 const subtitle = computed(() => collectionSubtitle(props.collection));
 const dark = computed(() => props.tone === 'dark');
+/** Primary tag design (deck pp. 7–8 artwork when the collection has it). */
+const art = computed(() => collectionTagArts(props.collection)[0]);
 </script>
 
 <template>
@@ -37,7 +39,7 @@ const dark = computed(() => props.tone === 'dark');
         "
     >
         <div
-            class="relative aspect-[4/5] overflow-hidden rounded-media transition-shadow duration-500 group-hover:shadow-fl-float"
+            class="relative aspect-[4/5] overflow-hidden rounded-media transition-[transform,box-shadow] duration-500 ease-legacy group-hover:-translate-y-1 group-hover:shadow-fl-float group-focus-visible:-translate-y-1 motion-reduce:transform-none motion-reduce:transition-none"
             :class="dark ? 'bg-fl-graphite' : 'bg-fl-cream ring-1 ring-fl-line'"
         >
             <template v-if="collection.cover_url">
@@ -46,7 +48,7 @@ const dark = computed(() => props.tone === 'dark');
                     :alt="`Colección ${collection.name}`"
                     :loading="priority ? 'eager' : 'lazy'"
                     decoding="async"
-                    class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03] motion-reduce:transition-none"
+                    class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06] motion-reduce:transition-none"
                 />
                 <div
                     class="absolute inset-0 bg-gradient-to-t from-fl-black/25 via-transparent to-transparent"
@@ -61,15 +63,9 @@ const dark = computed(() => props.tone === 'dark');
                     aria-hidden="true"
                 />
                 <div
-                    class="absolute inset-x-0 top-[8%] mx-auto w-[46%] transition-transform duration-700 ease-out group-hover:-translate-y-1 group-hover:rotate-[-2deg] motion-reduce:transition-none"
+                    class="absolute inset-x-0 top-[5%] mx-auto w-[40%] transition-transform duration-700 ease-out group-hover:-translate-y-1 motion-reduce:transition-none"
                 >
-                    <TagVisualizer
-                        :name="collection.name"
-                        :subtitle="subtitle"
-                        :year="collection.year"
-                        :accent="collection.accent_color"
-                        :tilt="false"
-                    />
+                    <TagFlipCard :art="art" />
                 </div>
             </template>
 
@@ -98,7 +94,7 @@ const dark = computed(() => props.tone === 'dark');
                 class="mt-1.5 font-serif text-2xl leading-tight sm:text-[1.7rem]"
                 :class="dark ? 'text-white' : 'text-foreground'"
             >
-                {{ collection.name }}
+                <span class="fl-link">{{ collection.name }}</span>
             </h3>
             <p
                 v-if="collection.tagline"

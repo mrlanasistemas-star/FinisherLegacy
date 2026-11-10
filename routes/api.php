@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\V1\Social\ReportController;
 use App\Http\Controllers\Api\V1\Social\SearchController;
 use App\Http\Controllers\Api\V1\Store\CartController;
 use App\Http\Controllers\Api\V1\Store\CheckoutController;
+use App\Http\Controllers\Api\V1\Store\CollectionController as StoreCollectionController;
 use App\Http\Controllers\Api\V1\Store\OrderController;
 use App\Http\Controllers\Api\V1\Store\PaymentController;
 use App\Http\Controllers\Api\V1\Store\ProductController;
@@ -323,6 +324,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // lookup (brief §88/§107) — no auth, no secrets.
     Route::get('store/products', [ProductController::class, 'index'])->name('store.products.index');
     Route::get('store/products/{product:slug}', [ProductController::class, 'show'])->name('store.products.show');
+    // Published tag collections with their `tag_design` (deck pp. 7–8).
+    Route::get('store/collections', [StoreCollectionController::class, 'index'])->name('store.collections.index');
+    Route::get('store/collections/{collection:slug}', [StoreCollectionController::class, 'show'])->name('store.collections.show');
     Route::get('gear/{code}', [GearController::class, 'publicShow'])
         ->middleware('throttle:api-legacy-lookup')
         ->name('gear.show');
@@ -434,3 +438,4 @@ require __DIR__.'/api/platform.php';
 require __DIR__.'/api/community.php';
 require __DIR__.'/api/nfc.php';
 require __DIR__.'/api/legacy.php';
+require __DIR__.'/api/quotas.php';

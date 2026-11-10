@@ -22,7 +22,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable([
     'uuid', 'name', 'slug', 'tagline', 'description', 'discipline', 'destination', 'year', 'edition',
     'season', 'event_id', 'status', 'launch_at', 'cover_path', 'hero_path', 'accent_color', 'sort_order',
-    'seo_title', 'seo_description',
+    'seo_title', 'seo_description', 'tag_front_art', 'tag_accent', 'tag_discipline_line', 'tag_back_line',
 ])]
 class Collection extends Model
 {
@@ -48,6 +48,17 @@ class Collection extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Extra tag designs of this collection; the collection's own `tag_*`
+     * columns are its primary design.
+     *
+     * @return HasMany<CollectionDesign, $this>
+     */
+    public function designs(): HasMany
+    {
+        return $this->hasMany(CollectionDesign::class)->orderBy('sort_order')->orderBy('id');
     }
 
     /** @return BelongsTo<Event, $this> */

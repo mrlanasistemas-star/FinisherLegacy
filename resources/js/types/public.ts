@@ -1,3 +1,4 @@
+import type { TagDesign } from '@/types/collections';
 import type { LegacyPlateModelData } from '@/types/plates';
 
 export type EventPhase = 'upcoming' | 'ongoing' | 'finished';
@@ -139,6 +140,8 @@ export type PublicProductCard = {
     is_nfc?: boolean;
     is_new?: boolean;
     is_presale?: boolean;
+    /** Finisher Legacy Tag artwork (null for other products). */
+    tag_design?: TagDesign | null;
 };
 
 export type ProductColor = { name: string; hex: string | null };

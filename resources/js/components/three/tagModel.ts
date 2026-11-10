@@ -1,14 +1,19 @@
 /**
  * The procedural Finisher Legacy Tag mesh (no .glb exists), shared by the
- * interactive viewer (tagScene.ts) and the Home's travelling stage
- * (tagStage.ts):
+ * interactive viewer (tagScene.ts) and the Home hero stage (tagStage.ts).
  *
- * - body: a rounded-rectangle ExtrudeGeometry with a bevel and a real
- *   punched eyelet, resin-like MeshPhysicalMaterial with clearcoat;
+ * Proportions follow the real product in the strategy deck (pp. 6–8): a
+ * luggage-style tag about 1 : 2, rounded corners, a horizontal SLOT near the
+ * top (not a round eyelet, not a bank-card shape) and a black silicone LOOP
+ * strap threaded through the slot:
+ *
+ * - body: a rounded-rectangle ExtrudeGeometry with a bevel and the slot cut
+ *   through it, resin-like MeshPhysicalMaterial with clearcoat;
  * - FRONT / BACK: two decal caps with the canvas artwork from
- *   tagArtwork.ts — the back also uses it as a subtle bump map so the copy
- *   reads engraved;
- * - a gold grommet, a woven strap loop through the eyelet and a crimp.
+ *   tagArtwork.ts (the canvas covers the whole body, header band included)
+ *   — the back also uses it as a subtle bump map so the copy reads engraved;
+ * - the loop: a round silicone tube along a closed curve that goes through
+ *   the slot, pinches above the tag and opens into an oval loop.
  *
  * `setArtwork` redraws the artwork into the SAME canvases/textures, so the
  * Home can swap collections without rebuilding the scene.
@@ -16,21 +21,35 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { TagArtworkOptions } from './tagArtwork';
-import { drawBack, drawFront, drawStrap } from './tagArtwork';
+import {
+    ART_H,
+    ART_W,
+    drawBack,
+    drawFront,
+    loadTagImages,
+    tagImagesReady,
+} from './tagArtwork';
 
+/** World units: 1 unit = 100 artwork units (ART_W = 200 → W = 2). */
 export const W = 2;
-export const H = 3.4;
-const R = 0.26;
+export const H = W * (ART_H / ART_W);
+const R = 0.3;
 const DEPTH = 0.08;
 const BEVEL = 0.028;
-export const HOLE_Y = H / 2 - 0.34;
-const HOLE_R = 0.1;
+/** Slot center (horizontal stadium cut near the top edge). */
+export const SLOT_Y = H / 2 - 0.22;
+const SLOT_HALF_W = 0.3;
+const SLOT_HALF_H = 0.085;
+/** Kept for callers that still read the old eyelet position. */
+export const HOLE_Y = SLOT_Y;
 export const CAP_Z = DEPTH / 2 + BEVEL;
+const STRAP_R = 0.055;
 /** Top of the strap loop (object spans −H/2 … STRAP_TOP). */
-export const STRAP_TOP = H / 2 + 1.28;
+export const STRAP_TOP = H / 2 + 1.32 + STRAP_R;
 
 export type TagModelOptions = TagArtworkOptions & {
     strapColor: string;
+    /** Accepted for compatibility; the tag has no metal parts any more. */
     metalColor: string;
 };
 
@@ -40,7 +59,7 @@ export type TagModel = {
     dispose: () => void;
 };
 
-function outline(withHole: boolean): THREE.Shape {
+function outline(withSlot: boolean): THREE.Shape {
     const x = -W / 2;
     const y = -H / 2;
     const shape = new THREE.Shape();
@@ -54,10 +73,22 @@ function outline(withHole: boolean): THREE.Shape {
     shape.lineTo(x, y + R);
     shape.quadraticCurveTo(x, y, x + R, y);
 
-    if (withHole) {
-        const hole = new THREE.Path();
-        hole.absarc(0, HOLE_Y, HOLE_R, 0, Math.PI * 2, true);
-        shape.holes.push(hole);
+    if (withSlot) {
+        const c = SLOT_HALF_W - SLOT_HALF_H;
+        const slot = new THREE.Path();
+        slot.moveTo(-c, SLOT_Y - SLOT_HALF_H);
+        slot.lineTo(c, SLOT_Y - SLOT_HALF_H);
+        slot.absarc(c, SLOT_Y, SLOT_HALF_H, -Math.PI / 2, Math.PI / 2, false);
+        slot.lineTo(-c, SLOT_Y + SLOT_HALF_H);
+        slot.absarc(
+            -c,
+            SLOT_Y,
+            SLOT_HALF_H,
+            Math.PI / 2,
+            (Math.PI * 3) / 2,
+            false,
+        );
+        shape.holes.push(slot);
     }
 
     return shape;
@@ -78,73 +109,33 @@ function capGeometry(): THREE.ShapeGeometry {
     return geometry;
 }
 
-/** Flat woven strap along a closed curve that threads the eyelet. */
-function strapGeometry(): THREE.BufferGeometry {
-    const y = HOLE_Y;
+/**
+ * The silicone loop: through the slot (front → back), up both faces, a
+ * pinch just above the top edge, then an oval loop in the tag's plane.
+ */
+function strapGeometry(): THREE.TubeGeometry {
+    const top = H / 2;
+    const face = CAP_Z + STRAP_R + 0.012;
     const curve = new THREE.CatmullRomCurve3(
         [
-            new THREE.Vector3(0, y - 0.045, 0),
-            new THREE.Vector3(0, y + 0.06, 0.1),
-            new THREE.Vector3(0, y + 0.22, 0.125),
-            new THREE.Vector3(0, H / 2 + 0.1, 0.14),
-            new THREE.Vector3(0, H / 2 + 0.75, 0.13),
-            new THREE.Vector3(0, H / 2 + 1.18, 0.06),
-            new THREE.Vector3(0, STRAP_TOP, 0),
-            new THREE.Vector3(0, H / 2 + 1.18, -0.06),
-            new THREE.Vector3(0, H / 2 + 0.75, -0.13),
-            new THREE.Vector3(0, H / 2 + 0.1, -0.14),
-            new THREE.Vector3(0, y + 0.22, -0.125),
-            new THREE.Vector3(0, y + 0.06, -0.1),
+            new THREE.Vector3(0, SLOT_Y - 0.01, 0),
+            new THREE.Vector3(0, SLOT_Y + 0.1, face),
+            new THREE.Vector3(0, top + 0.02, face),
+            new THREE.Vector3(0.03, top + 0.3, 0.07),
+            new THREE.Vector3(0.26, top + 0.7, 0),
+            new THREE.Vector3(0.3, top + 1.05, 0),
+            new THREE.Vector3(0, top + 1.32, 0),
+            new THREE.Vector3(-0.3, top + 1.05, 0),
+            new THREE.Vector3(-0.26, top + 0.7, 0),
+            new THREE.Vector3(-0.03, top + 0.3, -0.07),
+            new THREE.Vector3(0, top + 0.02, -face),
+            new THREE.Vector3(0, SLOT_Y + 0.1, -face),
         ],
         true,
         'centripetal',
     );
-    const segments = 160;
-    const half = 0.075;
-    const side = new THREE.Vector3(1, 0, 0);
-    const positions: number[] = [];
-    const normals: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-    const length = curve.getLength();
 
-    for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const p = curve.getPointAt(t % 1);
-        const tangent = curve.getTangentAt(t % 1);
-        const normal = new THREE.Vector3()
-            .crossVectors(side, tangent)
-            .normalize();
-        positions.push(p.x - half, p.y, p.z, p.x + half, p.y, p.z);
-        normals.push(
-            normal.x,
-            normal.y,
-            normal.z,
-            normal.x,
-            normal.y,
-            normal.z,
-        );
-        uvs.push(0, t * length * 6, 1, t * length * 6);
-
-        if (i < segments) {
-            const a = i * 2;
-            indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-        }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(positions, 3),
-    );
-    geometry.setAttribute(
-        'normal',
-        new THREE.Float32BufferAttribute(normals, 3),
-    );
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geometry.setIndex(indices);
-
-    return geometry;
+    return new THREE.TubeGeometry(curve, 220, STRAP_R, 14, true);
 }
 
 /** RoomEnvironment + PMREM image-based lighting and two soft lights. */
@@ -175,6 +166,8 @@ export function addStudioLighting(
 export function createTagModel(
     renderer: THREE.WebGLRenderer,
     options: TagModelOptions,
+    /** Called after a late redraw (artwork image loaded). */
+    onRedraw?: () => void,
 ): TagModel {
     const maxAniso = Math.min(renderer.capabilities.getMaxAnisotropy(), 16);
     const textures: THREE.Texture[] = [];
@@ -230,7 +223,7 @@ export function createTagModel(
     const backMaterial = new THREE.MeshPhysicalMaterial({
         map: backMap,
         bumpMap: backBump,
-        bumpScale: 0.5,
+        bumpScale: 0.18,
         roughness: 0.6,
         metalness: 0,
         clearcoat: 0.4,
@@ -241,63 +234,52 @@ export function createTagModel(
     back.position.z = -CAP_Z - 0.0015;
     group.add(back);
 
-    // Grommet: a ring on each face + the lining of the eyelet.
-    const metal = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(options.metalColor),
-        metalness: 1,
-        roughness: 0.24,
-    });
-    const ringGeometry = new THREE.TorusGeometry(HOLE_R + 0.035, 0.032, 18, 64);
-    const ringFront = new THREE.Mesh(ringGeometry, metal);
-    ringFront.position.set(0, HOLE_Y, CAP_Z + 0.004);
-    const ringBack = ringFront.clone();
-    ringBack.position.z = -CAP_Z - 0.004;
-    const liningGeometry = new THREE.CylinderGeometry(
-        HOLE_R + 0.004,
-        HOLE_R + 0.004,
-        CAP_Z * 2 + 0.01,
-        48,
-        1,
-        true,
-    );
-    liningGeometry.rotateX(Math.PI / 2);
-    const lining = new THREE.Mesh(liningGeometry, metal);
-    lining.position.y = HOLE_Y;
-    group.add(ringFront, ringBack, lining);
-
-    // Strap loop + crimp.
-    const strapCanvas = drawStrap(options.strapColor, options.accent);
-    const strapMap = texture(strapCanvas);
-    strapMap.wrapS = THREE.RepeatWrapping;
-    strapMap.wrapT = THREE.RepeatWrapping;
-    const strapMaterial = new THREE.MeshStandardMaterial({
-        map: strapMap,
-        roughness: 0.85,
+    // Silicone loop strap through the slot.
+    const strapMaterial = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(options.strapColor),
+        roughness: 0.55,
         metalness: 0,
-        side: THREE.DoubleSide,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.4,
     });
     group.add(new THREE.Mesh(strapGeometry(), strapMaterial));
-    const crimp = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, 0.1, 0.07, 2, 2, 2),
-        metal,
-    );
-    crimp.position.set(0, H / 2 + 1.25, 0);
-    group.add(crimp);
+
+    const redraw = (next: TagModelOptions) => {
+        drawFront(next, undefined, frontCanvas);
+        drawBack(next, undefined, backCanvas);
+        frontMap.needsUpdate = true;
+        backMap.needsUpdate = true;
+        backBump.needsUpdate = true;
+    };
+
+    // Artwork images arrive asynchronously: draw now, redraw once loaded.
+    let current = options;
+    let disposed = false;
+    const ensureImages = (next: TagModelOptions) => {
+        if (tagImagesReady(next)) {
+            return;
+        }
+
+        void loadTagImages(next).then(() => {
+            if (!disposed && current === next) {
+                redraw(next);
+                onRedraw?.();
+            }
+        });
+    };
+    ensureImages(options);
 
     return {
         group,
         setArtwork(next) {
-            drawFront(next, undefined, frontCanvas);
-            drawBack(next, undefined, backCanvas);
-            frontMap.needsUpdate = true;
-            backMap.needsUpdate = true;
-            backBump.needsUpdate = true;
+            current = next;
+            redraw(next);
+            ensureImages(next);
             bodyMaterial.color.set(next.bodyColor);
-            const strap = drawStrap(next.strapColor, next.accent);
-            strapCanvas.getContext('2d')?.drawImage(strap, 0, 0);
-            strapMap.needsUpdate = true;
+            strapMaterial.color.set(next.strapColor);
         },
         dispose() {
+            disposed = true;
             const materials = new Set<THREE.Material>();
             group.traverse((object) => {
                 if (object instanceof THREE.Mesh) {

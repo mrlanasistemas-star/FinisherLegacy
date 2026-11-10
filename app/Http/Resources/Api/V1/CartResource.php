@@ -3,7 +3,9 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\Cart;
+use App\Models\Product;
 use App\Queries\Commerce\GetCartSummary;
+use App\Support\Collections\TagDesign;
 use App\Support\Commerce\CartSummaryItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -19,6 +21,12 @@ class CartResource extends JsonResource
     public function toArray(Request $request): array
     {
         $summary = app(GetCartSummary::class)->handle($this->resource);
+        // One query for every line: product type + tag design, so the
+        // mobile cart draws each tag without a product request per item.
+        $products = Product::query()->with(['collection', 'design'])
+            ->whereIn('slug', $summary->items->map(fn (CartSummaryItem $item) => $item->productSlug)->filter()->unique()->values())
+            ->get()
+            ->keyBy('slug');
 
         return [
             'uuid' => $this->uuid,
@@ -43,6 +51,8 @@ class CartResource extends JsonResource
                 'color' => $item->color,
                 'nfc_enabled' => $item->connected,
                 'low_stock' => $item->lowStock,
+                'product_type' => $products->get($item->productSlug)?->type->value,
+                'tag_design' => ($product = $products->get($item->productSlug)) !== null ? TagDesign::forProduct($product) : null,
             ])->values(),
             'subtotal_minor' => $summary->subtotalMinor,
             'discount_minor' => $summary->discountMinor,

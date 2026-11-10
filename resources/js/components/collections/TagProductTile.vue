@@ -1,15 +1,21 @@
 <script setup lang="ts">
 /**
  * A Finisher Legacy Tag product (or any product of a collection) as a
- * tile: uploaded photo when there is one, otherwise the illustrative tag.
+ * tile: a tag product shows its design render (front, flips to the back
+ * on hover or with a button); other products their photo, else the
+ * illustrative tag.
  * Price and availability are exactly what the server resolved.
  */
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
+import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { show as productShow } from '@/routes/store/products';
+import type { TagDesign } from '@/types/collections';
+import { tagArt } from '@/types/collections';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         name: string;
         slug: string;
@@ -26,6 +32,8 @@ withDefaults(
         artSubtitle?: string | null;
         artYear?: number | null;
         accent?: string | null;
+        /** Tag products: their `tag_design` → front/back flip render. */
+        design?: TagDesign | null;
         tone?: 'dark' | 'light';
     }>(),
     {
@@ -41,8 +49,23 @@ withDefaults(
         artSubtitle: null,
         artYear: null,
         accent: null,
+        design: null,
         tone: 'light',
     },
+);
+
+/** A tag product always shows its design (front ↔ back), photo or not. */
+const designArt = computed(() =>
+    props.design
+        ? tagArt(
+              {
+                  name: props.artName ?? props.name,
+                  year: props.artYear,
+                  accent_color: props.accent,
+              },
+              props.design,
+          )
+        : null,
 );
 </script>
 
@@ -52,20 +75,26 @@ withDefaults(
         class="group block rounded-media focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-4 focus-visible:outline-none"
     >
         <div
-            class="relative aspect-square overflow-hidden rounded-media"
+            class="fl-card-hover relative aspect-square overflow-hidden rounded-media border border-transparent"
             :class="
                 tone === 'dark'
                     ? 'bg-fl-graphite'
                     : 'bg-card ring-1 ring-border'
             "
         >
+            <div
+                v-if="designArt"
+                class="absolute inset-x-0 top-[5%] mx-auto w-[36%]"
+            >
+                <TagFlipCard :art="designArt" />
+            </div>
             <img
-                v-if="imageUrl"
+                v-else-if="imageUrl"
                 :src="imageUrl"
                 :alt="imageAlt ?? name"
                 loading="lazy"
                 decoding="async"
-                class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.03] motion-reduce:transition-none"
+                class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06] motion-reduce:transition-none"
             />
             <div
                 v-else

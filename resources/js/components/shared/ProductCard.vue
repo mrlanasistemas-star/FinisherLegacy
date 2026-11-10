@@ -15,8 +15,11 @@ import { Nfc } from '@lucide/vue';
 import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import ProductImagePlaceholder from '@/components/shared/ProductImagePlaceholder.vue';
+import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import { PRODUCT_TYPE_LABELS, STOCK_LABELS, swatchColor } from '@/lib/store';
 import type { ProductAvailability, ProductColor } from '@/types';
+import type { TagDesign } from '@/types/collections';
+import { tagArt } from '@/types/collections';
 
 const props = withDefaults(
     defineProps<{
@@ -42,6 +45,8 @@ const props = withDefaults(
         isNfc?: boolean;
         isNew?: boolean;
         isPresale?: boolean;
+        /** Finisher Legacy Tag: its design render replaces the photo. */
+        tagDesign?: TagDesign | null;
         /** Eager-load the image (first row above the fold). */
         priority?: boolean;
     }>(),
@@ -50,6 +55,7 @@ const props = withDefaults(
         colors: () => [],
         sizes: () => [],
         stockLevel: null,
+        tagDesign: null,
     },
 );
 
@@ -104,6 +110,10 @@ const badges = computed(() => {
 });
 
 const visibleColors = computed(() => props.colors.slice(0, 5));
+/** Tag products show the design (front, flips to the back), not a photo. */
+const designArt = computed(() =>
+    props.tagDesign ? tagArt({ name: props.name }, props.tagDesign) : null,
+);
 const visibleSizes = computed(() => props.sizes.slice(0, 6));
 </script>
 
@@ -116,7 +126,13 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
         <div
             class="fl-product-card__media relative aspect-[4/5] overflow-hidden rounded-media border border-border bg-[#f1efe9] group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2"
         >
-            <template v-if="imageUrl">
+            <div
+                v-if="designArt"
+                class="absolute inset-0 flex items-start justify-center bg-[radial-gradient(70%_55%_at_50%_62%,color-mix(in_srgb,var(--fl-gold)_22%,transparent),transparent_72%)] pt-[5%]"
+            >
+                <TagFlipCard :art="designArt" class="w-[40%]" />
+            </div>
+            <template v-else-if="imageUrl">
                 <img
                     :src="imageUrl"
                     :alt="imageAlt || name"

@@ -1,49 +1,62 @@
 <script setup lang="ts">
 /**
- * TagVisualizer — ILLUSTRATIVE RENDER of the Finisher Legacy Tag.
+ * TagVisualizer — illustrative SVG render of the Finisher Legacy Tag, drawn
+ * like the collection designs of the strategy deck (pp. 7–8) with the
+ * shared layout in ./tagLayout.ts (the 3D textures use the same one):
  *
- * There is no photograph or 3D render of the real tag yet (pending real
- * tag photography — docs/architecture/public-experience.md). Until it
- * exists, this SVG draws a physical collectible, luggage-style tag so the
- * public pages can show *the object* without inventing a product photo:
+ * - a vertical rounded card ≈ 1 : 2 with a horizontal slot near the top
+ *   and a black silicone loop threaded through it;
+ * - FRONT: the collection's destination artwork (`tag_design.front_art_url`,
+ *   cover-fit below the slot, fading into carbon under the header) + the
+ *   official FL monogram IMAGE, a thin gold rule, the name in spaced caps
+ *   and the discipline line. No artwork → procedural fallback (carbon +
+ *   gold contour lines + outlined year);
+ * - BACK: carbon black, palm accents, monogram, "TU HISTORIA SIGUE VIVA"
+ *   and the NFC mark. The tag carries no QR.
  *
- * - portrait body with real thickness (offset edge layer + rim highlight),
- *   so it never reads as a credit card or a floating plastic card;
- * - a punched eyelet with a metal grommet and a woven strap looped
- *   through it (the strap is drawn behind the body and shows through the
- *   hole);
- * - subtle material grain + a single sheen that follows the tilt;
- * - FRONT: the collection artwork — the name set as large as it fits
- *   (shared layout in ./tagLayout.ts, same as the 3D textures), subtitle,
- *   big outlined year, accent contour lines and the NFC mark; BACK (NFC
- *   only — the tag carries no QR): "Tu historia vive dentro.", a big NFC
- *   seal in engraved rings, "Acerca tu celular" and the masked unit code.
- *
- * Nothing here is product data: dimensions/material come only from the
- * product record and are rendered by the pages, never by this drawing.
+ * Nothing here is product data beyond the design fields it is given.
  * Pointer tilt is mouse-only and disabled under prefers-reduced-motion.
  */
-import { computed, ref, useId } from 'vue';
+import { computed, onMounted, ref, useId, watch } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
 import {
-    displayName as tagDisplayName,
-    estimateSans,
-    estimateSerif,
-    fitLine,
-    fitName,
-    frontLayout,
+    BACK,
+    BACK_PALMS,
+    BACK_SPACING,
+    CONTOUR_PATHS,
+    DISCIPLINE_SPACING,
+    FACE_H,
+    FACE_W,
+    FRONT,
+    MONOGRAM_RATIO,
+    MONOGRAM_SRC,
+    NAME_SPACING,
+    NFC_ARCS,
+    TAG_COLORS,
     TAG_TEXT_W,
+    artPlacement,
+    disciplineSize,
+    estimateSans,
+    facePath,
+    fitLine,
+    nameSize,
+    tagText,
 } from './tagLayout';
 
 const props = withDefaults(
     defineProps<{
         /** Collection name, e.g. "Cozumel". */
         name?: string;
-        /** Small line under the name: discipline · destination. */
+        /** Discipline · destination (fallback for the discipline line). */
         subtitle?: string | null;
         year?: string | number | null;
-        /** Collection accent (validated hex from the server) — artwork lines only. */
+        /** Collection accent (validated hex) — fallback glow only. */
         accent?: string | null;
+        /** `tag_design` fields (deck pp. 7–8). */
+        frontArt?: string | null;
+        nameLine?: string | null;
+        disciplineLine?: string | null;
+        backLine?: string | null;
         face?: 'front' | 'back';
         tilt?: boolean;
         /** Accessible description; defaults to a sentence built from the props. */
@@ -54,6 +67,10 @@ const props = withDefaults(
         subtitle: null,
         year: null,
         accent: null,
+        frontArt: null,
+        nameLine: null,
+        disciplineLine: null,
+        backLine: null,
         face: 'front',
         tilt: true,
         label: null,
@@ -89,43 +106,83 @@ const tiltStyle = computed(() => ({
     transform: `rotateX(${rx.value.toFixed(2)}deg) rotateY(${ry.value.toFixed(2)}deg)`,
 }));
 
-/** Sheen + edge parallax follow the tilt (in viewBox units). */
 const sheenShift = computed(() => ry.value * 6);
 const edgeShift = computed(() => -ry.value * 0.35);
-
-const accentColor = computed(() => props.accent || 'var(--fl-gold)');
 
 const yearText = computed(() =>
     props.year === null || props.year === '' ? null : String(props.year),
 );
 
-/** Name as large as it fits (1–2 lines), same layout as the 3D artwork. */
-const name = computed(() =>
-    fitName(tagDisplayName(props.name, yearText.value), estimateSerif),
+const text = computed(() => tagText(props));
+const nameFont = computed(() => nameSize(text.value.name, estimateSans));
+const disciplineFont = computed(() =>
+    text.value.discipline
+        ? disciplineSize(text.value.discipline, estimateSans)
+        : 0,
 );
-
-const subtitleText = computed(() => props.subtitle?.toUpperCase() ?? '');
-const subtitleSize = computed(() =>
-    fitLine(subtitleText.value, estimateSans, { max: 11.5, min: 7.5 }),
+const backFont = computed(() =>
+    Math.min(
+        ...text.value.back.map((line) =>
+            fitLine(line, estimateSans, {
+                max: 9.5,
+                min: 6,
+                spacing: BACK_SPACING,
+                width: 150,
+            }),
+        ),
+    ),
 );
-
-const yearSize = computed(() =>
+const yearFont = computed(() =>
     yearText.value
-        ? Math.min(80, TAG_TEXT_W / estimateSerif(yearText.value))
+        ? Math.min(76, TAG_TEXT_W / (estimateSans(yearText.value) * 0.92))
         : 0,
 );
 
-const layout = computed(() =>
-    frontLayout(name.value, !!props.subtitle, !!yearText.value),
+// ---- Artwork: natural size → cover placement ---------------------------
+/** Until the image reports its size, assume the deck crops' ≈ 0.69 ratio. */
+const artSize = ref({ w: 900, h: 1310 });
+const artFailed = ref(false);
+
+function measureArt(src: string | null) {
+    artFailed.value = false;
+
+    if (!src || typeof window === 'undefined') {
+        return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+        if (props.frontArt === src && img.naturalWidth) {
+            artSize.value = { w: img.naturalWidth, h: img.naturalHeight };
+        }
+    };
+    img.onerror = () => {
+        if (props.frontArt === src) {
+            artFailed.value = true;
+        }
+    };
+    img.src = src;
+}
+
+onMounted(() => measureArt(props.frontArt));
+watch(
+    () => props.frontArt,
+    (src) => measureArt(src),
 );
 
-/** Engraved rings around the NFC seal (back). */
-const rings = Array.from({ length: 30 }, (_, i) => 62 + i * 3.2);
+const hasArt = computed(() => !!props.frontArt && !artFailed.value);
+const art = computed(() => artPlacement(artSize.value.w, artSize.value.h));
+const fadeTop = computed(() => Math.max(FRONT.artTop, art.value.y));
+
+const monogramH = (width: number) => width * MONOGRAM_RATIO;
+const accentColor = computed(() => props.accent || TAG_COLORS.gold);
 
 const ariaLabel = computed(
     () =>
         props.label ??
-        `Ilustración del Finisher Legacy Tag${props.face === 'back' ? ' (reverso)' : ''}: colección ${props.name}${yearText.value ? ` ${yearText.value}` : ''}, con correa, ojal metálico${props.face === 'back' ? ' y sello NFC para acercar el celular' : ' y NFC'}.`,
+        (props.face === 'back'
+            ? `Reverso ilustrativo del Finisher Legacy Tag: negro carbono con el monograma FL, «${text.value.back.join(' ')}» y el símbolo NFC.`
+            : `Frente ilustrativo del Finisher Legacy Tag ${text.value.name}${text.value.discipline ? ` · ${text.value.discipline}` : ''}${hasArt.value ? ', con el arte del destino' : ''}, con correa de silicón negra.`),
 );
 </script>
 
@@ -142,71 +199,86 @@ const ariaLabel = computed(
             :style="tiltStyle"
         >
             <svg
-                viewBox="0 -118 240 482"
+                viewBox="-20 -128 240 548"
                 class="block h-auto w-full overflow-visible"
                 role="img"
                 :aria-label="ariaLabel"
             >
                 <defs>
-                    <!-- Body: deep graphite (front) / warm paper (back) -->
                     <linearGradient
-                        :id="id('front')"
+                        :id="id('carbon')"
                         x1="0"
                         y1="0"
                         x2="1"
                         y2="1"
+                    >
+                        <stop offset="0" :stop-color="TAG_COLORS.carbonLight" />
+                        <stop offset="0.55" :stop-color="TAG_COLORS.carbon" />
+                        <stop offset="1" stop-color="#050506" />
+                    </linearGradient>
+                    <linearGradient
+                        :id="id('fade')"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                    >
+                        <stop offset="0" :stop-color="TAG_COLORS.carbon" />
+                        <stop
+                            offset="0.55"
+                            :stop-color="TAG_COLORS.carbon"
+                            stop-opacity="0.45"
+                        />
+                        <stop
+                            offset="1"
+                            :stop-color="TAG_COLORS.carbon"
+                            stop-opacity="0"
+                        />
+                    </linearGradient>
+                    <radialGradient
+                        :id="id('vignette')"
+                        cx="100"
+                        cy="250"
+                        r="240"
+                        gradientUnits="userSpaceOnUse"
+                    >
+                        <stop
+                            offset="0.33"
+                            stop-color="#000"
+                            stop-opacity="0"
+                        />
+                        <stop
+                            offset="1"
+                            stop-color="#000"
+                            stop-opacity="0.38"
+                        />
+                    </radialGradient>
+                    <radialGradient
+                        :id="id('glow')"
+                        cx="100"
+                        cy="300"
+                        r="190"
+                        gradientUnits="userSpaceOnUse"
                     >
                         <stop
                             offset="0"
-                            style="stop-color: var(--fl-graphite-light)"
+                            :stop-color="accentColor"
+                            stop-opacity="0.19"
                         />
                         <stop
-                            offset="0.45"
-                            style="stop-color: var(--fl-graphite)"
+                            offset="1"
+                            :stop-color="accentColor"
+                            stop-opacity="0"
                         />
-                        <stop offset="1" style="stop-color: var(--fl-black)" />
-                    </linearGradient>
-                    <linearGradient
-                        :id="id('back')"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                    >
-                        <stop offset="0" style="stop-color: var(--fl-paper)" />
-                        <stop offset="1" style="stop-color: var(--fl-cream)" />
-                    </linearGradient>
-                    <!-- Rim highlight: light catches the top-left bevel -->
+                    </radialGradient>
                     <linearGradient :id="id('rim')" x1="0" y1="0" x2="1" y2="1">
-                        <stop
-                            offset="0"
-                            stop-color="#fff"
-                            stop-opacity="0.55"
-                        />
+                        <stop offset="0" stop-color="#fff" stop-opacity="0.4" />
                         <stop
                             offset="0.35"
                             stop-color="#fff"
-                            stop-opacity="0.08"
+                            stop-opacity="0.06"
                         />
                         <stop offset="1" stop-color="#fff" stop-opacity="0" />
-                    </linearGradient>
-                    <!-- Metal (grommet): the brand's gold sheen stops -->
-                    <linearGradient
-                        :id="id('metal')"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                    >
-                        <stop
-                            offset="0"
-                            style="stop-color: var(--fl-gold-soft)"
-                        />
-                        <stop offset="0.5" style="stop-color: var(--fl-gold)" />
-                        <stop
-                            offset="1"
-                            style="stop-color: var(--fl-gold-dim)"
-                        />
                     </linearGradient>
                     <linearGradient
                         :id="id('sheen')"
@@ -221,31 +293,10 @@ const ariaLabel = computed(
                         <stop
                             offset="0.5"
                             stop-color="#fff"
-                            stop-opacity="0.09"
+                            stop-opacity="0.08"
                         />
                         <stop offset="0.7" stop-color="#fff" stop-opacity="0" />
                     </linearGradient>
-                    <!-- Woven strap texture -->
-                    <pattern
-                        :id="id('weave')"
-                        width="5"
-                        height="5"
-                        patternUnits="userSpaceOnUse"
-                        patternTransform="rotate(35)"
-                    >
-                        <rect
-                            width="5"
-                            height="5"
-                            style="fill: var(--fl-graphite)"
-                        />
-                        <rect
-                            width="2.4"
-                            height="5"
-                            style="fill: var(--fl-black)"
-                            opacity="0.7"
-                        />
-                    </pattern>
-                    <!-- Material grain -->
                     <filter
                         :id="id('grain')"
                         x="0"
@@ -268,407 +319,287 @@ const ariaLabel = computed(
                         width="160%"
                         height="160%"
                     >
-                        <feGaussianBlur stdDeviation="9" />
+                        <feGaussianBlur stdDeviation="8" />
                     </filter>
-                    <!-- The eyelet is a real hole: the body is masked there -->
-                    <mask :id="id('hole')">
-                        <rect
-                            x="0"
-                            y="-10"
-                            width="240"
-                            height="380"
-                            fill="#fff"
-                        />
-                        <circle cx="120" cy="34" r="9" fill="#000" />
-                    </mask>
                     <clipPath :id="id('clip')">
-                        <rect x="20" y="0" width="200" height="340" rx="26" />
+                        <path :d="facePath(true)" clip-rule="evenodd" />
                     </clipPath>
                 </defs>
 
                 <!-- Contact shadow -->
                 <ellipse
-                    cx="124"
-                    cy="356"
-                    rx="86"
-                    ry="10"
+                    cx="104"
+                    cy="418"
+                    rx="88"
+                    ry="9"
                     fill="#000"
-                    opacity="0.38"
+                    opacity="0.34"
                     :filter="url('shadow')"
                 />
 
-                <!-- Strap loop (behind the body; seen through the eyelet) -->
-                <g class="tag-visualizer__strap">
+                <!-- Silicone loop (oval above the pinch) -->
+                <g class="tag-visualizer__loop">
                     <path
-                        d="M120 34 C 86 4, 80 -78, 120 -106 C 160 -78, 154 4, 120 34"
+                        d="M100 -10 C 62 -28, 64 -120, 100 -120 C 136 -120, 138 -28, 100 -10"
                         fill="none"
-                        :stroke="url('weave')"
-                        stroke-width="15"
+                        stroke="#121214"
+                        stroke-width="9"
                         stroke-linecap="round"
                     />
                     <path
-                        d="M120 34 C 86 4, 80 -78, 120 -106 C 160 -78, 154 4, 120 34"
+                        d="M93 -26 C 72 -44, 74 -112, 100 -114"
                         fill="none"
-                        style="stroke: var(--fl-gold)"
-                        stroke-width="0.8"
-                        stroke-dasharray="3 3"
-                        opacity="0.75"
+                        stroke="#fff"
+                        stroke-opacity="0.14"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                    />
+                    <rect
+                        x="91"
+                        y="-18"
+                        width="18"
+                        height="16"
+                        rx="5"
+                        fill="#18181a"
                     />
                 </g>
 
                 <!-- Thickness: the edge layer under the face -->
-                <g :mask="url('hole')">
-                    <rect
-                        :x="20 + edgeShift"
-                        y="7"
-                        width="200"
-                        height="340"
-                        rx="26"
-                        :style="{
-                            fill:
-                                face === 'front'
-                                    ? 'var(--fl-black)'
-                                    : 'var(--fl-stone)',
-                        }"
-                    />
+                <path
+                    :d="facePath(true)"
+                    fill-rule="evenodd"
+                    fill="#030303"
+                    :transform="`translate(${edgeShift.toFixed(2)} 6)`"
+                />
 
-                    <!-- Face -->
+                <g :clip-path="url('clip')">
                     <rect
-                        x="20"
+                        x="0"
                         y="0"
-                        width="200"
-                        height="340"
-                        rx="26"
-                        :fill="url(face === 'front' ? 'front' : 'back')"
+                        :width="FACE_W"
+                        :height="FACE_H"
+                        :fill="url('carbon')"
                     />
 
-                    <g :clip-path="url('clip')">
-                        <rect
-                            x="20"
-                            y="0"
-                            width="200"
-                            height="340"
-                            :filter="url('grain')"
-                            :opacity="face === 'front' ? 0.07 : 0.05"
-                            style="mix-blend-mode: overlay"
-                        />
-
-                        <!-- FRONT artwork -->
-                        <g v-if="face === 'front'">
-                            <!-- Topographic contour lines in the collection accent -->
+                    <!-- FRONT -->
+                    <g v-if="face === 'front'">
+                        <template v-if="hasArt">
+                            <image
+                                :href="frontArt ?? undefined"
+                                :x="art.x"
+                                :y="art.y"
+                                :width="art.w"
+                                :height="art.h"
+                                preserveAspectRatio="none"
+                            />
+                            <rect
+                                x="0"
+                                y="0"
+                                :width="FACE_W"
+                                :height="fadeTop"
+                                :fill="TAG_COLORS.carbon"
+                            />
+                            <rect
+                                x="0"
+                                :y="fadeTop - 0.5"
+                                :width="FACE_W"
+                                :height="FRONT.artFade + 1"
+                                :fill="url('fade')"
+                            />
+                            <rect
+                                x="0"
+                                y="0"
+                                :width="FACE_W"
+                                :height="FACE_H"
+                                :fill="url('vignette')"
+                            />
+                        </template>
+                        <template v-else>
+                            <rect
+                                x="0"
+                                y="0"
+                                :width="FACE_W"
+                                :height="FACE_H"
+                                :fill="url('glow')"
+                            />
                             <g
                                 fill="none"
-                                :style="{ stroke: accentColor }"
-                                stroke-width="0.9"
-                                opacity="0.38"
+                                :stroke="TAG_COLORS.gold"
+                                stroke-width="0.8"
+                                opacity="0.42"
                             >
                                 <path
-                                    d="M20 300 C 70 262, 120 300, 170 258 S 230 236, 240 220"
-                                />
-                                <path
-                                    d="M20 316 C 76 280, 126 318, 178 274 S 232 254, 240 242"
-                                />
-                                <path
-                                    d="M20 332 C 82 298, 132 336, 186 290 S 234 272, 240 264"
-                                />
-                                <path
-                                    d="M40 350 C 92 316, 140 352, 194 306 S 236 290, 250 286"
+                                    v-for="d in CONTOUR_PATHS"
+                                    :key="d"
+                                    :d="d"
                                 />
                             </g>
-
-                            <text
-                                x="120"
-                                :y="layout.brandY"
-                                text-anchor="middle"
-                                class="tag-visualizer__brand"
-                                style="fill: var(--fl-gold-soft)"
-                            >
-                                FINISHER LEGACY
-                            </text>
-                            <rect
-                                x="106"
-                                :y="layout.ruleY"
-                                width="28"
-                                height="1"
-                                style="fill: var(--fl-gold)"
-                            />
-
-                            <text
-                                v-for="(line, index) in name.lines"
-                                :key="line"
-                                x="120"
-                                :y="layout.baselines[index]"
-                                text-anchor="middle"
-                                class="tag-visualizer__name"
-                                :font-size="name.size"
-                                :textLength="
-                                    name.squeeze ? TAG_TEXT_W : undefined
-                                "
-                                :lengthAdjust="
-                                    name.squeeze
-                                        ? 'spacingAndGlyphs'
-                                        : undefined
-                                "
-                                style="fill: #fbfaf6"
-                            >
-                                {{ line }}
-                            </text>
-
-                            <text
-                                v-if="subtitle"
-                                x="120"
-                                :y="layout.subtitleY"
-                                text-anchor="middle"
-                                class="tag-visualizer__sub"
-                                :font-size="subtitleSize"
-                                :letter-spacing="subtitleSize * 0.18"
-                                fill="#fff"
-                                fill-opacity="0.8"
-                            >
-                                {{ subtitleText }}
-                            </text>
-
                             <text
                                 v-if="yearText"
-                                x="120"
-                                :y="layout.yearY"
+                                x="100"
+                                y="236"
                                 text-anchor="middle"
                                 class="tag-visualizer__year"
-                                :font-size="yearSize"
-                                :style="{
-                                    stroke: accentColor,
-                                    fill: accentColor,
-                                }"
-                                fill-opacity="0.15"
-                                stroke-width="1.2"
+                                :font-size="yearFont"
+                                fill="none"
+                                :stroke="TAG_COLORS.gold"
+                                stroke-width="0.9"
+                                stroke-opacity="0.85"
                             >
                                 {{ yearText }}
                             </text>
+                        </template>
 
-                            <!-- NFC mark -->
-                            <g
-                                :transform="`translate(26 ${layout.footerY - 3.5})`"
-                                fill="none"
-                                style="stroke: var(--fl-gold-soft)"
-                                stroke-width="1.4"
-                                stroke-linecap="round"
-                            >
-                                <path d="M0 -5 a 7 7 0 0 1 0 10" />
-                                <path d="M4 -9.5 a 12 12 0 0 1 0 19" />
-                                <path d="M8 -14 a 17 17 0 0 1 0 28" />
-                            </g>
-                            <text
-                                x="66"
-                                :y="layout.footerY"
-                                class="tag-visualizer__micro"
-                                style="fill: var(--fl-gold-soft)"
-                            >
-                                ACERCA TU CELULAR
-                            </text>
-                        </g>
-
-                        <!-- BACK: NFC only (the tag carries no QR) -->
-                        <g v-else>
-                            <!-- Engraved guilloche rings around the seal -->
-                            <g
-                                fill="none"
-                                style="stroke: var(--fl-stone)"
-                                stroke-opacity="0.16"
-                                stroke-width="0.4"
-                            >
-                                <circle
-                                    v-for="r in rings"
-                                    :key="r"
-                                    cx="120"
-                                    cy="168"
-                                    :r="r"
-                                />
-                            </g>
-                            <rect
-                                x="29"
-                                y="9"
-                                width="182"
-                                height="322"
-                                rx="18"
-                                fill="none"
-                                style="stroke: var(--fl-gold-ink)"
-                                stroke-opacity="0.4"
-                                stroke-width="0.7"
-                            />
-                            <text
-                                x="120"
-                                y="78"
-                                text-anchor="middle"
-                                class="tag-visualizer__back-title"
-                                style="fill: var(--fl-black)"
-                            >
-                                <tspan x="120">Tu historia</tspan>
-                                <tspan x="120" dy="22">vive dentro.</tspan>
-                            </text>
-                            <rect
-                                x="106"
-                                y="110"
-                                width="28"
-                                height="1"
-                                style="fill: var(--fl-gold)"
-                            />
-
-                            <!-- NFC seal -->
-                            <circle
-                                cx="120"
-                                cy="168"
-                                r="50"
-                                fill="#fff"
-                                fill-opacity="0.85"
-                            />
-                            <circle
-                                cx="120"
-                                cy="168"
-                                r="50"
-                                fill="none"
-                                style="stroke: var(--fl-gold-ink)"
-                                stroke-width="1.6"
-                            />
-                            <circle
-                                cx="120"
-                                cy="168"
-                                r="55"
-                                fill="none"
-                                style="stroke: var(--fl-gold-ink)"
-                                stroke-width="0.5"
-                            />
-                            <g
-                                transform="translate(112 168)"
-                                fill="none"
-                                style="stroke: var(--fl-gold-ink)"
-                                stroke-width="3"
-                                stroke-linecap="round"
-                            >
-                                <path d="M0 -12 a 16 16 0 0 1 0 24" />
-                                <path d="M9 -21 a 27 27 0 0 1 0 42" />
-                                <path d="M18 -30 a 38 38 0 0 1 0 60" />
-                            </g>
-                            <circle
-                                cx="108"
-                                cy="168"
-                                r="4"
-                                style="fill: var(--fl-gold-ink)"
-                            />
-
-                            <text
-                                x="120"
-                                y="250"
-                                text-anchor="middle"
-                                class="tag-visualizer__back-cta"
-                                style="fill: var(--fl-black)"
-                            >
-                                Acerca tu celular
-                            </text>
-                            <text
-                                x="120"
-                                y="268"
-                                text-anchor="middle"
-                                class="tag-visualizer__micro"
-                                style="
-                                    fill: var(--fl-stone);
-                                    font-size: 9.5px;
-                                    letter-spacing: 1.4px;
-                                "
-                            >
-                                SIN APPS · SE ABRE SOLO
-                            </text>
-                            <text
-                                x="120"
-                                y="297"
-                                text-anchor="middle"
-                                class="tag-visualizer__code"
-                                style="fill: var(--fl-gold-ink)"
-                            >
-                                N.º •••• ••••
-                            </text>
-                            <text
-                                x="120"
-                                y="320"
-                                text-anchor="middle"
-                                class="tag-visualizer__micro"
-                                style="
-                                    fill: var(--fl-stone);
-                                    font-size: 8.5px;
-                                    letter-spacing: 2.8px;
-                                "
-                            >
-                                FINISHER LEGACY
-                            </text>
-                        </g>
-
-                        <!-- Single sheen -->
-                        <rect
-                            x="20"
-                            y="0"
-                            width="200"
-                            height="340"
-                            :fill="url('sheen')"
+                        <!-- Header: monogram, gold rule, name, discipline -->
+                        <image
+                            :href="MONOGRAM_SRC"
+                            :x="100 - FRONT.monogramW / 2"
+                            :y="
+                                FRONT.monogramY - monogramH(FRONT.monogramW) / 2
+                            "
+                            :width="FRONT.monogramW"
+                            :height="monogramH(FRONT.monogramW)"
                         />
+                        <rect
+                            :x="100 - FRONT.ruleW / 2"
+                            :y="FRONT.ruleY"
+                            :width="FRONT.ruleW"
+                            height="0.8"
+                            :fill="TAG_COLORS.gold"
+                        />
+                        <text
+                            :x="100 + (nameFont * NAME_SPACING) / 2"
+                            :y="FRONT.nameY"
+                            text-anchor="middle"
+                            class="tag-visualizer__caps"
+                            font-weight="600"
+                            :font-size="nameFont"
+                            :letter-spacing="nameFont * NAME_SPACING"
+                            fill="#f1e6d4"
+                        >
+                            {{ text.name }}
+                        </text>
+                        <text
+                            v-if="text.discipline"
+                            :x="100 + (disciplineFont * DISCIPLINE_SPACING) / 2"
+                            :y="FRONT.disciplineY"
+                            text-anchor="middle"
+                            class="tag-visualizer__caps"
+                            font-weight="500"
+                            :font-size="disciplineFont"
+                            :letter-spacing="
+                                disciplineFont * DISCIPLINE_SPACING
+                            "
+                            :fill="TAG_COLORS.goldSoft"
+                        >
+                            {{ text.discipline }}
+                        </text>
                     </g>
 
-                    <!-- Rim highlight -->
+                    <!-- BACK: carbon, palms, monogram, phrase, NFC (no QR) -->
+                    <g v-else>
+                        <path
+                            v-for="(palm, index) in BACK_PALMS"
+                            :key="index"
+                            :d="palm.d"
+                            :fill="
+                                palm.light
+                                    ? TAG_COLORS.palmLight
+                                    : TAG_COLORS.palm
+                            "
+                            :fill-opacity="palm.light ? 0.38 : 0.62"
+                        />
+                        <image
+                            :href="MONOGRAM_SRC"
+                            :x="100 - BACK.monogramW / 2"
+                            :y="BACK.monogramY - monogramH(BACK.monogramW) / 2"
+                            :width="BACK.monogramW"
+                            :height="monogramH(BACK.monogramW)"
+                        />
+                        <rect
+                            :x="100 - BACK.ruleW / 2"
+                            :y="BACK.ruleY"
+                            :width="BACK.ruleW"
+                            height="0.8"
+                            :fill="TAG_COLORS.gold"
+                        />
+                        <text
+                            v-for="(line, index) in text.back"
+                            :key="line"
+                            :x="100 + (backFont * BACK_SPACING) / 2"
+                            :y="BACK.lineY + index * BACK.lineGap"
+                            text-anchor="middle"
+                            class="tag-visualizer__caps"
+                            font-weight="500"
+                            :font-size="backFont"
+                            :letter-spacing="backFont * BACK_SPACING"
+                            :fill="TAG_COLORS.goldSoft"
+                        >
+                            {{ line }}
+                        </text>
+                        <g
+                            :transform="`translate(102 ${BACK.nfcY}) scale(0.9)`"
+                            fill="none"
+                            :stroke="TAG_COLORS.gold"
+                            stroke-width="2.2"
+                            stroke-linecap="round"
+                        >
+                            <path v-for="d in NFC_ARCS" :key="d" :d="d" />
+                            <circle
+                                cx="-8"
+                                cy="0"
+                                r="2"
+                                :fill="TAG_COLORS.gold"
+                                stroke="none"
+                            />
+                        </g>
+                    </g>
+
                     <rect
-                        x="20.6"
-                        y="0.6"
-                        width="198.8"
-                        height="338.8"
-                        rx="25.5"
-                        fill="none"
-                        :stroke="url('rim')"
-                        stroke-width="1.2"
+                        x="0"
+                        y="0"
+                        :width="FACE_W"
+                        :height="FACE_H"
+                        :filter="url('grain')"
+                        opacity="0.06"
+                        style="mix-blend-mode: overlay"
+                    />
+                    <rect
+                        x="0"
+                        y="0"
+                        :width="FACE_W"
+                        :height="FACE_H"
+                        :fill="url('sheen')"
                     />
                 </g>
 
-                <!-- Grommet (metal ring around the hole) -->
-                <circle
-                    cx="120"
-                    cy="34"
-                    r="13.5"
-                    fill="none"
-                    :stroke="url('metal')"
-                    stroke-width="6"
-                />
-                <circle
-                    cx="120"
-                    cy="34"
-                    r="16.4"
-                    fill="none"
-                    stroke="#000"
-                    stroke-opacity="0.35"
-                    stroke-width="0.8"
-                />
-                <circle
-                    cx="120"
-                    cy="34"
-                    r="10.6"
-                    fill="none"
-                    stroke="#000"
-                    stroke-opacity="0.45"
-                    stroke-width="0.8"
-                />
+                <!-- Rim highlight -->
                 <path
-                    d="M110 27 a 13.5 13.5 0 0 1 13 -6"
+                    :d="facePath(true)"
                     fill="none"
-                    stroke="#fff"
-                    stroke-opacity="0.7"
-                    stroke-width="1.4"
-                    stroke-linecap="round"
+                    :stroke="url('rim')"
+                    stroke-width="1.1"
                 />
 
-                <!-- Strap strand in front of the body, entering the hole -->
-                <path
-                    d="M120 34 C 112 26, 106 16, 102 6"
-                    fill="none"
-                    :stroke="url('weave')"
-                    stroke-width="12"
-                    stroke-linecap="round"
-                    opacity="0.95"
-                />
+                <!-- Loop strands through the slot, over the top edge -->
+                <g stroke-linecap="round">
+                    <path
+                        d="M96 -4 L96 22"
+                        stroke="#121214"
+                        stroke-width="6.5"
+                    />
+                    <path
+                        d="M104 -4 L104 22"
+                        stroke="#1a1a1c"
+                        stroke-width="6.5"
+                    />
+                    <path
+                        d="M94.6 -2 L94.6 18"
+                        stroke="#fff"
+                        stroke-opacity="0.12"
+                        stroke-width="1"
+                    />
+                </g>
             </svg>
         </div>
     </div>
@@ -690,53 +621,13 @@ const ariaLabel = computed(
     transition: none;
 }
 
-.tag-visualizer__brand {
-    font-family: var(--font-sans);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 3.4px;
-}
-
-.tag-visualizer__name {
-    font-family: var(--font-serif);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-}
-
-.tag-visualizer__sub {
-    font-family: var(--font-sans);
-    font-weight: 600;
+.tag-visualizer__caps,
+.tag-visualizer__year {
+    font-family: Montserrat, var(--font-sans);
 }
 
 .tag-visualizer__year {
-    font-family: var(--font-serif);
-    font-weight: 400;
-}
-
-.tag-visualizer__micro {
-    font-family: var(--font-sans);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-}
-
-.tag-visualizer__back-title {
-    font-family: var(--font-serif);
-    font-size: 20px;
-    font-style: italic;
-}
-
-.tag-visualizer__back-cta {
-    font-family: var(--font-serif);
-    font-size: 21px;
-    font-weight: 600;
-}
-
-.tag-visualizer__code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1.4px;
+    font-weight: 300;
 }
 
 @media (prefers-reduced-motion: reduce) {

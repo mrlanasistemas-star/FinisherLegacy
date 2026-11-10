@@ -37,7 +37,7 @@ class StorefrontCatalog
     public function query(): Builder
     {
         return Product::query()
-            ->with(['category', 'variants.inventoryLevels', 'media'])
+            ->with(['category', 'collection', 'design', 'variants.inventoryLevels', 'media'])
             ->withExists(['priceSchedules as has_presale' => fn (Builder $q) => $q
                 ->where('active', true)
                 ->where('price_type', ProductPriceType::EarlyPresale->value)

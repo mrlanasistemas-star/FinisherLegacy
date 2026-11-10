@@ -37,6 +37,11 @@ const props = withDefaults(
         year?: string | number | null;
         /** Collection accent (validated hex) — contour lines, year, stitching. */
         accent?: string | null;
+        /** Collection `tag_design` (deck pp. 7–8); absent → procedural front. */
+        frontArt?: string | null;
+        nameLine?: string | null;
+        disciplineLine?: string | null;
+        backLine?: string | null;
         /** Color preset for the body/back/strap; explicit colors win. */
         variant?: Variant;
         bodyColor?: string | null;
@@ -55,6 +60,10 @@ const props = withDefaults(
         subtitle: null,
         year: null,
         accent: null,
+        frontArt: null,
+        nameLine: null,
+        disciplineLine: null,
+        backLine: null,
         variant: 'graphite',
         bodyColor: null,
         backColor: null,
@@ -74,16 +83,16 @@ const PRESETS: Record<
     { body: string; back: string; strap: string; metal: string }
 > = {
     graphite: {
-        body: '#2a2925',
-        back: '#f8f7f3',
-        strap: '#2a2925',
-        metal: '#c9a45c',
+        body: '#141416',
+        back: '#0b0b0c',
+        strap: '#111113',
+        metal: '#c9ae8b',
     },
     ivory: {
         body: '#f4eedf',
         back: '#f8f7f3',
         strap: '#6b675e',
-        metal: '#c9a45c',
+        metal: '#c9ae8b',
     },
     gold: {
         body: '#a8843f',
@@ -105,7 +114,7 @@ const colors = computed(() => {
         back: safe(props.backColor, preset.back),
         strap: safe(props.strapColor, preset.strap),
         metal: preset.metal,
-        accent: safe(props.accent, '#c9a45c'),
+        accent: safe(props.accent, '#c9ae8b'),
     };
 });
 
@@ -153,6 +162,10 @@ async function boot() {
             strapColor: colors.value.strap,
             metalColor: colors.value.metal,
             accent: colors.value.accent,
+            frontArt: props.frontArt,
+            nameLine: props.nameLine,
+            disciplineLine: props.disciplineLine,
+            backLine: props.backLine,
             reducedMotion: reducedMotion.value,
             autoRotate: props.autoRotate,
             initialFace: face.value,
@@ -216,7 +229,17 @@ onBeforeUnmount(() => {
 
 /** Artwork/colors are baked into textures: rebuild when they change. */
 watch(
-    () => [props.name, props.subtitle, yearText.value, colors.value] as const,
+    () =>
+        [
+            props.name,
+            props.subtitle,
+            yearText.value,
+            colors.value,
+            props.frontArt,
+            props.nameLine,
+            props.disciplineLine,
+            props.backLine,
+        ] as const,
     () => {
         if (status.value !== 'ready') {
             return;
@@ -266,12 +289,16 @@ defineExpose({ show });
                 :class="{ 'is-hidden': status === 'ready' }"
                 aria-hidden="true"
             >
-                <div class="h-[92%] max-w-full" style="aspect-ratio: 240 / 482">
+                <div class="h-[92%] max-w-full" style="aspect-ratio: 240 / 548">
                     <TagVisualizer
                         :name="name"
                         :subtitle="subtitle"
                         :year="year"
                         :accent="accent"
+                        :front-art="frontArt"
+                        :name-line="nameLine"
+                        :discipline-line="disciplineLine"
+                        :back-line="backLine"
                         :face="face"
                         :tilt="false"
                     />

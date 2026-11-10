@@ -80,6 +80,7 @@ type Product = {
     seo_description?: string | null;
     specs?: TagProduct['specs'];
     collection?: TagProduct['collection'];
+    tag_design?: TagProduct['tag_design'];
 };
 
 const props = defineProps<{

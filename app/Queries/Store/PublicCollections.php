@@ -11,6 +11,7 @@ use App\Exceptions\PriceNotAvailableException;
 use App\Models\Collection;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Support\Collections\TagDesign;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -36,7 +37,7 @@ class PublicCollections
     {
         return Collection::query()
             ->published()
-            ->with(['products' => fn (Relation $q) => $this->listable($q)])
+            ->with(['designs', 'products' => fn (Relation $q) => $this->listable($q)])
             ->orderBy('sort_order')
             ->orderByDesc('year')
             ->orderBy('name');
@@ -59,7 +60,7 @@ class PublicCollections
      */
     public function card(Collection $collection): array
     {
-        $products = $collection->products->map(fn (Product $product) => $this->product($product));
+        $products = $collection->products->map(fn (Product $product) => $this->product($product->setRelation('collection', $collection)));
         $priced = $products->whereNotNull('price_minor');
 
         return [
@@ -78,6 +79,9 @@ class PublicCollections
             'from_price_minor' => $priced->min('price_minor'),
             'currency' => $priced->first()['currency'] ?? config('finisher.commerce.default_currency', 'MXN'),
             'available' => $products->contains(fn (array $p) => $p['available']),
+            // Deck pp. 7–8 tag artwork: the primary design + every design.
+            'tag_design' => TagDesign::forCollection($collection, null, false),
+            'tag_designs' => TagDesign::allForCollection($collection, false),
         ];
     }
 
@@ -86,14 +90,14 @@ class PublicCollections
      */
     public function detail(Collection $collection): array
     {
-        $collection->loadMissing(['products' => fn (Relation $q) => $this->listable($q)]);
+        $collection->loadMissing(['designs', 'products' => fn (Relation $q) => $this->listable($q)]);
 
         return [
             ...$this->card($collection),
             'description' => $collection->description,
             'seo_title' => $collection->seo_title,
             'seo_description' => $collection->seo_description,
-            'products' => $collection->products->map(fn (Product $product) => $this->product($product))->values()->all(),
+            'products' => $collection->products->map(fn (Product $product) => $this->product($product->setRelation('collection', $collection)))->values()->all(),
         ];
     }
 
@@ -145,6 +149,7 @@ class PublicCollections
             'material' => $product->material,
             'strap_type' => $product->strap_type,
             'dimensions' => $product->dimensions,
+            'tag_design' => TagDesign::forProduct($product, false),
         ];
     }
 
@@ -156,7 +161,7 @@ class PublicCollections
      */
     private function listable(Relation $query): void
     {
-        $query->with(['variants.inventoryLevels', 'media'])->where('active', true)
+        $query->with(['design', 'variants.inventoryLevels', 'media'])->where('active', true)
             ->where('status', ProductStatus::Active->value)
             ->where('type', '!=', ProductType::DigitalPhoto->value)
             ->orderBy('sort_order')

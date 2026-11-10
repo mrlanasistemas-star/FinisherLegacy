@@ -21,6 +21,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
+import { vReveal } from '@/composables/useReveal';
 import { productCardProps } from '@/lib/store';
 import { catalog } from '@/routes/store';
 import { show as categoryShow } from '@/routes/store/categories';
@@ -473,6 +474,7 @@ const lede = computed(
             <ProductCard
                 v-for="(product, index) in products.data"
                 :key="product.uuid"
+                v-reveal="{ index: index % 4 }"
                 v-bind="productCardProps(product)"
                 :priority="index < 4"
             />

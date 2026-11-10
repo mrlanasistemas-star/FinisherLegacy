@@ -9,17 +9,20 @@ import { ArrowRight } from '@lucide/vue';
 import CollectionCard from '@/components/collections/CollectionCard.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
+import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { ACTIVATE_URL } from '@/config/public-links';
 import { howItWorks } from '@/routes';
 import type { CollectionCardData } from '@/types/collections';
-import { collectionSubtitle } from '@/types/collections';
+import { collectionTagArts } from '@/types/collections';
 
 const props = defineProps<{
     collections: CollectionCardData[];
 }>();
 
 const lead = props.collections[0] ?? null;
+/** The lead collection's primary tag design (front ↔ back). */
+const leadArt = lead ? collectionTagArts(lead)[0] : null;
 </script>
 
 <template>
@@ -64,13 +67,11 @@ const lead = props.collections[0] ?? null;
                 </p>
             </div>
             <div class="hidden lg:col-span-3 lg:col-start-10 lg:block">
+                <TagFlipCard v-if="leadArt" :art="leadArt" />
                 <TagVisualizer
-                    :name="lead?.name ?? 'Tu colección'"
-                    :subtitle="
-                        lead ? collectionSubtitle(lead) : 'Destino · Disciplina'
-                    "
-                    :year="lead?.year ?? null"
-                    :accent="lead?.accent_color ?? null"
+                    v-else
+                    name="Tu colección"
+                    subtitle="Destino · Disciplina"
                 />
             </div>
         </div>

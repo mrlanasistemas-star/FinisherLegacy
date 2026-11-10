@@ -138,12 +138,16 @@ function onKey(event: KeyboardEvent) {
             :class="{ 'is-hidden': live }"
             aria-hidden="true"
         >
-            <div class="h-[94%] max-w-full" style="aspect-ratio: 240 / 482">
+            <div class="h-[94%] max-w-full" style="aspect-ratio: 240 / 548">
                 <TagVisualizer
                     :name="art.name"
                     :subtitle="art.subtitle"
                     :year="art.year"
                     :accent="art.accent"
+                    :front-art="art.frontArt"
+                    :name-line="art.nameLine"
+                    :discipline-line="art.disciplineLine"
+                    :back-line="art.backLine"
                     :face="pose.face ?? 'front'"
                     :tilt="false"
                 />

@@ -42,7 +42,7 @@ withDefaults(
             "
         />
         <img
-            src="/images/brand/logo/logo-mark-black.png"
+            src="/images/brand/logo/fl-monograma.png"
             alt=""
             aria-hidden="true"
             class="relative w-auto opacity-[0.08]"

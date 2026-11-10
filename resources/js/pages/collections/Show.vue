@@ -13,13 +13,18 @@ import CollectionCard from '@/components/collections/CollectionCard.vue';
 import TagProductTile from '@/components/collections/TagProductTile.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
-import TagVisualizer from '@/components/tag/TagVisualizer.vue';
+import TagFlipCard from '@/components/tag/TagFlipCard.vue';
+import { vReveal } from '@/composables/useReveal';
 import { ACTIVATE_URL } from '@/config/public-links';
 import { howItWorks } from '@/routes';
 import { index as collectionsIndex } from '@/routes/collections';
 import { show as productShow } from '@/routes/store/products';
 import type { CollectionCardData, CollectionDetail } from '@/types/collections';
-import { collectionBaseName, collectionSubtitle } from '@/types/collections';
+import {
+    collectionBaseName,
+    collectionSubtitle,
+    collectionTagArts,
+} from '@/types/collections';
 
 const props = defineProps<{
     collection: CollectionDetail;
@@ -28,6 +33,8 @@ const props = defineProps<{
 
 const subtitle = computed(() => collectionSubtitle(props.collection));
 const baseName = computed(() => collectionBaseName(props.collection));
+/** Every tag design of the collection (deck pp. 7–8), primary first. */
+const designs = computed(() => collectionTagArts(props.collection));
 
 const seoTitle = computed(
     () =>
@@ -196,18 +203,53 @@ const steps = [
             <div
                 class="mx-auto w-[56%] max-w-[18rem] sm:w-[40%] lg:col-span-4 lg:col-start-9 lg:w-full"
             >
-                <TagVisualizer
-                    :name="collection.name"
-                    :subtitle="subtitle"
-                    :year="collection.year"
-                    :accent="collection.accent_color"
-                />
+                <TagFlipCard :art="designs[0]" />
                 <p
                     class="mt-4 text-center text-[11px] tracking-[0.18em] text-muted-foreground uppercase"
                 >
                     Render ilustrativo
                 </p>
             </div>
+        </div>
+    </section>
+
+    <!-- Designs: every tag front of the collection (data-driven) -->
+    <section
+        v-if="designs.length > 1"
+        class="bg-fl-paper py-16 sm:py-20"
+        aria-labelledby="designs-title"
+    >
+        <div class="fl-container">
+            <p class="fl-eyebrow">Cada sede, su diseño</p>
+            <h2
+                id="designs-title"
+                class="fl-display mt-3 text-[clamp(1.7rem,3vw,2.5rem)]"
+            >
+                {{ designs.length }} diseños de {{ baseName }}
+            </h2>
+            <ul
+                v-reveal.stagger
+                class="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4"
+            >
+                <li
+                    v-for="(design, index) in designs"
+                    :key="`${design.frontArt ?? 'base'}-${index}`"
+                    class="fl-card-hover rounded-media border border-transparent bg-card p-5 ring-1 ring-fl-line"
+                >
+                    <TagFlipCard :art="design" class="mx-auto w-[72%]" />
+                    <p
+                        class="mt-4 text-center text-[11px] font-semibold tracking-[0.18em] text-fl-gold-ink uppercase"
+                    >
+                        {{
+                            collection.tag_designs?.[index]?.name ??
+                            collection.name
+                        }}
+                    </p>
+                </li>
+            </ul>
+            <p class="mt-6 text-xs text-muted-foreground">
+                Render ilustrativo · arte conceptual sujeto al troquel real.
+            </p>
         </div>
     </section>
 
@@ -281,6 +323,7 @@ const steps = [
                         :art-subtitle="subtitle"
                         :art-year="collection.year"
                         :accent="collection.accent_color"
+                        :design="product.tag_design"
                     />
                     <Link
                         :href="productShow(product.slug)"
@@ -333,7 +376,10 @@ const steps = [
                     >
                 </div>
             </div>
-            <ol class="grid gap-10 sm:grid-cols-3 lg:col-span-7 lg:col-start-6">
+            <ol
+                v-reveal.stagger
+                class="grid gap-10 sm:grid-cols-3 lg:col-span-7 lg:col-start-6"
+            >
                 <li
                     v-for="step in steps"
                     :key="step.n"
@@ -367,15 +413,23 @@ const steps = [
                 </h2>
                 <Link
                     :href="collectionsIndex()"
-                    class="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
+                    class="group inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold"
                 >
-                    Ver todas <ArrowRight class="size-4" aria-hidden="true" />
+                    <span class="fl-link">Ver todas</span>
+                    <ArrowRight
+                        class="size-4 transition-transform group-hover:translate-x-1"
+                        aria-hidden="true"
+                    />
                 </Link>
             </div>
             <ul
                 class="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3"
             >
-                <li v-for="other in otherCollections" :key="other.slug">
+                <li
+                    v-for="(other, index) in otherCollections"
+                    :key="other.slug"
+                    v-reveal="{ index }"
+                >
                     <CollectionCard :collection="other" />
                 </li>
             </ul>

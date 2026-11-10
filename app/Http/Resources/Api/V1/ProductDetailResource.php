@@ -2,10 +2,12 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\ProductType;
 use App\Models\Product;
 use App\Models\ProductContentSection;
 use App\Models\ProductMedia;
 use App\Models\ProductVariant;
+use App\Support\Collections\TagDesign;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -45,7 +47,9 @@ class ProductDetailResource extends JsonResource
             'variants' => ProductVariantResource::collection($this->variants->where('active', true)->values()),
             // Additive (mobile store, spec §20-§23).
             'short_description' => $this->tagline,
-            'nfc_enabled' => (bool) $this->qr_capable,
+            'nfc_enabled' => $this->type === ProductType::LegacyTag || (bool) $this->tracks_units || (bool) $this->qr_capable,
+            // Finisher Legacy Tag artwork (null for other products).
+            'tag_design' => TagDesign::forProduct($this->resource),
             'is_featured' => (bool) $this->is_featured,
             'is_new' => $this->created_at !== null && $this->created_at->gt(now()->subDays(30)),
             'media' => $this->whenLoaded('media', fn () => $this->media->map(fn (ProductMedia $m) => $m->toMediaArray())->values()->all()),

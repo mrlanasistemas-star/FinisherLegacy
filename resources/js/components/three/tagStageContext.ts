@@ -1,7 +1,7 @@
 /**
- * Contract between the Home's travelling tag (TagStage.vue) and the places
- * it visits (TagAnchor.vue). Sections drop a <TagAnchor :pose> where the tag
- * should sit; the stage flies ONE 3D tag between anchors with the scroll.
+ * Shared tag types: TagArt (a collection's artwork) and TagPose (face,
+ * turn, tilt…) used by HeroTag3D and the TagAnchor posters. TAG_STAGE is
+ * an optional provider: outside one, TagAnchor shows its SVG poster.
  */
 import type { InjectionKey, Ref } from 'vue';
 
@@ -10,6 +10,11 @@ export type TagArt = {
     subtitle: string | null;
     year: string | number | null;
     accent: string | null;
+    /** Collection `tag_design` (deck pp. 7–8); absent → procedural front. */
+    frontArt?: string | null;
+    nameLine?: string | null;
+    disciplineLine?: string | null;
+    backLine?: string | null;
 };
 
 export type TagPose = {

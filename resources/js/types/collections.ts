@@ -1,4 +1,5 @@
 /** Shapes sent by App\Queries\Store\PublicCollections. */
+import type { TagArt } from '@/components/three/tagStageContext';
 
 export type CollectionCardData = {
     name: string;
@@ -17,6 +18,9 @@ export type CollectionCardData = {
     from_price_minor: number | null;
     currency: string;
     available: boolean;
+    /** Primary tag design + every design of the collection (primary first). */
+    tag_design?: TagDesign | null;
+    tag_designs?: TagDesign[];
 };
 
 export type CollectionProduct = {
@@ -39,6 +43,8 @@ export type CollectionProduct = {
     material: string | null;
     strap_type: string | null;
     dimensions: string | null;
+    /** Tag products only (null otherwise). */
+    tag_design?: TagDesign | null;
 };
 
 export type CollectionDetail = CollectionCardData & {
@@ -73,4 +79,56 @@ export function collectionBaseName(c: {
     }
 
     return name.slice(0, -String(c.year).length).trim() || name;
+}
+
+/**
+ * `tag_design` (App\Support\Collections\TagDesign): what a Finisher Legacy
+ * Tag prints — deck pp. 7–8. Same shape on the web and in /api/v1.
+ */
+export type TagDesign = {
+    front_art_url: string | null;
+    accent: string | null;
+    name_line: string;
+    discipline_line: string | null;
+    back_line: string;
+    monogram_url: string;
+    /** Only in `tag_designs` lists. */
+    slug?: string;
+    name?: string;
+};
+
+/** A collection (or tag product) + its design → the tag renderers' props. */
+export function tagArt(
+    c: {
+        name: string;
+        year?: number | string | null;
+        discipline?: string | null;
+        destination?: string | null;
+        accent_color?: string | null;
+    },
+    design?: TagDesign | null,
+): TagArt {
+    return {
+        name: c.name,
+        subtitle: collectionSubtitle(c),
+        year: c.year ?? null,
+        accent: design?.accent ?? c.accent_color ?? null,
+        frontArt: design?.front_art_url ?? null,
+        nameLine: design?.name_line ?? null,
+        disciplineLine: design?.discipline_line ?? null,
+        backLine: design?.back_line ?? null,
+    };
+}
+
+/** Every design of a collection (primary first) as tag artwork. */
+export function collectionTagArts(c: CollectionCardData): TagArt[] {
+    const designs = c.tag_designs?.length
+        ? c.tag_designs
+        : c.tag_design
+          ? [c.tag_design]
+          : [];
+
+    return designs.length
+        ? designs.map((design) => tagArt(c, design))
+        : [tagArt(c, null)];
 }

@@ -17,9 +17,10 @@ import Reveal from '@/components/motion/Reveal.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import Money from '@/components/shared/Money.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
-import TagVisualizer from '@/components/tag/TagVisualizer.vue';
+import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import LegacyTag3D from '@/components/three/LegacyTag3D.vue';
 import { Button } from '@/components/ui/button';
+import { vReveal } from '@/composables/useReveal';
 import { MEDIA } from '@/config/media';
 import { productCardProps } from '@/lib/store';
 import { howItWorks } from '@/routes';
@@ -29,6 +30,7 @@ import { catalog } from '@/routes/store';
 import { show as categoryShow } from '@/routes/store/categories';
 import { show as productShow } from '@/routes/store/products';
 import type { PublicProductCard } from '@/types';
+import { tagArt } from '@/types/collections';
 
 type FeaturedProduct = PublicProductCard & {
     description: string | null;
@@ -62,6 +64,21 @@ const props = defineProps<{
 }>();
 
 const photo = MEDIA.photo;
+
+/** The featured tag's design (deck pp. 7–8 artwork when it has one). */
+const featuredArt = computed(() =>
+    tagArt(
+        {
+            name:
+                props.featured?.collection?.name ??
+                props.featured?.name ??
+                'Tu colección',
+            year: props.featured?.collection?.year ?? null,
+            destination: props.featured?.collection?.destination ?? null,
+        },
+        props.featured?.tag_design ?? null,
+    ),
+);
 
 const visibleCategories = computed(() =>
     props.categories.filter((c) => c.products_count > 0),
@@ -176,12 +193,7 @@ const legacyExtras = computed(() =>
                     />
                     <div class="relative mx-auto w-[56%] pt-4 sm:w-[44%]">
                         <LegacyTag3D
-                            :name="featured?.collection?.name ?? 'Tu colección'"
-                            :subtitle="
-                                featured?.collection?.destination ??
-                                'Destino · Disciplina'
-                            "
-                            :year="featured?.collection?.year ?? null"
+                            v-bind="featuredArt"
                             label="Finisher Legacy Tag en 3D"
                         />
                     </div>
@@ -289,6 +301,7 @@ const legacyExtras = computed(() =>
             <ProductCard
                 v-for="(product, index) in featuredRow"
                 :key="product.uuid"
+                v-reveal="{ index }"
                 v-bind="productCardProps(product)"
                 :priority="index < 2"
             />
@@ -316,13 +329,8 @@ const legacyExtras = computed(() =>
                     decoding="async"
                     class="absolute inset-0 size-full object-cover"
                 />
-                <div v-else class="absolute inset-x-0 top-[8%] mx-auto w-[34%]">
-                    <TagVisualizer
-                        :name="featured.collection?.name ?? featured.name"
-                        :subtitle="featured.collection?.destination ?? null"
-                        :year="featured.collection?.year ?? null"
-                        :tilt="false"
-                    />
+                <div v-else class="absolute inset-x-0 top-[6%] mx-auto w-[32%]">
+                    <TagFlipCard :art="featuredArt" />
                 </div>
             </div>
             <div class="flex flex-col justify-center p-8 sm:p-12 lg:col-span-6">
@@ -375,8 +383,9 @@ const legacyExtras = computed(() =>
                     class="mt-10 grid grid-cols-2 gap-4 border-t border-border pt-8"
                 >
                     <ProductCard
-                        v-for="product in legacyExtras"
+                        v-for="(product, index) in legacyExtras"
                         :key="product.uuid"
+                        v-reveal="{ index }"
                         v-bind="productCardProps(product)"
                     />
                 </div>
@@ -399,8 +408,9 @@ const legacyExtras = computed(() =>
                 class="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 lg:grid-cols-4"
             >
                 <ProductCard
-                    v-for="product in newestRow"
+                    v-for="(product, index) in newestRow"
                     :key="product.uuid"
+                    v-reveal="{ index }"
                     v-bind="productCardProps(product)"
                 />
             </div>
@@ -449,8 +459,9 @@ const legacyExtras = computed(() =>
                     class="grid grid-cols-2 gap-x-4 gap-y-12 sm:grid-cols-3 sm:gap-x-6 lg:col-span-8"
                 >
                     <ProductCard
-                        v-for="product in nfcRow"
+                        v-for="(product, index) in nfcRow"
                         :key="product.uuid"
+                        v-reveal="{ index }"
                         v-bind="productCardProps(product)"
                     />
                 </div>
@@ -579,8 +590,9 @@ const legacyExtras = computed(() =>
                 class="mt-10 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 lg:grid-cols-4"
             >
                 <ProductCard
-                    v-for="product in favoritesRow"
+                    v-for="(product, index) in favoritesRow"
                     :key="product.uuid"
+                    v-reveal="{ index }"
                     v-bind="productCardProps(product)"
                 />
             </div>

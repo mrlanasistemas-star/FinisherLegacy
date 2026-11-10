@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Storage;
     'uuid', 'name', 'slug', 'description', 'tagline', 'type', 'category_id', 'brand', 'image_path', 'status',
     'availability', 'sort_order',
     'taxable', 'requires_shipping', 'qr_capable', 'tracks_inventory', 'active', 'minimum_stock', 'is_featured',
-    'collection_id', 'tracks_units', 'material', 'strap_type', 'dimensions', 'instructions', 'seo_title', 'seo_description',
+    'collection_id', 'collection_design_id', 'tracks_units', 'material', 'strap_type', 'dimensions', 'instructions', 'seo_title', 'seo_description',
 ])]
 class Product extends Model
 {
@@ -50,6 +50,16 @@ class Product extends Model
     public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
+    }
+
+    /**
+     * The tag front this product prints (null → the collection's primary design).
+     *
+     * @return BelongsTo<CollectionDesign, $this>
+     */
+    public function design(): BelongsTo
+    {
+        return $this->belongsTo(CollectionDesign::class, 'collection_design_id');
     }
 
     /** @return BelongsTo<ProductCategory, $this> */

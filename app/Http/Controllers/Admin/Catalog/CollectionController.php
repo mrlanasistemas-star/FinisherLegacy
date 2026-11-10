@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Models\LegacyTag;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Support\Collections\TagDesign;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -183,7 +184,7 @@ class CollectionController extends Controller
             ->withProperties(['name' => $collection->name, 'slug' => $collection->slug])
             ->log('collections.deleted');
 
-        foreach ([$collection->cover_path, $collection->hero_path] as $path) {
+        foreach ([$collection->cover_path, $collection->hero_path, $collection->tag_front_art] as $path) {
             $this->deleteUpload($path);
         }
 
@@ -215,6 +216,10 @@ class CollectionController extends Controller
             'sort_order' => $c->sort_order,
             'seo_title' => $c->seo_title,
             'seo_description' => $c->seo_description,
+            'tag_accent' => $c->tag_accent,
+            'tag_discipline_line' => $c->tag_discipline_line,
+            'tag_back_line' => $c->tag_back_line,
+            'tag_front_art_url' => TagDesign::absoluteUrl($c->tag_front_art),
         ];
     }
 
@@ -249,10 +254,17 @@ class CollectionController extends Controller
             'hero' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:8192'],
             'remove_cover' => ['sometimes', 'boolean'],
             'remove_hero' => ['sometimes', 'boolean'],
+            // Tag design (deck pp. 7–8): front artwork + header/back lines.
+            'tag_art' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
+            'remove_tag_art' => ['sometimes', 'boolean'],
+            'tag_accent' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'tag_discipline_line' => ['nullable', 'string', 'max:60'],
+            'tag_back_line' => ['nullable', 'string', 'max:80'],
         ]);
 
         $data['slug'] = $this->uniqueSlug($data['slug'] ?? null, $data['name'], $collection);
         $data['sort_order'] ??= 0;
+        $data['tag_back_line'] = filled($data['tag_back_line'] ?? null) ? $data['tag_back_line'] : TagDesign::DEFAULT_BACK_LINE;
 
         return $data;
     }
@@ -263,7 +275,7 @@ class CollectionController extends Controller
      */
     private function withImages(Request $request, array $data, ?Collection $collection = null): array
     {
-        foreach (['cover' => 'cover_path', 'hero' => 'hero_path'] as $field => $column) {
+        foreach (['cover' => 'cover_path', 'hero' => 'hero_path', 'tag_art' => 'tag_front_art'] as $field => $column) {
             if ($request->hasFile($field)) {
                 $this->deleteUpload($collection?->{$column});
                 $data[$column] = $request->file($field)->store('collections', 'public');

@@ -25,7 +25,7 @@ class ProductController extends Controller
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $search).'%';
 
         $products = Product::query()
-            ->with(['category', 'variants.inventoryLevels', 'media'])
+            ->with(['category', 'collection', 'design', 'variants.inventoryLevels', 'media'])
             ->where('active', true)
             ->where('status', 'active')
             ->when($request->string('category')->toString(), fn ($q, $slug) => $q->whereHas('category', fn ($c) => $c->where('slug', $slug)))
@@ -57,6 +57,6 @@ class ProductController extends Controller
     {
         abort_unless($product->active && $product->status->value === 'active', 404);
 
-        return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'variants.inventoryLevels', 'media', 'contentSections'])));
+        return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'collection', 'design', 'variants.inventoryLevels', 'media', 'contentSections'])));
     }
 }

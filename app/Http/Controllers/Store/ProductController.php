@@ -17,6 +17,7 @@ use App\Queries\Commerce\GetFeaturedProducts;
 use App\Queries\Store\PublicCollections;
 use App\Queries\Store\StorefrontCatalog;
 use App\Services\Commerce\PromotionResolver;
+use App\Support\Collections\TagDesign;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -85,7 +86,7 @@ class ProductController extends Controller
             404,
         );
 
-        $product->loadMissing(['category', 'collection', 'variants.inventoryLevels', 'media', 'contentSections']);
+        $product->loadMissing(['category', 'collection', 'design', 'variants.inventoryLevels', 'media', 'contentSections']);
         // Wire the inverse relation in memory so ProductVariant::isAvailable()
         // never lazy-loads `product` per variant (no N+1).
         $product->variants->each(fn (ProductVariant $variant) => $variant->setRelation('product', $product));
@@ -142,6 +143,8 @@ class ProductController extends Controller
                     'accent_color' => PublicCollections::safeColor($product->collection->accent_color),
                 ] : null,
                 'image_url' => $product->primaryImageUrl(),
+                // Finisher Legacy Tag artwork (deck pp. 7–8); null for other products.
+                'tag_design' => TagDesign::forProduct($product, false),
                 'variants' => $product->variants->where('active', true)->values()->map(fn (ProductVariant $variant) => $this->tagVariant($product, $variant, [
                     'id' => $variant->id,
                     'sku' => $variant->sku,

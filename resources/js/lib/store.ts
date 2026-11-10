@@ -37,6 +37,7 @@ export function productCardProps(p: PublicProductCard) {
         isNfc: p.is_nfc ?? false,
         isNew: p.is_new ?? false,
         isPresale: p.is_presale ?? false,
+        tagDesign: p.tag_design ?? null,
     };
 }
 
