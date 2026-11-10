@@ -76,7 +76,7 @@ test('an ally user only holds the portal permission — no admin panel', functio
 test('the navigation config declares the commerce sections and the mobile bar', function () {
     $source = file_get_contents(resource_path('js/config/navigation.ts'));
 
-    foreach (["key: 'comercial'", "key: 'catalogo'", "key: 'inventario'", "key: 'legacy'", "key: 'soporte'", "key: 'operacion'", "href: '/admin/venta-rapida'", "href: '/aliado'", 'adminMobileTabs'] as $needle) {
+    foreach (["key: 'clientes'", "key: 'catalogo'", "key: 'inventario'", "key: 'ventas'", "key: 'contenido'", "key: 'aliados'", "key: 'reportes'", "key: 'soporte'", "key: 'configuracion'", "key: 'seguridad'", "href: '/admin/venta-rapida'", "href: '/aliado'", 'adminMobileTabs'] as $needle) {
         expect($source)->toContain($needle);
     }
 });

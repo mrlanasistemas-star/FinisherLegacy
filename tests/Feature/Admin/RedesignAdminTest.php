@@ -48,17 +48,23 @@ test('the new admin screens are permission-gated server side', function (string 
     '/admin/product-categories',
 ]);
 
-test('admin dashboard exposes real KPIs, the production pipeline and commerce panels', function () {
-    $this->actingAs(redesignAdmin())->get('/admin?period=7')
+test('admin dashboard exposes real KPIs and commerce panels, without the retired production widgets', function () {
+    $this->actingAs(redesignAdmin())->get('/admin?rango=7d')
         ->assertInertia(fn ($page) => $page
             ->component('admin/Dashboard')
-            ->where('period', 7)
-            ->has('salesSeries', 7)
-            ->has('production.stages', 6)
+            ->where('range', '7d')
+            ->where('commerce.range', '7d')
+            ->has('commerce.sales')
+            ->has('commerce.inventory')
+            ->has('commerce.activation')
+            ->where('tags.total', 0)
+            ->where('payments.paid.count', 0)
+            ->has('kpis.pending_orders')
             ->has('kpis.photos_pending')
-            ->has('lowStock')
-            ->has('activeOffers')
-            ->has('photos.recent_pending')
+            ->has('recentOrders')
+            ->missing('production')
+            ->missing('kpis.plates_in_production')
+            ->missing('today.preparation_queue')
         );
 });
 
@@ -200,13 +206,15 @@ test('dashboard sales come from paid orders only and never mix currencies', func
     Order::factory()->create(['payment_status' => OrderPaymentStatus::Pending, 'total_minor' => 99999]);
     Order::factory()->create(['payment_status' => OrderPaymentStatus::Paid, 'total_minor' => 70000, 'created_at' => now()->subDays(40)]);
 
-    $this->actingAs(redesignAdmin())->get('/admin?period=30')
+    // Sales are summed in the default currency only (MXN); the USD order is
+    // reported apart, the pending one and the one outside the window never count.
+    $this->actingAs(redesignAdmin())->get('/admin?rango=30d')
         ->assertInertia(fn ($page) => $page
-            ->where('kpis.sales.0.currency', 'MXN')
-            ->where('kpis.sales.0.total_minor', 80000)
-            ->where('kpis.sales.1.currency', 'USD')
-            ->where('kpis.sales_previous.0.total_minor', 70000)
+            ->where('commerce.currency', 'MXN')
+            ->where('commerce.sales.total_minor', 80000)
+            ->where('commerce.sales.orders', 1)
+            ->where('commerce.sales.average_ticket_minor', 80000)
+            ->where('commerce.sales.other_currency_orders', 1)
             ->where('kpis.pending_orders', 3)
-            ->where('salesSeries.29.total_minor', 80000)
         );
 });

@@ -125,6 +125,7 @@ class LegacyTagController extends Controller
                 'notes' => $tag->notes,
                 'is_sold' => $tag->status->isSold(),
                 'is_terminal' => $tag->status->isTerminal(),
+                'is_missing' => $tag->status->isMissing(),
                 'product' => $tag->productVariant?->product ? ['id' => $tag->productVariant->product->id, 'name' => $tag->productVariant->product->name, 'collection' => $tag->productVariant->product->collection?->name] : null,
                 'sku' => $tag->productVariant?->sku,
                 'variant' => $tag->productVariant?->name,
@@ -251,6 +252,28 @@ class LegacyTagController extends Controller
         $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:255']]);
 
         return $this->run(fn () => $manage->revokeOwnership($tag, $request->user(), $data['reason']), 'Propiedad revocada.');
+    }
+
+    /** Owner reports the piece lost or stolen: it cannot be activated or re-bound until recovered. */
+    public function reportMissing(Request $request, LegacyTag $tag, ManageTag $manage): RedirectResponse
+    {
+        $data = $request->validate([
+            'stolen' => ['required', 'boolean'],
+            'reason' => ['required', 'string', 'min:3', 'max:255'],
+        ]);
+        $stolen = (bool) $data['stolen'];
+
+        return $this->run(
+            fn () => $manage->reportMissing($tag, $request->user(), $stolen, $data['reason']),
+            $stolen ? 'Pieza reportada como robada.' : 'Pieza reportada como perdida.',
+        );
+    }
+
+    public function recover(Request $request, LegacyTag $tag, ManageTag $manage): RedirectResponse
+    {
+        $data = $request->validate(['notes' => ['nullable', 'string', 'max:255']]);
+
+        return $this->run(fn () => $manage->recover($tag, $request->user(), $data['notes'] ?? null), 'Pieza recuperada: vuelve a su estado anterior.', 'notes');
     }
 
     public function note(Request $request, LegacyTag $tag, TagLifecycle $lifecycle): RedirectResponse

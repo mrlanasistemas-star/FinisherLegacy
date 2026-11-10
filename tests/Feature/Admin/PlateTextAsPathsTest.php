@@ -1,13 +1,10 @@
 <?php
 
 use App\Enums\PlateTemplateVersionStatus;
-use App\Models\Plate;
 use App\Models\PlateTemplateVersion;
-use App\Models\User;
 use App\Services\FontOutlineService;
 use App\Services\PlateTemplateRenderService;
 use App\Support\PlateRenderData;
-use Database\Seeders\RolePermissionSeeder;
 
 function textAsPathsVersion(): PlateTemplateVersion
 {
@@ -84,23 +81,4 @@ test('accented composite glyphs (á, é, í, ó, ú, ñ) are not silently droppe
     // composite glyphs were being silently skipped, this count would be
     // equal or lower instead of strictly greater.
     expect($accentedPathCount)->toBeGreaterThan($plainPathCount);
-});
-
-test('an admin can request the text-as-paths svg export for a real plate', function () {
-    $this->seed(RolePermissionSeeder::class);
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-
-    $version = textAsPathsVersion();
-    $plate = Plate::factory()->create([
-        'plate_template_id' => $version->plate_template_id,
-        'plate_template_version_id' => $version->id,
-        'athlete_name' => 'Zuriel Ávila',
-    ]);
-
-    $response = $this->actingAs($admin)->get("/admin/plates/{$plate->id}/export/front/svg?text_as_paths=1");
-
-    $response->assertOk();
-    $response->assertHeader('Content-Type', 'image/svg+xml');
-    expect($response->getContent())->toContain('<path')->not->toContain('<text');
 });

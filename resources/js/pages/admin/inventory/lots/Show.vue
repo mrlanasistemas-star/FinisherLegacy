@@ -4,10 +4,12 @@
  * (ReceiveLot: location + defective pieces). Lists every piece of the lot.
  */
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Download, Factory, PackageCheck } from '@lucide/vue';
+import { Download, Factory, KeyRound, PackageCheck } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import {
+    downloadActivationCodes,
     exportMethod,
+    generateActivationCodes,
     index,
     receive,
     show,
@@ -67,6 +69,8 @@ const props = defineProps<{
     counts: Record<string, number>;
     filters: { status: string | null };
     locations: FancyOption[];
+    /** null without tags.manage. */
+    activationCodes: { file_available: boolean; missing: number } | null;
 }>();
 
 defineOptions({
@@ -104,6 +108,20 @@ function submitReceive() {
     });
 }
 
+const generatingCodes = ref(false);
+
+function generateCodes() {
+    router.post(
+        generateActivationCodes(props.lot.uuid).url,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (generatingCodes.value = true),
+            onFinish: () => (generatingCodes.value = false),
+        },
+    );
+}
+
 function filterStatus(status: string | null) {
     router.get(show(props.lot.uuid).url, status ? { status } : {}, {
         preserveScroll: true,
@@ -134,6 +152,17 @@ const statusChips = computed(() =>
                     </a>
                 </Button>
                 <Button
+                    v-if="activationCodes?.file_available"
+                    as-child
+                    variant="outline"
+                    class="rounded-full"
+                >
+                    <a :href="downloadActivationCodes(lot.uuid).url" download>
+                        <KeyRound class="size-4" /> Descargar códigos de
+                        activación
+                    </a>
+                </Button>
+                <Button
                     v-if="lot.status === 'ordered'"
                     class="rounded-full"
                     @click="receiveOpen = true"
@@ -142,6 +171,46 @@ const statusChips = computed(() =>
                 </Button>
             </template>
         </CatalogHeader>
+
+        <div
+            v-if="activationCodes && activationCodes.missing > 0"
+            class="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+            role="status"
+        >
+            <p class="flex items-start gap-2">
+                <KeyRound class="mt-0.5 size-4 shrink-0" />
+                <span>
+                    <strong>{{ activationCodes.missing }}</strong>
+                    {{
+                        activationCodes.missing === 1
+                            ? 'pieza no tiene'
+                            : 'piezas no tienen'
+                    }}
+                    código de activación<template
+                        v-if="!activationCodes.file_available"
+                    >
+                        y no hay archivo de códigos para descargar</template
+                    >. Los códigos se guardan cifrados: el CSV que se genere
+                    será la única copia legible.
+                </span>
+            </p>
+            <Button
+                size="sm"
+                class="shrink-0 rounded-full"
+                :disabled="generatingCodes"
+                @click="generateCodes"
+            >
+                Generar códigos faltantes
+            </Button>
+        </div>
+        <p
+            v-else-if="activationCodes && !activationCodes.file_available"
+            class="mb-6 text-xs text-muted-foreground"
+        >
+            Todas las piezas tienen código de activación, pero el archivo con
+            los códigos legibles ya no está en el servidor (se guardan cifrados
+            y no se pueden recuperar).
+        </p>
 
         <dl class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
             <div class="fl-card p-4">

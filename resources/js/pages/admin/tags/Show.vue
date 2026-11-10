@@ -20,6 +20,8 @@ import {
     MessageSquarePlus,
     Power,
     Repeat,
+    SearchX,
+    ShieldAlert,
     Truck,
     Undo2,
     UserRound,
@@ -36,7 +38,9 @@ import {
     enable,
     index,
     note,
+    recover,
     replace,
+    reportMissing,
     returnTag,
     revoke,
 } from '@/actions/App/Http/Controllers/Admin/Catalog/LegacyTagController';
@@ -66,6 +70,7 @@ type TagDetail = {
     notes: string | null;
     is_sold: boolean;
     is_terminal: boolean;
+    is_missing: boolean;
     product: { id: number; name: string; collection: string | null } | null;
     sku: string | null;
     variant: string | null;
@@ -296,7 +301,15 @@ async function copy(key: string, value: string) {
 // --- Actions -----------------------------------------------------------------
 
 type ActionKey =
-    'disable' | 'enable' | 'replace' | 'return' | 'revoke' | 'note';
+    | 'disable'
+    | 'enable'
+    | 'replace'
+    | 'return'
+    | 'revoke'
+    | 'report_lost'
+    | 'report_stolen'
+    | 'recover'
+    | 'note';
 
 const action = ref<ActionKey | null>(null);
 const dialogOpen = computed({
@@ -331,7 +344,7 @@ const ACTIONS: Record<
         label: 'Desactivar',
         title: 'Desactivar pieza',
         description:
-            'Pieza perdida, robada o dañada: al abrirla se mostrará una página honesta. Si estaba en inventario deja de contar como stock.',
+            'Pieza dañada o defectuosa (si el dueño la perdió o se la robaron, usa «Reportar perdido / robado»): al abrirla se mostrará una página honesta. Si estaba en inventario deja de contar como stock.',
         icon: Ban,
         destructive: true,
         visible: () =>
@@ -375,6 +388,35 @@ const ACTIONS: Record<
         visible: () => t.value.status === 'activated',
         url: () => revoke(t.value.uuid).url,
     },
+    report_lost: {
+        label: 'Reportar perdido',
+        title: 'Reportar pieza perdida',
+        description:
+            'El dueño la extravió: no se podrá activar ni volver a vincular hasta recuperarla. Su historia se conserva.',
+        icon: SearchX,
+        destructive: true,
+        visible: () => t.value.is_sold,
+        url: () => reportMissing(t.value.uuid).url,
+    },
+    report_stolen: {
+        label: 'Reportar robado',
+        title: 'Reportar pieza robada',
+        description:
+            'Se la robaron al dueño: no se podrá activar ni volver a vincular hasta recuperarla. Su historia se conserva.',
+        icon: ShieldAlert,
+        destructive: true,
+        visible: () => t.value.is_sold,
+        url: () => reportMissing(t.value.uuid).url,
+    },
+    recover: {
+        label: 'Recuperar',
+        title: 'Recuperar pieza',
+        description:
+            'La pieza apareció: vuelve al estado que tenía antes del reporte (con su dueño, si lo tenía).',
+        icon: Undo2,
+        visible: () => t.value.is_missing,
+        url: () => recover(t.value.uuid).url,
+    },
     note: {
         label: 'Agregar nota',
         title: 'Agregar nota al historial',
@@ -402,6 +444,10 @@ const canConfirm = computed(() => {
         return form.notes.trim().length >= 2;
     }
 
+    if (action.value === 'recover') {
+        return true;
+    }
+
     if (action.value === 'replace' && !form.replacement.trim()) {
         return false;
     }
@@ -416,16 +462,18 @@ function submitAction() {
 
     const key = action.value;
     form.transform((d) =>
-        key === 'note'
+        key === 'note' || key === 'recover'
             ? { notes: d.notes }
-            : key === 'replace'
-              ? { reason: d.reason, replacement: d.replacement }
-              : key === 'return'
-                ? {
-                      reason: d.reason,
-                      restock_location_id: d.restock_location_id,
-                  }
-                : { reason: d.reason },
+            : key === 'report_lost' || key === 'report_stolen'
+              ? { reason: d.reason, stolen: key === 'report_stolen' }
+              : key === 'replace'
+                ? { reason: d.reason, replacement: d.replacement }
+                : key === 'return'
+                  ? {
+                        reason: d.reason,
+                        restock_location_id: d.restock_location_id,
+                    }
+                  : { reason: d.reason },
     ).post(current.value.url(), {
         preserveScroll: true,
         onSuccess: () => (action.value = null),
@@ -471,6 +519,22 @@ const fullDate = (iso: string | null) =>
                 <TagStatusBadge :status="tag.status" class="self-center" />
             </template>
         </CatalogHeader>
+
+        <div
+            v-if="tag.is_missing"
+            class="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+            role="status"
+        >
+            <ShieldAlert class="mt-0.5 size-4 shrink-0" />
+            <p>
+                Reportada como
+                <strong>{{
+                    tag.status === 'stolen' ? 'robada' : 'perdida'
+                }}</strong
+                >: no se puede activar ni volver a vincular hasta que se
+                recupere. El motivo está en el historial.
+            </p>
+        </div>
 
         <div
             v-if="tag.disabled_reason || tag.replaces || tag.replacement"
@@ -838,15 +902,17 @@ const fullDate = (iso: string | null) =>
             :disabled="!canConfirm"
             @confirm="submitAction"
         >
-            <template v-if="action === 'note'">
+            <template v-if="action === 'note' || action === 'recover'">
                 <div class="grid gap-1.5">
-                    <Label for="act-notes">Nota *</Label>
+                    <Label for="act-notes">{{
+                        action === 'recover' ? 'Nota (opcional)' : 'Nota *'
+                    }}</Label>
                     <Textarea
                         id="act-notes"
                         v-model="form.notes"
                         rows="3"
-                        maxlength="500"
-                        required
+                        :maxlength="action === 'recover' ? 255 : 500"
+                        :required="action === 'note'"
                     />
                     <InputError :message="form.errors.notes" />
                 </div>

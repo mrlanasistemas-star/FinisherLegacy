@@ -31,7 +31,7 @@ test('event_operator only receives its own permissions — no users/roles access
     $operator = User::factory()->create();
     $operator->assignRole('event_operator');
 
-    $response = $this->actingAs($operator)->get('/operator');
+    $response = $this->actingAs($operator)->get('/settings/profile');
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -46,11 +46,11 @@ test('event_operator only receives its own permissions — no users/roles access
     $this->actingAs($operator)->get('/admin/roles')->assertForbidden();
 });
 
-test('production_operator sees production access but not users/roles', function () {
+test('production_operator (legacy role) keeps its permissions but not users/roles', function () {
     $productionOperator = User::factory()->create();
     $productionOperator->assignRole('production_operator');
 
-    $response = $this->actingAs($productionOperator)->get('/admin/legacy-nfc/preparacion');
+    $response = $this->actingAs($productionOperator)->get('/settings/profile');
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page

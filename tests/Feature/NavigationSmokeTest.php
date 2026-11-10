@@ -82,8 +82,8 @@ test('every admin section and workspace tab destination responds for an admin', 
     // Comercio (Resumen is /admin/comercio — A2)
     '/admin/products', '/admin/inventory', '/admin/orders', '/admin/payments', '/admin/coupons',
     '/admin/promotions', '/admin/product-categories',
-    // Legacy + NFC (Resumen is /admin/legacy-nfc — A6)
-    '/admin/legacy-nfc/preparacion', '/admin/legacy-nfc/etiquetas', '/admin/legacy-nfc/productos', '/admin/plates', '/admin/legacy-plates/presales', '/admin/legacy-plate-models',
+    // Inventario NFC + Soporte (placas históricas)
+    '/admin/legacy-nfc/etiquetas', '/admin/legacy-nfc/productos', '/admin/legacy-codes', '/imports',
     // Comunidad
     '/admin/community',
     // Personas
@@ -92,9 +92,9 @@ test('every admin section and workspace tab destination responds for an admin', 
     '/admin/settings', '/admin/content', '/admin/organizers', '/admin/data-sources', '/admin/integrations', '/admin/audit',
 ]);
 
-test('hidden technical modules stay reachable by direct URL', function (string $url) {
-    $this->actingAs(navAdmin())->get($url)->assertOk();
-})->with(['/admin/legacy-codes', '/admin/plate-studio', '/admin/machine-profiles', '/admin/production-devices', '/imports']);
+test('the retired plate production modules no longer answer', function (string $url) {
+    $this->actingAs(navAdmin())->get($url)->assertNotFound();
+})->with(['/operator', '/production', '/admin/plates', '/admin/plate-studio', '/admin/machine-profiles', '/admin/production-devices', '/admin/legacy-plate-models', '/admin/legacy-plates/presales', '/admin/incidents', '/admin/legacy-nfc/preparacion']);
 
 test('retired admin URLs answer with a permanent redirect to their new place', function () {
     $admin = navAdmin();
@@ -186,7 +186,9 @@ test('the admin dashboard exposes the operational "today" overview', function ()
         ->assertInertia(fn ($page) => $page
             ->has('today.events', 1)
             ->where('today.events.0.is_today', true)
-            ->has('today.preparation_queue')
+            ->missing('today.preparation_queue')
+            ->missing('production')
+            ->has('tags')
             ->has('today.community_reports'));
 });
 

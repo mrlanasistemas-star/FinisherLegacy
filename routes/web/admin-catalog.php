@@ -52,6 +52,9 @@ Route::middleware(['auth', 'verified', 'can:dashboard.admin.view'])->prefix('adm
                 Route::post('/', [InventoryLotController::class, 'store'])->name('store');
                 Route::get('{lot:uuid}/codigos.csv', [InventoryLotController::class, 'export'])->name('export');
                 Route::post('{lot:uuid}/recibir', [InventoryLotController::class, 'receive'])->name('receive');
+                // Clear-text activation codes (printed on the card in the box).
+                Route::get('{lot:uuid}/codigos-activacion.csv', [InventoryLotController::class, 'downloadActivationCodes'])->name('activation-codes.download');
+                Route::post('{lot:uuid}/codigos-activacion', [InventoryLotController::class, 'generateActivationCodes'])->middleware('throttle:10,1')->name('activation-codes.generate');
             });
             Route::middleware('can:tags.view')->get('{lot:uuid}', [InventoryLotController::class, 'show'])->name('show');
         });
@@ -84,6 +87,8 @@ Route::middleware(['auth', 'verified', 'can:dashboard.admin.view'])->prefix('adm
             Route::post('reemplazar', [LegacyTagController::class, 'replace'])->name('replace');
             Route::post('devolver', [LegacyTagController::class, 'returnTag'])->name('return');
             Route::post('revocar', [LegacyTagController::class, 'revoke'])->name('revoke');
+            Route::post('extravio', [LegacyTagController::class, 'reportMissing'])->name('report-missing');
+            Route::post('recuperar', [LegacyTagController::class, 'recover'])->name('recover');
             Route::post('notas', [LegacyTagController::class, 'note'])->name('note');
         });
     });

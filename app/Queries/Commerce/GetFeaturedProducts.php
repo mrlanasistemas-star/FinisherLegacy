@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\Commerce\InventoryService;
 use App\Services\Commerce\PromotionResolver;
+use App\Support\Collections\TagDesign;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -79,6 +80,8 @@ class GetFeaturedProducts
             'image_source' => $product->imageSource(),
             'hover_image_url' => $hoverImage?->url() ?? self::conceptHoverUrl($product, $galleryImages->isEmpty()),
             'variant_count' => $product->variants->count(),
+            // Finisher Legacy Tag front/back (null for other products).
+            'tag_design' => TagDesign::forProduct($product, false),
             ...self::merchandising($product),
         ];
     }

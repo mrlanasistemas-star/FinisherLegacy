@@ -7,9 +7,7 @@ use App\Models\EventRace;
 use App\Models\EventResult;
 use App\Models\ProductionDevice;
 use App\Models\ProductionJob;
-use App\Models\User;
 use App\Queries\Operations\GetEventOperationsDashboard;
-use Database\Seeders\RolePermissionSeeder;
 
 test('the dashboard counts participants, results, and production buckets correctly', function () {
     $edition = EventEdition::factory()->create();
@@ -53,18 +51,4 @@ test('production metrics stay null until at least one job has been delivered', f
     $data = app(GetEventOperationsDashboard::class)->handle($edition);
 
     expect($data['metrics'])->toBeNull();
-});
-
-test('the operator status endpoint returns the same shape the dashboard uses', function () {
-    $this->seed(RolePermissionSeeder::class);
-    $operator = User::factory()->create();
-    $operator->assignRole('event_operator');
-    $edition = EventEdition::factory()->create();
-
-    $this->actingAs($operator)->post(route('operator.select-event'), ['event_edition_id' => $edition->id]);
-
-    $response = $this->actingAs($operator)->getJson(route('operator.status'));
-
-    $response->assertOk();
-    $response->assertJsonStructure(['data' => ['provider', 'data', 'production', 'stations', 'readiness', 'metrics']]);
 });

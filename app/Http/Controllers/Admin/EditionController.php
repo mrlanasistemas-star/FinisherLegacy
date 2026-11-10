@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\CreateEvent;
 use App\Http\Controllers\Controller;
 use App\Models\EventEdition;
-use App\Models\LegacyPlateModel;
 use App\Models\Organizer;
 use App\Models\Product;
 use App\Models\ProductPriceSchedule;
@@ -155,7 +154,6 @@ class EditionController extends Controller
                 ]),
             ],
             'priceSchedules' => $priceSchedules,
-            'legacyPlateModels' => LegacyPlateModel::query()->where('active', true)->get(['id', 'name', 'slug']),
             'products' => Product::query()->where('active', true)->get(['id', 'name', 'type']),
         ]);
     }

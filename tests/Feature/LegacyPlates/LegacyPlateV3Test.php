@@ -66,50 +66,6 @@ test('the viewer payload never carries back-face fields', function () {
         ->and($viewer['spec']['clip_material'])->toBe('Acero inoxidable estampado');
 });
 
-test('the layout editor rejects fields on the back — it is the clip', function () {
-    $model = LegacyPlateModel::factory()->create();
-    $field = $model->fields()->create(['field_key' => 'pace', 'face' => 'front', 'x' => 4, 'y' => 4, 'width' => 20, 'height' => 5, 'alignment' => 'left']);
-
-    $this->actingAs($this->admin)
-        ->patch("/admin/legacy-plate-models/{$model->id}/fields", ['fields' => [[
-            'id' => $field->id, 'face' => 'back', 'x' => 4, 'y' => 4, 'width' => 20, 'height' => 5, 'alignment' => 'left',
-        ]]])
-        ->assertSessionHasErrors('fields.0.face');
-
-    $this->actingAs($this->admin)
-        ->patch("/admin/legacy-plate-models/{$model->id}/fields", ['fields' => [[
-            'id' => $field->id, 'x' => 6, 'y' => 4, 'width' => 20, 'height' => 5, 'alignment' => 'left',
-        ]]])
-        ->assertSessionHasNoErrors();
-
-    expect($field->fresh()->face)->toBe('front')
-        ->and((float) $field->fresh()->x)->toBe(6.0);
-});
-
-test('the physical spec is editable and applies to every layout', function () {
-    $this->seed(LegacyPlateModelSeeder::class);
-
-    $this->actingAs($this->admin)
-        ->patch('/admin/legacy-plate-models/spec', [
-            'width_mm' => 72, 'height_mm' => 46,
-            'clip_length_mm' => 54, 'clip_height_mm' => 21, 'clip_thickness_mm' => 1.2, 'total_depth_mm' => 6.5,
-            'body_material' => 'Zamak niquelado', 'clip_material' => 'Acero inoxidable estampado',
-        ])
-        ->assertSessionHasNoErrors();
-
-    expect(LegacyPlateModel::query()->pluck('width_mm')->map(fn ($v) => (float) $v)->unique()->all())->toBe([72.0])
-        ->and(LegacyPlateModel::query()->pluck('clip_length_mm')->map(fn ($v) => (float) $v)->unique()->all())->toBe([54.0]);
-
-    // A clip longer than the plate is not a real piece.
-    $this->actingAs($this->admin)
-        ->patch('/admin/legacy-plate-models/spec', [
-            'width_mm' => 70, 'height_mm' => 45,
-            'clip_length_mm' => 80, 'clip_height_mm' => 20, 'clip_thickness_mm' => 1, 'total_depth_mm' => 6,
-            'body_material' => 'Zamak niquelado', 'clip_material' => 'Acero',
-        ])
-        ->assertSessionHasErrors('clip_length_mm');
-});
-
 test('a generated plate freezes its layout so later edits never change an order', function () {
     $this->seed(LegacyPlateModelSeeder::class);
     $model = LegacyPlateModel::with('fields')->where('layout_style', 'nucleo')->firstOrFail();

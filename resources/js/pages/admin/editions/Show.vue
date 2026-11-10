@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Event workspace › Resumen (spec §9): the event at a glance — counts per
- * tab, general data, races, Legacy Plate for this event and its price
- * windows. Data sources live in the "Datos" tab now.
+ * tab, general data, races and its price windows. Data sources live in
+ * the "Datos" tab now.
  */
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import {
@@ -19,7 +19,6 @@ import type { EventWorkspaceData } from '@/components/admin/events/types';
 import DatePicker from '@/components/DatePicker.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import Money from '@/components/shared/Money.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,7 +59,6 @@ const props = defineProps<{
     workspace: EventWorkspaceData;
     edition: Edition;
     priceSchedules: PriceSchedule[];
-    legacyPlateModels: { id: number; name: string; slug: string }[];
     products: { id: number; name: string; type: string }[];
 }>();
 
@@ -207,50 +205,9 @@ function submitPrice() {
             </section>
 
             <section class="fl-card p-5 xl:col-span-2">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h2 class="text-sm font-semibold text-foreground">
-                            Legacy Plate de este evento
-                        </h2>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            Diseños disponibles, preventas y su preparación.
-                        </p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <Button as-child size="sm" variant="outline">
-                            <Link
-                                :href="`/admin/legacy-plates/presales?event_edition_id=${edition.id}`"
-                                >Preventas</Link
-                            >
-                        </Button>
-                        <Button as-child size="sm" variant="outline">
-                            <Link
-                                :href="`/admin/legacy-plates/production?event_edition_id=${edition.id}`"
-                                >Preparación y entrega</Link
-                            >
-                        </Button>
-                    </div>
-                </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <Badge
-                        v-for="model in legacyPlateModels"
-                        :key="model.id"
-                        variant="outline"
-                        class="border-fl-gold/30 text-fl-gold-ink"
-                    >
-                        {{ model.name }}
-                    </Badge>
-                    <p
-                        v-if="!legacyPlateModels.length"
-                        class="text-sm text-muted-foreground"
-                    >
-                        Sin diseños activos.
-                    </p>
-                </div>
-
-                <h3 class="mt-6 text-sm font-semibold text-foreground">
+                <h2 class="text-sm font-semibold text-foreground">
                     Precios por ventana
-                </h3>
+                </h2>
                 <div
                     class="mt-3 overflow-x-auto rounded-lg border border-border"
                 >

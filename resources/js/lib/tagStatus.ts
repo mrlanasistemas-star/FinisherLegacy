@@ -14,7 +14,9 @@ export type TagStatus =
     | 'activated'
     | 'replaced'
     | 'returned'
-    | 'disabled';
+    | 'disabled'
+    | 'lost'
+    | 'stolen';
 
 type Tone = { label: string; class: string; dot: string };
 
@@ -61,6 +63,17 @@ export const TAG_STATUS: Record<TagStatus, Tone> = {
         label: 'Desactivado',
         class: 'border-red-500/30 bg-red-50 text-red-700',
         dot: 'bg-red-500',
+    },
+    // Reported by the owner; blocked until staff recovers it.
+    lost: {
+        label: 'Extraviado',
+        class: 'border-rose-500/30 bg-rose-50 text-rose-800',
+        dot: 'bg-rose-500',
+    },
+    stolen: {
+        label: 'Robado',
+        class: 'border-red-600/40 bg-red-100 text-red-900',
+        dot: 'bg-red-700',
     },
 };
 

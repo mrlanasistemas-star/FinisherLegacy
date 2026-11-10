@@ -1,8 +1,6 @@
 <?php
 
-use App\Enums\IncidentStatus;
 use App\Enums\LegacyTagStatus;
-use App\Models\EventIncident;
 use App\Models\LegacyTag;
 use App\Models\Role;
 use App\Models\User;
@@ -27,8 +25,10 @@ test('an admin can see the dashboard with real metrics', function () {
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->component('admin/Dashboard')
-        ->has('general.athletes')
-        ->has('general.open_incidents')
+        ->has('general.new_messages')
+        ->has('tags.in_stock')
+        ->has('tags.activated')
+        ->missing('production')
         ->has('kpis.pending_orders')
     );
 });
@@ -37,38 +37,17 @@ test('an event_operator without dashboard.admin.view cannot reach admin lists', 
     $operator = User::factory()->create();
     $operator->assignRole('event_operator');
 
-    $this->actingAs($operator)->get('/admin/plates')->assertForbidden();
+    $this->actingAs($operator)->get('/admin/legacy-codes')->assertForbidden();
 });
 
-test('an admin can list plates and legacy codes', function () {
+test('an admin can list historical legacy codes and events', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    $this->actingAs($admin)->get('/admin/plates')->assertOk();
     $this->actingAs($admin)->get('/admin/legacy-codes')->assertOk();
     $this->actingAs($admin)->get('/admin/participants')->assertRedirect('/admin/events');
     $this->actingAs($admin)->get('/admin/preregistrations')->assertOk();
     $this->actingAs($admin)->get('/admin/events')->assertOk();
-});
-
-test('an admin can resolve an open incident but not resolve it twice', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-    $incident = EventIncident::factory()->create([
-        'status' => IncidentStatus::Open,
-        'reported_by' => $admin->id,
-    ]);
-
-    $this->actingAs($admin)
-        ->patch("/admin/incidents/{$incident->id}/resolve")
-        ->assertRedirect();
-
-    expect($incident->fresh()->status)->toBe(IncidentStatus::Resolved)
-        ->and($incident->fresh()->resolved_by)->toBe($admin->id);
-
-    $this->actingAs($admin)
-        ->patch("/admin/incidents/{$incident->id}/resolve")
-        ->assertStatus(409);
 });
 
 test('a signed in athlete is forbidden from every back-office area', function (string $url) {
@@ -78,7 +57,7 @@ test('a signed in athlete is forbidden from every back-office area', function (s
     $this->actingAs($athlete)->get($url)->assertForbidden();
 })->with([
     '/admin', '/admin/orders', '/admin/products', '/admin/tags', '/admin/soporte', '/admin/settings',
-    '/admin/users', '/admin/venta-rapida', '/admin/legacy-nfc', '/operator', '/imports', '/aliado', '/fotografo',
+    '/admin/users', '/admin/venta-rapida', '/admin/legacy-nfc', '/imports', '/aliado', '/fotografo',
 ]);
 
 test('guests visiting the admin are sent to the login page', function () {

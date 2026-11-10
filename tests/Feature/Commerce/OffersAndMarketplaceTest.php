@@ -5,7 +5,6 @@ use App\Enums\CouponType;
 use App\Enums\PhotographerStatus;
 use App\Enums\ProductType;
 use App\Models\Coupon;
-use App\Models\LegacyPlateModel;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Promotion;
@@ -156,22 +155,6 @@ test('a guest registers as a photographer and lands pending on the portal', func
 
 test('athletes without the photographer role cannot open the photographer portal', function () {
     $this->actingAs(User::factory()->create())->get('/fotografo')->assertForbidden();
-});
-
-test('there are never more than three Legacy Plate layouts', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('admin');
-    foreach ([1, 2, 3] as $slot) {
-        LegacyPlateModel::factory()->create(['layout_slot' => $slot]);
-    }
-
-    $this->actingAs($admin)->post('/admin/legacy-plate-models', [
-        'name' => 'Cuarto layout',
-        'width_mm' => 200,
-        'height_mm' => 80,
-    ]);
-
-    expect(LegacyPlateModel::query()->count())->toBe(3);
 });
 
 test('a photographer account without a profile is sent to the portal panel, never a 404', function () {

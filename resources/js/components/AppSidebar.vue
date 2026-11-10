@@ -3,11 +3,11 @@
  * Back-office sidebar (sheet on mobile). The personal side (Mi Legacy, Mis
  * pedidos, Mi perfil…) lives in the site's top navbar now, so this only
  * renders work screens:
- * - Administración — domain sections (navigation.ts) + a collapsed
- *   "Histórico" group (Operación). Everything else is a workspace tab
- *   under the topbar (WorkspaceTabs.vue).
+ * - Administración — domain sections (navigation.ts), plus a collapsed
+ *   group for any section flagged `secondary`. Everything else is a
+ *   workspace tab under the topbar (WorkspaceTabs.vue).
  * - Portales — the photographer portal and, for accounts without the admin
- *   panel, the ally / production staff screens.
+ *   panel, the ally staff screens.
  * The footer always offers "Volver al sitio" and the account menu.
  */
 import { Link, usePage } from '@inertiajs/vue3';
@@ -44,13 +44,13 @@ const allSections = computed(() => visibleAdminSections(permissions.value));
 const sections = computed(() =>
     allSections.value.filter((section) => !section.secondary),
 );
-// "Operación (histórico)": collapsed at the bottom unless you are in it.
+// `secondary` sections: collapsed at the bottom unless you are in one.
 const secondarySections = computed(() =>
     allSections.value.filter((section) => section.secondary),
 );
 const secondaryOpen = ref(false);
 
-// Admins reach production / Venta rápida through their sections; the
+// Admins reach Venta rápida through their sections; the
 // staff list is for accounts without the admin panel.
 const portals = computed(() => [
     ...(allSections.value.length
@@ -80,7 +80,7 @@ const showSecondary = computed(
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset">
+    <Sidebar collapsible="icon" variant="inset" class="admin-sidebar">
         <SidebarHeader>
             <SidebarMenu>
                 <SidebarMenuItem>
@@ -207,3 +207,26 @@ const showSecondary = computed(
     </Sidebar>
     <slot />
 </template>
+
+<style scoped>
+/* Light polish: hover/active colours ease in alongside the collapse
+ * animation (the width itself is animated by components/ui/sidebar). */
+.admin-sidebar :deep([data-sidebar='menu-button']) {
+    transition-property: width, height, padding, background-color, color;
+    transition-duration: 200ms, 200ms, 200ms, 150ms, 150ms;
+    transition-timing-function: ease;
+}
+
+.admin-sidebar :deep([data-sidebar='menu-button'] > span),
+.admin-sidebar :deep([data-sidebar='group-label']) {
+    transition: opacity 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-sidebar :deep([data-sidebar='menu-button']),
+    .admin-sidebar :deep([data-sidebar='menu-button'] > span),
+    .admin-sidebar :deep([data-sidebar='group-label']) {
+        transition: none;
+    }
+}
+</style>

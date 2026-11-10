@@ -24,9 +24,10 @@ import {
     Sparkles,
     Timer,
     Type,
+    Wallet,
     Zap,
 } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import SalesChannelBadge from '@/components/admin/SalesChannelBadge.vue';
 import Money from '@/components/shared/Money.vue';
 import { SALES_CHANNEL_ORDER, channelSwatch } from '@/lib/salesChannel';
@@ -127,7 +128,23 @@ const props = defineProps<{
         items: number;
         created_at: string | null;
     }[];
-    general: { new_messages: number; open_incidents: number };
+    general: { new_messages: number };
+    /** Lifetime Finisher Legacy Tag units by lifecycle bucket. */
+    tags: {
+        total: number;
+        in_stock: number;
+        reserved: number;
+        sold: number;
+        activated: number;
+    };
+    /** null when the viewer cannot open Ventas → Pagos. */
+    payments: {
+        currency: string;
+        paid: { count: number; amount_minor: number };
+        refunded: { count: number; amount_minor: number };
+        failed: number;
+        pending: number;
+    } | null;
     today: {
         date: string;
         events: {
@@ -139,7 +156,6 @@ const props = defineProps<{
             city: string;
             participants: number;
         }[];
-        preparation_queue: number;
         community_reports: number;
     };
     kpis: { photos_pending: number; pending_orders: number };
@@ -233,13 +249,50 @@ const rangeLabel = computed(
             ?.label.toLowerCase() ?? '',
 );
 
+/** True while a period change reloads the figures (skeletons render). */
+const loading = ref(false);
+
 function setRange(value: string) {
+    if (value === props.range) {
+        return;
+    }
+
     router.get(
         '/admin',
         { rango: value },
-        { preserveScroll: true, preserveState: true, replace: true },
+        {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            onStart: () => (loading.value = true),
+            onFinish: () => (loading.value = false),
+        },
     );
 }
+
+const tagBuckets = computed(() => [
+    {
+        key: 'in_stock',
+        label: 'En stock',
+        hint: 'Listas para vender',
+        value: props.tags.in_stock,
+        bar: 'bg-foreground/70',
+    },
+    {
+        key: 'sold',
+        label: 'Vendidas',
+        hint: 'Esperando activación',
+        value: props.tags.sold,
+        bar: 'bg-fl-gold',
+    },
+    {
+        key: 'activated',
+        label: 'Activadas',
+        hint: 'Con su dueño',
+        value: props.tags.activated,
+        bar: 'bg-emerald-600',
+    },
+]);
 
 const c = computed(() => props.commerce);
 
@@ -304,9 +357,9 @@ const attention = computed(() =>
             href: '/admin/orders',
         },
         {
-            label: 'Incidencias abiertas (eventos)',
-            value: props.general.open_incidents,
-            href: '/admin/incidents',
+            label: 'Casos de soporte abiertos',
+            value: props.support?.open ?? 0,
+            href: '/admin/soporte',
         },
         {
             label: 'Fotos por revisar',
@@ -339,7 +392,11 @@ const todayLabel = computed(() =>
 <template>
     <Head title="Inicio · Administración" />
 
-    <div class="w-full space-y-8 px-4 py-6 md:px-6 md:py-8 xl:px-8">
+    <div
+        class="dashboard w-full space-y-8 px-4 py-6 md:px-6 md:py-8 xl:px-8"
+        :class="{ 'is-loading': loading }"
+        :aria-busy="loading"
+    >
         <!-- Header -->
         <div
             class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
@@ -473,6 +530,160 @@ const todayLabel = computed(() =>
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
                         Productos físicos (sin fotos digitales).
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAGS (inventario NFC) + PAGOS -->
+        <section class="grid gap-3 sm:gap-4 lg:grid-cols-3">
+            <div class="fl-card p-5 lg:col-span-2" aria-labelledby="h-tags">
+                <div class="flex items-center justify-between gap-2">
+                    <h2
+                        id="h-tags"
+                        class="text-sm font-semibold text-foreground"
+                    >
+                        Finisher Legacy Tags
+                    </h2>
+                    <Link
+                        href="/admin/tags"
+                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                    >
+                        Unidades <ArrowRight class="size-3.5" />
+                    </Link>
+                </div>
+                <template v-if="tags.total > 0">
+                    <dl class="mt-4 grid grid-cols-3 gap-3">
+                        <div
+                            v-for="bucket in tagBuckets"
+                            :key="bucket.key"
+                            class="rounded-lg bg-muted/40 px-3 py-2.5 transition-colors hover:bg-muted/70"
+                        >
+                            <dt class="text-xs text-muted-foreground">
+                                {{ bucket.label }}
+                            </dt>
+                            <dd
+                                class="legacy-numeric text-2xl font-semibold text-foreground"
+                            >
+                                {{ num(bucket.value) }}
+                            </dd>
+                            <p class="text-[11px] text-muted-foreground">
+                                {{ bucket.hint }}
+                            </p>
+                        </div>
+                    </dl>
+                    <div
+                        class="mt-4 flex h-2 overflow-hidden rounded-full bg-muted"
+                        role="presentation"
+                    >
+                        <div
+                            v-for="bucket in tagBuckets"
+                            :key="bucket.key"
+                            class="h-full transition-[width] duration-500"
+                            :class="bucket.bar"
+                            :style="{
+                                width: `${(bucket.value / tags.total) * 100}%`,
+                            }"
+                        />
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        {{ num(tags.total) }} unidades registradas<template
+                            v-if="tags.reserved"
+                        >
+                            · {{ num(tags.reserved) }} reservadas</template
+                        >.
+                    </p>
+                </template>
+                <div
+                    v-else
+                    class="mt-4 flex flex-col items-center gap-2 py-6 text-center"
+                >
+                    <Nfc class="size-6 text-muted-foreground/70" />
+                    <p class="text-sm text-muted-foreground">
+                        Aún no hay tags registrados. Recibe un lote del
+                        proveedor en Inventario → Lotes.
+                    </p>
+                </div>
+            </div>
+
+            <div
+                v-if="payments !== null"
+                class="fl-card p-5"
+                aria-labelledby="h-pagos"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <h2
+                        id="h-pagos"
+                        class="text-sm font-semibold text-foreground"
+                    >
+                        Pagos · {{ rangeLabel }}
+                    </h2>
+                    <Link
+                        href="/admin/payments"
+                        class="inline-flex items-center gap-1 text-xs font-medium text-fl-gold-ink hover:underline"
+                    >
+                        Ver pagos <ArrowRight class="size-3.5" />
+                    </Link>
+                </div>
+                <template
+                    v-if="
+                        payments.paid.count ||
+                        payments.refunded.count ||
+                        payments.failed ||
+                        payments.pending
+                    "
+                >
+                    <p
+                        class="legacy-numeric mt-3 text-3xl font-semibold text-foreground"
+                    >
+                        <Money
+                            :minor="payments.paid.amount_minor"
+                            :currency="payments.currency"
+                        />
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                        {{ num(payments.paid.count) }} pago{{
+                            payments.paid.count === 1 ? '' : 's'
+                        }}
+                        recibido{{ payments.paid.count === 1 ? '' : 's' }}
+                    </p>
+                    <dl class="mt-4 grid grid-cols-3 gap-2 text-sm">
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                Reembolsos
+                            </dt>
+                            <dd class="legacy-numeric font-semibold">
+                                {{ num(payments.refunded.count) }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                Pendientes
+                            </dt>
+                            <dd class="legacy-numeric font-semibold">
+                                {{ num(payments.pending) }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                Fallidos
+                            </dt>
+                            <dd
+                                class="legacy-numeric font-semibold"
+                                :class="payments.failed ? 'text-red-700' : ''"
+                            >
+                                {{ num(payments.failed) }}
+                            </dd>
+                        </div>
+                    </dl>
+                </template>
+                <div
+                    v-else
+                    class="mt-4 flex flex-col items-center gap-2 py-6 text-center"
+                >
+                    <Wallet class="size-6 text-muted-foreground/70" />
+                    <p class="text-sm text-muted-foreground">
+                        Sin pagos en este periodo.
                     </p>
                 </div>
             </div>
@@ -1238,3 +1449,43 @@ const todayLabel = computed(() =>
         </section>
     </div>
 </template>
+
+<style scoped>
+/* Subtle admin polish: cards lift a touch on hover; while a period change
+ * reloads, every figure turns into a pulsing skeleton bar. */
+.dashboard .fl-card {
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease;
+}
+
+.dashboard .fl-card:hover {
+    border-color: color-mix(in oklab, var(--foreground) 14%, transparent);
+    box-shadow: 0 6px 20px -14px rgb(0 0 0 / 0.25);
+}
+
+.dashboard.is-loading .legacy-numeric {
+    color: transparent;
+    border-radius: 0.375rem;
+    background: var(--muted);
+    animation: dashboard-pulse 1.2s ease-in-out infinite;
+}
+
+.dashboard.is-loading .legacy-numeric * {
+    visibility: hidden;
+}
+
+@keyframes dashboard-pulse {
+    50% {
+        opacity: 0.55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard .fl-card,
+    .dashboard.is-loading .legacy-numeric {
+        transition: none;
+        animation: none;
+    }
+}
+</style>

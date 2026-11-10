@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Catalog;
 
 use App\Actions\LegacyTags\CreateLot;
+use App\Actions\LegacyTags\GenerateActivationCodes;
 use App\Actions\LegacyTags\ReceiveLot;
 use App\Enums\InventoryLotStatus;
 use App\Enums\LegacyTagStatus;
@@ -17,11 +18,14 @@ use App\Support\LegacyTags\TagUrls;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
+use Spatie\Activitylog\Models\Activity;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -133,6 +137,10 @@ class InventoryLotController extends Controller
             ],
             'tags' => $tags,
             'counts' => $counts,
+            'activationCodes' => $request->user()->can('tags.manage') ? [
+                'file_available' => $this->latestActivationCodesCsv($lot) !== null,
+                'missing' => LegacyTag::query()->where('inventory_lot_id', $lot->id)->whereNull('activation_code_hash')->count(),
+            ] : null,
             'filters' => ['status' => $status?->value],
             'locations' => InventoryLocation::query()->where('active', true)->orderBy('name')->get(['id', 'name', 'type'])
                 ->map(fn (InventoryLocation $l) => ['value' => $l->id, 'label' => $l->name.' · '.$l->type->label()])->all(),
@@ -165,6 +173,67 @@ class InventoryLotController extends Controller
 
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * The clear-text activation codes of the lot (the card printed inside
+     * each box). Codes are stored hashed, so the private CSV written at
+     * generation time is the only copy — streamed as is, never rebuilt.
+     */
+    public function downloadActivationCodes(Request $request, InventoryLot $lot): StreamedResponse|RedirectResponse
+    {
+        $path = $this->latestActivationCodesCsv($lot);
+
+        if ($path === null) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'No hay archivo de códigos de activación para este lote. Genera los que falten.']);
+
+            return back();
+        }
+
+        activity()->causedBy($request->user())->performedOn($lot)
+            ->withProperties(['path' => $path])
+            ->log('tags.lot.activation_codes_downloaded');
+
+        return Storage::disk('local')->download($path, 'codigos-activacion-'.$lot->code.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** Codes for the pieces of the lot that still have none (never rotates a printed code). */
+    public function generateActivationCodes(Request $request, InventoryLot $lot, GenerateActivationCodes $generator): RedirectResponse
+    {
+        $missing = LegacyTag::query()->where('inventory_lot_id', $lot->id)->whereNull('activation_code_hash')->orderBy('id')->get();
+
+        if ($missing->isEmpty()) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => 'Todas las piezas del lote ya tienen código de activación.']);
+
+            return back();
+        }
+
+        $rows = $generator->handle($missing);
+        // Own suffix: writeCsv() names files to the second, so a second batch
+        // must never overwrite the lot-creation CSV (the only copy).
+        $path = $generator->writeCsv($rows, 'lote-'.$lot->code.'-faltantes-'.Str::lower(Str::random(6)));
+
+        activity()->causedBy($request->user())->performedOn($lot)
+            ->withProperties(['count' => count($rows), 'path' => $path])
+            ->log('tags.lot.activation_codes_generated');
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => count($rows).' códigos de activación generados. Descarga el archivo e imprímelo.']);
+
+        return back();
+    }
+
+    /** Path (local disk) of the newest activation-codes CSV of the lot that still exists. */
+    private function latestActivationCodesCsv(InventoryLot $lot): ?string
+    {
+        return Activity::query()
+            ->where('subject_type', $lot->getMorphClass())
+            ->where('subject_id', $lot->getKey())
+            ->where('description', 'tags.lot.activation_codes_generated')
+            ->latest('id')
+            ->limit(20)
+            ->get()
+            ->map(fn (Activity $a) => $a->properties?->get('path'))
+            ->first(fn ($path) => is_string($path) && $path !== '' && Storage::disk('local')->exists($path));
     }
 
     public function receive(Request $request, InventoryLot $lot, ReceiveLot $receiveLot): RedirectResponse

@@ -11,26 +11,17 @@ use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EditionController as AdminEditionController;
 use App\Http\Controllers\Admin\EventPhotoController as AdminEventPhotoController;
-use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\Integrations\ProviderConnectionController as AdminProviderConnectionController;
 use App\Http\Controllers\Admin\Integrations\SyncController as AdminSyncController;
 use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Admin\LegacyCodeController as AdminLegacyCodeController;
-use App\Http\Controllers\Admin\LegacyPlateModelController as AdminLegacyPlateModelController;
-use App\Http\Controllers\Admin\LegacyPlatePresaleController as AdminLegacyPlatePresaleController;
-use App\Http\Controllers\Admin\LegacyPlateProductionController as AdminLegacyPlateProductionController;
-use App\Http\Controllers\Admin\MachineProfileController as AdminMachineProfileController;
 use App\Http\Controllers\Admin\OrganizerController as AdminOrganizerController;
 use App\Http\Controllers\Admin\ParticipantController as AdminParticipantController;
 use App\Http\Controllers\Admin\PhotographerController as AdminPhotographerController;
-use App\Http\Controllers\Admin\PlateController as AdminPlateController;
-use App\Http\Controllers\Admin\PlateStudioController as AdminPlateStudioController;
 use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistrationController;
 use App\Http\Controllers\Admin\ProductCategoryController as AdminProductCategoryController;
 use App\Http\Controllers\Admin\ProductContentSectionController as AdminProductContentSectionController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
-use App\Http\Controllers\Admin\ProductionDeviceController as AdminProductionDeviceController;
-use App\Http\Controllers\Admin\ProductionSetupController as AdminProductionSetupController;
 use App\Http\Controllers\Admin\ProductMediaController as AdminProductMediaController;
 use App\Http\Controllers\Admin\PromotionController as AdminPromotionController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
@@ -51,12 +42,10 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\LegacyCodeController;
 use App\Http\Controllers\MedalController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PhotographerJoinController;
 use App\Http\Controllers\PhotographerPortalController;
 use App\Http\Controllers\PhotosController;
 use App\Http\Controllers\PreregistrationController;
-use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Store\CartController as StoreCartController;
@@ -245,47 +234,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('dashboard/medals/{medal}/gallery/{medalImage}', [MedalController::class, 'destroyGalleryImage'])
         ->name('dashboard.medals.gallery.destroy');
 
-    Route::middleware('can:operator.access')->prefix('operator')->name('operator.')->group(function () {
-        Route::get('/', [OperatorController::class, 'index'])->name('index');
-        Route::post('event', [OperatorController::class, 'selectEvent'])->name('select-event');
-        Route::get('status', [OperatorController::class, 'status'])->middleware('throttle:30,1')->name('status');
-        Route::get('search', [OperatorController::class, 'search'])->middleware('throttle:60,1')->name('search');
-        Route::post('preview', [OperatorController::class, 'previewPlate'])->middleware('throttle:60,1')->name('preview');
-        Route::get('participants/{eventParticipant}', [OperatorController::class, 'showParticipant'])->name('participants.show');
-        Route::post('participants/{eventParticipant}/plate', [OperatorController::class, 'generateIntegratedPlate'])->name('participants.plate');
-        Route::post('quick-plate', [OperatorController::class, 'generateQuickPlate'])->name('quick-plate');
-        Route::get('quick-plate/{plate}', [OperatorController::class, 'showQuickPlate'])->name('quick-plate.show');
-    });
-
-    Route::middleware('can:production.access')->prefix('production')->name('production.')->group(function () {
-        Route::get('/', [ProductionController::class, 'index'])->name('index');
-
-        // Manual/web fallback for the same physical workflow the Device
-        // API drives (docs/adr/0003-production-state-machine.md §45) —
-        // every route here calls the same Actions as the Device API.
-        Route::middleware('can:production.manage')->prefix('jobs/{job}')->name('jobs.')->group(function () {
-            Route::patch('prepare', [ProductionController::class, 'prepare'])->name('prepare');
-            Route::patch('front/start', [ProductionController::class, 'frontStart'])->name('front.start');
-            Route::patch('front/complete', [ProductionController::class, 'frontComplete'])->name('front.complete');
-            Route::patch('flip/confirm', [ProductionController::class, 'flipConfirm'])->name('flip.confirm');
-            Route::patch('back/start', [ProductionController::class, 'backStart'])->name('back.start');
-            Route::patch('back/complete', [ProductionController::class, 'backComplete'])->name('back.complete');
-            Route::post('qr/verify', [ProductionController::class, 'qrVerify'])->name('qr.verify');
-            Route::patch('deliver', [ProductionController::class, 'deliver'])->name('deliver');
-            Route::post('fail', [ProductionController::class, 'fail'])->name('fail');
-            Route::patch('cancel', [ProductionController::class, 'cancel'])->name('cancel');
-        });
-    });
-
-    // Production file downloads: gated by plates.view alone (not the wider
-    // dashboard.admin.view admin-panel gate) so operators and production staff can
-    // download what they just generated without needing full admin access.
-    Route::middleware('can:plates.view')->prefix('admin/plates')->name('admin.plates.')->group(function () {
-        Route::get('{plate}/export/{face}/{format}', [AdminPlateController::class, 'export'])->name('export');
-        Route::get('{plate}/export-qr/{format?}', [AdminPlateController::class, 'exportQr'])->name('export-qr');
-        Route::get('{plate}/export-package', [AdminPlateController::class, 'exportPackage'])->name('export-package');
-    });
-
     Route::middleware('can:imports.manage')->prefix('imports')->name('imports.')->group(function () {
         Route::get('/', [ImportController::class, 'index'])->name('index');
         Route::get('create', [ImportController::class, 'create'])->name('create');
@@ -310,11 +258,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:eventdata.manage')->put('editions/{eventEdition}/data-sources', [AdminEditionController::class, 'updateDataSources'])->name('editions.data-sources.update');
         Route::get('editions/{eventEdition}', RedirectController::class)->whereNumber('eventEdition')->defaults('destination', '/admin/events/{eventEdition}')->defaults('status', 301)->name('editions.show');
 
-        Route::middleware('can:editions.manage')->prefix('events/{eventEdition}/production-setup')->name('editions.production-setup.')->group(function () {
-            Route::get('/', [AdminProductionSetupController::class, 'show'])->name('show');
-            Route::post('assign-template', [AdminProductionSetupController::class, 'assignTemplate'])->name('assign-template');
-            Route::post('qr-test', [AdminProductionSetupController::class, 'markQrTested'])->name('qr-test');
-        });
         Route::middleware('can:preregistrations.view')->get('preregistrations', [AdminPreregistrationController::class, 'index'])->name('preregistrations.index');
         Route::middleware('can:participants.view')->prefix('participants')->name('participants.')->group(function () {
             Route::get('/', [AdminParticipantController::class, 'index'])->name('index');
@@ -355,76 +298,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::middleware('can:integrations.sync')->post('mappings/{eventMapping}/sync', [AdminSyncController::class, 'store'])->name('mappings.sync');
         });
 
-        Route::middleware('can:plates.view')->group(function () {
-            Route::get('plates', [AdminPlateController::class, 'index'])->name('plates.index');
-            Route::post('plates/export-batch', [AdminPlateController::class, 'exportBatch'])->name('plates.export-batch');
-            Route::get('plates/{plate}', [AdminPlateController::class, 'show'])->name('plates.show');
-            Route::middleware('can:plates.manage')->post('plates/{plate}/reprint', [AdminPlateController::class, 'reprint'])->name('plates.reprint');
-        });
+        // Historical Legacy Plate codes (read-only): the /l/{code} links
+        // customers still tap. The plate production UI was retired
+        // (docs/renovacion/retiro-modulos.md).
         Route::middleware('can:legacycodes.view')->get('legacy-codes', [AdminLegacyCodeController::class, 'index'])->name('legacy-codes.index');
-
-        Route::middleware('can:legacyplates.manage')->prefix('legacy-plate-models')->name('legacy-plate-models.')->group(function () {
-            Route::get('/', [AdminLegacyPlateModelController::class, 'index'])->name('index');
-            Route::patch('spec', [AdminLegacyPlateModelController::class, 'updateSpec'])->name('spec.update');
-            Route::get('{legacyPlateModel}', [AdminLegacyPlateModelController::class, 'show'])->name('show');
-            Route::post('/', [AdminLegacyPlateModelController::class, 'store'])->name('store');
-            Route::patch('{legacyPlateModel}', [AdminLegacyPlateModelController::class, 'update'])->name('update');
-            Route::patch('{legacyPlateModel}/fields', [AdminLegacyPlateModelController::class, 'updateFields'])->name('fields.update');
-        });
-
-        Route::middleware('can:legacyplates.produce')->prefix('legacy-plates/production')->name('legacy-plates.production.')->group(function () {
-            Route::get('/', [AdminLegacyPlateProductionController::class, 'index'])->name('index');
-            Route::post('entitlements/{legacyPlateEntitlement}/produce', [AdminLegacyPlateProductionController::class, 'produce'])->name('produce');
-        });
-
-        Route::middleware('can:legacyplates.manage')->get('legacy-plates/presales', [AdminLegacyPlatePresaleController::class, 'index'])->name('legacy-plates.presales.index');
-        Route::middleware('can:legacyplates.manage')->post('legacy-plates/presales/{legacyPlateEntitlement}/link', [AdminLegacyPlatePresaleController::class, 'linkParticipant'])->name('legacy-plates.presales.link');
-
-        Route::middleware('can:platetemplates.view')->prefix('plate-studio')->name('plate-studio.')->group(function () {
-            Route::get('/', [AdminPlateStudioController::class, 'index'])->name('index');
-            Route::get('templates/{plateTemplate}/versions/{plateTemplateVersion}', [AdminPlateStudioController::class, 'edit'])->name('edit');
-            Route::post('preview', [AdminPlateStudioController::class, 'preview'])->name('preview');
-            Route::get('versions/{plateTemplateVersion}/test-export/{face}', [AdminPlateStudioController::class, 'testExport'])->name('versions.test-export');
-            Route::get('calibration/{face}', [AdminPlateStudioController::class, 'calibrationCard'])->name('calibration');
-
-            Route::middleware('can:platetemplates.manage')->group(function () {
-                Route::post('templates', [AdminPlateStudioController::class, 'store'])->name('templates.store');
-                Route::patch('templates/{plateTemplate}', [AdminPlateStudioController::class, 'update'])->name('templates.update');
-                Route::post('templates/{plateTemplate}/duplicate', [AdminPlateStudioController::class, 'duplicate'])->name('templates.duplicate');
-                Route::post('templates/{plateTemplate}/archive', [AdminPlateStudioController::class, 'archiveTemplate'])->name('templates.archive');
-                Route::post('templates/{plateTemplate}/versions', [AdminPlateStudioController::class, 'createVersion'])->name('versions.create');
-                Route::patch('versions/{plateTemplateVersion}', [AdminPlateStudioController::class, 'updateVersion'])->name('versions.update');
-                Route::post('versions/{plateTemplateVersion}/publish', [AdminPlateStudioController::class, 'publish'])->name('versions.publish');
-                Route::post('versions/{plateTemplateVersion}/archive', [AdminPlateStudioController::class, 'archiveVersion'])->name('versions.archive');
-            });
-        });
-
-        // Machine profiles: a workflow label ("Fiber 30W — LightBurn"), not
-        // a driver — gated the same as plate templates since it's part of
-        // the same production-configuration surface.
-        Route::middleware('can:platetemplates.view')->prefix('machine-profiles')->name('machine-profiles.')->group(function () {
-            Route::get('/', [AdminMachineProfileController::class, 'index'])->name('index');
-
-            Route::middleware('can:platetemplates.manage')->group(function () {
-                Route::post('/', [AdminMachineProfileController::class, 'store'])->name('store');
-                Route::patch('{machineProfile}', [AdminMachineProfileController::class, 'update'])->name('update');
-            });
-        });
-
-        // Estaciones: Super Admin only in practice — `admin` gets every
-        // permission via RolePermissionSeeder, `super_admin` bypasses via
-        // Gate::before, and no other seeded role is granted these keys.
-        Route::middleware('can:productiondevices.view')->prefix('production-devices')->name('production-devices.')->group(function () {
-            Route::get('/', [AdminProductionDeviceController::class, 'index'])->name('index');
-
-            Route::middleware('can:productiondevices.manage')->group(function () {
-                Route::post('pairings/{pairingRequest}/approve', [AdminProductionDeviceController::class, 'approvePairing'])->name('pairings.approve');
-                Route::post('{device}/revoke', [AdminProductionDeviceController::class, 'revoke'])->name('revoke');
-            });
-        });
-
-        Route::middleware('can:incidents.view')->get('incidents', [AdminIncidentController::class, 'index'])->name('incidents.index');
-        Route::middleware('can:incidents.manage')->patch('incidents/{incident}/resolve', [AdminIncidentController::class, 'resolve'])->name('incidents.resolve');
 
         Route::middleware('can:users.view')->get('users', [AdminUserController::class, 'index'])->name('users.index');
         Route::middleware('can:users.manage')->group(function () {
@@ -568,3 +445,4 @@ require __DIR__.'/web/collections.php';
 require __DIR__.'/web/legacy.php';
 require __DIR__.'/web/admin-catalog.php';
 require __DIR__.'/web/admin-commercial.php';
+require __DIR__.'/web/admin-quotas.php';
