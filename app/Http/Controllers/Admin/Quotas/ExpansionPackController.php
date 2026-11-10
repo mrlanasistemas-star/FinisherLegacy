@@ -2,20 +2,26 @@
 
 namespace App\Http\Controllers\Admin\Quotas;
 
+use App\Enums\BillingPeriod;
 use App\Enums\ProductType;
+use App\Enums\StoryQuotaKind;
 use App\Http\Controllers\Controller;
 use App\Models\PhotoExpansionPack;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
- * Photo expansion packs. A pack with a price or a sale is archived, never
- * deleted — its price history and the rights it granted stay readable.
- * Changing `photos` only affects future purchases: each entitlement froze
- * its own photo count.
+ * Expansion packs: extra photos, videos or voice messages (`kind`), sold
+ * as a one-time payment or as a prepaid term (`billing_period`). A pack
+ * with a price or a sale is archived, never deleted — its price history
+ * and the rights it granted stay readable. Changing `photos` (the units),
+ * the kind's price or the billing period only affects FUTURE purchases:
+ * each entitlement froze its own units, period and dates. The kind of a
+ * pack that already has prices or sales cannot change.
  */
 class ExpansionPackController extends Controller
 {
@@ -39,7 +45,13 @@ class ExpansionPackController extends Controller
 
     public function update(Request $request, PhotoExpansionPack $pack): RedirectResponse
     {
-        $pack->update($this->validated($request, $pack));
+        $data = $this->validated($request, $pack);
+
+        if ($data['kind'] !== $pack->kind->value && ($pack->prices()->exists() || $pack->entitlements()->exists())) {
+            throw ValidationException::withMessages(['kind' => 'Esta ampliación ya tiene precios o ventas: crea una nueva para otro tipo de contenido.']);
+        }
+
+        $pack->update($data);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Ampliación actualizada.']);
 
@@ -87,6 +99,8 @@ class ExpansionPackController extends Controller
             // docs/renovacion/compras-dentro-de-app.md.
             'apple_product_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique('photo_expansion_packs', 'apple_product_id')->ignore($pack?->id)],
             'google_product_id' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9][a-z0-9._]*$/', Rule::unique('photo_expansion_packs', 'google_product_id')->ignore($pack?->id)],
+            'kind' => ['nullable', Rule::enum(StoryQuotaKind::class)],
+            'billing_period' => ['nullable', Rule::enum(BillingPeriod::class)],
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:500'],
             'photos' => ['required', 'integer', 'min:1', 'max:1000'],
@@ -98,6 +112,8 @@ class ExpansionPackController extends Controller
         ]);
 
         return [
+            'kind' => $data['kind'] ?? $pack?->kind->value ?? StoryQuotaKind::Photos->value,
+            'billing_period' => $data['billing_period'] ?? $pack?->billing_period->value ?? BillingPeriod::OneTime->value,
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'photos' => (int) $data['photos'],

@@ -2,18 +2,25 @@
 
 namespace App\Services\Iap;
 
+use App\Enums\StoryQuotaKind;
 use App\Models\LegacyStory;
 use App\Models\PhotoExpansionPack;
+use App\Models\PhotoExpansionPriceStep;
 use App\Models\User;
-use App\Services\Media\StoryPhotoQuota;
+use App\Services\Media\StoryMediaQuota;
+use App\Support\Quotas\ResolvedExpansionPrice;
 
 /**
  * What the app may buy with store billing, and the glue between a store
  * product id and a PhotoExpansionPack (docs/renovacion/compras-dentro-de-app.md).
  *
- * - The pack offered for a story is the most specific sellable pack that
- *   covers it AND has a product id for the platform (the store owns the
- *   price, so no web price schedule is required).
+ * - The pack offered for a story and a kind (photos / videos / audio) is
+ *   the most specific sellable pack that covers it AND has a product id
+ *   for the platform (the store owns the price, so no web price schedule
+ *   is required).
+ * - Price steps ("banderas"): a step may carry its own store product id.
+ *   The product offered is the one of the step that matches what the
+ *   story already holds; without one, the pack's own product id.
  * - `accountToken()` is a stable, non-reversible UUID per user, sent as
  *   StoreKit `appAccountToken` / Play `obfuscatedAccountId`; when a
  *   transaction carries it, the backend refuses to credit it to another
@@ -24,7 +31,7 @@ class InAppPurchaseCatalog
     public const array PLATFORMS = ['ios', 'android'];
 
     public function __construct(
-        private readonly StoryPhotoQuota $quota,
+        private readonly StoryMediaQuota $quota,
         private readonly AppStoreVerifier $appStore,
         private readonly GooglePlayVerifier $googlePlay,
     ) {}
@@ -38,13 +45,39 @@ class InAppPurchaseCatalog
         };
     }
 
-    public function offerFor(LegacyStory $story, string $platform): ?PhotoExpansionPack
+    /**
+     * @return null|array{pack: PhotoExpansionPack, product_id: string, price: ?ResolvedExpansionPrice}
+     */
+    public function offerFor(LegacyStory $story, string $platform, StoryQuotaKind $kind = StoryQuotaKind::Photos): ?array
     {
-        return $this->quota->applicablePacks($story)
-            ->first(fn (PhotoExpansionPack $pack) => $pack->storeProductId($platform) !== null);
+        foreach ($this->quota->applicablePacks($story, $kind) as $pack) {
+            if (! $this->quota->fitsCap($story, $pack)) {
+                continue;
+            }
+
+            $price = $this->quota->resolvePrice($pack, $story);
+            $productId = $this->productIdFor($pack, $price, $platform);
+
+            if ($productId !== null) {
+                return ['pack' => $pack, 'product_id' => $productId, 'price' => $price];
+            }
+        }
+
+        return null;
     }
 
-    /** Includes paused/archived packs: a purchase paid before a pause is still honoured. */
+    /** The store product to charge: the matched step's own, else the pack's. */
+    public function productIdFor(PhotoExpansionPack $pack, ?ResolvedExpansionPrice $price, string $platform): ?string
+    {
+        return $price?->storeProductId($platform) ?? $pack->storeProductId($platform);
+    }
+
+    /**
+     * The pack a store product belongs to — its own product id or the one
+     * of any of its price steps. Includes paused/archived packs and past
+     * price schedules: a purchase paid before a pause or a tariff change
+     * is still honoured.
+     */
     public function packForProduct(string $platform, string $productId): ?PhotoExpansionPack
     {
         $column = match ($platform) {
@@ -53,7 +86,19 @@ class InAppPurchaseCatalog
             default => null,
         };
 
-        return $column === null ? null : PhotoExpansionPack::query()->where($column, $productId)->first();
+        if ($column === null) {
+            return null;
+        }
+
+        $pack = PhotoExpansionPack::query()->where($column, $productId)->first();
+
+        if ($pack !== null) {
+            return $pack;
+        }
+
+        $step = PhotoExpansionPriceStep::query()->where($column, $productId)->with('schedule.photoExpansionPack')->latest('id')->first();
+
+        return $step?->schedule?->photoExpansionPack;
     }
 
     public function accountToken(User $user): string

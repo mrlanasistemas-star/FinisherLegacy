@@ -23,7 +23,7 @@ class UpdateLegacyStoryRequest extends FormRequest
     {
         return [
             ...StoryRaceRules::rules(required: false),
-            'result_position' => ['nullable', 'string', 'max:60'],
+            ...StoryRaceRules::extraRules(),
             'title' => ['nullable', 'string', 'max:120'],
             'recipient_label' => ['nullable', 'string', 'max:80'],
             'dedication' => ['nullable', 'string', 'max:600'],

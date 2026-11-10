@@ -4,6 +4,10 @@
  * someone taps the tag. Editorial, warm paper + gold, photo-first; built for a
  * phone held in one hand. No app shell on purpose: only the memory.
  * Motion is decorative and off under prefers-reduced-motion.
+ *
+ * Race data (name, bib, time, pace, places, category…) is the
+ * StoryRaceSheet; videos are lazy StoryVideoPlayer cards; each voice
+ * message is a StoryVoiceMessage. Only one of them sounds at a time.
  */
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
@@ -14,17 +18,20 @@ import {
     FileText,
     Images,
     Link2,
-    Pause,
     PenLine,
-    Play,
     Printer,
     Share2,
     Trash2,
+    Video,
     X,
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
+import StoryRaceSheet from '@/components/legacy/story/StoryRaceSheet.vue';
+import StoryVideoPlayer from '@/components/legacy/story/StoryVideoPlayer.vue';
+import StoryVoiceMessage from '@/components/legacy/story/StoryVoiceMessage.vue';
+import type { StoryViewExtended } from '@/components/legacy/story/types';
 import { Toaster } from '@/components/ui/sonner';
 import { home } from '@/routes';
 import {
@@ -38,12 +45,12 @@ import {
     store as storeShare,
 } from '@/routes/my-legacy/shares';
 import { formatStoryDate, forRecipient } from '@/types/legacy-tags';
-import type { StoryShare, StoryView } from '@/types/legacy-tags';
+import type { StoryShare } from '@/types/legacy-tags';
 
 defineOptions({ layout: [] });
 
 const props = defineProps<{
-    story: StoryView;
+    story: StoryViewExtended;
     mode: 'owner' | 'visitor' | 'recipient';
     recipientLabel: string | null;
     noindex: boolean;
@@ -52,27 +59,21 @@ const props = defineProps<{
 
 const isOwner = computed(() => props.mode === 'owner');
 const race = computed(() => props.story.race);
+// Portarretrato inteligente: the page presents itself as an album.
+const isAlbum = computed(() => props.story.kind === 'album');
 const date = computed(() => formatStoryDate(race.value.date));
-const eyebrow = computed(
-    () =>
+const eyebrow = computed(() => {
+    const base =
         race.value.event_name ??
         props.story.tag?.collection?.name ??
-        'Finisher Legacy',
-);
+        (isAlbum.value ? null : 'Finisher Legacy');
+
+    return isAlbum.value ? ['Álbum', base].filter(Boolean).join(' · ') : base;
+});
 const metaLine = computed(() =>
     [race.value.race ?? race.value.distance, race.value.time]
         .filter(Boolean)
         .join(' · '),
-);
-const facts = computed(() =>
-    [
-        { label: 'Carrera', value: race.value.race },
-        { label: 'Distancia', value: race.value.distance },
-        { label: 'Tiempo', value: race.value.time },
-        { label: 'Posición', value: race.value.position ?? null },
-        { label: 'Fecha', value: date.value },
-        { label: 'Lugar', value: race.value.location },
-    ].filter((f) => f.value),
 );
 const greeting = computed(
     () => props.recipientLabel ?? props.story.recipient_label,
@@ -80,6 +81,41 @@ const greeting = computed(
 const gallery = computed(() =>
     props.story.photos.filter((p) => p.url && p.kind === 'image'),
 );
+const videos = computed(() =>
+    (props.story.videos ?? []).filter(
+        (v) => v.url && v.status !== 'processing' && v.status !== 'failed',
+    ),
+);
+// Every voice message; older payloads only carry the first one.
+const voiceMessages = computed(() => {
+    const list = (props.story.audios ?? []).filter((a) => a.url);
+
+    if (list.length > 0) {
+        return list;
+    }
+
+    return props.story.audio?.url ? [props.story.audio] : [];
+});
+
+// ── One sound at a time ─────────────────────────────────────────────────
+type Pausable = { pause: () => void };
+const players = new Map<string, Pausable>();
+
+function registerPlayer(key: string, el: unknown) {
+    if (el && typeof (el as Pausable).pause === 'function') {
+        players.set(key, el as Pausable);
+    } else {
+        players.delete(key);
+    }
+}
+
+function onMediaPlay(key: string) {
+    players.forEach((player, other) => {
+        if (other !== key) {
+            player.pause();
+        }
+    });
+}
 
 // ── Lightbox ────────────────────────────────────────────────────────────
 const openIndex = ref<number | null>(null);
@@ -116,6 +152,10 @@ function onKey(e: KeyboardEvent) {
 
 watch(openIndex, (v) => {
     document.documentElement.style.overflow = v === null ? '' : 'hidden';
+
+    if (v !== null) {
+        onMediaPlay('');
+    }
 });
 
 onMounted(() => window.addEventListener('keydown', onKey));
@@ -123,54 +163,6 @@ onBeforeUnmount(() => {
     window.removeEventListener('keydown', onKey);
     document.documentElement.style.overflow = '';
 });
-
-// ── Voice message ───────────────────────────────────────────────────────
-const audioEl = ref<HTMLAudioElement | null>(null);
-const playing = ref(false);
-const progress = ref(0);
-const duration = ref(0);
-
-function toggleAudio() {
-    const el = audioEl.value;
-
-    if (!el) {
-        return;
-    }
-
-    if (el.paused) {
-        void el.play();
-    } else {
-        el.pause();
-    }
-}
-
-function onTime() {
-    const el = audioEl.value;
-
-    if (el && el.duration > 0) {
-        progress.value = el.currentTime / el.duration;
-        duration.value = el.duration;
-    }
-}
-
-function seek(e: Event) {
-    const el = audioEl.value;
-    const value = Number((e.target as HTMLInputElement).value);
-
-    if (el && el.duration > 0) {
-        el.currentTime = value * el.duration;
-    }
-}
-
-function clock(seconds: number): string {
-    if (!Number.isFinite(seconds) || seconds <= 0) {
-        return '0:00';
-    }
-
-    const s = Math.round(seconds);
-
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
 
 // ── Owner: share ────────────────────────────────────────────────────────
 const shareForm = useForm({ label: '' });
@@ -227,7 +219,7 @@ async function nativeShare() {
 </script>
 
 <template>
-    <Head :title="story.title">
+    <Head :title="isAlbum ? `Álbum · ${story.title}` : story.title">
         <meta v-if="noindex" name="robots" content="noindex, nofollow" />
         <meta name="theme-color" content="#171714" />
         <meta property="og:title" :content="story.title" />
@@ -354,7 +346,10 @@ async function nativeShare() {
             </div>
         </section>
 
-        <main class="mx-auto max-w-3xl px-5 pb-20 sm:px-8">
+        <main
+            class="mx-auto max-w-3xl px-5 pb-20 sm:px-8"
+            :class="{ 'story-album': isAlbum }"
+        >
             <!-- Dedication -->
             <section
                 v-if="story.dedication"
@@ -381,84 +376,32 @@ async function nativeShare() {
                 </p>
             </section>
 
-            <!-- Race facts -->
-            <section
-                v-if="facts.length"
-                class="reveal border-t border-foreground/10 py-10"
-                aria-label="Datos de la carrera"
-            >
-                <dl class="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
-                    <div v-for="fact in facts" :key="fact.label">
-                        <dt
-                            class="text-[11px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
-                        >
-                            {{ fact.label }}
-                        </dt>
-                        <dd
-                            class="legacy-numeric mt-1.5 font-serif text-lg leading-snug text-foreground sm:text-xl"
-                        >
-                            {{ fact.value }}
-                        </dd>
-                    </div>
-                </dl>
-                <p
-                    v-if="race.source === 'participation'"
-                    class="mt-6 text-xs text-muted-foreground"
-                >
-                    Resultado oficial del evento.
-                </p>
-            </section>
+            <!-- Race data: name, bib and every figure that has a value -->
+            <StoryRaceSheet class="reveal" :race="race" :date="date" />
 
-            <!-- Voice message -->
+            <!-- Voice message(s) -->
             <section
-                v-if="story.audio?.url"
-                class="reveal border-t border-foreground/10 py-10"
-                aria-label="Mensaje de voz"
+                v-if="voiceMessages.length"
+                class="reveal space-y-3 border-t border-foreground/10 py-10"
+                :aria-label="
+                    voiceMessages.length > 1
+                        ? 'Mensajes de voz'
+                        : 'Mensaje de voz'
+                "
             >
-                <div
-                    class="flex items-center gap-4 rounded-2xl border border-fl-gold/30 bg-white p-4 shadow-fl-soft"
-                >
-                    <button
-                        type="button"
-                        class="flex size-14 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-fl-graphite focus-visible:ring-4 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
-                        :aria-label="
-                            playing ? 'Pausar mensaje' : 'Escuchar mensaje'
-                        "
-                        @click="toggleAudio"
-                    >
-                        <Pause v-if="playing" class="size-6" />
-                        <Play v-else class="ml-0.5 size-6" />
-                    </button>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-semibold">Un mensaje de voz</p>
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.001"
-                            :value="progress"
-                            class="audio-range mt-2 w-full"
-                            aria-label="Avance del mensaje"
-                            @input="seek"
-                        />
-                        <p
-                            class="legacy-numeric mt-1 text-xs text-muted-foreground"
-                        >
-                            {{ clock(progress * duration) }} /
-                            {{ clock(duration) }}
-                        </p>
-                    </div>
-                    <audio
-                        ref="audioEl"
-                        :src="story.audio.url"
-                        preload="metadata"
-                        @play="playing = true"
-                        @pause="playing = false"
-                        @ended="playing = false"
-                        @timeupdate="onTime"
-                        @loadedmetadata="onTime"
-                    />
-                </div>
+                <StoryVoiceMessage
+                    v-for="(message, i) in voiceMessages"
+                    :key="message.uuid"
+                    :ref="(el) => registerPlayer(`audio:${message.uuid}`, el)"
+                    :url="message.url ?? ''"
+                    :title="
+                        voiceMessages.length > 1
+                            ? `Mensaje de voz ${i + 1}`
+                            : 'Un mensaje de voz'
+                    "
+                    :duration-seconds="message.duration_seconds ?? null"
+                    @play="onMediaPlay(`audio:${message.uuid}`)"
+                />
             </section>
 
             <!-- Words -->
@@ -474,17 +417,45 @@ async function nativeShare() {
                 </p>
             </section>
 
+            <!-- Videos -->
+            <section
+                v-if="videos.length"
+                class="reveal border-t border-foreground/10 py-12"
+                aria-label="Videos"
+            >
+                <h2
+                    class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
+                >
+                    <Video class="size-4" aria-hidden="true" />
+                    {{
+                        videos.length === 1
+                            ? 'Video'
+                            : `${videos.length} videos`
+                    }}
+                </h2>
+                <div class="mt-5 space-y-8">
+                    <StoryVideoPlayer
+                        v-for="(video, i) in videos"
+                        :key="video.uuid"
+                        :ref="(el) => registerPlayer(`video:${video.uuid}`, el)"
+                        :video="video"
+                        :label="`Video ${i + 1}`"
+                        @play="onMediaPlay(`video:${video.uuid}`)"
+                    />
+                </div>
+            </section>
+
             <!-- Gallery -->
             <section
                 v-if="gallery.length > 1"
-                class="reveal border-t border-foreground/10 py-12"
-                aria-label="Fotos"
+                class="story-gallery reveal border-t border-foreground/10 py-12"
+                :aria-label="isAlbum ? 'Álbum de fotos' : 'Fotos'"
             >
                 <h2
                     class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     <Images class="size-4" aria-hidden="true" />
-                    {{ gallery.length }} fotos
+                    {{ isAlbum ? 'Álbum · ' : '' }}{{ gallery.length }} fotos
                 </h2>
                 <ul class="mt-5 columns-2 gap-3 sm:columns-3">
                     <li
@@ -811,6 +782,18 @@ async function nativeShare() {
 </template>
 
 <style scoped>
+/* Portarretrato inteligente (kind = album): the photos come first. */
+.story-album {
+    display: flex;
+    flex-direction: column;
+}
+
+.story-album > .story-gallery {
+    order: -1;
+    border-top: 0;
+    padding-top: 0;
+}
+
 .owner-chip {
     display: inline-flex;
     align-items: center;
@@ -828,10 +811,6 @@ async function nativeShare() {
 
 .owner-chip:hover {
     border-color: var(--fl-gold);
-}
-
-.audio-range {
-    accent-color: var(--fl-gold);
 }
 
 @media (prefers-reduced-motion: no-preference) {

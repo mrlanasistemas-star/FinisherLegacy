@@ -81,6 +81,8 @@ Route::middleware('auth')->group(function () use ($legacyStoryId) {
 
         Route::post('media', [StoryEditorController::class, 'storeMedia'])->middleware('throttle:uploads')->name('media.store');
         Route::patch('media/orden', [StoryEditorController::class, 'reorderMedia'])->name('media.reorder');
+        Route::post('media/importar', [StoryEditorController::class, 'importMedia'])->middleware('throttle:30,1')->name('media.import');
+        Route::get('fotos-compradas', [StoryEditorController::class, 'purchasedPhotos'])->name('purchased-photos');
         Route::patch('media/{media}', [StoryEditorController::class, 'updateMedia'])->whereNumber('media')->name('media.update');
         Route::delete('media/{media}', [StoryEditorController::class, 'destroyMedia'])->whereNumber('media')->name('media.destroy');
 
@@ -92,6 +94,7 @@ Route::middleware('auth')->group(function () use ($legacyStoryId) {
 
         Route::get('portarretrato', [StoryPrintController::class, 'portrait'])->name('portrait');
         Route::post('portarretrato', [StoryPrintController::class, 'downloadPortrait'])->middleware('throttle:20,1')->name('portrait.download');
+        Route::post('portarretrato/vista-previa', [StoryPrintController::class, 'previewPortrait'])->middleware('throttle:120,1')->name('portrait.preview');
         Route::get('descargar', [StoryEditorController::class, 'archive'])->middleware('throttle:10,1')->name('archive');
     });
 });

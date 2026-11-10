@@ -35,12 +35,20 @@ return [
     ],
 
     'stories' => [
+        // Last-resort limits per story, used only when no rule in
+        // Administración → Límites y tarifas sets the value (product →
+        // product type → global rule → these). See StoryMediaQuota.
         'max_photos' => 12,
+        'max_videos' => 1,
+        'max_audios' => 1,
+        'max_video_seconds' => 60,
         'max_audio_seconds' => 180,
         // Upload ceilings for the story editor (MediaStorage sniffs the real
         // type; the extension is never trusted).
         'max_photo_bytes' => (int) env('LEGACY_STORY_MAX_PHOTO_BYTES', 12 * 1024 * 1024),
         'max_audio_bytes' => (int) env('LEGACY_STORY_MAX_AUDIO_BYTES', 15 * 1024 * 1024),
+        // mp4 / mov / webm from the owner's device; transcoded to H.264 MP4.
+        'max_video_bytes' => (int) env('LEGACY_STORY_MAX_VIDEO_BYTES', 150 * 1024 * 1024),
         'max_certificate_bytes' => (int) env('LEGACY_STORY_MAX_CERTIFICATE_BYTES', 10 * 1024 * 1024),
         'max_shares' => 20,
     ],

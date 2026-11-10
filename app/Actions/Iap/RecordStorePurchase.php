@@ -3,7 +3,7 @@
 namespace App\Actions\Iap;
 
 use App\Actions\Commerce\MarkOrderPaid;
-use App\Actions\Quotas\GrantPhotoExpansionEntitlements;
+use App\Actions\Quotas\CheckoutPhotoExpansion;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
@@ -23,7 +23,7 @@ use App\Services\Iap\AppStoreVerifier;
 use App\Services\Iap\GooglePlayVerifier;
 use App\Services\Iap\InAppPurchaseCatalog;
 use App\Services\Iap\VerifiedStoreTransaction;
-use App\Services\Media\StoryPhotoQuota;
+use App\Services\Media\StoryMediaQuota;
 use App\Support\CodeGenerator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -31,12 +31,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Turns ONE store transaction (StoreKit 2 / Play Billing) into photo
- * capacity for a Legacy story (docs/renovacion/compras-dentro-de-app.md):
+ * Turns ONE store transaction (StoreKit 2 / Play Billing) into capacity
+ * for a Legacy story — photos, videos or voice messages, by the pack's
+ * kind; permanent or a prepaid term, by its billing period (the server
+ * sets the dates) — docs/renovacion/compras-dentro-de-app.md:
  *
  *  1. Re-read the transaction from the store server-side (never trust the app).
- *  2. Check: the story is the caller's, the store product is a photo
- *     expansion whose scope covers that story, the purchase is completed
+ *  2. Check: the story is the caller's, the store product is an
+ *     expansion (or one of its price steps) whose scope covers that
+ *     story, the purchase is completed
  *     (not pending / refunded) and — when the app bound it — the
  *     transaction belongs to this account.
  *  3. In one DB transaction: StorePurchase (unique per platform +
@@ -49,6 +52,13 @@ use Illuminate\Support\Str;
  * "Restaurar compras") returns the existing StorePurchase and grants
  * nothing new. The app finishes the store transaction only after this
  * returned successfully.
+ *
+ * Price steps: the app is offered the product of the step that matches
+ * what the story holds. If the verified transaction is for ANOTHER step
+ * of the same pack (the story changed between offer and purchase, or a
+ * modified client), the capacity is still granted — the store already
+ * collected the money — and the order item is flagged `step_mismatch`
+ * and logged for review.
  */
 class RecordStorePurchase
 {
@@ -56,7 +66,7 @@ class RecordStorePurchase
         private readonly AppStoreVerifier $appStore,
         private readonly GooglePlayVerifier $googlePlay,
         private readonly InAppPurchaseCatalog $catalog,
-        private readonly StoryPhotoQuota $quota,
+        private readonly StoryMediaQuota $quota,
         private readonly MarkOrderPaid $markOrderPaid,
     ) {}
 
@@ -184,6 +194,10 @@ class RecordStorePurchase
 
         $product = Product::query()->where('slug', PhotoExpansionPack::PRODUCT_SLUG)->firstOrFail();
         $total = $amount ?? 0;
+        // Resolved before the grant: what the story holds NOW decides the step.
+        $resolved = $this->quota->resolvePrice($pack, $story);
+        $expectedProduct = $this->catalog->productIdFor($pack, $resolved, $tx->platform);
+        $stepMismatch = $expectedProduct !== null && $expectedProduct !== $tx->productId;
         $unit = intdiv($total, max(1, $tx->quantity));
 
         $order = Order::create([
@@ -206,19 +220,17 @@ class RecordStorePurchase
         $order->items()->create([
             'uuid' => (string) Str::uuid(),
             'product_id' => $product->id,
-            'name' => "{$pack->name} · +{$pack->photos} fotos",
+            'name' => $pack->lineName(),
             'sku' => 'PHOTO-EXP-'.$pack->id,
             'quantity' => $tx->quantity,
             'unit_price_minor' => $unit,
             'line_total_minor' => $total,
             'currency' => $currency,
             'metadata' => [
-                'kind' => GrantPhotoExpansionEntitlements::ITEM_KIND,
-                'legacy_story_id' => $story->id,
-                'legacy_story_public_id' => $story->public_id,
-                'photo_expansion_pack_id' => $pack->id,
+                ...CheckoutPhotoExpansion::itemMetadata($story, $pack, $resolved),
+                // The store, not a web price schedule, priced this purchase.
                 'product_price_schedule_id' => null,
-                'photos' => $pack->photos,
+                'step_mismatch' => $stepMismatch,
                 'tax_rate' => 0.0,
                 'tax_included' => true,
                 'tax_minor' => 0,
@@ -243,6 +255,14 @@ class RecordStorePurchase
         ]);
 
         $this->markOrderPaid->handle($order);
+
+        if ($stepMismatch) {
+            activity('quotas')
+                ->causedBy($user)
+                ->performedOn($purchase)
+                ->withProperties(['expected_product' => $expectedProduct, 'paid_product' => $tx->productId, 'story' => $story->public_id])
+                ->log('Compra en tienda con un producto de otra bandera de precio');
+        }
 
         $purchase->update(['order_id' => $order->id]);
 

@@ -23,7 +23,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 #[Fillable([
     'uuid', 'public_id', 'athlete_id', 'legacy_tag_id', 'event_participant_id', 'event_edition_id', 'title',
-    'event_name', 'distance', 'result_time', 'result_position', 'race_date', 'location', 'recipient_label', 'dedication', 'body',
+    'event_name', 'distance', 'result_time', 'result_position', 'bib_number', 'athlete_display_name', 'pace', 'category',
+    'category_position', 'gender_position', 'finish_status', 'elevation_gain_m', 'sport_id', 'race_date', 'location', 'recipient_label', 'dedication', 'body',
     'external_url', 'visibility', 'completed_at',
 ])]
 class LegacyStory extends Model implements OwnsMediaFiles
@@ -36,6 +37,7 @@ class LegacyStory extends Model implements OwnsMediaFiles
         return [
             'visibility' => StoryVisibility::class,
             'race_date' => 'date',
+            'elevation_gain_m' => 'integer',
             'completed_at' => 'datetime',
         ];
     }
@@ -69,11 +71,17 @@ class LegacyStory extends Model implements OwnsMediaFiles
         return $this->belongsTo(EventEdition::class);
     }
 
+    /** @return BelongsTo<Sport, $this> */
+    public function sport(): BelongsTo
+    {
+        return $this->belongsTo(Sport::class);
+    }
+
     /** @return BelongsToMany<MediaFile, $this> */
     public function media(): BelongsToMany
     {
         return $this->belongsToMany(MediaFile::class, 'legacy_story_media')
-            ->withPivot(['id', 'role', 'caption', 'sort_order'])
+            ->withPivot(['id', 'role', 'source', 'photo_sale_id', 'caption', 'sort_order'])
             ->withTimestamps()
             ->orderByPivot('sort_order');
     }

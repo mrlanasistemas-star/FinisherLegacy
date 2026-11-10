@@ -6,6 +6,7 @@ use App\Enums\StoryVisibility;
 use App\Models\EventParticipant;
 use App\Models\LegacyStory;
 use App\Models\User;
+use App\Support\LegacyTags\StoryRaceData;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -13,6 +14,12 @@ use Illuminate\Validation\ValidationException;
  * is checked by the caller). Race data either points at one of THEIR
  * participations (never someone else's: checked here, not trusted from
  * the form) or is typed by hand; switching one clears the other.
+ *
+ * Two shapes of input: the web form sends `race_mode` (participation /
+ * manual / later / keep) with the six classic race fields; the app PATCHes
+ * any subset of fields without a mode. Either way a field the linked
+ * participation has an OFFICIAL value for (StoryRaceData) is read-only:
+ * what is sent for it is ignored, never stored over the official one.
  */
 class UpdateStory
 {
@@ -21,9 +28,13 @@ class UpdateStory
      */
     public function handle(LegacyStory $story, User $user, array $data): LegacyStory
     {
-        if (array_key_exists('race_mode', $data)) {
+        $hasMode = array_key_exists('race_mode', $data) && $data['race_mode'] !== null;
+
+        if ($hasMode) {
             $this->applyRace($story, (string) $data['race_mode'], $data);
         }
+
+        $this->applyRaceFields($story, $data, $hasMode ? self::EXTRA_RACE_FIELDS : StoryRaceData::FIELDS);
 
         foreach (['title', 'recipient_label', 'dedication', 'body', 'external_url'] as $field) {
             if (array_key_exists($field, $data)) {
@@ -47,6 +58,41 @@ class UpdateStory
             ->log('legacy_story.updated');
 
         return $story;
+    }
+
+    /** Race fields that are not part of the race_mode form block. */
+    public const array EXTRA_RACE_FIELDS = [
+        'bib_number', 'athlete_display_name', 'pace', 'category', 'category_position', 'gender_position',
+        'finish_status', 'elevation_gain_m',
+    ];
+
+    /**
+     * Stores the given race fields that are present in the input, skipping
+     * the ones the participation already answers officially.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, string>  $fields
+     */
+    public function applyRaceFields(LegacyStory $story, array $data, array $fields): void
+    {
+        // applyRace may have just switched the participation.
+        $story->unsetRelation('participation');
+        $official = StoryRaceData::for($story)['official'];
+
+        foreach ($fields as $field) {
+            if (! array_key_exists($field, $data) || ($official[$field] ?? false)) {
+                continue;
+            }
+
+            $story->{$field} = $field === 'elevation_gain_m'
+                ? (is_numeric($data[$field]) ? (int) $data[$field] : null)
+                : $this->clean(is_scalar($data[$field]) ? (string) $data[$field] : null);
+        }
+
+        if (array_key_exists('sport_id', $data)) {
+            $sportId = is_numeric($data['sport_id']) ? (int) $data['sport_id'] : 0;
+            $story->sport_id = $sportId > 0 ? $sportId : null;
+        }
     }
 
     /**

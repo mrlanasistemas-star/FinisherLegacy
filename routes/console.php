@@ -55,6 +55,12 @@ Schedule::command('inventory:check-low-stock')
     ->dailyAt('08:00')
     ->withoutOverlapping();
 
+// Planes por periodo de las ampliaciones (docs/renovacion/cuotas-y-precios.md):
+// avisa 30, 7 y 1 día antes de que venza un plan y cuando ya venció.
+Schedule::command('quotas:remind-expiring')
+    ->dailyAt('10:00')
+    ->withoutOverlapping();
+
 Schedule::call(fn () => app(AlertIfPaymentGatewayUnconfigured::class)->handle())
     ->name('admin-alerts:payment-gateway')
     ->dailyAt('08:05')

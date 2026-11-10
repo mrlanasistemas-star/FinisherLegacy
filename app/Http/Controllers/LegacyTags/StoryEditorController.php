@@ -5,6 +5,7 @@ namespace App\Http\Controllers\LegacyTags;
 use App\Actions\LegacyTags\ManageStoryMedia;
 use App\Actions\LegacyTags\UpdateStory;
 use App\Enums\StoryMediaRole;
+use App\Enums\StoryQuotaKind;
 use App\Enums\StoryVisibility;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LegacyTags\StoreStoryMediaRequest;
@@ -12,10 +13,16 @@ use App\Http\Requests\LegacyTags\UpdateLegacyStoryRequest;
 use App\Models\EventParticipant;
 use App\Models\LegacyStory;
 use App\Models\MediaFile;
+use App\Models\PhotoSale;
+use App\Models\Sport;
+use App\Services\Media\StoryMediaQuota;
 use App\Services\Media\StoryPhotoQuota;
 use App\Support\LegacyTags\StoryPresenter;
+use App\Support\LegacyTags\StoryRaceData;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -24,21 +31,41 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipArchive;
 
 /**
- * `/mi-legacy/{story}/editar` — the owner builds the memory: title, race,
- * dedication, words, visibility, photos (ordered, captioned, first =
- * cover), one voice message, a certificate and an external link. Every
- * action is LegacyStoryPolicy::update; uploads go through MediaStorage.
+ * `/mi-legacy/{story}/editar` — the owner builds the memory: title, race
+ * data (official values are read-only), dedication, words, visibility,
+ * photos (from the device or bought on the site; ordered, captioned,
+ * first = cover), videos, voice message, a certificate and an external
+ * link. Each kind has its own admin-editable limit (StoryMediaQuota).
+ * Every action is LegacyStoryPolicy::update; uploads go through
+ * MediaStorage.
  */
 class StoryEditorController extends Controller
 {
-    public function edit(Request $request, LegacyStory $story, StoryPresenter $presenter, StoryPhotoQuota $quota): Response
+    public function edit(Request $request, LegacyStory $story, StoryPresenter $presenter, StoryPhotoQuota $quota, StoryMediaQuota $mediaQuota): Response
     {
         $this->authorize('update', $story);
+        $raceData = StoryRaceData::for($story);
 
         return Inertia::render('my-legacy/Edit', [
             'story' => $presenter->story($story, forOwner: true),
             // Photo space: used / limit / purchasable expansion (App\Services\Media\StoryPhotoQuota).
             'photoQuota' => fn () => $quota->summary($story),
+            // Every kind: photos / videos / audio → limit, used, remaining,
+            // can_expand, max_seconds, cap, expansion(s) with the step price
+            // and billing period, and the prepaid plan state.
+            'quota' => fn () => $mediaQuota->summaryAll($story),
+            // Which race fields the linked participation answers officially
+            // (read-only, badge "Oficial") and the values shown for them.
+            'raceData' => [
+                'official' => [...$raceData['official'], 'sport' => $raceData['sport_official']],
+                'values' => $raceData['values'],
+                'suggested_pace' => $raceData['suggested_pace'],
+                'sport' => $raceData['sport'],
+            ],
+            'sports' => fn () => Sport::query()->where('active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name'])
+                ->map(fn (Sport $sport) => ['id' => $sport->id, 'name' => $sport->name])->all(),
+            'finishStatuses' => collect(StoryRaceData::FINISH_STATUSES)->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])->values()->all(),
+            'hasPurchasedPhotos' => fn () => PhotoSale::query()->grantingAccess()->where('buyer_user_id', $request->user()->id)->exists(),
             'supportUrl' => route('contact', ['tipo' => 'support']),
             'fields' => [
                 'title' => $story->title,
@@ -55,6 +82,15 @@ class StoryEditorController extends Controller
                 'result_position' => $story->result_position,
                 'race_date' => $story->race_date?->toDateString(),
                 'location' => $story->location,
+                'bib_number' => $story->bib_number,
+                'athlete_display_name' => $story->athlete_display_name,
+                'pace' => $story->pace,
+                'category' => $story->category,
+                'category_position' => $story->category_position,
+                'gender_position' => $story->gender_position,
+                'finish_status' => $story->finish_status,
+                'elevation_gain_m' => $story->elevation_gain_m,
+                'sport_id' => $story->sport_id,
             ],
             'participations' => EventParticipant::query()
                 ->where('athlete_id', $story->athlete_id)
@@ -80,7 +116,9 @@ class StoryEditorController extends Controller
                 'max_photo_mb' => (int) floor((int) config('legacy.stories.max_photo_bytes') / 1048576),
                 'max_audio_mb' => (int) floor((int) config('legacy.stories.max_audio_bytes') / 1048576),
                 'max_certificate_mb' => (int) floor((int) config('legacy.stories.max_certificate_bytes') / 1048576),
-                'max_audio_seconds' => (int) config('legacy.stories.max_audio_seconds', 180),
+                'max_video_mb' => (int) floor((int) config('legacy.stories.max_video_bytes') / 1048576),
+                'max_audio_seconds' => $mediaQuota->maxSecondsFor($story, StoryQuotaKind::Audio) ?? (int) config('legacy.stories.max_audio_seconds', 180),
+                'max_video_seconds' => $mediaQuota->maxSecondsFor($story, StoryQuotaKind::Videos) ?? (int) config('legacy.stories.max_video_seconds', 60),
             ],
         ]);
     }
@@ -96,7 +134,69 @@ class StoryEditorController extends Controller
 
     public function storeMedia(StoreStoryMediaRequest $request, LegacyStory $story, ManageStoryMedia $media): RedirectResponse
     {
-        $media->add($story, $request->user(), $request->file('file'), StoryMediaRole::from((string) $request->input('role')), $request->input('caption'));
+        $media->add(
+            $story,
+            $request->user(),
+            $request->file('file'),
+            StoryMediaRole::from((string) $request->input('role')),
+            $request->input('caption'),
+            $request->filled('duration_seconds') ? (int) $request->input('duration_seconds') : null,
+        );
+
+        return back();
+    }
+
+    /**
+     * `GET /mi-legacy/{story}/fotos-compradas` (JSON) — the event photos
+     * the owner bought on the site and still has access to, for the
+     * "Agregar fotos que compré" picker. `in_story` marks the ones this
+     * story already holds.
+     */
+    public function purchasedPhotos(Request $request, LegacyStory $story): JsonResponse
+    {
+        $this->authorize('update', $story);
+
+        $page = PhotoSale::query()
+            ->grantingAccess()
+            ->where('buyer_user_id', $request->user()->id)
+            ->whereHas('photo')
+            ->with('photo.eventEdition.event')
+            ->latest('id')
+            ->paginate(24);
+
+        $inStory = DB::table('legacy_story_media')
+            ->where('legacy_story_id', $story->id)
+            ->whereNotNull('photo_sale_id')
+            ->pluck('photo_sale_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return response()->json([
+            'data' => collect($page->items())->map(fn (PhotoSale $sale) => [
+                'sale_id' => $sale->uuid,
+                'thumb_url' => $sale->photo?->thumbUrl(),
+                'preview_url' => $sale->photo?->previewUrl(),
+                'event_name' => $sale->photo?->eventEdition?->event?->name,
+                'purchased_at' => $sale->created_at->toIso8601String(),
+                'in_story' => in_array($sale->id, $inStory, true),
+            ])->values()->all(),
+            'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
+        ]);
+    }
+
+    /** `POST /mi-legacy/{story}/media/importar` — adds purchased photos (PhotoSale uuids). */
+    public function importMedia(Request $request, LegacyStory $story, ManageStoryMedia $media): RedirectResponse
+    {
+        $this->authorize('update', $story);
+        $data = $request->validate(['sale_ids' => ['required', 'array', 'min:1', 'max:50'], 'sale_ids.*' => ['uuid']]);
+
+        $added = $media->importPurchased($story, $request->user(), array_values($data['sale_ids']));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => match (count($added)) {
+            0 => 'Esas fotos ya estaban en tu recuerdo.',
+            1 => 'Agregamos tu foto. Estará lista en un momento.',
+            default => 'Agregamos '.count($added).' fotos. Estarán listas en un momento.',
+        }]);
 
         return back();
     }
@@ -114,7 +214,7 @@ class StoryEditorController extends Controller
     public function reorderMedia(Request $request, LegacyStory $story, ManageStoryMedia $manage): RedirectResponse
     {
         $this->authorize('update', $story);
-        $data = $request->validate(['order' => ['required', 'array', 'max:50'], 'order.*' => ['integer']]);
+        $data = $request->validate(['order' => ['required', 'array', 'max:500'], 'order.*' => ['integer']]);
 
         $manage->reorder($story, array_map('intval', $data['order']));
 
@@ -140,6 +240,9 @@ class StoryEditorController extends Controller
         abort_unless($zip->open($path, ZipArchive::OVERWRITE) === true, 500);
 
         $photoNumber = 0;
+        $videoNumber = 0;
+        /** @var list<string> $temps */
+        $temps = [];
         foreach ($story->media as $file) {
             /** @var MediaFile $file */
             /** @var object{role: string} $pivot */
@@ -150,6 +253,22 @@ class StoryEditorController extends Controller
             }
 
             $source = $file->original_path ?? $file->resolveVariant('default')['path'] ?? null;
+
+            // Videos can be large: streamed to a temp file, never held in memory.
+            if ($pivot->role === StoryMediaRole::Video->value) {
+                $stream = $source !== null ? Storage::disk($file->disk)->readStream($source) : null;
+                $temp = tempnam(sys_get_temp_dir(), 'flvid');
+
+                if (is_resource($stream) && $temp !== false) {
+                    file_put_contents($temp, $stream);
+                    fclose($stream);
+                    $temps[] = $temp;
+                    $zip->addFile($temp, sprintf('videos/%02d.%s', ++$videoNumber, $this->extensionFor((string) $file->mime, $source)));
+                }
+
+                continue;
+            }
+
             $bytes = $source !== null ? Storage::disk($file->disk)->get($source) : null;
 
             if (! is_string($bytes) || $bytes === '') {
@@ -168,6 +287,10 @@ class StoryEditorController extends Controller
 
         $zip->addFromString('recuerdo.txt', $this->storyText($view));
         $zip->close();
+
+        foreach ($temps as $temp) {
+            @unlink($temp);
+        }
 
         $filename = 'finisher-legacy-'.Str::slug((string) $view['title']).'.zip';
 
@@ -191,6 +314,14 @@ class StoryEditorController extends Controller
             'Distancia' => $race['distance'] ?? null,
             'Tiempo' => $race['time'] ?? null,
             'Lugar en la clasificación' => $race['position'] ?? null,
+            'Nombre' => $race['athlete_name'] ?? null,
+            'Número de corredor' => $race['bib_number'] ?? null,
+            'Ritmo' => $race['pace'] ?? $race['suggested_pace'] ?? null,
+            'Categoría' => $race['category'] ?? null,
+            'Lugar en su categoría' => $race['category_position'] ?? null,
+            'Lugar por rama' => $race['gender_position'] ?? null,
+            'Desnivel positivo (m)' => isset($race['elevation_gain_m']) ? (string) $race['elevation_gain_m'] : null,
+            'Deporte' => $race['sport'] ?? null,
             'Fecha' => $race['date'] ?? null,
             'Sede' => $race['location'] ?? null,
             'Para' => $view['recipient_label'] ?? null,
@@ -226,6 +357,8 @@ class StoryEditorController extends Controller
             'audio/mpeg', 'audio/mp3' => 'mp3',
             'audio/ogg', 'application/ogg' => 'ogg',
             'audio/webm', 'video/webm' => 'webm',
+            'video/mp4' => 'mp4',
+            'video/quicktime' => 'mov',
             default => 'm4a',
         };
     }

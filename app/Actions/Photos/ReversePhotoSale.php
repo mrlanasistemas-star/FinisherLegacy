@@ -2,6 +2,7 @@
 
 namespace App\Actions\Photos;
 
+use App\Actions\LegacyTags\ManageStoryMedia;
 use App\Models\Order;
 use App\Models\PhotoSale;
 use App\Models\User;
@@ -16,12 +17,18 @@ use Illuminate\Support\Facades\DB;
  *  - already paid out     → stays `paid` and becomes a clawback that the
  *    next PhotographerPayout deducts (reversal_payout_id).
  *
+ * A reversed sale no longer grants the photo, so it also leaves every
+ * Legacy story that imported it (ManageStoryMedia::removePurchasedSale —
+ * only the story's renditions are deleted, never the original).
+ *
  * Idempotent: a sale already reversed is left untouched. Called for every
  * photo of a fully refunded Order (App\Listeners\PhotoSaleRefundReversal)
  * and by an admin for a single sale (partial refunds).
  */
 class ReversePhotoSale
 {
+    public function __construct(private readonly ManageStoryMedia $storyMedia) {}
+
     public function handle(PhotoSale $sale, string $reason, ?User $by = null): PhotoSale
     {
         return DB::transaction(function () use ($sale, $reason, $by) {
@@ -52,6 +59,16 @@ class ReversePhotoSale
                     'clawback' => $locked->payout_status === PhotoSale::PAYOUT_PAID,
                 ])
                 ->log('Revirtió una venta de foto por reembolso');
+
+            $removed = $this->storyMedia->removePurchasedSale($locked);
+
+            if ($removed > 0) {
+                activity('legacy')
+                    ->causedBy($by)
+                    ->performedOn($locked)
+                    ->withProperties(['stories' => $removed, 'reason' => $locked->reversal_reason])
+                    ->log('legacy_story.purchased_photo_removed');
+            }
 
             return $locked;
         });

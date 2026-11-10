@@ -4,11 +4,13 @@ namespace App\Enums;
 
 /**
  * What a file is inside a Legacy story (legacy_story_media.role): ordered
- * photos (the first one is the cover), one voice message, one certificate.
+ * photos (the first one is the cover), videos, voice messages and one
+ * certificate. How many of each: App\Services\Media\StoryMediaQuota.
  */
 enum StoryMediaRole: string
 {
     case Photo = 'photo';
+    case Video = 'video';
     case Audio = 'audio';
     case Certificate = 'certificate';
 
@@ -16,14 +18,19 @@ enum StoryMediaRole: string
     {
         return match ($this) {
             self::Photo => 'Foto',
+            self::Video => 'Video',
             self::Audio => 'Mensaje de voz',
             self::Certificate => 'Certificado',
         };
     }
 
-    /** Only photos can be many; audio and certificate replace the previous one. */
+    /**
+     * The certificate always replaces the previous one. Audio does too
+     * while its limit is 1 (ManageStoryMedia); photos and videos pile up
+     * to their quota.
+     */
     public function isSingle(): bool
     {
-        return $this !== self::Photo;
+        return $this === self::Audio || $this === self::Certificate;
     }
 }

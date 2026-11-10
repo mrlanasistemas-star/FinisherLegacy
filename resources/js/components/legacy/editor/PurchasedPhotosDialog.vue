@@ -1,0 +1,294 @@
+<script setup lang="ts">
+/**
+ * "Agregar fotos que compré": the owner picks event photos they bought on
+ * the site and adds them to the story. Loads pages of
+ * `GET /mi-legacy/{story}/fotos-compradas` (JSON), marks the ones the
+ * story already holds, and never lets the selection exceed the free photo
+ * slots. Importing counts against the photo limit like any other photo.
+ */
+import { router } from '@inertiajs/vue3';
+import { Check, ImageOff } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
+import {
+    Dialog,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogScrollContent,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
+import { purchasedPhotos } from '@/routes/my-legacy';
+import { importMethod as importMedia } from '@/routes/my-legacy/media';
+import type { PurchasedPhoto } from './types';
+
+const props = defineProps<{
+    storyId: string;
+    /** Free photo slots of the story. */
+    remaining: number;
+}>();
+
+const open = defineModel<boolean>('open', { default: false });
+
+const photos = ref<PurchasedPhoto[]>([]);
+const page = ref(0);
+const lastPage = ref(1);
+const loading = ref(false);
+const failed = ref(false);
+const selected = ref<string[]>([]);
+const importing = ref(false);
+
+const room = computed(() =>
+    Math.max(0, props.remaining - selected.value.length),
+);
+
+async function load(next: number) {
+    loading.value = true;
+    failed.value = false;
+
+    try {
+        const response = await fetch(
+            purchasedPhotos(props.storyId, { query: { page: next } }).url,
+            {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            },
+        );
+
+        if (!response.ok) {
+            throw new Error(String(response.status));
+        }
+
+        const json = (await response.json()) as {
+            data: PurchasedPhoto[];
+            meta: { current_page: number; last_page: number };
+        };
+
+        photos.value = next === 1 ? json.data : [...photos.value, ...json.data];
+        page.value = json.meta.current_page;
+        lastPage.value = json.meta.last_page;
+    } catch {
+        failed.value = true;
+    } finally {
+        loading.value = false;
+    }
+}
+
+watch(open, (isOpen) => {
+    if (isOpen) {
+        selected.value = [];
+        photos.value = [];
+        void load(1);
+    }
+});
+
+function toggle(photo: PurchasedPhoto) {
+    if (photo.in_story) {
+        return;
+    }
+
+    const at = selected.value.indexOf(photo.sale_id);
+
+    if (at >= 0) {
+        selected.value.splice(at, 1);
+    } else if (room.value > 0) {
+        selected.value.push(photo.sale_id);
+    } else {
+        toast.info(
+            props.remaining > 0
+                ? `Solo te ${props.remaining === 1 ? 'queda' : 'quedan'} ${props.remaining} ${props.remaining === 1 ? 'lugar' : 'lugares'} para fotos.`
+                : 'Tu recuerdo ya tiene el máximo de fotos.',
+        );
+    }
+}
+
+function submit() {
+    if (selected.value.length === 0) {
+        return;
+    }
+
+    importing.value = true;
+    router.post(
+        importMedia(props.storyId).url,
+        { sale_ids: selected.value },
+        {
+            preserveScroll: true,
+            only: ['story', 'quota', 'photoQuota', 'errors', 'flash'],
+            onSuccess: (result) => {
+                const errors = (result.props.errors ?? {}) as Record<
+                    string,
+                    string
+                >;
+                const message = errors.sale_ids ?? errors.file;
+
+                if (message) {
+                    toast.error(message);
+
+                    return;
+                }
+
+                open.value = false;
+            },
+            onError: (errors) => {
+                toast.error(
+                    errors.sale_ids ??
+                        errors.file ??
+                        'No pudimos agregar esas fotos. Intenta de nuevo.',
+                );
+            },
+            onFinish: () => (importing.value = false),
+        },
+    );
+}
+
+function purchasedOn(iso: string): string {
+    return new Date(iso).toLocaleDateString('es-MX', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+}
+</script>
+
+<template>
+    <Dialog v-model:open="open">
+        <DialogScrollContent class="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Fotos que compraste</DialogTitle>
+                <DialogDescription>
+                    Elige las fotos del evento que quieres en tu recuerdo. Se
+                    agregan en alta calidad y cuentan dentro de tu límite de
+                    fotos
+                    <template v-if="remaining > 0">
+                        ({{ remaining }}
+                        {{
+                            remaining === 1 ? 'lugar libre' : 'lugares libres'
+                        }}).
+                    </template>
+                    <template v-else>(ya no tienes lugares libres).</template>
+                </DialogDescription>
+            </DialogHeader>
+
+            <div
+                v-if="loading && photos.length === 0"
+                class="grid grid-cols-3 gap-2 sm:grid-cols-4"
+                aria-busy="true"
+            >
+                <div
+                    v-for="n in 8"
+                    :key="n"
+                    class="fl-skeleton aspect-square rounded-xl"
+                    aria-hidden="true"
+                />
+            </div>
+
+            <p
+                v-else-if="failed && photos.length === 0"
+                class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            >
+                No pudimos cargar tus fotos.
+                <button
+                    type="button"
+                    class="font-semibold underline underline-offset-4"
+                    @click="load(1)"
+                >
+                    Reintentar
+                </button>
+            </p>
+
+            <p
+                v-else-if="photos.length === 0"
+                class="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border p-8 text-center text-sm text-muted-foreground"
+            >
+                <ImageOff class="size-6" aria-hidden="true" />
+                Todavía no tienes fotos compradas.
+            </p>
+
+            <ul v-else class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                <li v-for="photo in photos" :key="photo.sale_id">
+                    <button
+                        type="button"
+                        class="group relative block aspect-square w-full overflow-hidden rounded-xl border-2 bg-fl-cream text-left transition focus-visible:ring-4 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
+                        :class="[
+                            selected.includes(photo.sale_id)
+                                ? 'border-fl-gold'
+                                : 'border-transparent',
+                            photo.in_story
+                                ? 'cursor-default opacity-60'
+                                : 'cursor-pointer',
+                        ]"
+                        :aria-pressed="selected.includes(photo.sale_id)"
+                        :aria-disabled="photo.in_story"
+                        :aria-label="`Foto de ${photo.event_name ?? 'tu evento'}${photo.in_story ? ', ya está en tu recuerdo' : ''}`"
+                        @click="toggle(photo)"
+                    >
+                        <img
+                            v-if="photo.thumb_url"
+                            :src="photo.thumb_url"
+                            alt=""
+                            loading="lazy"
+                            class="size-full object-cover transition duration-300 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                        />
+                        <span
+                            v-if="photo.in_story"
+                            class="absolute inset-x-1.5 bottom-1.5 rounded-full bg-white/95 px-2 py-1 text-center text-[10px] font-semibold"
+                        >
+                            Ya está en tu recuerdo
+                        </span>
+                        <span
+                            v-else-if="selected.includes(photo.sale_id)"
+                            class="absolute top-1.5 right-1.5 grid size-6 place-items-center rounded-full bg-fl-gold text-fl-black shadow"
+                        >
+                            <Check class="size-4" aria-hidden="true" />
+                        </span>
+                        <span
+                            v-if="!photo.in_story"
+                            class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/65 to-transparent px-2 pt-5 pb-1.5 text-[10px] font-medium text-white"
+                        >
+                            {{ photo.event_name ?? 'Evento' }} ·
+                            {{ purchasedOn(photo.purchased_at) }}
+                        </span>
+                    </button>
+                </li>
+            </ul>
+
+            <div v-if="page < lastPage" class="flex justify-center">
+                <button
+                    type="button"
+                    class="inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold disabled:opacity-60"
+                    :disabled="loading"
+                    @click="load(page + 1)"
+                >
+                    <Spinner v-if="loading" class="size-4" />
+                    Ver más fotos
+                </button>
+            </div>
+
+            <DialogFooter class="gap-2">
+                <button
+                    type="button"
+                    class="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-semibold"
+                    @click="open = false"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="fl-press inline-flex h-11 items-center justify-center gap-2 rounded-full bg-fl-black px-5 text-sm font-semibold text-white transition hover:bg-fl-graphite disabled:opacity-50"
+                    :disabled="importing || selected.length === 0"
+                    @click="submit"
+                >
+                    <Spinner v-if="importing" class="size-4" />
+                    {{
+                        selected.length === 0
+                            ? 'Elige fotos'
+                            : selected.length === 1
+                              ? 'Agregar 1 foto'
+                              : `Agregar ${selected.length} fotos`
+                    }}
+                </button>
+            </DialogFooter>
+        </DialogScrollContent>
+    </Dialog>
+</template>

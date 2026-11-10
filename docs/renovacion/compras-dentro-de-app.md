@@ -253,6 +253,21 @@ Después: `php artisan config:cache`.
   confirmar (activar modo avión justo después de pagar → al reabrir se
   acredita), «Restaurar compras», reembolso → baja el límite sin borrar fotos.
 
+### G. Videos, mensajes de voz, planes por periodo y banderas (2026-11-12)
+
+- **Tipo de contenido**: cada ampliación tiene `kind` (`photos` / `videos` / `audio`). `GET /api/v1/iap/offer` acepta `kind` (por defecto `photos`) y la compra verificada otorga el tipo de su ampliación (`extra_images` / `extra_videos` / `extra_audio`).
+- **Tipo de producto en las tiendas según el cobro de la ampliación**:
+
+  | `billing_period` | App Store Connect | Play Console |
+  |---|---|---|
+  | `one_time` (pago único) | **Consumable** | Producto único (consumible) |
+  | `semiannual` / `annual` (plan prepagado) | **Non-Renewing Subscription** | Producto único (consumible) |
+
+  La verificación es la misma en ambos casos (una transacción de una sola vez). **Las fechas las pone el servidor**: al confirmar la compra el derecho recibe `starts_at` / `expires_at` (6 o 12 meses); renovar es volver a comprar (si al plan le quedan ≤ 30 días, se extiende desde su vencimiento). En iOS una suscripción sin renovación automática no caduca sola en la tienda: la vigencia es responsabilidad nuestra, y por eso el mismo producto se puede volver a comprar.
+- **Banderas de precio**: como la tienda es dueña del precio, cada bandera puede tener **su propio producto** (`apple_product_id` / `google_product_id` en la bandera, panel "Avanzado" del precio en Límites y tarifas). `offer` devuelve el `product_id` de la bandera que le toca al recuerdo (o el de la ampliación si la bandera no tiene uno) y `pack.step`. Un mismo producto puede repetirse en el siguiente precio de la misma ampliación, nunca en otra.
+- Si llega una transacción verificada de **otra bandera** de la misma ampliación (el recuerdo cambió entre la oferta y el pago, o un cliente modificado), el espacio se otorga —la tienda ya cobró— y el pedido queda marcado `step_mismatch` con una entrada en el registro de actividad para revisarlo.
+- **Suscripciones auto-renovables** (opción futura, no implementada): productos *Auto-Renewable Subscription* en App Store / suscripciones en Play, grupo de suscripción por tipo, verificación de renovaciones con App Store Server Notifications V2 (`DID_RENEW`, `EXPIRED`, `DID_FAIL_TO_RENEW`, `GRACE_PERIOD_EXPIRED`, `REFUND`) y RTDN de suscripciones en Google, una tabla de suscripciones que mantenga vigente el derecho mientras la suscripción esté activa, y el enlace a "Administrar suscripción" de cada tienda.
+
 ### F. Build nativa
 
 `expo-iap` es código nativo: hace falta `eas build` nuevo para iOS y Android

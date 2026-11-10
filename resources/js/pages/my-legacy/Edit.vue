@@ -1,8 +1,11 @@
 <script setup lang="ts">
 /**
  * `/mi-legacy/{story}/editar` — the owner builds the memory. Text fields
- * save together; photos / voice / certificate upload one by one with
- * visible states (the server sniffs every file, never trusts the name).
+ * and race data save together (official race values are read-only);
+ * photos / videos / voice / certificate upload one by one with visible
+ * states (the server sniffs every file, never trusts the name). Each
+ * media kind has its own admin-set limit, shown by QuotaMeter with the
+ * "Ampliar" offer; photos can also come from the owner's purchases.
  */
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
@@ -12,20 +15,41 @@ import {
     Download,
     Eye,
     FileText,
+    Film,
     Frame,
     Globe,
+    GripVertical,
     ImagePlus,
+    Images,
     LifeBuoy,
     Link2,
     Lock,
     Mic,
-    Sparkles,
     Trash2,
+    TriangleAlert,
     Upload,
 } from '@lucide/vue';
-import { computed, reactive, ref } from 'vue';
+import {
+    computed,
+    onBeforeUnmount,
+    onMounted,
+    reactive,
+    ref,
+    watch,
+} from 'vue';
 import { toast } from 'vue-sonner';
 import InputError from '@/components/InputError.vue';
+import PurchasedPhotosDialog from '@/components/legacy/editor/PurchasedPhotosDialog.vue';
+import QuotaMeter from '@/components/legacy/editor/QuotaMeter.vue';
+import RaceField from '@/components/legacy/editor/RaceField.vue';
+import { clock, humanSeconds } from '@/components/legacy/editor/types';
+import type {
+    EditorMediaItem,
+    EditorStory,
+    QuotaKind,
+    RaceData,
+    StoryQuota,
+} from '@/components/legacy/editor/types';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
 import { Spinner } from '@/components/ui/spinner';
 import { show as storyShow } from '@/routes/legacy/story';
@@ -41,34 +65,16 @@ import {
     store as storeMedia,
     update as updateMedia,
 } from '@/routes/my-legacy/media';
-import { store as buyExpansion } from '@/routes/my-legacy/photo-expansion';
 import { formatStoryDate } from '@/types/legacy-tags';
 import type {
     ParticipationOption,
-    StoryMediaItem,
-    StoryView,
     StoryVisibilityValue,
 } from '@/types/legacy-tags';
 
 type RaceMode = 'participation' | 'manual' | 'later';
 
-/** App\Services\Media\StoryPhotoQuota::summary() */
-type PhotoQuota = {
-    limit: number;
-    used: number;
-    remaining: number;
-    can_expand: boolean;
-    expansion: {
-        id: number;
-        name: string;
-        photos: number;
-        price: string;
-        currency: string;
-    } | null;
-};
-
 const props = defineProps<{
-    story: StoryView;
+    story: EditorStory;
     fields: {
         title: string | null;
         recipient_label: string | null;
@@ -84,8 +90,24 @@ const props = defineProps<{
         result_position: string | null;
         race_date: string | null;
         location: string | null;
+        bib_number: string | null;
+        athlete_display_name: string | null;
+        pace: string | null;
+        category: string | null;
+        category_position: string | null;
+        gender_position: string | null;
+        finish_status: string | null;
+        elevation_gain_m: number | null;
+        sport_id: number | null;
     };
-    photoQuota: PhotoQuota;
+    /** App\Services\Media\StoryMediaQuota::summaryAll() */
+    quota: StoryQuota;
+    /** Photos-only summary kept by the controller; `quota.photos` replaces it. */
+    photoQuota?: unknown;
+    raceData: RaceData;
+    sports: { id: number; name: string }[];
+    finishStatuses: { value: string; label: string }[];
+    hasPurchasedPhotos: boolean;
     supportUrl: string;
     participations: ParticipationOption[];
     visibilityOptions: {
@@ -98,9 +120,24 @@ const props = defineProps<{
         max_photo_mb: number;
         max_audio_mb: number;
         max_certificate_mb: number;
+        max_video_mb: number;
         max_audio_seconds: number;
+        max_video_seconds: number;
     };
 }>();
+
+/** Race fields the linked participation may answer officially. */
+const EXTRA_RACE_FIELDS = [
+    'bib_number',
+    'athlete_display_name',
+    'pace',
+    'category',
+    'category_position',
+    'gender_position',
+    'finish_status',
+    'elevation_gain_m',
+    'sport_id',
+] as const;
 
 const form = useForm({
     title: props.fields.title ?? '',
@@ -119,10 +156,47 @@ const form = useForm({
     result_position: props.fields.result_position ?? '',
     race_date: props.fields.race_date ?? '',
     location: props.fields.location ?? '',
+    bib_number: props.fields.bib_number ?? '',
+    athlete_display_name: props.fields.athlete_display_name ?? '',
+    pace: props.fields.pace ?? '',
+    category: props.fields.category ?? '',
+    category_position: props.fields.category_position ?? '',
+    gender_position: props.fields.gender_position ?? '',
+    finish_status: props.fields.finish_status ?? '',
+    elevation_gain_m: (props.fields.elevation_gain_m ?? '') as number | '',
+    sport_id: (props.fields.sport_id ?? '') as number | '',
 });
 
+function isOfficial(field: string): boolean {
+    return props.raceData.official[field] === true;
+}
+
+function officialValue(field: string): string | number | null {
+    return props.raceData.values[field] ?? null;
+}
+
+const finishStatusLabel = computed(
+    () =>
+        props.finishStatuses.find(
+            (s) => s.value === props.raceData.values.finish_status,
+        )?.label ?? null,
+);
+
 function save() {
-    form.patch(update(props.story.public_id).url, { preserveScroll: true });
+    form.transform((data) => {
+        const payload: Record<string, unknown> = { ...data };
+
+        // Official values belong to the event: never sent back as edits.
+        for (const field of EXTRA_RACE_FIELDS) {
+            const key = field === 'sport_id' ? 'sport' : field;
+
+            if (isOfficial(key)) {
+                delete payload[field];
+            }
+        }
+
+        return payload;
+    }).patch(update(props.story.public_id).url, { preserveScroll: true });
 }
 
 const visibilityIcon = { public: Globe, unlisted: Link2, private: Lock };
@@ -132,8 +206,18 @@ const inputClass =
 const areaClass =
     'mt-1.5 w-full rounded-xl border border-border bg-white px-3 py-3 text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/20';
 
+/** Props every media action refreshes. */
+const MEDIA_PROPS = ['story', 'quota'];
+
+const videos = computed<EditorMediaItem[]>(() => props.story.videos ?? []);
+const audios = computed<EditorMediaItem[]>(
+    () => props.story.audios ?? (props.story.audio ? [props.story.audio] : []),
+);
+/** One voice message: a new one replaces it (the server does that). */
+const singleAudio = computed(() => props.quota.audio.limit <= 1);
+
 // ── Uploads ─────────────────────────────────────────────────────────────
-type Role = 'photo' | 'audio' | 'certificate';
+type Role = 'photo' | 'video' | 'audio' | 'certificate';
 type UploadItem = {
     key: number;
     name: string;
@@ -143,23 +227,40 @@ type UploadItem = {
     error: string | null;
 };
 
+const ROLE_KIND: Record<Role, QuotaKind | null> = {
+    photo: 'photos',
+    video: 'videos',
+    audio: 'audio',
+    certificate: null,
+};
+
 const uploads = reactive<UploadItem[]>([]);
 let uploadKey = 0;
 const uploading = computed(() =>
     uploads.some((u) => u.state === 'uploading' || u.state === 'waiting'),
 );
 
-function uploadOne(file: File, item: UploadItem): Promise<void> {
+function uploadOne(
+    file: File,
+    item: UploadItem,
+    seconds: number | null,
+): Promise<void> {
     return new Promise((resolve) => {
         item.state = 'uploading';
         router.post(
             storeMedia(props.story.public_id).url,
-            { file, role: item.role },
+            {
+                file,
+                role: item.role,
+                ...(seconds !== null
+                    ? { duration_seconds: Math.floor(seconds) }
+                    : {}),
+            },
             {
                 forceFormData: true,
                 preserveScroll: true,
                 preserveState: true,
-                only: ['story', 'photoQuota'],
+                only: [...MEDIA_PROPS, 'errors'],
                 onProgress: (p) => {
                     item.progress = p?.percentage ?? 0;
                 },
@@ -201,22 +302,48 @@ function uploadOne(file: File, item: UploadItem): Promise<void> {
     });
 }
 
-function audioDuration(file: File): Promise<number> {
+/** Length of an audio / video file, read from its metadata (0 = unknown). */
+function mediaDuration(file: File, tag: 'audio' | 'video'): Promise<number> {
     return new Promise((resolve) => {
-        const el = document.createElement('audio');
+        const el = document.createElement(tag);
         const url = URL.createObjectURL(file);
+        const done = (seconds: number) => {
+            URL.revokeObjectURL(url);
+            resolve(seconds);
+        };
         el.preload = 'metadata';
-        el.onloadedmetadata = () => {
-            URL.revokeObjectURL(url);
-            resolve(Number.isFinite(el.duration) ? el.duration : 0);
-        };
-        el.onerror = () => {
-            URL.revokeObjectURL(url);
-            resolve(0);
-        };
+        el.onloadedmetadata = () =>
+            done(Number.isFinite(el.duration) ? el.duration : 0);
+        el.onerror = () => done(0);
+        // Some containers never report metadata in this browser.
+        setTimeout(() => done(0), 8000);
         el.src = url;
     });
 }
+
+function roomFor(role: Role): number {
+    const kind = ROLE_KIND[role];
+
+    if (kind === null) {
+        return 1;
+    }
+
+    if (role === 'audio' && props.quota.audio.limit === 1) {
+        return 1;
+    }
+
+    return Math.max(0, props.quota[kind].remaining);
+}
+
+const SUCCESS: Record<Role, [string, string]> = {
+    photo: ['Foto agregada.', 'fotos agregadas.'],
+    video: [
+        'Video subido. Lo estamos preparando.',
+        'videos subidos. Los estamos preparando.',
+    ],
+    audio: ['Mensaje de voz guardado.', 'mensajes de voz guardados.'],
+    certificate: ['Certificado guardado.', 'certificados guardados.'],
+};
 
 async function enqueue(files: FileList | null, role: Role) {
     if (!files || files.length === 0) {
@@ -224,18 +351,16 @@ async function enqueue(files: FileList | null, role: Role) {
     }
 
     const list = Array.from(files);
-    const room =
-        role === 'photo'
-            ? Math.max(0, props.photoQuota.limit - props.photoQuota.used)
-            : 1;
-    const maxMb =
-        role === 'photo'
-            ? props.limits.max_photo_mb
-            : role === 'audio'
-              ? props.limits.max_audio_mb
-              : props.limits.max_certificate_mb;
+    const room = roomFor(role);
+    const kind = ROLE_KIND[role];
+    const maxMb = {
+        photo: props.limits.max_photo_mb,
+        video: props.limits.max_video_mb,
+        audio: props.limits.max_audio_mb,
+        certificate: props.limits.max_certificate_mb,
+    }[role];
 
-    const items: [File, UploadItem][] = [];
+    const items: [File, UploadItem, number | null][] = [];
 
     for (const [i, file] of list.entries()) {
         const item = reactive<UploadItem>({
@@ -250,7 +375,12 @@ async function enqueue(files: FileList | null, role: Role) {
 
         if (i >= room) {
             item.state = 'error';
-            item.error = `Llegaste al límite de ${props.photoQuota.limit} fotos.`;
+            item.error =
+                kind === 'photos'
+                    ? `Llegaste al límite de ${props.quota.photos.limit} fotos.`
+                    : kind === 'videos'
+                      ? `Llegaste al límite de ${props.quota.videos.limit} ${props.quota.videos.limit === 1 ? 'video' : 'videos'}.`
+                      : 'Llegaste al límite de mensajes de voz.';
             continue;
         }
 
@@ -260,34 +390,38 @@ async function enqueue(files: FileList | null, role: Role) {
             continue;
         }
 
-        if (role === 'audio') {
-            const seconds = await audioDuration(file);
+        let seconds: number | null = null;
 
-            if (seconds > props.limits.max_audio_seconds + 1) {
+        if (role === 'audio' || role === 'video') {
+            const max =
+                role === 'audio'
+                    ? props.limits.max_audio_seconds
+                    : props.limits.max_video_seconds;
+            const measured = await mediaDuration(file, role);
+            seconds = measured > 0 ? measured : null;
+
+            if (measured > max + 1) {
                 item.state = 'error';
-                item.error = `Dura más de ${Math.round(props.limits.max_audio_seconds / 60)} minutos.`;
+                item.error =
+                    role === 'video'
+                        ? `Dura más de ${humanSeconds(max)}. Recórtalo y vuelve a subirlo.`
+                        : `Dura más de ${humanSeconds(max)}.`;
                 continue;
             }
         }
 
-        items.push([file, item]);
+        items.push([file, item, seconds]);
     }
 
-    for (const [file, item] of items) {
-        await uploadOne(file, item);
+    for (const [file, item, seconds] of items) {
+        await uploadOne(file, item, seconds);
     }
 
     const done = items.filter(([, item]) => item.state === 'done').length;
 
     if (done > 0) {
         toast.success(
-            role === 'photo'
-                ? done === 1
-                    ? 'Foto agregada.'
-                    : `${done} fotos agregadas.`
-                : role === 'audio'
-                  ? 'Mensaje de voz guardado.'
-                  : 'Certificado guardado.',
+            done === 1 ? SUCCESS[role][0] : `${done} ${SUCCESS[role][1]}`,
         );
     }
 
@@ -306,56 +440,55 @@ function onPick(event: Event, role: Role) {
     input.value = '';
 }
 
-// Drag & drop: the whole photo card / voice block is a drop zone.
+function dismissUpload(key: number) {
+    const at = uploads.findIndex((u) => u.key === key);
+
+    if (at >= 0) {
+        uploads.splice(at, 1);
+    }
+}
+
+// Drag & drop: each media card is a drop zone for files of its kind.
 const dropTarget = ref<Role | null>(null);
+
+function hasFiles(event: DragEvent): boolean {
+    return Array.from(event.dataTransfer?.types ?? []).includes('Files');
+}
+
+function onDragOver(event: DragEvent, role: Role) {
+    if (hasFiles(event)) {
+        dropTarget.value = role;
+    }
+}
 
 function onDrop(event: DragEvent, role: Role) {
     dropTarget.value = null;
-    void enqueue(event.dataTransfer?.files ?? null, role);
+
+    if (hasFiles(event)) {
+        void enqueue(event.dataTransfer?.files ?? null, role);
+    }
 }
 
-const quotaFull = computed(() => props.photoQuota.remaining <= 0);
-const quotaPercent = computed(() =>
-    props.photoQuota.limit > 0
-        ? Math.min(
-              100,
-              Math.round(
-                  (props.photoQuota.used / props.photoQuota.limit) * 100,
-              ),
-          )
-        : 100,
+const photosFull = computed(() => props.quota.photos.remaining <= 0);
+const videosFull = computed(() => props.quota.videos.remaining <= 0);
+const audioBlocked = computed(
+    () => props.quota.audio.limit !== 1 && props.quota.audio.remaining <= 0,
 );
-const buyingExpansion = ref(false);
 
-function expand() {
-    if (!props.photoQuota.can_expand) {
-        return;
-    }
+const pickingPurchased = ref(false);
 
-    // Redirects to the order page, where payment happens; only a
-    // confirmed payment grants the extra space.
-    buyingExpansion.value = true;
-    router.post(
-        buyExpansion(props.story.public_id).url,
-        props.photoQuota.expansion
-            ? { pack: props.photoQuota.expansion.id }
-            : {},
-        { onFinish: () => (buyingExpansion.value = false) },
+// ── Gallery management ──────────────────────────────────────────────────
+function saveOrder(ids: number[]) {
+    router.patch(
+        reorderMedia(props.story.public_id).url,
+        { order: ids },
+        { preserveScroll: true, only: MEDIA_PROPS },
     );
 }
 
-function money(amount: string, currency: string): string {
-    const value = Number(amount);
-
-    return Number.isFinite(value)
-        ? value.toLocaleString('es-MX', { style: 'currency', currency })
-        : `${amount} ${currency}`;
-}
-
-// ── Photo management ────────────────────────────────────────────────────
-function move(photo: StoryMediaItem, delta: number) {
-    const ids = props.story.photos.map((p) => p.id);
-    const from = ids.indexOf(photo.id);
+function move(list: EditorMediaItem[], item: EditorMediaItem, delta: number) {
+    const ids = list.map((p) => p.id);
+    const from = ids.indexOf(item.id);
     const to = from + delta;
 
     if (to < 0 || to >= ids.length) {
@@ -363,14 +496,44 @@ function move(photo: StoryMediaItem, delta: number) {
     }
 
     ids.splice(to, 0, ids.splice(from, 1)[0]);
-    router.patch(
-        reorderMedia(props.story.public_id).url,
-        { order: ids },
-        { preserveScroll: true, only: ['story', 'photoQuota'] },
-    );
+    saveOrder(ids);
 }
 
-function saveCaption(item: StoryMediaItem, caption: string) {
+// Reorder photos by dragging a card onto another.
+const draggingPhoto = ref<number | null>(null);
+const dragOverPhoto = ref<number | null>(null);
+
+function onPhotoDragStart(event: DragEvent, photo: EditorMediaItem) {
+    draggingPhoto.value = photo.id;
+
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(photo.id));
+    }
+}
+
+function onPhotoDrop(target: EditorMediaItem) {
+    const moving = draggingPhoto.value;
+    draggingPhoto.value = null;
+    dragOverPhoto.value = null;
+
+    if (moving === null || moving === target.id) {
+        return;
+    }
+
+    const ids = props.story.photos.map((p) => p.id);
+    const from = ids.indexOf(moving);
+    const to = ids.indexOf(target.id);
+
+    if (from < 0 || to < 0) {
+        return;
+    }
+
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    saveOrder(ids);
+}
+
+function saveCaption(item: EditorMediaItem, caption: string) {
     if ((item.caption ?? '') === caption) {
         return;
     }
@@ -384,7 +547,7 @@ function saveCaption(item: StoryMediaItem, caption: string) {
 
 const confirmingRemove = ref<number | null>(null);
 
-function remove(item: StoryMediaItem) {
+function remove(item: EditorMediaItem) {
     if (confirmingRemove.value !== item.id) {
         confirmingRemove.value = item.id;
 
@@ -396,15 +559,64 @@ function remove(item: StoryMediaItem) {
         destroyMedia({ story: props.story.public_id, media: item.id }).url,
         {
             preserveScroll: true,
-            only: ['story', 'photoQuota'],
+            only: MEDIA_PROPS,
             onSuccess: () => toast.success('Listo, lo quitamos.'),
         },
     );
 }
 
-function isProcessing(item: StoryMediaItem): boolean {
-    return item.status !== 'ready';
+function isFailed(item: EditorMediaItem): boolean {
+    return item.status === 'failed';
 }
+
+/** Still in the pipeline (a video waiting for its transcode is playable). */
+function isProcessing(item: EditorMediaItem): boolean {
+    return item.status === 'processing';
+}
+
+// While anything is being prepared, refresh quietly until it is ready.
+const anyProcessing = computed(() =>
+    [...props.story.photos, ...videos.value, ...audios.value].some(
+        isProcessing,
+    ),
+);
+let poll: ReturnType<typeof setInterval> | null = null;
+
+function stopPolling() {
+    if (poll !== null) {
+        clearInterval(poll);
+        poll = null;
+    }
+}
+
+function syncPolling(processing: boolean) {
+    stopPolling();
+
+    // Browser only: the page is also rendered on the server.
+    if (processing && typeof document !== 'undefined') {
+        poll = setInterval(() => {
+            if (!uploading.value && document.visibilityState === 'visible') {
+                router.reload({ only: MEDIA_PROPS });
+            }
+        }, 4000);
+    }
+}
+
+// Timers start once the page is mounted in the browser, never during setup.
+let stopWatchingProcessing: (() => void) | null = null;
+
+onMounted(() => {
+    syncPolling(anyProcessing.value);
+    stopWatchingProcessing = watch(anyProcessing, syncPolling);
+});
+
+onBeforeUnmount(() => {
+    stopWatchingProcessing?.();
+    stopPolling();
+});
+
+// A video only loads once the owner asks to play it.
+const playing = ref<number | null>(null);
 </script>
 
 <template>
@@ -463,130 +675,61 @@ function isProcessing(item: StoryMediaItem): boolean {
                 class="fl-card mt-8 p-5 transition sm:p-6"
                 :class="{
                     'ring-2 ring-fl-gold ring-offset-2':
-                        dropTarget === 'photo' && !quotaFull,
+                        dropTarget === 'photo' && !photosFull,
                 }"
                 aria-labelledby="photos-h"
-                @dragover.prevent="dropTarget = 'photo'"
+                @dragover.prevent="onDragOver($event, 'photo')"
                 @dragleave.self="dropTarget = null"
                 @drop.prevent="onDrop($event, 'photo')"
             >
-                <div class="flex items-center justify-between gap-3">
-                    <div>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="min-w-0">
                         <h2 id="photos-h" class="text-lg font-semibold">
                             Fotos
                         </h2>
                         <p class="text-xs text-muted-foreground">
                             La primera es la portada. JPG, PNG o WebP de hasta
                             {{ limits.max_photo_mb }} MB · arrastra aquí tus
-                            fotos.
+                            fotos; arrástralas entre sí para ordenarlas.
                         </p>
                     </div>
-                    <label
-                        class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full bg-fl-black px-4 text-sm font-semibold text-white transition focus-within:ring-4 focus-within:ring-fl-gold/40 hover:bg-fl-graphite"
-                        :class="{
-                            'pointer-events-none opacity-50': quotaFull,
-                        }"
-                        :aria-disabled="quotaFull"
-                    >
-                        <ImagePlus class="size-4" aria-hidden="true" />
-                        Agregar
-                        <input
-                            type="file"
-                            class="sr-only"
-                            accept="image/jpeg,image/png,image/webp"
-                            multiple
-                            :disabled="quotaFull"
-                            @change="onPick($event, 'photo')"
-                        />
-                    </label>
+                    <div class="flex shrink-0 flex-wrap gap-2">
+                        <button
+                            v-if="hasPurchasedPhotos"
+                            type="button"
+                            class="fl-press inline-flex h-11 items-center gap-2 rounded-full border border-border px-4 text-sm font-semibold transition hover:border-fl-gold hover:bg-fl-paper"
+                            @click="pickingPurchased = true"
+                        >
+                            <Images class="size-4" aria-hidden="true" />
+                            Agregar fotos que compré
+                        </button>
+                        <label
+                            class="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full bg-fl-black px-4 text-sm font-semibold text-white transition focus-within:ring-4 focus-within:ring-fl-gold/40 hover:bg-fl-graphite"
+                            :class="{
+                                'pointer-events-none opacity-50': photosFull,
+                            }"
+                            :aria-disabled="photosFull"
+                        >
+                            <ImagePlus class="size-4" aria-hidden="true" />
+                            Subir
+                            <input
+                                type="file"
+                                class="sr-only"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                :disabled="photosFull"
+                                @change="onPick($event, 'photo')"
+                            />
+                        </label>
+                    </div>
                 </div>
 
-                <!-- Photo space (StoryPhotoQuota) -->
-                <div class="mt-4" aria-live="polite">
-                    <div
-                        class="flex items-center justify-between text-xs font-medium"
-                    >
-                        <span>
-                            {{ photoQuota.used }} de
-                            {{ photoQuota.limit }} fotos
-                        </span>
-                        <span
-                            class="flex items-center gap-3 text-muted-foreground"
-                        >
-                            {{
-                                quotaFull
-                                    ? 'Límite alcanzado'
-                                    : `Te quedan ${photoQuota.remaining}`
-                            }}
-                            <button
-                                v-if="photoQuota.can_expand && !quotaFull"
-                                type="button"
-                                class="font-semibold text-fl-gold-ink underline-offset-4 hover:underline disabled:opacity-60"
-                                :disabled="buyingExpansion"
-                                @click="expand"
-                            >
-                                Ampliar espacio
-                            </button>
-                        </span>
-                    </div>
-                    <div
-                        class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"
-                        role="progressbar"
-                        :aria-valuenow="photoQuota.used"
-                        :aria-valuemax="photoQuota.limit"
-                        aria-label="Espacio de fotos usado"
-                    >
-                        <div
-                            class="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
-                            :class="quotaFull ? 'bg-fl-gold-ink' : 'bg-fl-gold'"
-                            :style="{ width: `${quotaPercent}%` }"
-                        />
-                    </div>
-                    <div
-                        v-if="quotaFull"
-                        class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fl-gold/40 bg-fl-paper p-3 text-sm"
-                    >
-                        <p class="min-w-0">
-                            <span class="block font-semibold"
-                                >Tu recuerdo está completo</span
-                            >
-                            <span class="block text-xs text-muted-foreground">
-                                Tus fotos siguen aquí, todas visibles.
-                                {{
-                                    photoQuota.can_expand
-                                        ? photoQuota.expansion
-                                            ? `Amplía con ${photoQuota.expansion.photos} fotos más o quita una para subir otra.`
-                                            : 'Amplía tu espacio o quita una foto para subir otra.'
-                                        : 'Quita una foto para subir otra.'
-                                }}
-                            </span>
-                        </p>
-                        <button
-                            v-if="photoQuota.can_expand"
-                            type="button"
-                            class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-fl-black px-4 text-sm font-semibold text-white transition hover:bg-fl-graphite disabled:opacity-60"
-                            :disabled="buyingExpansion"
-                            @click="expand"
-                        >
-                            <Spinner v-if="buyingExpansion" class="size-4" />
-                            <Sparkles
-                                v-else
-                                class="size-4"
-                                aria-hidden="true"
-                            />
-                            Ampliar espacio
-                            <template v-if="photoQuota.expansion">
-                                ·
-                                {{
-                                    money(
-                                        photoQuota.expansion.price,
-                                        photoQuota.expansion.currency,
-                                    )
-                                }}
-                            </template>
-                        </button>
-                    </div>
-                </div>
+                <QuotaMeter
+                    class="mt-4"
+                    kind="photos"
+                    :story-id="story.public_id"
+                    :quota="quota.photos"
+                />
 
                 <TransitionGroup
                     v-if="story.photos.length"
@@ -597,7 +740,28 @@ function isProcessing(item: StoryMediaItem): boolean {
                     <li
                         v-for="(photo, i) in story.photos"
                         :key="photo.id"
-                        class="group overflow-hidden rounded-xl border border-border bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                        draggable="true"
+                        class="group overflow-hidden rounded-xl border bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                        :class="[
+                            dragOverPhoto === photo.id &&
+                            draggingPhoto !== photo.id
+                                ? 'border-fl-gold ring-2 ring-fl-gold/40'
+                                : 'border-border',
+                            draggingPhoto === photo.id ? 'opacity-50' : '',
+                        ]"
+                        @dragstart="onPhotoDragStart($event, photo)"
+                        @dragover.prevent="
+                            draggingPhoto !== null && (dragOverPhoto = photo.id)
+                        "
+                        @dragend="
+                            draggingPhoto = null;
+                            dragOverPhoto = null;
+                        "
+                        @drop.prevent.stop="
+                            draggingPhoto !== null
+                                ? onPhotoDrop(photo)
+                                : onDrop($event, 'photo')
+                        "
                     >
                         <div
                             class="relative aspect-[4/3] overflow-hidden bg-fl-cream"
@@ -620,18 +784,33 @@ function isProcessing(item: StoryMediaItem): boolean {
                                 >Portada</span
                             >
                             <span
-                                v-if="isProcessing(photo)"
+                                v-if="photo.source === 'purchased'"
+                                class="absolute top-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-fl-gold-ink"
+                                >Comprada</span
+                            >
+                            <span
+                                v-if="isFailed(photo)"
+                                class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700"
+                            >
+                                <TriangleAlert
+                                    class="size-3"
+                                    aria-hidden="true"
+                                />
+                                No se pudo procesar · quítala y súbela de nuevo
+                            </span>
+                            <span
+                                v-else-if="isProcessing(photo)"
                                 class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium"
                             >
                                 <Spinner class="size-3" />
-                                {{
-                                    photo.status === 'failed'
-                                        ? 'No se pudo procesar'
-                                        : 'Procesando'
-                                }}
+                                Procesando
                             </span>
                         </div>
                         <div class="flex items-center gap-1 p-2">
+                            <GripVertical
+                                class="size-4 shrink-0 cursor-grab text-muted-foreground/50"
+                                aria-hidden="true"
+                            />
                             <input
                                 type="text"
                                 maxlength="280"
@@ -655,7 +834,7 @@ function isProcessing(item: StoryMediaItem): boolean {
                                 class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
                                 :disabled="i === 0"
                                 :aria-label="`Mover foto ${i + 1} antes`"
-                                @click="move(photo, -1)"
+                                @click="move(story.photos, photo, -1)"
                             >
                                 <ArrowUp class="size-4" />
                             </button>
@@ -664,7 +843,7 @@ function isProcessing(item: StoryMediaItem): boolean {
                                 class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
                                 :disabled="i === story.photos.length - 1"
                                 :aria-label="`Mover foto ${i + 1} después`"
-                                @click="move(photo, 1)"
+                                @click="move(story.photos, photo, 1)"
                             >
                                 <ArrowDown class="size-4" />
                             </button>
@@ -711,7 +890,249 @@ function isProcessing(item: StoryMediaItem): boolean {
                         class="sr-only"
                         accept="image/jpeg,image/png,image/webp"
                         multiple
+                        :disabled="photosFull"
                         @change="onPick($event, 'photo')"
+                    />
+                </label>
+            </section>
+
+            <PurchasedPhotosDialog
+                v-if="hasPurchasedPhotos"
+                v-model:open="pickingPurchased"
+                :story-id="story.public_id"
+                :remaining="quota.photos.remaining"
+            />
+
+            <!-- Videos -->
+            <section
+                class="fl-card mt-6 p-5 transition sm:p-6"
+                :class="{
+                    'ring-2 ring-fl-gold ring-offset-2':
+                        dropTarget === 'video' && !videosFull,
+                }"
+                aria-labelledby="videos-h"
+                @dragover.prevent="onDragOver($event, 'video')"
+                @dragleave.self="dropTarget = null"
+                @drop.prevent="onDrop($event, 'video')"
+            >
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 id="videos-h" class="text-lg font-semibold">
+                            Videos
+                        </h2>
+                        <p class="text-xs text-muted-foreground">
+                            MP4, MOV o WebM de hasta
+                            {{ humanSeconds(limits.max_video_seconds) }} y
+                            {{ limits.max_video_mb }} MB · arrástralos aquí.
+                        </p>
+                    </div>
+                    <label
+                        class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full bg-fl-black px-4 text-sm font-semibold text-white transition focus-within:ring-4 focus-within:ring-fl-gold/40 hover:bg-fl-graphite"
+                        :class="{
+                            'pointer-events-none opacity-50': videosFull,
+                        }"
+                        :aria-disabled="videosFull"
+                    >
+                        <Film class="size-4" aria-hidden="true" />
+                        Subir video
+                        <input
+                            type="file"
+                            class="sr-only"
+                            accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+                            :disabled="videosFull"
+                            @change="onPick($event, 'video')"
+                        />
+                    </label>
+                </div>
+
+                <QuotaMeter
+                    class="mt-4"
+                    kind="videos"
+                    :story-id="story.public_id"
+                    :quota="quota.videos"
+                />
+
+                <TransitionGroup
+                    v-if="videos.length"
+                    tag="ul"
+                    name="photo"
+                    class="mt-5 grid gap-4 sm:grid-cols-2"
+                >
+                    <li
+                        v-for="(video, i) in videos"
+                        :key="video.id"
+                        class="overflow-hidden rounded-xl border border-border bg-white"
+                    >
+                        <div
+                            class="relative aspect-video overflow-hidden bg-fl-black"
+                        >
+                            <video
+                                v-if="playing === video.id && video.url"
+                                :src="video.url"
+                                :poster="video.poster_url ?? undefined"
+                                controls
+                                autoplay
+                                playsinline
+                                preload="none"
+                                class="size-full object-contain"
+                            />
+                            <template v-else>
+                                <img
+                                    v-if="video.poster_url ?? video.thumb_url"
+                                    :src="
+                                        (video.poster_url ??
+                                            video.thumb_url) as string
+                                    "
+                                    :alt="video.caption ?? `Video ${i + 1}`"
+                                    loading="lazy"
+                                    class="size-full object-cover"
+                                />
+                                <div
+                                    v-else
+                                    class="grid size-full place-items-center bg-fl-graphite"
+                                    :class="{
+                                        'animate-pulse motion-reduce:animate-none':
+                                            isProcessing(video),
+                                    }"
+                                >
+                                    <Film
+                                        class="size-8 text-white/40"
+                                        aria-hidden="true"
+                                    />
+                                </div>
+                                <button
+                                    v-if="
+                                        video.url &&
+                                        !isProcessing(video) &&
+                                        !isFailed(video)
+                                    "
+                                    type="button"
+                                    class="group/play absolute inset-0 grid place-items-center focus-visible:outline-none"
+                                    :aria-label="`Reproducir video ${i + 1}`"
+                                    @click="playing = video.id"
+                                >
+                                    <span
+                                        class="grid size-14 place-items-center rounded-full bg-white/90 shadow-lg transition group-hover/play:scale-110 group-focus-visible/play:ring-4 group-focus-visible/play:ring-fl-gold motion-reduce:transition-none"
+                                    >
+                                        <span
+                                            class="ml-1 block size-0 border-y-[9px] border-l-[15px] border-y-transparent border-l-fl-black"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                </button>
+                            </template>
+                            <span
+                                v-if="
+                                    clock(video.duration_seconds) &&
+                                    playing !== video.id
+                                "
+                                class="legacy-numeric absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
+                                >{{ clock(video.duration_seconds) }}</span
+                            >
+                            <span
+                                v-if="isFailed(video)"
+                                class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700"
+                            >
+                                <TriangleAlert
+                                    class="size-3"
+                                    aria-hidden="true"
+                                />
+                                No se pudo procesar
+                            </span>
+                            <span
+                                v-else-if="isProcessing(video)"
+                                class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium"
+                            >
+                                <Spinner class="size-3" />
+                                Procesando…
+                            </span>
+                        </div>
+                        <p
+                            v-if="isFailed(video)"
+                            class="px-3 pt-2 text-xs text-red-700"
+                        >
+                            Puede que dure más de
+                            {{ humanSeconds(limits.max_video_seconds) }} o que
+                            el archivo esté dañado. Quítalo y sube otro.
+                        </p>
+                        <div class="flex items-center gap-1 p-2">
+                            <input
+                                type="text"
+                                maxlength="280"
+                                :value="video.caption ?? ''"
+                                placeholder="Agrega una descripción"
+                                :aria-label="`Descripción del video ${i + 1}`"
+                                class="h-10 min-w-0 flex-1 rounded-lg px-2 text-sm outline-none focus:bg-fl-paper"
+                                @blur="
+                                    saveCaption(
+                                        video,
+                                        ($event.target as HTMLInputElement)
+                                            .value,
+                                    )
+                                "
+                                @keydown.enter.prevent="
+                                    ($event.target as HTMLInputElement).blur()
+                                "
+                            />
+                            <button
+                                v-if="videos.length > 1"
+                                type="button"
+                                class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                                :disabled="i === 0"
+                                :aria-label="`Mover video ${i + 1} antes`"
+                                @click="move(videos, video, -1)"
+                            >
+                                <ArrowUp class="size-4" />
+                            </button>
+                            <button
+                                v-if="videos.length > 1"
+                                type="button"
+                                class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                                :disabled="i === videos.length - 1"
+                                :aria-label="`Mover video ${i + 1} después`"
+                                @click="move(videos, video, 1)"
+                            >
+                                <ArrowDown class="size-4" />
+                            </button>
+                            <button
+                                type="button"
+                                class="rounded-lg p-2 hover:bg-red-50"
+                                :class="
+                                    confirmingRemove === video.id
+                                        ? 'bg-red-50 text-red-700'
+                                        : 'text-muted-foreground'
+                                "
+                                :aria-label="
+                                    confirmingRemove === video.id
+                                        ? 'Confirmar: quitar video'
+                                        : `Quitar video ${i + 1}`
+                                "
+                                @click="remove(video)"
+                            >
+                                <Trash2 class="size-4" />
+                            </button>
+                        </div>
+                    </li>
+                </TransitionGroup>
+                <label
+                    v-else-if="!videosFull"
+                    class="mt-5 flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-8 text-center text-sm text-muted-foreground transition focus-within:ring-4 focus-within:ring-fl-gold/30 hover:border-fl-gold/60 hover:bg-fl-paper"
+                    :class="
+                        dropTarget === 'video'
+                            ? 'border-fl-gold bg-fl-gold/10'
+                            : 'border-border'
+                    "
+                >
+                    <Film class="size-6 text-fl-gold-ink" aria-hidden="true" />
+                    <span class="font-semibold text-foreground"
+                        >Sube el video de tu llegada a la meta</span
+                    >
+                    Arrastra tu video aquí o toca para elegirlo.
+                    <input
+                        type="file"
+                        class="sr-only"
+                        accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+                        @change="onPick($event, 'video')"
                     />
                 </label>
             </section>
@@ -751,15 +1172,31 @@ function isProcessing(item: StoryMediaItem): boolean {
                             />
                         </span>
                     </span>
-                    <span class="shrink-0 text-xs">{{
-                        u.state === 'uploading'
-                            ? `${u.progress}%`
-                            : u.state === 'waiting'
-                              ? 'En espera'
-                              : u.state === 'done'
-                                ? 'Listo'
-                                : u.error
-                    }}</span>
+                    <span
+                        class="text-xs"
+                        :class="
+                            u.state === 'error'
+                                ? 'max-w-[60%] text-right'
+                                : 'shrink-0'
+                        "
+                        >{{
+                            u.state === 'uploading'
+                                ? `${u.progress}%`
+                                : u.state === 'waiting'
+                                  ? 'En espera'
+                                  : u.state === 'done'
+                                    ? 'Listo'
+                                    : u.error
+                        }}</span
+                    >
+                    <button
+                        v-if="u.state === 'error'"
+                        type="button"
+                        class="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold underline-offset-4 hover:underline"
+                        @click="dismissUpload(u.key)"
+                    >
+                        Cerrar
+                    </button>
                 </li>
             </ul>
 
@@ -950,6 +1387,236 @@ function isProcessing(item: StoryMediaItem): boolean {
                             </div>
                         </div>
                     </div>
+
+                    <!-- Race data (official values are read-only) -->
+                    <div class="mt-6 border-t border-border pt-5">
+                        <h3 class="text-sm font-semibold">
+                            Datos de tu carrera
+                        </h3>
+                        <p class="mt-0.5 text-xs text-muted-foreground">
+                            Aparecen en tu recuerdo. Los que vienen de los
+                            resultados del evento llevan la marca
+                            <span class="font-semibold text-fl-gold-ink"
+                                >Oficial</span
+                            >
+                            y no se editan; lo demás es opcional.
+                        </p>
+
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                            <RaceField
+                                id="rd-name"
+                                class="sm:col-span-2"
+                                label="Tu nombre en el recuerdo"
+                                :official="false"
+                                :error="form.errors.athlete_display_name"
+                            >
+                                <input
+                                    id="rd-name"
+                                    v-model="form.athlete_display_name"
+                                    type="text"
+                                    maxlength="80"
+                                    autocomplete="name"
+                                    :placeholder="
+                                        String(
+                                            raceData.values
+                                                .athlete_display_name ??
+                                                'Tu nombre completo',
+                                        )
+                                    "
+                                    :class="inputClass"
+                                />
+                            </RaceField>
+
+                            <RaceField
+                                id="rd-bib"
+                                label="Número de corredor"
+                                optional
+                                :official="isOfficial('bib_number')"
+                                :official-value="officialValue('bib_number')"
+                                :error="form.errors.bib_number"
+                            >
+                                <input
+                                    id="rd-bib"
+                                    v-model="form.bib_number"
+                                    type="text"
+                                    maxlength="12"
+                                    placeholder="1284"
+                                    :class="[inputClass, 'legacy-numeric']"
+                                />
+                            </RaceField>
+
+                            <RaceField
+                                id="rd-pace"
+                                label="Ritmo"
+                                optional
+                                :official="isOfficial('pace')"
+                                :official-value="officialValue('pace')"
+                                :error="form.errors.pace"
+                            >
+                                <input
+                                    id="rd-pace"
+                                    v-model="form.pace"
+                                    type="text"
+                                    maxlength="20"
+                                    placeholder="5:12 min/km"
+                                    :class="[inputClass, 'legacy-numeric']"
+                                />
+                                <p
+                                    v-if="
+                                        raceData.suggested_pace &&
+                                        !form.pace.trim()
+                                    "
+                                    class="mt-1.5 text-xs text-muted-foreground"
+                                >
+                                    Sugerido:
+                                    <span class="legacy-numeric font-medium">{{
+                                        raceData.suggested_pace
+                                    }}</span>
+                                    <button
+                                        type="button"
+                                        class="ml-1.5 font-semibold text-fl-gold-ink underline-offset-4 hover:underline"
+                                        @click="
+                                            form.pace = raceData.suggested_pace
+                                        "
+                                    >
+                                        Usar
+                                    </button>
+                                </p>
+                            </RaceField>
+
+                            <RaceField
+                                id="rd-cat"
+                                class="sm:col-span-2"
+                                label="Categoría"
+                                optional
+                                :official="isOfficial('category')"
+                                :official-value="officialValue('category')"
+                                :error="form.errors.category"
+                            >
+                                <input
+                                    id="rd-cat"
+                                    v-model="form.category"
+                                    type="text"
+                                    maxlength="40"
+                                    placeholder="Femenil 30-34"
+                                    :class="inputClass"
+                                />
+                            </RaceField>
+
+                            <RaceField
+                                id="rd-catpos"
+                                label="Lugar en tu categoría"
+                                optional
+                                :official="isOfficial('category_position')"
+                                :official-value="
+                                    officialValue('category_position')
+                                "
+                                :error="form.errors.category_position"
+                            >
+                                <input
+                                    id="rd-catpos"
+                                    v-model="form.category_position"
+                                    type="text"
+                                    maxlength="20"
+                                    placeholder="3 de 48"
+                                    :class="[inputClass, 'legacy-numeric']"
+                                />
+                            </RaceField>
+
+                            <RaceField
+                                id="rd-genpos"
+                                label="Lugar por rama"
+                                optional
+                                :official="isOfficial('gender_position')"
+                                :official-value="
+                                    officialValue('gender_position')
+                                "
+                                :error="form.errors.gender_position"
+                            >
+                                <input
+                                    id="rd-genpos"
+                                    v-model="form.gender_position"
+                                    type="text"
+                                    maxlength="20"
+                                    placeholder="25 de 310"
+                                    :class="[inputClass, 'legacy-numeric']"
+                                />
+                            </RaceField>
+
+                            <RaceField
+                                id="rd-status"
+                                label="Resultado"
+                                optional
+                                :official="isOfficial('finish_status')"
+                                :official-value="finishStatusLabel"
+                                :error="form.errors.finish_status"
+                            >
+                                <select
+                                    id="rd-status"
+                                    v-model="form.finish_status"
+                                    :class="inputClass"
+                                >
+                                    <option value="">Sin indicar</option>
+                                    <option
+                                        v-for="s in finishStatuses"
+                                        :key="s.value"
+                                        :value="s.value"
+                                    >
+                                        {{ s.label }}
+                                    </option>
+                                </select>
+                            </RaceField>
+
+                            <RaceField
+                                id="rd-elev"
+                                label="Desnivel positivo (m)"
+                                optional
+                                :official="isOfficial('elevation_gain_m')"
+                                :official-value="
+                                    officialValue('elevation_gain_m')
+                                "
+                                :error="form.errors.elevation_gain_m"
+                            >
+                                <input
+                                    id="rd-elev"
+                                    v-model.number="form.elevation_gain_m"
+                                    type="number"
+                                    inputmode="numeric"
+                                    min="0"
+                                    max="20000"
+                                    step="1"
+                                    placeholder="850"
+                                    :class="[inputClass, 'legacy-numeric']"
+                                />
+                            </RaceField>
+
+                            <RaceField
+                                v-if="sports.length || isOfficial('sport')"
+                                id="rd-sport"
+                                class="sm:col-span-2"
+                                label="Deporte"
+                                optional
+                                :official="isOfficial('sport')"
+                                :official-value="raceData.sport?.name ?? null"
+                                :error="form.errors.sport_id"
+                            >
+                                <select
+                                    id="rd-sport"
+                                    v-model="form.sport_id"
+                                    :class="inputClass"
+                                >
+                                    <option value="">Sin indicar</option>
+                                    <option
+                                        v-for="s in sports"
+                                        :key="s.id"
+                                        :value="s.id"
+                                    >
+                                        {{ s.name }}
+                                    </option>
+                                </select>
+                            </RaceField>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Dedication + words -->
@@ -1036,7 +1703,7 @@ function isProcessing(item: StoryMediaItem): boolean {
                             'bg-fl-gold/10 ring-2 ring-fl-gold':
                                 dropTarget === 'audio',
                         }"
-                        @dragover.prevent="dropTarget = 'audio'"
+                        @dragover.prevent="onDragOver($event, 'audio')"
                         @dragleave.self="dropTarget = null"
                         @drop.prevent="onDrop($event, 'audio')"
                     >
@@ -1052,47 +1719,102 @@ function isProcessing(item: StoryMediaItem): boolean {
                             </p>
                             <label
                                 class="inline-flex h-10 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-semibold focus-within:ring-4 focus-within:ring-fl-gold/30"
+                                :class="{
+                                    'pointer-events-none opacity-50':
+                                        audioBlocked,
+                                }"
+                                :aria-disabled="audioBlocked"
                             >
-                                {{ story.audio ? 'Cambiar' : 'Subir audio' }}
+                                {{
+                                    singleAudio && audios.length
+                                        ? 'Cambiar'
+                                        : audios.length
+                                          ? 'Agregar otro'
+                                          : 'Subir audio'
+                                }}
                                 <input
                                     type="file"
                                     class="sr-only"
                                     accept="audio/*,.m4a"
+                                    :disabled="audioBlocked"
                                     @change="onPick($event, 'audio')"
                                 />
                             </label>
                         </div>
                         <p class="mt-1 text-xs text-muted-foreground">
                             Hasta
-                            {{ Math.round(limits.max_audio_seconds / 60) }}
-                            minutos y {{ limits.max_audio_mb }} MB · M4A, MP3,
-                            AAC, WebM u OGG. Puedes arrastrarlo aquí.
-                        </p>
-                        <div
-                            v-if="story.audio"
-                            class="mt-3 flex items-center gap-2"
-                        >
-                            <audio
-                                v-if="story.audio.url"
-                                :src="story.audio.url"
-                                controls
-                                preload="none"
-                                class="h-10 min-w-0 flex-1"
-                            />
-                            <button
-                                type="button"
-                                class="rounded-lg p-2 hover:bg-red-50"
-                                :class="
-                                    confirmingRemove === story.audio.id
-                                        ? 'bg-red-50 text-red-700'
-                                        : 'text-muted-foreground'
-                                "
-                                aria-label="Quitar mensaje de voz"
-                                @click="remove(story.audio)"
+                            {{ humanSeconds(limits.max_audio_seconds) }} y
+                            {{ limits.max_audio_mb }} MB · M4A, MP3, AAC, WebM u
+                            OGG. Puedes arrastrarlo aquí.
+                            <template
+                                v-if="singleAudio && quota.audio.limit === 1"
                             >
-                                <Trash2 class="size-4" />
-                            </button>
-                        </div>
+                                Uno nuevo reemplaza al anterior.
+                            </template>
+                        </p>
+                        <QuotaMeter
+                            class="mt-3"
+                            kind="audio"
+                            :story-id="story.public_id"
+                            :quota="quota.audio"
+                        />
+                        <ul v-if="audios.length" class="mt-3 grid gap-2">
+                            <li
+                                v-for="(clip, i) in audios"
+                                :key="clip.id"
+                                class="flex items-center gap-2"
+                            >
+                                <audio
+                                    v-if="
+                                        clip.url &&
+                                        !isProcessing(clip) &&
+                                        !isFailed(clip)
+                                    "
+                                    :src="clip.url"
+                                    controls
+                                    preload="none"
+                                    class="h-10 min-w-0 flex-1"
+                                />
+                                <span
+                                    v-else
+                                    class="inline-flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full px-3 text-xs font-medium"
+                                    :class="
+                                        isFailed(clip)
+                                            ? 'bg-red-50 text-red-700'
+                                            : 'bg-muted text-muted-foreground'
+                                    "
+                                >
+                                    <TriangleAlert
+                                        v-if="isFailed(clip)"
+                                        class="size-3.5"
+                                        aria-hidden="true"
+                                    />
+                                    <Spinner v-else class="size-3.5" />
+                                    {{
+                                        isFailed(clip)
+                                            ? 'No se pudo procesar. Quítalo y sube otro.'
+                                            : 'Procesando…'
+                                    }}
+                                </span>
+                                <button
+                                    type="button"
+                                    class="rounded-lg p-2 hover:bg-red-50"
+                                    :class="
+                                        confirmingRemove === clip.id
+                                            ? 'bg-red-50 text-red-700'
+                                            : 'text-muted-foreground'
+                                    "
+                                    :aria-label="
+                                        confirmingRemove === clip.id
+                                            ? 'Confirmar: quitar mensaje de voz'
+                                            : `Quitar mensaje de voz ${i + 1}`
+                                    "
+                                    @click="remove(clip)"
+                                >
+                                    <Trash2 class="size-4" />
+                                </button>
+                            </li>
+                        </ul>
                     </div>
 
                     <div>
@@ -1210,8 +1932,8 @@ function isProcessing(item: StoryMediaItem): boolean {
                                 >Descargar mi recuerdo</span
                             >
                             <span class="block text-xs text-muted-foreground"
-                                >Fotos en calidad original, voz, certificado y
-                                tus palabras en un ZIP.</span
+                                >Fotos, videos, voz, certificado y tus palabras
+                                en un ZIP.</span
                             >
                         </span>
                     </a>

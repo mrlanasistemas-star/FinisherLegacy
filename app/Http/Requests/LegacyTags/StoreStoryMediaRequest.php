@@ -29,12 +29,15 @@ class StoreStoryMediaRequest extends FormRequest
             (int) config('legacy.stories.max_photo_bytes'),
             (int) config('legacy.stories.max_audio_bytes'),
             (int) config('legacy.stories.max_certificate_bytes'),
+            (int) config('legacy.stories.max_video_bytes'),
         ) / 1024);
 
         return [
             'file' => ['required', 'file', 'max:'.$maxKb],
             'role' => ['required', Rule::enum(StoryMediaRole::class)],
             'caption' => ['nullable', 'string', 'max:280'],
+            // Client-measured length of a video / audio (early refusal only).
+            'duration_seconds' => ['nullable', 'integer', 'min:0', 'max:86400'],
         ];
     }
 

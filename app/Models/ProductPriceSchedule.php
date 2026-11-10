@@ -6,13 +6,16 @@ use App\Enums\ProductPriceType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * One priced window for a product/variant, optionally scoped to an event —
  * resolved by App\Actions\Commerce\ResolveProductPrice (brief §40-§44).
  * Rows with photo_expansion_pack_id price a Legacy story photo expansion
  * (PhotoExpansionPack::priceAt) and are never edited once they started —
- * a new price is always a new row.
+ * a new price is always a new row. Their price steps ("banderas") are
+ * PhotoExpansionPriceStep rows, written with the schedule and equally
+ * immutable.
  */
 #[Fillable([
     'product_id', 'product_variant_id', 'event_edition_id', 'price_type',
@@ -50,6 +53,12 @@ class ProductPriceSchedule extends Model
     public function photoExpansionPack(): BelongsTo
     {
         return $this->belongsTo(PhotoExpansionPack::class);
+    }
+
+    /** @return HasMany<PhotoExpansionPriceStep, $this> */
+    public function steps(): HasMany
+    {
+        return $this->hasMany(PhotoExpansionPriceStep::class)->orderBy('from_units');
     }
 
     /** @return BelongsTo<EventEdition, $this> */

@@ -350,4 +350,5 @@ require __DIR__.'/api/nfc.php';
 require __DIR__.'/api/legacy.php';
 require __DIR__.'/api/quotas.php';
 require __DIR__.'/api/iap.php';
+require __DIR__.'/api/story-editor.php';
 require __DIR__.'/api/push-campaigns.php';

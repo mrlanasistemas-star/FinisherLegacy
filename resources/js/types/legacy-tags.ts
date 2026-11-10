@@ -54,6 +54,8 @@ export type StoryVisibilityValue = 'public' | 'unlisted' | 'private';
 export type StoryView = {
     public_id: string;
     title: string;
+    /** 'album' when the unit is a Portarretrato inteligente (photo-first page). */
+    kind?: 'album' | 'tag';
     athlete_first_name: string | null;
     race: StoryRace;
     recipient_label: string | null;

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\BillingPeriod;
 use App\Enums\ProductPriceType;
 use App\Enums\ProductType;
+use App\Enums\StoryQuotaKind;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -13,24 +15,33 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
- * A sellable block of extra photos for a Legacy story. Its prices are
- * ProductPriceSchedule rows (photo_expansion_pack_id) — one immutable row
- * per priced window, so a past purchase always keeps the price it paid.
+ * A sellable block of extra capacity for a Legacy story: `photos` units of
+ * `kind` (photos, videos or voice messages — the column keeps its first
+ * name). Sold `one_time` (permanent) or as a prepaid term
+ * (App\Enums\BillingPeriod). Its prices are ProductPriceSchedule rows
+ * (photo_expansion_pack_id) — one immutable row per priced window, with
+ * optional price steps, so a past purchase always keeps the price it paid.
  *
- * @property int $photos
+ * @property int $photos Units of `kind` the pack adds.
+ * @property StoryQuotaKind $kind
+ * @property BillingPeriod $billing_period
  * @property bool $active
  * @property ProductType|null $product_type
  * @property Carbon|null $archived_at
  * @property string|null $apple_product_id Consumable product id in App Store Connect (in-app purchase; the store owns its price).
  * @property string|null $google_product_id One-time consumable product id in Play Console.
  */
-#[Fillable(['uuid', 'name', 'description', 'photos', 'product_id', 'product_type', 'apple_product_id', 'google_product_id', 'active', 'archived_at', 'sort_order', 'created_by'])]
+#[Fillable(['uuid', 'kind', 'billing_period', 'name', 'description', 'photos', 'product_id', 'product_type', 'apple_product_id', 'google_product_id', 'active', 'archived_at', 'sort_order', 'created_by'])]
 class PhotoExpansionPack extends Model
 {
     /** Internal, never-listed product every expansion OrderItem points at. */
     public const string PRODUCT_SLUG = 'ampliacion-fotos-recuerdo';
 
+    /** Entitlement source of every purchased expansion, whatever its kind. */
     public const string ENTITLEMENT_SOURCE = 'photo_expansion';
+
+    /** @var array<string, mixed> */
+    protected $attributes = ['kind' => 'photos', 'billing_period' => 'one_time'];
 
     protected static function booted(): void
     {
@@ -43,6 +54,8 @@ class PhotoExpansionPack extends Model
     {
         return [
             'photos' => 'integer',
+            'kind' => StoryQuotaKind::class,
+            'billing_period' => BillingPeriod::class,
             'active' => 'boolean',
             'archived_at' => 'datetime',
             'product_type' => ProductType::class,
@@ -90,6 +103,20 @@ class PhotoExpansionPack extends Model
             ->orderByDesc('starts_at')
             ->orderByDesc('id')
             ->first();
+    }
+
+    /** Units of its kind the pack adds (alias of the `photos` column). */
+    public function units(): int
+    {
+        return (int) $this->photos;
+    }
+
+    /** Order item / receipt line: "Pack · +20 fotos · 12 meses". */
+    public function lineName(): string
+    {
+        $months = $this->billing_period->months();
+
+        return "{$this->name} · +{$this->units()} {$this->kind->noun($this->units())}".($months !== null ? " · {$months} meses" : '');
     }
 
     /** The store product id for an in-app purchase platform (`ios` / `android`). */

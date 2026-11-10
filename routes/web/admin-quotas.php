@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\Quotas\CapacityGrantController;
 use App\Http\Controllers\Admin\Quotas\ExpansionPackController;
 use App\Http\Controllers\Admin\Quotas\ExpansionPriceController;
 use App\Http\Controllers\Admin\Quotas\QuotaController;
@@ -33,6 +34,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('ampliaciones/{pack}/precios', [ExpansionPriceController::class, 'store'])->whereNumber('pack')->name('prices.store');
         Route::post('precios/{schedule}/terminar', [ExpansionPriceController::class, 'end'])->whereNumber('schedule')->name('prices.end');
         Route::post('precios/{schedule}/cancelar', [ExpansionPriceController::class, 'cancel'])->whereNumber('schedule')->name('prices.cancel');
+
+        // "Liberarle más": capacity granted by hand to a story or a user.
+        Route::post('liberaciones', [CapacityGrantController::class, 'store'])->name('grants.store');
+        Route::post('liberaciones/{entitlement}/revocar', [CapacityGrantController::class, 'revoke'])->whereNumber('entitlement')->name('grants.revoke');
     });
 });
 
@@ -41,4 +46,10 @@ Route::middleware('auth')->group(function () {
         ->where('story', '[a-z0-9]{8,16}')
         ->middleware('throttle:30,1')
         ->name('my-legacy.photo-expansion.store');
+
+    // Same action for every kind (`kind` = photos | videos | audio, `pack`).
+    Route::post('mi-legacy/{story}/ampliar', PhotoExpansionCheckoutController::class)
+        ->where('story', '[a-z0-9]{8,16}')
+        ->middleware('throttle:30,1')
+        ->name('my-legacy.expansion.store');
 });

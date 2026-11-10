@@ -3,6 +3,7 @@
 namespace App\Jobs\Media;
 
 use App\Enums\MediaKind;
+use App\Enums\StoryQuotaKind;
 use App\Jobs\Media\Concerns\MarksMediaFileFailed;
 use App\Models\CheerMessage;
 use App\Models\LegacyStory;
@@ -10,6 +11,7 @@ use App\Models\MediaFile;
 use App\Services\Media\AudioTranscoder;
 use App\Services\Media\ImageVariantGenerator;
 use App\Services\Media\MediaStorage;
+use App\Services\Media\StoryMediaQuota;
 use App\Services\Media\VideoTranscoder;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Queue\Queueable;
@@ -64,7 +66,7 @@ class ProcessMediaFile implements ShouldQueueAfterCommit
         $file->forceFill(['variants' => null, 'poster_path' => null, 'path' => null, 'original_path' => null]);
 
         match ($file->kind) {
-            MediaKind::Image => $this->processImage($file, $images, $source, $out),
+            MediaKind::Image => $this->processImage($file, $images, $source, $out, $this->ownsSource($file, $storage)),
             MediaKind::Video => $this->processVideo($file, $images, $video, $source, $out),
             MediaKind::Audio => $this->processAudio($file, $audio, $source, $out),
             MediaKind::File => $file->forceFill([
@@ -147,9 +149,31 @@ class ProcessMediaFile implements ShouldQueueAfterCommit
 
         return match (true) {
             $owner instanceof CheerMessage => (int) config('training.cheers.max_audio_seconds', 180),
-            $owner instanceof LegacyStory => (int) config('legacy.stories.max_audio_seconds', 180),
+            // Admin-editable per product / type / global (Límites y tarifas).
+            $owner instanceof LegacyStory => app(StoryMediaQuota::class)->maxSecondsFor($owner, StoryQuotaKind::Audio)
+                ?? (int) config('legacy.stories.max_audio_seconds', 180),
             default => (int) config('finisher.media.audio.max_seconds', 600),
         };
+    }
+
+    /** Story videos have their own admin-editable limit; null = only the global one. */
+    private function maxStoryVideoSeconds(MediaFile $file): ?int
+    {
+        $owner = $file->mediable_type !== null ? $file->mediable : null;
+
+        return $owner instanceof LegacyStory
+            ? app(StoryMediaQuota::class)->maxSecondsFor($owner, StoryQuotaKind::Videos)
+            : null;
+    }
+
+    /**
+     * False when the bytes belong to someone else's storage (a purchased
+     * event photo read in place from its private disk): such a source is
+     * never copied as this file's "original".
+     */
+    private function ownsSource(MediaFile $file, MediaStorage $storage): bool
+    {
+        return $file->source_disk === $storage->tmpDisk() || $file->source_disk === $file->disk;
     }
 
     /**
@@ -167,11 +191,11 @@ class ProcessMediaFile implements ShouldQueueAfterCommit
         $this->fail($reason);
     }
 
-    private function processImage(MediaFile $file, ImageVariantGenerator $images, string $source, string $out): void
+    private function processImage(MediaFile $file, ImageVariantGenerator $images, string $source, string $out, bool $ownsSource = true): void
     {
         $result = $images->generate($source, $out, $file->uuid);
         $variants = $this->finalVariants($file, $result['variants']);
-        $keepOriginal = (bool) config('finisher.media.images.keep_original', true);
+        $keepOriginal = $ownsSource && (bool) config('finisher.media.images.keep_original', true);
 
         $file->forceFill([
             'width' => $result['width'],
@@ -197,6 +221,15 @@ class ProcessMediaFile implements ShouldQueueAfterCommit
 
         if ($probe['duration_ms'] !== null && $probe['duration_ms'] > $maxMs) {
             throw new RuntimeException('Video longer than finisher.media.max_video_seconds.');
+        }
+
+        $storyMax = $this->maxStoryVideoSeconds($file);
+
+        // One second of slack, like audio. A content problem: no retry.
+        if ($storyMax !== null && $probe['duration_ms'] !== null && $probe['duration_ms'] > ($storyMax + 1) * 1000) {
+            $this->reject(new RuntimeException("video_too_long: {$probe['duration_ms']} ms > {$storyMax} s."));
+
+            return;
         }
 
         $mp4 = $file->uuid.'_video.mp4';

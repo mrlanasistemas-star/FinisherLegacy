@@ -132,7 +132,7 @@ test('the portrait builder is owner only and lists the print settings', function
             ->component('my-legacy/Portrait')
             ->where('spec.width_px', 2362)
             ->where('spec.height_px', 2953)
-            ->has('templates', 2)
+            ->has('templates', 4)
             ->where('defaultTemplate', 'carbono'));
 
     $this->actingAs(User::factory()->create())->get(route('my-legacy.portrait', $story->public_id))->assertForbidden();
