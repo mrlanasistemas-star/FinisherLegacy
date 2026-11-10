@@ -1,0 +1,223 @@
+MANUAL DE IDENTIDAD · 2026
+
+     Haz que perdure.
+
+            FINISHER LEGACY
+ÍNDICE                        5. Colores corporativos               8. Usos incorrectos
+
+1. Introducción               5.1 Principales                       8.1 Tipografía
+2. Misión y visión            5.2 HEX · RGB · CMYK · PANTONE        8.2 Color
+3. Construcción               5.3 Versiones de color                8.3 Rotación
+                                                                    8.4 Distorsión
+3.1 Concepto                  6. Versiones                          8.5 Alteración de elementos
+3.2 Retícula de construcción                                        8.6 Sombras o contornos
+                              6.1 Marca principal y firma
+4. Tipografía                 6.2 Ícono                             9. Aplicaciones
+
+4.1 Tipografía corporativa    7. Usos correctos
+4.2 Tipografía secundaria
+                              7.1 Zona de protección · 7.2 Tamaños
+                              7.3 Uso sobre fondos
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                            02
+ Finisher Legacy transforma cada logro deportivo en una historia que se puede
+     conservar, revivir y compartir. Cruzar la meta es solo el principio: lo que
+                          permanece es el legado.
+
+Nuestra firma, MAKE IT LAST --Haz que perdure--, resume la promesa de la marca:
+
+    que el esfuerzo de cada finisher dure mucho más que el día de la carrera.
+02 · LA MARCA                                                        Visión
+
+  Misión                                                             Ser la marca de referencia en Latinoamérica para
+                                                                     celebrar el deporte de resistencia, donde cada
+   Honrar el esfuerzo de corredores, ciclistas y                     meta cruzada se convierte en un legado que dura
+   atletas convirtiendo cada logro en una pieza de                   toda la vida.
+   historia: productos y experiencias que se
+   conservan, se reviven y se comparten.
+
+Propuesta de redacción -- validar con el equipo de Finisher Legacy.
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                                  04
+03
+
+Construcción
+03 · CONSTRUCCIÓN
+
+3.1 Concepto
+
+El monograma une las iniciales de Finisher y Legacy, trazadas en itálica a 25° para expresar velocidad y
+avance. Ambas letras comparten ángulo y grosor; el corte que las separa es la línea de meta. Sobre ellas, la
+firma MAKE IT LAST completa el mensaje.
+
++                                      =
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                         06
+03 · CONSTRUCCIÓN
+
+3.2 Retícula de construcción
+
+El monograma se dibuja sobre una retícula fija. Respetarla garantiza que la marca conserve su proporción en
+cualquier tamaño, del bordado de una gorra a un espectacular.
+
+                                                                             Ángulo: 25° en los fustes
+                                                                             Módulo x: ancho del fuste de la F
+                                                                             Barras: oro macizo, 0.45x
+                                                                             Fustes: marco oro + carbono
+                                                                             Proporción: 2.33 : 1
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                           07
+04
+
+Tipografías
+04 · TIPOGRAFÍA
+
+4.1 Firma y tipografía corporativa
+
+Aa               La firma MAKE IT LAST es un logotipo dibujado: siempre se coloca como archivo
+                 vectorial y nunca se escribe con el teclado. Para textos de apoyo en mayúsculas se
+                 usa Syncopate Bold, la fuente más cercana a la firma.
+
+                 ABCDEFGHIJKLMNÑOPQRSTUVWXYZ
+                 1234567890
+
+                 Syncopate: solo mayúsculas. El monograma FL y la firma son dibujos exclusivos.
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD  09
+04 · TIPOGRAFÍA
+
+4.2 Secundarias · Montserrat y Manrope
+
+Aa               Montserrat para títulos y para la frase Haz que perdure. con espaciado amplio.
+                 Manrope para textos, descripciones, papelería y medios digitales.
+
+                 Light · Regular · Bold
+
+                 ABCDEFGHIJKLMNÑOPQRSTUVWXYZ
+                 abcdefghijklmnñopqrstuvwxyz
+
+                 1234567890
+
+                 Ambas familias son gratuitas en Google Fonts.
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                            10
+  05
+
+Colores corporativos
+05 · COLORES CORPORATIVOS
+
+5.1 Principales
+
+                                       Degradado oro
+
+Negro Carbono                                                Oro Legacy
+
+HEX #0B0B0C · textura fibra de                               HEX #C9AE8B
+carbono
+
+Blanco  #FFFFFF                        Blanco Hueso #F8F7F3  Grafito      #1E1E21
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                              12
+05 · COLORES CORPORATIVOS
+
+5.2 HEX · RGB · CMYK · PANTONE
+
+Color                  HEX             RGB              CMYK                PANTONE (ref.)
+Negro Carbono          #0B0B0C         11 · 11 · 12     60 · 40 · 40 · 100  Black 6 C
+Grafito                #1E1E21         30 · 30 · 33     9 · 9 · 0 · 87      Black 7 C
+Oro Legacy             #C9AE8B         201 · 174 · 139  0 · 13 · 31 · 21    7502 C · 872 C metálico
+Oro Claro (brillo)     #E6D1B5         230 · 209 · 181  0 · 9 · 21 · 10     7527 C · 9224 C
+Oro Profundo (sombra)  #8C7454         140 · 116 · 84   0 · 17 · 40 · 45    7503 C
+Blanco Hueso           #F8F7F3         248 · 247 · 243  0·0·2·3             --
+Blanco                 #FFFFFF         255 · 255 · 255  0·0·0·0             --
+
+CMYK y PANTONE son equivalencias de referencia: confirmar siempre con prueba de color del proveedor. En bordado y serigrafía, el oro se reproduce
+con hilo o tinta metálica.
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                                                              13
+05 · COLORES CORPORATIVOS
+
+5.3 Versiones de color
+
+Carbono + Oro               Oro sobre negro                   Sobre fondo claro  Sobre grafito
+
+Principal · piezas premium  Una tinta · bordado y serigrafía  Carbono + oro en blanco y hueso Carbono + oro en fondos oscuros
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                                          14
+06
+
+Versiones
+06 · VERSIONES
+
+Marca principal, firma e ícono
+
+Haz que perdure.
+
+6.1 Marca principal                      Firma horizontal                           6.2 Ícono
+
+Monograma + firma, apilados y centrados  Para espacios bajos: web, correo, banners  Monograma solo: avatar, app, favicon, parches
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                                              16
+ 07
+
+Usos correctos
+07 · USOS CORRECTOS                                             7.2 Tamaños mínimos
+
+7.1 Zona de protección                                          Por debajo de estas medidas la marca pierde legibilidad. No
+                                                                hay tamaño máximo.
+Alrededor de la marca se reserva un espacio libre igual al
+módulo x (ancho del fuste de la F). Ningún texto, imagen o      Versión          Impreso       Digital
+borde puede invadirlo.                                          Monograma FL     1.2 cm ancho  32 px ancho
+                                                                Marca principal  3 cm ancho    120 px ancho
+       x = ancho del fuste · margen mínimo en los cuatro lados  Bordado (gorra)  4 cm ancho    --
+
+                                                                Medidas recomendadas; validar con el proveedor de bordado o
+                                                                impresión.
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                                        18
+07 · USOS CORRECTOS
+
+7.3 Uso sobre fondos
+
+La marca siempre debe tener contraste suficiente. La versión principal, carbono + oro, funciona sobre cualquier
+fondo. Sobre oro se usa el FL en negro.
+
+Fibra de carbono  carbono + Fotografía oscura  carbono + Oro  negro  Blanco o hueso  carbono +
+oro  oro                                                             oro
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                               19
+ 08
+
+Usos incorrectos
+08 · USOS INCORRECTOS
+
+Lo que nunca se hace con la marca
+
+ 8.1 Tipografía                       8.2 Color                             8.3 Rotación
+
+No reescribir el monograma con otra  No usar colores fuera de la paleta.   No girar ni cambiar el ángulo de 25°.
+fuente.
+                                                                            8.6 Sombras o contornos
+    FL
+                                                                           No añadir sombras, brillos ni trazos.
+ 8.4 Distorsión                       8.5 Alteración
+
+No estirar ni comprimir la marca.    No mover, separar ni cambiar letras.
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                             21
+09
+
+Aplicaciones
+09 · APLICACIONES
+
+La marca en uso
+
+Gorra técnica                         Etiqueta colgante           Perfil en redes
+
+Bordado en hilo oro sobre tela negra  Producto y empaque premium  Ícono negro sobre oro, recorte circular
+
+FINISHER LEGACY · MANUAL DE IDENTIDAD                                                                        23
+Haz que perdure.
+
+  F I N I S H E R L E G A C Y. C O M
+
