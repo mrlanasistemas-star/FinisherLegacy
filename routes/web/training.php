@@ -33,6 +33,7 @@ Route::middleware('auth')->prefix('mi-entrenamiento')->name('training.')->group(
         Route::post('escuchado', [TrainingController::class, 'listened'])->name('listened');
         Route::post('favorito', [TrainingController::class, 'favorite'])->name('favorite');
         Route::post('bloquear', [TrainingController::class, 'block'])->name('block');
+        Route::post('reportar', [TrainingController::class, 'report'])->middleware('throttle:20,1')->name('report');
         Route::delete('/', [TrainingController::class, 'hide'])->name('hide');
     });
 });

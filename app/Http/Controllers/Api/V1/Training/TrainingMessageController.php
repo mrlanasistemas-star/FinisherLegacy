@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Training;
 
 use App\Actions\Training\ManageCheerMessages;
+use App\Actions\Training\ReportCheerMessage;
+use App\Enums\CheerReportReason;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
@@ -72,6 +74,18 @@ class TrainingMessageController extends Controller
     {
         $user = $this->sanctumUser($request);
         $messages->blockSender($this->ownMessage($user, $uuid), $user);
+
+        return response()->noContent();
+    }
+
+    /** `POST /training/messages/{uuid}/report` `{reason, details?}` → 204; staff can then review that one message. */
+    public function report(Request $request, string $uuid, ReportCheerMessage $report): Response
+    {
+        $user = $this->sanctumUser($request);
+        $message = $this->ownMessage($user, $uuid);
+        $data = $request->validate(ReportCheerMessage::rules());
+
+        $report->handle($message, $user, CheerReportReason::from($data['reason']), $data['details'] ?? null);
 
         return response()->noContent();
     }

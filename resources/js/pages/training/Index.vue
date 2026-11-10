@@ -5,7 +5,7 @@
  * via the Web Share API, revoke). Below: the cheers their people left,
  * filtered all / unheard / favorites, with a web player (play/pause,
  * prev/next, speed 0.75–2×, volume) and per-message favorite / hide /
- * block sender. Same Actions as /api/v1/training (TrainingController).
+ * block sender / report. Same Actions as /api/v1/training (TrainingController).
  */
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
@@ -13,6 +13,7 @@ import {
     Check,
     Copy,
     EyeOff,
+    Flag,
     Headphones,
     Link2,
     Pause,
@@ -23,6 +24,7 @@ import {
     Star,
     Volume2,
 } from '@lucide/vue';
+import Swal from 'sweetalert2';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { cheerIcon } from '@/components/training/cheerIcons';
 import { vReveal } from '@/composables/useReveal';
@@ -39,6 +41,7 @@ import {
     favorite as favoriteMessage,
     hide as hideMessage,
     listened as listenedMessage,
+    report as reportMessage,
 } from '@/routes/training/messages';
 
 type CheerMessage = {
@@ -82,8 +85,11 @@ const props = defineProps<{
     expiryOptions: number[];
 }>();
 
-const page = usePage<{ flash?: { cheer_link_url?: string } }>();
-const newLinkUrl = computed(() => page.props.flash?.cheer_link_url ?? null);
+// Inertia v3 delivers `Inertia::flash()` data on the page object itself
+// (`page.flash`), never inside `page.props`. Kept in a ref so the fresh link
+// stays on screen while the runner keeps using the page (flash is one-shot).
+const page = usePage();
+const newLinkUrl = ref<string | null>(page.flash?.cheer_link_url ?? null);
 
 // ── Links ────────────────────────────────────────────────────────────────
 
@@ -95,7 +101,10 @@ const linkForm = useForm({
 function createLink() {
     linkForm.post(storeLink.url(), {
         preserveScroll: true,
-        onSuccess: () => linkForm.reset('title'),
+        onSuccess: (response) => {
+            linkForm.reset('title');
+            newLinkUrl.value = response.flash?.cheer_link_url ?? null;
+        },
     });
 }
 
@@ -233,6 +242,42 @@ async function block(message: CheerMessage) {
         router.post(
             blockMessage.url(message.uuid),
             {},
+            { preserveScroll: true },
+        );
+    }
+}
+
+/** «Reportar mensaje»: only a reported message becomes reviewable by our team. */
+async function report(message: CheerMessage) {
+    const result = await Swal.fire({
+        title: 'Reportar mensaje',
+        text: 'Nuestro equipo podrá revisar solo este mensaje (y su audio). Lo quitaremos de tu lista.',
+        input: 'select',
+        inputOptions: {
+            harassment: 'Acoso',
+            threat: 'Amenaza',
+            inappropriate: 'Contenido inapropiado',
+            spam: 'Spam',
+            other: 'Otro',
+        },
+        inputPlaceholder: 'Elige un motivo',
+        inputValidator: (value) => (value ? null : 'Elige un motivo.'),
+        showCancelButton: true,
+        confirmButtonText: 'Reportar',
+        cancelButtonText: 'Cancelar',
+        background: '#ffffff',
+        color: '#171714',
+        confirmButtonColor: '#171714',
+        cancelButtonColor: '#e7e3da',
+        reverseButtons: true,
+        customClass: { cancelButton: 'fl-swal-cancel' },
+    });
+
+    if (result.isConfirmed && typeof result.value === 'string') {
+        stopIf(message);
+        router.post(
+            reportMessage.url(message.uuid),
+            { reason: result.value },
             { preserveScroll: true },
         );
     }
@@ -770,6 +815,15 @@ const hasNext = computed(() => {
                             @click="block(message)"
                         >
                             <Ban class="size-5" aria-hidden="true" />
+                        </button>
+                        <button
+                            type="button"
+                            class="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-700"
+                            aria-label="Reportar mensaje"
+                            title="Reportar mensaje"
+                            @click="report(message)"
+                        >
+                            <Flag class="size-5" aria-hidden="true" />
                         </button>
                     </div>
                 </li>

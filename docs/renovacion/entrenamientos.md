@@ -46,9 +46,15 @@ reproducción.
      lista `ManageStoryMedia::AUDIO_MIMES`), nunca por la extensión; ≤ 10 MB;
      disco temporal → cola (Process → Transfer → Finalize) → disco de medios;
      **siempre privado**. Carpeta: la sección `support` del atleta.
-   - Duración ≤ 180 s: si el servidor tiene ffprobe (`FFMPEG_BINARY` /
-     `FFPROBE_BINARY`), se mide el archivo y manda la medición; si no, se usa
-     la duración medida por el navegador, limitada a 180 s.
+   - Duración ≤ 180 s: si el servidor tiene ffprobe (se detecta solo:
+     `FFMPEG_BINARY` / `FFPROBE_BINARY` → entorno → PATH), se mide el archivo
+     al recibirlo y otra vez en el job `ProcessMediaFile`; la medición del
+     job es la que queda en `duration_seconds` (vía `syncFromMediaFile`) y un
+     audio que excede el límite marca el archivo `failed` sin reintento. Con
+     ffmpeg el audio se recodifica a AAC/m4a mono (~80 kbps) para iOS y
+     Android. Sin ffprobe se usa la duración medida por el navegador,
+     limitada a 180 s (y se registra `media.ffprobe_missing` en producción).
+     Instalación: `docs/renovacion/despliegue-vps.md` §3.1.
    - Bajo un bloqueo de la fila del enlace se vuelve a comprobar que siga
      activo, para que el último lugar no se entregue dos veces.
 5. **Se notifica al atleta** con la infraestructura existente
@@ -109,6 +115,7 @@ cualquier uuid ajeno responde **404** (nunca 403). Envoltura estándar del API
 | POST | `/training/messages/{uuid}/favorite` | `{"favorite": true}` | Marca/desmarca favorito |
 | DELETE | `/training/messages/{uuid}` | — | Oculta el mensaje (sale de la lista) |
 | POST | `/training/messages/{uuid}/block-sender` | — | Bloquea al remitente en ese enlace y oculta todos sus mensajes de ese enlace |
+| POST | `/training/messages/{uuid}/report` | `{"reason": "…", "details": "…"}` | Reporta el mensaje al equipo y lo oculta (ver «Moderación») |
 
 Un mensaje oculto ya no existe para la API (404).
 
@@ -166,9 +173,48 @@ Menú: «Mi entrenamiento» en el menú de cuenta (`resources/js/config/public-l
   foto si su perfil es público. Nunca correo, usuario ni otros datos.
 - `/animo/*` es `noindex, nofollow` (meta + `X-Robots-Tag`) y no aparece en el
   sitemap.
-- El personal no tiene una vista para escuchar estos mensajes: son privados
-  entre quien los manda y el atleta. La moderación la hace el propio atleta
-  (ocultar / bloquear). Ver «Pendiente».
+- El personal no puede leer ni escuchar estos mensajes: son privados entre
+  quien los manda y el atleta. La única excepción es un mensaje que el propio
+  atleta **reporta** (ver «Moderación»).
+
+## Moderación
+
+**El atleta** modera primero (ocultar / bloquear) y puede **reportar** un
+mensaje concreto:
+
+| Canal | Ruta | Cuerpo | Respuesta |
+|---|---|---|---|
+| API | `POST /api/v1/training/messages/{uuid}/report` | `{"reason": "harassment\|threat\|inappropriate\|spam\|other", "details": "…≤500, opcional"}` | `204`; `422` motivo inválido; `404` uuid ajeno |
+| Web | `POST /mi-entrenamiento/mensajes/{uuid}/reportar` | igual | redirect + toast (botón de bandera en `/mi-entrenamiento`) |
+
+Reportar crea un `cheer_message_reports` (idempotente por atleta y mensaje),
+quita el mensaje de la lista del atleta (`status = hidden`) y queda en la
+bitácora (`activity_log`, `log_name = training`).
+
+**Administración → Contenido → Entrenamientos** (`/admin/entrenamientos`,
+permiso `community.moderate`, `App\Http\Controllers\Admin\Training\CheerModerationController`,
+`App\Actions\Training\ModerateCheers`):
+
+- **Solo conteos** para lo no reportado: enlaces (mensajes totales, últimas
+  24 h, bloqueos, reportes, envíos frenados por el límite en 7 días), totales
+  por atleta y remitentes bloqueados/reportados, identificados con una
+  referencia corta (8 caracteres del HMAC de su IP, nunca la IP).
+- **Señales de abuso** de un enlace: algún reporte, ≥ 3 bloqueos, ≥ 10 envíos
+  frenados en 7 días o ≥ 50 mensajes en 24 h.
+- **Envíos frenados**: cada `429` del limitador `cheer-submit` se guarda en
+  `cheer_rate_limit_hits` (enlace, alcance `ip_minute`/`ip_hour`/`link_hour`,
+  HMAC de la IP).
+- **Reportes**: solo aquí se ve el contenido (nombre, relación, texto) del
+  mensaje reportado. «Escuchar audio» genera una URL firmada de **10 minutos**
+  al audio de ESE mensaje y registra cada acceso
+  (`cheer_report.audio_accessed`, con el moderador como causante).
+- **Acciones** (todas auditadas): desactivar / reactivar un enlace
+  (`cheer_links.moderation_disabled_at`; deja de aceptar mensajes como uno
+  revocado), resolver o descartar un reporte (descartar puede devolver el
+  mensaje a la lista del atleta) y **eliminar los mensajes del remitente
+  reportado**: borra (filas y audio) todo lo que ese remitente dejó a ese
+  atleta, lo bloquea en el enlace y resuelve el reporte (el reporte se
+  conserva como historial).
 
 ## Datos
 
@@ -177,18 +223,21 @@ Menú: «Mi entrenamiento» en el menú de cuenta (`resources/js/config/public-l
 | `cheer_links` | `uuid`, `user_id`, `token` (32, único), `title` (≤ 80), `legacy_story_id` (opcional), `expires_at`, `revoked_at`, `max_messages`, `messages_count` |
 | `cheer_messages` | `uuid`, `cheer_link_id`, `recipient_user_id`, `sender_name` (≤ 60), `relationship` (≤ 40), `body` (≤ 500), `icon`, `audio_media_file_id`, `duration_seconds`, `status` (`visible`/`hidden`), `listened_at`, `favorite`, `sender_ip_hash` |
 | `cheer_blocks` | `user_id`, `cheer_link_id`, `sender_ip_hash` (único por enlace), `cheer_message_id` |
+| `cheer_message_reports` | `uuid`, `cheer_message_id` (nulo tras purgar), `cheer_link_id`, `reporter_user_id`, `reason`, `details`, `sender_ip_hash`, `status` (`open`/`reviewing`/`resolved`/`dismissed`), `reviewed_by`, `reviewed_at`, `resolution_notes` |
+| `cheer_rate_limit_hits` | `cheer_link_id`, `scope`, `sender_ip_hash`, `created_at` |
 
-Migraciones `2026_11_10_600000…600200`, solo aditivas y reversibles.
+`cheer_links` suma `moderation_disabled_at` / `moderation_disabled_by`.
+
+Migraciones `2026_11_10_600000…600200` y `2026_11_11_420000`, solo aditivas y
+reversibles.
 
 ## Pendiente
 
-- **Moderación en Administración**: no se agregó a `/admin/community`. Esa
-  pantalla trabaja sobre reportes públicos de la comunidad; los mensajes de
-  ánimo son privados y no tienen reportes. Si se necesita, agregar una
-  pestaña de solo conteos (mensajes por día, bloqueos) sin acceso al audio, y
-  una acción de soporte para reactivar mensajes ocultos (`status = visible`).
+- La app móvil debe agregar «Reportar mensaje» con el endpoint de arriba.
+- `cheer_rate_limit_hits` crece con cada envío frenado; si se vuelve grande,
+  agregar una poda programada (p. ej. > 90 días).
 - `legacy_story_id` existe en `cheer_links` pero aún no se expone para ligar
   un enlace a una historia Legacy.
-- La duración solo se mide en el servidor si `FFMPEG_BINARY`/`FFPROBE_BINARY`
-  están configurados; sin ffprobe se confía en la duración del navegador
-  (limitada a 180 s) y en el límite de 10 MB.
+- La duración solo se mide en el servidor si hay ffprobe (configurado o en el
+  PATH; `php artisan storage:health` lo muestra); sin ffprobe se confía en la
+  duración del navegador (limitada a 180 s) y en el límite de 10 MB.

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Training;
 
 use App\Actions\Training\ManageCheerLinks;
 use App\Actions\Training\ManageCheerMessages;
+use App\Actions\Training\ReportCheerMessage;
+use App\Enums\CheerReportReason;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Training\StoreCheerLinkRequest;
 use App\Models\CheerLink;
@@ -119,6 +121,20 @@ class TrainingController extends Controller
         $messages->blockSender($this->ownMessage($user, $message), $user);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Bloqueado. No recibirás más mensajes suyos en ese enlace.']);
+
+        return back();
+    }
+
+    public function report(Request $request, string $message, ReportCheerMessage $report): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $cheer = $this->ownMessage($user, $message);
+        $data = $request->validate(ReportCheerMessage::rules());
+
+        $report->handle($cheer, $user, CheerReportReason::from($data['reason']), $data['details'] ?? null);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Gracias. Reportamos el mensaje y lo quitamos de tu lista; nuestro equipo lo revisará.']);
 
         return back();
     }
