@@ -38,8 +38,8 @@ class AboutController extends Controller
                 ->map(fn (CompanyMilestone $m) => [
                     'id' => $m->id,
                     'period' => $m->period,
-                    'title' => $m->title,
-                    'description' => $m->description,
+                    'title' => tr($m, 'title'),
+                    'description' => tr($m, 'description'),
                     'location' => $m->location,
                     'image_url' => $m->imageUrl(),
                 ]),
@@ -52,7 +52,7 @@ class AboutController extends Controller
                     'title' => $item->title,
                     'description' => $item->description,
                 ]),
-            'sports' => Sport::query()->where('active', true)->orderBy('sort_order')->pluck('name'),
+            'sports' => Sport::query()->where('active', true)->orderBy('sort_order')->get()->map(fn (Sport $sport) => tr($sport, 'name')),
         ]);
     }
 }

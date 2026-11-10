@@ -107,23 +107,34 @@ class AccountController extends Controller
     /**
      * `DELETE /me/account` — re-authentication: the current password, or
      * for an account that only ever signed in with Google/Apple (no known
-     * password), typing the confirmation word.
+     * password), typing the confirmation word — the one of the request's
+     * language (`__('ELIMINAR')`: "DELETE" in English). The Spanish word is
+     * always accepted: app builds older than the translated app send it.
      */
     public function destroy(Request $request, DeleteAccount $delete): JsonResponse
     {
         $user = $this->sanctumUser($request);
         $hasSocialLogin = $user->socialAccounts()->exists();
 
+        $word = __('ELIMINAR');
+        $accepted = array_values(array_unique([$word, 'ELIMINAR']));
+
+        // Tolerant of spaces around the word, strict about the word itself.
+        if (is_string($request->input('confirmation'))) {
+            $request->merge(['confirmation' => trim($request->input('confirmation'))]);
+        }
+
         $data = $request->validate([
             'password' => [$hasSocialLogin ? 'nullable' : 'required', 'string'],
-            'confirmation' => [$hasSocialLogin ? 'required_without:password' : 'nullable', 'nullable', 'string', Rule::in(['ELIMINAR'])],
+            'confirmation' => [$hasSocialLogin ? 'required_without:password' : 'nullable', 'nullable', 'string', Rule::in($accepted)],
         ], [
             'password.required' => __('Escribe tu contraseña para confirmar.'),
-            'confirmation.in' => __('Escribe ELIMINAR para confirmar.'),
+            'confirmation.in' => __('Escribe :word para confirmar.', ['word' => $word]),
+            'confirmation.required_without' => __('Escribe :word para confirmar.', ['word' => $word]),
         ]);
 
         $passwordOk = isset($data['password']) && Hash::check($data['password'], $user->password);
-        $confirmationOk = $hasSocialLogin && ($data['confirmation'] ?? null) === 'ELIMINAR';
+        $confirmationOk = $hasSocialLogin && in_array($data['confirmation'] ?? null, $accepted, true);
 
         if (! $passwordOk && ! $confirmationOk) {
             throw ValidationException::withMessages(['password' => [__('La contraseña no es correcta.')]]);

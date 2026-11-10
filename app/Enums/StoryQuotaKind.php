@@ -42,7 +42,10 @@ enum StoryQuotaKind: string
         };
     }
 
-    /** Lowercase noun for sentences: "+10 fotos", "máximo de videos". */
+    /**
+     * Lowercase noun on its own ("máximo de videos") — admin panel only.
+     * NEVER glue a number to it: a quantity is `amount()`, a whole phrase.
+     */
     public function noun(int $count = 2): string
     {
         return match ($this) {

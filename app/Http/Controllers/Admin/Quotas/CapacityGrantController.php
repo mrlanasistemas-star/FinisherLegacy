@@ -72,7 +72,7 @@ class CapacityGrantController extends Controller
             isset($data['expires_at']) ? Carbon::parse($data['expires_at'])->endOfDay() : null,
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => "Listo: liberaste +{$data['units']} {$kind->noun((int) $data['units'])}."]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Listo: liberaste +{$kind->amount((int) $data['units'])}."]);
 
         return back();
     }

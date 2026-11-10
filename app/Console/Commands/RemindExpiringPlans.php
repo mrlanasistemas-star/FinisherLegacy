@@ -74,20 +74,27 @@ class RemindExpiringPlans extends Command
                     // Written once, in the owner's language (not the worker's):
                     // the in-app row, the push and the e-mail share these texts.
                     [$headline, $body] = in_locale_of($user, function () use ($entitlement, $story, $kind, $units, $stage, $expired): array {
+                        $titled = filled($story->title);
                         $values = [
                             'amount' => $kind->amount($units),
-                            'title' => $story->title ?: __('tu recuerdo'),
+                            'title' => (string) $story->title,
                             'date' => $entitlement->expires_at?->isoFormat('LL'),
                         ];
 
+                        // A memory without a title gets its own sentence
+                        // (never a generic word inside the «quotes»).
                         return $expired
                             ? [
                                 __('Tu plan venció'),
-                                __('El plan de +:amount de «:title» terminó. Todo tu contenido sigue visible; para agregar más, renuévalo.', $values),
+                                $titled
+                                    ? __('El plan de +:amount de «:title» terminó. Todo tu contenido sigue visible; para agregar más, renuévalo.', $values)
+                                    : __('El plan de +:amount de tu recuerdo terminó. Todo tu contenido sigue visible; para agregar más, renuévalo.', $values),
                             ]
                             : [
-                                $stage === '1' ? __('Tu plan vence mañana') : __('Tu plan vence en :days días', ['days' => $stage]),
-                                __('El plan de +:amount de «:title» vence el :date. Renuévalo para conservar ese espacio.', $values),
+                                $stage === '1' ? __('Tu plan vence mañana') : trans_choice('Tu plan vence en :count día|Tu plan vence en :count días', (int) $stage),
+                                $titled
+                                    ? __('El plan de +:amount de «:title» vence el :date. Renuévalo para conservar ese espacio.', $values)
+                                    : __('El plan de +:amount de tu recuerdo vence el :date. Renuévalo para conservar ese espacio.', $values),
                             ];
                     });
 

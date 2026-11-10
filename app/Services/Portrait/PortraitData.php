@@ -48,7 +48,7 @@ final readonly class PortraitData
             'pace' => __('Ritmo'),
             'position' => __('Lugar'),
             'category' => __('Categoría'),
-            'bib' => __('Número'),
+            'bib' => __('Número||número de corredor (dorsal)'),
             default => null,
         };
 

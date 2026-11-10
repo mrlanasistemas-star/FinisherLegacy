@@ -181,10 +181,20 @@ final class OrderSummary
 
         $known = ['line', 'street', 'neighborhood', 'city', 'state', 'postal_code', 'country'];
 
+        // City, state and postal code are ONE translatable line: each
+        // language orders them its own way ("Cuernavaca, Morelos C.P. 62000"
+        // / "Cuernavaca, Morelos 62000").
+        $place = $line(['city', 'state']);
+        $zip = is_scalar($address['postal_code'] ?? null) ? trim((string) $address['postal_code']) : '';
+
         $lines = [
             $line(['line', 'street']),
             $line(['neighborhood']),
-            trim($line(['city', 'state']).(filled($address['postal_code'] ?? null) ? ' C.P. '.$address['postal_code'] : '')),
+            match (true) {
+                $place !== '' && $zip !== '' => __(':place C.P. :zip', ['place' => $place, 'zip' => $zip]),
+                $zip !== '' => __('C.P. :zip', ['zip' => $zip]),
+                default => $place,
+            },
             $line(['country']),
         ];
 

@@ -3,6 +3,7 @@
 namespace App\Services\Portrait;
 
 use App\Models\LegacyTag;
+use App\Models\Product;
 
 /**
  * Tells the Portarretrato inteligente apart from a Finisher Legacy Tag.
@@ -32,6 +33,16 @@ final class PortraitProduct
         $slug = $tag?->productVariant?->product?->slug;
 
         return is_string($slug) && in_array($slug, self::slugs(), true) ? self::KIND_ALBUM : self::KIND_TAG;
+    }
+
+    /**
+     * Whether a catalog product is a frame. A frame is serialized like a
+     * tag (`tracks_units`) but it is NOT a tag: it has no tag artwork and
+     * the store shows its own product photos.
+     */
+    public static function isFrameProduct(?Product $product): bool
+    {
+        return $product !== null && in_array($product->slug, self::slugs(), true);
     }
 
     public static function isFrame(?LegacyTag $tag): bool

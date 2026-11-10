@@ -40,12 +40,17 @@ enum BillingPeriod: string
         };
     }
 
-    /** Shown next to the price before paying: "$X por 12 meses" / "$X · pago único". */
-    public function priceSuffix(): string
+    /**
+     * The price as shown before paying — one whole phrase, so each language
+     * orders it its own way: "$149.00 MXN por 12 meses" / "$49.00 MXN · pago único".
+     */
+    public function priceLabel(string $price): string
     {
         $months = $this->months();
 
-        return $months === null ? __('pago único') : __('por :months meses', ['months' => $months]);
+        return $months === null
+            ? __(':price · pago único', ['price' => $price])
+            : trans_choice(':price por :count mes|:price por :count meses', $months, ['price' => $price]);
     }
 
     public function expiresAt(CarbonInterface $startsAt): ?CarbonInterface

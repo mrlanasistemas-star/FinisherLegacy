@@ -107,7 +107,7 @@ class OrderProgress
     {
         return match (data_get($order->customer_snapshot, 'delivery_method')) {
             'pickup', 'event_pickup', 'kit_pickup' => __('Listo para recoger'),
-            'shipping', 'delivery' => __('Enviado'),
+            'shipping', 'delivery' => __('Enviado||pedido enviado por paquetería'),
             default => __('Enviado o listo para recoger'),
         };
     }

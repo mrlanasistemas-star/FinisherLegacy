@@ -119,7 +119,7 @@ class PhotoExpansionPack extends Model
         $amount = $this->kind->amount($this->units());
 
         return $months !== null
-            ? __(':name · +:amount · :months meses', ['name' => $this->name, 'amount' => $amount, 'months' => $months])
+            ? trans_choice(':name · +:amount · :count mes|:name · +:amount · :count meses', $months, ['name' => $this->name, 'amount' => $amount])
             : __(':name · +:amount', ['name' => $this->name, 'amount' => $amount]);
     }
 

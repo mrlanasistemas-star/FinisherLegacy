@@ -189,7 +189,13 @@ class ModelAlerts
                 fn (): string => $resolved ? __('Resolvimos tu solicitud') : __('Actualizamos tu solicitud'),
                 fn (): string => $resolved && filled($case->resolution)
                     ? __('Caso :number: :resolution', ['number' => $case->number, 'resolution' => mb_strimwidth((string) $case->resolution, 0, 140, '…')])
-                    : __('Tu caso :number ahora está: :status.', ['number' => $case->number, 'status' => mb_strtolower($case->status->label())]),
+                    // One whole sentence per status (never a label dropped mid-sentence).
+                    : match ($case->status) {
+                        SupportCaseStatus::Open => __('Tu caso :number está abierto.', ['number' => $case->number]),
+                        SupportCaseStatus::InProgress => __('Tu caso :number ya está en proceso.', ['number' => $case->number]),
+                        SupportCaseStatus::Resolved => __('Tu caso :number quedó resuelto.', ['number' => $case->number]),
+                        SupportCaseStatus::Closed => __('Tu caso :number quedó cerrado.', ['number' => $case->number]),
+                    },
                 NotificationType::SupportReply,
                 null,
                 ['target' => ['type' => 'support', 'uuid' => $case->uuid]],

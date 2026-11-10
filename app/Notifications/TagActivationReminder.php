@@ -45,8 +45,8 @@ class TagActivationReminder extends Notification implements ShouldQueue
             ->subject(__('Activa tu Finisher Legacy Tag'))
             ->greeting(__('¡Tu historia te está esperando!'))
             ->line(__('Tu Finisher Legacy Tag todavía no está activado. Actívalo para guardar tu recuerdo: tu carrera, tus fotos y tu dedicatoria.'))
-            ->line(__('Código impreso en tu tag: :code', ['code' => $this->tag->displayCode()]))
-            ->action(__('Activar mi tag'), $url)
-            ->line(__('También puedes acercar tu teléfono al tag (NFC) o entrar a :url y escribir el código.', ['url' => route('activate.index')]));
+            ->line(__('Código impreso en tu Tag: :code', ['code' => $this->tag->displayCode()]))
+            ->action(__('Activar mi Tag'), $url)
+            ->line(__('También puedes acercar tu teléfono al Tag (NFC) o entrar a :url y escribir el código.', ['url' => route('activate.index')]));
     }
 }

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserSocialAccount;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
@@ -49,6 +50,46 @@ test('a social-only account confirms deletion by typing ELIMINAR', function () {
     $this->withHeaders(apiAuthHeader($user))->deleteJson('/api/v1/me/account', ['confirmation' => 'ELIMINAR'])->assertOk();
 
     expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+});
+
+test('the confirmation word follows the language of the request', function () {
+    // Several attempts in a row: the rate limit is not what is tested here.
+    $this->withoutMiddleware(ThrottleRequests::class);
+
+    // Only these lines exist in English: the test does not depend on lang/en.json.
+    app('translator')->setLoaded(['*' => ['*' => ['en' => ['ELIMINAR' => 'DELETE', 'Escribe :word para confirmar.' => 'Type :word to confirm.']]]]);
+
+    $social = function (): User {
+        $user = User::factory()->create();
+        UserSocialAccount::create(['user_id' => $user->id, 'provider' => 'apple', 'provider_user_id' => 'apple-'.$user->id]);
+
+        return $user;
+    };
+
+    // English: a wrong word is refused and the message names the English word.
+    $user = $social();
+    $this->withHeaders([...apiAuthHeader($user), 'X-Locale' => 'en'])->deleteJson('/api/v1/me/account', ['confirmation' => 'BORRAR'])
+        ->assertStatus(422)
+        ->assertJsonPath('errors.confirmation.0', 'Type DELETE to confirm.');
+    $this->withHeaders([...apiAuthHeader($user), 'X-Locale' => 'en'])->deleteJson('/api/v1/me/account', ['confirmation' => 'delete'])
+        ->assertStatus(422);
+    expect($user->fresh()->trashed())->toBeFalse();
+
+    // English: the English word (spaces around it are forgiven).
+    $this->withHeaders([...apiAuthHeader($user), 'X-Locale' => 'en'])->deleteJson('/api/v1/me/account', ['confirmation' => ' DELETE '])->assertOk();
+    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+
+    // An older app build in English still sends the Spanish word.
+    $user = $social();
+    $this->withHeaders([...apiAuthHeader($user), 'X-Locale' => 'en'])->deleteJson('/api/v1/me/account', ['confirmation' => 'ELIMINAR'])->assertOk();
+    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+
+    // Spanish: the English word is not the confirmation word.
+    $user = $social();
+    $this->withHeaders([...apiAuthHeader($user), 'X-Locale' => 'es'])->deleteJson('/api/v1/me/account', ['confirmation' => 'DELETE'])
+        ->assertStatus(422)
+        ->assertJsonPath('errors.confirmation.0', 'Escribe ELIMINAR para confirmar.');
+    expect($user->fresh()->trashed())->toBeFalse();
 });
 
 test('forgot password always answers the same and emails a reset link only to real accounts', function () {

@@ -107,7 +107,7 @@ class StoryEditorController extends Controller
                 'label' => $v->label(),
                 'help' => match ($v) {
                     StoryVisibility::Public => __('Cualquiera puede verlo, también desde buscadores.'),
-                    StoryVisibility::Unlisted => __('Lo ve quien acerque su teléfono a tu tag o tenga el enlace. No aparece en buscadores.'),
+                    StoryVisibility::Unlisted => __('Lo ve quien acerque su teléfono a tu Tag o tenga el enlace. No aparece en buscadores.'),
                     StoryVisibility::Private => __('Solo tú. Puedes compartirlo con alguien especial con un enlace personal.'),
                 },
             ], StoryVisibility::cases()),
@@ -309,29 +309,40 @@ class StoryEditorController extends Controller
         $race = $view['race'];
         $lines = [(string) $view['title'], str_repeat('=', mb_strlen((string) $view['title'])), ''];
 
-        foreach ([
-            __('Carrera') => $race['event_name'] ?? null,
-            __('Distancia') => $race['distance'] ?? null,
-            __('Tiempo') => $race['time'] ?? null,
-            __('Lugar en la clasificación') => $race['position'] ?? null,
-            __('Nombre') => $race['athlete_name'] ?? null,
-            __('Número de corredor') => $race['bib_number'] ?? null,
-            __('Ritmo') => $race['pace'] ?? $race['suggested_pace'] ?? null,
-            __('Categoría') => $race['category'] ?? null,
-            __('Lugar en su categoría') => $race['category_position'] ?? null,
-            __('Lugar por rama') => $race['gender_position'] ?? null,
-            __('Desnivel positivo (m)') => isset($race['elevation_gain_m']) ? (string) $race['elevation_gain_m'] : null,
-            __('Deporte') => $race['sport'] ?? null,
-            __('Fecha') => $race['date'] ?? null,
-            __('Sede') => $race['location'] ?? null,
-            __('Para') => $view['recipient_label'] ?? null,
-        ] as $label => $value) {
+        // Rows are [label, value] pairs keyed by a stable identifier: a
+        // translated label is never an array key (two labels may translate
+        // to the same word and would overwrite each other).
+        $rows = [
+            'event' => [__('Carrera'), $race['event_name'] ?? null],
+            'distance' => [__('Distancia'), $race['distance'] ?? null],
+            'time' => [__('Tiempo'), $race['time'] ?? null],
+            'position' => [__('Lugar en la clasificación'), $race['position'] ?? null],
+            'athlete_name' => [__('Nombre||nombre completo del atleta'), $race['athlete_name'] ?? null],
+            'bib_number' => [__('Número de corredor'), $race['bib_number'] ?? null],
+            'pace' => [__('Ritmo'), $race['pace'] ?? $race['suggested_pace'] ?? null],
+            'category' => [__('Categoría'), $race['category'] ?? null],
+            'category_position' => [__('Lugar en su categoría'), $race['category_position'] ?? null],
+            'gender_position' => [__('Lugar por rama'), $race['gender_position'] ?? null],
+            'elevation_gain' => [__('Desnivel positivo (m)'), isset($race['elevation_gain_m']) ? (string) $race['elevation_gain_m'] : null],
+            'sport' => [__('Deporte'), $race['sport'] ?? null],
+            'date' => [__('Fecha'), $race['date'] ?? null],
+            'location' => [__('Sede'), $race['location'] ?? null],
+            'recipient' => [__('Para||destinatario de la dedicatoria'), $view['recipient_label'] ?? null],
+        ];
+
+        foreach ($rows as [$label, $value]) {
             if (filled($value)) {
                 $lines[] = $label.': '.$value;
             }
         }
 
-        foreach ([__('Dedicatoria') => $view['dedication'] ?? null, __('Historia') => $view['body'] ?? null, __('Enlace') => $view['external_url'] ?? null] as $label => $value) {
+        $sections = [
+            'dedication' => [__('Dedicatoria'), $view['dedication'] ?? null],
+            'body' => [__('Historia'), $view['body'] ?? null],
+            'link' => [__('Enlace'), $view['external_url'] ?? null],
+        ];
+
+        foreach ($sections as [$label, $value]) {
             if (filled($value)) {
                 $lines[] = '';
                 $lines[] = $label.':';

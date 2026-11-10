@@ -349,9 +349,9 @@ class PhotographerPortalController extends Controller
             'gross_minor' => $sale->gross_minor,
             'processor_fee_minor' => $sale->processor_fee_minor,
             'processor_fee_estimated' => $sale->processor_fee_estimated,
+            // Customer-facing copy never names the payment processor.
             'payment_method_label' => match ($sale->payment_provider) {
-                'openpay' => __('Tarjeta (Openpay)'),
-                'stripe' => __('Tarjeta (Stripe)'),
+                'openpay', 'stripe' => __('Tarjeta'),
                 'manual' => __('Pago manual'),
                 default => null,
             },

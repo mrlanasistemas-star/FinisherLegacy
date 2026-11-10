@@ -45,7 +45,8 @@ class EventController extends Controller
 
         return Inertia::render('events/Index', [
             'editions' => $editions,
-            'sports' => Sport::query()->where('active', true)->orderBy('sort_order')->get(['id', 'name', 'slug']),
+            'sports' => Sport::query()->where('active', true)->orderBy('sort_order')->get(['id', 'name', 'slug'])
+                ->map(fn (Sport $sport) => ['id' => $sport->id, 'name' => tr($sport, 'name'), 'slug' => $sport->slug]),
             'filters' => [
                 'q' => $filters['q'],
                 'sport' => $filters['sport'],
@@ -67,7 +68,7 @@ class EventController extends Controller
                 'slug' => $event->slug,
                 'description' => $event->description,
                 'cover_url' => $event->cover_path ? asset('storage/'.$event->cover_path) : null,
-                'sport' => $event->sport->name,
+                'sport' => tr($event->sport, 'name'),
                 'organizer' => $event->organizer?->name,
             ],
             'edition' => $edition ? $this->editionPayload($edition, $request) : null,

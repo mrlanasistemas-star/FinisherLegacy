@@ -259,8 +259,8 @@ final class StoryMediaQuota
         return [
             'id' => $pack->id,
             'kind' => $pack->kind->value,
-            'name' => $pack->name,
-            'description' => $pack->description,
+            'name' => tr($pack, 'name'),
+            'description' => tr($pack, 'description'),
             'units' => $pack->units(),
             'price' => $amount,
             'currency' => $price->schedule->currency,
@@ -268,7 +268,7 @@ final class StoryMediaQuota
             'billing_label' => $pack->billing_period->label(),
             'months' => $pack->billing_period->months(),
             // "$149.00 MXN por 12 meses" / "$49.00 MXN · pago único"
-            'price_label' => '$'.$amount.' '.$price->schedule->currency.($pack->billing_period->isTerm() ? ' ' : ' · ').$pack->billing_period->priceSuffix(),
+            'price_label' => $pack->billing_period->priceLabel('$'.$amount.' '.$price->schedule->currency),
             'step' => $price->stepPayload(),
         ];
     }

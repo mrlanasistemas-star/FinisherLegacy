@@ -53,7 +53,7 @@ class ActivationController extends Controller
     public function lookup(Request $request): RedirectResponse
     {
         $request->validate(['code' => ['required', 'string', 'max:200']], [
-            'code.required' => __('Escribe el código impreso en tu tag.'),
+            'code.required' => __('Escribe el código impreso en tu Tag.'),
         ]);
 
         $code = TagCode::normalize((string) $request->input('code'));

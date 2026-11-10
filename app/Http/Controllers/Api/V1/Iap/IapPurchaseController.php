@@ -65,8 +65,8 @@ class IapPurchaseController extends Controller
             'pack' => $pack === null ? null : [
                 'id' => $pack->id,
                 'kind' => $pack->kind->value,
-                'name' => $pack->name,
-                'description' => $pack->description,
+                'name' => tr($pack, 'name'),
+                'description' => tr($pack, 'description'),
                 'units' => $pack->units(),
                 'photos' => $pack->photos,
                 'billing_period' => $pack->billing_period->value,

@@ -79,7 +79,7 @@ class StoreCheckoutRequest extends FormRequest
             'delivery_method' => __('método de entrega'),
             'address_line' => __('calle y número'),
             'address_city' => __('ciudad'),
-            'address_state' => __('estado'),
+            'address_state' => __('estado||entidad federativa'),
             'address_postal_code' => __('código postal'),
         ];
     }
