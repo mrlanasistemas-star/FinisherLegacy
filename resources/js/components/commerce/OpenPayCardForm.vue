@@ -60,6 +60,8 @@ const props = defineProps<{
     config: { merchant_id: string; public_key: string; sandbox: boolean };
     amountLabel: string;
     holderName?: string | null;
+    /** Charge endpoint override (the app checkout's scoped route). */
+    paymentUrl?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -252,7 +254,7 @@ function tokenizeError(error: OpenPayError): string {
 async function charge(tokenId: string) {
     try {
         const data = await postJson<PaymentResponse>(
-            `/checkout/${props.orderUuid}/online-payment`,
+            props.paymentUrl ?? `/checkout/${props.orderUuid}/online-payment`,
             { token_id: tokenId, device_session_id: deviceSessionId },
         );
 
