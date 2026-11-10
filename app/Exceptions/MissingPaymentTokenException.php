@@ -17,7 +17,7 @@ class MissingPaymentTokenException extends ApiException
     public function __construct()
     {
         parent::__construct(
-            'Falta el token de la tarjeta generado por Openpay.js.',
+            'No pudimos leer los datos de tu tarjeta. Revisa la información e intenta de nuevo.',
             ApiErrorCode::ValidationFailed,
             422,
         );

@@ -453,7 +453,7 @@ const busy = computed(
             >
                 <span class="inline-flex items-center gap-1.5">
                     <ShieldCheck class="size-3.5 text-emerald-700" />
-                    Pago seguro procesado por OpenPay (BBVA)
+                    Pago seguro con cifrado bancario
                 </span>
                 <span>Visa · Mastercard · American Express · Carnet</span>
             </div>
@@ -461,7 +461,7 @@ const busy = computed(
                 v-if="config.sandbox"
                 class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900"
             >
-                Modo de pruebas (sandbox): usa una tarjeta de prueba de OpenPay;
+                Modo de pruebas (sandbox): usa una tarjeta de prueba;
                 no se hace ningún cargo real.
             </p>
         </form>
