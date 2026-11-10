@@ -11,6 +11,7 @@ use App\Enums\ProductType;
 use App\Http\Controllers\Admin\Catalog\ChannelPriceController;
 use App\Http\Controllers\Controller;
 use App\Models\Collection;
+use App\Models\CollectionDesign;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -130,6 +131,7 @@ class ProductController extends Controller
                 'minimum_stock' => $product->minimum_stock,
                 'is_featured' => (bool) $product->is_featured,
                 'collection_id' => $product->collection_id,
+                'collection_design_id' => $product->collection_design_id,
                 'tracks_units' => (bool) $product->tracks_units,
                 'material' => $product->material,
                 'strap_type' => $product->strap_type,
@@ -171,6 +173,11 @@ class ProductController extends Controller
             'reasons' => InventoryAdjustmentReason::options(),
             'categories' => ProductCategory::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'collections' => Collection::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            // Extra tag fronts per collection (the select filters by the chosen one).
+            'collectionDesigns' => CollectionDesign::query()
+                ->where(fn ($q) => $q->whereNull('archived_at')->orWhere('id', $product->collection_design_id))
+                ->orderBy('sort_order')->orderBy('id')->get(['id', 'collection_id', 'name', 'archived_at'])
+                ->map(fn (CollectionDesign $d) => ['id' => $d->id, 'collection_id' => $d->collection_id, 'name' => $d->name, 'archived' => $d->archived_at !== null]),
             'channelPricing' => ChannelPriceController::panelFor($product),
             'media' => $product->media->map(fn (ProductMedia $m) => [
                 'id' => $m->id,
@@ -203,6 +210,12 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image_path'] = $request->file('image')->store('products', 'public');
+        }
+
+        // A design belongs to one collection: moving the product drops it.
+        if (array_key_exists('collection_id', $data) && ! array_key_exists('collection_design_id', $data)
+            && $data['collection_id'] !== $product->collection_id) {
+            $data['collection_design_id'] = null;
         }
 
         $product->update($data);
@@ -390,6 +403,11 @@ class ProductController extends Controller
             'is_featured' => ['sometimes', 'boolean'],
             // Finisher Legacy Tag catalog fields (commerce-os §Administración) — all optional.
             'collection_id' => ['sometimes', 'nullable', 'integer', 'exists:collections,id'],
+            // The tag front it prints: one of its collection's designs (null → primary).
+            'collection_design_id' => [
+                'sometimes', 'nullable', 'integer',
+                Rule::exists('collection_designs', 'id')->where('collection_id', $request->integer('collection_id') ?: -1),
+            ],
             'tracks_units' => ['sometimes', 'boolean'],
             'material' => ['sometimes', 'nullable', 'string', 'max:255'],
             'strap_type' => ['sometimes', 'nullable', 'string', 'max:255'],

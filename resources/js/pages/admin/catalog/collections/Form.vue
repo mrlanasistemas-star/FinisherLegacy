@@ -13,6 +13,8 @@ import {
     update,
 } from '@/actions/App/Http/Controllers/Admin/Catalog/CollectionController';
 import CatalogHeader from '@/components/admin/catalog/CatalogHeader.vue';
+import CollectionDesignsManager from '@/components/admin/catalog/CollectionDesignsManager.vue';
+import type { CollectionDesignRow } from '@/components/admin/catalog/CollectionDesignsManager.vue';
 import DatePicker from '@/components/DatePicker.vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
@@ -52,6 +54,7 @@ type CollectionData = {
 const props = defineProps<{
     collection: CollectionData | null;
     events: { value: number; label: string }[];
+    designs?: CollectionDesignRow[];
 }>();
 
 defineOptions({
@@ -608,5 +611,13 @@ function submit() {
                 </Button>
             </div>
         </form>
+
+        <CollectionDesignsManager
+            v-if="c"
+            class="mt-6"
+            :collection-id="c.id"
+            :designs="props.designs ?? []"
+            :base="tagPreview"
+        />
     </div>
 </template>

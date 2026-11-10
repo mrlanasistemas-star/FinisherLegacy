@@ -80,6 +80,7 @@ class CollectionController extends Controller
         return Inertia::render('admin/catalog/collections/Form', [
             'collection' => null,
             'events' => $this->eventOptions(),
+            'designs' => [],
         ]);
     }
 
@@ -153,6 +154,8 @@ class CollectionController extends Controller
                 'hero_url' => $collection->hero_path ? $collection->heroUrl() : null,
             ],
             'events' => $this->eventOptions(),
+            // Extra tag fronts, managed in place (CollectionDesignController).
+            'designs' => CollectionDesignController::listFor($collection),
         ]);
     }
 
@@ -184,7 +187,9 @@ class CollectionController extends Controller
             ->withProperties(['name' => $collection->name, 'slug' => $collection->slug])
             ->log('collections.deleted');
 
-        foreach ([$collection->cover_path, $collection->hero_path, $collection->tag_front_art] as $path) {
+        $designArt = $collection->allDesigns()->pluck('front_art_path')->all();
+
+        foreach ([$collection->cover_path, $collection->hero_path, $collection->tag_front_art, ...$designArt] as $path) {
             $this->deleteUpload($path);
         }
 

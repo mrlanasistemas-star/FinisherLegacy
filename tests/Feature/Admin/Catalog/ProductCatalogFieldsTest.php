@@ -95,6 +95,13 @@ test('channel prices are created per channel / ally, disabled (never deleted) an
     $this->actingAs($admin)->post("/admin/products/{$variant->product_id}/precios-canal", [
         'sales_channel' => 'direct', 'product_variant_id' => $other->id, 'amount_minor' => 30000,
     ])->assertSessionHasErrors('product_variant_id');
+
+    // App Store / Google Play charge a store-managed price tier, never a manual one.
+    foreach (['app_store', 'play_store'] as $storeChannel) {
+        $this->actingAs($admin)->post("/admin/products/{$variant->product_id}/precios-canal", [
+            'sales_channel' => $storeChannel, 'amount_minor' => 30000,
+        ])->assertSessionHasErrors('sales_channel');
+    }
 });
 
 test('sales staff cannot manage channel prices', function () {

@@ -90,6 +90,7 @@ const props = defineProps<{
         active: boolean;
         concept_gallery?: { url: string; alt: string; srcset?: string }[];
         collection_id?: number | null;
+        collection_design_id?: number | null;
         tracks_units?: boolean;
         material?: string | null;
         strap_type?: string | null;
@@ -99,6 +100,12 @@ const props = defineProps<{
         seo_description?: string | null;
     };
     collections?: { id: number; name: string }[];
+    collectionDesigns?: {
+        id: number;
+        collection_id: number;
+        name: string;
+        archived: boolean;
+    }[];
     channelPricing?: ChannelPricing;
     variants: Variant[];
     matrix: {
@@ -289,6 +296,8 @@ const detailsForm = useForm({
     // Finisher Legacy Tag catalog fields (all optional server-side).
     collection_id: (props.product.collection_id ?? null) as
         string | number | null,
+    collection_design_id: (props.product.collection_design_id ?? null) as
+        string | number | null,
     tracks_units: props.product.tracks_units ?? false,
     material: props.product.material ?? '',
     strap_type: props.product.strap_type ?? '',
@@ -302,6 +311,30 @@ const collectionOptions = computed(() => [
     { value: null, label: 'Sin colección' },
     ...(props.collections ?? []).map((c) => ({ value: c.id, label: c.name })),
 ]);
+
+// Tag front: only the designs of the chosen collection (null → its primary).
+const designOptions = computed(() => [
+    { value: null, label: 'Diseño principal de la colección' },
+    ...(props.collectionDesigns ?? [])
+        .filter((d) => d.collection_id === Number(detailsForm.collection_id))
+        .map((d) => ({
+            value: d.id,
+            label: d.archived ? `${d.name} (archivado)` : d.name,
+        })),
+]);
+
+watch(
+    () => detailsForm.collection_id,
+    () => {
+        if (
+            !designOptions.value.some(
+                (o) => o.value === detailsForm.collection_design_id,
+            )
+        ) {
+            detailsForm.collection_design_id = null;
+        }
+    },
+);
 
 function saveDetails() {
     detailsForm.patch(`/admin/products/${props.product.id}`, {
@@ -632,6 +665,23 @@ const date = (iso: string) =>
                         />
                         <InputError
                             :message="detailsForm.errors.collection_id"
+                        />
+                    </div>
+                    <div
+                        v-if="
+                            detailsForm.collection_id &&
+                            designOptions.length > 1
+                        "
+                        class="grid gap-1.5"
+                    >
+                        <Label for="p-collection-design">Diseño del tag</Label>
+                        <FancySelect
+                            id="p-collection-design"
+                            v-model="detailsForm.collection_design_id"
+                            :options="designOptions"
+                        />
+                        <InputError
+                            :message="detailsForm.errors.collection_design_id"
                         />
                     </div>
                     <label

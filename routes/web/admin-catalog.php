@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Catalog\ChannelPriceController;
 use App\Http\Controllers\Admin\Catalog\CollectionController;
+use App\Http\Controllers\Admin\Catalog\CollectionDesignController;
 use App\Http\Controllers\Admin\Catalog\InventoryLocationController;
 use App\Http\Controllers\Admin\Catalog\InventoryLotController;
 use App\Http\Controllers\Admin\Catalog\LegacyTagController;
@@ -25,6 +26,16 @@ Route::middleware(['auth', 'verified', 'can:dashboard.admin.view'])->prefix('adm
         // POST (not PATCH): carries optional image uploads.
         Route::post('{collection:id}', [CollectionController::class, 'update'])->whereNumber('collection')->name('update');
         Route::delete('{collection:id}', [CollectionController::class, 'destroy'])->whereNumber('collection')->name('destroy');
+
+        // Diseños extra del tag (collection_designs), desde la edición de la colección.
+        Route::prefix('{collection:id}/disenos')->whereNumber('collection')->withoutScopedBindings()->name('designs.')->group(function () {
+            Route::post('/', [CollectionDesignController::class, 'store'])->name('store');
+            Route::post('orden', [CollectionDesignController::class, 'reorder'])->name('reorder');
+            // POST (not PATCH): carries an optional front-art upload.
+            Route::post('{design}', [CollectionDesignController::class, 'update'])->whereNumber('design')->name('update');
+            Route::post('{design}/archivar', [CollectionDesignController::class, 'archive'])->whereNumber('design')->name('archive');
+            Route::delete('{design}', [CollectionDesignController::class, 'destroy'])->whereNumber('design')->name('destroy');
+        });
     });
 
     // Productos → Precios por canal (lives on the product page)

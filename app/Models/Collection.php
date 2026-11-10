@@ -51,12 +51,22 @@ class Collection extends Model
     }
 
     /**
-     * Extra tag designs of this collection; the collection's own `tag_*`
-     * columns are its primary design.
+     * Extra tag designs of this collection (archived ones excluded); the
+     * collection's own `tag_*` columns are its primary design.
      *
      * @return HasMany<CollectionDesign, $this>
      */
     public function designs(): HasMany
+    {
+        return $this->allDesigns()->whereNull('archived_at');
+    }
+
+    /**
+     * Every extra design, archived included (admin).
+     *
+     * @return HasMany<CollectionDesign, $this>
+     */
+    public function allDesigns(): HasMany
     {
         return $this->hasMany(CollectionDesign::class)->orderBy('sort_order')->orderBy('id');
     }
