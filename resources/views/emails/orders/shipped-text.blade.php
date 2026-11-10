@@ -2,22 +2,22 @@
 @extends('emails.layouts.brand-text')
 
 @section('content')
-PEDIDO ENVIADO
+{!! mb_strtoupper(__('Pedido enviado')) !!}
 
-Tu pedido va en camino. Enviamos tu pedido {!! $order['number'] !!}. Te avisaremos cuando quede entregado.
+{!! __('Tu pedido va en camino') !!}. {!! __('Enviamos tu pedido :number. Te avisaremos cuando quede entregado.', ['number' => $order['number']]) !!}
 
 @if ($order['carrier'])
-Paquetería: {!! $order['carrier'] !!}
+{!! __('Paquetería') !!}: {!! $order['carrier'] !!}
 @endif
 @if ($order['tracking_number'])
-Número de guía: {!! $order['tracking_number'] !!}
+{!! __('Número de guía') !!}: {!! $order['tracking_number'] !!}
 @endif
 
 @include('emails.orders.partials.summary-text', ['order' => $order])
 @if ($order['needs_activation'])
-PRÓXIMOS PASOS
-Cuando recibas tu Finisher Legacy, actívalo desde la app o en {!! $order['activation_label'] !!}
+{!! mb_strtoupper(__('Próximos pasos')) !!}
+{!! __('Cuando recibas tu Finisher Legacy, actívalo desde la app o en :link', ['link' => $order['activation_label']]) !!}
 
 @endif
-Ver mi pedido: {!! $order['order_url'] !!}
+{!! __('Ver mi pedido') !!}: {!! $order['order_url'] !!}
 @endsection

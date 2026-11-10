@@ -37,7 +37,7 @@ class CreateTrackingDevicePairing
         $device = TrackingDevice::create([
             'uuid' => (string) Str::uuid(),
             'type' => TrackingSource::GpsBand,
-            'public_name' => $publicName !== null && trim($publicName) !== '' ? trim($publicName) : 'Dispositivo de seguimiento',
+            'public_name' => $publicName !== null && trim($publicName) !== '' ? trim($publicName) : __('Dispositivo de seguimiento'),
             'status' => TrackingDeviceStatus::Pending,
             'athlete_id' => $athlete->id,
             'event_participant_id' => $participant->id,

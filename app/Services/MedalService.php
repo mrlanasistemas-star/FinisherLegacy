@@ -122,7 +122,7 @@ class MedalService
 
         if ($user->medals()->count() >= $max) {
             throw ValidationException::withMessages([
-                'quota' => ["No pudimos agregar otra medalla porque alcanzaste el límite de {$max} medallas de esta versión piloto."],
+                'quota' => [__('No pudimos agregar otra medalla porque alcanzaste el límite de :max medallas de esta versión piloto.', ['max' => $max])],
             ]);
         }
     }
@@ -138,7 +138,7 @@ class MedalService
 
         if ($current + $incomingCount > $max) {
             throw ValidationException::withMessages([
-                'quota' => ['No pudimos agregar otra imagen porque alcanzaste el límite de almacenamiento de esta versión piloto.'],
+                'quota' => [__('No pudimos agregar otra imagen porque alcanzaste el límite de almacenamiento de esta versión piloto.')],
             ]);
         }
     }
@@ -150,7 +150,7 @@ class MedalService
 
         if ($current + $incomingCount > $max) {
             throw ValidationException::withMessages([
-                'gallery_images' => ["Esta medalla puede tener máximo {$max} imágenes en total."],
+                'gallery_images' => [__('Esta medalla puede tener máximo :max imágenes en total.', ['max' => $max])],
             ]);
         }
     }

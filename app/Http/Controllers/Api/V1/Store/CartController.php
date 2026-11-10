@@ -56,7 +56,7 @@ class CartController extends Controller
 
         $addItem->handle($cart, $variant, $request->integer('quantity'), $edition, $metadata);
 
-        return $this->respond(new CartResource($cart->fresh()), 'Producto agregado al carrito.');
+        return $this->respond(new CartResource($cart->fresh()), __('Producto agregado al carrito.'));
     }
 
     public function updateItem(UpdateCartItemRequest $request, CartItem $item, UpdateCartItem $updateItem): JsonResponse
@@ -83,7 +83,7 @@ class CartController extends Controller
 
         $applyCoupon->handle($cart, $data['code'], $this->sanctumUser($request));
 
-        return $this->respond(new CartResource($cart->fresh()), 'Cupón aplicado.');
+        return $this->respond(new CartResource($cart->fresh()), __('Cupón aplicado.'));
     }
 
     public function removeCoupon(Request $request, GetOrCreateCart $getOrCreateCart, RemoveCouponFromCart $removeCoupon): JsonResponse

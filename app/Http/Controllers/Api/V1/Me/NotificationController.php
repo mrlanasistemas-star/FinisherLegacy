@@ -44,14 +44,14 @@ class NotificationController extends Controller
         $record = $this->sanctumUser($request)->notifications()->whereKey($notification)->firstOrFail();
         $record->markAsRead();
 
-        return $this->respond(['unread_count' => $this->unread($request)], 'Notificación marcada como leída.');
+        return $this->respond(['unread_count' => $this->unread($request)], __('Notificación marcada como leída.'));
     }
 
     public function markAllRead(Request $request): JsonResponse
     {
         UnreadCounter::customer($this->sanctumUser($request)->unreadNotifications())->update(['read_at' => now()]);
 
-        return $this->respond(['unread_count' => 0], 'Todas las notificaciones fueron marcadas como leídas.');
+        return $this->respond(['unread_count' => 0], __('Todas las notificaciones fueron marcadas como leídas.'));
     }
 
     private function unread(Request $request): int

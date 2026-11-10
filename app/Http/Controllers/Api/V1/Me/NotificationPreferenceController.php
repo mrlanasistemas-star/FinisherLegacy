@@ -44,12 +44,12 @@ class NotificationPreferenceController extends Controller
 
         $unknown = array_diff(array_keys($data['preferences']), $keys);
         if ($unknown !== []) {
-            throw ValidationException::withMessages(['preferences' => 'Categoría de notificación desconocida.']);
+            throw ValidationException::withMessages(['preferences' => __('Categoría de notificación desconocida.')]);
         }
 
         $preferences->updateCustomer($this->sanctumUser($request), $data['preferences']);
 
-        return $this->respond($this->payload($request, $preferences, $push), 'Preferencias guardadas.');
+        return $this->respond($this->payload($request, $preferences, $push), __('Preferencias guardadas.'));
     }
 
     /**

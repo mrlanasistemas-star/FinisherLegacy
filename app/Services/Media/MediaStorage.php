@@ -94,7 +94,7 @@ class MediaStorage
         $directory = $this->assertSafeDirectory($directory);
 
         if (! $upload->isValid()) {
-            throw ValidationException::withMessages(['file' => 'No pudimos recibir el archivo. Intenta de nuevo.']);
+            throw ValidationException::withMessages(['file' => __('No pudimos recibir el archivo. Intenta de nuevo.')]);
         }
 
         // Symfony guesses from the bytes (fileinfo), not the client header.
@@ -102,7 +102,7 @@ class MediaStorage
         $kind = $rules->kindFor($mime);
 
         if ($kind === null) {
-            throw ValidationException::withMessages(['file' => 'Formato de archivo no soportado.']);
+            throw ValidationException::withMessages(['file' => __('Formato de archivo no soportado.')]);
         }
 
         $size = (int) $upload->getSize();
@@ -118,7 +118,7 @@ class MediaStorage
         $sourcePath = Storage::disk($tmpDisk)->putFileAs('incoming/'.$uuid, $upload, 'source.'.$extension);
 
         if (! is_string($sourcePath)) {
-            throw ValidationException::withMessages(['file' => 'No pudimos guardar el archivo. Intenta de nuevo.']);
+            throw ValidationException::withMessages(['file' => __('No pudimos guardar el archivo. Intenta de nuevo.')]);
         }
 
         return MediaFile::create([
@@ -235,14 +235,14 @@ class MediaStorage
         $size = @getimagesize((string) $upload->getRealPath());
 
         if ($size === false || $size[0] < 1 || $size[1] < 1) {
-            throw ValidationException::withMessages(['file' => 'La imagen está dañada o no se puede leer.']);
+            throw ValidationException::withMessages(['file' => __('La imagen está dañada o no se puede leer.')]);
         }
 
         $maxSide = (int) config('finisher.media.max_image_side', 12000);
         $maxPixels = (int) config('finisher.media.max_image_pixels', 50_000_000);
 
         if ($size[0] > $maxSide || $size[1] > $maxSide || $maxPixels < $size[0] * $size[1]) {
-            throw ValidationException::withMessages(['file' => 'La imagen es demasiado grande en resolución.']);
+            throw ValidationException::withMessages(['file' => __('La imagen es demasiado grande en resolución.')]);
         }
 
         return [$size[0], $size[1]];

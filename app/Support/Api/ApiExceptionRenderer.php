@@ -37,15 +37,15 @@ class ApiExceptionRenderer
         }
 
         if ($e instanceof AuthenticationException) {
-            return $this->respond(ApiErrorCode::Unauthenticated, 'No autenticado.', [], 401);
+            return $this->respond(ApiErrorCode::Unauthenticated, __('No autenticado.'), [], 401);
         }
 
         if ($e instanceof AuthorizationException) {
-            return $this->respond(ApiErrorCode::Forbidden, 'No tienes permiso para esta acción.', [], 403);
+            return $this->respond(ApiErrorCode::Forbidden, __('No tienes permiso para esta acción.'), [], 403);
         }
 
         if ($e instanceof ModelNotFoundException) {
-            return $this->respond(ApiErrorCode::NotFound, 'Recurso no encontrado.', [], 404);
+            return $this->respond(ApiErrorCode::NotFound, __('Recurso no encontrado.'), [], 404);
         }
 
         if ($e instanceof HttpExceptionInterface) {
@@ -65,7 +65,7 @@ class ApiExceptionRenderer
                     429 => ApiErrorCode::TooManyRequests,
                     default => ApiErrorCode::HttpError,
                 },
-                $e->getMessage() !== '' ? $e->getMessage() : 'Error de solicitud.',
+                $e->getMessage() !== '' ? $e->getMessage() : __('Error de solicitud.'),
                 [],
                 $status,
             );
@@ -73,7 +73,7 @@ class ApiExceptionRenderer
 
         report($e);
 
-        return $this->respond(ApiErrorCode::InternalError, 'Error interno del servidor.', [], 500);
+        return $this->respond(ApiErrorCode::InternalError, __('Error interno del servidor.'), [], 500);
     }
 
     /**

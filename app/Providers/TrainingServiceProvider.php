@@ -35,7 +35,7 @@ class TrainingServiceProvider extends ServiceProvider
             $tooMany = fn (string $scope) => function (Request $request) use ($scope, $token) {
                 $this->recordHit($scope, $token, $request->ip());
 
-                return back()->withErrors(['form' => 'Has enviado varios mensajes seguidos. Espera unos minutos e inténtalo de nuevo.']);
+                return back()->withErrors(['form' => __('Has enviado varios mensajes seguidos. Espera unos minutos e inténtalo de nuevo.')]);
             };
 
             return [

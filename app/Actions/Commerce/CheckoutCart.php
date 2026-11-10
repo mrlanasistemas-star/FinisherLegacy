@@ -60,7 +60,7 @@ class CheckoutCart
         $items = $cart->items;
 
         if ($items->isEmpty()) {
-            throw new RuntimeException('El carrito está vacío.');
+            throw new RuntimeException(__('El carrito está vacío.'));
         }
 
         // One Order has exactly one event_edition_id (or none) — never
@@ -168,7 +168,10 @@ class CheckoutCart
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
                 'coupon_name' => $coupon?->name,
-                'customer_snapshot' => $customerSnapshot === [] ? null : $customerSnapshot,
+                // The language the buyer checked out in travels with the order:
+                // its emails are written in it (OrderSummary::locale), also for
+                // a buyer with no saved language.
+                'customer_snapshot' => $customerSnapshot === [] ? null : ['locale' => app()->getLocale(), ...$customerSnapshot],
             ]);
 
             if ($coupon !== null) {

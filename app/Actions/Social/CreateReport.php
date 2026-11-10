@@ -32,7 +32,7 @@ class CreateReport
         };
 
         if ($ownerId === $reporter->id) {
-            throw new SocialActionNotAllowedException('No puedes reportar tu propio contenido.');
+            throw new SocialActionNotAllowedException(__('No puedes reportar tu propio contenido.'));
         }
 
         return Report::query()->updateOrCreate(

@@ -13,6 +13,6 @@ class MomentReferenceInvalidException extends ApiException
 {
     public function __construct(string $field)
     {
-        parent::__construct('Sólo puedes compartir tu propia actividad.', ApiErrorCode::MomentReferenceInvalid, 422, ['field' => $field]);
+        parent::__construct(__('Sólo puedes compartir tu propia actividad.'), ApiErrorCode::MomentReferenceInvalid, 422, ['field' => $field]);
     }
 }

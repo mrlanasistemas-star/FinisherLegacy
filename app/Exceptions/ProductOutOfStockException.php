@@ -9,6 +9,6 @@ class ProductOutOfStockException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este producto no tiene existencias suficientes.', ApiErrorCode::ProductOutOfStock, 422);
+        parent::__construct(__('Este producto no tiene existencias suficientes.'), ApiErrorCode::ProductOutOfStock, 422);
     }
 }

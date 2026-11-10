@@ -16,6 +16,6 @@ class ProductUnavailableException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este producto ya no está disponible.', ApiErrorCode::ProductUnavailable, 422);
+        parent::__construct(__('Este producto ya no está disponible.'), ApiErrorCode::ProductUnavailable, 422);
     }
 }

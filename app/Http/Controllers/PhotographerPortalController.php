@@ -123,7 +123,7 @@ class PhotographerPortalController extends Controller
     public function upload(Request $request, UploadEventPhotos $upload): RedirectResponse
     {
         $profile = $this->requireProfile($request);
-        abort_unless($profile->isApproved(), 403, 'Tu perfil de fotógrafo aún no está aprobado.');
+        abort_unless($profile->isApproved(), 403, __('Tu perfil de fotógrafo aún no está aprobado.'));
 
         $rules = $this->fees->rules();
         $data = $request->validate([
@@ -133,9 +133,9 @@ class PhotographerPortalController extends Controller
             'files' => ['required', 'array', 'min:1', 'max:'.config('finisher.photos.max_files_per_upload')],
             'files.*' => ['image', 'mimes:jpeg,png,webp', 'max:'.config('finisher.photos.max_file_kb')],
         ], [
-            'files.required' => 'Selecciona al menos una fotografía.',
-            'files.*.max' => 'Una de las fotos supera el tamaño máximo.',
-            'price_minor.min' => 'El precio mínimo por foto es de $'.number_format($rules['min_price_minor'] / 100, 2).'.',
+            'files.required' => __('Selecciona al menos una fotografía.'),
+            'files.*.max' => __('Una de las fotos supera el tamaño máximo.'),
+            'price_minor.min' => __('El precio mínimo por foto es de $:amount.', ['amount' => number_format($rules['min_price_minor'] / 100, 2)]),
         ]);
 
         $edition = EventEdition::query()->findOrFail((int) $data['event_edition_id']);
@@ -147,7 +147,7 @@ class PhotographerPortalController extends Controller
             $profile->update(['default_price_minor' => (int) $data['price_minor']]);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => count($created).' fotos enviadas a revisión.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => trans_choice(':count foto enviada a revisión.|:count fotos enviadas a revisión.', count($created), ['count' => count($created)])]);
 
         return back();
     }
@@ -176,7 +176,7 @@ class PhotographerPortalController extends Controller
         abort_unless($photo->photographer_profile_id === $profile->id, 404);
 
         if ($photo->sales()->exists()) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Esta foto ya se vendió: no puede eliminarse (los compradores conservan su descarga).']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Esta foto ya se vendió: no puede eliminarse (los compradores conservan su descarga).')]);
 
             return back();
         }
@@ -185,7 +185,7 @@ class PhotographerPortalController extends Controller
         Storage::disk('public')->delete([$photo->preview_path, $photo->thumb_path]);
         $photo->delete();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Foto eliminada.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Foto eliminada.')]);
 
         return back();
     }
@@ -247,9 +247,9 @@ class PhotographerPortalController extends Controller
             'payout_holder' => ['nullable', 'string', 'max:150'],
             'payout_bank' => ['nullable', 'string', 'max:120'],
             'payout_clabe' => ['nullable', 'digits:18'],
-        ], ['payout_clabe.digits' => 'La CLABE debe tener 18 dígitos.']));
+        ], ['payout_clabe.digits' => __('La CLABE debe tener 18 dígitos.')]));
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Perfil actualizado.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Perfil actualizado.')]);
 
         return back();
     }
@@ -266,7 +266,7 @@ class PhotographerPortalController extends Controller
      */
     private function toProfileRequest(): RedirectResponse
     {
-        Inertia::flash('toast', ['type' => 'info', 'message' => 'Primero completa tu perfil de fotógrafo para subir y vender fotos.']);
+        Inertia::flash('toast', ['type' => 'info', 'message' => __('Primero completa tu perfil de fotógrafo para subir y vender fotos.')]);
 
         return to_route('photographer.dashboard');
     }
@@ -350,9 +350,9 @@ class PhotographerPortalController extends Controller
             'processor_fee_minor' => $sale->processor_fee_minor,
             'processor_fee_estimated' => $sale->processor_fee_estimated,
             'payment_method_label' => match ($sale->payment_provider) {
-                'openpay' => 'Tarjeta (Openpay)',
-                'stripe' => 'Tarjeta (Stripe)',
-                'manual' => 'Pago manual',
+                'openpay' => __('Tarjeta (Openpay)'),
+                'stripe' => __('Tarjeta (Stripe)'),
+                'manual' => __('Pago manual'),
                 default => null,
             },
             'platform_fee_minor' => $sale->platform_fee_minor,
@@ -380,7 +380,7 @@ class PhotographerPortalController extends Controller
             ->get()
             ->map(fn (EventEdition $edition) => [
                 'id' => $edition->id,
-                'label' => trim(($edition->event->name ?? 'Evento').' — '.$edition->name),
+                'label' => trim(($edition->event->name ?? __('Evento')).' — '.$edition->name),
                 'date' => $edition->event_date->toDateString(),
             ])
             ->all());

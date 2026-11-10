@@ -83,7 +83,7 @@ class NfcTapController extends Controller
             return back();
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Listo. Ya forma parte de tu equipo.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Listo. Ya forma parte de tu equipo.')]);
 
         return $assignment->target_type === NfcTargetType::Profile
             ? redirect()->route('dashboard.profile.show')

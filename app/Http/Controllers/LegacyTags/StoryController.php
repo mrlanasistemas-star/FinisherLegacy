@@ -65,8 +65,8 @@ class StoryController extends Controller
         if (! $share->isActive()) {
             return $this->noindex($request, Inertia::render('legacy/Unavailable', [
                 'kind' => 'revoked',
-                'title' => 'Este enlace ya no está disponible',
-                'message' => 'Quien te lo compartió lo desactivó. Si crees que es un error, pídele un enlace nuevo.',
+                'title' => __('Este enlace ya no está disponible'),
+                'message' => __('Quien te lo compartió lo desactivó. Si crees que es un error, pídele un enlace nuevo.'),
             ]));
         }
 

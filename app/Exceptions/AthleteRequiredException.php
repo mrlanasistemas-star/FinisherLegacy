@@ -14,6 +14,6 @@ class AthleteRequiredException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este producto requiere una identidad de Athlete antes de comprarlo.', ApiErrorCode::ValidationFailed, 422);
+        parent::__construct(__('Este producto requiere una identidad de Athlete antes de comprarlo.'), ApiErrorCode::ValidationFailed, 422);
     }
 }

@@ -16,7 +16,7 @@ class EventGearOwnershipMismatchException extends ApiException
     public function __construct()
     {
         parent::__construct(
-            'Este producto no pertenece al atleta de esta participación.',
+            __('Este producto no pertenece al atleta de esta participación.'),
             ApiErrorCode::Forbidden,
             403,
         );

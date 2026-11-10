@@ -64,7 +64,7 @@ class StoryEditorController extends Controller
             ],
             'sports' => fn () => Sport::query()->where('active', true)->orderBy('sort_order')->orderBy('name')->get(['id', 'name'])
                 ->map(fn (Sport $sport) => ['id' => $sport->id, 'name' => $sport->name])->all(),
-            'finishStatuses' => collect(StoryRaceData::FINISH_STATUSES)->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])->values()->all(),
+            'finishStatuses' => collect(StoryRaceData::finishStatuses())->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])->values()->all(),
             'hasPurchasedPhotos' => fn () => PhotoSale::query()->grantingAccess()->where('buyer_user_id', $request->user()->id)->exists(),
             'supportUrl' => route('contact', ['tipo' => 'support']),
             'fields' => [
@@ -106,9 +106,9 @@ class StoryEditorController extends Controller
                 'value' => $v->value,
                 'label' => $v->label(),
                 'help' => match ($v) {
-                    StoryVisibility::Public => 'Cualquiera puede verlo, también desde buscadores.',
-                    StoryVisibility::Unlisted => 'Lo ve quien acerque su teléfono a tu tag o tenga el enlace. No aparece en buscadores.',
-                    StoryVisibility::Private => 'Solo tú. Puedes compartirlo con alguien especial con un enlace personal.',
+                    StoryVisibility::Public => __('Cualquiera puede verlo, también desde buscadores.'),
+                    StoryVisibility::Unlisted => __('Lo ve quien acerque su teléfono a tu tag o tenga el enlace. No aparece en buscadores.'),
+                    StoryVisibility::Private => __('Solo tú. Puedes compartirlo con alguien especial con un enlace personal.'),
                 },
             ], StoryVisibility::cases()),
             'limits' => [
@@ -127,7 +127,7 @@ class StoryEditorController extends Controller
     {
         $update->handle($story, $request->user(), $request->validated());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Guardado.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Guardado.')]);
 
         return back();
     }
@@ -193,9 +193,9 @@ class StoryEditorController extends Controller
         $added = $media->importPurchased($story, $request->user(), array_values($data['sale_ids']));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => match (count($added)) {
-            0 => 'Esas fotos ya estaban en tu recuerdo.',
-            1 => 'Agregamos tu foto. Estará lista en un momento.',
-            default => 'Agregamos '.count($added).' fotos. Estarán listas en un momento.',
+            0 => __('Esas fotos ya estaban en tu recuerdo.'),
+            1 => __('Agregamos tu foto. Estará lista en un momento.'),
+            default => __('Agregamos :count fotos. Estarán listas en un momento.', ['count' => count($added)]),
         }]);
 
         return back();
@@ -310,28 +310,28 @@ class StoryEditorController extends Controller
         $lines = [(string) $view['title'], str_repeat('=', mb_strlen((string) $view['title'])), ''];
 
         foreach ([
-            'Carrera' => $race['event_name'] ?? null,
-            'Distancia' => $race['distance'] ?? null,
-            'Tiempo' => $race['time'] ?? null,
-            'Lugar en la clasificación' => $race['position'] ?? null,
-            'Nombre' => $race['athlete_name'] ?? null,
-            'Número de corredor' => $race['bib_number'] ?? null,
-            'Ritmo' => $race['pace'] ?? $race['suggested_pace'] ?? null,
-            'Categoría' => $race['category'] ?? null,
-            'Lugar en su categoría' => $race['category_position'] ?? null,
-            'Lugar por rama' => $race['gender_position'] ?? null,
-            'Desnivel positivo (m)' => isset($race['elevation_gain_m']) ? (string) $race['elevation_gain_m'] : null,
-            'Deporte' => $race['sport'] ?? null,
-            'Fecha' => $race['date'] ?? null,
-            'Sede' => $race['location'] ?? null,
-            'Para' => $view['recipient_label'] ?? null,
+            __('Carrera') => $race['event_name'] ?? null,
+            __('Distancia') => $race['distance'] ?? null,
+            __('Tiempo') => $race['time'] ?? null,
+            __('Lugar en la clasificación') => $race['position'] ?? null,
+            __('Nombre') => $race['athlete_name'] ?? null,
+            __('Número de corredor') => $race['bib_number'] ?? null,
+            __('Ritmo') => $race['pace'] ?? $race['suggested_pace'] ?? null,
+            __('Categoría') => $race['category'] ?? null,
+            __('Lugar en su categoría') => $race['category_position'] ?? null,
+            __('Lugar por rama') => $race['gender_position'] ?? null,
+            __('Desnivel positivo (m)') => isset($race['elevation_gain_m']) ? (string) $race['elevation_gain_m'] : null,
+            __('Deporte') => $race['sport'] ?? null,
+            __('Fecha') => $race['date'] ?? null,
+            __('Sede') => $race['location'] ?? null,
+            __('Para') => $view['recipient_label'] ?? null,
         ] as $label => $value) {
             if (filled($value)) {
                 $lines[] = $label.': '.$value;
             }
         }
 
-        foreach (['Dedicatoria' => $view['dedication'] ?? null, 'Historia' => $view['body'] ?? null, 'Enlace' => $view['external_url'] ?? null] as $label => $value) {
+        foreach ([__('Dedicatoria') => $view['dedication'] ?? null, __('Historia') => $view['body'] ?? null, __('Enlace') => $view['external_url'] ?? null] as $label => $value) {
             if (filled($value)) {
                 $lines[] = '';
                 $lines[] = $label.':';

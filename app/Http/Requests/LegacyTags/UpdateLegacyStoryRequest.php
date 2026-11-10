@@ -40,7 +40,7 @@ class UpdateLegacyStoryRequest extends FormRequest
     {
         return [
             ...StoryRaceRules::messages(),
-            'external_url.url' => 'El enlace debe empezar con https://',
+            'external_url.url' => __('El enlace debe empezar con https://'),
         ];
     }
 }

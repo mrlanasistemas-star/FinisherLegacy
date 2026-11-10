@@ -90,7 +90,7 @@ class LegacyTagController extends Controller
             $story->save();
         }
 
-        return $this->respond($presenter->apiStory($story->fresh() ?? $story, forOwner: true), '¡Listo! Tu Finisher Legacy ya es tuyo.');
+        return $this->respond($presenter->apiStory($story->fresh() ?? $story, forOwner: true), __('¡Listo! Tu Finisher Legacy ya es tuyo.'));
     }
 
     public function myStories(Request $request, StoryPresenter $presenter): JsonResponse

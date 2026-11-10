@@ -34,9 +34,9 @@ enum BillingPeriod: string
     public function label(): string
     {
         return match ($this) {
-            self::OneTime => 'Pago único',
-            self::Semiannual => 'Semestral (6 meses)',
-            self::Annual => 'Anual (12 meses)',
+            self::OneTime => __('Pago único'),
+            self::Semiannual => __('Semestral (6 meses)'),
+            self::Annual => __('Anual (12 meses)'),
         };
     }
 
@@ -45,7 +45,7 @@ enum BillingPeriod: string
     {
         $months = $this->months();
 
-        return $months === null ? 'pago único' : "por {$months} meses";
+        return $months === null ? __('pago único') : __('por :months meses', ['months' => $months]);
     }
 
     public function expiresAt(CarbonInterface $startsAt): ?CarbonInterface

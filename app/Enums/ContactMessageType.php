@@ -16,13 +16,13 @@ enum ContactMessageType: string
     public function label(): string
     {
         return match ($this) {
-            self::General => 'Contacto general',
-            self::Events => 'Colaboración con eventos',
-            self::Suppliers => 'Proveedores',
-            self::Brands => 'Marcas y patrocinadores',
-            self::Photographers => 'Fotógrafos',
-            self::Support => 'Soporte',
-            self::AccountDeletion => 'Eliminación de cuenta',
+            self::General => __('Contacto general'),
+            self::Events => __('Colaboración con eventos'),
+            self::Suppliers => __('Proveedores'),
+            self::Brands => __('Marcas y patrocinadores'),
+            self::Photographers => __('Fotógrafos'),
+            self::Support => __('Soporte'),
+            self::AccountDeletion => __('Eliminación de cuenta'),
         };
     }
 

@@ -23,15 +23,15 @@ class CouponNotApplicableException extends ApiException
     private static function messageFor(CouponRejectionReason $reason): string
     {
         return match ($reason) {
-            CouponRejectionReason::NotFound => 'Este código de cupón no es válido.',
-            CouponRejectionReason::Inactive => 'Este cupón ya no está activo.',
-            CouponRejectionReason::NotStarted => 'Este cupón todavía no está disponible.',
-            CouponRejectionReason::Expired => 'Este cupón ya expiró.',
-            CouponRejectionReason::UsageLimitReached => 'Este cupón alcanzó su límite de usos.',
-            CouponRejectionReason::PerUserLimitReached => 'Ya usaste este cupón el máximo de veces permitido.',
-            CouponRejectionReason::MinimumOrderNotMet => 'Tu compra no alcanza el monto mínimo para este cupón.',
-            CouponRejectionReason::CurrencyMismatch => 'Este cupón no aplica para esta moneda.',
-            CouponRejectionReason::NoEligibleProducts => 'Este cupón solo aplica a productos que no están en tu carrito.',
+            CouponRejectionReason::NotFound => __('Este código de cupón no es válido.'),
+            CouponRejectionReason::Inactive => __('Este cupón ya no está activo.'),
+            CouponRejectionReason::NotStarted => __('Este cupón todavía no está disponible.'),
+            CouponRejectionReason::Expired => __('Este cupón ya expiró.'),
+            CouponRejectionReason::UsageLimitReached => __('Este cupón alcanzó su límite de usos.'),
+            CouponRejectionReason::PerUserLimitReached => __('Ya usaste este cupón el máximo de veces permitido.'),
+            CouponRejectionReason::MinimumOrderNotMet => __('Tu compra no alcanza el monto mínimo para este cupón.'),
+            CouponRejectionReason::CurrencyMismatch => __('Este cupón no aplica para esta moneda.'),
+            CouponRejectionReason::NoEligibleProducts => __('Este cupón solo aplica a productos que no están en tu carrito.'),
         };
     }
 }

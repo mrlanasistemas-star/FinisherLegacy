@@ -49,7 +49,7 @@ class NotificationPreferenceController extends Controller
 
         $preferences->updateCustomer($request->user(), $values);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Preferencias de notificaciones guardadas.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Preferencias de notificaciones guardadas.')]);
 
         return back();
     }

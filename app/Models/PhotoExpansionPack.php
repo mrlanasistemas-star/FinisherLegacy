@@ -116,7 +116,11 @@ class PhotoExpansionPack extends Model
     {
         $months = $this->billing_period->months();
 
-        return "{$this->name} · +{$this->units()} {$this->kind->noun($this->units())}".($months !== null ? " · {$months} meses" : '');
+        $amount = $this->kind->amount($this->units());
+
+        return $months !== null
+            ? __(':name · +:amount · :months meses', ['name' => $this->name, 'amount' => $amount, 'months' => $months])
+            : __(':name · +:amount', ['name' => $this->name, 'amount' => $amount]);
     }
 
     /** The store product id for an in-app purchase platform (`ios` / `android`). */

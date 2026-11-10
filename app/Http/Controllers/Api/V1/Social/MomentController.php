@@ -44,7 +44,7 @@ class MomentController extends Controller
 
         $moment = $create->handle($user, $request->safe()->except('photos'), $photos);
 
-        return $this->respond(new MomentResource($this->moments->load($moment, $user)), 'Tu momento ya es parte de tu Legacy.', status: 201);
+        return $this->respond(new MomentResource($this->moments->load($moment, $user)), __('Tu momento ya es parte de tu Legacy.'), status: 201);
     }
 
     public function show(Request $request, LegacyMoment $moment): JsonResponse
@@ -68,7 +68,7 @@ class MomentController extends Controller
 
         $moment->update($data);
 
-        return $this->respond(new MomentResource($this->moments->load($moment, $user)), 'Cambios guardados.');
+        return $this->respond(new MomentResource($this->moments->load($moment, $user)), __('Cambios guardados.'));
     }
 
     public function destroy(Request $request, LegacyMoment $moment, DeleteMoment $delete): JsonResponse
@@ -77,7 +77,7 @@ class MomentController extends Controller
 
         $delete->handle($moment);
 
-        return $this->respond(null, 'Momento eliminado.');
+        return $this->respond(null, __('Momento eliminado.'));
     }
 
     public function react(Request $request, LegacyMoment $moment, string $type, ReactToMoment $react): JsonResponse

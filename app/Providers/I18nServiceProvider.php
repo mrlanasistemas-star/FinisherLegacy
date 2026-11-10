@@ -4,13 +4,17 @@ namespace App\Providers;
 
 use App\Contracts\I18n\Translator;
 use App\Jobs\I18n\TranslateModelFields;
+use App\Models\User;
 use App\Services\I18n\MachineTranslation;
 use App\Services\I18n\Translators\AnthropicTranslator;
 use App\Services\I18n\Translators\DeepLTranslator;
 use App\Services\I18n\Translators\NullTranslator;
 use App\Support\I18n\ContentTranslations;
+use App\Support\I18n\Locales;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -20,7 +24,8 @@ use Illuminate\Support\ServiceProvider;
  * - the global helpers (`localized_url()`, `tr()`),
  * - the translator driver chosen with I18N_TRANSLATOR,
  * - the routes in routes/i18n.php (switcher, catalogs, admin page, API),
- * - the "translate on save" hook of the models in `i18n.models`.
+ * - the "translate on save" hook of the models in `i18n.models`,
+ * - the language a person signs up in, kept on their account.
  *
  * The two middleware (StripLocalePrefix, SetLocale) are registered in
  * bootstrap/app.php because their position in the stack matters.
@@ -49,6 +54,19 @@ class I18nServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(base_path('routes/i18n.php'));
+
+        // Someone who signs up while reading another language keeps it: their
+        // e-mails, notifications and push are written in the saved language
+        // (User::preferredLocale), so it must not stay empty until they open
+        // the language switcher. Spanish sign-ups stay null (= the default).
+        Event::listen(function (Registered $event): void {
+            $user = $event->user;
+            $locale = app()->getLocale();
+
+            if ($user instanceof User && $user->locale === null && $locale !== Locales::source() && Locales::isEnabled($locale)) {
+                $user->forceFill(['locale' => $locale])->saveQuietly();
+            }
+        });
 
         /** @var array<class-string<Model>, list<string>> $models */
         $models = config('i18n.models', []);

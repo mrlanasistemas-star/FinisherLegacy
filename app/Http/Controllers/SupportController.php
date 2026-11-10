@@ -100,7 +100,7 @@ class SupportController extends Controller
             return back();
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => '¡Mensaje enviado! Gracias por tu apoyo.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('¡Mensaje enviado! Gracias por tu apoyo.')]);
 
         return back();
     }

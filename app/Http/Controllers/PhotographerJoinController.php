@@ -57,7 +57,7 @@ class PhotographerJoinController extends Controller
             'bio' => ['nullable', 'string', 'max:1000'],
             'accept_terms' => ['accepted'],
         ], [
-            'accept_terms.accepted' => 'Acepta los términos para fotógrafos para continuar.',
+            'accept_terms.accepted' => __('Acepta los términos para fotógrafos para continuar.'),
         ]);
 
         $user = $request->user();
@@ -71,7 +71,7 @@ class PhotographerJoinController extends Controller
 
         $register->handle($user, $profileData);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Recibimos tu solicitud. Te avisaremos al aprobar tu perfil de fotógrafo.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Recibimos tu solicitud. Te avisaremos al aprobar tu perfil de fotógrafo.')]);
 
         return to_route('photographer.dashboard');
     }

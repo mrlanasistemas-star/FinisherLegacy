@@ -54,7 +54,7 @@ class GearController extends Controller
         $athlete = $ensureAthlete->handle($this->sanctumUser($request), 'gear_claim');
         $owned = $claim->handle($code, $athlete);
 
-        return $this->respond(new AthleteOwnedProductResource($owned->loadMissing('product.media', 'productVariant', 'activeNfcAssignment')), 'Producto reclamado.')
+        return $this->respond(new AthleteOwnedProductResource($owned->loadMissing('product.media', 'productVariant', 'activeNfcAssignment')), __('Producto reclamado.'))
             ->header('Deprecation', 'true');
     }
 }

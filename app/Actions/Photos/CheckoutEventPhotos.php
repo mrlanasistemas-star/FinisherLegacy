@@ -36,7 +36,7 @@ class CheckoutEventPhotos
         $requested = array_values(array_unique(array_filter($photoUuids, 'is_string')));
 
         if ($requested === []) {
-            throw ValidationException::withMessages(['photos' => 'Selecciona al menos una fotografía disponible.']);
+            throw ValidationException::withMessages(['photos' => __('Selecciona al menos una fotografía disponible.')]);
         }
 
         $validUuids = array_values(array_filter($requested, fn (string $uuid) => Str::isUuid($uuid)));
@@ -73,8 +73,11 @@ class CheckoutEventPhotos
 
         if ($pendingUuids !== []) {
             throw ValidationException::withMessages([
-                'photos' => (count($pendingUuids) === 1 ? '1 fotografía ya está' : count($pendingUuids).' fotografías ya están')
-                    ." en tu pedido {$pendingOrder->order_number}, pendiente de pago. Complétalo desde Mis pedidos — no se cobró nada.",
+                'photos' => trans_choice(
+                    '1 fotografía ya está en tu pedido :order, pendiente de pago. Complétalo desde Mis pedidos — no se cobró nada.|:count fotografías ya están en tu pedido :order, pendiente de pago. Complétalo desde Mis pedidos — no se cobró nada.',
+                    count($pendingUuids),
+                    ['order' => $pendingOrder->order_number],
+                ),
                 'pending_order' => $pendingOrder->uuid,
             ]);
         }
@@ -83,26 +86,29 @@ class CheckoutEventPhotos
             $messages = [];
 
             if ($unavailable !== []) {
-                $messages[] = count($unavailable) === 1
-                    ? '1 fotografía de tu selección ya no está disponible.'
-                    : count($unavailable).' fotografías de tu selección ya no están disponibles.';
+                $messages[] = trans_choice(
+                    '1 fotografía de tu selección ya no está disponible.|:count fotografías de tu selección ya no están disponibles.',
+                    count($unavailable),
+                );
             }
 
             if ($ownedUuids !== []) {
-                $messages[] = count($ownedUuids) === 1
-                    ? '1 fotografía ya la compraste: está en Mis fotos.'
-                    : count($ownedUuids).' fotografías ya las compraste: están en Mis fotos.';
+                $messages[] = trans_choice(
+                    '1 fotografía ya la compraste: está en Mis fotos.|:count fotografías ya las compraste: están en Mis fotos.',
+                    count($ownedUuids),
+                );
             }
 
             throw ValidationException::withMessages([
-                'photos' => implode(' ', $messages).' Las quitamos de tu selección; revisa y confirma de nuevo — no se cobró nada.',
+                // Complete sentences, one after the other.
+                'photos' => implode(' ', [...$messages, __('Las quitamos de tu selección; revisa y confirma de nuevo — no se cobró nada.')]),
                 // Machine-readable so the page can deselect exactly those.
                 'photos_removed' => implode(',', [...$unavailable, ...$ownedUuids]),
             ]);
         }
 
         if ($photos->pluck('currency')->unique()->count() > 1) {
-            throw ValidationException::withMessages(['photos' => 'Las fotografías deben tener la misma moneda.']);
+            throw ValidationException::withMessages(['photos' => __('Las fotografías deben tener la misma moneda.')]);
         }
 
         $product = Product::query()->where('slug', 'fotografia-digital')->firstOrFail();

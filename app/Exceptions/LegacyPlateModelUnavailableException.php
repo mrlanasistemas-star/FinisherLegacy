@@ -13,6 +13,6 @@ class LegacyPlateModelUnavailableException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este modelo ya no está disponible.', ApiErrorCode::LegacyPlateModelUnavailable, 422);
+        parent::__construct(__('Este modelo ya no está disponible.'), ApiErrorCode::LegacyPlateModelUnavailable, 422);
     }
 }

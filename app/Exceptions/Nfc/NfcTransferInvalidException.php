@@ -7,8 +7,8 @@ use App\Exceptions\Api\ApiException;
 
 class NfcTransferInvalidException extends ApiException
 {
-    public function __construct(string $message = 'La transferencia no es válida o ya expiró.')
+    public function __construct(?string $message = null)
     {
-        parent::__construct($message, ApiErrorCode::NfcTransferInvalid, 422);
+        parent::__construct($message ?? __('La transferencia no es válida o ya expiró.'), ApiErrorCode::NfcTransferInvalid, 422);
     }
 }

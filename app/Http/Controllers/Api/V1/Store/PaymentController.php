@@ -113,6 +113,6 @@ class PaymentController extends Controller
             $request->string('notes')->toString() ?: null,
         );
 
-        return $this->respond(['uuid' => $payment->uuid, 'status' => $payment->status->value], 'Pago registrado.', status: 201);
+        return $this->respond(['uuid' => $payment->uuid, 'status' => $payment->status->value], __('Pago registrado.'), status: 201);
     }
 }

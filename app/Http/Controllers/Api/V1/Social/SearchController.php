@@ -38,7 +38,7 @@ class SearchController extends Controller
             'q' => ['required', 'string', 'min:'.config('finisher.social.search_min_length'), 'max:60'],
             'type' => ['nullable', Rule::in(['all', 'athletes', 'events', 'products'])],
         ], [
-            'q.min' => 'Escribe al menos :min letras.',
+            'q.min' => __('Escribe al menos :min letras.'),
         ]);
 
         $term = trim($data['q']);

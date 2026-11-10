@@ -107,7 +107,7 @@ class UpdateStory
                 ->first();
 
             if ($participant === null) {
-                throw ValidationException::withMessages(['event_participant_id' => 'Elige una de tus carreras.']);
+                throw ValidationException::withMessages(['event_participant_id' => __('Elige una de tus carreras.')]);
             }
 
             $story->fill([

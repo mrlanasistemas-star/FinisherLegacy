@@ -48,7 +48,7 @@ class StoryPrintController extends Controller
             'photos' => array_values(array_filter($data['photos'], fn (array $p) => $p['status'] === 'ready' && $p['kind'] === 'image')),
             'layouts' => collect(StoryPrintRenderer::LAYOUTS)->map(fn (array $l, string $key) => [
                 'value' => $key,
-                'label' => $l[0],
+                'label' => StoryPrintRenderer::layoutLabel($key),
                 'paper' => ['width' => $l[1], 'height' => $l[2]],
                 'photo' => ['width' => $l[3], 'height' => $l[4]],
             ])->values()->all(),
@@ -132,7 +132,7 @@ class StoryPrintController extends Controller
         } catch (Throwable $e) {
             report($e);
 
-            throw ValidationException::withMessages(['photo' => 'No pudimos preparar esa foto. Prueba con otra.']);
+            throw ValidationException::withMessages(['photo' => __('No pudimos preparar esa foto. Prueba con otra.')]);
         }
 
         return response($result->jpeg, 200, [
@@ -166,7 +166,7 @@ class StoryPrintController extends Controller
         } catch (Throwable $e) {
             report($e);
 
-            throw ValidationException::withMessages(['photo' => 'No pudimos preparar esa foto. Prueba con otra.']);
+            throw ValidationException::withMessages(['photo' => __('No pudimos preparar esa foto. Prueba con otra.')]);
         }
 
         $asPdf = ($data['format'] ?? 'jpg') === 'pdf';
@@ -212,10 +212,10 @@ class StoryPrintController extends Controller
             'dedication' => ['nullable', 'string', 'max:600'],
             ...$extra,
         ], [
-            'photo_id.required_without' => 'Elige una foto de tu recuerdo o sube una.',
-            'photo.required_without' => 'Elige una foto de tu recuerdo o sube una.',
-            'photo.max' => 'La foto es demasiado pesada.',
-            'template.in' => 'Elige una plantilla.',
+            'photo_id.required_without' => __('Elige una foto de tu recuerdo o sube una.'),
+            'photo.required_without' => __('Elige una foto de tu recuerdo o sube una.'),
+            'photo.max' => __('La foto es demasiado pesada.'),
+            'template.in' => __('Elige una plantilla.'),
         ]);
     }
 
@@ -324,9 +324,9 @@ class StoryPrintController extends Controller
             'photo' => ['nullable', 'required_without:photo_id', 'file', 'max:'.(int) ceil((int) config('legacy.stories.max_photo_bytes') / 1024)],
             'dedication' => ['nullable', 'string', 'max:600'],
         ], [
-            'photo_id.required_without' => 'Elige una foto de tu recuerdo o sube una.',
-            'photo.required_without' => 'Elige una foto de tu recuerdo o sube una.',
-            'photo.max' => 'La foto es demasiado pesada.',
+            'photo_id.required_without' => __('Elige una foto de tu recuerdo o sube una.'),
+            'photo.required_without' => __('Elige una foto de tu recuerdo o sube una.'),
+            'photo.max' => __('La foto es demasiado pesada.'),
         ]);
 
         $bytes = $request->hasFile('photo')
@@ -351,7 +351,7 @@ class StoryPrintController extends Controller
         } catch (Throwable $e) {
             report($e);
 
-            throw ValidationException::withMessages(['photo' => 'No pudimos preparar esa foto. Prueba con otra.']);
+            throw ValidationException::withMessages(['photo' => __('No pudimos preparar esa foto. Prueba con otra.')]);
         }
 
         $name = 'finisher-legacy-'.Str::slug((string) $view['title']).'-'.$data['layout'].'.pdf';
@@ -367,7 +367,7 @@ class StoryPrintController extends Controller
     {
         // Sniffed from the bytes, never the extension.
         if (! in_array((string) $file->getMimeType(), MediaUploadRules::IMAGE_MIMES, true)) {
-            throw ValidationException::withMessages(['photo' => 'Sube una foto JPG, PNG o WebP.']);
+            throw ValidationException::withMessages(['photo' => __('Sube una foto JPG, PNG o WebP.')]);
         }
 
         return (string) file_get_contents((string) $file->getRealPath());
@@ -379,7 +379,7 @@ class StoryPrintController extends Controller
         $file = $story->media()->wherePivot('id', $pivotId)->wherePivot('role', StoryMediaRole::Photo->value)->first();
 
         if ($file === null || $file->kind !== MediaKind::Image || ! $file->isServable()) {
-            throw ValidationException::withMessages(['photo_id' => 'Esa foto todavía se está procesando o ya no existe.']);
+            throw ValidationException::withMessages(['photo_id' => __('Esa foto todavía se está procesando o ya no existe.')]);
         }
 
         // The print is cut from the original; a preview only needs the display size.
@@ -388,7 +388,7 @@ class StoryPrintController extends Controller
         $bytes = $path !== null ? Storage::disk($file->disk)->get($path) : null;
 
         if (! is_string($bytes) || $bytes === '') {
-            throw ValidationException::withMessages(['photo_id' => 'No pudimos leer esa foto. Prueba con otra.']);
+            throw ValidationException::withMessages(['photo_id' => __('No pudimos leer esa foto. Prueba con otra.')]);
         }
 
         return $bytes;

@@ -82,7 +82,7 @@ class AppCheckoutController extends CheckoutController
         Gate::authorize('pay', $order);
 
         if (AppPurchasePolicy::containsDigitalGoods($order)) {
-            return response()->json(['available' => false, 'message' => 'Este pedido no se puede pagar desde la app.']);
+            return response()->json(['available' => false, 'message' => __('Este pedido no se puede pagar desde la app.')]);
         }
 
         return $this->chargeOnline(

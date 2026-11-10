@@ -88,6 +88,39 @@ Correos, notificaciones y push salen en el idioma de quien los recibe:
 `User` implementa `HasLocalePreference` (`preferredLocale()` = `users.locale`),
 que Laravel respeta también en notificaciones y correos en cola.
 
+### Textos que escribe el servidor (PHP)
+
+Todo lo que PHP le dice a un cliente va con `__()` / `trans_choice()`:
+respuestas de la API, mensajes flash, errores de validación, excepciones de
+dominio (`ApiException`), etiquetas de enums (`label()`), presentadores,
+correos, notificaciones y push. El panel de administración, los logs, el
+registro de actividad y los errores para desarrolladores se quedan en español.
+
+- **A quien hace la petición** (respuesta, flash, excepción): `__()` a secas;
+  `SetLocale` ya fijó el idioma. En la API manda `X-Locale` (va *antes* de
+  `auth:sanctum` y del límite de peticiones, así que también traduce 401 y 429).
+- **A otra persona** (notificación, push, correo armado en un comando o por
+  un webhook): el texto se escribe en el idioma de **quien lo recibe**, nunca
+  en el de quien lo provocó ni en el del *worker*:
+  - `SendAthleteNotification::handle()` acepta el título y el mensaje como
+    *closures* — `fn () => __('Tu pedido :number va en camino', ['number' => $n])`
+    — y los evalúa en el idioma del destinatario (fila, evento en vivo y push
+    llevan ese mismo texto). Una cadena simple es texto que escribió una
+    persona (aviso del admin, campaña) y se envía tal cual.
+  - En cualquier otro lugar: `in_locale_of($user, fn () => …)`
+    (`App\Support\I18n\RecipientLocale`). Sin idioma guardado → el idioma por
+    defecto. Dentro, Carbon también cambia: las fechas van con
+    `isoFormat('LL')` / `translatedFormat()`, nunca con `locale('es')` fijo.
+  - Correos de pedido: `OrderSummary::locale($order)` (idioma guardado en el
+    pedido → cuenta del comprador → por defecto), fijado con
+    `Mail::to(...)->locale()` porque el destinatario es solo una dirección.
+- Quien se registra leyendo otro idioma lo conserva en su cuenta
+  (`I18nServiceProvider`, evento `Registered`).
+- Constantes y arreglos estáticos no pueden llamar `__()`: el texto vive en
+  un método (`match` con un `__('…')` por caso). Nunca `__($variable)`.
+- Validación: `lang/es/validation.php` y `lang/en/validation.php` cubren todas
+  las reglas del framework; los nombres de campo van en `attributes`.
+
 ### URLs y SEO
 
 - Las URLs en español **no cambian**. El inglés vive bajo `/en` y sirve
@@ -237,7 +270,52 @@ $category->tr('name')                                  // con el trait HasTransl
   (`GET /api/v1/i18n`, `GET /api/v1/i18n/{locale}?v=` con ETag), guardados en
   AsyncStorage: textos e idiomas nuevos llegan sin publicar versión.
 - El cliente HTTP envía `Accept-Language` y `X-Locale`.
-- `<LanguagePicker />` (`components/i18n/language-picker.tsx`).
+- `<LanguagePicker />` (`components/i18n/language-picker.tsx`), montado en
+  Configuración después de "Preferencias". Cambia la app al momento y guarda
+  la elección en la cuenta (`PATCH /me/locale`) si hay sesión.
+- Arranque: `initializeI18n()` en `src/app/_layout.tsx`; la pantalla de
+  inicio (splash) se queda hasta que hay fuentes + sesión + idioma. Nunca
+  lanza: si algo falla, la app abre en español.
+
+**Cómo se actualiza la pantalla al cambiar de idioma** (la app se compila con
+React Compiler, que guarda en caché cualquier `t('…')` sin entradas
+reactivas):
+
+- **Dentro de un componente o hook** el traductor sale siempre del hook:
+  `const { t, tc } = useI18n()` (también `useT()` y `useLocale()`). El hook
+  entrega un `t` **nuevo** cuando cambia el idioma o su catálogo, así que
+  todo lo que lo usa se vuelve a pintar. `regional` da la etiqueta para
+  `Intl` (`es-MX`, `en-US`).
+- **Fuera de React** (mapas de errores, esquemas de zod, servicios, sesión
+  NFC) se importa el `t` directo y se llama **en el momento de usarlo**,
+  nunca al cargar el módulo. Una tabla de textos a nivel de módulo
+  (`const COPY = { paid: 'Pago confirmado' }`) se congelaría en español:
+  se escribe como función (`paymentPhaseCopy(phase)`, `failureCopy(…)`,
+  `timeBucketLabel(…)`) o se construye al pintar (`buildTabs(t)`). En zod:
+  `.min(1, { error: () => t('Ingresa tu correo.') })`.
+- **Red de seguridad:** `<LocaleBoundary>` (`components/i18n/locale-boundary.tsx`)
+  es el `screenLayout` de los navegadores: al cambiar de idioma **vuelve a
+  montar cada pantalla** (no el navegador: se conserva dónde estás y el
+  historial), así se refresca también lo que llega por funciones auxiliares
+  (fechas, dinero, textos de error). Lo que vive fuera de una pantalla
+  (barra de pestañas, mini reproductor, avisos) usa el hook de principio a
+  fin.
+- Fechas y números: `getRegionalLocale()` / `dateFormatter()` de
+  `utils/dates.ts`; nada de `'es-MX'` fijo. La moneda sigue siendo la que
+  manda la API (MXN) y los precios de la tienda de apps salen del SDK.
+- Pruebas (Jest): corren en español (`jest.setup.js` simula AsyncStorage y
+  el idioma del teléfono), por eso las que comprueban textos en español no
+  cambian. `src/i18n/reactivity.test.tsx` cubre el cambio en caliente.
+
+**Textos nativos de iOS** (permisos de cámara, fotos, ubicación, NFC y el
+nombre de la app) no pasan por el catálogo: los escribe el sistema antes de
+que corra JavaScript. Viven en `locales/es.json` y `locales/en.json` del
+repo móvil (`expo.locales` en `app.json`, más
+`ios.infoPlist.CFBundleAllowMixedLocalizations`). Si se cambia un texto de
+permiso en `app.json` / `app.config.ts` hay que cambiarlo también ahí, en
+los dos idiomas, y **requieren una compilación nativa nueva**. En Android
+los diálogos de permiso son del sistema y ya salen en el idioma del
+teléfono.
 
 ## Panel: Idiomas y traducciones
 

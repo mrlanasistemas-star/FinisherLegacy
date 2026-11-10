@@ -56,17 +56,17 @@ final class StoryRaceRules
     public static function messages(): array
     {
         return [
-            'bib_number.max' => 'El número de corredor admite hasta 12 caracteres.',
-            'athlete_display_name.max' => 'El nombre admite hasta 80 caracteres.',
-            'pace.max' => 'Escribe el ritmo como 5:12 min/km.',
-            'category.max' => 'La categoría admite hasta 40 caracteres.',
-            'elevation_gain_m.integer' => 'Escribe el desnivel en metros, solo números.',
-            'finish_status.in' => 'Elige un estado de la lista.',
-            'sport_id.exists' => 'Elige un deporte de la lista.',
-            'event_participant_id.required_if' => 'Elige una de tus carreras.',
-            'event_name.required_if' => 'Escribe el nombre de la carrera.',
-            'result_time.regex' => 'Escribe el tiempo como 1:45:30.',
-            'race_date.date' => 'Revisa la fecha.',
+            'bib_number.max' => __('El número de corredor admite hasta 12 caracteres.'),
+            'athlete_display_name.max' => __('El nombre admite hasta 80 caracteres.'),
+            'pace.max' => __('Escribe el ritmo como 5:12 min/km.'),
+            'category.max' => __('La categoría admite hasta 40 caracteres.'),
+            'elevation_gain_m.integer' => __('Escribe el desnivel en metros, solo números.'),
+            'finish_status.in' => __('Elige un estado de la lista.'),
+            'sport_id.exists' => __('Elige un deporte de la lista.'),
+            'event_participant_id.required_if' => __('Elige una de tus carreras.'),
+            'event_name.required_if' => __('Escribe el nombre de la carrera.'),
+            'result_time.regex' => __('Escribe el tiempo como 1:45:30.'),
+            'race_date.date' => __('Revisa la fecha.'),
         ];
     }
 }

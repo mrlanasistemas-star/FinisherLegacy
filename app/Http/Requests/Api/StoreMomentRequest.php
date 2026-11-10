@@ -46,10 +46,10 @@ class StoreMomentRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'photos.max' => 'Puedes agregar hasta :max fotos.',
-            'photos.*.image' => 'Ese archivo no es una imagen válida.',
-            'photos.*.max' => 'Una de las fotos es demasiado grande.',
-            'caption.max' => 'Tu texto es demasiado largo (máximo :max caracteres).',
+            'photos.max' => __('Puedes agregar hasta :max fotos.'),
+            'photos.*.image' => __('Ese archivo no es una imagen válida.'),
+            'photos.*.max' => __('Una de las fotos es demasiado grande.'),
+            'caption.max' => __('Tu texto es demasiado largo (máximo :max caracteres).'),
         ];
     }
 }

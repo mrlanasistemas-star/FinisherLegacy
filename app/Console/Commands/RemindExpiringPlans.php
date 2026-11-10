@@ -10,6 +10,7 @@ use App\Enums\StoryQuotaKind;
 use App\Models\MediaEntitlement;
 use App\Models\PhotoExpansionPack;
 use App\Notifications\PlanExpiryReminder;
+use App\Support\I18n\RecipientLocale;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -67,19 +68,30 @@ class RemindExpiringPlans extends Command
 
                     $kind = $entitlement->extra_videos > 0 ? StoryQuotaKind::Videos : ($entitlement->extra_audio > 0 ? StoryQuotaKind::Audio : StoryQuotaKind::Photos);
                     $units = (int) $entitlement->getAttribute($kind->entitlementColumn());
-                    $what = "+{$units} {$kind->noun($units)}";
-                    $title = $story->title ?: 'tu recuerdo';
                     $url = route('my-legacy.edit', $story->public_id);
                     $expired = $stage === 'expired';
 
-                    [$headline, $body] = $expired
-                        ? ['Tu plan venció', "El plan de {$what} de «{$title}» terminó. Todo tu contenido sigue visible; para agregar más, renuévalo."]
-                        : [
-                            $stage === '1' ? 'Tu plan vence mañana' : "Tu plan vence en {$stage} días",
-                            "El plan de {$what} de «{$title}» vence el {$entitlement->expires_at?->translatedFormat('j \\d\\e F \\d\\e Y')}. Renuévalo para conservar ese espacio.",
+                    // Written once, in the owner's language (not the worker's):
+                    // the in-app row, the push and the e-mail share these texts.
+                    [$headline, $body] = in_locale_of($user, function () use ($entitlement, $story, $kind, $units, $stage, $expired): array {
+                        $values = [
+                            'amount' => $kind->amount($units),
+                            'title' => $story->title ?: __('tu recuerdo'),
+                            'date' => $entitlement->expires_at?->isoFormat('LL'),
                         ];
 
-                    $this->line(sprintf('  %s → %s (%s, %s)', $stage, $user->email, $story->public_id, $what));
+                        return $expired
+                            ? [
+                                __('Tu plan venció'),
+                                __('El plan de +:amount de «:title» terminó. Todo tu contenido sigue visible; para agregar más, renuévalo.', $values),
+                            ]
+                            : [
+                                $stage === '1' ? __('Tu plan vence mañana') : __('Tu plan vence en :days días', ['days' => $stage]),
+                                __('El plan de +:amount de «:title» vence el :date. Renuévalo para conservar ese espacio.', $values),
+                            ];
+                    });
+
+                    $this->line(sprintf('  %s → %s (%s, +%d %s)', $stage, $user->email, $story->public_id, $units, $kind->value));
                     $sent++;
 
                     if ($dry) {
@@ -100,7 +112,10 @@ class RemindExpiringPlans extends Command
                         category: NotificationCategory::Pedidos,
                     );
 
-                    $user->notify(new PlanExpiryReminder($headline.' · Finisher Legacy', $headline, $body, $url, $expired));
+                    $user->notify(
+                        (new PlanExpiryReminder($headline.' · Finisher Legacy', $headline, $body, $url, $expired))
+                            ->locale(RecipientLocale::of($user)),
+                    );
                 }
             });
 

@@ -104,12 +104,12 @@ class ImageProcessingService
         $maxDimension = (int) ($config['max_dimension'] ?? 12_000);
 
         if ($size === false || $size[0] < 1 || $size[1] < 1) {
-            throw ValidationException::withMessages(['image' => 'No pudimos leer la imagen. Prueba con un JPG, PNG o WebP.']);
+            throw ValidationException::withMessages(['image' => __('No pudimos leer la imagen. Prueba con un JPG, PNG o WebP.')]);
         }
 
         if ($size[0] > $maxDimension || $size[1] > $maxDimension || $maxPixels < $size[0] * $size[1]) {
             throw ValidationException::withMessages([
-                'image' => 'La imagen es demasiado grande (máximo '.intdiv($maxPixels, 1_000_000).' megapíxeles). Redúcela e inténtalo de nuevo.',
+                'image' => __('La imagen es demasiado grande (máximo :megapixels megapíxeles). Redúcela e inténtalo de nuevo.', ['megapixels' => intdiv($maxPixels, 1_000_000)]),
             ]);
         }
     }

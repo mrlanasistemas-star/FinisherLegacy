@@ -19,12 +19,12 @@ enum PostKind: string
     public function label(): string
     {
         return match ($this) {
-            self::Moment => 'Momento',
-            self::RaceResult => 'Resultado',
-            self::Photo => 'Foto',
-            self::Gear => 'Mi equipo',
+            self::Moment => __('Momento'),
+            self::RaceResult => __('Resultado'),
+            self::Photo => __('Foto'),
+            self::Gear => __('Mi equipo'),
             self::LegacyPlate => 'Legacy Plate',
-            self::Text => 'Actualización',
+            self::Text => __('Actualización'),
         };
     }
 }

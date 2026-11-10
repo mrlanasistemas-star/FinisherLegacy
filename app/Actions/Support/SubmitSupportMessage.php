@@ -35,15 +35,15 @@ class SubmitSupportMessage
         bool $isSurprise = false,
     ): AthleteSupportMessage {
         if (! $session->isAcceptingMessages()) {
-            throw new InvalidArgumentException('Esta sesión de apoyo ya no acepta mensajes.');
+            throw new InvalidArgumentException(__('Esta sesión de apoyo ya no acepta mensajes.'));
         }
 
         if ($type === SupportMessageType::Text && ! $session->allow_text) {
-            throw new InvalidArgumentException('Esta sesión no acepta mensajes de texto.');
+            throw new InvalidArgumentException(__('Esta sesión no acepta mensajes de texto.'));
         }
 
         if ($type === SupportMessageType::Audio && ! $session->allow_audio) {
-            throw new InvalidArgumentException('Esta sesión no acepta mensajes de audio.');
+            throw new InvalidArgumentException(__('Esta sesión no acepta mensajes de audio.'));
         }
 
         $contributorModel = SupportContributor::create([

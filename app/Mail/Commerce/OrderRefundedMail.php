@@ -30,8 +30,8 @@ class OrderRefundedMail extends OrderMail
     protected function subjectLine(): string
     {
         return $this->full
-            ? "Reembolso procesado · Pedido {$this->order->order_number}"
-            : "Reembolso parcial procesado · Pedido {$this->order->order_number}";
+            ? __('Reembolso procesado · Pedido :number', ['number' => $this->order->order_number])
+            : __('Reembolso parcial procesado · Pedido :number', ['number' => $this->order->order_number]);
     }
 
     protected function viewName(): string
@@ -41,7 +41,7 @@ class OrderRefundedMail extends OrderMail
 
     protected function preheader(): string
     {
-        return 'Procesamos tu reembolso de '.$this->formattedAmount().'.';
+        return __('Procesamos tu reembolso de :amount.', ['amount' => $this->formattedAmount()]);
     }
 
     protected function extraData(): array

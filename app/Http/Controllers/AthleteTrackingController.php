@@ -48,7 +48,7 @@ class AthleteTrackingController extends Controller
         Gate::authorize('delete', $share);
 
         $revoke->handle($share);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Enlace desactivado. Ya nadie puede verlo.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Enlace desactivado. Ya nadie puede verlo.')]);
 
         return back();
     }
@@ -75,7 +75,7 @@ class AthleteTrackingController extends Controller
         Gate::authorize('delete', $device);
 
         $revoke->handle($device);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Dispositivo desconectado.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Dispositivo desconectado.')]);
 
         return back();
     }

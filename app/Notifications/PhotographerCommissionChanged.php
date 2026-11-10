@@ -62,31 +62,45 @@ class PhotographerCommissionChanged extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject($this->title())
-            ->greeting('Hola')
+            ->greeting(__('Hola'))
             ->line($this->message())
-            ->line('Las ventas que ya se realizaron conservan la comisión con la que se vendieron.')
-            ->action('Ver mi simulador de precios', route('photographer.photos'))
-            ->line('Si tienes dudas sobre este cambio, responde a este correo.');
+            ->line(__('Las ventas que ya se realizaron conservan la comisión con la que se vendieron.'))
+            ->action(__('Ver mi simulador de precios'), route('photographer.photos'))
+            ->line(__('Si tienes dudas sobre este cambio, responde a este correo.'));
     }
 
     private function title(): string
     {
-        return 'Cambio en la comisión de Finisher Legacy';
+        return __('Cambio en la comisión de Finisher Legacy');
     }
 
     private function message(): string
     {
-        $date = $this->effectiveFrom->copy()->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
-        $rate = $this->format($this->commissionPercent);
-        $who = $this->scope === 'photographer' ? 'Tu comisión personalizada' : 'La comisión de Finisher Legacy';
-        $from = $this->previousPercent !== null && abs($this->previousPercent - $this->commissionPercent) > 0.0001
-            ? ' (antes '.$this->format($this->previousPercent).')'
-            : '';
-        $gateway = $this->gatewayFeeAbsorbedBy === 'finisher'
-            ? ' La comisión de la pasarela de pago la absorbe Finisher Legacy.'
-            : ' La comisión de la pasarela de pago se descuenta de tu ganancia.';
+        // Long date in the photographer's language ("3 de noviembre de 2026" /
+        // "November 3, 2026"): the notification is rendered in their locale.
+        $values = [
+            'rate' => $this->format($this->commissionPercent),
+            'date' => $this->effectiveFrom->copy()->locale(app()->getLocale())->isoFormat('LL'),
+        ];
+        $personal = $this->scope === 'photographer';
+        $changed = $this->previousPercent !== null && abs($this->previousPercent - $this->commissionPercent) > 0.0001;
 
-        return "{$who} será de {$rate}{$from} a partir del {$date}.{$gateway}";
+        if ($changed) {
+            $values['previous'] = $this->format((float) $this->previousPercent);
+        }
+
+        $rate = match (true) {
+            $personal && $changed => __('Tu comisión personalizada será de :rate (antes :previous) a partir del :date.', $values),
+            $personal => __('Tu comisión personalizada será de :rate a partir del :date.', $values),
+            $changed => __('La comisión de Finisher Legacy será de :rate (antes :previous) a partir del :date.', $values),
+            default => __('La comisión de Finisher Legacy será de :rate a partir del :date.', $values),
+        };
+
+        $gateway = $this->gatewayFeeAbsorbedBy === 'finisher'
+            ? __('La comisión de la pasarela de pago la absorbe Finisher Legacy.')
+            : __('La comisión de la pasarela de pago se descuenta de tu ganancia.');
+
+        return $rate.' '.$gateway;
     }
 
     private function format(float $percent): string

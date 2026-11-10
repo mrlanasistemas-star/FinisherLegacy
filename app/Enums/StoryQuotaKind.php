@@ -36,9 +36,9 @@ enum StoryQuotaKind: string
     public function label(): string
     {
         return match ($this) {
-            self::Photos => 'Fotos',
-            self::Videos => 'Videos',
-            self::Audio => 'Mensajes de voz',
+            self::Photos => __('Fotos'),
+            self::Videos => __('Videos'),
+            self::Audio => __('Mensajes de voz'),
         };
     }
 
@@ -46,9 +46,19 @@ enum StoryQuotaKind: string
     public function noun(int $count = 2): string
     {
         return match ($this) {
-            self::Photos => $count === 1 ? 'foto' : 'fotos',
-            self::Videos => $count === 1 ? 'video' : 'videos',
-            self::Audio => $count === 1 ? 'mensaje de voz' : 'mensajes de voz',
+            self::Photos => trans_choice('foto|fotos', $count),
+            self::Videos => trans_choice('video|videos', $count),
+            self::Audio => trans_choice('mensaje de voz|mensajes de voz', $count),
+        };
+    }
+
+    /** A complete amount: "1 foto", "10 videos" — use this instead of gluing a number to noun(). */
+    public function amount(int $count): string
+    {
+        return match ($this) {
+            self::Photos => trans_choice(':count foto|:count fotos', $count),
+            self::Videos => trans_choice(':count video|:count videos', $count),
+            self::Audio => trans_choice(':count mensaje de voz|:count mensajes de voz', $count),
         };
     }
 

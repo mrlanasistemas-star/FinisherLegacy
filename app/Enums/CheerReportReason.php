@@ -18,11 +18,11 @@ enum CheerReportReason: string
     public function label(): string
     {
         return match ($this) {
-            self::Harassment => 'Acoso',
-            self::Inappropriate => 'Contenido inapropiado',
-            self::Spam => 'Spam',
-            self::Threat => 'Amenaza',
-            self::Other => 'Otro',
+            self::Harassment => __('Acoso'),
+            self::Inappropriate => __('Contenido inapropiado'),
+            self::Spam => __('Spam'),
+            self::Threat => __('Amenaza'),
+            self::Other => __('Otro'),
         };
     }
 }

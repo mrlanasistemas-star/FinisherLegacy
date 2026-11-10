@@ -39,7 +39,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Suspended/blocked accounts lose API access immediately (403).
-        $middleware->api(append: [EnsureUserIsActive::class, SetLocale::class.':api']);
+        $middleware->api(
+            // Language first (docs/renovacion/idiomas.md): `auth:sanctum` and the
+            // throttle are sorted ahead of anything appended, and their 401 / 429
+            // messages must already come out in the language the client asked for.
+            prepend: [SetLocale::class.':api'],
+            append: [EnsureUserIsActive::class],
+        );
 
         // Correlation id on every request (web + api) — docs/ARCHITECTURE.md §Observability.
         $middleware->prepend(AssignRequestId::class);
@@ -86,7 +92,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if ($response->getStatusCode() === 419) {
-                return back()->with(['message' => 'Tu sesión expiró. Intenta de nuevo.']);
+                return back()->with(['message' => __('Tu sesión expiró. Intenta de nuevo.')]);
             }
 
             if (! app()->environment(['local', 'testing']) && in_array($response->getStatusCode(), [404, 403, 500, 503, 429], true)) {

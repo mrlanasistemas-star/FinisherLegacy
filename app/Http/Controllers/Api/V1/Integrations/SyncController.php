@@ -43,7 +43,7 @@ class SyncController extends Controller
             (bool) ($data['full'] ?? false),
         );
 
-        return $this->respond(['mapping_id' => $eventMapping->id], 'Sincronización en cola.', status: 202);
+        return $this->respond(['mapping_id' => $eventMapping->id], __('Sincronización en cola.'), status: 202);
     }
 
     public function latestRun(ExternalEventMapping $eventMapping): JsonResponse
@@ -54,7 +54,7 @@ class SyncController extends Controller
             ->latest('started_at')
             ->first();
 
-        abort_unless($run !== null, 404, 'Todavía no hay ninguna sincronización para este evento.');
+        abort_unless($run !== null, 404, __('Todavía no hay ninguna sincronización para este evento.'));
 
         $run->load('providerConnection', 'eventEdition.event');
 

@@ -18,9 +18,9 @@ enum NfcTargetType: string
     {
         return match ($this) {
             self::LegacyPlate => 'Legacy Plate',
-            self::Product => 'Producto conectado',
-            self::Profile => 'Perfil',
-            self::Event => 'Evento',
+            self::Product => __('Producto conectado'),
+            self::Profile => __('Perfil'),
+            self::Event => __('Evento'),
         };
     }
 

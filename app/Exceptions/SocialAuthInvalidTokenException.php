@@ -9,6 +9,6 @@ class SocialAuthInvalidTokenException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('No pudimos verificar tu inicio de sesión. Intenta de nuevo.', ApiErrorCode::SocialAuthInvalidToken, 422);
+        parent::__construct(__('No pudimos verificar tu inicio de sesión. Intenta de nuevo.'), ApiErrorCode::SocialAuthInvalidToken, 422);
     }
 }

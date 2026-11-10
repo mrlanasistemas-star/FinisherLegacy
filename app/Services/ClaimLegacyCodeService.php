@@ -156,7 +156,7 @@ class ClaimLegacyCodeService
             'event_edition_id' => $plate->event_edition_id,
             'event_race_id' => $plate->eventParticipant?->event_race_id,
             'event_participant_id' => $plate->event_participant_id,
-            'title' => $plate->event_name ?? 'Placa Finisher Legacy',
+            'title' => $plate->event_name ?? __('Placa Finisher Legacy'),
             'event_name_manual' => $plate->event_participant_id ? null : $plate->event_name,
             'event_date' => $plate->event_date,
             'distance_label' => $plate->race_name,

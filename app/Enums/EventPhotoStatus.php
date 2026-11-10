@@ -11,9 +11,9 @@ enum EventPhotoStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Review => 'Por revisar',
-            self::Published => 'Publicada',
-            self::Rejected => 'Rechazada',
+            self::Review => __('Por revisar'),
+            self::Published => __('Publicada'),
+            self::Rejected => __('Rechazada'),
         };
     }
 }

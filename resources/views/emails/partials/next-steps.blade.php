@@ -7,8 +7,8 @@
 <tr>
 <td width="3" bgcolor="#C9AE8B" style="width: 3px; background-color: #C9AE8B; font-size: 0; line-height: 0;">&nbsp;</td>
 <td class="fl-text" style="padding: 4px 0 4px 18px; font-size: 14px; line-height: 22px; color: #2B2A28;">
-<span style="display: block; margin-bottom: 4px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #A88B62;">Próximos pasos</span>
-Cuando recibas tu Finisher Legacy, actívalo desde la app o en <a href="{{ $order['activation_url'] }}" target="_blank" rel="noopener" style="color: #8A6F4B; font-weight: 600; text-decoration: underline;">{{ $order['activation_label'] }}</a>.
+<span style="display: block; margin-bottom: 4px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #A88B62;">{{ __('Próximos pasos') }}</span>
+{!! str_replace(':link', '<a href="'.e($order['activation_url']).'" target="_blank" rel="noopener" style="color: #8A6F4B; font-weight: 600; text-decoration: underline;">'.e($order['activation_label']).'</a>', e(__('Cuando recibas tu Finisher Legacy, actívalo desde la app o en :link'))) !!}.
 </td>
 </tr>
 </table>

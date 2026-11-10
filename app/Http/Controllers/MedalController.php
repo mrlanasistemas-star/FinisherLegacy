@@ -47,7 +47,7 @@ class MedalController extends Controller
             $request->file('gallery_images', []),
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Medalla agregada a tu colección.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Medalla agregada a tu colección.')]);
 
         return to_route('dashboard.medals.show', $medal);
     }
@@ -86,7 +86,7 @@ class MedalController extends Controller
             $request->file('gallery_images', []),
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Medalla actualizada.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Medalla actualizada.')]);
 
         return to_route('dashboard.medals.show', $medal);
     }
@@ -97,7 +97,7 @@ class MedalController extends Controller
 
         $this->medals->delete($medal);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Medalla archivada de tu colección.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Medalla archivada de tu colección.')]);
 
         return to_route('dashboard.medals.index');
     }
@@ -110,7 +110,7 @@ class MedalController extends Controller
 
         $this->medals->removeGalleryImage($medal, $medalImage->id);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Imagen eliminada.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Imagen eliminada.')]);
 
         return back();
     }

@@ -53,19 +53,19 @@ class ActivationController extends Controller
     public function lookup(Request $request): RedirectResponse
     {
         $request->validate(['code' => ['required', 'string', 'max:200']], [
-            'code.required' => 'Escribe el código impreso en tu tag.',
+            'code.required' => __('Escribe el código impreso en tu tag.'),
         ]);
 
         $code = TagCode::normalize((string) $request->input('code'));
 
         if ($code === null) {
-            throw ValidationException::withMessages(['code' => 'Revisa el código: son 12 letras y números, como ABCD-EFGH-JKMN.']);
+            throw ValidationException::withMessages(['code' => __('Revisa el código: son 12 letras y números, como ABCD-EFGH-JKMN.')]);
         }
 
         $tag = LegacyTag::query()->where('public_code', $code)->first();
 
         if ($tag === null) {
-            throw ValidationException::withMessages(['code' => 'No encontramos ese código. Revisa que esté bien escrito o escríbenos.']);
+            throw ValidationException::withMessages(['code' => __('No encontramos ese código. Revisa que esté bien escrito o escríbenos.')]);
         }
 
         return redirect()->route('activate.show', ['code' => $tag->public_code, 'src' => TagAccessSource::Code->value]);
@@ -78,7 +78,7 @@ class ActivationController extends Controller
         if ($tag === null) {
             return Inertia::render('activate/Unavailable', [
                 'reason' => 'not_found',
-                'message' => 'No encontramos este código. Revisa que esté bien escrito o escríbenos y lo buscamos contigo.',
+                'message' => __('No encontramos este código. Revisa que esté bien escrito o escríbenos y lo buscamos contigo.'),
                 'tag' => null,
             ])->toResponse($request)->setStatusCode(404);
         }
@@ -142,7 +142,7 @@ class ActivationController extends Controller
         }
 
         $request->session()->forget($this->sourceKey($tag));
-        Inertia::flash('toast', ['type' => 'success', 'message' => '¡Listo! Tu Finisher Legacy ya es tuyo.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('¡Listo! Tu Finisher Legacy ya es tuyo.')]);
 
         return redirect()->route('activate.show', $tag->public_code);
     }
@@ -160,7 +160,7 @@ class ActivationController extends Controller
         $story->completed_at ??= now();
         $story->save();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Tu Legacy está listo. Ahora ponle tus fotos y tus palabras.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Tu Legacy está listo. Ahora ponle tus fotos y tus palabras.')]);
 
         return redirect()->route('my-legacy.edit', $story->public_id);
     }

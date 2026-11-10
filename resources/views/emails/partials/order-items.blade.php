@@ -5,7 +5,7 @@
 --}}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; margin: 0 0 8px 0;">
 <tr>
-<td class="fl-muted fl-line" style="padding: 0 0 10px 0; border-bottom: 1px solid #ECE7DC; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #6B675F;">Pedido {{ $order['number'] }}</td>
+<td class="fl-muted fl-line" style="padding: 0 0 10px 0; border-bottom: 1px solid #ECE7DC; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #6B675F;">{{ __('Pedido :number', ['number' => $order['number']]) }}</td>
 </tr>
 @foreach ($order['items'] as $item)
 <tr>
@@ -20,7 +20,7 @@
 @if (filled($item['variant']))
 <br /><span class="fl-muted" style="font-size: 13px; color: #6B675F;">{{ $item['variant'] }}</span>
 @endif
-<br /><span class="fl-muted" style="font-size: 13px; color: #6B675F;">Cantidad: {{ $item['quantity'] }}</span>
+<br /><span class="fl-muted" style="font-size: 13px; color: #6B675F;">{{ __('Cantidad: :quantity', ['quantity' => $item['quantity']]) }}</span>
 </td>
 <td valign="top" align="right" class="fl-text" style="padding-left: 12px; font-size: 14px; line-height: 20px; white-space: nowrap; color: #0B0B0C;">{{ $item['total'] }}</td>
 </tr>

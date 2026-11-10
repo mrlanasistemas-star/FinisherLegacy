@@ -23,21 +23,21 @@
 </tr>
 <tr>
 <td align="center" class="fl-muted" style="font-family: {!! $brand::FONT_STACK !!}; font-size: 12px; line-height: 20px; color: #6B675F;">
-¿Necesitas ayuda? Escríbenos a <a href="mailto:{{ $support }}" style="color: #8A6F4B; text-decoration: underline;">{{ $support }}</a>
+{!! str_replace(':email', '<a href="mailto:'.e($support).'" style="color: #8A6F4B; text-decoration: underline;">'.e($support).'</a>', e(__('¿Necesitas ayuda? Escríbenos a :email'))) !!}
 </td>
 </tr>
 <tr>
 <td align="center" class="fl-muted" style="padding-top: 10px; font-family: {!! $brand::FONT_STACK !!}; font-size: 12px; line-height: 20px; color: #6B675F;">
-<a href="{{ $brand::privacyUrl() }}" target="_blank" rel="noopener" style="color: #6B675F; text-decoration: underline;">Aviso de privacidad</a>
+<a href="{{ $brand::privacyUrl() }}" target="_blank" rel="noopener" style="color: #6B675F; text-decoration: underline;">{{ __('Aviso de privacidad') }}</a>
 &nbsp;&middot;&nbsp;
-<a href="{{ $brand::termsUrl() }}" target="_blank" rel="noopener" style="color: #6B675F; text-decoration: underline;">Términos y condiciones</a>
+<a href="{{ $brand::termsUrl() }}" target="_blank" rel="noopener" style="color: #6B675F; text-decoration: underline;">{{ __('Términos y condiciones') }}</a>
 &nbsp;&middot;&nbsp;
 <a href="{{ $brand::homeUrl() }}" target="_blank" rel="noopener" style="color: #6B675F; text-decoration: underline;">{{ parse_url($brand::homeUrl(), PHP_URL_HOST) ?: 'finisherlegacy.com' }}</a>
 </td>
 </tr>
 <tr>
 <td align="center" class="fl-muted" style="padding-top: 10px; font-family: {!! $brand::FONT_STACK !!}; font-size: 11px; line-height: 18px; color: #8C877D;">
-&copy; {{ date('Y') }} {{ config('app.name', 'Finisher Legacy') }}. Todos los derechos reservados.
+&copy; {{ date('Y') }} {{ config('app.name', 'Finisher Legacy') }}. {{ __('All rights reserved.') }}
 </td>
 </tr>
 </table>

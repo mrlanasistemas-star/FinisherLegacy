@@ -19,12 +19,12 @@ class TagNotActivatableException extends ApiException
     public static function messageFor(string $reason): string
     {
         return match ($reason) {
-            'disabled' => 'Este Finisher Legacy está desactivado. Escríbenos y te ayudamos.',
-            'replaced' => 'Esta pieza fue reemplazada por una nueva. Usa la pieza que recibiste como reemplazo.',
-            'returned' => 'Esta pieza fue devuelta y ya no puede activarse.',
-            'lost' => 'Esta pieza está reportada como extraviada. Si la recuperaste, escríbenos y la reactivamos.',
-            'stolen' => 'Esta pieza está reportada como robada y no puede activarse. Escríbenos si crees que es un error.',
-            default => 'Esta pieza todavía no está registrada como vendida. Pide al punto de venta que la registre o escríbenos.',
+            'disabled' => __('Este Finisher Legacy está desactivado. Escríbenos y te ayudamos.'),
+            'replaced' => __('Esta pieza fue reemplazada por una nueva. Usa la pieza que recibiste como reemplazo.'),
+            'returned' => __('Esta pieza fue devuelta y ya no puede activarse.'),
+            'lost' => __('Esta pieza está reportada como extraviada. Si la recuperaste, escríbenos y la reactivamos.'),
+            'stolen' => __('Esta pieza está reportada como robada y no puede activarse. Escríbenos si crees que es un error.'),
+            default => __('Esta pieza todavía no está registrada como vendida. Pide al punto de venta que la registre o escríbenos.'),
         };
     }
 }

@@ -20,7 +20,7 @@ class ReorderAthleteEventMedia
         $ids = $participant->media()->whereIn('uuid', $uuids)->pluck('id', 'uuid');
 
         if ($ids->count() !== count(array_unique($uuids))) {
-            throw ValidationException::withMessages(['media_uuids' => 'Alguno de los archivos no pertenece a este evento.']);
+            throw ValidationException::withMessages(['media_uuids' => __('Alguno de los archivos no pertenece a este evento.')]);
         }
 
         return array_map(fn (string $uuid) => (int) $ids[$uuid], $uuids);

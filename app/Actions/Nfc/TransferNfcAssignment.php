@@ -39,11 +39,11 @@ class TransferNfcAssignment
                 || ! $assignment->target_type->isTransferable()
                 || $ownerAthlete === null
                 || $assignment->athlete_id !== $ownerAthlete->id) {
-                throw new NfcTransferInvalidException('Solo el dueño puede transferir este producto.');
+                throw new NfcTransferInvalidException(__('Solo el dueño puede transferir este producto.'));
             }
 
             if ($recipient->id === $ownerAthlete->id) {
-                throw new NfcTransferInvalidException('Elige a otra persona para transferir.');
+                throw new NfcTransferInvalidException(__('Elige a otra persona para transferir.'));
             }
 
             $token = Str::random(40);
@@ -128,7 +128,7 @@ class TransferNfcAssignment
         $ownerAthlete = $owner->athlete()->first();
 
         if ($ownerAthlete === null || $assignment->athlete_id !== $ownerAthlete->id) {
-            throw new NfcTransferInvalidException('Solo el dueño puede cancelar la transferencia.');
+            throw new NfcTransferInvalidException(__('Solo el dueño puede cancelar la transferencia.'));
         }
 
         $assignment->update(['transfer_to_athlete_id' => null, 'transfer_token_hash' => null, 'transfer_expires_at' => null]);

@@ -14,9 +14,9 @@ enum DeliveryMethod: string
     public function label(): string
     {
         return match ($this) {
-            self::InPerson => 'Entrega inmediata',
-            self::Pickup => 'Recolección',
-            self::Shipping => 'Envío',
+            self::InPerson => __('Entrega inmediata'),
+            self::Pickup => __('Recolección'),
+            self::Shipping => __('Envío'),
         };
     }
 

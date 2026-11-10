@@ -87,7 +87,7 @@ class CheckoutController extends Controller
             report($e);
             Inertia::flash('toast', ['type' => 'error', 'message' => $e instanceof ApiException || $e instanceof \RuntimeException
                 ? $e->getMessage()
-                : 'No pudimos confirmar tu pedido. Intenta de nuevo.']);
+                : __('No pudimos confirmar tu pedido. Intenta de nuevo.')]);
 
             return back();
         }
@@ -208,7 +208,7 @@ class CheckoutController extends Controller
     protected function chargeOnline(Request $request, Order $order, CreateOnlinePayment $createPayment, SyncOnlinePayment $sync, ?string $provider, ?string $returnUrl = null): JsonResponse
     {
         if ($provider === null) {
-            return response()->json(['available' => false, 'message' => 'El pago en línea no está disponible en este momento.']);
+            return response()->json(['available' => false, 'message' => __('El pago en línea no está disponible en este momento.')]);
         }
 
         $paymentData = $request->only(['token_id', 'device_session_id']);

@@ -21,8 +21,8 @@ enum UserStatus: string
     public function signInDeniedMessage(): string
     {
         return match ($this) {
-            self::Blocked => 'Tu cuenta está bloqueada. Si crees que es un error, escríbenos a soporte.',
-            default => 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a soporte.',
+            self::Blocked => __('Tu cuenta está bloqueada. Si crees que es un error, escríbenos a soporte.'),
+            default => __('Tu cuenta está suspendida. Si crees que es un error, escríbenos a soporte.'),
         };
     }
 }

@@ -60,16 +60,16 @@ class UploadAthleteEventMedia
         $remaining = $this->entitlement->remaining($participant);
 
         if ($type === AthleteEventMediaType::Image && $remaining['images'] <= 0) {
-            throw new MediaLimitReachedException('Alcanzaste el límite de fotos incluidas para este evento.');
+            throw new MediaLimitReachedException(__('Alcanzaste el límite de fotos incluidas para este evento.'));
         }
 
         if ($type === AthleteEventMediaType::Video && $remaining['videos'] <= 0) {
-            throw new MediaLimitReachedException('Alcanzaste el límite de videos incluidos para este evento.');
+            throw new MediaLimitReachedException(__('Alcanzaste el límite de videos incluidos para este evento.'));
         }
 
         $edition = $participant->eventEdition()->first();
         if ($edition === null) {
-            throw ValidationException::withMessages(['file' => 'Este registro no pertenece a un evento válido.']);
+            throw ValidationException::withMessages(['file' => __('Este registro no pertenece a un evento válido.')]);
         }
 
         $directory = $this->storage->paths()->athleteEvent(
@@ -122,7 +122,7 @@ class UploadAthleteEventMedia
         return match (true) {
             in_array($mime, self::IMAGE_MIMES, true) => AthleteEventMediaType::Image,
             in_array($mime, self::VIDEO_MIMES, true) => AthleteEventMediaType::Video,
-            default => throw ValidationException::withMessages(['file' => "Formato de archivo no soportado: {$mime}."]),
+            default => throw ValidationException::withMessages(['file' => __('Formato de archivo no soportado: :mime.', ['mime' => $mime])]),
         };
     }
 }

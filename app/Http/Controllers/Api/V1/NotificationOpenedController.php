@@ -23,6 +23,6 @@ class NotificationOpenedController extends Controller
     {
         $user = $request->user('sanctum') ?? $request->user();
 
-        return $this->respond(['recorded' => $tracker->record($user, $id)], 'Apertura registrada.');
+        return $this->respond(['recorded' => $tracker->record($user, $id)], __('Apertura registrada.'));
     }
 }

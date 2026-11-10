@@ -42,8 +42,8 @@ class AccountDeletionController extends Controller
             // Honeypot — real people never fill a hidden field.
             'website' => ['prohibited'],
         ], [
-            'confirm.accepted' => 'Confirma que entiendes que la eliminación es definitiva.',
-            'website.prohibited' => 'No pudimos enviar tu solicitud.',
+            'confirm.accepted' => __('Confirma que entiendes que la eliminación es definitiva.'),
+            'website.prohibited' => __('No pudimos enviar tu solicitud.'),
         ]);
 
         $reason = trim((string) ($data['reason'] ?? ''));
@@ -59,7 +59,7 @@ class AccountDeletionController extends Controller
             'status' => ContactMessageStatus::New,
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Recibimos tu solicitud. Te escribiremos a ese correo para confirmarla.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Recibimos tu solicitud. Te escribiremos a ese correo para confirmarla.')]);
 
         return back();
     }

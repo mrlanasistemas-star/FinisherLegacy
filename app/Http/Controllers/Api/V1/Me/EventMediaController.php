@@ -52,7 +52,7 @@ class EventMediaController extends Controller
 
         $media = $upload->handle($athlete, $participant, $request->file('file'), $request->boolean('is_public'));
 
-        return $this->respond(new AthleteEventMediaResource($media), 'Archivo subido.', status: 201);
+        return $this->respond(new AthleteEventMediaResource($media), __('Archivo subido.'), status: 201);
     }
 
     public function updateVisibility(Request $request, AthleteEventMedia $media, UpdateAthleteEventMediaVisibility $update): JsonResponse
@@ -67,7 +67,7 @@ class EventMediaController extends Controller
         Gate::forUser($this->sanctumUser($request))->authorize('delete', $media);
         $delete->handle($media);
 
-        return $this->respond(null, 'Archivo eliminado.');
+        return $this->respond(null, __('Archivo eliminado.'));
     }
 
     /**

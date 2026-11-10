@@ -14,9 +14,9 @@ enum StoryVisibility: string
     public function label(): string
     {
         return match ($this) {
-            self::Public => 'Público',
-            self::Unlisted => 'Solo con el tag o el enlace',
-            self::Private => 'Privado',
+            self::Public => __('Público'),
+            self::Unlisted => __('Solo con el tag o el enlace'),
+            self::Private => __('Privado'),
         };
     }
 

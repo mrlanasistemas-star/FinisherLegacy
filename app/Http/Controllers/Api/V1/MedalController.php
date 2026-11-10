@@ -42,7 +42,7 @@ class MedalController extends Controller
         );
 
         return (new MedalResource($medal->load(['eventEdition.event', 'eventRace'])))
-            ->additional(['message' => 'Medalla agregada a tu colección.', 'meta' => (object) []])
+            ->additional(['message' => __('Medalla agregada a tu colección.'), 'meta' => (object) []])
             ->response()
             ->setStatusCode(201);
     }
@@ -71,7 +71,7 @@ class MedalController extends Controller
         );
 
         return (new MedalResource($updated->load(['eventEdition.event', 'eventRace'])))
-            ->additional(['message' => 'Medalla actualizada.', 'meta' => (object) []])
+            ->additional(['message' => __('Medalla actualizada.'), 'meta' => (object) []])
             ->response();
     }
 
@@ -83,7 +83,7 @@ class MedalController extends Controller
 
         return response()->json([
             'data' => null,
-            'message' => 'Medalla archivada de tu colección.',
+            'message' => __('Medalla archivada de tu colección.'),
             'meta' => (object) [],
         ]);
     }

@@ -12,7 +12,7 @@ class AthleteAlreadyLinkedException extends RuntimeException
 {
     public function __construct()
     {
-        parent::__construct('Esta cuenta ya está vinculada a un atleta distinto.');
+        parent::__construct(__('Esta cuenta ya está vinculada a un atleta distinto.'));
     }
 
     public function code(): string

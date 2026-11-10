@@ -81,6 +81,6 @@ class CheerPresenter
                 ? Storage::disk('public')->url($profile->profile_photo_path)
                 : null;
 
-        return ['name' => trim((string) $user->name) ?: 'Atleta', 'avatar_url' => $photo];
+        return ['name' => trim((string) $user->name) ?: __('Atleta'), 'avatar_url' => $photo];
     }
 }

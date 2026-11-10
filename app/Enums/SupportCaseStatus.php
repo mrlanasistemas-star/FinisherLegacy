@@ -15,10 +15,10 @@ enum SupportCaseStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Open => 'Abierta',
-            self::InProgress => 'En proceso',
-            self::Resolved => 'Resuelta',
-            self::Closed => 'Cerrada',
+            self::Open => __('Abierta'),
+            self::InProgress => __('En proceso'),
+            self::Resolved => __('Resuelta'),
+            self::Closed => __('Cerrada'),
         };
     }
 

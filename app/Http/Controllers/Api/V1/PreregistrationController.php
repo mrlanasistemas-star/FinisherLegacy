@@ -42,7 +42,7 @@ class PreregistrationController extends Controller
         return $this->respond([
             'token' => $preregistration->token,
             'status' => $preregistration->status->value,
-        ], 'Prerregistro confirmado.', status: 201);
+        ], __('Prerregistro confirmado.'), status: 201);
     }
 
     public function show(Request $request, string $token): JsonResponse

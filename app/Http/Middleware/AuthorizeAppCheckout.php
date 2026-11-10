@@ -38,7 +38,7 @@ class AuthorizeAppCheckout
 
         if (! $user instanceof User || ! $order instanceof Order || $order->user_id !== $user->id || ! $user->status->canSignIn()) {
             if ($request->expectsJson()) {
-                abort(403, 'Esta sesión de pago ya no es válida. Vuelve a la app e intenta de nuevo.');
+                abort(403, __('Esta sesión de pago ya no es válida. Vuelve a la app e intenta de nuevo.'));
             }
 
             return Inertia::render('store/AppCheckoutInvalid', [

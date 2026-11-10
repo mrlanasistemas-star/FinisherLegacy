@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Mail\Support\OrderSummary;
 use App\Models\LegacyTag;
+use App\Support\I18n\RecipientLocale;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -19,7 +21,13 @@ class TagActivationReminder extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public readonly LegacyTag $tag) {}
+    public function __construct(public readonly LegacyTag $tag)
+    {
+        // An on-demand address carries no language: use the one of the
+        // order (see OrderSummary::locale) or of the owner's account —
+        // never the language of the admin who pressed the button.
+        $this->locale($tag->order !== null ? OrderSummary::locale($tag->order) : RecipientLocale::of($tag->owner?->user));
+    }
 
     /**
      * @return list<string>
@@ -34,11 +42,11 @@ class TagActivationReminder extends Notification implements ShouldQueue
         $url = route('activate.show', $this->tag->public_code);
 
         return (new MailMessage)
-            ->subject('Activa tu Finisher Legacy Tag')
-            ->greeting('¡Tu historia te está esperando!')
-            ->line('Tu Finisher Legacy Tag todavía no está activado. Actívalo para guardar tu recuerdo: tu carrera, tus fotos y tu dedicatoria.')
-            ->line('Código impreso en tu tag: '.$this->tag->displayCode())
-            ->action('Activar mi tag', $url)
-            ->line('También puedes acercar tu teléfono al tag (NFC) o entrar a '.route('activate.index').' y escribir el código.');
+            ->subject(__('Activa tu Finisher Legacy Tag'))
+            ->greeting(__('¡Tu historia te está esperando!'))
+            ->line(__('Tu Finisher Legacy Tag todavía no está activado. Actívalo para guardar tu recuerdo: tu carrera, tus fotos y tu dedicatoria.'))
+            ->line(__('Código impreso en tu tag: :code', ['code' => $this->tag->displayCode()]))
+            ->action(__('Activar mi tag'), $url)
+            ->line(__('También puedes acercar tu teléfono al tag (NFC) o entrar a :url y escribir el código.', ['url' => route('activate.index')]));
     }
 }

@@ -10,7 +10,7 @@ class OrderDeliveredMail extends OrderMail
 {
     protected function subjectLine(): string
     {
-        return "Pedido {$this->order->order_number} entregado";
+        return __('Pedido :number entregado', ['number' => $this->order->order_number]);
     }
 
     protected function viewName(): string
@@ -20,6 +20,6 @@ class OrderDeliveredMail extends OrderMail
 
     protected function preheader(): string
     {
-        return 'Tu pedido ya fue entregado. Actívalo para empezar a guardar tu historia.';
+        return __('Tu pedido ya fue entregado. Actívalo para empezar a guardar tu historia.');
     }
 }

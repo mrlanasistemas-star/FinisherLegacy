@@ -26,7 +26,7 @@ class IapException extends ApiException
     public static function notConfigured(string $platform): self
     {
         return new self(
-            'Las compras dentro de la app aún no están disponibles.',
+            __('Las compras dentro de la app aún no están disponibles.'),
             ApiErrorCode::IapNotConfigured,
             503,
             ['platform' => $platform, 'retryable' => true],
@@ -36,7 +36,7 @@ class IapException extends ApiException
     public static function storeUnavailable(): self
     {
         return new self(
-            'No pudimos confirmar la compra con la tienda. Lo intentaremos de nuevo; no se te cobrará dos veces.',
+            __('No pudimos confirmar la compra con la tienda. Lo intentaremos de nuevo; no se te cobrará dos veces.'),
             ApiErrorCode::IapStoreUnavailable,
             503,
             ['retryable' => true],
@@ -46,7 +46,7 @@ class IapException extends ApiException
     public static function verificationFailed(string $reason): self
     {
         return new self(
-            'La tienda no reconoce esta compra.',
+            __('La tienda no reconoce esta compra.'),
             ApiErrorCode::IapVerificationFailed,
             422,
             ['reason' => $reason, 'retryable' => false],
@@ -56,7 +56,7 @@ class IapException extends ApiException
     public static function notValid(string $reason): self
     {
         return new self(
-            'Esta compra ya no es válida (reembolsada o cancelada).',
+            __('Esta compra ya no es válida (reembolsada o cancelada).'),
             ApiErrorCode::IapPurchaseNotValid,
             422,
             ['reason' => $reason, 'retryable' => false],
@@ -66,7 +66,7 @@ class IapException extends ApiException
     public static function pending(): self
     {
         return new self(
-            'Tu pago está pendiente de aprobación. Te daremos el espacio en cuanto la tienda lo confirme.',
+            __('Tu pago está pendiente de aprobación. Te daremos el espacio en cuanto la tienda lo confirme.'),
             ApiErrorCode::IapPurchasePending,
             409,
             ['retryable' => true],
@@ -76,7 +76,7 @@ class IapException extends ApiException
     public static function productMismatch(): self
     {
         return new self(
-            'Este producto no corresponde a una ampliación de este recuerdo.',
+            __('Este producto no corresponde a una ampliación de este recuerdo.'),
             ApiErrorCode::IapProductMismatch,
             422,
             ['retryable' => false],
@@ -86,7 +86,7 @@ class IapException extends ApiException
     public static function otherAccount(): self
     {
         return new self(
-            'Esta compra pertenece a otra cuenta de Finisher Legacy.',
+            __('Esta compra pertenece a otra cuenta de Finisher Legacy.'),
             ApiErrorCode::IapPurchaseOtherAccount,
             409,
             ['retryable' => false],

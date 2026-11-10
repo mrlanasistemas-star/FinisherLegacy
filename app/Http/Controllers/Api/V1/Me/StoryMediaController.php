@@ -57,9 +57,9 @@ class StoryMediaController extends Controller
             'caption' => ['nullable', 'string', 'max:280'],
             'duration_seconds' => ['nullable', 'integer', 'min:0', 'max:86400'],
         ], [
-            'file.required' => 'Elige un archivo.',
-            'file.max' => 'El archivo es demasiado pesado. Prueba con uno más ligero.',
-            'file.uploaded' => 'No pudimos recibir el archivo. Intenta de nuevo.',
+            'file.required' => __('Elige un archivo.'),
+            'file.max' => __('El archivo es demasiado pesado. Prueba con uno más ligero.'),
+            'file.uploaded' => __('No pudimos recibir el archivo. Intenta de nuevo.'),
         ]);
 
         $file = $media->add(
@@ -71,7 +71,7 @@ class StoryMediaController extends Controller
             isset($data['duration_seconds']) ? (int) $data['duration_seconds'] : null,
         );
 
-        return $this->respond($this->item($story, $presenter, $file), 'Archivo subido.', ['quota' => $quota->summaryAll($story)], 201);
+        return $this->respond($this->item($story, $presenter, $file), __('Archivo subido.'), ['quota' => $quota->summaryAll($story)], 201);
     }
 
     public function destroy(Request $request, string $publicId, string $uuid, ManageStoryMedia $media): Response
@@ -104,7 +104,7 @@ class StoryMediaController extends Controller
 
         return $this->respond(
             array_values(array_filter(array_map(fn (MediaFile $file) => $this->item($story, $presenter, $file), $files))),
-            $files === [] ? 'Esas fotos ya estaban en tu recuerdo.' : 'Fotos agregadas a tu recuerdo.',
+            $files === [] ? __('Esas fotos ya estaban en tu recuerdo.') : __('Fotos agregadas a tu recuerdo.'),
             ['quota' => $quota->summaryAll($story)],
             201,
         );

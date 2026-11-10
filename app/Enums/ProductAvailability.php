@@ -18,9 +18,9 @@ enum ProductAvailability: string
     public function label(): string
     {
         return match ($this) {
-            self::Available => 'Disponible',
-            self::ComingSoon => 'Próximamente',
-            self::Concept => 'Concepto',
+            self::Available => __('Disponible'),
+            self::ComingSoon => __('Próximamente'),
+            self::Concept => __('Concepto'),
         };
     }
 

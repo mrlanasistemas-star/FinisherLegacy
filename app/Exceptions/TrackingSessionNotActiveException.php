@@ -7,8 +7,8 @@ use App\Exceptions\Api\ApiException;
 
 class TrackingSessionNotActiveException extends ApiException
 {
-    public function __construct(string $message = 'Este seguimiento ya terminó.')
+    public function __construct(?string $message = null)
     {
-        parent::__construct($message, ApiErrorCode::Conflict, 409);
+        parent::__construct($message ?? __('Este seguimiento ya terminó.'), ApiErrorCode::Conflict, 409);
     }
 }

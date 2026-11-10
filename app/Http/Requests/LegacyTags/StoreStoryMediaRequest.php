@@ -47,9 +47,9 @@ class StoreStoryMediaRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'file.required' => 'Elige un archivo.',
-            'file.max' => 'El archivo es demasiado pesado. Prueba con uno más ligero.',
-            'file.uploaded' => 'No pudimos recibir el archivo. Intenta de nuevo.',
+            'file.required' => __('Elige un archivo.'),
+            'file.max' => __('El archivo es demasiado pesado. Prueba con uno más ligero.'),
+            'file.uploaded' => __('No pudimos recibir el archivo. Intenta de nuevo.'),
         ];
     }
 }

@@ -51,7 +51,7 @@ class CheerPublicController extends Controller
         $link = $this->find($token);
 
         if (! $link->isAccepting()) {
-            return back()->withErrors(['form' => 'Este enlace ya no recibe mensajes.']);
+            return back()->withErrors(['form' => __('Este enlace ya no recibe mensajes.')]);
         }
 
         /** @var array{sender_name: string, relationship?: string|null, body?: string|null, icon: string, duration_seconds?: int|string|null} $data */

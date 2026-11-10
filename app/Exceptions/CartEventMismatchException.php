@@ -15,7 +15,7 @@ class CartEventMismatchException extends ApiException
     public function __construct()
     {
         parent::__construct(
-            'Tu carrito ya contiene productos asociados a otro evento. Finaliza ese pedido antes de agregar productos de un evento diferente.',
+            __('Tu carrito ya contiene productos asociados a otro evento. Finaliza ese pedido antes de agregar productos de un evento diferente.'),
             ApiErrorCode::CartEventMismatch,
             422,
         );

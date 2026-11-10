@@ -62,14 +62,14 @@ class NfcController extends Controller
             'activated_at' => $assignment->activated_at?->toIso8601String(),
             'usage_history' => [],
             'connected' => true,
-            'connection_label' => GearItem::CONNECTED_LABEL,
+            'connection_label' => GearItem::connectedLabel(),
             'connected_at' => $assignment->activated_at?->toIso8601String(),
             'image_url' => null,
             'story_url' => null,
             'event' => null,
         ];
 
-        return $this->respond($item, 'Listo. Ya forma parte de tu equipo.');
+        return $this->respond($item, __('Listo. Ya forma parte de tu equipo.'));
     }
 
     private function findTag(string $token): NfcTag

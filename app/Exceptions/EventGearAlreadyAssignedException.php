@@ -15,7 +15,7 @@ class EventGearAlreadyAssignedException extends ApiException
     public function __construct()
     {
         parent::__construct(
-            'Este producto ya está asignado a esta participación.',
+            __('Este producto ya está asignado a esta participación.'),
             ApiErrorCode::EventGearAlreadyAssigned,
             409,
         );

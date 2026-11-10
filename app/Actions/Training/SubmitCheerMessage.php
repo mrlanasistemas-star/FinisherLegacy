@@ -74,7 +74,7 @@ class SubmitCheerMessage
         $body = isset($data['body']) && trim((string) $data['body']) !== '' ? trim((string) $data['body']) : null;
 
         if ($audio === null && $body === null) {
-            throw ValidationException::withMessages(['audio' => 'Graba un mensaje de voz o escribe unas palabras.']);
+            throw ValidationException::withMessages(['audio' => __('Graba un mensaje de voz o escribe unas palabras.')]);
         }
 
         $duration = $audio !== null ? $this->duration($audio, $data['duration_seconds'] ?? null) : 0;
@@ -89,7 +89,7 @@ class SubmitCheerMessage
                 $locked = CheerLink::query()->whereKey($link->id)->lockForUpdate()->firstOrFail();
 
                 if (! $locked->isAccepting()) {
-                    throw ValidationException::withMessages(['form' => 'Este enlace ya no recibe mensajes.']);
+                    throw ValidationException::withMessages(['form' => __('Este enlace ya no recibe mensajes.')]);
                 }
 
                 $recipient = $locked->user;
@@ -142,7 +142,7 @@ class SubmitCheerMessage
 
         // One second of slack: browsers stop the recorder a hair late.
         if ($probed !== null && $probed > ($max + 1) * 1000) {
-            throw ValidationException::withMessages(['audio' => 'El mensaje dura más de '.intdiv($max, 60).' minutos. Graba uno más corto.']);
+            throw ValidationException::withMessages(['audio' => __('El mensaje dura más de :minutes minutos. Graba uno más corto.', ['minutes' => intdiv($max, 60)])]);
         }
 
         $seconds = $probed !== null ? (int) round($probed / 1000) : (int) $clientSeconds;
@@ -158,11 +158,11 @@ class SubmitCheerMessage
         try {
             return $this->storage->accept($audio, $this->storage->paths()->forUser($recipient, 'support'), self::rules(), $recipient);
         } catch (MediaTooLargeException) {
-            throw ValidationException::withMessages(['audio' => 'El audio pesa más de '.intdiv((int) config('training.cheers.max_audio_bytes'), 1024 * 1024).' MB.']);
+            throw ValidationException::withMessages(['audio' => __('El audio pesa más de :size MB.', ['size' => intdiv((int) config('training.cheers.max_audio_bytes'), 1024 * 1024)])]);
         } catch (FilesystemException) {
-            throw ValidationException::withMessages(['audio' => 'No pudimos guardar el audio en este momento. Intenta de nuevo en unos minutos.']);
+            throw ValidationException::withMessages(['audio' => __('No pudimos guardar el audio en este momento. Intenta de nuevo en unos minutos.')]);
         } catch (ValidationException) {
-            throw ValidationException::withMessages(['audio' => 'Sube un audio M4A, MP3, AAC, WebM u OGG.']);
+            throw ValidationException::withMessages(['audio' => __('Sube un audio M4A, MP3, AAC, WebM u OGG.')]);
         }
     }
 
@@ -184,9 +184,10 @@ class SubmitCheerMessage
 
         $this->notify->handle(
             $link->user,
-            'Nuevo mensaje de ánimo',
-            $message->audio_media_file_id !== null
-                ? "{$message->sender_name} te dejó un mensaje de voz para tu entrenamiento."
+            // Rendered in the athlete's language, not the sender's browser one.
+            fn (): string => __('Nuevo mensaje de ánimo'),
+            fn (): string => $message->audio_media_file_id !== null
+                ? __(':name te dejó un mensaje de voz para tu entrenamiento.', ['name' => $message->sender_name])
                 : "{$message->sender_name}: ".mb_strimwidth((string) $message->body, 0, 90, '…'),
             NotificationType::TrainingCheer,
             route('training.index'),

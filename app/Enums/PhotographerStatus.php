@@ -11,9 +11,9 @@ enum PhotographerStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'En revisión',
-            self::Approved => 'Aprobado',
-            self::Suspended => 'Suspendido',
+            self::Pending => __('En revisión'),
+            self::Approved => __('Aprobado'),
+            self::Suspended => __('Suspendido'),
         };
     }
 }

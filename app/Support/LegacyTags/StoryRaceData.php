@@ -23,13 +23,31 @@ final class StoryRaceData
         'category', 'category_position', 'gender_position', 'finish_status', 'elevation_gain_m', 'race_date', 'location',
     ];
 
-    /** finish_status values an athlete may pick (labels in Spanish). */
+    /**
+     * finish_status values an athlete may pick. The values here are only the
+     * Spanish reference; anything shown to a person uses finishStatuses().
+     */
     public const array FINISH_STATUSES = [
         'finished' => 'Finalizó',
         'dnf' => 'No terminó (DNF)',
         'dns' => 'No tomó la salida (DNS)',
         'dq' => 'Descalificado (DQ)',
     ];
+
+    /**
+     * finish_status value => label in the active language.
+     *
+     * @return array<string, string>
+     */
+    public static function finishStatuses(): array
+    {
+        return [
+            'finished' => __('Finalizó'),
+            'dnf' => __('No terminó (DNF)'),
+            'dns' => __('No tomó la salida (DNS)'),
+            'dq' => __('Descalificado (DQ)'),
+        ];
+    }
 
     /**
      * @return array{values: array<string, string|int|null>, official: array<string, bool>, stored: array<string, string|int|null>, suggested_pace: ?string, sport: ?array{id: int, name: string, slug: string}, sport_official: bool}

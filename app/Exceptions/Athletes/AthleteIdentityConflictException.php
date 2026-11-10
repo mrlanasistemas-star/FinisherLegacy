@@ -15,9 +15,9 @@ class AthleteIdentityConflictException extends RuntimeException
 {
     public function __construct(
         public readonly ?AthleteIdentityConflict $conflict = null,
-        string $message = 'Este código pertenece a una identidad distinta a la de tu cuenta — un administrador debe revisarlo.',
+        ?string $message = null,
     ) {
-        parent::__construct($message);
+        parent::__construct($message ?? __('Este código pertenece a una identidad distinta a la de tu cuenta — un administrador debe revisarlo.'));
     }
 
     public function code(): string

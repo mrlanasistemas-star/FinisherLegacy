@@ -38,7 +38,7 @@ class CheckoutPhotoExpansion
     public function handle(User $buyer, LegacyStory $story, ?int $packId = null, StoryQuotaKind $kind = StoryQuotaKind::Photos): Order
     {
         if (! $story->isOwnedBy($buyer)) {
-            throw ValidationException::withMessages(['expansion' => 'Solo quien es dueño del recuerdo puede ampliar su espacio.']);
+            throw ValidationException::withMessages(['expansion' => __('Solo quien es dueño del recuerdo puede ampliar su espacio.')]);
         }
 
         $pack = $packId !== null
@@ -52,11 +52,15 @@ class CheckoutPhotoExpansion
         $price = $pack !== null ? $this->quota->resolvePrice($pack, $story) : null;
 
         if ($pack === null || $price === null) {
-            throw ValidationException::withMessages(['expansion' => 'Esta ampliación ya no está disponible. Recarga la página.']);
+            throw ValidationException::withMessages(['expansion' => __('Esta ampliación ya no está disponible. Recarga la página.')]);
         }
 
         if (! $this->quota->fitsCap($story, $pack)) {
-            throw ValidationException::withMessages(['expansion' => 'Este recuerdo ya llegó al máximo de '.$pack->kind->noun().' permitido.']);
+            throw ValidationException::withMessages(['expansion' => match ($pack->kind) {
+                StoryQuotaKind::Photos => __('Este recuerdo ya llegó al máximo de fotos permitido.'),
+                StoryQuotaKind::Videos => __('Este recuerdo ya llegó al máximo de videos permitido.'),
+                StoryQuotaKind::Audio => __('Este recuerdo ya llegó al máximo de mensajes de voz permitido.'),
+            }]);
         }
 
         $pending = Order::query()
@@ -72,7 +76,7 @@ class CheckoutPhotoExpansion
 
         if ($pending !== null) {
             throw ValidationException::withMessages([
-                'expansion' => "Ya tienes esta ampliación en el pedido {$pending->order_number}, pendiente de pago. Complétalo desde Mis pedidos — no se cobró nada.",
+                'expansion' => __('Ya tienes esta ampliación en el pedido :order, pendiente de pago. Complétalo desde Mis pedidos — no se cobró nada.', ['order' => $pending->order_number]),
                 'pending_order' => $pending->uuid,
             ]);
         }

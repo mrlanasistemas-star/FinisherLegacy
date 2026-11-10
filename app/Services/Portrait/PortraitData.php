@@ -10,30 +10,51 @@ namespace App\Services\Portrait;
  */
 final readonly class PortraitData
 {
-    /** Stat key => printed label. Order is the default print order. */
-    public const STAT_LABELS = [
-        'distance' => 'Distancia',
-        'pace' => 'Ritmo',
-        'position' => 'Lugar',
-        'category' => 'Categoría',
-        'bib' => 'Número',
-    ];
+    /** Stat keys, in the default print order (labels: statLabel()). */
+    public const STAT_KEYS = ['distance', 'pace', 'position', 'category', 'bib'];
 
+    public string $cta;
+
+    public string $timeLabel;
+
+    /**
+     * `$cta` and `$timeLabel` default to the standard wording in the
+     * language of whoever builds the portrait.
+     */
     public function __construct(
         public ?string $name = null,
         public ?string $eventLine = null,
         public ?string $time = null,
         public ?string $resultLine = null,
         public ?string $dedication = null,
-        public string $cta = 'Acerca tu celular',
+        ?string $cta = null,
         public string $brand = 'Finisher Legacy',
         public ?string $distance = null,
         public ?string $position = null,
         public ?string $pace = null,
         public ?string $bib = null,
         public ?string $category = null,
-        public string $timeLabel = 'Tiempo oficial',
-    ) {}
+        ?string $timeLabel = null,
+    ) {
+        $this->cta = $cta ?? __('Acerca tu celular');
+        $this->timeLabel = $timeLabel ?? __('Tiempo oficial');
+    }
+
+    /** The printed label of a stat, in the active language. */
+    public static function statLabel(string $key): ?string
+    {
+        $label = match ($key) {
+            'distance' => __('Distancia'),
+            'pace' => __('Ritmo'),
+            'position' => __('Lugar'),
+            'category' => __('Categoría'),
+            'bib' => __('Número'),
+            default => null,
+        };
+
+        // A one-word key could name a PHP language file (an array).
+        return is_string($label) ? $label : null;
+    }
 
     /**
      * "EVENTO · LUGAR · FECHA" from the parts that exist.
@@ -91,16 +112,17 @@ final readonly class PortraitData
     {
         $out = [];
 
-        foreach ($fields ?? array_keys(self::STAT_LABELS) as $key) {
-            $value = isset(self::STAT_LABELS[$key]) ? $this->field($key) : null;
+        foreach ($fields ?? self::STAT_KEYS as $key) {
+            $label = self::statLabel($key);
+            $value = $label !== null ? $this->field($key) : null;
 
-            if ($value !== null && count($out) < $max) {
-                $out[] = ['key' => $key, 'label' => self::STAT_LABELS[$key], 'value' => $value];
+            if ($label !== null && $value !== null && count($out) < $max) {
+                $out[] = ['key' => $key, 'label' => $label, 'value' => $value];
             }
         }
 
         if ($out === [] && ($result = $this->field('result_line')) !== null) {
-            $out[] = ['key' => 'result_line', 'label' => 'Resultado', 'value' => $result];
+            $out[] = ['key' => 'result_line', 'label' => __('Resultado'), 'value' => $result];
         }
 
         return $out;

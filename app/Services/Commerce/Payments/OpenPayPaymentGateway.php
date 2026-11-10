@@ -42,35 +42,6 @@ use stdClass;
  */
 class OpenPayPaymentGateway implements ResumablePaymentGateway
 {
-    /**
-     * OpenPay error codes → what the shopper reads. Wording follows
-     * OpenPay's own official plugin (OpenpayErrorManager).
-     *
-     * @var array<int, string>
-     */
-    private const array DECLINE_MESSAGES = [
-        1000 => 'El servicio de pagos no está disponible en este momento. Intenta de nuevo en unos minutos.',
-        1004 => 'El servicio de pagos no está disponible en este momento. Intenta de nuevo en unos minutos.',
-        1005 => 'El servicio de pagos no está disponible en este momento. Intenta de nuevo en unos minutos.',
-        2004 => 'El número de tarjeta no es válido. Revísalo e intenta de nuevo.',
-        2005 => 'La fecha de vencimiento de la tarjeta ya pasó.',
-        2006 => 'Falta el código de seguridad (CVV) de la tarjeta.',
-        2009 => 'El código de seguridad (CVV) no es válido.',
-        2010 => 'No pudimos validar la tarjeta con 3D Secure. Intenta con otra tarjeta.',
-        2011 => 'Este tipo de tarjeta no es aceptado.',
-        3001 => 'Tu banco rechazó la tarjeta. Intenta con otra tarjeta.',
-        3002 => 'La tarjeta está vencida. Intenta con otra tarjeta.',
-        3003 => 'La tarjeta no tiene fondos suficientes.',
-        3004 => 'Tu banco rechazó la tarjeta. Intenta con otra tarjeta.',
-        3005 => 'Tu banco rechazó la tarjeta. Intenta con otra tarjeta.',
-        3006 => 'La operación no está permitida para esta tarjeta.',
-        3008 => 'La tarjeta no está habilitada para compras en línea.',
-        3009 => 'La tarjeta fue reportada como perdida. Intenta con otra tarjeta.',
-        3010 => 'El banco restringió la tarjeta. Comunícate con tu banco.',
-        3011 => 'El banco solicitó retener la tarjeta. Comunícate con tu banco.',
-        3012 => 'Tu banco requiere que autorices este pago. Comunícate con tu banco e intenta de nuevo.',
-    ];
-
     public function __construct(private readonly OpenPayClientFactory $factory) {}
 
     public function key(): string
@@ -307,12 +278,34 @@ class OpenPayPaymentGateway implements ResumablePaymentGateway
 
     private function declined(OpenpayApiError $e): PaymentDeclinedException
     {
-        $code = (int) $e->getErrorCode();
+        return new PaymentDeclinedException(self::declineMessage((int) $e->getErrorCode()));
+    }
 
-        return new PaymentDeclinedException(
-            self::DECLINE_MESSAGES[$code]
-                ?? 'No pudimos procesar la tarjeta. Revisa los datos o intenta con otra tarjeta.',
-        );
+    /**
+     * OpenPay error codes → what the shopper reads, in their language.
+     * Wording follows OpenPay's own official plugin (OpenpayErrorManager).
+     */
+    private static function declineMessage(int $code): string
+    {
+        return match ($code) {
+            1000, 1004, 1005 => __('El servicio de pagos no está disponible en este momento. Intenta de nuevo en unos minutos.'),
+            2004 => __('El número de tarjeta no es válido. Revísalo e intenta de nuevo.'),
+            2005 => __('La fecha de vencimiento de la tarjeta ya pasó.'),
+            2006 => __('Falta el código de seguridad (CVV) de la tarjeta.'),
+            2009 => __('El código de seguridad (CVV) no es válido.'),
+            2010 => __('No pudimos validar la tarjeta con 3D Secure. Intenta con otra tarjeta.'),
+            2011 => __('Este tipo de tarjeta no es aceptado.'),
+            3001, 3004, 3005 => __('Tu banco rechazó la tarjeta. Intenta con otra tarjeta.'),
+            3002 => __('La tarjeta está vencida. Intenta con otra tarjeta.'),
+            3003 => __('La tarjeta no tiene fondos suficientes.'),
+            3006 => __('La operación no está permitida para esta tarjeta.'),
+            3008 => __('La tarjeta no está habilitada para compras en línea.'),
+            3009 => __('La tarjeta fue reportada como perdida. Intenta con otra tarjeta.'),
+            3010 => __('El banco restringió la tarjeta. Comunícate con tu banco.'),
+            3011 => __('El banco solicitó retener la tarjeta. Comunícate con tu banco.'),
+            3012 => __('Tu banco requiere que autorices este pago. Comunícate con tu banco e intenta de nuevo.'),
+            default => __('No pudimos procesar la tarjeta. Revisa los datos o intenta con otra tarjeta.'),
+        };
     }
 
     private function client(): mixed

@@ -91,7 +91,7 @@ class StoryPresenter
             'category_position' => $values['category_position'],
             'gender_position' => $values['gender_position'],
             'finish_status' => $status,
-            'finish_status_label' => $status !== null ? (StoryRaceData::FINISH_STATUSES[$status] ?? null) : null,
+            'finish_status_label' => $status !== null ? (StoryRaceData::finishStatuses()[$status] ?? null) : null,
             'elevation_gain_m' => $values['elevation_gain_m'],
             'sport' => $data['sport']['name'] ?? null,
             'official' => [...$data['official'], 'sport' => $data['sport_official']],
@@ -161,7 +161,7 @@ class StoryPresenter
 
         return [
             'public_id' => $story->public_id,
-            'title' => $story->title ?: ($race['event_name'] ?? $tag['collection']['name'] ?? ($kind === PortraitProduct::KIND_ALBUM ? 'Mi álbum' : 'Mi Finisher Legacy')),
+            'title' => $story->title ?: ($race['event_name'] ?? $tag['collection']['name'] ?? ($kind === PortraitProduct::KIND_ALBUM ? __('Mi álbum') : __('Mi Finisher Legacy'))),
             'kind' => $kind,
             'athlete_first_name' => $story->athlete?->first_name,
             'race' => $race,

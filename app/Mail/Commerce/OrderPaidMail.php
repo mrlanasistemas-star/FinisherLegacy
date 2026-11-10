@@ -10,7 +10,7 @@ class OrderPaidMail extends OrderMail
 {
     protected function subjectLine(): string
     {
-        return "Pago confirmado · Pedido {$this->order->order_number}";
+        return __('Pago confirmado · Pedido :number', ['number' => $this->order->order_number]);
     }
 
     protected function viewName(): string
@@ -20,6 +20,6 @@ class OrderPaidMail extends OrderMail
 
     protected function preheader(): string
     {
-        return 'Recibimos tu pago. Aquí está el resumen de tu pedido y los próximos pasos.';
+        return __('Recibimos tu pago. Aquí está el resumen de tu pedido y los próximos pasos.');
     }
 }

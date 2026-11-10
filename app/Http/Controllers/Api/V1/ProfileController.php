@@ -60,7 +60,7 @@ class ProfileController extends Controller
 
         return $this->respond(
             new AthleteProfileResource($profile->loadMissing('mainSport')),
-            'Tu Legacy Profile fue actualizado.',
+            __('Tu Legacy Profile fue actualizado.'),
         );
     }
 }

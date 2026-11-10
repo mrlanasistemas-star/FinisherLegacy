@@ -25,9 +25,9 @@ trait ActivationNfcRules
             'nfc_uid' => ['nullable', 'string', 'max:64', 'regex:/^[0-9A-Fa-f:\s-]+$/'],
             'platform' => ['required', Rule::enum(LegacyTagActivationPlatform::class)],
         ], [
-            'activation_code.required_without' => 'Escribe el código de activación de la tarjeta que venía en el empaque.',
-            'tag_code.required_without' => 'Escribe el código de activación de la tarjeta que venía en el empaque.',
-            'nfc_uid.regex' => 'No pudimos leer bien la pieza. Vuelve a acercarla.',
+            'activation_code.required_without' => __('Escribe el código de activación de la tarjeta que venía en el empaque.'),
+            'tag_code.required_without' => __('Escribe el código de activación de la tarjeta que venía en el empaque.'),
+            'nfc_uid.regex' => __('No pudimos leer bien la pieza. Vuelve a acercarla.'),
         ]);
     }
 

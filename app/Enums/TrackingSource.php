@@ -16,8 +16,8 @@ enum TrackingSource: string
     public function label(): string
     {
         return match ($this) {
-            self::MobileGps => 'Teléfono',
-            self::GpsBand => 'Dispositivo de seguimiento',
+            self::MobileGps => __('Teléfono'),
+            self::GpsBand => __('Dispositivo de seguimiento'),
         };
     }
 }

@@ -6,10 +6,12 @@ use App\Enums\NotificationCategory;
 use App\Enums\NotificationType;
 use App\Models\User;
 use App\Notifications\AthleteAlert;
+use App\Support\I18n\RecipientLocale;
 use App\Support\Notifications\NotificationPreferences;
 use App\Support\Notifications\NotificationTarget;
 use App\Support\Notifications\PushMessage;
 use App\Support\Notifications\PushSender;
+use Closure;
 use Illuminate\Support\Str;
 
 /**
@@ -24,6 +26,14 @@ use Illuminate\Support\Str;
  *  - in-app OFF → no row (an admin-sent message, `$sentBy`, always saves);
  *  - push OFF   → no push.
  *
+ * Language: a system-written title/message is passed as a closure —
+ * `fn () => __('Tu pedido :number va en camino', ['number' => $n])` — and is
+ * rendered here in the RECIPIENT's saved language (the application default
+ * when they never chose one), never the sender's or the worker's. The row,
+ * the realtime event and the push all carry that same rendered text. A plain
+ * string (something a person typed: an admin message, a campaign) is sent as
+ * written.
+ *
  * Returns the stored notification id (null when the in-app row was skipped).
  */
 class SendAthleteNotification
@@ -34,12 +44,14 @@ class SendAthleteNotification
     ) {}
 
     /**
+     * @param  string|Closure(): string  $title
+     * @param  string|Closure(): string  $message
      * @param  array<string, mixed>  $metadata
      */
     public function handle(
         User $recipient,
-        string $title,
-        string $message,
+        string|Closure $title,
+        string|Closure $message,
         NotificationType $type = NotificationType::Custom,
         ?string $actionUrl = null,
         array $metadata = [],
@@ -48,6 +60,8 @@ class SendAthleteNotification
         ?string $imageUrl = null,
         ?NotificationCategory $category = null,
     ): ?string {
+        $title = RecipientLocale::text($recipient, $title);
+        $message = RecipientLocale::text($recipient, $message);
         $category ??= $type->category();
         $notificationId = null;
 

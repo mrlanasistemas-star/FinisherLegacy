@@ -48,17 +48,17 @@ class TagActivationException extends RuntimeException implements ShouldntReport
 
     public static function invalidCode(): self
     {
-        return new self(self::CODE_INVALID, 'Ese código de activación no coincide. Revisa la tarjeta que venía en el empaque e inténtalo de nuevo.');
+        return new self(self::CODE_INVALID, __('Ese código de activación no coincide. Revisa la tarjeta que venía en el empaque e inténtalo de nuevo.'));
     }
 
     public static function codeRequired(): self
     {
-        return new self(self::CODE_INVALID, 'Para activar esta pieza necesitamos el código de activación impreso en la tarjeta del empaque.');
+        return new self(self::CODE_INVALID, __('Para activar esta pieza necesitamos el código de activación impreso en la tarjeta del empaque.'));
     }
 
     public static function alreadyActivated(): self
     {
-        return new self(self::ALREADY_ACTIVATED, 'Esta pieza ya está activada en otra cuenta. Si es tuya, escríbenos y lo revisamos.');
+        return new self(self::ALREADY_ACTIVATED, __('Esta pieza ya está activada en otra cuenta. Si es tuya, escríbenos y lo revisamos.'));
     }
 
     public static function notActivatable(string $reason): self
@@ -68,24 +68,24 @@ class TagActivationException extends RuntimeException implements ShouldntReport
 
     public static function uidMismatch(): self
     {
-        return new self(self::UID_MISMATCH, 'Este chip no corresponde a la pieza que estás activando. Acerca la pieza correcta o escríbenos.');
+        return new self(self::UID_MISMATCH, __('Este chip no corresponde a la pieza que estás activando. Acerca la pieza correcta o escríbenos.'));
     }
 
     public static function urlMismatch(): self
     {
-        return new self(self::URL_MISMATCH, 'Lo que quedó grabado en la pieza no coincide. Vuelve a intentarlo acercando la pieza sin moverla.');
+        return new self(self::URL_MISMATCH, __('Lo que quedó grabado en la pieza no coincide. Vuelve a intentarlo acercando la pieza sin moverla.'));
     }
 
     public static function expired(): self
     {
-        return new self(self::INTENT_EXPIRED, 'Este intento de activación ya venció. Empieza de nuevo, solo toma unos segundos.');
+        return new self(self::INTENT_EXPIRED, __('Este intento de activación ya venció. Empieza de nuevo, solo toma unos segundos.'));
     }
 
     public static function tooManyAttempts(int $retryAfter): self
     {
         $minutes = max(1, (int) ceil($retryAfter / 60));
 
-        return new self(self::TOO_MANY_ATTEMPTS, "Demasiados intentos con códigos incorrectos. Espera {$minutes} min e inténtalo de nuevo.", 429, [], $retryAfter);
+        return new self(self::TOO_MANY_ATTEMPTS, __('Demasiados intentos con códigos incorrectos. Espera :minutes min e inténtalo de nuevo.', ['minutes' => $minutes]), 429, [], $retryAfter);
     }
 
     public function render(Request $request): ?JsonResponse

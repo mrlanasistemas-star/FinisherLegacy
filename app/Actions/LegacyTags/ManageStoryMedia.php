@@ -184,14 +184,14 @@ class ManageStoryMedia
             ->values();
 
         if ($sales->count() !== count($saleUuids) || $sales->contains(fn (PhotoSale $sale) => $sale->photo === null)) {
-            throw ValidationException::withMessages(['sale_ids' => 'Alguna de esas fotos no está entre tus compras.']);
+            throw ValidationException::withMessages(['sale_ids' => __('Alguna de esas fotos no está entre tus compras.')]);
         }
 
         $originals = Storage::disk(self::PURCHASED_DISK);
 
         foreach ($sales as $sale) {
             if (! $originals->exists((string) $sale->photo?->original_path)) {
-                throw ValidationException::withMessages(['sale_ids' => 'No pudimos encontrar el archivo original de una de tus fotos. Escríbenos desde Contacto y lo resolvemos.']);
+                throw ValidationException::withMessages(['sale_ids' => __('No pudimos encontrar el archivo original de una de tus fotos. Escríbenos desde Contacto y lo resolvemos.')]);
             }
         }
 
@@ -322,8 +322,8 @@ class ManageStoryMedia
         // One second of slack: recorders stop a hair late.
         if ($max !== null && $seconds !== null && $seconds > $max + 1) {
             throw ValidationException::withMessages(['file' => $kind === StoryQuotaKind::Videos
-                ? "El video dura más de lo permitido ({$this->humanSeconds($max)}). Recórtalo y vuelve a subirlo."
-                : "El audio dura más de lo permitido ({$this->humanSeconds($max)}). Graba uno más corto."]);
+                ? __('El video dura más de lo permitido (:duration). Recórtalo y vuelve a subirlo.', ['duration' => $this->humanSeconds($max)])
+                : __('El audio dura más de lo permitido (:duration). Graba uno más corto.', ['duration' => $this->humanSeconds($max)])]);
         }
     }
 
@@ -353,13 +353,15 @@ class ManageStoryMedia
     private function humanSeconds(int $seconds): string
     {
         if ($seconds < 60) {
-            return "{$seconds} segundos";
+            return trans_choice(':count segundo|:count segundos', $seconds);
         }
 
         $minutes = intdiv($seconds, 60);
         $rest = $seconds % 60;
 
-        return $rest === 0 ? ($minutes === 1 ? '1 minuto' : "{$minutes} minutos") : sprintf('%d:%02d min', $minutes, $rest);
+        return $rest === 0
+            ? trans_choice(':count minuto|:count minutos', $minutes)
+            : __(':time min', ['time' => sprintf('%d:%02d', $minutes, $rest)]);
     }
 
     /**
@@ -370,15 +372,15 @@ class ManageStoryMedia
         try {
             return $this->storage->accept($upload, $this->storage->paths()->forUser($user, 'legacy'), self::rulesFor($role), $user);
         } catch (MediaTooLargeException) {
-            throw ValidationException::withMessages(['file' => 'El archivo es demasiado pesado. Prueba con uno más ligero.']);
+            throw ValidationException::withMessages(['file' => __('El archivo es demasiado pesado. Prueba con uno más ligero.')]);
         } catch (FilesystemException) {
-            throw ValidationException::withMessages(['file' => 'No pudimos guardar el archivo en este momento. Intenta de nuevo en unos minutos.']);
+            throw ValidationException::withMessages(['file' => __('No pudimos guardar el archivo en este momento. Intenta de nuevo en unos minutos.')]);
         } catch (ValidationException $e) {
             throw ValidationException::withMessages(['file' => match ($role) {
-                StoryMediaRole::Photo => 'Sube una foto JPG, PNG o WebP.',
-                StoryMediaRole::Video => 'Sube un video MP4, MOV o WebM.',
-                StoryMediaRole::Audio => 'Sube un audio M4A, MP3, AAC, WebM u OGG.',
-                StoryMediaRole::Certificate => 'Sube tu certificado en PDF, JPG, PNG o WebP.',
+                StoryMediaRole::Photo => __('Sube una foto JPG, PNG o WebP.'),
+                StoryMediaRole::Video => __('Sube un video MP4, MOV o WebM.'),
+                StoryMediaRole::Audio => __('Sube un audio M4A, MP3, AAC, WebM u OGG.'),
+                StoryMediaRole::Certificate => __('Sube tu certificado en PDF, JPG, PNG o WebP.'),
             }.' '.collect($e->errors())->flatten()->first()]);
         }
     }

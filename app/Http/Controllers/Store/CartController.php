@@ -59,10 +59,10 @@ class CartController extends Controller
         } catch (Throwable $e) {
             report($e);
 
-            return back()->withErrors(['code' => 'No pudimos aplicar el cupón. Intenta de nuevo.']);
+            return back()->withErrors(['code' => __('No pudimos aplicar el cupón. Intenta de nuevo.')]);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Cupón aplicado.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Cupón aplicado.')]);
 
         return back();
     }
@@ -98,7 +98,7 @@ class CartController extends Controller
             return back();
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Producto agregado al carrito.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Producto agregado al carrito.')]);
 
         return redirect()->route('store.cart.show');
     }

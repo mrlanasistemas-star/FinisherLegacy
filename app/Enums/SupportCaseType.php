@@ -19,14 +19,14 @@ enum SupportCaseType: string
     public function label(): string
     {
         return match ($this) {
-            self::ActivationHelp => 'Ayuda con activación',
-            self::NfcFailure => 'Falla NFC',
-            self::QrFailure => 'Falla QR (antiguo)',
-            self::Defect => 'Defecto',
-            self::Return => 'Devolución',
-            self::Replacement => 'Reemplazo',
-            self::Ownership => 'Propiedad / reclamo',
-            self::Other => 'Otro',
+            self::ActivationHelp => __('Ayuda con activación'),
+            self::NfcFailure => __('Falla NFC'),
+            self::QrFailure => __('Falla QR (antiguo)'),
+            self::Defect => __('Defecto'),
+            self::Return => __('Devolución'),
+            self::Replacement => __('Reemplazo'),
+            self::Ownership => __('Propiedad / reclamo'),
+            self::Other => __('Otro'),
         };
     }
 

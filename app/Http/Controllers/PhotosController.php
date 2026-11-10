@@ -70,7 +70,7 @@ class PhotosController extends Controller
 
         $order = $checkout->handle($request->user(), $data['photos']);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Tu pedido está listo: completa el pago para descargar tus fotos.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Tu pedido está listo: completa el pago para descargar tus fotos.')]);
 
         return to_route('store.orders.show', $order);
     }
@@ -83,7 +83,7 @@ class PhotosController extends Controller
         // A refunded purchase no longer grants the original: the money went
         // back, so the download is gone too (the watermarked preview stays).
         if ($sale->isReversed()) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Esta compra fue reembolsada, así que la descarga ya no está disponible.']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Esta compra fue reembolsada, así que la descarga ya no está disponible.')]);
 
             return to_route('photos.index');
         }
@@ -94,7 +94,7 @@ class PhotosController extends Controller
             // Paid but the original is gone (storage incident): tell the
             // buyer instead of a bare 404 and leave a trail for support.
             report(new RuntimeException("Original missing for photo sale {$sale->uuid}"));
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'No pudimos encontrar el archivo original de esta foto. Escríbenos desde Contacto y lo resolvemos.']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('No pudimos encontrar el archivo original de esta foto. Escríbenos desde Contacto y lo resolvemos.')]);
 
             return back();
         }
@@ -156,7 +156,7 @@ class PhotosController extends Controller
             ->get(['id', 'event_id', 'name', 'event_date'])
             ->map(fn (EventEdition $edition) => [
                 'id' => $edition->id,
-                'label' => trim(($edition->event->name ?? 'Evento').($edition->name ? ' — '.$edition->name : '')),
+                'label' => trim(($edition->event->name ?? __('Evento')).($edition->name ? ' — '.$edition->name : '')),
                 'date' => $edition->event_date->toDateString(),
             ])
             ->values();
@@ -185,7 +185,7 @@ class PhotosController extends Controller
                 'height' => $photo->height,
                 'event' => $photo->eventEdition?->event?->name,
                 'race' => null,
-                'source' => $photo->photographer->display_name ?? 'Fotógrafo',
+                'source' => $photo->photographer->display_name ?? __('Fotógrafo'),
                 'price_minor' => $photo->price_minor,
                 'currency' => $photo->currency,
                 'owned' => in_array($photo->id, $owned, true),
@@ -287,7 +287,7 @@ class PhotosController extends Controller
             'is_public' => $media->is_public,
             'event' => $participant?->eventEdition?->event?->name,
             'race' => $participant?->eventRace?->name,
-            'source' => 'Subida por el atleta',
+            'source' => __('Subida por el atleta'),
             'price_minor' => null,
             'currency' => null,
             'owned' => true,

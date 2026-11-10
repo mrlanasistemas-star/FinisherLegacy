@@ -47,8 +47,8 @@ class ContactController extends Controller
             // Honeypot — real people never fill a hidden field.
             'website' => ['prohibited'],
         ], [
-            'message.min' => 'Cuéntanos un poco más (mínimo :min caracteres).',
-            'website.prohibited' => 'No pudimos enviar tu mensaje.',
+            'message.min' => __('Cuéntanos un poco más (mínimo :min caracteres).'),
+            'website.prohibited' => __('No pudimos enviar tu mensaje.'),
         ]);
 
         ContactMessage::create([
@@ -57,7 +57,7 @@ class ContactController extends Controller
             'status' => ContactMessageStatus::New,
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Gracias. Recibimos tu mensaje y te responderemos pronto.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Gracias. Recibimos tu mensaje y te responderemos pronto.')]);
 
         return back();
     }

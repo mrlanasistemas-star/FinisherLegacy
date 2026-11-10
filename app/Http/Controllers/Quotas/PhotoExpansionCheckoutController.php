@@ -32,7 +32,7 @@ class PhotoExpansionCheckoutController extends Controller
         $kind = StoryQuotaKind::tryFrom((string) ($data['kind'] ?? '')) ?? StoryQuotaKind::Photos;
         $order = $checkout->handle($request->user(), $story, isset($data['pack']) ? (int) $data['pack'] : null, $kind);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Tu pedido está listo: completa el pago para ampliar el espacio de tu recuerdo.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Tu pedido está listo: completa el pago para ampliar el espacio de tu recuerdo.')]);
 
         return to_route('store.orders.show', $order);
     }

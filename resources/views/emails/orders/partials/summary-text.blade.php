@@ -1,26 +1,26 @@
 {{-- Plain-text order summary (items, totals, delivery, payment) for the text alternatives. --}}
-Pedido {!! $order['number'] !!}
+{!! __('Pedido :number', ['number' => $order['number']]) !!}
 @foreach ($order['items'] as $item)
 - {!! $item['name'] !!}{!! $item['variant'] ? ' ('.$item['variant'].')' : '' !!} x {{ $item['quantity'] }} · {!! $item['total'] !!}
 @endforeach
 
-Subtotal: {!! $order['subtotal'] !!}
+{!! __('Subtotal') !!}: {!! $order['subtotal'] !!}
 @if ($order['discount'])
-Descuento{!! $order['coupon'] ? ' ('.$order['coupon'].')' : '' !!}: {!! $order['discount'] !!}
+{!! $order['coupon'] ? __('Descuento (:coupon)', ['coupon' => $order['coupon']]) : __('Descuento') !!}: {!! $order['discount'] !!}
 @endif
 @if ($order['tax'])
-Impuestos: {!! $order['tax'] !!}
+{!! __('Impuestos') !!}: {!! $order['tax'] !!}
 @endif
-Total: {!! $order['total'] !!}
+{!! __('Total') !!}: {!! $order['total'] !!}
 
 @if ($order['delivery_method'] || $order['address'] !== [])
-Entrega: {!! $order['delivery_method'] ?? '' !!}
+{!! __('Entrega') !!}: {!! $order['delivery_method'] ?? '' !!}
 @foreach ($order['address'] as $line)
 {!! $line !!}
 @endforeach
 
 @endif
 @if ($order['payment_method'])
-Método de pago: {!! $order['payment_method'] !!}
+{!! __('Método de pago') !!}: {!! $order['payment_method'] !!}
 
 @endif

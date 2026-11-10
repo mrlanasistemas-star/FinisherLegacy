@@ -73,14 +73,14 @@ class StoreCheckoutRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => 'nombre',
-            'email' => 'correo',
-            'phone' => 'teléfono',
-            'delivery_method' => 'método de entrega',
-            'address_line' => 'calle y número',
-            'address_city' => 'ciudad',
-            'address_state' => 'estado',
-            'address_postal_code' => 'código postal',
+            'name' => __('nombre'),
+            'email' => __('correo'),
+            'phone' => __('teléfono'),
+            'delivery_method' => __('método de entrega'),
+            'address_line' => __('calle y número'),
+            'address_city' => __('ciudad'),
+            'address_state' => __('estado'),
+            'address_postal_code' => __('código postal'),
         ];
     }
 

@@ -50,6 +50,7 @@ test('public navigation destinations respond for guests', function (string $url)
 })->with([
     '/', '/comunidad', '/events', '/fotos', '/tienda', '/nosotros', '/contact',
     '/buscar', '/buscar?q=ma', '/como-funciona', '/tienda/catalogo', '/privacy', '/terms', '/login', '/register',
+    '/recuerdos', '/portarretrato', '/entrenamientos', '/app', '/colecciones', '/fotografos', '/activar', '/eliminar-cuenta',
 ]);
 
 test('Mi espacio and account menu destinations respond for a signed in athlete', function (string $url) {

@@ -7,8 +7,8 @@ use App\Exceptions\Api\ApiException;
 
 class MediaLimitReachedException extends ApiException
 {
-    public function __construct(string $message = 'Alcanzaste el límite de archivos incluidos para este evento.')
+    public function __construct(?string $message = null)
     {
-        parent::__construct($message, ApiErrorCode::MediaLimitReached, 422);
+        parent::__construct($message ?? __('Alcanzaste el límite de archivos incluidos para este evento.'), ApiErrorCode::MediaLimitReached, 422);
     }
 }

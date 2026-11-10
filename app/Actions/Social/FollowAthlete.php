@@ -23,11 +23,11 @@ class FollowAthlete
     public function handle(User $follower, AthleteProfile $target): void
     {
         if ($follower->id === $target->user_id) {
-            throw new SocialActionNotAllowedException('No puedes seguirte a ti mismo.');
+            throw new SocialActionNotAllowedException(__('No puedes seguirte a ti mismo.'));
         }
 
         if (! $this->visibility->canSeeProfileShell($target, $follower)) {
-            throw new SocialActionNotAllowedException('No puedes seguir a este atleta.');
+            throw new SocialActionNotAllowedException(__('No puedes seguir a este atleta.'));
         }
 
         try {

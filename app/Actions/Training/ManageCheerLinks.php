@@ -28,7 +28,7 @@ class ManageCheerLinks
             ->count();
 
         if ($active >= (int) config('training.cheers.max_active_links', 20)) {
-            throw ValidationException::withMessages(['title' => 'Ya tienes muchos enlaces activos. Desactiva alguno para crear otro.']);
+            throw ValidationException::withMessages(['title' => __('Ya tienes muchos enlaces activos. Desactiva alguno para crear otro.')]);
         }
 
         do {

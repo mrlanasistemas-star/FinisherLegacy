@@ -47,7 +47,7 @@ class EventGearController extends Controller
         $ownedProduct = AthleteOwnedProduct::query()->where('uuid', $data['athlete_owned_product_uuid'])->firstOrFail();
         $selection = $assign->handle($participant, $ownedProduct, $data['notes'] ?? null);
 
-        return $this->respond($this->payload($selection), 'Equipo agregado.', status: 201);
+        return $this->respond($this->payload($selection), __('Equipo agregado.'), status: 201);
     }
 
     public function destroy(EventParticipant $participant, EventGearSelection $gear, Request $request, EnsureAthleteForUser $ensureAthlete, RemoveOwnedProductFromEvent $remove): JsonResponse
@@ -58,7 +58,7 @@ class EventGearController extends Controller
 
         $remove->handle($gear);
 
-        return $this->respond(null, 'Equipo removido.');
+        return $this->respond(null, __('Equipo removido.'));
     }
 
     /** @return array<string, mixed> */

@@ -23,7 +23,7 @@ class ManageStoryShares
     public function create(LegacyStory $story, User $user, string $label): LegacyStoryShare
     {
         if ($story->shares()->whereNull('revoked_at')->count() >= (int) config('legacy.stories.max_shares', 20)) {
-            throw ValidationException::withMessages(['label' => 'Ya tienes muchos enlaces activos. Revoca alguno para crear otro.']);
+            throw ValidationException::withMessages(['label' => __('Ya tienes muchos enlaces activos. Revoca alguno para crear otro.')]);
         }
 
         do {

@@ -54,8 +54,8 @@ class CommentController extends Controller
         $data = $request->validate([
             'body' => ['required', 'string', 'min:1', 'max:'.config('finisher.social.comment_max'), new NoObjectionableContent],
         ], [
-            'body.required' => 'Escribe un mensaje antes de enviarlo.',
-            'body.max' => 'Tu mensaje es demasiado largo (máximo :max caracteres).',
+            'body.required' => __('Escribe un mensaje antes de enviarlo.'),
+            'body.max' => __('Tu mensaje es demasiado largo (máximo :max caracteres).'),
         ]);
 
         $created = $comment->handle($user, $moment, $data['body']);
@@ -69,6 +69,6 @@ class CommentController extends Controller
 
         $comment->delete();
 
-        return $this->respond(null, 'Mensaje eliminado.');
+        return $this->respond(null, __('Mensaje eliminado.'));
     }
 }

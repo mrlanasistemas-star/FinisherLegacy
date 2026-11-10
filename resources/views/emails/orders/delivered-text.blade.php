@@ -2,15 +2,15 @@
 @extends('emails.layouts.brand-text')
 
 @section('content')
-PEDIDO ENTREGADO
+{!! mb_strtoupper(__('Pedido entregado')) !!}
 
-Marcamos como entregado tu pedido {!! $order['number'] !!}.
+{!! __('Marcamos como entregado tu pedido :number.', ['number' => $order['number']]) !!}
 
 @if ($order['needs_activation'])
-PRÓXIMOS PASOS
-Cuando recibas tu Finisher Legacy, actívalo desde la app o en {!! $order['activation_label'] !!}
+{!! mb_strtoupper(__('Próximos pasos')) !!}
+{!! __('Cuando recibas tu Finisher Legacy, actívalo desde la app o en :link', ['link' => $order['activation_label']]) !!}
 
 @endif
 @include('emails.orders.partials.summary-text', ['order' => $order])
-Ver mi pedido: {!! $order['order_url'] !!}
+{!! __('Ver mi pedido') !!}: {!! $order['order_url'] !!}
 @endsection

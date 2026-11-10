@@ -66,7 +66,7 @@ class SupportSessionController extends Controller
             targetDistanceMeters: $data['target_distance_meters'] ?? null,
         );
 
-        return $this->respond($this->summary($session), 'Sesión de apoyo creada.', status: 201);
+        return $this->respond($this->summary($session), __('Sesión de apoyo creada.'), status: 201);
     }
 
     public function show(Request $request, AthleteSupportSession $supportSession, EnsureAthleteForUser $ensureAthlete): JsonResponse
@@ -163,7 +163,7 @@ class SupportSessionController extends Controller
 
         $markConsumed->handle($message);
 
-        return $this->respond(null, 'Mensaje marcado como consumido.');
+        return $this->respond(null, __('Mensaje marcado como consumido.'));
     }
 
     /** @return array<string, mixed> */

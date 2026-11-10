@@ -7,16 +7,16 @@
 
 @section('content')
 @include('emails.partials.heading', [
-    'eyebrow' => 'Pedido entregado',
-    'headline' => $order['needs_activation'] ? 'Tu Finisher Legacy ya está contigo' : 'Tu pedido fue entregado',
-    'intro' => 'Marcamos como entregado tu pedido '.$order['number'].'.',
+    'eyebrow' => __('Pedido entregado'),
+    'headline' => $order['needs_activation'] ? __('Tu Finisher Legacy ya está contigo') : __('Tu pedido fue entregado'),
+    'intro' => __('Marcamos como entregado tu pedido :number.', ['number' => $order['number']]),
 ])
 @include('emails.partials.next-steps', ['order' => $order])
 @include('emails.partials.order-items', ['order' => $order])
 <div style="height: 20px; line-height: 20px; font-size: 0;">&nbsp;</div>
 @if ($order['needs_activation'])
-@include('emails.partials.button', ['url' => $order['activation_url'], 'label' => 'Activar mi Finisher Legacy'])
+@include('emails.partials.button', ['url' => $order['activation_url'], 'label' => __('Activar mi Finisher Legacy')])
 @else
-@include('emails.partials.button', ['url' => $order['order_url'], 'label' => 'Ver mi pedido'])
+@include('emails.partials.button', ['url' => $order['order_url'], 'label' => __('Ver mi pedido')])
 @endif
 @endsection

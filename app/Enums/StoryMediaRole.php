@@ -17,10 +17,10 @@ enum StoryMediaRole: string
     public function label(): string
     {
         return match ($this) {
-            self::Photo => 'Foto',
-            self::Video => 'Video',
-            self::Audio => 'Mensaje de voz',
-            self::Certificate => 'Certificado',
+            self::Photo => __('Foto'),
+            self::Video => __('Video'),
+            self::Audio => __('Mensaje de voz'),
+            self::Certificate => __('Certificado'),
         };
     }
 

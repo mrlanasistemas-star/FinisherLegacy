@@ -8,6 +8,8 @@ use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Support\I18n\Locales;
+use App\Support\I18n\RecipientLocale;
 use Illuminate\Support\Str;
 
 /**
@@ -15,6 +17,8 @@ use Illuminate\Support\Str;
  * order email renders (items with absolute thumbnail URLs, totals in the
  * order currency, delivery address, payment method). Built from the
  * Order's purchase-time snapshot — never re-reads current catalog prices.
+ * Built while the Mailable renders, so its labels come out in the email's
+ * language (docs/renovacion/idiomas.md).
  *
  * Card details: only a brand/last4 the provider handed back and was stored
  * on Payment.metadata (`card_brand`/`card_last4` or `card.brand`/
@@ -119,6 +123,25 @@ final class OrderSummary
         return filled($email) && filter_var($email, FILTER_VALIDATE_EMAIL) ? (string) $email : null;
     }
 
+    /**
+     * Language of the order emails: the one the buyer was browsing in at
+     * checkout when the order kept it (`customer_snapshot.locale`), else the
+     * one saved on their account, else the application default — never the
+     * language of whoever triggered the event (a webhook, an admin).
+     */
+    public static function locale(Order $order): string
+    {
+        $locale = $order->customer_snapshot['locale'] ?? null;
+
+        if (is_string($locale) && Locales::match($locale) !== null) {
+            return RecipientLocale::of($locale);
+        }
+
+        $order->loadMissing('user', 'athlete.user');
+
+        return RecipientLocale::of($order->user ?? $order->athlete?->user);
+    }
+
     private static function customerName(Order $order): ?string
     {
         $name = $order->customer_snapshot['name'] ?? null;
@@ -193,16 +216,16 @@ final class OrderSummary
         $last4 = is_scalar($last4) ? substr(preg_replace('/\D/', '', (string) $last4) ?? '', -4) : '';
 
         if ($payment->method === PaymentMethod::OnlineCard && strlen($last4) === 4) {
-            $brandLabel = is_string($brand) && $brand !== '' ? ucfirst(strtolower($brand)) : 'Tarjeta';
-
-            return "{$brandLabel} terminación {$last4}";
+            return is_string($brand) && $brand !== ''
+                ? __(':brand terminación :last4', ['brand' => ucfirst(strtolower($brand)), 'last4' => $last4])
+                : __('Tarjeta terminación :last4', ['last4' => $last4]);
         }
 
         return match ($payment->method) {
-            PaymentMethod::OnlineCard => 'Tarjeta (pago en línea)',
-            PaymentMethod::MercadoPagoTerminal => 'Terminal de pago',
-            PaymentMethod::Cash => 'Efectivo',
-            PaymentMethod::InAppPurchase => 'Compra dentro de la app',
+            PaymentMethod::OnlineCard => __('Tarjeta (pago en línea)'),
+            PaymentMethod::MercadoPagoTerminal => __('Terminal de pago'),
+            PaymentMethod::Cash => __('Efectivo'),
+            PaymentMethod::InAppPurchase => __('Compra dentro de la app'),
         };
     }
 }

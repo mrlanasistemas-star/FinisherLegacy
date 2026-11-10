@@ -14,6 +14,6 @@ class LegacyPlateQuantityInvalidException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Solo puedes agregar una Legacy Plate por línea del carrito.', ApiErrorCode::LegacyPlateQuantityInvalid, 422);
+        parent::__construct(__('Solo puedes agregar una Legacy Plate por línea del carrito.'), ApiErrorCode::LegacyPlateQuantityInvalid, 422);
     }
 }

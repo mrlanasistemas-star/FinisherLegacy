@@ -9,6 +9,6 @@ class PaymentAlreadyRecordedException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este pedido ya tiene un pago registrado.', ApiErrorCode::PaymentAlreadyRecorded, 409);
+        parent::__construct(__('Este pedido ya tiene un pago registrado.'), ApiErrorCode::PaymentAlreadyRecorded, 409);
     }
 }

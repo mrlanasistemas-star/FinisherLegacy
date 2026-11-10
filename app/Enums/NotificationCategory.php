@@ -24,24 +24,24 @@ enum NotificationCategory: string
     public function label(): string
     {
         return match ($this) {
-            self::Pedidos => 'Pedidos y Tags',
-            self::Comunidad => 'Comunidad',
-            self::Entrenamientos => 'Entrenamientos',
-            self::Soporte => 'Soporte',
-            self::Avisos => 'Avisos y eventos',
-            self::Promociones => 'Novedades y promociones',
+            self::Pedidos => __('Pedidos y Tags'),
+            self::Comunidad => __('Comunidad'),
+            self::Entrenamientos => __('Entrenamientos'),
+            self::Soporte => __('Soporte'),
+            self::Avisos => __('Avisos y eventos'),
+            self::Promociones => __('Novedades y promociones'),
         };
     }
 
     public function description(): string
     {
         return match ($this) {
-            self::Pedidos => 'Pagos confirmados, envíos, entregas, reembolsos y activación de tus Tags.',
-            self::Comunidad => 'Seguidores nuevos, reacciones y comentarios en tus momentos.',
-            self::Entrenamientos => 'Mensajes de ánimo que te dejan por tu enlace.',
-            self::Soporte => 'Respuestas de nuestro equipo a tus solicitudes.',
-            self::Avisos => 'Resultados, cambios en tus eventos y avisos importantes de Finisher Legacy.',
-            self::Promociones => 'Lanzamientos, colecciones y promociones.',
+            self::Pedidos => __('Pagos confirmados, envíos, entregas, reembolsos y activación de tus Tags.'),
+            self::Comunidad => __('Seguidores nuevos, reacciones y comentarios en tus momentos.'),
+            self::Entrenamientos => __('Mensajes de ánimo que te dejan por tu enlace.'),
+            self::Soporte => __('Respuestas de nuestro equipo a tus solicitudes.'),
+            self::Avisos => __('Resultados, cambios en tus eventos y avisos importantes de Finisher Legacy.'),
+            self::Promociones => __('Lanzamientos, colecciones y promociones.'),
         };
     }
 

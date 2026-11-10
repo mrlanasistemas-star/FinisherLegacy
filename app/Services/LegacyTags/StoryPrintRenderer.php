@@ -29,6 +29,20 @@ class StoryPrintRenderer
     private const DPI = 240;
 
     /**
+     * The layout's name as the customer reads it, in the active language
+     * (LAYOUTS[..][0] is the Spanish original, kept for reference).
+     */
+    public static function layoutLabel(string $layout): string
+    {
+        return match ($layout) {
+            'classic' => __('Clásico · 15×21 cm'),
+            'poster' => __('Póster · A4'),
+            'square' => __('Cuadrado · 20×20 cm'),
+            default => $layout,
+        };
+    }
+
+    /**
      * @param  array{title: string, event_name: ?string, race: ?string, distance: ?string, time: ?string, date: ?string, location: ?string, dedication: ?string, recipient_label: ?string}  $data
      */
     public function render(string $layout, string $imageBytes, array $data): string

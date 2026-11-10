@@ -17,12 +17,12 @@ class StoryShareController extends Controller
     {
         $this->authorize('share', $story);
         $data = $request->validate(['label' => ['required', 'string', 'max:80']], [
-            'label.required' => '¿Para quién es? Por ejemplo: Mamá.',
+            'label.required' => __('¿Para quién es? Por ejemplo: Mamá.'),
         ]);
 
         $share = $shares->create($story, $request->user(), $data['label']);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Enlace listo para '.$share->label.'.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Enlace listo para :name.', ['name' => $share->label])]);
         Inertia::flash('share_url', $share->url());
 
         return back();
@@ -35,7 +35,7 @@ class StoryShareController extends Controller
 
         $shares->revoke($share, $request->user());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Enlace desactivado.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Enlace desactivado.')]);
 
         return back();
     }

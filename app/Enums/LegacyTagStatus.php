@@ -51,17 +51,17 @@ enum LegacyTagStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Manufactured => 'Fabricado',
-            self::InStock => 'En inventario',
-            self::Reserved => 'Reservado',
-            self::Sold => 'Vendido',
-            self::Delivered => 'Entregado',
-            self::Activated => 'Activado',
-            self::Replaced => 'Reemplazado',
-            self::Returned => 'Devuelto',
-            self::Disabled => 'Desactivado',
-            self::Lost => 'Extraviado',
-            self::Stolen => 'Robado',
+            self::Manufactured => __('Fabricado'),
+            self::InStock => __('En inventario'),
+            self::Reserved => __('Reservado'),
+            self::Sold => __('Vendido'),
+            self::Delivered => __('Entregado'),
+            self::Activated => __('Activado'),
+            self::Replaced => __('Reemplazado'),
+            self::Returned => __('Devuelto'),
+            self::Disabled => __('Desactivado'),
+            self::Lost => __('Extraviado'),
+            self::Stolen => __('Robado'),
         };
     }
 

@@ -8,8 +8,8 @@ FINISHER LEGACY · MAKE IT LAST
 @yield('content')
 
 ------------------------------
-¿Necesitas ayuda? Escríbenos a {!! \App\Mail\Support\BrandMail::supportEmail() !!}
-Aviso de privacidad: {!! \App\Mail\Support\BrandMail::privacyUrl() !!}
-Términos y condiciones: {!! \App\Mail\Support\BrandMail::termsUrl() !!}
+{!! __('¿Necesitas ayuda? Escríbenos a :email', ['email' => \App\Mail\Support\BrandMail::supportEmail()]) !!}
+{!! __('Aviso de privacidad') !!}: {!! \App\Mail\Support\BrandMail::privacyUrl() !!}
+{!! __('Términos y condiciones') !!}: {!! \App\Mail\Support\BrandMail::termsUrl() !!}
 
-© {{ date('Y') }} {!! config('app.name', 'Finisher Legacy') !!}. Todos los derechos reservados.
+© {{ date('Y') }} {!! config('app.name', 'Finisher Legacy') !!}. {!! __('All rights reserved.') !!}

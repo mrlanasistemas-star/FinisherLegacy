@@ -68,8 +68,9 @@ class ModelAlerts
                 if ($owner !== null) {
                     $this->customer->handle(
                         $owner,
-                        'Tu Tag está activo',
-                        "Activaste tu {$product}. Ya puedes contar tu historia desde la app.",
+                        // Closures: written in the owner's language (SendAthleteNotification).
+                        fn (): string => __('Tu Tag está activo'),
+                        fn (): string => __('Activaste tu :product. Ya puedes contar tu historia desde la app.', ['product' => $product]),
                         NotificationType::TagActivated,
                         '/t/'.$tag->public_code,
                         ['tag_uuid' => $tag->uuid],
@@ -185,10 +186,10 @@ class ModelAlerts
 
             $this->customer->handle(
                 $reporter,
-                $resolved ? 'Resolvimos tu solicitud' : 'Actualizamos tu solicitud',
-                $resolved && filled($case->resolution)
-                    ? "Caso {$case->number}: ".mb_strimwidth((string) $case->resolution, 0, 140, '…')
-                    : "Tu caso {$case->number} ahora está: ".mb_strtolower($case->status->label()).'.',
+                fn (): string => $resolved ? __('Resolvimos tu solicitud') : __('Actualizamos tu solicitud'),
+                fn (): string => $resolved && filled($case->resolution)
+                    ? __('Caso :number: :resolution', ['number' => $case->number, 'resolution' => mb_strimwidth((string) $case->resolution, 0, 140, '…')])
+                    : __('Tu caso :number ahora está: :status.', ['number' => $case->number, 'status' => mb_strtolower($case->status->label())]),
                 NotificationType::SupportReply,
                 null,
                 ['target' => ['type' => 'support', 'uuid' => $case->uuid]],

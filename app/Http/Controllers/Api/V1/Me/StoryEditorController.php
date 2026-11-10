@@ -47,11 +47,11 @@ class StoryEditorController extends Controller
             'body' => ['sometimes', 'nullable', 'string', 'max:8000'],
             'external_url' => ['sometimes', 'nullable', 'url:https,http', 'max:512'],
             'visibility' => ['sometimes', Rule::enum(StoryVisibility::class)],
-        ], [...StoryRaceRules::messages(), 'external_url.url' => 'El enlace debe empezar con https://']);
+        ], [...StoryRaceRules::messages(), 'external_url.url' => __('El enlace debe empezar con https://')]);
 
         $story = $update->handle($story, $this->sanctumUser($request), $data);
 
-        return $this->respond($presenter->apiEditableStory($story->fresh() ?? $story), 'Guardado.');
+        return $this->respond($presenter->apiEditableStory($story->fresh() ?? $story), __('Guardado.'));
     }
 
     private function ownedStory(Request $request, string $publicId): LegacyStory

@@ -25,7 +25,7 @@ class NoObjectionableContent implements ValidationRule
         }
 
         if (self::containsBlockedTerm($value)) {
-            $fail('Tu texto incluye lenguaje que no está permitido en la comunidad. Revísalo e inténtalo de nuevo.');
+            $fail(__('Tu texto incluye lenguaje que no está permitido en la comunidad. Revísalo e inténtalo de nuevo.'));
         }
     }
 

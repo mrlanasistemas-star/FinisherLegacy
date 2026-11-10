@@ -39,7 +39,7 @@ class AssignNfcTag
             $previous = NfcAssignment::query()->open()->where('plate_id', $plate->id)->lockForUpdate()->first();
 
             if ($previous !== null && ! $replace) {
-                throw new NfcTagInUseException('Esta placa ya tiene una etiqueta NFC.');
+                throw new NfcTagInUseException(__('Esta placa ya tiene una etiqueta NFC.'));
             }
 
             $owner = $previous?->athlete_id;
@@ -91,7 +91,7 @@ class AssignNfcTag
             $tag = $this->lockAvailable($tag);
 
             if (NfcAssignment::query()->open()->where('athlete_owned_product_id', $owned->id)->lockForUpdate()->exists()) {
-                throw new NfcTagInUseException('Este producto ya tiene una etiqueta NFC.');
+                throw new NfcTagInUseException(__('Este producto ya tiene una etiqueta NFC.'));
             }
 
             return $this->open($tag, $actor, [

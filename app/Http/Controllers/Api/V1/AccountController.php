@@ -41,7 +41,7 @@ class AccountController extends Controller
 
         Password::broker()->sendResetLink(['email' => Str::lower($data['email'])]);
 
-        return $this->respond(null, 'Si existe una cuenta con ese correo, te enviamos un enlace para restablecer tu contraseña.');
+        return $this->respond(null, __('Si existe una cuenta con ese correo, te enviamos un enlace para restablecer tu contraseña.'));
     }
 
     public function resetPassword(Request $request): JsonResponse
@@ -66,7 +66,7 @@ class AccountController extends Controller
             throw ValidationException::withMessages(['email' => [__($status)]]);
         }
 
-        return $this->respond(null, 'Listo. Ya puedes iniciar sesión con tu nueva contraseña.');
+        return $this->respond(null, __('Listo. Ya puedes iniciar sesión con tu nueva contraseña.'));
     }
 
     public function socialSignIn(Request $request, string $provider, SocialSignIn $signIn): JsonResponse
@@ -93,11 +93,15 @@ class AccountController extends Controller
 
         $user->loadMissing(['legacyId', 'athlete']);
 
-        return $this->respond([
+        $data = [
             'user' => new UserResource($user),
             'token' => $user->issueApiToken(),
             'created' => $created,
-        ], $created ? 'Tu Legacy comienza aquí.' : null, status: $created ? 201 : 200);
+        ];
+
+        return $created
+            ? $this->respond($data, __('Tu Legacy comienza aquí.'), status: 201)
+            : $this->respond($data);
     }
 
     /**
@@ -114,19 +118,19 @@ class AccountController extends Controller
             'password' => [$hasSocialLogin ? 'nullable' : 'required', 'string'],
             'confirmation' => [$hasSocialLogin ? 'required_without:password' : 'nullable', 'nullable', 'string', Rule::in(['ELIMINAR'])],
         ], [
-            'password.required' => 'Escribe tu contraseña para confirmar.',
-            'confirmation.in' => 'Escribe ELIMINAR para confirmar.',
+            'password.required' => __('Escribe tu contraseña para confirmar.'),
+            'confirmation.in' => __('Escribe ELIMINAR para confirmar.'),
         ]);
 
         $passwordOk = isset($data['password']) && Hash::check($data['password'], $user->password);
         $confirmationOk = $hasSocialLogin && ($data['confirmation'] ?? null) === 'ELIMINAR';
 
         if (! $passwordOk && ! $confirmationOk) {
-            throw ValidationException::withMessages(['password' => ['La contraseña no es correcta.']]);
+            throw ValidationException::withMessages(['password' => [__('La contraseña no es correcta.')]]);
         }
 
         $delete->handle($user);
 
-        return $this->respond(null, 'Tu cuenta fue eliminada.');
+        return $this->respond(null, __('Tu cuenta fue eliminada.'));
     }
 }

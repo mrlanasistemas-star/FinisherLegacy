@@ -14,6 +14,6 @@ class LegacyPlateEventRequiredException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Selecciona un evento para tu Legacy Plate.', ApiErrorCode::LegacyPlateEventRequired, 422);
+        parent::__construct(__('Selecciona un evento para tu Legacy Plate.'), ApiErrorCode::LegacyPlateEventRequired, 422);
     }
 }

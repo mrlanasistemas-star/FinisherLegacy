@@ -104,11 +104,11 @@ class LegacyCodeController extends Controller
         } catch (ModelNotFoundException) {
             abort(404);
         } catch (LegacyCodeUnavailableException) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Este código no está disponible para vincularse.']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Este código no está disponible para vincularse.')]);
 
             return back();
         } catch (LegacyCodeClaimConflictException) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Esta placa ya forma parte de otro Legacy.']);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Esta placa ya forma parte de otro Legacy.')]);
 
             return back();
         } catch (AthleteIdentityConflictException $e) {
@@ -120,8 +120,8 @@ class LegacyCodeController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => $result['alreadyOwned']
-                ? 'Esta placa ya es parte de tu Legacy.'
-                : 'Esta historia ya forma parte de tu Legacy.',
+                ? __('Esta placa ya es parte de tu Legacy.')
+                : __('Esta historia ya forma parte de tu Legacy.'),
         ]);
 
         if ($result['medal']) {

@@ -42,17 +42,29 @@ class PhotoQuotaExceededException extends ApiException
 
     private static function defaultMessage(StoryQuotaKind $kind, bool $canExpand, bool $planExpired): string
     {
-        $what = $kind->noun();
-        $one = $kind === StoryQuotaKind::Photos ? 'una' : 'uno';
-        $other = $kind === StoryQuotaKind::Photos ? 'otra' : 'otro';
-
+        // One complete sentence per kind: gender and word order change
+        // between languages, so nothing is assembled from pieces.
         if ($planExpired) {
-            return "Tu plan venció y este recuerdo ya tiene el máximo de {$what}. Renuévalo o quita {$one} para subir {$other}.";
+            return match ($kind) {
+                StoryQuotaKind::Photos => __('Tu plan venció y este recuerdo ya tiene el máximo de fotos. Renuévalo o quita una para subir otra.'),
+                StoryQuotaKind::Videos => __('Tu plan venció y este recuerdo ya tiene el máximo de videos. Renuévalo o quita uno para subir otro.'),
+                StoryQuotaKind::Audio => __('Tu plan venció y este recuerdo ya tiene el máximo de mensajes de voz. Renuévalo o quita uno para subir otro.'),
+            };
         }
 
-        return $canExpand
-            ? "Ya tienes el máximo de {$what} en este recuerdo. Amplía tu espacio o quita {$one} para subir {$other}."
-            : "Ya tienes el máximo de {$what} en este recuerdo. Quita {$one} para subir {$other}.";
+        if ($canExpand) {
+            return match ($kind) {
+                StoryQuotaKind::Photos => __('Ya tienes el máximo de fotos en este recuerdo. Amplía tu espacio o quita una para subir otra.'),
+                StoryQuotaKind::Videos => __('Ya tienes el máximo de videos en este recuerdo. Amplía tu espacio o quita uno para subir otro.'),
+                StoryQuotaKind::Audio => __('Ya tienes el máximo de mensajes de voz en este recuerdo. Amplía tu espacio o quita uno para subir otro.'),
+            };
+        }
+
+        return match ($kind) {
+            StoryQuotaKind::Photos => __('Ya tienes el máximo de fotos en este recuerdo. Quita una para subir otra.'),
+            StoryQuotaKind::Videos => __('Ya tienes el máximo de videos en este recuerdo. Quita uno para subir otro.'),
+            StoryQuotaKind::Audio => __('Ya tienes el máximo de mensajes de voz en este recuerdo. Quita uno para subir otro.'),
+        };
     }
 
     /**

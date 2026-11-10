@@ -82,7 +82,7 @@ class CreateMoment
 
         if (($caption === null || $caption === '') && $participant === null && $medal === null && $gear === null
             && $mediaUuids === [] && $photos === [] && $metrics === null) {
-            throw ValidationException::withMessages(['caption' => 'Escribe algo o agrega una foto o actividad.']);
+            throw ValidationException::withMessages(['caption' => __('Escribe algo o agrega una foto o actividad.')]);
         }
 
         // Validate + park uploads before the transaction (no DB lock held);

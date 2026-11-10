@@ -85,9 +85,9 @@ class LegacyCodeController extends Controller
         } catch (ModelNotFoundException) {
             abort(404);
         } catch (LegacyCodeUnavailableException) {
-            return $this->respond(null, 'Este código no está disponible para vincularse.', status: 403);
+            return $this->respond(null, __('Este código no está disponible para vincularse.'), status: 403);
         } catch (LegacyCodeClaimConflictException) {
-            return $this->respond(null, 'Esta placa ya forma parte de otro Legacy.', status: 409);
+            return $this->respond(null, __('Esta placa ya forma parte de otro Legacy.'), status: 409);
         } catch (AthleteIdentityConflictException $e) {
             return $this->respond(null, $e->getMessage(), status: 409);
         }
@@ -96,7 +96,7 @@ class LegacyCodeController extends Controller
             'legacy_code' => $result['legacyCode']->code,
             'medal' => $result['medal'] ? new MedalResource($result['medal']) : null,
         ], $result['alreadyOwned']
-            ? 'Esta placa ya es parte de tu Legacy.'
-            : 'Esta historia ya forma parte de tu Legacy.');
+            ? __('Esta placa ya es parte de tu Legacy.')
+            : __('Esta historia ya forma parte de tu Legacy.'));
     }
 }

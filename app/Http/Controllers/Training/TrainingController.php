@@ -67,7 +67,7 @@ class TrainingController extends Controller
         $user = $request->user();
         $link = $links->create($user, (string) $request->validated('title'), $request->expiresInDays());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Enlace listo. Compártelo con tu gente.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Enlace listo. Compártelo con tu gente.')]);
         Inertia::flash('cheer_link_url', $link->url());
 
         return back();
@@ -79,7 +79,7 @@ class TrainingController extends Controller
         $user = $request->user();
         $links->revoke($this->ownLink($user, $link), $user);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Enlace desactivado. Ya no recibe mensajes.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Enlace desactivado. Ya no recibe mensajes.')]);
 
         return back();
     }
@@ -109,7 +109,7 @@ class TrainingController extends Controller
         $user = $request->user();
         $messages->hide($this->ownMessage($user, $message));
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Mensaje quitado de tu lista.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Mensaje quitado de tu lista.')]);
 
         return back();
     }
@@ -120,7 +120,7 @@ class TrainingController extends Controller
         $user = $request->user();
         $messages->blockSender($this->ownMessage($user, $message), $user);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Bloqueado. No recibirás más mensajes suyos en ese enlace.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Bloqueado. No recibirás más mensajes suyos en ese enlace.')]);
 
         return back();
     }
@@ -134,7 +134,7 @@ class TrainingController extends Controller
 
         $report->handle($cheer, $user, CheerReportReason::from($data['reason']), $data['details'] ?? null);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Gracias. Reportamos el mensaje y lo quitamos de tu lista; nuestro equipo lo revisará.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Gracias. Reportamos el mensaje y lo quitamos de tu lista; nuestro equipo lo revisará.')]);
 
         return back();
     }

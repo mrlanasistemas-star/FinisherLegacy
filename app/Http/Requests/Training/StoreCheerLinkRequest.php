@@ -33,9 +33,9 @@ class StoreCheerLinkRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.required' => 'Ponle un nombre, por ejemplo: Mi maratón de Mérida.',
-            'title.max' => 'El nombre puede tener hasta 80 caracteres.',
-            'expires_in_days.in' => 'Elige 7, 30 o 90 días, o sin vencimiento.',
+            'title.required' => __('Ponle un nombre, por ejemplo: Mi maratón de Mérida.'),
+            'title.max' => __('El nombre puede tener hasta 80 caracteres.'),
+            'expires_in_days.in' => __('Elige 7, 30 o 90 días, o sin vencimiento.'),
         ];
     }
 

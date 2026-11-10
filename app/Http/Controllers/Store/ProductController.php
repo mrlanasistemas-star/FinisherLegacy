@@ -269,10 +269,10 @@ class ProductController extends Controller
         return match ($type) {
             ProductType::LegacyTag => 'Finisher Legacy Tag',
             ProductType::LegacyPlate => 'Legacy Plate',
-            ProductType::Apparel => 'Ropa',
-            ProductType::Accessory => 'Accesorios',
-            ProductType::Equipment => 'Equipo',
-            ProductType::DigitalPhoto => 'Fotografía',
+            ProductType::Apparel => __('Ropa'),
+            ProductType::Accessory => __('Accesorios'),
+            ProductType::Equipment => __('Equipo'),
+            ProductType::DigitalPhoto => __('Fotografía'),
         };
     }
 }

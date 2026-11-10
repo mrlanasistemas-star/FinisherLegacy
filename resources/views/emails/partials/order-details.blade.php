@@ -10,7 +10,7 @@
 @if ($order['delivery_method'] || $order['address'] !== [])
 <tr>
 <td class="fl-text" style="padding: 0 0 14px 0; font-size: 14px; line-height: 21px; color: #0B0B0C;">
-<span style="display: block; margin-bottom: 4px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #A88B62;">Entrega</span>
+<span style="display: block; margin-bottom: 4px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #A88B62;">{{ __('Entrega') }}</span>
 @if ($order['delivery_method']){{ $order['delivery_method'] }}<br />@endif
 @foreach ($order['address'] as $line){{ $line }}<br />@endforeach
 </td>
@@ -19,7 +19,7 @@
 @if ($order['payment_method'])
 <tr>
 <td class="fl-text" style="font-size: 14px; line-height: 21px; color: #0B0B0C;">
-<span style="display: block; margin-bottom: 4px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #A88B62;">Método de pago</span>
+<span style="display: block; margin-bottom: 4px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #A88B62;">{{ __('Método de pago') }}</span>
 {{ $order['payment_method'] }}
 </td>
 </tr>

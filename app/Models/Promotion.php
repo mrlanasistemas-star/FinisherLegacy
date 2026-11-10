@@ -72,6 +72,6 @@ class Promotion extends Model
 
     public function label(): string
     {
-        return $this->badge_label ?: ($this->type === CouponType::Percentage ? "-{$this->value}%" : 'Oferta');
+        return $this->badge_label ?: ($this->type === CouponType::Percentage ? "-{$this->value}%" : __('Oferta'));
     }
 }

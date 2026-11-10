@@ -51,7 +51,7 @@ class TrackingSessionController extends Controller
 
         return $this->respond(
             TrackingSessionPresenter::present($result['session']),
-            $result['created'] ? 'Seguimiento iniciado.' : 'El seguimiento ya estaba activo.',
+            $result['created'] ? __('Seguimiento iniciado.') : __('El seguimiento ya estaba activo.'),
             status: $result['created'] ? 201 : 200,
         );
     }
@@ -138,7 +138,7 @@ class TrackingSessionController extends Controller
     {
         Gate::forUser($this->sanctumUser($request))->authorize('update', $session);
 
-        return $this->respond(TrackingSessionPresenter::present($stop->handle($session)), 'Seguimiento detenido.');
+        return $this->respond(TrackingSessionPresenter::present($stop->handle($session)), __('Seguimiento detenido.'));
     }
 
     /** `POST tracking/sessions/{session}/shares` */
@@ -163,7 +163,7 @@ class TrackingSessionController extends Controller
             'token' => $result['token'],
             'url' => $result['url'],
             'expires_at' => $result['share']->expires_at->toIso8601String(),
-        ], 'Enlace de seguimiento creado.', status: 201);
+        ], __('Enlace de seguimiento creado.'), status: 201);
     }
 
     /** `DELETE tracking/shares/{share}` */

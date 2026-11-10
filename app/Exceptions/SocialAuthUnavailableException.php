@@ -13,6 +13,6 @@ class SocialAuthUnavailableException extends ApiException
 {
     public function __construct(string $provider)
     {
-        parent::__construct('Este método de inicio de sesión todavía no está disponible.', ApiErrorCode::SocialAuthUnavailable, 422, ['provider' => $provider]);
+        parent::__construct(__('Este método de inicio de sesión todavía no está disponible.'), ApiErrorCode::SocialAuthUnavailable, 422, ['provider' => $provider]);
     }
 }

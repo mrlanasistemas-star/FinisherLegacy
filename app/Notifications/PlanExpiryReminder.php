@@ -13,6 +13,10 @@ use Illuminate\Notifications\Notification;
  * half goes through SendAthleteNotification
  * (App\Console\Commands\RemindExpiringPlans). Queued. It never mentions
  * how the payment is processed, and always says that nothing is deleted.
+ *
+ * Subject, headline and body arrive already written in the recipient's
+ * language (the command renders them with RecipientLocale); the rest is
+ * translated when the mail is built, in that same language.
  */
 class PlanExpiryReminder extends Notification implements ShouldQueue
 {
@@ -40,7 +44,7 @@ class PlanExpiryReminder extends Notification implements ShouldQueue
             ->subject($this->subject)
             ->greeting($this->headline)
             ->line($this->body)
-            ->action($this->expired ? 'Renovar mi plan' : 'Ver mi recuerdo', $this->actionUrl)
-            ->line('Pase lo que pase, tu contenido no se borra: todo lo que ya subiste sigue visible y lo puedes descargar cuando quieras.');
+            ->action($this->expired ? __('Renovar mi plan') : __('Ver mi recuerdo'), $this->actionUrl)
+            ->line(__('Pase lo que pase, tu contenido no se borra: todo lo que ya subiste sigue visible y lo puedes descargar cuando quieras.'));
     }
 }

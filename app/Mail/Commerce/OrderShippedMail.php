@@ -10,7 +10,7 @@ class OrderShippedMail extends OrderMail
 {
     protected function subjectLine(): string
     {
-        return "Tu pedido {$this->order->order_number} va en camino";
+        return __('Tu pedido :number va en camino', ['number' => $this->order->order_number]);
     }
 
     protected function viewName(): string
@@ -20,6 +20,6 @@ class OrderShippedMail extends OrderMail
 
     protected function preheader(): string
     {
-        return 'Tu pedido salió hacia ti. Aquí tienes los datos de envío.';
+        return __('Tu pedido salió hacia ti. Aquí tienes los datos de envío.');
     }
 }

@@ -22,7 +22,7 @@ class LiveTrackingController extends Controller
 
         if ($share === null || ! $share->isUsable()) {
             return response()->json([
-                'error' => ['code' => 'NOT_FOUND', 'message' => 'Este enlace de seguimiento ya no está disponible.', 'details' => (object) []],
+                'error' => ['code' => 'NOT_FOUND', 'message' => __('Este enlace de seguimiento ya no está disponible.'), 'details' => (object) []],
             ], 404);
         }
 

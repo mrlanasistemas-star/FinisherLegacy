@@ -199,7 +199,7 @@ class CommunityController extends Controller
         $user = $request->user();
 
         if (! $user->athleteProfile()->exists()) {
-            Inertia::flash('toast', ['type' => 'info', 'message' => 'Crea tu perfil de atleta para publicar en la comunidad.']);
+            Inertia::flash('toast', ['type' => 'info', 'message' => __('Crea tu perfil de atleta para publicar en la comunidad.')]);
 
             return to_route('dashboard.profile.edit');
         }
@@ -213,7 +213,7 @@ class CommunityController extends Controller
             throw ValidationException::withMessages(['caption' => $e->getMessage()]);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Publicado. Ya es parte de la comunidad.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Publicado. Ya es parte de la comunidad.')]);
 
         return back();
     }
@@ -227,7 +227,7 @@ class CommunityController extends Controller
             'visibility' => ['sometimes', Rule::enum(MomentVisibility::class)],
         ]));
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Publicación actualizada.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Publicación actualizada.')]);
 
         return back();
     }
@@ -238,7 +238,7 @@ class CommunityController extends Controller
 
         $delete->handle($moment);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Publicación eliminada.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Publicación eliminada.')]);
 
         return $request->boolean('from_detail') ? to_route('community.index') : back();
     }
@@ -270,8 +270,8 @@ class CommunityController extends Controller
         $data = $request->validate([
             'body' => ['required', 'string', 'min:1', 'max:'.config('finisher.social.comment_max'), new NoObjectionableContent],
         ], [
-            'body.required' => 'Escribe un mensaje antes de enviarlo.',
-            'body.max' => 'Tu mensaje es demasiado largo (máximo :max caracteres).',
+            'body.required' => __('Escribe un mensaje antes de enviarlo.'),
+            'body.max' => __('Tu mensaje es demasiado largo (máximo :max caracteres).'),
         ]);
 
         $comment->handle($request->user(), $moment, $data['body']);
@@ -327,7 +327,7 @@ class CommunityController extends Controller
             return back();
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Bloqueaste a este atleta. Ya no verán su actividad entre ustedes.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Bloqueaste a este atleta. Ya no verán su actividad entre ustedes.')]);
 
         // Their profile is no longer visible to you — leave it.
         return to_route('community.index');
@@ -340,7 +340,7 @@ class CommunityController extends Controller
 
         $block->unblock($request->user(), $athleteProfile->user);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Desbloqueaste a este atleta.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Desbloqueaste a este atleta.')]);
 
         return back();
     }
@@ -357,7 +357,7 @@ class CommunityController extends Controller
             'reason' => ['required', Rule::in(config('finisher.social.report_reasons'))],
             'details' => ['nullable', 'string', 'max:1000'],
         ], [
-            'reason.required' => 'Elige un motivo.',
+            'reason.required' => __('Elige un motivo.'),
         ]);
 
         try {
@@ -368,7 +368,7 @@ class CommunityController extends Controller
             throw ValidationException::withMessages(['reason' => $e->getMessage()]);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Gracias. Nuestro equipo revisará tu reporte.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Gracias. Nuestro equipo revisará tu reporte.')]);
 
         return back();
     }
@@ -398,7 +398,7 @@ class CommunityController extends Controller
             ->map(fn (EventParticipant $p) => [
                 'id' => $p->id,
                 'event_edition_id' => $p->event_edition_id,
-                'label' => trim(($p->eventEdition?->event->name ?? 'Evento').' · '.($p->eventRace->name ?? ''), ' ·'),
+                'label' => trim(($p->eventEdition?->event->name ?? __('Evento')).' · '.($p->eventRace->name ?? ''), ' ·'),
                 'date' => $p->eventEdition?->event_date?->toDateString(),
             ]);
 
@@ -423,7 +423,7 @@ class CommunityController extends Controller
             ->latest('id')
             ->limit(30)
             ->get(['id', 'uuid', 'product_id'])
-            ->map(fn (AthleteOwnedProduct $item) => ['uuid' => $item->uuid, 'label' => $item->product->name ?? 'Producto']);
+            ->map(fn (AthleteOwnedProduct $item) => ['uuid' => $item->uuid, 'label' => $item->product->name ?? __('Producto')]);
 
         return [
             'has_profile' => $profile !== null,
@@ -446,9 +446,9 @@ class CommunityController extends Controller
     private function visibilityOptions(): array
     {
         return [
-            ['value' => MomentVisibility::Public->value, 'label' => 'Público', 'description' => 'Cualquiera que pueda ver tu perfil'],
-            ['value' => MomentVisibility::Followers->value, 'label' => 'Seguidores', 'description' => 'Solo quienes te siguen'],
-            ['value' => MomentVisibility::Private->value, 'label' => 'Solo yo', 'description' => 'Queda en tu perfil, nadie más lo ve'],
+            ['value' => MomentVisibility::Public->value, 'label' => __('Público'), 'description' => __('Cualquiera que pueda ver tu perfil')],
+            ['value' => MomentVisibility::Followers->value, 'label' => __('Seguidores'), 'description' => __('Solo quienes te siguen')],
+            ['value' => MomentVisibility::Private->value, 'label' => __('Solo yo'), 'description' => __('Queda en tu perfil, nadie más lo ve')],
         ];
     }
 

@@ -9,6 +9,6 @@ class NfcAlreadyClaimedException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este producto ya está conectado al Legacy de otra persona.', ApiErrorCode::NfcAlreadyClaimed, 409);
+        parent::__construct(__('Este producto ya está conectado al Legacy de otra persona.'), ApiErrorCode::NfcAlreadyClaimed, 409);
     }
 }

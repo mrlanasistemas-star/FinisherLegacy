@@ -66,10 +66,12 @@ final readonly class TagActivationState
 
     public function message(): ?string
     {
-        return match ($this->state) {
-            self::TAKEN => 'Este Finisher Legacy ya fue activado por otra persona. Si es tuyo, escríbenos y lo revisamos.',
-            self::UNAVAILABLE => TagNotActivatableException::messageFor((string) $this->reason),
-            default => null,
-        };
+        if ($this->state === self::TAKEN) {
+            return __('Este Finisher Legacy ya fue activado por otra persona. Si es tuyo, escríbenos y lo revisamos.');
+        }
+
+        return $this->state === self::UNAVAILABLE
+            ? TagNotActivatableException::messageFor((string) $this->reason)
+            : null;
     }
 }

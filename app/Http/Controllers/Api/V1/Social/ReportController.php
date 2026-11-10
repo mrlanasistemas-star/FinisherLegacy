@@ -37,6 +37,6 @@ class ReportController extends Controller
             $data['details'] ?? null,
         );
 
-        return $this->respond(['uuid' => $report->uuid], 'Gracias. Nuestro equipo revisará tu reporte.', status: 201);
+        return $this->respond(['uuid' => $report->uuid], __('Gracias. Nuestro equipo revisará tu reporte.'), status: 201);
     }
 }

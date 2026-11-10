@@ -8,13 +8,17 @@ namespace App\Support\Social;
  */
 final class ReportReasons
 {
-    private const array LABELS = [
-        'spam' => 'Spam o publicidad',
-        'harassment' => 'Acoso u ofensas',
-        'inappropriate' => 'Contenido inapropiado',
-        'impersonation' => 'Suplantación de identidad',
-        'other' => 'Otro motivo',
-    ];
+    private static function label(string $reason): string
+    {
+        return match ($reason) {
+            'spam' => __('Spam o publicidad'),
+            'harassment' => __('Acoso u ofensas'),
+            'inappropriate' => __('Contenido inapropiado'),
+            'impersonation' => __('Suplantación de identidad'),
+            'other' => __('Otro motivo'),
+            default => ucfirst($reason),
+        };
+    }
 
     /**
      * @return list<array{value: string, label: string}>
@@ -22,7 +26,7 @@ final class ReportReasons
     public static function options(): array
     {
         return array_values(array_map(
-            fn (string $reason) => ['value' => $reason, 'label' => self::LABELS[$reason] ?? ucfirst($reason)],
+            fn (string $reason) => ['value' => $reason, 'label' => self::label($reason)],
             (array) config('finisher.social.report_reasons'),
         ));
     }

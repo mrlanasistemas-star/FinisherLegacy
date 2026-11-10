@@ -43,17 +43,17 @@ class StoreCheerMessageRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'sender_name.required' => 'Escribe tu nombre para que sepa quién le manda ánimo.',
-            'sender_name.max' => 'Tu nombre puede tener hasta 60 caracteres.',
-            'relationship.max' => 'Usa hasta 40 caracteres.',
-            'body.max' => 'El texto puede tener hasta 500 caracteres.',
-            'body.required_without' => 'Graba un mensaje de voz o escribe unas palabras.',
-            'audio.required_without' => 'Graba un mensaje de voz o escribe unas palabras.',
-            'audio.max' => 'El audio pesa más de '.intdiv((int) config('training.cheers.max_audio_bytes'), 1024 * 1024).' MB.',
-            'audio.file' => 'No pudimos recibir el audio. Intenta de nuevo.',
-            'icon.required' => 'Elige un ícono.',
-            'icon.enum' => 'Elige uno de los íconos.',
-            'duration_seconds.max' => 'El mensaje dura más de 3 minutos. Graba uno más corto.',
+            'sender_name.required' => __('Escribe tu nombre para que sepa quién le manda ánimo.'),
+            'sender_name.max' => __('Tu nombre puede tener hasta 60 caracteres.'),
+            'relationship.max' => __('Usa hasta 40 caracteres.'),
+            'body.max' => __('El texto puede tener hasta 500 caracteres.'),
+            'body.required_without' => __('Graba un mensaje de voz o escribe unas palabras.'),
+            'audio.required_without' => __('Graba un mensaje de voz o escribe unas palabras.'),
+            'audio.max' => __('El audio pesa más de :size MB.', ['size' => intdiv((int) config('training.cheers.max_audio_bytes'), 1024 * 1024)]),
+            'audio.file' => __('No pudimos recibir el audio. Intenta de nuevo.'),
+            'icon.required' => __('Elige un ícono.'),
+            'icon.enum' => __('Elige uno de los íconos.'),
+            'duration_seconds.max' => __('El mensaje dura más de 3 minutos. Graba uno más corto.'),
         ];
     }
 }

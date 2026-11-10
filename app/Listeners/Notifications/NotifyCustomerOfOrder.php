@@ -11,6 +11,7 @@ use App\Events\Commerce\OrderRefunded;
 use App\Events\Commerce\OrderShipped;
 use App\Models\Order;
 use App\Models\User;
+use Closure;
 use Throwable;
 
 /**
@@ -28,24 +29,41 @@ class NotifyCustomerOfOrder
     {
         $order = $event->order;
 
-        $this->notify($order, NotificationType::OrderPaid, 'Pago confirmado', "Recibimos tu pago del pedido {$order->order_number}. Te avisaremos cuando vaya en camino.");
+        $this->notify(
+            $order,
+            NotificationType::OrderPaid,
+            fn (): string => __('Pago confirmado'),
+            fn (): string => __('Recibimos tu pago del pedido :number. Te avisaremos cuando vaya en camino.', ['number' => $order->order_number]),
+        );
     }
 
     public function handleOrderShipped(OrderShipped $event): void
     {
         $order = $event->order;
         $tracking = filled($order->tracking_number)
-            ? ' Guía '.trim(($order->carrier ? $order->carrier.' ' : '').$order->tracking_number).'.'
-            : '';
+            ? trim(($order->carrier ? $order->carrier.' ' : '').$order->tracking_number)
+            : null;
 
-        $this->notify($order, NotificationType::OrderShipped, 'Tu pedido va en camino', "Enviamos tu pedido {$order->order_number}.{$tracking}");
+        $this->notify(
+            $order,
+            NotificationType::OrderShipped,
+            fn (): string => __('Tu pedido va en camino'),
+            fn (): string => $tracking !== null
+                ? __('Enviamos tu pedido :number. Guía :tracking.', ['number' => $order->order_number, 'tracking' => $tracking])
+                : __('Enviamos tu pedido :number.', ['number' => $order->order_number]),
+        );
     }
 
     public function handleOrderDelivered(OrderDelivered $event): void
     {
         $order = $event->order;
 
-        $this->notify($order, NotificationType::OrderDelivered, 'Pedido entregado', "Tu pedido {$order->order_number} fue entregado. Si incluye un Finisher Legacy Tag, ya puedes activarlo.");
+        $this->notify(
+            $order,
+            NotificationType::OrderDelivered,
+            fn (): string => __('Pedido entregado'),
+            fn (): string => __('Tu pedido :number fue entregado. Si incluye un Finisher Legacy Tag, ya puedes activarlo.', ['number' => $order->order_number]),
+        );
     }
 
     public function handleOrderRefunded(OrderRefunded $event): void
@@ -56,12 +74,19 @@ class NotifyCustomerOfOrder
         $this->notify(
             $order,
             NotificationType::OrderRefunded,
-            $event->full ? 'Reembolso realizado' : 'Reembolso parcial realizado',
-            "Reembolsamos {$amount} de tu pedido {$order->order_number}. Puede tardar unos días en reflejarse en tu banco.",
+            fn (): string => $event->full ? __('Reembolso realizado') : __('Reembolso parcial realizado'),
+            fn (): string => __('Reembolsamos :amount de tu pedido :number. Puede tardar unos días en reflejarse en tu banco.', ['amount' => $amount, 'number' => $order->order_number]),
         );
     }
 
-    private function notify(Order $order, NotificationType $type, string $title, string $message): void
+    /**
+     * Title and message are closures: SendAthleteNotification renders them
+     * in the buyer's language (the event may come from a webhook or an admin).
+     *
+     * @param  Closure(): string  $title
+     * @param  Closure(): string  $message
+     */
+    private function notify(Order $order, NotificationType $type, Closure $title, Closure $message): void
     {
         try {
             $recipient = $this->recipient($order);

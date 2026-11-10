@@ -36,7 +36,7 @@ class TrackingDeviceController extends Controller
         $result = $pair->handle($data['code']);
 
         if ($result === null) {
-            throw ValidationException::withMessages(['code' => 'El código no es válido o ya venció.']);
+            throw ValidationException::withMessages(['code' => __('El código no es válido o ya venció.')]);
         }
 
         return $this->respond([
@@ -46,7 +46,7 @@ class TrackingDeviceController extends Controller
                 'name' => $result['device']->public_name,
             ],
             'token' => $result['token'],
-        ], 'Dispositivo conectado.', status: 201);
+        ], __('Dispositivo conectado.'), status: 201);
     }
 
     public function startSession(Request $request, StartTrackingSession $start): JsonResponse
@@ -59,7 +59,7 @@ class TrackingDeviceController extends Controller
         }
 
         $participant = $device->eventParticipant()->first();
-        abort_if($participant === null, 409, 'Este dispositivo no está asignado a ningún evento.');
+        abort_if($participant === null, 409, __('Este dispositivo no está asignado a ningún evento.'));
 
         $device->update(['last_seen_at' => now()]);
         $result = $start->handle($participant, TrackingSource::GpsBand, $device);

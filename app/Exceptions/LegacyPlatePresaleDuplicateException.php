@@ -16,7 +16,7 @@ class LegacyPlatePresaleDuplicateException extends ApiException
     public function __construct()
     {
         parent::__construct(
-            'Ya existe una preventa de Legacy Plate para este atleta y este evento.',
+            __('Ya existe una preventa de Legacy Plate para este atleta y este evento.'),
             ApiErrorCode::LegacyPlatePresaleDuplicate,
             409,
         );

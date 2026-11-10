@@ -40,7 +40,7 @@ class ConnectProductRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['product_id.required_without' => 'Elige el producto que vas a conectar.'];
+        return ['product_id.required_without' => __('Elige el producto que vas a conectar.')];
     }
 
     /**
@@ -54,17 +54,17 @@ class ConnectProductRequest extends FormRequest
             }
 
             if ($this->resolveTag() === null) {
-                $validator->errors()->add('tag', 'No encontramos esa etiqueta NFC.');
+                $validator->errors()->add('tag', __('No encontramos esa etiqueta NFC.'));
             }
 
             if ($this->filled('owned_product_uuid') && $this->ownedProduct() === null) {
-                $validator->errors()->add('owned_product_uuid', 'No encontramos ese producto.');
+                $validator->errors()->add('owned_product_uuid', __('No encontramos ese producto.'));
             }
 
             $variant = $this->variant();
 
             if ($this->filled('product_variant_id') && ($variant === null || $variant->product_id !== $this->integer('product_id'))) {
-                $validator->errors()->add('product_variant_id', 'La variante no pertenece a ese producto.');
+                $validator->errors()->add('product_variant_id', __('La variante no pertenece a ese producto.'));
             }
         }];
     }

@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Cache;
  * Ajustes › Notificaciones). `metadata` carries the structured target so the
  * app deep-links without parsing URLs: `{kind: athlete|moment, username?,
  * moment_uuid?}`. A reaction toggled off and on again pushes at most once per
- * hour per (moment, person) — the in-app row still records it.
+ * hour per (moment, person) — the in-app row still records it. Texts are
+ * closures: SendAthleteNotification renders them in the recipient's language.
  */
 class NotifySocialActivity
 {
@@ -26,8 +27,8 @@ class NotifySocialActivity
 
         $this->send->handle(
             $recipient,
-            'Nuevo seguidor',
-            "{$follower->name} empezó a seguir tu Legacy.",
+            fn (): string => __('Nuevo seguidor'),
+            fn (): string => __(':name empezó a seguir tu Legacy.', ['name' => $follower->name]),
             NotificationType::NewFollower,
             $username !== null ? $this->profileUrl($username) : null,
             ['kind' => 'athlete', 'username' => $username],
@@ -37,12 +38,12 @@ class NotifySocialActivity
 
     public function momentReaction(LegacyMoment $moment, User $reactor, string $type): void
     {
-        $verb = $type === 'cheer' ? 'te echó porras en' : 'reaccionó a';
-
         $this->send->handle(
             $moment->author,
-            'Nueva reacción',
-            "{$reactor->name} {$verb} tu momento.",
+            fn (): string => __('Nueva reacción'),
+            fn (): string => $type === 'cheer'
+                ? __(':name te echó porras en tu momento.', ['name' => $reactor->name])
+                : __(':name reaccionó a tu momento.', ['name' => $reactor->name]),
             NotificationType::MomentReaction,
             $this->momentUrl($moment),
             ['kind' => 'moment', 'moment_uuid' => $moment->uuid, 'username' => $reactor->athleteProfile?->username],
@@ -54,7 +55,7 @@ class NotifySocialActivity
     {
         $this->send->handle(
             $moment->author,
-            'Nuevo mensaje de apoyo',
+            fn (): string => __('Nuevo mensaje de apoyo'),
             "{$commenter->name}: ".mb_strimwidth($body, 0, 90, '…'),
             NotificationType::MomentComment,
             $this->momentUrl($moment),

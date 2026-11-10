@@ -13,6 +13,6 @@ class PaymentAmountMismatchException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('El monto del pago no coincide con lo esperado.', ApiErrorCode::PaymentAmountMismatch, 422);
+        parent::__construct(__('El monto del pago no coincide con lo esperado.'), ApiErrorCode::PaymentAmountMismatch, 422);
     }
 }

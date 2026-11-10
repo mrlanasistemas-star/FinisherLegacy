@@ -9,6 +9,6 @@ class TagAlreadyActivatedException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este Finisher Legacy ya fue activado por otra persona. Si es tuyo, escríbenos y lo revisamos.', ApiErrorCode::TagAlreadyActivated, 409);
+        parent::__construct(__('Este Finisher Legacy ya fue activado por otra persona. Si es tuyo, escríbenos y lo revisamos.'), ApiErrorCode::TagAlreadyActivated, 409);
     }
 }

@@ -44,11 +44,11 @@ class OrderProgress
         };
 
         $labels = [
-            'pending_payment' => 'Pendiente de pago',
-            'paid' => 'Pagado',
-            'preparing' => 'Preparando',
+            'pending_payment' => __('Pendiente de pago'),
+            'paid' => __('Pagado'),
+            'preparing' => __('Preparando'),
             'on_its_way' => self::handoffLabel($order),
-            'delivered' => 'Entregado',
+            'delivered' => __('Entregado'),
         ];
 
         $dates = [
@@ -77,18 +77,18 @@ class OrderProgress
 
         $closed = match (true) {
             $order->status === OrderStatus::Cancelled => [
-                'label' => 'Pedido cancelado',
-                'description' => 'Este pedido se canceló. Si pagaste algo, te contactaremos para el reembolso.',
+                'label' => __('Pedido cancelado'),
+                'description' => __('Este pedido se canceló. Si pagaste algo, te contactaremos para el reembolso.'),
                 'tone' => 'muted',
             ],
             $order->payment_status === OrderPaymentStatus::Refunded => [
-                'label' => 'Reembolsado',
-                'description' => 'Te devolvimos el importe de este pedido.',
+                'label' => __('Reembolsado'),
+                'description' => __('Te devolvimos el importe de este pedido.'),
                 'tone' => 'muted',
             ],
             $order->payment_status === OrderPaymentStatus::Failed => [
-                'label' => 'El pago no se completó',
-                'description' => 'Tu banco no aprobó el pago. Puedes intentarlo de nuevo.',
+                'label' => __('El pago no se completó'),
+                'description' => __('Tu banco no aprobó el pago. Puedes intentarlo de nuevo.'),
                 'tone' => 'warning',
             ],
             default => null,
@@ -99,16 +99,16 @@ class OrderProgress
         return [
             'steps' => $steps,
             'closed' => $closed,
-            'headline' => $closed['label'] ?? ($delivered ? 'Entregado' : ($current['label'] ?? 'Pendiente de pago')),
+            'headline' => $closed['label'] ?? ($delivered ? __('Entregado') : ($current['label'] ?? __('Pendiente de pago'))),
         ];
     }
 
     private static function handoffLabel(Order $order): string
     {
         return match (data_get($order->customer_snapshot, 'delivery_method')) {
-            'pickup', 'event_pickup', 'kit_pickup' => 'Listo para recoger',
-            'shipping', 'delivery' => 'Enviado',
-            default => 'Enviado o listo para recoger',
+            'pickup', 'event_pickup', 'kit_pickup' => __('Listo para recoger'),
+            'shipping', 'delivery' => __('Enviado'),
+            default => __('Enviado o listo para recoger'),
         };
     }
 }

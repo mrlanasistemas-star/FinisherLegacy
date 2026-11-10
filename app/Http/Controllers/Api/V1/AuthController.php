@@ -41,7 +41,7 @@ class AuthController extends Controller
         return $this->respond([
             'user' => new UserResource($user),
             'token' => $token,
-        ], 'Tu Legacy comienza aquí.', status: 201);
+        ], __('Tu Legacy comienza aquí.'), status: 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -80,7 +80,7 @@ class AuthController extends Controller
     {
         $this->sanctumUser($request)->currentAccessToken()->delete();
 
-        return $this->respond(null, 'Sesión cerrada.');
+        return $this->respond(null, __('Sesión cerrada.'));
     }
 
     public function me(Request $request): JsonResponse

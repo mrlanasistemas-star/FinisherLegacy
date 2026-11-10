@@ -34,6 +34,6 @@ class CheckoutController extends Controller
         // address_postal_code, notes — same rules as the web checkout.
         $order = $checkout->handle($cart, $user, $athlete, $request->customerSnapshot());
 
-        return $this->respond(new OrderResource($order->load(['items.productVariant', 'items.product.media'])), 'Pedido creado.', status: 201);
+        return $this->respond(new OrderResource($order->load(['items.productVariant', 'items.product.media'])), __('Pedido creado.'), status: 201);
     }
 }

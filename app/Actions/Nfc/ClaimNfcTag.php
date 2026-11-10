@@ -44,7 +44,7 @@ class ClaimNfcTag
                 $tag = NfcTag::query()->lockForUpdate()->findOrFail($tag->id);
 
                 if ($tag->status === NfcTagStatus::Disabled) {
-                    throw new NfcNotClaimableException('Esta etiqueta está desactivada.');
+                    throw new NfcNotClaimableException(__('Esta etiqueta está desactivada.'));
                 }
 
                 /** @var NfcAssignment|null $assignment */
@@ -93,7 +93,7 @@ class ClaimNfcTag
         $code = $assignment->plate?->legacyCode?->code;
 
         if ($code === null) {
-            throw new NfcNotClaimableException('Esta Legacy Plate todavía no está lista para conectarse.');
+            throw new NfcNotClaimableException(__('Esta Legacy Plate todavía no está lista para conectarse.'));
         }
 
         try {
@@ -101,7 +101,7 @@ class ClaimNfcTag
         } catch (LegacyCodeClaimConflictException) {
             throw new NfcAlreadyClaimedException;
         } catch (LegacyCodeUnavailableException) {
-            throw new NfcNotClaimableException('Esta Legacy Plate no está disponible.');
+            throw new NfcNotClaimableException(__('Esta Legacy Plate no está disponible.'));
         }
 
         return ['athlete_id' => $assignment->plate->fresh()->athlete_id];

@@ -16,7 +16,7 @@ class OrderExpiredException extends ApiException
     public function __construct()
     {
         parent::__construct(
-            'Este pedido expiró. Vuelve a agregar los productos al carrito.',
+            __('Este pedido expiró. Vuelve a agregar los productos al carrito.'),
             ApiErrorCode::OrderExpired,
             422,
         );

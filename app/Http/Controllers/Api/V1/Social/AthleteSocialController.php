@@ -41,7 +41,7 @@ class AthleteSocialController extends Controller
 
         $follow->handle($viewer, $athleteProfile);
 
-        return $this->respond($this->followState($athleteProfile, $viewer), "Listo. Ya sigues a {$athleteProfile->user->first_name}.");
+        return $this->respond($this->followState($athleteProfile, $viewer), __('Listo. Ya sigues a :name.', ['name' => $athleteProfile->user->first_name]));
     }
 
     public function unfollow(Request $request, AthleteProfile $athleteProfile): JsonResponse
@@ -94,14 +94,14 @@ class AthleteSocialController extends Controller
         $viewer = $this->sanctumUser($request);
         $block->block($viewer, $athleteProfile->user);
 
-        return $this->respond(['blocked' => true], 'Bloqueaste a este atleta. Ya no verán su actividad entre ustedes.');
+        return $this->respond(['blocked' => true], __('Bloqueaste a este atleta. Ya no verán su actividad entre ustedes.'));
     }
 
     public function unblock(Request $request, AthleteProfile $athleteProfile, BlockUser $block): JsonResponse
     {
         $block->unblock($this->sanctumUser($request), $athleteProfile->user);
 
-        return $this->respond(['blocked' => false], 'Desbloqueaste a este atleta.');
+        return $this->respond(['blocked' => false], __('Desbloqueaste a este atleta.'));
     }
 
     public function blocks(Request $request): JsonResponse

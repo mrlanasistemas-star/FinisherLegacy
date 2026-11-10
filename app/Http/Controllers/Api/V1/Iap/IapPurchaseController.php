@@ -99,7 +99,7 @@ class IapPurchaseController extends Controller
             'replayed' => $replayed,
             'quota' => $story !== null ? ['story' => $story->public_id, ...$quota->summary($story)] : null,
             'quotas' => $story !== null ? $mediaQuota->summaryAll($story) : null,
-        ], $replayed ? 'Esta compra ya estaba registrada.' : 'Listo: ampliamos el espacio de tu recuerdo.', [], $replayed ? 200 : 201);
+        ], $replayed ? __('Esta compra ya estaba registrada.') : __('Listo: ampliamos el espacio de tu recuerdo.'), [], $replayed ? 200 : 201);
     }
 
     /**

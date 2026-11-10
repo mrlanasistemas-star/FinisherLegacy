@@ -4,8 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Models\CartItem;
 use App\Models\CompanySetting;
-use App\Support\Notifications\UnreadCounter;
 use App\Support\I18n\I18nProps;
+use App\Support\Notifications\UnreadCounter;
 use App\Support\PermissionCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;

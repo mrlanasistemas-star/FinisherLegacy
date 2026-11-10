@@ -28,7 +28,11 @@ abstract class SendOrderEmailOnce
         }
 
         try {
-            Mail::to($recipient, $order->customer_snapshot['name'] ?? null)->send($mail);
+            // The address is a plain string (guest checkouts have no account),
+            // so the language is set explicitly; it travels with the queued mail.
+            Mail::to($recipient, $order->customer_snapshot['name'] ?? null)
+                ->locale(OrderSummary::locale($order))
+                ->send($mail);
         } catch (Throwable $e) {
             DB::table('order_email_deliveries')
                 ->where('order_id', $order->id)

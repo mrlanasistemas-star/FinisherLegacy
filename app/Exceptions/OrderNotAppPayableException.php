@@ -14,6 +14,6 @@ class OrderNotAppPayableException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Este pedido no se puede pagar desde la app.', ApiErrorCode::OrderNotAppPayable, 409);
+        parent::__construct(__('Este pedido no se puede pagar desde la app.'), ApiErrorCode::OrderNotAppPayable, 409);
     }
 }

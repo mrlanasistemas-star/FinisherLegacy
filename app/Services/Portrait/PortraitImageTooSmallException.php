@@ -14,13 +14,9 @@ class PortraitImageTooSmallException extends RuntimeException
         public readonly int $requiredHeightPx,
         public readonly string $printLabel,
     ) {
-        parent::__construct(sprintf(
-            'La foto es muy pequeña para imprimir a %s (quedaría a %d dpi; mínimo %d). Usa una foto de al menos %d × %d px o recorta menos.',
-            $printLabel,
-            $effectiveDpi,
-            $minDpi,
-            $requiredWidthPx,
-            $requiredHeightPx,
+        parent::__construct(__(
+            'La foto es muy pequeña para imprimir a :size (quedaría a :dpi dpi; mínimo :min). Usa una foto de al menos :width × :height px o recorta menos.',
+            ['size' => $printLabel, 'dpi' => $effectiveDpi, 'min' => $minDpi, 'width' => $requiredWidthPx, 'height' => $requiredHeightPx],
         ));
     }
 }

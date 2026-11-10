@@ -54,7 +54,7 @@ class EventController extends Controller
             'event' => ['id' => $edition->event->id, 'name' => $edition->event->name, 'slug' => $edition->event->slug],
             'edition' => ['id' => $edition->id, 'name' => $edition->name, 'year' => $edition->year],
             'races' => $edition->races->map(fn ($race) => ['id' => $race->id, 'name' => $race->name]),
-        ], 'Evento creado.', status: 201);
+        ], __('Evento creado.'), status: 201);
     }
 
     public function index(Request $request): JsonResponse

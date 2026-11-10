@@ -14,6 +14,6 @@ class PriceNotAvailableException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('No hay un precio disponible para este producto en este momento.', ApiErrorCode::PriceNotAvailable, 422);
+        parent::__construct(__('No hay un precio disponible para este producto en este momento.'), ApiErrorCode::PriceNotAvailable, 422);
     }
 }

@@ -21,7 +21,7 @@ class BlockUser
     public function block(User $blocker, User $blocked): void
     {
         if ($blocker->id === $blocked->id) {
-            throw new SocialActionNotAllowedException('No puedes bloquearte a ti mismo.');
+            throw new SocialActionNotAllowedException(__('No puedes bloquearte a ti mismo.'));
         }
 
         DB::transaction(function () use ($blocker, $blocked) {

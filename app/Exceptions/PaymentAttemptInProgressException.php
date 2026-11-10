@@ -14,6 +14,6 @@ class PaymentAttemptInProgressException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Ya existe un intento de pago en curso para este pedido.', ApiErrorCode::Conflict, 409);
+        parent::__construct(__('Ya existe un intento de pago en curso para este pedido.'), ApiErrorCode::Conflict, 409);
     }
 }

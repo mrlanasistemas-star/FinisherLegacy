@@ -15,7 +15,7 @@ class PriceCurrencyMismatchException extends ApiException
     public function __construct()
     {
         parent::__construct(
-            'No se pueden combinar productos con monedas diferentes en el mismo carrito.',
+            __('No se pueden combinar productos con monedas diferentes en el mismo carrito.'),
             ApiErrorCode::PriceCurrencyMismatch,
             422,
         );

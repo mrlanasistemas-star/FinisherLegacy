@@ -15,7 +15,13 @@ use App\Queries\Nfc\ResolveNfcTag;
  */
 final class GearItem
 {
+    /** Spanish reference only — show connectedLabel() to people. */
     public const string CONNECTED_LABEL = 'Producto conectado';
+
+    public static function connectedLabel(): string
+    {
+        return __('Producto conectado');
+    }
 
     /**
      * @return array<string, mixed>
@@ -44,7 +50,7 @@ final class GearItem
                 'selected_at' => $selection->selected_at->toIso8601String(),
             ])->all() ?? [],
             'connected' => $connected,
-            'connection_label' => $connected ? self::CONNECTED_LABEL : null,
+            'connection_label' => $connected ? self::connectedLabel() : null,
             'connected_at' => $connected ? $nfc->activated_at?->toIso8601String() : null,
             'image_url' => $owned->product->primaryImageUrl(),
             'story_url' => $latest !== null ? route('dashboard.legado.show', $latest->event_participant_id) : null,
@@ -80,7 +86,7 @@ final class GearItem
             'activated_at' => $code?->claimed_at?->toIso8601String(),
             'usage_history' => [],
             'connected' => $connected,
-            'connection_label' => $connected ? self::CONNECTED_LABEL : null,
+            'connection_label' => $connected ? self::connectedLabel() : null,
             'connected_at' => $connected ? $nfc->activated_at?->toIso8601String() : null,
             'image_url' => asset(ResolveNfcTag::PLATE_IMAGE),
             'story_url' => $code !== null ? route('legacy-code.show', $code->code) : null,

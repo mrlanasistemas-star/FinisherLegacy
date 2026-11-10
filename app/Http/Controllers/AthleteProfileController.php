@@ -130,9 +130,9 @@ class AthleteProfileController extends Controller
     private static function visibilityOptions(): array
     {
         $copy = [
-            'public' => ['Público', 'Cualquiera puede ver tu perfil y tu historia.'],
-            'followers' => ['Solo seguidores', 'Solo las personas que te siguen ven tu historia.'],
-            'private' => ['Privado', 'Solo tú ves tu historia.'],
+            'public' => [__('Público'), __('Cualquiera puede ver tu perfil y tu historia.')],
+            'followers' => [__('Solo seguidores'), __('Solo las personas que te siguen ven tu historia.')],
+            'private' => [__('Privado'), __('Solo tú ves tu historia.')],
         ];
 
         return array_map(function (ProfileVisibility $case) use ($copy): array {
@@ -151,7 +151,7 @@ class AthleteProfileController extends Controller
             $request->file('cover_photo'),
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Tu Legacy Profile fue actualizado.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Tu Legacy Profile fue actualizado.')]);
 
         return to_route('dashboard.profile.edit');
     }

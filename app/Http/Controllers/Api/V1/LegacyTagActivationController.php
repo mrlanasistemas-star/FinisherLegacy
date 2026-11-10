@@ -51,7 +51,7 @@ class LegacyTagActivationController extends Controller
 
         $story = $confirm->handle($user, $model, $data['written_url'], $data['nfc_uid'] ?? null);
 
-        return $this->respond($confirm->present($model, $story), '¡Listo! Tu Finisher Legacy ya es tuyo.');
+        return $this->respond($confirm->present($model, $story), __('¡Listo! Tu Finisher Legacy ya es tuyo.'));
     }
 
     public function fail(Request $request, string $intent, FailTagActivation $fail): Response

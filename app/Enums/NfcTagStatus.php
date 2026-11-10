@@ -20,9 +20,9 @@ enum NfcTagStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Available => 'Disponible',
-            self::Assigned => 'Asignada',
-            self::Disabled => 'Desactivada',
+            self::Available => __('Disponible'),
+            self::Assigned => __('Asignada'),
+            self::Disabled => __('Desactivada'),
         };
     }
 }

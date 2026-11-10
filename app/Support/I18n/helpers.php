@@ -7,6 +7,7 @@
 
 use App\Support\I18n\ContentTranslations;
 use App\Support\I18n\LocalizedUrls;
+use App\Support\I18n\RecipientLocale;
 use Illuminate\Database\Eloquent\Model;
 
 if (! function_exists('localized_url')) {
@@ -41,5 +42,22 @@ if (! function_exists('tr')) {
     function tr(Model $model, string $field, ?string $locale = null): mixed
     {
         return app(ContentTranslations::class)->get($model, $field, $locale);
+    }
+}
+
+if (! function_exists('in_locale_of')) {
+    /**
+     * Runs `$callback` in the language of `$recipient` (a User, a locale
+     * code or null = the application default) and restores the current one:
+     * `in_locale_of($user, fn () => __('Tu recuerdo está listo'))`.
+     *
+     * @template TReturn
+     *
+     * @param  Closure(): TReturn  $callback
+     * @return TReturn
+     */
+    function in_locale_of(mixed $recipient, Closure $callback): mixed
+    {
+        return RecipientLocale::render($recipient, $callback);
     }
 }

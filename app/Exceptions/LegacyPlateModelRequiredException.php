@@ -13,6 +13,6 @@ class LegacyPlateModelRequiredException extends ApiException
 {
     public function __construct()
     {
-        parent::__construct('Selecciona un modelo de Legacy Plate.', ApiErrorCode::LegacyPlateModelRequired, 422);
+        parent::__construct(__('Selecciona un modelo de Legacy Plate.'), ApiErrorCode::LegacyPlateModelRequired, 422);
     }
 }

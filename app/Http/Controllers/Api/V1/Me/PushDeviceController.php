@@ -43,7 +43,7 @@ class PushDeviceController extends Controller
             'uuid' => $device->uuid,
             'platform' => $device->platform,
             'provider' => $device->provider,
-        ], 'Dispositivo registrado.', status: 201);
+        ], __('Dispositivo registrado.'), status: 201);
     }
 
     public function destroy(Request $request, string $uuid): JsonResponse
@@ -55,6 +55,6 @@ class PushDeviceController extends Controller
 
         $device->delete();
 
-        return $this->respond(null, 'Dispositivo eliminado.');
+        return $this->respond(null, __('Dispositivo eliminado.'));
     }
 }
