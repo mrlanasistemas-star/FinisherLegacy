@@ -12,14 +12,16 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
+                // Manual de identidad: Manrope (UI/texto), Montserrat
+                // (encabezados), Syncopate Bold (momentos de marca).
+                bunny('Manrope', {
+                    weights: [300, 400, 500, 600, 700],
+                }),
+                bunny('Montserrat', {
                     weights: [400, 500, 600, 700],
                 }),
-                // Editorial serif for display headings only (font-serif) —
-                // interface text stays on Instrument Sans.
-                bunny('Fraunces', {
-                    weights: [400, 500, 600],
-                    styles: ['normal', 'italic'],
+                bunny('Syncopate', {
+                    weights: [700],
                 }),
             ],
         }),

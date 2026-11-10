@@ -25,12 +25,12 @@
         <meta property="og:image:width" content="1200">
         <meta property="og:image:height" content="630">
         <meta property="og:image:type" content="image/png">
-        <meta property="og:image:alt" content="Finisher Legacy — Tu historia. Tu legado.">
+        <meta property="og:image:alt" content="Finisher Legacy — Make it last.">
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="Finisher Legacy — Tu esfuerzo merece una historia">
         <meta name="twitter:description" content="Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.">
         <meta name="twitter:image" content="{{ asset('images/brand/og-finisher-legacy.png') }}">
-        <meta name="twitter:image:alt" content="Finisher Legacy — Tu historia. Tu legado.">
+        <meta name="twitter:image:alt" content="Finisher Legacy — Make it last.">
 
         {{-- Organization + WebSite structured data — site-wide, safe to
              repeat on every page (Google just reads the first valid one
@@ -54,7 +54,7 @@
                         '@id' => rtrim(config('app.url'), '/').'/#organization',
                         'name' => 'Finisher Legacy',
                         'url' => config('app.url'),
-                        'logo' => asset('images/brand/logo/logo-mark-gold.png'),
+                        'logo' => asset('images/brand/logo/fl-monograma.png'),
                         'description' => 'Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.',
                     ],
                     [
@@ -87,7 +87,6 @@
         </style>
 
         <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png">
         <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">

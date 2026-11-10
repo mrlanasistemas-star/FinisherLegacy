@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
 import LegalPlaceholderNotice from '@/components/public/LegalPlaceholderNotice.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
-import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
-
-const canonicalUrl = useCanonicalUrl();
+import SeoHead from '@/components/public/SeoHead.vue';
 
 const sections = [
     {
@@ -35,13 +32,10 @@ const sections = [
 </script>
 
 <template>
-    <Head title="Términos y condiciones">
-        <meta
-            name="description"
-            content="Términos y condiciones de uso de la plataforma Finisher Legacy."
-        />
-        <link v-if="canonicalUrl" rel="canonical" :href="canonicalUrl" />
-    </Head>
+    <SeoHead
+        title="Términos y condiciones"
+        description="Términos y condiciones de uso de la plataforma Finisher Legacy."
+    />
 
     <section class="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading

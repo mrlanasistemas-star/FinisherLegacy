@@ -32,14 +32,14 @@ const sources: Record<
     Record<'light' | 'gold' | 'dark', string>
 > = {
     mark: {
-        light: '/images/brand/logo/logo-mark-white.png',
-        gold: '/images/brand/logo/logo-mark-gold.png',
-        dark: '/images/brand/logo/logo-mark-black.png',
+        light: '/images/brand/logo/fl-monograma.png',
+        gold: '/images/brand/logo/fl-monograma.png',
+        dark: '/images/brand/logo/fl-monograma.png',
     },
     horizontal: {
-        light: '/images/brand/logo/logo-horizontal-light.png',
-        gold: '/images/brand/logo/logo-horizontal-gold.png',
-        dark: '/images/brand/logo/logo-horizontal-dark.png',
+        light: '/images/brand/logo/fl-firma-horizontal-oscuro.png',
+        gold: '/images/brand/logo/fl-firma-horizontal-claro.png',
+        dark: '/images/brand/logo/fl-firma-horizontal-claro.png',
     },
 };
 
@@ -75,15 +75,10 @@ const failed = ref(false);
         aria-label="Finisher Legacy"
         role="img"
     >
-        <span
-            v-if="failed"
-            class="inline-flex items-center font-black tracking-tighter text-fl-gold-ink"
-            :class="heights[size]"
-            aria-hidden="true"
-            >FL</span
-        >
+        <!-- The monogram is exclusive artwork: if the file fails we show
+             nothing rather than retyping "FL" in a font (manual §8.1). -->
         <img
-            v-else
+            v-if="!failed"
             :src="src"
             alt=""
             aria-hidden="true"
@@ -92,7 +87,7 @@ const failed = ref(false);
             @error="failed = true"
         />
         <span
-            class="leading-none font-semibold tracking-[0.28em] whitespace-nowrap uppercase"
+            class="fl-brand-caps leading-none font-bold tracking-[0.28em] whitespace-nowrap uppercase"
             :class="[
                 wordSizes[size],
                 resolvedTone === 'light' ? 'text-white' : 'text-foreground',
@@ -112,10 +107,10 @@ const failed = ref(false);
     </span>
     <span
         v-else-if="failed"
-        class="inline-flex items-center font-black tracking-tighter text-fl-gold-ink uppercase"
+        class="fl-brand-caps inline-flex items-center text-[11px] text-foreground"
         :class="heights[size]"
     >
-        FL
+        Finisher Legacy
     </span>
     <img
         v-else

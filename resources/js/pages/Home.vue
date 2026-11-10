@@ -1,58 +1,27 @@
 <script setup lang="ts">
 /**
- * Home — the Finisher Legacy Tag, explained on a light, warm-paper page
- * (2026-10-29): hero → cómo funciona (3 steps) → dos caras → real
- * collections → what the story page looks like → community → FAQ → final
- * CTA. No dark sections.
- *
- * ONE 3D tag travels with the scroll (TagStage): each section places a
- * <TagAnchor> in a column it keeps free and the tag flies between them,
- * turning, pulsing or changing collection to illustrate each section
- * (see components/three/TagStage.vue). Phones / reduced motion get static
- * posters outside the hero.
+ * Home — the Finisher Legacy Tag, explained fast on a light page
+ * (2026-11): a compact hero of five scenes (what it is → the tag → tap →
+ * the story opens → CTA, see HomeHero.vue) instead of a long scroll story,
+ * then the real collections, community, FAQ and the final CTA.
  *
  * Real data only: published collections and tag products from
- * HomeController; illustrative pieces (3D/SVG tag, example story) are
+ * HomeController; illustrative pieces (3D tag, phone, example story) are
  * labelled as such. Map: docs/architecture/public-experience.md.
  */
-import { computed } from 'vue';
 import CollectionsShowcase from '@/components/home/CollectionsShowcase.vue';
 import CommunityTeaser from '@/components/home/CommunityTeaser.vue';
 import HomeFaq from '@/components/home/HomeFaq.vue';
 import HomeFinalCta from '@/components/home/HomeFinalCta.vue';
 import HomeHero from '@/components/home/HomeHero.vue';
-import HomeSteps from '@/components/home/HomeSteps.vue';
-import StoryPreview from '@/components/home/StoryPreview.vue';
-import TagFaces from '@/components/home/TagFaces.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
-import TagStage from '@/components/three/TagStage.vue';
 import type { PublicProductCard } from '@/types';
 import type { CollectionCardData } from '@/types/collections';
-import { collectionSubtitle } from '@/types/collections';
 
-const props = defineProps<{
+defineProps<{
     collections: CollectionCardData[];
     tagProducts: PublicProductCard[];
 }>();
-
-/** The drawn / 3D tag wears the first real collection; otherwise a neutral one. */
-const tag = computed(() => {
-    const first = props.collections[0];
-
-    return first
-        ? {
-              name: first.name,
-              subtitle: collectionSubtitle(first),
-              year: first.year,
-              accent: first.accent_color,
-          }
-        : {
-              name: 'Tu colección',
-              subtitle: 'Destino · Disciplina',
-              year: null,
-              accent: null,
-          };
-});
 
 const origin = typeof window === 'undefined' ? '' : window.location.origin;
 
@@ -60,34 +29,30 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Finisher Legacy',
+    slogan: 'Haz que perdure.',
     url: origin ? `${origin}/` : undefined,
-    logo: origin ? `${origin}/images/brand/logo/logo-mark.png` : undefined,
+    logo: origin ? `${origin}/images/brand/logo/fl-monograma.png` : undefined,
 };
 </script>
 
 <template>
     <SeoHead
         title="Finisher Legacy — El tag que guarda la historia de tu carrera"
-        description="El Finisher Legacy Tag: un tag de colección con NFC. Te llega listo con su correa; lo acercas a tu celular y se abre la historia de tu carrera."
-        image="/images/brand/og-finisher-legacy.jpg"
+        description="El Finisher Legacy Tag: un tag de colección con chip NFC y correa. Lo acercas a tu celular y se abre la historia de tu carrera: tu tiempo, tus fotos y tus dedicatorias."
+        image="/images/brand/og-finisher-legacy.png"
         :json-ld="jsonLd"
     />
 
-    <TagStage :art="tag">
-        <div class="overflow-x-clip">
-            <HomeHero :tag="tag" />
-            <HomeSteps />
-            <TagFaces :tag="tag" />
-            <CollectionsShowcase
-                :collections="collections"
-                :tag-products="tagProducts"
-            />
-            <StoryPreview :tag="tag" />
-            <CommunityTeaser />
-            <HomeFaq />
-            <HomeFinalCta />
-        </div>
-    </TagStage>
+    <div class="overflow-x-clip">
+        <HomeHero :collections="collections" />
+        <CollectionsShowcase
+            :collections="collections"
+            :tag-products="tagProducts"
+        />
+        <CommunityTeaser />
+        <HomeFaq />
+        <HomeFinalCta />
+    </div>
 </template>
 
 <style>

@@ -52,7 +52,7 @@ createInertiaApp({
         return PublicLayout;
     },
     progress: {
-        color: '#C9A45C',
+        color: '#C9AE8B',
     },
 });
 

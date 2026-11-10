@@ -25,7 +25,7 @@ import {
 } from '@/routes/collections';
 import type { PublicProductCard } from '@/types';
 import type { CollectionCardData } from '@/types/collections';
-import { collectionSubtitle } from '@/types/collections';
+import { collectionSubtitle, collectionTagArts } from '@/types/collections';
 
 const props = defineProps<{
     collections: CollectionCardData[];
@@ -45,16 +45,12 @@ const pose = computed<TagPose>(() => {
         turn: -0.3,
         tilt: 0.05,
         roll: 0.03,
-        art: c
-            ? {
-                  name: c.name,
-                  subtitle: collectionSubtitle(c),
-                  year: c.year,
-                  accent: c.accent_color,
-              }
-            : null,
+        art: c ? collectionTagArts(c)[0] : null,
     };
 });
+
+/** A collection's primary design as TagVisualizer props. */
+const tagProps = (c: CollectionCardData) => collectionTagArts(c)[0];
 
 const stage = (accent: string | null) => ({
     background: `radial-gradient(80% 70% at 50% 60%, color-mix(in srgb, ${accent ?? 'var(--fl-gold)'} 26%, transparent), transparent 75%), var(--fl-paper)`,
@@ -145,12 +141,7 @@ onBeforeUnmount(() => observer?.disconnect());
                                     class="absolute inset-x-0 top-[4%] mx-auto block w-[46%] transition-transform duration-700 ease-out group-hover:-translate-y-0.5 group-hover:rotate-[-4deg] motion-reduce:transition-none"
                                 >
                                     <TagVisualizer
-                                        :name="collection.name"
-                                        :subtitle="
-                                            collectionSubtitle(collection)
-                                        "
-                                        :year="collection.year"
-                                        :accent="collection.accent_color"
+                                        v-bind="tagProps(collection)"
                                         :tilt="false"
                                     />
                                 </span>
@@ -229,6 +220,7 @@ onBeforeUnmount(() => observer?.disconnect());
                             :currency="product.currency"
                             :available="product.in_stock"
                             :status-label="product.availability_label"
+                            :design="product.tag_design"
                             tone="light"
                         />
                     </li>

@@ -14,11 +14,24 @@
 @custom-variant dark (&:is(.fl-never-dark *));
 
 @theme inline {
+    /* Brand manual §4: Manrope for UI/body, Montserrat for headings,
+       Syncopate Bold (caps only) for brand support text next to the logo.
+       Each stack falls back to the previously loaded families (Instrument
+       Sans / Fraunces) so nothing breaks until the font loader in
+       vite.config.ts serves the manual's families. */
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        Manrope, 'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
-    --font-serif: Fraunces, ui-serif, Georgia, 'Times New Roman', serif;
+    --font-serif:
+        Montserrat, Fraunces, ui-sans-serif, system-ui, Georgia, sans-serif;
+    --font-heading:
+        Montserrat, 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-brand:
+        Syncopate, Montserrat, 'Instrument Sans', ui-sans-serif, sans-serif;
+
+    /* Motion tokens as utilities: ease-legacy, duration-* stay Tailwind's. */
+    --ease-legacy: var(--legacy-ease);
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -101,20 +114,37 @@
     --color-fl-cream: var(--fl-cream);
     --color-fl-stone: var(--fl-stone);
     --color-fl-line: var(--fl-line);
+    --color-fl-white: var(--fl-white);
+    --color-fl-focus: var(--fl-focus);
 }
 
 :root {
-    --fl-black: #171714;
-    --fl-graphite: #2a2925;
-    --fl-graphite-light: #3b3934;
-    --fl-gold: #c9a45c;
-    --fl-gold-soft: #e8d6ad;
-    --fl-gold-dim: #a8843f;
-    --fl-gold-ink: #85662b;
+    /* Brand manual §5.1–5.2 (2026): Negro Carbono, Grafito, Oro Legacy,
+       Oro Claro (brillo), Oro Profundo (sombra), Blanco Hueso, Blanco.
+       `fl-gold-ink` is Oro Profundo darkened just enough to pass WCAG AA as
+       small text on Blanco Hueso / Blanco (≈5.5:1); Oro Profundo itself is
+       `fl-gold-dim` (rules, icons, focus rings). */
+    --fl-black: #0b0b0c;
+    --fl-graphite: #1e1e21;
+    --fl-graphite-light: #2e2e33;
+    --fl-gold: #c9ae8b;
+    --fl-gold-soft: #e6d1b5;
+    --fl-gold-dim: #8c7454;
+    --fl-gold-ink: #75603f;
     --fl-paper: #f8f7f3;
-    --fl-cream: #f4eedf;
-    --fl-stone: #6b675e;
+    --fl-white: #ffffff;
+    --fl-cream: #f3ede3;
+    --fl-stone: #66625a;
     --fl-line: #e7e3da;
+    /* Focus ring: Oro Profundo reads ≥3:1 on every light surface. */
+    --fl-focus: #8c7454;
+    /* The manual's gold gradient (Oro Claro → Oro Legacy → Oro Profundo). */
+    --fl-gold-gradient: linear-gradient(
+        135deg,
+        #e6d1b5 0%,
+        #c9ae8b 48%,
+        #8c7454 100%
+    );
 
     /* Radius + elevation raw values (UI System §4/§5). The @theme block maps
        these to the rounded-* / shadow-fl-* utilities; keeping the source of
@@ -137,6 +167,8 @@
     --legacy-duration-reveal: 600ms;
     --legacy-duration-cinematic: 1100ms;
     --legacy-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --legacy-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --legacy-stagger: 70ms;
 }
 
 /*
@@ -161,7 +193,7 @@
     body,
     html {
         --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+            Manrope, 'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
     }
@@ -175,38 +207,38 @@
 */
 :root {
     --background: #f8f7f3;
-    --foreground: #171714;
+    --foreground: #0b0b0c;
     --card: #ffffff;
-    --card-foreground: #171714;
+    --card-foreground: #0b0b0c;
     --popover: #ffffff;
-    --popover-foreground: #171714;
-    --primary: #171714;
+    --popover-foreground: #0b0b0c;
+    --primary: #0b0b0c;
     --primary-foreground: #f8f7f3;
     --secondary: #f1eee7;
-    --secondary-foreground: #171714;
+    --secondary-foreground: #0b0b0c;
     --muted: #f1eee7;
-    --muted-foreground: #6b675e;
-    --accent: #f4eedf;
-    --accent-foreground: #171714;
+    --muted-foreground: #66625a;
+    --accent: #f3ede3;
+    --accent-foreground: #0b0b0c;
     --destructive: #c2410c;
     --destructive-foreground: #ffffff;
     --border: #e7e3da;
     --input: #ddd8cd;
-    --ring: #c9a45c;
-    --chart-1: #c9a45c;
+    --ring: #8c7454;
+    --chart-1: #c9ae8b;
     --chart-2: #3f7d64;
     --chart-3: #3d6a99;
     --chart-4: #7b5e9e;
     --chart-5: #b4533a;
     --radius: 0.625rem;
     --sidebar-background: #ffffff;
-    --sidebar-foreground: #3b3934;
-    --sidebar-primary: #171714;
+    --sidebar-foreground: #2e2e33;
+    --sidebar-primary: #0b0b0c;
     --sidebar-primary-foreground: #f8f7f3;
-    --sidebar-accent: #f4eedf;
-    --sidebar-accent-foreground: #171714;
+    --sidebar-accent: #f3ede3;
+    --sidebar-accent-foreground: #0b0b0c;
     --sidebar-border: #ebe7de;
-    --sidebar-ring: #c9a45c;
+    --sidebar-ring: #8c7454;
     --sidebar: #ffffff;
 
     color-scheme: light;
@@ -244,8 +276,8 @@
     }
     .fl-display {
         font-family: var(--font-serif);
-        font-weight: 500;
-        letter-spacing: -0.02em;
+        font-weight: 600;
+        letter-spacing: -0.025em;
         line-height: 1.05;
         color: var(--foreground);
     }
@@ -522,7 +554,7 @@
 
 /* SweetAlert cancel button sits on a light chip, so its label must be ink. */
 .fl-swal-cancel {
-    color: #171714 !important;
+    color: #0b0b0c !important;
 }
 
 /*
@@ -585,5 +617,254 @@
         border-color: var(--fl-gold);
         box-shadow: 0 0 0 4px
             color-mix(in srgb, var(--fl-gold) 15%, transparent);
+    }
+}
+
+/*
+  Finisher Legacy motion system v2 (public site, 2026-11) — CSS-first,
+  transform/opacity only. Entry animation is driven by the `v-reveal`
+  directive (resources/js/composables/useReveal.ts): it adds `.fl-reveal`
+  only once JS is alive and flips `.is-revealed` when the element enters the
+  viewport (with a bounded fallback), so content never depends on JS.
+  Everything here is switched off under prefers-reduced-motion at the end.
+
+  - .fl-reveal / .is-revealed     fade + slide-up entry (v-reveal)
+  - --fl-reveal-delay / -y        per-element delay / distance (set by v-reveal)
+  - .fl-card-hover                card lift + warm shadow + gold hairline
+  - .fl-zoom (on a wrapper)       image zoom on hover/focus-within
+  - .fl-link                      animated gold underline for text links
+  - .fl-press                     button press state (scale on :active)
+  - .fl-btn-primary / -secondary  the two public CTA buttons
+  - .fl-skeleton                  shimmer placeholder while content loads
+  - .fl-page-enter                Inertia page enter (PublicLayout)
+  - .fl-brand-caps                Syncopate caps for brand support text
+*/
+@layer base {
+    /* Visible focus everywhere: a two-step ring (Oro Profundo + paper gap)
+       that reads on white, paper and photos. Components that draw their own
+       ring with focus-visible:ring-* + outline-none still win. */
+    :where(
+        a,
+        button,
+        summary,
+        [role='button'],
+        [role='tab'],
+        [tabindex]:not([tabindex='-1']),
+        input,
+        select,
+        textarea
+    ):focus-visible {
+        outline: 2px solid var(--fl-focus);
+        outline-offset: 3px;
+    }
+}
+
+@layer components {
+    .fl-brand-caps {
+        font-family: var(--font-brand);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.32em;
+    }
+
+    .fl-btn-primary,
+    .fl-btn-secondary {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 3rem;
+        border-radius: 9999px;
+        padding-inline: 1.75rem;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        isolation: isolate;
+        overflow: hidden;
+        transition:
+            transform var(--legacy-duration-standard) var(--legacy-ease),
+            background-color var(--legacy-duration-fast) ease,
+            border-color var(--legacy-duration-fast) ease,
+            box-shadow var(--legacy-duration-standard) var(--legacy-ease);
+    }
+    .fl-btn-primary {
+        background: var(--fl-black);
+        color: #fff;
+        box-shadow: var(--fl-shadow-float);
+    }
+    .fl-btn-primary::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(
+            110deg,
+            transparent 30%,
+            rgb(230 209 181 / 0.28) 50%,
+            transparent 70%
+        );
+        transform: translateX(-120%);
+        transition: transform 700ms var(--legacy-ease);
+    }
+    .fl-btn-primary:hover {
+        background: var(--fl-graphite);
+        transform: translateY(-2px);
+        box-shadow: var(--fl-shadow-overlay);
+    }
+    .fl-btn-primary:hover::after {
+        transform: translateX(120%);
+    }
+    .fl-btn-secondary {
+        background: rgb(255 255 255 / 0.9);
+        color: var(--fl-black);
+        border: 1px solid rgb(11 11 12 / 0.14);
+    }
+    .fl-btn-secondary:hover {
+        border-color: var(--fl-gold-dim);
+        transform: translateY(-2px);
+    }
+    .fl-btn-primary:active,
+    .fl-btn-secondary:active {
+        transform: translateY(0) scale(0.97);
+        transition-duration: 90ms;
+    }
+
+    .fl-skeleton {
+        position: relative;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--fl-gold-soft) 38%, var(--muted));
+        border-radius: 0.5rem;
+    }
+    .fl-skeleton::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgb(255 255 255 / 0.65),
+            transparent
+        );
+        transform: translateX(-100%);
+        animation: fl-shimmer 1.4s ease-in-out infinite;
+    }
+}
+
+@layer utilities {
+    .fl-reveal {
+        opacity: 0;
+        transform: translate3d(0, var(--fl-reveal-y, 18px), 0);
+        transition:
+            opacity var(--legacy-duration-reveal) var(--legacy-ease),
+            transform calc(var(--legacy-duration-reveal) + 200ms)
+                var(--legacy-ease);
+        transition-delay: var(--fl-reveal-delay, 0ms);
+    }
+    .fl-reveal.is-revealed {
+        opacity: 1;
+        transform: none;
+    }
+
+    .fl-card-hover {
+        transition:
+            transform 420ms var(--legacy-ease),
+            box-shadow 420ms var(--legacy-ease),
+            border-color 300ms ease;
+    }
+    .fl-card-hover:hover,
+    .fl-card-hover:focus-within {
+        transform: translateY(-4px);
+        box-shadow: 0 24px 48px -30px rgb(11 11 12 / 0.35);
+        border-color: color-mix(in srgb, var(--fl-gold) 55%, transparent);
+    }
+
+    .fl-zoom {
+        overflow: hidden;
+    }
+    .fl-zoom img,
+    .fl-zoom .fl-zoom-target {
+        transition: transform 900ms var(--legacy-ease);
+    }
+    .fl-zoom:hover img,
+    .fl-zoom:hover .fl-zoom-target,
+    :where(a, .group):hover > .fl-zoom img,
+    :where(a, .group):focus-visible .fl-zoom img {
+        transform: scale(1.05);
+    }
+
+    .fl-link {
+        background-image: linear-gradient(currentColor, currentColor);
+        background-position: 0 100%;
+        background-repeat: no-repeat;
+        background-size: 0% 1px;
+        text-decoration: none;
+        transition: background-size 380ms var(--legacy-ease);
+    }
+    .fl-link:hover,
+    .fl-link:focus-visible,
+    .group:hover .fl-link,
+    .group:focus-visible .fl-link {
+        background-size: 100% 1px;
+    }
+    .fl-link--gold {
+        background-image: linear-gradient(
+            var(--fl-gold-dim),
+            var(--fl-gold-dim)
+        );
+        background-size: 100% 1px;
+    }
+    .fl-link--gold:hover,
+    .fl-link--gold:focus-visible {
+        background-size: 100% 2px;
+    }
+
+    .fl-press {
+        transition: transform 120ms ease;
+    }
+    .fl-press:active {
+        transform: scale(0.97);
+    }
+
+    .fl-page-enter {
+        animation: fl-page-in 460ms var(--legacy-ease) backwards;
+    }
+}
+
+@keyframes fl-page-in {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0);
+    }
+}
+
+@keyframes fl-shimmer {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fl-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+    .fl-card-hover,
+    .fl-card-hover:hover,
+    .fl-card-hover:focus-within,
+    .fl-zoom img,
+    .fl-zoom .fl-zoom-target,
+    .fl-btn-primary,
+    .fl-btn-secondary,
+    .fl-press {
+        transition: none !important;
+        transform: none !important;
+    }
+    .fl-btn-primary::after {
+        display: none;
+    }
+    .fl-page-enter,
+    .fl-skeleton::after {
+        animation: none !important;
     }
 }

@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
 import LegalPlaceholderNotice from '@/components/public/LegalPlaceholderNotice.vue';
 import SectionHeading from '@/components/public/SectionHeading.vue';
-import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
-
-const canonicalUrl = useCanonicalUrl();
+import SeoHead from '@/components/public/SeoHead.vue';
 
 const sections = [
     {
@@ -35,13 +32,10 @@ const sections = [
 </script>
 
 <template>
-    <Head title="Aviso de privacidad">
-        <meta
-            name="description"
-            content="Aviso de privacidad de Finisher Legacy: qué información recopilamos y cómo la usamos."
-        />
-        <link v-if="canonicalUrl" rel="canonical" :href="canonicalUrl" />
-    </Head>
+    <SeoHead
+        title="Aviso de privacidad"
+        description="Aviso de privacidad de Finisher Legacy: qué información recopilamos y cómo la usamos."
+    />
 
     <section class="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading

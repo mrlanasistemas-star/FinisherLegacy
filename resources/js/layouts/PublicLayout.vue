@@ -43,7 +43,15 @@ const showTabBar = computed(
         >
         <PublicNavbar />
         <main id="contenido" class="relative flex-1 pt-16">
-            <slot />
+            <!--
+                Page enter: keyed by component only, so filters/pagination
+                (same component) keep their state; the animation uses
+                fill-mode `backwards`, so no transform remains afterwards
+                (fixed bars inside pages keep the viewport as their box).
+            -->
+            <div :key="page.component" class="fl-page-enter">
+                <slot />
+            </div>
         </main>
         <PublicFooter />
         <BackToTop />
