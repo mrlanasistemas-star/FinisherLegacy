@@ -97,6 +97,8 @@ class QuotaController extends Controller
                     'active' => $pack->active,
                     'archived' => $pack->isArchived(),
                     'sort_order' => $pack->sort_order,
+                    'apple_product_id' => $pack->apple_product_id,
+                    'google_product_id' => $pack->google_product_id,
                     'sold_count' => (int) $pack->getAttribute('sold_count'),
                     'current_price' => $current !== null ? $this->pricePayload($current, $now, $usedScheduleIds) : null,
                     'prices' => $pack->prices->map(fn (ProductPriceSchedule $p) => $this->pricePayload($p, $now, $usedScheduleIds))->values()->all(),

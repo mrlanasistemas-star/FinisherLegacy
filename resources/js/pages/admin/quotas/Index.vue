@@ -77,6 +77,8 @@ type Pack = {
     active: boolean;
     archived: boolean;
     sort_order: number;
+    apple_product_id: string | null;
+    google_product_id: string | null;
     sold_count: number;
     current_price: Price | null;
     prices: Price[];
@@ -204,6 +206,8 @@ const packForm = useForm({
     product_type: null as string | number | null,
     active: true,
     sort_order: 0,
+    apple_product_id: '',
+    google_product_id: '',
     price: {
         amount: '',
         currency: props.currencies[0] ?? 'MXN',
@@ -229,6 +233,8 @@ function openPack(pack: Pack | null) {
     packForm.product_type = pack?.product_type ?? null;
     packForm.active = pack?.active ?? true;
     packForm.sort_order = pack?.sort_order ?? 0;
+    packForm.apple_product_id = pack?.apple_product_id ?? '';
+    packForm.google_product_id = pack?.google_product_id ?? '';
     packForm.price.amount = '';
     packOpen.value = true;
 }
@@ -567,7 +573,10 @@ const historyPack = ref<Pack | null>(null);
                         >
                     </div>
                     <div class="flex flex-1 flex-col gap-3 p-5 text-sm">
-                        <p v-if="pack.current_price" class="text-lg font-semibold">
+                        <p
+                            v-if="pack.current_price"
+                            class="text-lg font-semibold"
+                        >
                             {{
                                 money(
                                     pack.current_price.amount,
@@ -588,6 +597,26 @@ const historyPack = ref<Pack | null>(null);
                             class="text-muted-foreground"
                         >
                             {{ pack.description }}
+                        </p>
+                        <p
+                            v-if="
+                                pack.apple_product_id || pack.google_product_id
+                            "
+                            class="text-xs text-muted-foreground"
+                        >
+                            En la app:
+                            {{
+                                [
+                                    pack.apple_product_id
+                                        ? `App Store ${pack.apple_product_id}`
+                                        : null,
+                                    pack.google_product_id
+                                        ? `Google Play ${pack.google_product_id}`
+                                        : null,
+                                ]
+                                    .filter(Boolean)
+                                    .join(' · ')
+                            }}
                         </p>
                         <p class="text-xs text-muted-foreground">
                             {{ pack.sold_count }} compras ·
@@ -655,8 +684,8 @@ const historyPack = ref<Pack | null>(null);
                 <ImagePlus class="size-8 text-sky-700" />
                 <p class="font-semibold">Aún no hay ampliaciones</p>
                 <p class="text-sm text-muted-foreground">
-                    Crea una para que los dueños de un recuerdo puedan sumar
-                    más fotos al llegar a su límite.
+                    Crea una para que los dueños de un recuerdo puedan sumar más
+                    fotos al llegar a su límite.
                 </p>
             </div>
         </section>
@@ -737,11 +766,15 @@ const historyPack = ref<Pack | null>(null);
                     <DialogTitle>Fotos incluidas</DialogTitle>
                     <DialogDescription
                         >Bajar el límite no borra fotos: solo impide subir
-                        nuevas mientras el recuerdo esté por encima.</DialogDescription
+                        nuevas mientras el recuerdo esté por
+                        encima.</DialogDescription
                     >
                 </DialogHeader>
                 <form class="space-y-4" @submit.prevent="submitRule">
-                    <div v-if="ruleForm.scope === 'product'" class="grid gap-1.5">
+                    <div
+                        v-if="ruleForm.scope === 'product'"
+                        class="grid gap-1.5"
+                    >
                         <Label>Producto</Label>
                         <FancySelect
                             v-model="ruleForm.product_id"
@@ -830,13 +863,19 @@ const historyPack = ref<Pack | null>(null);
                         <FancySelect
                             v-model="packForm.scope"
                             :options="[
-                                { value: 'global', label: 'Todos los recuerdos' },
+                                {
+                                    value: 'global',
+                                    label: 'Todos los recuerdos',
+                                },
                                 { value: 'type', label: 'Un tipo de producto' },
                                 { value: 'product', label: 'Un producto' },
                             ]"
                         />
                     </div>
-                    <div v-if="packForm.scope === 'product'" class="grid gap-1.5">
+                    <div
+                        v-if="packForm.scope === 'product'"
+                        class="grid gap-1.5"
+                    >
                         <Label>Producto</Label>
                         <FancySelect
                             v-model="packForm.product_id"
@@ -860,6 +899,48 @@ const historyPack = ref<Pack | null>(null);
                             rows="2"
                         />
                     </div>
+                    <fieldset class="space-y-3 rounded-xl border p-4">
+                        <legend class="px-1 text-sm font-medium">
+                            Venta dentro de la app (opcional)
+                        </legend>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-1.5">
+                                <Label for="pk-apple"
+                                    >ID de producto en App Store</Label
+                                >
+                                <Input
+                                    id="pk-apple"
+                                    v-model="packForm.apple_product_id"
+                                    placeholder="com.finisherlegacy.app.fotos10"
+                                    autocomplete="off"
+                                />
+                                <InputError
+                                    :message="packForm.errors.apple_product_id"
+                                />
+                            </div>
+                            <div class="grid gap-1.5">
+                                <Label for="pk-google"
+                                    >ID de producto en Google Play</Label
+                                >
+                                <Input
+                                    id="pk-google"
+                                    v-model="packForm.google_product_id"
+                                    placeholder="fotos_10"
+                                    autocomplete="off"
+                                />
+                                <InputError
+                                    :message="packForm.errors.google_product_id"
+                                />
+                            </div>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            En la app el precio lo fija la tienda: créalo como
+                            producto consumible en App Store Connect y como
+                            producto único en Play Console con este mismo ID, y
+                            elige ahí su precio. El precio de abajo es solo para
+                            la web (OpenPay). Vacío = no se vende en la app.
+                        </p>
+                    </fieldset>
                     <fieldset
                         v-if="!editingPack"
                         class="space-y-3 rounded-xl border p-4"
@@ -916,10 +997,12 @@ const historyPack = ref<Pack | null>(null);
         <Dialog v-model:open="priceOpen">
             <DialogContent class="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Nuevo precio · {{ pricePack?.name }}</DialogTitle>
+                    <DialogTitle
+                        >Nuevo precio · {{ pricePack?.name }}</DialogTitle
+                    >
                     <DialogDescription
-                        >Se agrega al historial y cierra el precio vigente en
-                        la fecha de inicio. Las compras anteriores no
+                        >Se agrega al historial y cierra el precio vigente en la
+                        fecha de inicio. Las compras anteriores no
                         cambian.</DialogDescription
                     >
                 </DialogHeader>
@@ -952,7 +1035,13 @@ const historyPack = ref<Pack | null>(null);
                             <Input
                                 id="pr-tax"
                                 :model-value="priceForm.tax_rate ?? undefined"
-                                @update:model-value="(v) => (priceForm.tax_rate = v === '' || v === undefined ? null : Number(v))"
+                                @update:model-value="
+                                    (v) =>
+                                        (priceForm.tax_rate =
+                                            v === '' || v === undefined
+                                                ? null
+                                                : Number(v))
+                                "
                                 type="number"
                                 min="0"
                                 max="99"
@@ -961,7 +1050,9 @@ const historyPack = ref<Pack | null>(null);
                             />
                             <InputError :message="priceForm.errors.tax_rate" />
                         </div>
-                        <label class="flex items-center gap-2 self-end pb-2 text-sm">
+                        <label
+                            class="flex items-center gap-2 self-end pb-2 text-sm"
+                        >
                             <Checkbox
                                 :model-value="priceForm.tax_included"
                                 @update:model-value="
@@ -1011,11 +1102,12 @@ const historyPack = ref<Pack | null>(null);
             <DialogContent class="max-h-[92vh] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle
-                        >Historial de precios · {{ historyPack?.name }}</DialogTitle
+                        >Historial de precios ·
+                        {{ historyPack?.name }}</DialogTitle
                     >
                     <DialogDescription
-                        >Cada fila es inmutable: un precio nuevo siempre es
-                        una fila nueva.</DialogDescription
+                        >Cada fila es inmutable: un precio nuevo siempre es una
+                        fila nueva.</DialogDescription
                     >
                 </DialogHeader>
                 <ol
@@ -1080,7 +1172,9 @@ const historyPack = ref<Pack | null>(null);
                                 ahora</Button
                             >
                             <Button
-                                v-if="price.state === 'scheduled' && !price.used"
+                                v-if="
+                                    price.state === 'scheduled' && !price.used
+                                "
                                 size="sm"
                                 variant="ghost"
                                 class="h-7 rounded-full text-xs"

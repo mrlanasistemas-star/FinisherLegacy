@@ -26,7 +26,7 @@ class ChannelPriceController extends Controller
     {
         $data = $request->validate([
             'product_variant_id' => ['nullable', 'integer', Rule::exists('product_variants', 'id')->where('product_id', $product->id)],
-            'sales_channel' => ['required', 'string', Rule::enum(SalesChannel::class)],
+            'sales_channel' => ['required', 'string', Rule::enum(SalesChannel::class)->only(SalesChannel::manuallyPriced())],
             'ally_id' => ['nullable', 'integer', 'exists:allies,id'],
             'amount_minor' => ['required', 'integer', 'min:1', 'max:100000000'],
             'starts_at' => ['nullable', 'date'],
@@ -109,7 +109,7 @@ class ChannelPriceController extends Controller
                 'ends_at' => $s->ends_at?->toDateString(),
                 'active' => $s->active,
             ])->values()->all(),
-            'channels' => SalesChannel::options(),
+            'channels' => SalesChannel::manualPricingOptions(),
             'allies' => Ally::query()->orderBy('name')->limit(500)->get(['id', 'name'])
                 ->map(fn (Ally $a) => ['value' => $a->id, 'label' => $a->name])->all(),
         ];

@@ -21,8 +21,10 @@ use Illuminate\Support\Str;
  * @property bool $active
  * @property ProductType|null $product_type
  * @property Carbon|null $archived_at
+ * @property string|null $apple_product_id Consumable product id in App Store Connect (in-app purchase; the store owns its price).
+ * @property string|null $google_product_id One-time consumable product id in Play Console.
  */
-#[Fillable(['uuid', 'name', 'description', 'photos', 'product_id', 'product_type', 'active', 'archived_at', 'sort_order', 'created_by'])]
+#[Fillable(['uuid', 'name', 'description', 'photos', 'product_id', 'product_type', 'apple_product_id', 'google_product_id', 'active', 'archived_at', 'sort_order', 'created_by'])]
 class PhotoExpansionPack extends Model
 {
     /** Internal, never-listed product every expansion OrderItem points at. */
@@ -88,6 +90,14 @@ class PhotoExpansionPack extends Model
             ->orderByDesc('starts_at')
             ->orderByDesc('id')
             ->first();
+    }
+
+    /** The store product id for an in-app purchase platform (`ios` / `android`). */
+    public function storeProductId(string $platform): ?string
+    {
+        $id = $platform === 'ios' ? $this->apple_product_id : ($platform === 'android' ? $this->google_product_id : null);
+
+        return is_string($id) && $id !== '' ? $id : null;
     }
 
     public function isArchived(): bool
