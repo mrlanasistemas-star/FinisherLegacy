@@ -10,26 +10,26 @@ use RuntimeException;
 
 /**
  * Renders the printable portrait (strategy deck pp. 9–10): the athlete's
- * photo cropped to the template's photo box + the bottom band (name,
- * event, date, time, result, dedication, FL monogram, "Acerca tu
- * celular") at the configured print size — 2362×2953 px for 20×25 cm
- *
- * @ 300 dpi by default.
+ * photo cropped to the template's photo box plus the template's slots
+ * (PortraitLayout) at the configured print size — 2362×2953 px for
+ * 20×25 cm at 300 dpi by default.
  *
  * Always from the ORIGINAL bytes, never a thumbnail: the crop's effective
  * resolution is checked against `min_dpi` and the photo is only resampled
  * once, straight into the canvas. Text uses TTF files via FreeType so the
  * file is identical on every server. GD is used on purpose (text needs
  * imagettftext); Intervention only decodes + auto-orients (EXIF).
+ *
+ * Export extras (PortraitOptions): mirrored bleed around the trim size,
+ * crop marks in a white slug, and an embedded sRGB profile so print labs
+ * never have to guess the colour space.
  */
 final class PortraitComposer
 {
-    /** @var array<string, GdImage> */
-    private array $marks = [];
-
     public function __construct(
         private readonly PortraitTemplates $templates,
-        private readonly TextFitter $fitter,
+        private readonly PortraitLayout $layout,
+        private readonly PortraitAssets $assets,
     ) {}
 
     public function spec(): PortraitSpec
@@ -42,14 +42,15 @@ final class PortraitComposer
      *
      * @throws PortraitImageTooSmallException
      */
-    public function compose(string $template, string $imageBytes, ?array $crop, PortraitData $data, ?PortraitSpec $spec = null): PortraitResult
+    public function compose(string $template, string $imageBytes, ?array $crop, PortraitData $data, ?PortraitSpec $spec = null, ?PortraitOptions $options = null): PortraitResult
     {
         $spec ??= $this->spec();
+        $options ??= new PortraitOptions;
         $this->ensureMemory();
         $definition = $this->templates->get($template);
-        $canvasW = $spec->widthPx();
-        $canvasH = $spec->heightPx();
-        $box = $this->templates->photoBox($template, $canvasW, $canvasH);
+        $trimW = $spec->widthPx();
+        $trimH = $spec->heightPx();
+        $box = $this->templates->photoBox($template, $trimW, $trimH);
 
         $source = $this->decode($imageBytes);
         $srcW = imagesx($source);
@@ -57,7 +58,7 @@ final class PortraitComposer
         $rect = $this->cropRect($srcW, $srcH, $box['w'] / max(1, $box['h']), $crop);
         $effectiveDpi = (int) floor($rect['w'] * $spec->dpi / max(1, $box['w']));
 
-        if ($effectiveDpi < $spec->minDpi) {
+        if ($options->enforceResolution && $effectiveDpi < $spec->minDpi) {
             throw new PortraitImageTooSmallException(
                 $effectiveDpi,
                 $spec->minDpi,
@@ -67,21 +68,33 @@ final class PortraitComposer
             );
         }
 
-        $canvas = imagecreatetruecolor($canvasW, $canvasH);
+        $canvas = imagecreatetruecolor($trimW, $trimH);
         imagealphablending($canvas, true);
         imagefill($canvas, 0, 0, $this->color($canvas, (string) ($definition['background'] ?? '#FFFFFF')));
         imagecopyresampled($canvas, $source, $box['x'], $box['y'], $rect['x'], $rect['y'], $box['w'], $box['h'], $rect['w'], $rect['h']);
         unset($source);
 
-        $layout = $this->drawSlots($canvas, $template, $data, $canvasW, $canvasH);
+        $layout = $this->layout->render($canvas, $definition, $data, $trimW, $trimH);
+
+        $bleed = (int) round(max(0.0, $options->bleedMm) / 25.4 * $spec->dpi);
+        $slug = $options->cropMarks ? (int) round((float) config('portrait.print.crop_marks_slug_mm', 6) / 25.4 * $spec->dpi) : 0;
+
+        if ($bleed > 0 || $slug > 0) {
+            $canvas = $this->extend($canvas, $bleed, $slug, $spec->dpi);
+        }
 
         imageresolution($canvas, $spec->dpi, $spec->dpi);
         ob_start();
         imagejpeg($canvas, null, $spec->jpegQuality);
-        $jpeg = (string) ob_get_clean();
+        $jpeg = SrgbProfile::embed((string) ob_get_clean());
+        $width = imagesx($canvas);
+        $height = imagesy($canvas);
         unset($canvas);
 
-        return new PortraitResult($jpeg, $canvasW, $canvasH, $spec->dpi, $effectiveDpi, $effectiveDpi < $spec->warnDpi, $layout);
+        return new PortraitResult(
+            $jpeg, $width, $height, $spec->dpi, $effectiveDpi, $effectiveDpi < $spec->warnDpi, $layout,
+            trimWidth: $trimW, trimHeight: $trimH, bleedPx: $bleed, slugPx: $slug,
+        );
     }
 
     /**
@@ -94,7 +107,7 @@ final class PortraitComposer
     {
         $spec ??= $this->spec();
 
-        return $this->drawSlots(null, $template, $data, $spec->widthPx(), $spec->heightPx());
+        return $this->layout->render(null, $this->templates->get($template), $data, $spec->widthPx(), $spec->heightPx());
     }
 
     /**
@@ -139,160 +152,69 @@ final class PortraitComposer
 
     public function font(string $role): string
     {
-        foreach ((array) config("portrait.fonts.{$role}", []) as $path) {
-            if (is_string($path) && $path !== '' && is_file($path)) {
-                return $path;
-            }
-        }
-
-        throw new RuntimeException("No TTF font available for portrait role [{$role}].");
+        return $this->assets->font($role);
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * Trim-size artwork → artwork + bleed (+ slug with crop marks). The
+     * bleed mirrors the edge of the artwork, so the trim area is exactly
+     * what the preview showed whatever the template or the photo.
      */
-    private function drawSlots(?GdImage $canvas, string $template, PortraitData $data, int $canvasW, int $canvasH): array
+    private function extend(GdImage $trim, int $bleed, int $slug, int $dpi): GdImage
     {
-        $definition = $this->templates->get($template);
-        $layout = [];
+        $w = imagesx($trim);
+        $h = imagesy($trim);
+        $pad = max(0, $bleed) + max(0, $slug);
+        $out = imagecreatetruecolor(max(1, $w + 2 * $pad), max(1, $h + 2 * $pad));
+        imagefill($out, 0, 0, (int) imagecolorallocate($out, 255, 255, 255));
+        imagecopy($out, $trim, $pad, $pad, 0, 0, $w, $h);
 
-        /** @var array<string, mixed> $slot */
-        foreach ((array) ($definition['slots'] ?? []) as $index => $slot) {
-            $kind = (string) ($slot['kind'] ?? 'text');
-
-            if ($kind === 'rule') {
-                $x = (int) round((float) $slot['x'] * $canvasW);
-                $y = (int) round((float) $slot['y'] * $canvasH);
-                $w = (int) round((float) $slot['w'] * $canvasW);
-                $t = max(1, (int) round((float) $slot['thickness'] * $canvasW));
-
-                if ($canvas !== null) {
-                    imagefilledrectangle($canvas, $x, $y, $x + $w - 1, $y + $t - 1, $this->color($canvas, (string) $slot['color']));
-                }
-
-                $layout[] = ['slot' => $index, 'kind' => 'rule', 'left' => $x, 'right' => $x + $w, 'top' => $y, 'bottom' => $y + $t];
-
-                continue;
-            }
-
-            if ($kind === 'mark') {
-                $layout[] = ['slot' => $index, 'kind' => 'mark', ...$this->drawMark($canvas, $slot, $canvasW, $canvasH)];
-
-                continue;
-            }
-
-            $field = (string) ($slot['field'] ?? '');
-            $text = $data->field($field);
-
-            if ($text === null) {
-                continue;
-            }
-
-            if (! empty($slot['uppercase'])) {
-                $text = mb_strtoupper($text);
-            }
-
-            $font = $this->font((string) ($slot['font'] ?? 'body'));
-            $px = (float) $slot['size'] * $canvasW;
-            $minPx = (float) ($slot['min_size'] ?? $slot['size']) * $canvasW;
-            $maxWidth = (float) $slot['max_width'] * $canvasW;
-            $tracking = (float) ($slot['tracking'] ?? 0);
-            $anchorX = (float) $slot['x'] * $canvasW;
-            $baseline = (float) $slot['y'] * $canvasH;
-            $align = (string) ($slot['align'] ?? 'left');
-            $color = $canvas !== null ? $this->color($canvas, (string) $slot['color']) : 0;
-
-            if ($kind === 'paragraph') {
-                $fit = $this->fitter->fitParagraph($text, $font, $px, $minPx, $maxWidth, max(1, (int) ($slot['max_lines'] ?? 2)), $tracking);
-                $lineHeight = $fit['size'] * (float) ($slot['line_height'] ?? 1.3);
-                $lines = [];
-
-                foreach ($fit['lines'] as $i => $line) {
-                    $width = $fit['widths'][$i];
-                    $left = $this->left($anchorX, $width, $align);
-                    $lineBaseline = $baseline + $i * $lineHeight;
-
-                    if ($canvas !== null) {
-                        $this->fitter->draw($canvas, $line, $font, $fit['size'], $left, $lineBaseline, $color, $tracking);
-                    }
-
-                    $lines[] = ['text' => $line, 'left' => $left, 'right' => $left + $width, 'baseline' => $lineBaseline, 'width' => $width];
-                }
-
-                $layout[] = [
-                    'slot' => $index, 'kind' => 'paragraph', 'field' => $field, 'size' => $fit['size'],
-                    'max_width' => $maxWidth, 'lines' => $lines, 'shrunk' => $fit['shrunk'], 'truncated' => $fit['truncated'],
-                    'bottom' => $baseline + (count($lines) - 1) * $lineHeight + $fit['size'] * 0.25,
-                ];
-
-                continue;
-            }
-
-            $fit = $this->fitter->fitLine($text, $font, $px, $minPx, $maxWidth, $tracking);
-            $left = $this->left($anchorX, $fit['width'], $align);
-
-            if ($canvas !== null) {
-                $this->fitter->draw($canvas, $fit['text'], $font, $fit['size'], $left, $baseline, $color, $tracking);
-            }
-
-            $layout[] = [
-                'slot' => $index, 'kind' => 'text', 'field' => $field, 'text' => $fit['text'], 'size' => $fit['size'],
-                'left' => $left, 'right' => $left + $fit['width'], 'baseline' => $baseline, 'width' => $fit['width'],
-                'max_width' => $maxWidth, 'shrunk' => $fit['shrunk'], 'truncated' => $fit['truncated'],
+        if ($bleed > 0) {
+            // [source x, y, w, h, flip mode, destination x, y]
+            $strips = [
+                [0, 0, $bleed, $h, IMG_FLIP_HORIZONTAL, $pad - $bleed, $pad],
+                [$w - $bleed, 0, $bleed, $h, IMG_FLIP_HORIZONTAL, $pad + $w, $pad],
+                [0, 0, $w, $bleed, IMG_FLIP_VERTICAL, $pad, $pad - $bleed],
+                [0, $h - $bleed, $w, $bleed, IMG_FLIP_VERTICAL, $pad, $pad + $h],
+                [0, 0, $bleed, $bleed, IMG_FLIP_BOTH, $pad - $bleed, $pad - $bleed],
+                [$w - $bleed, 0, $bleed, $bleed, IMG_FLIP_BOTH, $pad + $w, $pad - $bleed],
+                [0, $h - $bleed, $bleed, $bleed, IMG_FLIP_BOTH, $pad - $bleed, $pad + $h],
+                [$w - $bleed, $h - $bleed, $bleed, $bleed, IMG_FLIP_BOTH, $pad + $w, $pad + $h],
             ];
+
+            foreach ($strips as [$sx, $sy, $sw, $sh, $mode, $dx, $dy]) {
+                $strip = imagecrop($trim, ['x' => $sx, 'y' => $sy, 'width' => $sw, 'height' => $sh]);
+
+                if ($strip === false) {
+                    continue;
+                }
+
+                imageflip($strip, $mode);
+                imagecopy($out, $strip, $dx, $dy, 0, 0, $sw, $sh);
+            }
         }
 
-        return $layout;
-    }
+        if ($slug > 0) {
+            $black = (int) imagecolorallocate($out, 0, 0, 0);
+            $t = max(1, (int) round($dpi / 150));
+            $half = intdiv($t, 2);
+            // Each mark starts at the outer edge and stops short of the bleed.
+            $length = max(1, (int) round($slug * 0.85));
+            $outerW = imagesx($out);
+            $outerH = imagesy($out);
 
-    /**
-     * @param  array<string, mixed>  $slot
-     * @return array{left: int, right: int, top: int, bottom: int}
-     */
-    private function drawMark(?GdImage $canvas, array $slot, int $canvasW, int $canvasH): array
-    {
-        $mark = $this->mark((string) ($slot['variant'] ?? 'gold'));
-        $h = max(1, (int) round((float) $slot['height'] * $canvasW));
-        $w = max(1, (int) round(imagesx($mark) * $h / imagesy($mark)));
-        $x = (int) round((float) $slot['x'] * $canvasW);
-        $y = (int) round((float) $slot['y'] * $canvasH);
+            foreach ([$pad, $pad + $w] as $x) {
+                imagefilledrectangle($out, $x - $half, 0, $x - $half + $t - 1, $length, $black);
+                imagefilledrectangle($out, $x - $half, $outerH - 1 - $length, $x - $half + $t - 1, $outerH - 1, $black);
+            }
 
-        if (($slot['align'] ?? 'left') === 'right') {
-            $x -= $w;
+            foreach ([$pad, $pad + $h] as $y) {
+                imagefilledrectangle($out, 0, $y - $half, $length, $y - $half + $t - 1, $black);
+                imagefilledrectangle($out, $outerW - 1 - $length, $y - $half, $outerW - 1, $y - $half + $t - 1, $black);
+            }
         }
 
-        if ($canvas !== null) {
-            imagecopyresampled($canvas, $mark, $x, $y, 0, 0, $w, $h, imagesx($mark), imagesy($mark));
-        }
-
-        return ['left' => $x, 'right' => $x + $w, 'top' => $y, 'bottom' => $y + $h];
-    }
-
-    private function mark(string $variant): GdImage
-    {
-        if (isset($this->marks[$variant])) {
-            return $this->marks[$variant];
-        }
-
-        $path = (string) config("portrait.marks.{$variant}", '');
-        $image = is_file($path) ? @imagecreatefrompng($path) : false;
-
-        if ($image === false) {
-            throw new RuntimeException("FL monogram asset [{$variant}] not found.");
-        }
-
-        imagealphablending($image, true);
-
-        return $this->marks[$variant] = $image;
-    }
-
-    private function left(float $anchorX, float $width, string $align): float
-    {
-        return match ($align) {
-            'right' => $anchorX - $width,
-            'center' => $anchorX - $width / 2,
-            default => $anchorX,
-        };
+        return $out;
     }
 
     private function decode(string $bytes): GdImage
@@ -326,7 +248,7 @@ final class PortraitComposer
     private function ensureMemory(): void
     {
         $wanted = (string) config('portrait.memory_limit', '512M');
-        $current = ini_get('memory_limit');
+        $current = (string) ini_get('memory_limit');
 
         if ($current !== '-1' && $this->bytes($current) < $this->bytes($wanted)) {
             @ini_set('memory_limit', $wanted);

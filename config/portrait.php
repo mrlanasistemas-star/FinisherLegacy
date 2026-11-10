@@ -24,7 +24,16 @@ return [
         'warn_dpi' => (int) env('PORTRAIT_WARN_DPI', 220),
 
         'jpeg_quality' => (int) env('PORTRAIT_JPEG_QUALITY', 92),
+
+        // "Para imprenta" export: bleed mirrored around the trim size, and the
+        // white slug that carries the crop marks when they are requested.
+        'bleed_mm' => (float) env('PORTRAIT_BLEED_MM', 3),
+        'crop_marks_slug_mm' => (float) env('PORTRAIT_CROP_MARKS_SLUG_MM', 6),
     ],
+
+    // Catalog products that are frames: the story their NFC opens presents
+    // itself as an "álbum" (App\Services\Portrait\PortraitProduct).
+    'product_slugs' => ['portarretrato-inteligente'],
 
     // GD needs ~250 MB for a full-size canvas + a 12 MP photo. Raised only
     // while rendering, never lowered.
@@ -39,6 +48,13 @@ return [
     'fonts' => [
         'heading' => array_values(array_filter([
             env('PORTRAIT_FONT_HEADING'),
+            resource_path('fonts/Montserrat-Bold.ttf'),
+            resource_path('fonts/DejaVuSans-Bold.ttf'),
+        ])),
+        // Small caps labels, stats and the "ACERCA TU CELULAR" lockup.
+        'label' => array_values(array_filter([
+            env('PORTRAIT_FONT_LABEL'),
+            resource_path('fonts/Montserrat-SemiBold.ttf'),
             resource_path('fonts/Montserrat-Bold.ttf'),
             resource_path('fonts/DejaVuSans-Bold.ttf'),
         ])),
@@ -60,52 +76,143 @@ return [
     'default_template' => 'carbono',
 
     /*
-    | Data-driven templates. Geometry is proportional: x / w / sizes are
-    | fractions of the canvas WIDTH, y / h fractions of its HEIGHT, so a
-    | template works for any configured print size. Slot kinds:
-    |   text      one line; shrinks down to min_size, then ellipsis
-    |   paragraph wraps up to max_lines; shrinks, then ellipsis
-    |   rule      a hairline
-    |   mark      the FL monogram image
-    | `field` is one of: name, event_line, time, result_line, dedication,
-    | cta, brand. Empty fields are skipped.
+    | Data-driven templates (drawn by App\Services\Portrait\PortraitLayout).
+    | Geometry is proportional — x / w / sizes / gaps are fractions of the
+    | canvas WIDTH, y / h of top-level slots fractions of its HEIGHT — so a
+    | template works for any configured print size.
+    |
+    | Top-level slots: `rect`, `scrim` (vertical gradient over the photo),
+    | `rule` and `stack`. A stack is a column of rows that flows inside its
+    | box (`justify`: start | center | end); rows with no data disappear
+    | with their `gap`, and a stack that would overflow is scaled down.
+    | Row kinds:
+    |   text       one line; shrinks down to min_size, then ellipsis.
+    |              `fit` makes it take the full width (big numerals).
+    |   paragraph  wraps up to max_lines; shrinks, then ellipsis
+    |   rule       a hairline          spacer  empty height
+    |   mark       the FL monogram image
+    |   lockup     monogram · hairline · "ACERCA TU CELULAR" as one unit
+    |   stats      label-over-value columns: distance, pace, position,
+    |              category, bib — whichever exist (max 4)
+    |   split      side-by-side columns, each with its own rows
+    | `field`: name, event_line, time, time_label, result_line, dedication,
+    | cta, brand, distance, position, pace, bib, category.
+    | `when` (all) / `when_any` / `unless`: show a row only if those fields
+    | have / lack data (`stats` = any race data).
+    |
+    | Keep every text at least 5 % of the width away from the edges: the
+    | acrylic frame and its standoffs cover the border of the print.
     */
     'templates' => [
 
         'carbono' => [
             'label' => 'Carbono',
-            'description' => 'Fondo negro carbono, banda inferior con tiempo en oro.',
+            'description' => 'Negro carbono con el tiempo en oro. El clásico de meta.',
             'background' => '#0B0B0C',
-            'photo' => ['x' => 0.06, 'y' => 0.072, 'w' => 0.88, 'h' => 0.655],
+            'photo' => ['x' => 0.055, 'y' => 0.044, 'w' => 0.89, 'h' => 0.644],
             'slots' => [
-                ['kind' => 'mark', 'variant' => 'gold', 'x' => 0.06, 'y' => 0.026, 'height' => 0.03],
-                ['kind' => 'text', 'field' => 'brand', 'font' => 'body', 'size' => 0.0125, 'min_size' => 0.01, 'color' => '#C9AE8B', 'x' => 0.94, 'y' => 0.047, 'max_width' => 0.5, 'align' => 'right', 'uppercase' => true, 'tracking' => 0.22],
-                ['kind' => 'text', 'field' => 'name', 'font' => 'heading', 'size' => 0.046, 'min_size' => 0.024, 'color' => '#F8F7F3', 'x' => 0.06, 'y' => 0.79, 'max_width' => 0.88, 'align' => 'left', 'uppercase' => true, 'tracking' => 0.02],
-                ['kind' => 'text', 'field' => 'event_line', 'font' => 'body', 'size' => 0.019, 'min_size' => 0.013, 'color' => '#E6D1B5', 'x' => 0.06, 'y' => 0.822, 'max_width' => 0.88, 'align' => 'left', 'uppercase' => true, 'tracking' => 0.08],
-                ['kind' => 'rule', 'color' => '#C9AE8B', 'x' => 0.06, 'y' => 0.842, 'w' => 0.88, 'thickness' => 0.0016],
-                ['kind' => 'text', 'field' => 'time', 'font' => 'heading', 'size' => 0.074, 'min_size' => 0.04, 'color' => '#C9AE8B', 'x' => 0.06, 'y' => 0.915, 'max_width' => 0.48, 'align' => 'left', 'tracking' => 0.02],
-                ['kind' => 'text', 'field' => 'result_line', 'font' => 'body', 'size' => 0.0175, 'min_size' => 0.012, 'color' => '#B8B5AE', 'x' => 0.06, 'y' => 0.944, 'max_width' => 0.48, 'align' => 'left', 'uppercase' => true, 'tracking' => 0.06],
-                ['kind' => 'paragraph', 'field' => 'dedication', 'font' => 'body', 'size' => 0.0205, 'min_size' => 0.014, 'color' => '#E6D1B5', 'x' => 0.94, 'y' => 0.874, 'max_width' => 0.38, 'align' => 'right', 'max_lines' => 3, 'line_height' => 1.38],
-                ['kind' => 'mark', 'variant' => 'gold', 'x' => 0.06, 'y' => 0.959, 'height' => 0.016],
-                ['kind' => 'text', 'field' => 'cta', 'font' => 'body', 'size' => 0.0125, 'min_size' => 0.01, 'color' => '#C9AE8B', 'x' => 0.94, 'y' => 0.973, 'max_width' => 0.32, 'align' => 'right', 'uppercase' => true, 'tracking' => 0.24],
+                ['kind' => 'stack', 'x' => 0.055, 'w' => 0.89, 'y' => 0.706, 'h' => 0.218, 'justify' => 'center', 'rows' => [
+                    ['kind' => 'text', 'field' => 'name', 'font' => 'heading', 'size' => 0.044, 'min_size' => 0.024, 'color' => '#F8F7F3', 'uppercase' => true, 'tracking' => 0.03],
+                    ['kind' => 'text', 'field' => 'event_line', 'gap' => 0.0165, 'font' => 'label', 'size' => 0.0148, 'min_size' => 0.0105, 'color' => '#E6D1B5', 'uppercase' => true, 'tracking' => 0.12],
+                    ['kind' => 'rule', 'gap' => 0.022, 'when_any' => ['time', 'stats', 'dedication'], 'color' => '#C9AE8B', 'opacity' => 0.65, 'thickness' => 0.0011],
+                    ['kind' => 'split', 'gap' => 0.024, 'when' => ['time'], 'columns' => [
+                        ['w' => 0.46, 'rows' => [
+                            ['kind' => 'text', 'field' => 'time_label', 'font' => 'label', 'size' => 0.0115, 'color' => '#A8937A', 'uppercase' => true, 'tracking' => 0.26],
+                            ['kind' => 'text', 'field' => 'time', 'gap' => 0.013, 'font' => 'heading', 'size' => 0.078, 'min_size' => 0.04, 'color' => '#C9AE8B', 'caps' => true, 'tracking' => 0.01],
+                        ]],
+                        ['w' => 0.54, 'valign' => 'bottom', 'rows' => [
+                            ['kind' => 'stats', 'max' => 3, 'align' => 'right', 'column' => 'auto', 'label_color' => '#A8937A', 'value_color' => '#F8F7F3', 'divider_color' => '#C9AE8B', 'value_size' => 0.0215],
+                        ]],
+                    ]],
+                    ['kind' => 'stats', 'gap' => 0.024, 'unless' => ['time'], 'max' => 4, 'label_color' => '#A8937A', 'value_color' => '#F8F7F3', 'divider_color' => '#C9AE8B'],
+                    ['kind' => 'paragraph', 'field' => 'dedication', 'gap' => 0.026, 'font' => 'body', 'size' => 0.0168, 'min_size' => 0.0125, 'color' => '#CFC8BA', 'max_lines' => 2, 'line_height' => 1.42, 'quotes' => true],
+                ]],
+                ['kind' => 'stack', 'x' => 0.055, 'w' => 0.89, 'y' => 0.94, 'h' => 0.03, 'justify' => 'center', 'rows' => [
+                    ['kind' => 'lockup', 'variant' => 'gold', 'height' => 0.027, 'size' => 0.0112, 'color' => '#C9AE8B', 'align' => 'center'],
+                ]],
             ],
         ],
 
         'hueso' => [
             'label' => 'Blanco hueso',
-            'description' => 'Foto a sangre arriba, banda clara con detalles en oro.',
+            'description' => 'Foto a sangre y ficha clara centrada, como en una galería.',
             'background' => '#F8F7F3',
-            'photo' => ['x' => 0.0, 'y' => 0.0, 'w' => 1.0, 'h' => 0.7],
+            'photo' => ['x' => 0.0, 'y' => 0.0, 'w' => 1.0, 'h' => 0.662],
             'slots' => [
-                ['kind' => 'rule', 'color' => '#C9AE8B', 'x' => 0.0, 'y' => 0.7, 'w' => 1.0, 'thickness' => 0.004],
-                ['kind' => 'text', 'field' => 'event_line', 'font' => 'body', 'size' => 0.018, 'min_size' => 0.012, 'color' => '#8C7454', 'x' => 0.07, 'y' => 0.748, 'max_width' => 0.86, 'align' => 'left', 'uppercase' => true, 'tracking' => 0.1],
-                ['kind' => 'text', 'field' => 'name', 'font' => 'heading', 'size' => 0.05, 'min_size' => 0.026, 'color' => '#0B0B0C', 'x' => 0.07, 'y' => 0.8, 'max_width' => 0.86, 'align' => 'left', 'uppercase' => true, 'tracking' => 0.01],
-                ['kind' => 'text', 'field' => 'time', 'font' => 'heading', 'size' => 0.064, 'min_size' => 0.036, 'color' => '#0B0B0C', 'x' => 0.07, 'y' => 0.876, 'max_width' => 0.44, 'align' => 'left', 'tracking' => 0.02],
-                ['kind' => 'text', 'field' => 'result_line', 'font' => 'body', 'size' => 0.0165, 'min_size' => 0.012, 'color' => '#8C7454', 'x' => 0.07, 'y' => 0.905, 'max_width' => 0.44, 'align' => 'left', 'uppercase' => true, 'tracking' => 0.08],
-                ['kind' => 'paragraph', 'field' => 'dedication', 'font' => 'body', 'size' => 0.0195, 'min_size' => 0.0135, 'color' => '#3A3833', 'x' => 0.93, 'y' => 0.846, 'max_width' => 0.4, 'align' => 'right', 'max_lines' => 3, 'line_height' => 1.38],
-                ['kind' => 'rule', 'color' => '#E6D1B5', 'x' => 0.07, 'y' => 0.938, 'w' => 0.86, 'thickness' => 0.0012],
-                ['kind' => 'mark', 'variant' => 'black', 'x' => 0.07, 'y' => 0.952, 'height' => 0.017],
-                ['kind' => 'text', 'field' => 'cta', 'font' => 'body', 'size' => 0.0125, 'min_size' => 0.01, 'color' => '#8C7454', 'x' => 0.93, 'y' => 0.969, 'max_width' => 0.5, 'align' => 'right', 'uppercase' => true, 'tracking' => 0.24],
+                ['kind' => 'rule', 'color' => '#C9AE8B', 'x' => 0.0, 'y' => 0.662, 'w' => 1.0, 'thickness' => 0.0032],
+                ['kind' => 'stack', 'x' => 0.08, 'w' => 0.84, 'y' => 0.685, 'h' => 0.235, 'justify' => 'center', 'rows' => [
+                    ['kind' => 'text', 'field' => 'event_line', 'font' => 'label', 'size' => 0.0138, 'min_size' => 0.0102, 'color' => '#8C7454', 'uppercase' => true, 'tracking' => 0.15, 'align' => 'center'],
+                    ['kind' => 'text', 'field' => 'name', 'gap' => 0.024, 'font' => 'heading', 'size' => 0.046, 'min_size' => 0.021, 'color' => '#0B0B0C', 'uppercase' => true, 'tracking' => 0.025, 'align' => 'center'],
+                    ['kind' => 'rule', 'gap' => 0.024, 'color' => '#C9AE8B', 'thickness' => 0.0018, 'w' => 0.075, 'align' => 'center'],
+                    ['kind' => 'text', 'field' => 'time', 'gap' => 0.026, 'font' => 'heading', 'size' => 0.062, 'min_size' => 0.036, 'color' => '#0B0B0C', 'caps' => true, 'tracking' => 0.02, 'align' => 'center'],
+                    ['kind' => 'stats', 'gap' => 0.024, 'max' => 4, 'align' => 'center', 'text_align' => 'center', 'column' => 0.2, 'label_color' => '#8C7454', 'value_color' => '#0B0B0C', 'divider_color' => '#C9AE8B', 'value_size' => 0.0195],
+                    ['kind' => 'paragraph', 'field' => 'dedication', 'gap' => 0.026, 'font' => 'body', 'size' => 0.0165, 'min_size' => 0.0125, 'color' => '#4A473F', 'max_lines' => 2, 'line_height' => 1.42, 'align' => 'center', 'quotes' => true, 'max_width' => 0.86],
+                ]],
+                ['kind' => 'stack', 'x' => 0.08, 'w' => 0.84, 'y' => 0.938, 'h' => 0.03, 'justify' => 'center', 'rows' => [
+                    ['kind' => 'lockup', 'variant' => 'black', 'height' => 0.027, 'size' => 0.0112, 'color' => '#8C7454', 'align' => 'center'],
+                ]],
+            ],
+        ],
+
+        'minimal' => [
+            'label' => 'Minimal',
+            'description' => 'Tu foto a todo el marco con una firma discreta al pie.',
+            'background' => '#0B0B0C',
+            'photo' => ['x' => 0.0, 'y' => 0.0, 'w' => 1.0, 'h' => 1.0],
+            'slots' => [
+                ['kind' => 'scrim', 'color' => '#0B0B0C', 'x' => 0.0, 'y' => 0.56, 'w' => 1.0, 'h' => 0.44, 'from' => 0.0, 'to' => 0.9],
+                ['kind' => 'stack', 'x' => 0.065, 'w' => 0.87, 'y' => 0.76, 'h' => 0.155, 'justify' => 'end', 'rows' => [
+                    ['kind' => 'split', 'columns' => [
+                        ['w' => 0.66, 'valign' => 'bottom', 'rows' => [
+                            ['kind' => 'text', 'field' => 'name', 'font' => 'heading', 'size' => 0.037, 'min_size' => 0.019, 'color' => '#FFFFFF', 'uppercase' => true, 'tracking' => 0.03, 'max_width' => 0.96],
+                            ['kind' => 'text', 'field' => 'event_line', 'gap' => 0.0145, 'font' => 'label', 'size' => 0.0128, 'min_size' => 0.0102, 'color' => '#E6D1B5', 'uppercase' => true, 'tracking' => 0.12, 'max_width' => 0.96],
+                        ]],
+                        ['w' => 0.34, 'valign' => 'bottom', 'rows' => [
+                            ['kind' => 'text', 'field' => 'time_label', 'font' => 'label', 'size' => 0.0108, 'color' => '#E6D1B5', 'uppercase' => true, 'tracking' => 0.26, 'align' => 'right'],
+                            ['kind' => 'text', 'field' => 'time', 'gap' => 0.012, 'font' => 'heading', 'size' => 0.052, 'min_size' => 0.03, 'color' => '#E6D1B5', 'caps' => true, 'tracking' => 0.01, 'align' => 'right'],
+                        ]],
+                    ]],
+                    ['kind' => 'paragraph', 'field' => 'dedication', 'gap' => 0.022, 'font' => 'body', 'size' => 0.0158, 'min_size' => 0.0125, 'color' => '#EDE9E0', 'max_lines' => 2, 'line_height' => 1.42, 'quotes' => true],
+                    ['kind' => 'rule', 'gap' => 0.022, 'color' => '#E6D1B5', 'opacity' => 0.55, 'thickness' => 0.0011],
+                ]],
+                ['kind' => 'stack', 'x' => 0.065, 'w' => 0.87, 'y' => 0.93, 'h' => 0.034, 'justify' => 'center', 'rows' => [
+                    ['kind' => 'lockup', 'variant' => 'gold', 'height' => 0.027, 'size' => 0.0112, 'color' => '#E6D1B5', 'align' => 'center'],
+                ]],
+            ],
+        ],
+
+        'editorial' => [
+            'label' => 'Editorial',
+            'description' => 'Tu tiempo en números gigantes, como portada de revista.',
+            'background' => '#F8F7F3',
+            'photo' => ['x' => 0.07, 'y' => 0.056, 'w' => 0.86, 'h' => 0.55],
+            'slots' => [
+                ['kind' => 'stack', 'x' => 0.07, 'w' => 0.86, 'y' => 0.626, 'h' => 0.298, 'justify' => 'center', 'rows' => [
+                    ['kind' => 'split', 'columns' => [
+                        ['w' => 0.5, 'rows' => [
+                            ['kind' => 'text', 'field' => 'time_label', 'font' => 'label', 'size' => 0.0115, 'color' => '#8C7454', 'uppercase' => true, 'tracking' => 0.26],
+                        ]],
+                        ['w' => 0.5, 'rows' => [
+                            ['kind' => 'text', 'field' => 'brand', 'font' => 'label', 'size' => 0.0115, 'color' => '#8C7454', 'uppercase' => true, 'tracking' => 0.26, 'align' => 'right'],
+                        ]],
+                    ]],
+                    ['kind' => 'text', 'field' => 'time', 'gap' => 0.018, 'font' => 'heading', 'size' => 0.3, 'min_size' => 0.05, 'color' => '#0B0B0C', 'caps' => true, 'fit' => true],
+                    ['kind' => 'text', 'field' => 'name', 'unless' => ['time'], 'gap' => 0.018, 'font' => 'heading', 'size' => 0.13, 'min_size' => 0.04, 'color' => '#0B0B0C', 'uppercase' => true, 'fit' => true],
+                    ['kind' => 'rule', 'gap' => 0.024, 'color' => '#0B0B0C', 'thickness' => 0.0018],
+                    ['kind' => 'split', 'gap' => 0.022, 'columns' => [
+                        ['w' => 0.52, 'rows' => [
+                            ['kind' => 'text', 'field' => 'name', 'when' => ['time'], 'font' => 'heading', 'size' => 0.027, 'min_size' => 0.016, 'color' => '#0B0B0C', 'uppercase' => true, 'tracking' => 0.03, 'max_width' => 0.94],
+                            ['kind' => 'paragraph', 'field' => 'event_line', 'gap' => 0.013, 'font' => 'label', 'size' => 0.0118, 'min_size' => 0.0105, 'color' => '#8C7454', 'uppercase' => true, 'tracking' => 0.1, 'max_width' => 0.94, 'max_lines' => 2, 'line_height' => 1.5],
+                        ]],
+                        ['w' => 0.48, 'rows' => [
+                            ['kind' => 'stats', 'max' => 3, 'align' => 'right', 'column' => 'auto', 'label_color' => '#8C7454', 'value_color' => '#0B0B0C', 'divider_color' => '#C9AE8B', 'value_size' => 0.018, 'label_size' => 0.0105],
+                        ]],
+                    ]],
+                    ['kind' => 'paragraph', 'field' => 'dedication', 'gap' => 0.026, 'font' => 'body', 'size' => 0.016, 'min_size' => 0.0125, 'color' => '#4A473F', 'max_lines' => 2, 'line_height' => 1.42, 'quotes' => true],
+                ]],
+                ['kind' => 'stack', 'x' => 0.07, 'w' => 0.86, 'y' => 0.94, 'h' => 0.03, 'justify' => 'center', 'rows' => [
+                    ['kind' => 'lockup', 'variant' => 'black', 'height' => 0.027, 'size' => 0.0112, 'color' => '#8C7454', 'align' => 'center'],
+                ]],
             ],
         ],
 

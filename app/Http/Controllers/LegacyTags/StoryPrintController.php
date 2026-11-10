@@ -12,6 +12,8 @@ use App\Services\Media\MediaUploadRules;
 use App\Services\Portrait\PortraitComposer;
 use App\Services\Portrait\PortraitData;
 use App\Services\Portrait\PortraitImageTooSmallException;
+use App\Services\Portrait\PortraitOptions;
+use App\Services\Portrait\PortraitPdf;
 use App\Services\Portrait\PortraitSpec;
 use App\Services\Portrait\PortraitTemplates;
 use App\Support\LegacyTags\StoryPresenter;
@@ -31,6 +33,8 @@ use Throwable;
  * `/mi-legacy/{story}/imprimir` — print template MVP (§23). Owner only
  * (LegacyStoryPolicy::print): it reads the owner's private files straight
  * from the media disk. The uploaded "own photo" is never stored.
+ * Also the Portarretrato builder (docs/renovacion/portarretrato.md):
+ * page, server-rendered preview and the print-size download.
  */
 class StoryPrintController extends Controller
 {
@@ -53,7 +57,9 @@ class StoryPrintController extends Controller
 
     /**
      * `/mi-legacy/{story}/portarretrato` — the frame builder (deck pp. 9–10):
-     * photo, crop at the print aspect, template, live preview, download.
+     * photo → crop at the print aspect → template → words → download. The
+     * preview the page shows is rendered here by the same composer as the
+     * final file (see previewPortrait), so what you see is what prints.
      */
     public function portrait(Request $request, LegacyStory $story, StoryPresenter $presenter, PortraitTemplates $templates): Response
     {
@@ -61,6 +67,7 @@ class StoryPrintController extends Controller
         $data = $presenter->story($story, forOwner: true);
         $spec = PortraitSpec::fromConfig();
         $sources = $this->printSources($story);
+        /** @var array<string, mixed> $race */
         $race = $data['race'];
 
         $photos = [];
@@ -72,6 +79,8 @@ class StoryPrintController extends Controller
             $photos[] = [...$photo, 'source_width' => $sources[$photo['id']]['width'], 'source_height' => $sources[$photo['id']]['height']];
         }
 
+        $bleedMm = max(0.0, (float) config('portrait.print.bleed_mm', 3));
+
         return Inertia::render('my-legacy/Portrait', [
             'story' => $data,
             'photos' => $photos,
@@ -79,27 +88,109 @@ class StoryPrintController extends Controller
             'templates' => $templates->forClient($spec),
             'defaultTemplate' => $templates->defaultKey(),
             'defaults' => [
-                'name' => $this->athleteName($story),
+                'name' => $this->text($race['athlete_name'] ?? null) ?? $this->athleteName($story),
                 'event' => $race['event_name'] ?? $data['title'],
-                'details' => PortraitData::join([$race['location'], $this->longDate($race['date'])]),
-                'time' => $race['time'],
-                'result' => PortraitData::join([$race['distance'] ?? $race['race'], filled($race['position'] ?? null) ? 'Lugar '.$race['position'] : null]),
+                'details' => PortraitData::join([$race['location'] ?? null, $this->longDate($race['date'] ?? null)]),
+                'time' => $race['time'] ?? null,
+                'distance' => $this->text($race['distance'] ?? $race['race'] ?? null),
+                'position' => $this->text($race['position'] ?? null),
+                'pace' => $this->text($race['pace'] ?? null),
+                'bib' => $this->text($race['bib_number'] ?? null),
+                'category' => $this->text($race['category'] ?? null),
                 'dedication' => $story->dedication,
             ],
             'maxUploadMb' => (int) floor((int) config('legacy.stories.max_photo_bytes') / 1048576),
-            'marks' => [
-                'gold' => asset('images/brand/logo/fl-monograma.png'),
-                'black' => asset('images/brand/logo/fl-monograma.png'),
-                'white' => asset('images/brand/logo/fl-monograma.png'),
-            ],
+            'bleedMm' => $bleedMm,
+            'isAlbum' => ($data['kind'] ?? null) === 'album',
         ]);
     }
 
-    public function downloadPortrait(Request $request, LegacyStory $story, PortraitTemplates $templates, PortraitComposer $composer): HttpResponse
+    /**
+     * The live preview / template thumbnails: the same render as the final
+     * file at screen size (no resolution check). For a photo of the memory
+     * the display variant is enough; an own photo arrives already reduced
+     * by the browser. Nothing is stored.
+     */
+    public function previewPortrait(Request $request, LegacyStory $story, PortraitTemplates $templates, PortraitComposer $composer): HttpResponse
+    {
+        $this->authorize('print', $story);
+        $data = $this->validatePortrait($request, $templates, ['width' => ['nullable', 'integer', 'between:160,1000']]);
+
+        $bytes = $request->hasFile('photo')
+            ? $this->uploadedBytes($request->file('photo'))
+            : $this->storyPhotoBytes($story, (int) $data['photo_id'], preview: true);
+
+        try {
+            $result = $composer->compose(
+                (string) $data['template'],
+                $bytes,
+                $this->cropFrom($data),
+                $this->portraitData($data),
+                PortraitSpec::fromConfig()->scaledToWidth((int) ($data['width'] ?? 720)),
+                PortraitOptions::preview(),
+            );
+        } catch (Throwable $e) {
+            report($e);
+
+            throw ValidationException::withMessages(['photo' => 'No pudimos preparar esa foto. Prueba con otra.']);
+        }
+
+        return response($result->jpeg, 200, [
+            'Content-Type' => 'image/jpeg',
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    public function downloadPortrait(Request $request, LegacyStory $story, PortraitTemplates $templates, PortraitComposer $composer, PortraitPdf $pdf): HttpResponse
     {
         $this->authorize('print', $story);
 
-        $data = $request->validate([
+        $data = $this->validatePortrait($request, $templates, [
+            // `frame`: exact size, ready to slide in. `print_shop`: with bleed.
+            'output' => ['nullable', Rule::in(['frame', 'print_shop'])],
+            'crop_marks' => ['nullable', 'boolean'],
+            'format' => ['nullable', Rule::in(['jpg', 'pdf'])],
+        ]);
+
+        $bytes = $request->hasFile('photo')
+            ? $this->uploadedBytes($request->file('photo'))
+            : $this->storyPhotoBytes($story, (int) $data['photo_id']);
+
+        $printShop = ($data['output'] ?? 'frame') === 'print_shop';
+        $options = $printShop ? PortraitOptions::forPrintShop((bool) ($data['crop_marks'] ?? false)) : new PortraitOptions;
+
+        try {
+            $result = $composer->compose((string) $data['template'], $bytes, $this->cropFrom($data), $this->portraitData($data), null, $options);
+        } catch (PortraitImageTooSmallException $e) {
+            throw ValidationException::withMessages([$request->hasFile('photo') ? 'photo' : 'photo_id' => $e->getMessage()]);
+        } catch (Throwable $e) {
+            report($e);
+
+            throw ValidationException::withMessages(['photo' => 'No pudimos preparar esa foto. Prueba con otra.']);
+        }
+
+        $asPdf = ($data['format'] ?? 'jpg') === 'pdf';
+        $title = $story->title ?: ($story->event_name ?? 'recuerdo');
+        $name = 'finisher-legacy-portarretrato-'.Str::slug((string) $title).'-'.$data['template'].($printShop ? '-imprenta' : '').($asPdf ? '.pdf' : '.jpg');
+
+        return response($asPdf ? $pdf->wrap($result) : $result->jpeg, 200, [
+            'Content-Type' => $asPdf ? 'application/pdf' : 'image/jpeg',
+            'Content-Disposition' => 'attachment; filename="'.$name.'"',
+            'Cache-Control' => 'private, no-store',
+            'X-Portrait-Size' => $result->width.'x'.$result->height,
+            'X-Portrait-Trim-Size' => $result->trimWidth.'x'.$result->trimHeight,
+            'X-Portrait-Bleed-Px' => (string) $result->bleedPx,
+            'X-Portrait-Effective-Dpi' => (string) $result->effectiveDpi,
+        ]);
+    }
+
+    /**
+     * @param  array<string, array<int, mixed>>  $extra
+     * @return array<string, mixed>
+     */
+    private function validatePortrait(Request $request, PortraitTemplates $templates, array $extra = []): array
+    {
+        return $request->validate([
             'template' => ['required', Rule::in($templates->keys())],
             'photo_id' => ['nullable', 'required_without:photo', 'integer'],
             'photo' => ['nullable', 'required_without:photo_id', 'file', 'max:'.(int) ceil((int) config('legacy.stories.max_photo_bytes') / 1024)],
@@ -113,53 +204,61 @@ class StoryPrintController extends Controller
             'details' => ['nullable', 'string', 'max:160'],
             'time' => ['nullable', 'string', 'max:20'],
             'result' => ['nullable', 'string', 'max:80'],
+            'distance' => ['nullable', 'string', 'max:40'],
+            'position' => ['nullable', 'string', 'max:40'],
+            'pace' => ['nullable', 'string', 'max:20'],
+            'bib' => ['nullable', 'string', 'max:12'],
+            'category' => ['nullable', 'string', 'max:40'],
             'dedication' => ['nullable', 'string', 'max:600'],
+            ...$extra,
         ], [
             'photo_id.required_without' => 'Elige una foto de tu recuerdo o sube una.',
             'photo.required_without' => 'Elige una foto de tu recuerdo o sube una.',
             'photo.max' => 'La foto es demasiado pesada.',
             'template.in' => 'Elige una plantilla.',
         ]);
+    }
 
-        $bytes = $request->hasFile('photo')
-            ? $this->uploadedBytes($request->file('photo'))
-            : $this->storyPhotoBytes($story, (int) $data['photo_id']);
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function portraitData(array $data): PortraitData
+    {
+        return new PortraitData(
+            name: $this->text($data['name'] ?? null),
+            eventLine: PortraitData::join([$this->text($data['event'] ?? null), $this->text($data['details'] ?? null)]),
+            time: $this->text($data['time'] ?? null),
+            resultLine: $this->text($data['result'] ?? null),
+            dedication: $this->text($data['dedication'] ?? null),
+            distance: $this->text($data['distance'] ?? null),
+            position: $this->text($data['position'] ?? null),
+            pace: $this->text($data['pace'] ?? null),
+            bib: $this->text($data['bib'] ?? null),
+            category: $this->text($data['category'] ?? null),
+        );
+    }
 
-        $crop = isset($data['crop']) ? [
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{x: float, y: float, w: float, h: float}|null
+     */
+    private function cropFrom(array $data): ?array
+    {
+        if (! isset($data['crop']) || ! is_array($data['crop'])) {
+            return null;
+        }
+
+        return [
             'x' => (float) $data['crop']['x'],
             'y' => (float) $data['crop']['y'],
             'w' => (float) $data['crop']['w'],
             'h' => (float) $data['crop']['h'],
-        ] : null;
+        ];
+    }
 
-        $text = new PortraitData(
-            name: $data['name'] ?? null,
-            eventLine: PortraitData::join([$data['event'] ?? null, $data['details'] ?? null]),
-            time: $data['time'] ?? null,
-            resultLine: $data['result'] ?? null,
-            dedication: $data['dedication'] ?? null,
-        );
-
-        try {
-            $result = $composer->compose((string) $data['template'], $bytes, $crop, $text);
-        } catch (PortraitImageTooSmallException $e) {
-            throw ValidationException::withMessages([$request->hasFile('photo') ? 'photo' : 'photo_id' => $e->getMessage()]);
-        } catch (Throwable $e) {
-            report($e);
-
-            throw ValidationException::withMessages(['photo' => 'No pudimos preparar esa foto. Prueba con otra.']);
-        }
-
-        $title = $story->title ?: ($story->event_name ?? 'recuerdo');
-        $name = 'finisher-legacy-portarretrato-'.Str::slug((string) $title).'-'.$data['template'].'.jpg';
-
-        return response($result->jpeg, 200, [
-            'Content-Type' => 'image/jpeg',
-            'Content-Disposition' => 'attachment; filename="'.$name.'"',
-            'Cache-Control' => 'private, no-store',
-            'X-Portrait-Size' => $result->width.'x'.$result->height,
-            'X-Portrait-Effective-Dpi' => (string) $result->effectiveDpi,
-        ]);
+    private function text(mixed $value): ?string
+    {
+        return is_scalar($value) && trim((string) $value) !== '' ? trim((string) $value) : null;
     }
 
     /**
@@ -274,7 +373,7 @@ class StoryPrintController extends Controller
         return (string) file_get_contents((string) $file->getRealPath());
     }
 
-    private function storyPhotoBytes(LegacyStory $story, int $pivotId): string
+    private function storyPhotoBytes(LegacyStory $story, int $pivotId, bool $preview = false): string
     {
         /** @var MediaFile|null $file */
         $file = $story->media()->wherePivot('id', $pivotId)->wherePivot('role', StoryMediaRole::Photo->value)->first();
@@ -283,7 +382,9 @@ class StoryPrintController extends Controller
             throw ValidationException::withMessages(['photo_id' => 'Esa foto todavía se está procesando o ya no existe.']);
         }
 
-        $path = $file->original_path ?? $file->resolveVariant('display')['path'] ?? $file->path;
+        // The print is cut from the original; a preview only needs the display size.
+        $display = $file->resolveVariant('display')['path'] ?? null;
+        $path = $preview ? ($display ?? $file->original_path ?? $file->path) : ($file->original_path ?? $display ?? $file->path);
         $bytes = $path !== null ? Storage::disk($file->disk)->get($path) : null;
 
         if (! is_string($bytes) || $bytes === '') {

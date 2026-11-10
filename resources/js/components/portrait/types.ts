@@ -1,8 +1,8 @@
 /**
  * Portarretrato builder shapes — produced by
  * App\Services\Portrait\PortraitTemplates::forClient / PortraitSpec.
- * Geometry mirrors config/portrait.php: x / w / sizes are fractions of
- * the canvas width, y / h fractions of its height.
+ * The preview is a server render (StoryPrintController::previewPortrait),
+ * so the page only needs each template's photo box, not its slots.
  */
 
 export type PortraitSpec = {
@@ -16,48 +16,40 @@ export type PortraitSpec = {
     label: string;
 };
 
-export type PortraitSlot = {
-    kind: 'text' | 'paragraph' | 'rule' | 'mark';
-    field?: PortraitField;
-    font?: 'heading' | 'body';
-    size?: number;
-    min_size?: number;
-    color?: string;
-    x: number;
-    y: number;
-    w?: number;
-    thickness?: number;
-    height?: number;
-    variant?: 'gold' | 'black' | 'white';
-    max_width?: number;
-    align?: 'left' | 'right' | 'center';
-    uppercase?: boolean;
-    tracking?: number;
-    max_lines?: number;
-    line_height?: number;
-};
-
 export type PortraitTemplate = {
     value: string;
     label: string;
     description: string;
     background: string;
+    /** Photo box as fractions of the print (x / w of the width, y / h of the height). */
     photo: { x: number; y: number; w: number; h: number };
     photo_px: { x: number; y: number; w: number; h: number };
+    /** Photo box width / height. */
     aspect: number;
-    slots: PortraitSlot[];
 };
-
-export type PortraitField =
-    | 'name'
-    | 'event_line'
-    | 'time'
-    | 'result_line'
-    | 'dedication'
-    | 'cta'
-    | 'brand';
 
 /** Normalised (0..1) rectangle of the oriented source photo. */
 export type PortraitCrop = { x: number; y: number; w: number; h: number };
 
-export type PortraitTexts = Record<PortraitField, string | null>;
+/** The words of the print, as the builder form holds them. */
+export type PortraitForm = {
+    name: string;
+    event: string;
+    details: string;
+    time: string;
+    distance: string;
+    position: string;
+    pace: string;
+    bib: string;
+    category: string;
+    dedication: string;
+    withDedication: boolean;
+};
+
+export type PortraitQuality = 'ok' | 'warn' | 'low';
+
+export type PortraitStep = {
+    key: 'photo' | 'crop' | 'template' | 'data' | 'download';
+    label: string;
+    hint: string;
+};

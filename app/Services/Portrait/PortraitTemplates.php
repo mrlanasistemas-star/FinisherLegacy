@@ -69,8 +69,9 @@ final class PortraitTemplates
     }
 
     /**
-     * Templates as the builder page consumes them (geometry included so
-     * the preview is laid out from the very same numbers).
+     * Templates as the builder page consumes them (photo box included so
+     * the cropper uses the exact print aspect; the preview itself is a
+     * server render, see StoryPrintController::previewPortrait).
      *
      * @return list<array<string, mixed>>
      */
@@ -89,7 +90,6 @@ final class PortraitTemplates
                 'photo' => $template['photo'],
                 'photo_px' => $box,
                 'aspect' => $box['h'] > 0 ? $box['w'] / $box['h'] : 1,
-                'slots' => array_values((array) ($template['slots'] ?? [])),
             ];
         }
 

@@ -29,6 +29,17 @@ final readonly class PortraitSpec
         );
     }
 
+    /**
+     * The same print at another pixel width (on-screen previews): the
+     * layout is proportional, so only the dpi changes.
+     */
+    public function scaledToWidth(int $widthPx): self
+    {
+        $dpi = max(1, (int) round(max(1, $widthPx) * 2.54 / $this->widthCm));
+
+        return new self($this->widthCm, $this->heightCm, $dpi, $this->minDpi, $this->warnDpi, $this->jpegQuality);
+    }
+
     /** @return int<1, max> A print canvas is never empty, even with a bad config. */
     public function widthPx(): int
     {

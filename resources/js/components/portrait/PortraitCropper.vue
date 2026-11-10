@@ -41,9 +41,10 @@ function emit() {
     crop.value = { x, y, w, h };
 }
 
-// New photo or new template → recentre.
+// New photo → recentre. New template (another photo box ratio) → keep
+// where the user was looking and only re-fit the window.
 watch(
-    () => [props.src, props.aspect, props.imageAspect],
+    () => [props.src, props.imageAspect],
     () => {
         zoom.value = 1;
         center.value = { x: 0.5, y: 0.5 };
@@ -51,6 +52,8 @@ watch(
     },
     { immediate: true },
 );
+
+watch(() => props.aspect, emit);
 
 watch(zoom, emit);
 
