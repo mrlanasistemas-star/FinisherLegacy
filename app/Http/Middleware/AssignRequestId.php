@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  *  - Echoed back on the response header.
  *  - Available as `request()->attributes->get('request_id')` for the API
- *    error envelopes (ApiExceptionRenderer / DeviceExceptionRenderer).
+ *    error envelope (ApiExceptionRenderer).
  *  - Added to Laravel's Context, so it is appended to EVERY log line of this
  *    request and automatically carried into queued jobs dispatched from it
  *    (docs/ARCHITECTURE.md §Observability). Never logged with a secret.

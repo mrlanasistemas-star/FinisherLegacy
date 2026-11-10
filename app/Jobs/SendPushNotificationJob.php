@@ -12,7 +12,10 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * One device, one push — dispatched per-device by
+ * LEGACY single-device push job. New code uses App\Support\Notifications\PushSender
+ * (batches of 100 via App\Jobs\SendPushBatchJob, preferences, badges,
+ * receipts); this stays only so jobs already queued before the upgrade still
+ * run. Originally dispatched per-device by
  * App\Actions\Notifications\SendAthleteNotification so a slow/failing
  * provider call never blocks the web request that triggered it (brief
  * §54/§59: controllers stay thin, no push call inline).

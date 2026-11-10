@@ -37,9 +37,13 @@ return [
 
     'expo' => [
         'push_url' => env('EXPO_PUSH_URL', 'https://exp.host/--/api/v2/push/send'),
+        'receipts_url' => env('EXPO_RECEIPTS_URL', 'https://exp.host/--/api/v2/push/getReceipts'),
         // Only required when "enhanced push security" is enabled in EAS.
         'access_token' => env('EXPO_ACCESS_TOKEN'),
         'android_channel_id' => env('EXPO_ANDROID_CHANNEL_ID', 'default'),
+        // Android accent is set at build time by the expo-notifications
+        // plugin (app.config.ts); kept here for payloads that carry a color.
+        'color' => env('PUSH_ACCENT_COLOR', '#C9AE8B'),
     ],
 
     'slack' => [

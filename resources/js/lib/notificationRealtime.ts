@@ -25,6 +25,9 @@ export type NotificationItem = {
     message: string | null;
     type: string | null;
     action_url: string | null;
+    /** Preference category (pedidos, comunidad, …); may be absent on old rows. */
+    category?: string | null;
+    image_url?: string | null;
     read_at: string | null;
     created_at: string | null;
 };
@@ -142,6 +145,8 @@ function handleCreated(payload: Partial<NotificationItem>): void {
         message: payload.message ?? null,
         type: payload.type ?? null,
         action_url: payload.action_url ?? null,
+        category: payload.category ?? null,
+        image_url: payload.image_url ?? null,
         read_at: null,
         created_at: payload.created_at ?? new Date().toISOString(),
     };

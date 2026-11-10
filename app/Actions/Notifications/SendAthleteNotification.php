@@ -2,26 +2,37 @@
 
 namespace App\Actions\Notifications;
 
+use App\Enums\NotificationCategory;
 use App\Enums\NotificationType;
-use App\Jobs\SendPushNotificationJob;
 use App\Models\User;
 use App\Notifications\AthleteAlert;
+use App\Support\Notifications\NotificationPreferences;
 use App\Support\Notifications\NotificationTarget;
-use App\Support\Notifications\PushNotificationPayload;
+use App\Support\Notifications\PushMessage;
+use App\Support\Notifications\PushSender;
 use Illuminate\Support\Str;
 
 /**
- * The one Action Central "send a user a notification" goes through
- * (consolidation brief §36-§38, §49, §52) — Web (participant profile,
- * Athlete profile) and any future admin/API caller all call this instead
- * of constructing App\Notifications\AthleteAlert by hand or dispatching
- * push directly. `$push = true` additionally queues one
- * App\Jobs\SendPushNotificationJob per active PushDevice the recipient
- * has (brief §54) — the database notification always saves regardless of
- * whether any push actually gets delivered (brief §51).
+ * The one Action every customer notification goes through — admin forms,
+ * the API, social activity, cheers, orders, tags, support, broadcasts
+ * (docs/renovacion/notificaciones.md). One call = the in-app row (web
+ * /notifications + app Notificaciones, same table, read state shared through
+ * the API) + realtime event + push to every active device when `$push`.
+ *
+ * Preferences (NotificationPreferences, per category = `$type->category()`
+ * unless `$category` overrides it) are enforced here, server-side:
+ *  - in-app OFF → no row (an admin-sent message, `$sentBy`, always saves);
+ *  - push OFF   → no push.
+ *
+ * Returns the stored notification id (null when the in-app row was skipped).
  */
 class SendAthleteNotification
 {
+    public function __construct(
+        private readonly PushSender $pushSender,
+        private readonly NotificationPreferences $preferences,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $metadata
      */
@@ -34,19 +45,25 @@ class SendAthleteNotification
         array $metadata = [],
         ?User $sentBy = null,
         bool $push = false,
-    ): void {
-        $alert = new AthleteAlert($title, $message, $type, $actionUrl, $metadata, $sentBy);
-        // Fixed id up front: the database row, the realtime event and the
-        // push `data.notification_id` must all carry the same one (a queued
-        // notification otherwise only gets its id on an internal clone).
-        $alert->id = (string) Str::uuid();
+        ?string $imageUrl = null,
+        ?NotificationCategory $category = null,
+    ): ?string {
+        $category ??= $type->category();
+        $notificationId = null;
 
-        $recipient->notify($alert);
+        if ($sentBy !== null || $this->preferences->allows($recipient, $category, 'in_app')) {
+            $alert = new AthleteAlert($title, $message, $type, $actionUrl, [...$metadata, 'category' => $category->value], $sentBy, $imageUrl);
+            // Fixed id up front: the database row, the realtime event and the
+            // push `data.notification_id` must all carry the same one (a queued
+            // notification otherwise only gets its id on an internal clone).
+            $alert->id = (string) Str::uuid();
+            $notificationId = $alert->id;
+
+            $recipient->notify($alert);
+        }
 
         // An admin-sent notification is audited here once, regardless of
-        // whether the caller was Web or API (consolidation brief §42) —
-        // never the message body itself (could be considered sensitive),
-        // never a push token.
+        // whether the caller was Web or API — never the body, never a token.
         if ($sentBy !== null) {
             activity()
                 ->causedBy($sentBy)
@@ -55,22 +72,25 @@ class SendAthleteNotification
                 ->log('notification_sent');
         }
 
-        if (! $push) {
-            return;
+        if ($push) {
+            // Mobile push-tap routing contract: exactly
+            // {notification_id, type, target, action_url} — target is
+            // {type, id|uuid, slug?, event_slug?} (NotificationTarget).
+            $this->pushSender->sendToUser($recipient, new PushMessage(
+                title: $title,
+                body: $message,
+                data: [
+                    'notification_id' => $notificationId,
+                    'type' => $type->value,
+                    'target' => NotificationTarget::fromMetadata($metadata),
+                    'action_url' => $actionUrl,
+                ],
+                deepLink: $actionUrl,
+                imageUrl: $imageUrl,
+                category: $category,
+            ));
         }
 
-        // Mobile push-tap routing contract: exactly
-        // {notification_id, type, target, action_url} — target is
-        // {type, id|uuid, slug?, event_slug?} (NotificationTarget).
-        $payload = new PushNotificationPayload($title, $message, $actionUrl, [
-            'notification_id' => $alert->id,
-            'type' => $type->value,
-            'target' => NotificationTarget::fromMetadata($metadata),
-            'action_url' => $actionUrl,
-        ]);
-
-        foreach ($recipient->pushDevices()->where('active', true)->get() as $device) {
-            SendPushNotificationJob::dispatch($device, $payload);
-        }
+        return $notificationId;
     }
 }

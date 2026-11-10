@@ -3,11 +3,12 @@
  * Ajustes (/settings/*), nested inside the site shell (PublicLayout).
  * Apple-style grouped lists: on desktop a sidebar of grouped rows
  * ("Cuenta" and "Tu Finisher Legacy"); on phones a segmented control for
- * the two settings pages and the shortcuts as a grouped list at the end.
+ * the three settings pages and the shortcuts as a grouped list at the end.
  */
 import { Link } from '@inertiajs/vue3';
 import {
     Bell,
+    BellRing,
     ChevronRight,
     KeyRound,
     Nfc,
@@ -18,6 +19,7 @@ import {
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { dashboard } from '@/routes';
 import { edit as editAthleteProfile } from '@/routes/dashboard/profile';
+import { edit as editNotificationPreferences } from '@/routes/notification-preferences';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
@@ -36,6 +38,12 @@ const items = [
         href: editSecurity.url(),
         icon: KeyRound,
     },
+    {
+        title: 'Notificaciones',
+        short: 'Avisos',
+        href: editNotificationPreferences.url(),
+        icon: BellRing,
+    },
 ];
 
 const shortcuts = [
@@ -45,7 +53,11 @@ const shortcuts = [
         href: editAthleteProfile.url(),
         icon: UserRoundPen,
     },
-    { title: 'Notificaciones', href: notificationsIndex.url(), icon: Bell },
+    {
+        title: 'Centro de notificaciones',
+        href: notificationsIndex.url(),
+        icon: Bell,
+    },
     { title: 'Mis pedidos', href: ordersIndex.url(), icon: Receipt },
 ];
 
@@ -65,7 +77,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 
         <!-- Phones / tablets: segmented control -->
         <nav
-            class="mb-6 grid grid-cols-2 rounded-full border border-border bg-white p-1 shadow-fl-micro lg:hidden"
+            class="mb-6 grid grid-cols-3 rounded-full border border-border bg-white p-1 shadow-fl-micro lg:hidden"
             aria-label="Ajustes"
         >
             <Link

@@ -4,7 +4,7 @@ use App\Actions\Notifications\SendAthleteNotification;
 use App\Contracts\Notifications\PushNotificationGateway;
 use App\Enums\NotificationType;
 use App\Enums\PushSendStatus;
-use App\Jobs\SendPushNotificationJob;
+use App\Jobs\SendPushBatchJob;
 use App\Models\Athlete;
 use App\Models\EventParticipant;
 use App\Models\PushDevice;
@@ -84,7 +84,8 @@ test('marking a notification read updates it and clears the unread count', funct
     expect($user->fresh()->unreadNotifications()->count())->toBe(0);
 });
 
-test('push=true queues one SendPushNotificationJob per active device and none for inactive ones', function () {
+test('push=true queues one SendPushBatchJob with the active devices only', function () {
+    config(['services.push.provider' => 'expo']);
     Queue::fake();
     $user = User::factory()->create();
     $activeDevice = PushDevice::create([
@@ -98,8 +99,8 @@ test('push=true queues one SendPushNotificationJob per active device and none fo
 
     app(SendAthleteNotification::class)->handle($user, 'Título', 'Mensaje', NotificationType::Custom, push: true);
 
-    Queue::assertPushed(SendPushNotificationJob::class, 1);
-    Queue::assertPushed(SendPushNotificationJob::class, fn ($job) => $job->device->id === $activeDevice->id);
+    Queue::assertPushed(SendPushBatchJob::class, 1);
+    Queue::assertPushed(SendPushBatchJob::class, fn ($job) => $job->deviceIds === [$activeDevice->id]);
 });
 
 test('push=false never queues a push job even if the user has active devices', function () {
@@ -112,7 +113,7 @@ test('push=false never queues a push job even if the user has active devices', f
 
     app(SendAthleteNotification::class)->handle($user, 'Título', 'Mensaje', NotificationType::Custom);
 
-    Queue::assertNotPushed(SendPushNotificationJob::class);
+    Queue::assertNotPushed(SendPushBatchJob::class);
 });
 
 test('the NullPushNotificationGateway reports not_configured without throwing', function () {

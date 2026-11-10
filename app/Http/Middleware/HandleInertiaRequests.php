@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\CartItem;
 use App\Models\CompanySetting;
+use App\Support\Notifications\UnreadCounter;
 use App\Support\PermissionCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -84,7 +85,11 @@ class HandleInertiaRequests extends Middleware
             // per-user table) — the header bell needs this on every page,
             // not just the inbox, so a shared prop beats a second round
             // trip (product UX consolidation brief §37).
-            'unreadNotificationsCount' => $user?->unreadNotifications()->count() ?? 0,
+            'unreadNotificationsCount' => $user !== null ? UnreadCounter::customer($user->unreadNotifications())->count() : 0,
+            // Back-office alert bell (App\Notifications\AdminAlert), admins only.
+            'unreadAdminAlertsCount' => $user !== null && $user->can('dashboard.admin.view')
+                ? UnreadCounter::admin($user->unreadNotifications())->count()
+                : 0,
             // Footer contact/social links — only channels an admin actually
             // configured (cached; see CompanySetting::values()).
             'company' => function () {

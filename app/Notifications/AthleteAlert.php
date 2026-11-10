@@ -36,6 +36,7 @@ class AthleteAlert extends Notification implements ShouldQueue
         public readonly ?string $actionUrl = null,
         public readonly array $metadata = [],
         public readonly ?User $sentBy = null,
+        public readonly ?string $imageUrl = null,
     ) {}
 
     /**
@@ -59,6 +60,7 @@ class AthleteAlert extends Notification implements ShouldQueue
             'metadata' => $this->metadata,
             'sent_by_user_id' => $this->sentBy?->id,
             'sent_by_name' => $this->sentBy?->name,
+            'image_url' => $this->imageUrl,
         ];
     }
 
@@ -105,6 +107,8 @@ class AthleteAlert extends Notification implements ShouldQueue
             'action_url' => $this->actionUrl,
             // Same {type, id|uuid, slug?, event_slug?} shape as push data.
             'target' => NotificationTarget::fromMetadata($this->metadata),
+            'category' => $this->metadata['category'] ?? $this->type->category()->value,
+            'image_url' => $this->imageUrl,
             'created_at' => now()->toIso8601String(),
         ];
     }

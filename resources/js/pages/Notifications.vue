@@ -5,12 +5,13 @@
  * reload when something new arrives (or the 60 s fallback poll notices).
  */
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Bell, CheckCheck, ChevronRight } from '@lucide/vue';
+import { Bell, CheckCheck, ChevronRight, Settings2 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import Pagination from '@/components/public/Pagination.vue';
 import { vReveal } from '@/composables/useReveal';
 import { timeAgo } from '@/lib/datetime';
 import { onNotificationCreated } from '@/lib/notificationRealtime';
+import { edit as editNotificationPreferences } from '@/routes/notification-preferences';
 import notificationRoutes from '@/routes/notifications';
 
 type NotificationRow = {
@@ -19,6 +20,8 @@ type NotificationRow = {
     message: string | null;
     type: string | null;
     action_url: string | null;
+    category?: string | null;
+    image_url?: string | null;
     read_at: string | null;
     created_at: string | null;
 };
@@ -159,26 +162,35 @@ onBeforeUnmount(() => stop?.());
             </button>
         </header>
 
-        <nav
-            class="mb-6 inline-flex rounded-full border border-border bg-card p-1"
-            aria-label="Filtrar notificaciones"
-        >
-            <Link
-                v-for="tab in tabs"
-                :key="tab.key"
-                :href="tab.href"
-                preserve-scroll
-                class="inline-flex min-h-10 items-center rounded-full px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-fl-gold/60 focus-visible:outline-none"
-                :class="
-                    filter === tab.key
-                        ? 'bg-fl-black font-medium text-white'
-                        : 'text-muted-foreground hover:text-foreground'
-                "
-                :aria-current="filter === tab.key ? 'page' : undefined"
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <nav
+                class="inline-flex rounded-full border border-border bg-card p-1"
+                aria-label="Filtrar notificaciones"
             >
-                {{ tab.label }}
+                <Link
+                    v-for="tab in tabs"
+                    :key="tab.key"
+                    :href="tab.href"
+                    preserve-scroll
+                    class="inline-flex min-h-10 items-center rounded-full px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-fl-gold/60 focus-visible:outline-none"
+                    :class="
+                        filter === tab.key
+                            ? 'bg-fl-black font-medium text-white'
+                            : 'text-muted-foreground hover:text-foreground'
+                    "
+                    :aria-current="filter === tab.key ? 'page' : undefined"
+                >
+                    {{ tab.label }}
+                </Link>
+            </nav>
+            <Link
+                :href="editNotificationPreferences()"
+                class="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-fl-gold-ink focus-visible:ring-2 focus-visible:ring-fl-gold/60 focus-visible:outline-none"
+            >
+                <Settings2 class="size-4" />
+                Preferencias
             </Link>
-        </nav>
+        </div>
 
         <section
             v-for="group in groups"
@@ -221,6 +233,13 @@ onBeforeUnmount(() => stop?.());
                         >
                             {{ n.message }}
                         </span>
+                        <img
+                            v-if="n.image_url"
+                            :src="n.image_url"
+                            alt=""
+                            loading="lazy"
+                            class="mt-2 max-h-40 w-full max-w-xs rounded-xl object-cover"
+                        />
                         <span
                             class="mt-2 block text-xs text-muted-foreground/80"
                         >

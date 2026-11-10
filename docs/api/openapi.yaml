@@ -1032,8 +1032,51 @@ paths:
                         message: { type: string, nullable: true }
                         type: { type: string, nullable: true }
                         action_url: { type: string, nullable: true }
+                        category: { type: string, nullable: true, description: "pedidos | comunidad | entrenamientos | soporte | avisos | promociones" }
+                        image_url: { type: string, nullable: true }
+                        target:
+                          type: object
+                          nullable: true
+                          description: "Canónico {type, id|uuid, slug?, event_slug?} + llaves antiguas {kind, username, moment_uuid, order_uuid}"
                         read_at: { type: string, format: date-time, nullable: true }
                         created_at: { type: string, format: date-time }
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema: { type: string, enum: [unread] }
+
+  /me/notifications/preferences:
+    get:
+      tags: [Me]
+      summary: Preferencias de notificación por categoría (en la app + push)
+      responses:
+        "200":
+          description: "data: {categories: [{key, label, description, in_app, push}], push_available}"
+    put:
+      tags: [Me]
+      summary: Actualiza preferencias (parcial)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [preferences]
+              properties:
+                preferences:
+                  type: object
+                  description: '{"comunidad": {"in_app": true, "push": false}}'
+                  additionalProperties:
+                    type: object
+                    properties:
+                      in_app: { type: boolean }
+                      push: { type: boolean }
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Categoría desconocida o valores inválidos
 
   /me/notifications/{notification}/read:
     post:

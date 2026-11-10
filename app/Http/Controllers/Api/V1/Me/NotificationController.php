@@ -5,15 +5,18 @@ namespace App\Http\Controllers\Api\V1\Me;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
+use App\Support\Notifications\NotificationPresenter;
+use App\Support\Notifications\UnreadCounter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 
 /**
  * `GET me/notifications`, `POST me/notifications/{id}/read`, `POST
- * me/notifications/read-all` — same Laravel database notifications
- * App\Http\Controllers\NotificationController (Web) already reads, never
- * a second notification system (product consolidation brief §31).
+ * me/notifications/read-all` — the same database notifications the web
+ * center (App\Http\Controllers\NotificationController) reads, so the app and
+ * the web always show the same items and the same read state. Admin alerts
+ * (App\Notifications\AdminAlert) live in the admin bell and are excluded.
  */
 class NotificationController extends Controller
 {
@@ -23,46 +26,17 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $this->sanctumUser($request);
-        $notifications = $user->notifications()
+
+        $query = $request->query('filter') === 'unread' ? $user->unreadNotifications() : $user->notifications();
+
+        $notifications = UnreadCounter::customer($query)
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
-        $notifications->through(fn (DatabaseNotification $n) => [
-            'id' => $n->id,
-            'title' => $n->data['title'] ?? null,
-            'message' => $n->data['message'] ?? null,
-            'type' => $n->data['type'] ?? null,
-            'action_url' => $n->data['action_url'] ?? null,
-            // Structured deep-link target for social notifications
-            // (`{kind: athlete|moment, username?, moment_uuid?}`) — lets the
-            // app route without parsing web URLs.
-            'target' => $this->target($n->data['metadata'] ?? null),
-            'read_at' => $n->read_at?->toIso8601String(),
-            'created_at' => $n->created_at->toIso8601String(),
-        ]);
+        $notifications->through(fn (DatabaseNotification $n) => NotificationPresenter::apiRow($n));
 
-        return $this->respond($notifications, meta: ['unread_count' => $user->unreadNotifications()->count()]);
-    }
-
-    /**
-     * Only the whitelisted routing keys — never the rest of `metadata`,
-     * which may hold admin-side context.
-     *
-     * @return array<string, string>|null
-     */
-    private function target(mixed $metadata): ?array
-    {
-        if (! is_array($metadata) || ! in_array($metadata['kind'] ?? null, ['athlete', 'moment', 'order', 'event'], true)) {
-            return null;
-        }
-
-        return array_filter([
-            'kind' => $metadata['kind'],
-            'username' => is_string($metadata['username'] ?? null) ? $metadata['username'] : null,
-            'moment_uuid' => is_string($metadata['moment_uuid'] ?? null) ? $metadata['moment_uuid'] : null,
-            'order_uuid' => is_string($metadata['order_uuid'] ?? null) ? $metadata['order_uuid'] : null,
-        ], fn ($value) => $value !== null);
+        return $this->respond($notifications, meta: ['unread_count' => $this->unread($request)]);
     }
 
     public function markRead(Request $request, string $notification): JsonResponse
@@ -70,13 +44,18 @@ class NotificationController extends Controller
         $record = $this->sanctumUser($request)->notifications()->whereKey($notification)->firstOrFail();
         $record->markAsRead();
 
-        return $this->respond(null, 'Notificación marcada como leída.');
+        return $this->respond(['unread_count' => $this->unread($request)], 'Notificación marcada como leída.');
     }
 
     public function markAllRead(Request $request): JsonResponse
     {
-        $this->sanctumUser($request)->unreadNotifications()->update(['read_at' => now()]);
+        UnreadCounter::customer($this->sanctumUser($request)->unreadNotifications())->update(['read_at' => now()]);
 
-        return $this->respond(null, 'Todas las notificaciones fueron marcadas como leídas.');
+        return $this->respond(['unread_count' => 0], 'Todas las notificaciones fueron marcadas como leídas.');
+    }
+
+    private function unread(Request $request): int
+    {
+        return UnreadCounter::customer($this->sanctumUser($request)->unreadNotifications())->count();
     }
 }

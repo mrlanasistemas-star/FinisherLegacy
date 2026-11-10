@@ -9,6 +9,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { Search } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
+import AdminAlertBell from '@/components/admin/AdminAlertBell.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import NotificationBell from '@/components/NotificationBell.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -28,6 +29,9 @@ const props = withDefaults(defineProps<{ breadcrumbs?: BreadcrumbItem[] }>(), {
 const page = usePage();
 const permissions = computed(() => page.props.auth?.permissions ?? []);
 const path = computed(() => page.url.split('?')[0]);
+const canSeeAdminAlerts = computed(() =>
+    permissions.value.includes('dashboard.admin.view'),
+);
 
 const isAdmin = computed(
     () => visibleAdminSections(permissions.value).length > 0,
@@ -109,6 +113,8 @@ onMounted(() => {
                     >{{ shortcut }}</kbd
                 >
             </button>
+            <!-- Back-office alerts (docs/renovacion/notificaciones.md). -->
+            <AdminAlertBell v-if="canSeeAdminAlerts" />
             <!-- Slot owned by A1 (notification center). -->
             <NotificationBell />
         </div>

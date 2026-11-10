@@ -12,12 +12,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Optional `Idempotency-Key` header support for general `/api/v1/*` write
- * endpoints (currently: generate plate) — the same replay pattern
- * App\Http\Middleware\EnsureIdempotencyKey already gives the Device API,
- * generalized to any authenticated Sanctum actor (User or
- * ProductionDevice) instead of only ProductionDevice, since a
- * User-authenticated API client needs the exact same protection
- * (docs/api/v1.md §Idempotencia).
+ * endpoints (e.g. POST /api/v1/events) — a retried request with the same
+ * key replays the stored response instead of running twice, for any
+ * authenticated Sanctum actor (docs/api/v1.md §Idempotencia).
  */
 class EnsureApiIdempotencyKey
 {
