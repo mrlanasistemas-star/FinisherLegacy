@@ -8,6 +8,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
     BadgeCheck,
+    BadgePercent,
     Camera,
     ChevronRight,
     Hourglass,
@@ -56,6 +57,7 @@ const props = defineProps<{
         pending_payout_minor: number;
     };
     commissionPercent: number;
+    canManageCommissions?: boolean;
 }>();
 
 const q = ref(props.filters.q ?? '');
@@ -132,6 +134,16 @@ const shortDate = (iso: string | null) =>
                     foto vendida.
                 </p>
             </div>
+            <Button
+                v-if="canManageCommissions"
+                as-child
+                variant="outline"
+                class="rounded-full"
+            >
+                <Link href="/admin/photographer-commissions"
+                    ><BadgePercent class="size-4" /> Comisiones y reportes</Link
+                >
+            </Button>
         </div>
 
         <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

@@ -3,6 +3,7 @@
 use App\Actions\Commerce\MarkOrderPaid;
 use App\Actions\Commerce\RegisterManualPayment;
 use App\Actions\Photos\CheckoutEventPhotos;
+use App\Actions\Photos\ReversePhotoSale;
 use App\Enums\EventPhotoStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -214,6 +215,34 @@ test('only the buyer can download the original', function () {
     $this->actingAs($buyer)->get("/fotos/descargar/{$sale->uuid}")->assertOk()->assertDownload();
 
     expect($sale->fresh()->download_count)->toBe(1);
+});
+
+test('a refunded photo sale no longer grants the download and frees the photo to be bought again', function () {
+    $buyer = User::factory()->create();
+    $photo = marketPhoto();
+    $order = app(CheckoutEventPhotos::class)->handle($buyer, [$photo->uuid]);
+    marketPay($order, 'openpay');
+    $sale = PhotoSale::query()->where('order_id', $order->id)->firstOrFail();
+
+    $this->actingAs($buyer)->get("/fotos/descargar/{$sale->uuid}")->assertOk()->assertDownload();
+
+    app(ReversePhotoSale::class)->handle($sale, 'Reembolso de prueba');
+
+    // The link itself stops working — no file, no extra download counted.
+    $this->actingAs($buyer)->get("/fotos/descargar/{$sale->uuid}")
+        ->assertRedirect('/fotos')
+        ->assertInertiaFlash('toast.type', 'error');
+    expect($sale->fresh()->download_count)->toBe(1);
+
+    // And it leaves "Mis fotos" and the order's downloads.
+    $this->actingAs($buyer)->get('/fotos')
+        ->assertInertia(fn ($page) => $page->has('purchased', 0));
+    $this->actingAs($buyer)->get("/mis-pedidos/{$order->uuid}")
+        ->assertInertia(fn ($page) => $page->has('photoDownloads', 0));
+
+    // Refunded = no longer owned: the same photo can be bought again.
+    $again = app(CheckoutEventPhotos::class)->handle($buyer, [$photo->uuid]);
+    expect($again->id)->not->toBe($order->id);
 });
 
 test('a missing original tells the buyer instead of failing silently', function () {

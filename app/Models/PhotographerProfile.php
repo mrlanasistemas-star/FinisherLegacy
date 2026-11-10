@@ -12,7 +12,8 @@ use Illuminate\Support\Carbon;
 
 /**
  * A photographer selling event photos on Finisher Legacy. Uploading is
- * free; Finisher keeps a commission per sale (config finisher.photos).
+ * free; Finisher keeps a commission per sale (admin-editable, optionally
+ * overridden per photographer — App\Services\Commissions\CommissionResolver).
  * Payout data (CLABE) is encrypted at rest.
  *
  * @property int $id
@@ -72,6 +73,16 @@ class PhotographerProfile extends Model
     public function sales(): HasMany
     {
         return $this->hasMany(PhotoSale::class);
+    }
+
+    /**
+     * Commission override history (App\Services\Commissions).
+     *
+     * @return HasMany<PhotographerCommissionSetting, $this>
+     */
+    public function commissionSettings(): HasMany
+    {
+        return $this->hasMany(PhotographerCommissionSetting::class);
     }
 
     /** @return HasMany<PhotographerPayout, $this> */

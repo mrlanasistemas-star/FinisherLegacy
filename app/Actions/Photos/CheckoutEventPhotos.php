@@ -50,6 +50,7 @@ class CheckoutEventPhotos
         $unavailable = array_values(array_diff($requested, $photos->pluck('uuid')->all()));
 
         $owned = PhotoSale::query()
+            ->grantingAccess()
             ->where('buyer_user_id', $buyer->id)
             ->whereIn('event_photo_id', $photos->pluck('id'))
             ->pluck('event_photo_id')

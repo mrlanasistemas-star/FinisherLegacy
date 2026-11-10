@@ -20,8 +20,26 @@ type Sale = {
     processor_fee_estimated: boolean;
     payment_method_label: string | null;
     payout_status: string;
+    gateway_fee_absorbed_by?: 'photographer' | 'finisher';
+    refunded_at?: string | null;
+    reversed_net_minor?: number | null;
     created_at: string;
 };
+
+function payoutLabel(sale: Sale): { label: string; class: string } {
+    if (sale.refunded_at) {
+        return sale.payout_status === 'paid'
+            ? {
+                  label: 'Reembolsada · se descuenta del próximo pago',
+                  class: 'bg-red-100 text-red-800',
+              }
+            : { label: 'Reembolsada', class: 'bg-red-100 text-red-800' };
+    }
+
+    return sale.payout_status === 'paid'
+        ? { label: 'Transferida', class: 'bg-emerald-600 text-white' }
+        : { label: 'Por transferir', class: 'bg-amber-100 text-amber-800' };
+}
 
 defineProps<{
     sales: {
@@ -96,24 +114,23 @@ const money = (minor: number) =>
                                 sale.processor_fee_estimated
                                     ? 'Procesamiento (est.)'
                                     : 'Procesamiento'
-                            }}: {{ money(sale.processor_fee_minor) }}</span
+                            }}: {{ money(sale.processor_fee_minor) }}
+                            <template
+                                v-if="
+                                    sale.gateway_fee_absorbed_by === 'finisher'
+                                "
+                            >
+                                (lo absorbe Finisher)</template
+                            ></span
                         >
                     </div>
                 </div>
                 <span
                     class="inline-flex items-center gap-1 self-start rounded-full px-3 py-1 text-xs font-semibold sm:self-center"
-                    :class="
-                        sale.payout_status === 'paid'
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-amber-100 text-amber-800'
-                    "
+                    :class="payoutLabel(sale).class"
                 >
                     <Landmark class="size-3.5" />
-                    {{
-                        sale.payout_status === 'paid'
-                            ? 'Transferida'
-                            : 'Por transferir'
-                    }}
+                    {{ payoutLabel(sale).label }}
                 </span>
             </article>
         </div>

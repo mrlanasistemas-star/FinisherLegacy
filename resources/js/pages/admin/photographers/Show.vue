@@ -9,6 +9,7 @@ import {
     ArrowLeft,
     AtSign,
     BadgeCheck,
+    BadgePercent,
     Camera,
     Globe,
     Landmark,
@@ -20,6 +21,7 @@ import {
     UserRound,
     Wallet,
 } from '@lucide/vue';
+import Swal from 'sweetalert2';
 import { ref } from 'vue';
 import DatePicker from '@/components/DatePicker.vue';
 import InputError from '@/components/InputError.vue';
@@ -92,13 +94,30 @@ const props = defineProps<{
         currency: string;
         payment_provider: string | null;
         payout_status: string;
+        commission_percent: number;
+        commission_source: string | null;
+        gateway_fee_absorbed_by: 'photographer' | 'finisher';
+        refunded_at: string | null;
+        reversed_net_minor: number | null;
+        reversal_reason: string | null;
         created_at: string | null;
     }[];
+    canManageCommissions: boolean;
+    commission: {
+        commission_percent: number;
+        source: 'config' | 'global' | 'override';
+        effective_from: string | null;
+        gateway_fee_absorbed_by: 'photographer' | 'finisher';
+        upcoming: { effective_from: string; commission_percent: number } | null;
+        clawback_minor: number;
+    };
     payouts: {
         uuid: string;
         amount_minor: number;
         currency: string;
         sales_count: number;
+        reversals_minor?: number;
+        reversals_count?: number;
         reference: string | null;
         notes: string | null;
         paid_at: string;
@@ -158,6 +177,37 @@ function registerPayout() {
             payoutForm.reset();
         },
     });
+}
+
+async function reverseSale(uuid: string) {
+    const result = await Swal.fire({
+        title: '¿Revertir esta venta por reembolso?',
+        text: 'La ganancia del fotógrafo se descuenta (si ya se le pagó, se resta del próximo pago). La venta original no se modifica.',
+        input: 'text',
+        inputPlaceholder: 'Motivo, p. ej. reembolso parcial del pedido',
+        inputValidator: (v) => (v.trim() ? null : 'Indica el motivo.'),
+        icon: 'warning',
+        iconColor: '#c9a45c',
+        showCancelButton: true,
+        confirmButtonText: 'Revertir venta',
+        cancelButtonText: 'Cancelar',
+        background: '#ffffff',
+        color: '#171714',
+        confirmButtonColor: '#171714',
+        reverseButtons: true,
+        customClass: { cancelButton: 'fl-swal-cancel' },
+    });
+    const reason = result.isConfirmed ? String(result.value ?? '').trim() : '';
+
+    if (!reason) {
+        return;
+    }
+
+    router.post(
+        `/admin/photographer-commissions/ventas/${uuid}/revertir`,
+        { reason },
+        { preserveScroll: true },
+    );
 }
 
 const date = (iso: string | null) =>
@@ -280,10 +330,75 @@ const date = (iso: string | null) =>
             <div class="fl-card col-span-2 bg-fl-cream/50 p-4 lg:col-span-1">
                 <dt class="text-xs text-fl-gold-ink">Saldo pendiente</dt>
                 <dd class="legacy-numeric mt-1 text-2xl font-semibold">
-                    <Money :minor="photographer.pending_minor" />
+                    <Money
+                        :minor="
+                            photographer.pending_minor -
+                            commission.clawback_minor
+                        "
+                    />
                 </dd>
+                <p
+                    v-if="commission.clawback_minor > 0"
+                    class="text-xs text-red-700"
+                >
+                    incluye −<Money :minor="commission.clawback_minor" /> de
+                    reembolsos
+                </p>
             </div>
         </dl>
+
+        <!-- Commission -->
+        <section
+            class="fl-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
+        >
+            <span
+                class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-fl-cream text-fl-gold-ink"
+                ><BadgePercent class="size-4"
+            /></span>
+            <div class="min-w-0 flex-1 text-sm">
+                <p>
+                    Comisión vigente:
+                    <strong class="legacy-numeric"
+                        >{{ commission.commission_percent }}%</strong
+                    >
+                    {{
+                        commission.source === 'override'
+                            ? '(personalizada)'
+                            : '(global)'
+                    }}
+                    <span
+                        v-if="commission.effective_from"
+                        class="text-muted-foreground"
+                    >
+                        · desde {{ date(commission.effective_from) }}</span
+                    >
+                    · pasarela:
+                    {{
+                        commission.gateway_fee_absorbed_by === 'finisher'
+                            ? 'la absorbe Finisher Legacy'
+                            : 'la absorbe el fotógrafo'
+                    }}
+                </p>
+                <p
+                    v-if="commission.upcoming"
+                    class="text-xs font-medium text-fl-gold-ink"
+                >
+                    Cambia a {{ commission.upcoming.commission_percent }}% el
+                    {{ date(commission.upcoming.effective_from) }}.
+                </p>
+            </div>
+            <Button
+                v-if="canManageCommissions"
+                as-child
+                variant="outline"
+                size="sm"
+                class="rounded-full"
+            >
+                <Link href="/admin/photographer-commissions"
+                    >Configurar comisión</Link
+                >
+            </Button>
+        </section>
 
         <!-- Tabs -->
         <div
@@ -544,6 +659,17 @@ const date = (iso: string | null) =>
                         </td>
                         <td class="px-4 py-2">
                             <span
+                                v-if="sale.refunded_at"
+                                class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800"
+                                :title="sale.reversal_reason ?? ''"
+                                >{{
+                                    sale.payout_status === 'paid'
+                                        ? 'Reembolsada (a descontar)'
+                                        : 'Reembolsada'
+                                }}</span
+                            >
+                            <span
+                                v-else
                                 class="rounded-full px-2 py-0.5 text-xs font-semibold"
                                 :class="
                                     sale.payout_status === 'paid'
@@ -556,6 +682,22 @@ const date = (iso: string | null) =>
                                         : 'Pendiente'
                                 }}</span
                             >
+                            <span
+                                class="mt-0.5 block text-[11px] text-muted-foreground"
+                                >{{ sale.commission_percent }}%{{
+                                    sale.gateway_fee_absorbed_by === 'finisher'
+                                        ? ' · pasarela FL'
+                                        : ''
+                                }}</span
+                            >
+                            <button
+                                v-if="canManageCommissions && !sale.refunded_at"
+                                type="button"
+                                class="mt-0.5 block text-[11px] text-red-700 hover:underline"
+                                @click="reverseSale(sale.uuid)"
+                            >
+                                Revertir por reembolso
+                            </button>
                         </td>
                     </tr>
                     <tr v-if="!sales.length">
@@ -591,6 +733,13 @@ const date = (iso: string | null) =>
                     <p class="text-xs text-muted-foreground">
                         {{ date(payout.paid_at) }} ·
                         {{ payout.sales_count }} ventas
+                        <template v-if="payout.reversals_count">
+                            · {{ payout.reversals_count }} reembolsos
+                            descontados (−<Money
+                                :minor="payout.reversals_minor ?? 0"
+                                :currency="payout.currency"
+                            />)</template
+                        >
                         <template v-if="payout.reference">
                             · Ref. {{ payout.reference }}</template
                         >
@@ -648,6 +797,19 @@ const date = (iso: string | null) =>
                         maxlength="500"
                     />
                 </div>
+                <p
+                    v-if="commission.clawback_minor > 0"
+                    class="rounded-xl bg-red-50 p-3 text-xs text-red-800"
+                >
+                    Se descontarán
+                    <Money :minor="commission.clawback_minor" /> de reembolsos
+                    de ventas que ya se habían transferido.
+                </p>
+                <InputError
+                    :message="
+                        (payoutForm.errors as Record<string, string>).payout
+                    "
+                />
                 <DialogFooter>
                     <Button
                         type="submit"

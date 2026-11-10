@@ -14,7 +14,9 @@ use Illuminate\Support\Str;
 /**
  * Called by MarkOrderPaid: every paid photo OrderItem becomes a PhotoSale
  * with the money split frozen (Finisher commission, card processor fee,
- * photographer net) and the item is fulfilled immediately (digital
+ * photographer net — the commission terms in force at payment time, see
+ * App\Services\Commissions\CommissionResolver; never recalculated when
+ * the rate changes later) and the item is fulfilled immediately (digital
  * delivery). Idempotent per order item — a late or repeated webhook never
  * creates a second sale.
  */
@@ -38,6 +40,7 @@ class RecordPhotoSales
             ->where('status', PaymentStatus::Paid)
             ->latest('id')
             ->first()?->provider?->value;
+        $paidAt = now();
 
         foreach ($photoItems as $item) {
             $photo = $item->eventPhoto;
@@ -46,7 +49,9 @@ class RecordPhotoSales
                 continue;
             }
 
-            $split = $this->fees->split((int) $item->line_total_minor, $itemsInOrder, $provider);
+            // Snapshot of the terms in force right now (override → global →
+            // env): a later rate change never touches this row.
+            $split = $this->fees->split((int) $item->line_total_minor, $itemsInOrder, $provider, $photo->photographer_profile_id, $paidAt);
 
             try {
                 PhotoSale::create([
@@ -63,6 +68,9 @@ class RecordPhotoSales
                     'payment_provider' => $split['payment_provider'],
                     'photographer_net_minor' => $split['photographer_net_minor'],
                     'commission_percent' => $split['commission_percent'],
+                    'commission_source' => $split['commission_source'],
+                    'commission_setting_id' => $split['commission_setting_id'],
+                    'gateway_fee_absorbed_by' => $split['gateway_fee_absorbed_by'],
                     'currency' => $item->currency,
                     'payout_status' => 'pending',
                 ]);

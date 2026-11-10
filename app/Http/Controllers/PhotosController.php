@@ -44,7 +44,7 @@ class PhotosController extends Controller
         $editionId = $request->integer('evento') ?: null;
         $bib = ltrim(trim(mb_substr($request->string('numero')->toString(), 0, 20)), '#');
         $searched = $editionId !== null && $bib !== '';
-        $owned = $viewer === null ? [] : array_values(PhotoSale::query()->where('buyer_user_id', $viewer->id)->pluck('event_photo_id')->map(fn ($id) => (int) $id)->all());
+        $owned = $viewer === null ? [] : array_values(PhotoSale::query()->grantingAccess()->where('buyer_user_id', $viewer->id)->pluck('event_photo_id')->map(fn ($id) => (int) $id)->all());
 
         return Inertia::render('photos/Index', [
             'events' => $this->eventOptions(),
@@ -79,6 +79,14 @@ class PhotosController extends Controller
     {
         // Only the buyer — anyone else gets a 404 (never confirms it exists).
         abort_unless($sale->buyer_user_id === $request->user()->id, 404);
+
+        // A refunded purchase no longer grants the original: the money went
+        // back, so the download is gone too (the watermarked preview stays).
+        if ($sale->isReversed()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Esta compra fue reembolsada, así que la descarga ya no está disponible.']);
+
+            return to_route('photos.index');
+        }
 
         $photo = $sale->photo;
 
@@ -224,6 +232,7 @@ class PhotosController extends Controller
     private function purchased(User $viewer): array
     {
         return array_values(PhotoSale::query()
+            ->grantingAccess()
             ->where('buyer_user_id', $viewer->id)
             ->with(['photo.eventEdition.event', 'photo.photographer'])
             ->latest('id')

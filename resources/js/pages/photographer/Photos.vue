@@ -22,7 +22,7 @@ import {
 import { computed, onBeforeUnmount, ref } from 'vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
 import InputError from '@/components/InputError.vue';
-import FeeBreakdown from '@/components/photos/FeeBreakdown.vue';
+import PhotographerCommissionSimulator from '@/components/photos/PhotographerCommissionSimulator.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,6 +65,7 @@ const props = defineProps<{
     filters: { evento: number | null; estado: string | null };
     fees: PhotoFeeRules;
     limits: { max_files: number; max_file_kb: number };
+    pricePoints: number[];
 }>();
 
 const money = (minor: number) =>
@@ -270,10 +271,9 @@ async function remove(photo: Photo) {
                     </div>
                     <InputError :message="form.errors.price_minor" />
                 </div>
-                <FeeBreakdown
+                <PhotographerCommissionSimulator
                     :rules="fees"
                     :price-minor="Math.round((Number(price) || 0) * 100)"
-                    compact
                 />
                 <div class="grid gap-1.5">
                     <Label for="up-bibs" class="flex items-center gap-1.5"
@@ -396,6 +396,26 @@ async function remove(photo: Photo) {
         >
             Podrás subir fotos en cuanto aprobemos tu perfil.
         </div>
+
+        <!-- Commission notice + common price points -->
+        <section class="fl-card grid gap-4 p-5 lg:grid-cols-2 lg:p-6">
+            <div class="space-y-2">
+                <h2 class="font-semibold">Cuánto recibes por foto</h2>
+                <PhotographerCommissionSimulator
+                    :rules="fees"
+                    :price-minor="0"
+                    :show-line="false"
+                    show-notice
+                />
+            </div>
+            <PhotographerCommissionSimulator
+                :rules="fees"
+                :price-minor="0"
+                :price-points="pricePoints"
+                :show-line="false"
+                show-table
+            />
+        </section>
 
         <!-- Filters -->
         <div
@@ -546,12 +566,11 @@ async function remove(photo: Photo) {
                             min="0"
                         />
                     </div>
-                    <FeeBreakdown
+                    <PhotographerCommissionSimulator
                         :rules="fees"
                         :price-minor="
                             Math.round((Number(editPrice) || 0) * 100)
                         "
-                        compact
                     />
                     <div class="grid gap-1.5">
                         <Label for="ed-bibs">Números de corredor</Label>

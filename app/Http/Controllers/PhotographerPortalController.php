@@ -9,8 +9,10 @@ use App\Models\EventEdition;
 use App\Models\EventPhoto;
 use App\Models\PhotographerProfile;
 use App\Models\PhotoSale;
+use App\Services\Commissions\CommissionCalculator;
 use App\Services\Photos\PhotoFeeCalculator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +28,13 @@ use Inertia\Response;
  */
 class PhotographerPortalController extends Controller
 {
-    public function __construct(private readonly PhotoFeeCalculator $fees) {}
+    /** Common photo prices (MXN centavos) for the simulator table. */
+    public const array PRICE_POINTS = [5000, 9900, 14900, 19900, 29900];
+
+    public function __construct(
+        private readonly PhotoFeeCalculator $fees,
+        private readonly CommissionCalculator $calculator,
+    ) {}
 
     public function dashboard(Request $request): Response
     {
@@ -41,7 +49,7 @@ class PhotographerPortalController extends Controller
 
         return Inertia::render('photographer/Dashboard', [
             'profile' => $this->profilePayload($profile),
-            'fees' => $this->fees->rules(),
+            'fees' => $this->fees->rules($profile),
             'stats' => [
                 'published' => (clone $photos)->where('status', EventPhotoStatus::Published)->count(),
                 'review' => (clone $photos)->where('status', EventPhotoStatus::Review)->count(),
@@ -50,8 +58,11 @@ class PhotographerPortalController extends Controller
                 'gross_minor' => (int) (clone $sales)->sum('gross_minor'),
                 'platform_fee_minor' => (int) (clone $sales)->sum('platform_fee_minor'),
                 'processor_fee_minor' => (int) (clone $sales)->sum('processor_fee_minor'),
-                'net_minor' => (int) (clone $sales)->sum('photographer_net_minor'),
-                'pending_payout_minor' => (int) (clone $sales)->where('payout_status', 'pending')->sum('photographer_net_minor'),
+                // Net after refunds: a reversed sale's net is not earned.
+                'net_minor' => (int) (clone $sales)->sum('photographer_net_minor') - (int) (clone $sales)->sum('reversed_net_minor'),
+                'refunded_minor' => (int) (clone $sales)->sum('reversed_net_minor'),
+                'pending_payout_minor' => (int) (clone $sales)->payoutDue()->sum('photographer_net_minor')
+                    - (int) (clone $sales)->clawbackDue()->sum('reversed_net_minor'),
                 'paid_out_minor' => (int) (clone $sales)->where('payout_status', 'paid')->sum('photographer_net_minor'),
             ],
             'monthly' => $this->monthly($profile),
@@ -69,6 +80,7 @@ class PhotographerPortalController extends Controller
 
         $editionId = $request->integer('evento') ?: null;
         $status = EventPhotoStatus::tryFrom($request->string('estado')->toString());
+        $terms = $this->fees->terms($profile);
 
         $photos = EventPhoto::query()
             ->where('photographer_profile_id', $profile->id)
@@ -91,7 +103,7 @@ class PhotographerPortalController extends Controller
                 'rejection_reason' => $photo->rejection_reason,
                 'bib_numbers' => $photo->bib_numbers ?? [],
                 'sales_count' => $photo->sales_count,
-                'net_minor' => $this->fees->split($photo->price_minor)['photographer_net_minor'],
+                'net_minor' => $this->calculator->split($photo->price_minor, $terms)['photographer_net_minor'],
             ]);
 
         return Inertia::render('photographer/Photos', [
@@ -99,7 +111,8 @@ class PhotographerPortalController extends Controller
             'photos' => $photos,
             'events' => $this->eventOptions(),
             'filters' => ['evento' => $editionId, 'estado' => $status?->value],
-            'fees' => $this->fees->rules(),
+            'fees' => $this->fees->rules($profile),
+            'pricePoints' => self::PRICE_POINTS,
             'limits' => [
                 'max_files' => (int) config('finisher.photos.max_files_per_upload'),
                 'max_file_kb' => (int) config('finisher.photos.max_file_kb'),
@@ -188,7 +201,35 @@ class PhotographerPortalController extends Controller
         return Inertia::render('photographer/Sales', [
             'profile' => $this->profilePayload($profile),
             'sales' => $this->salesQuery($profile)->paginate(30)->through(fn (PhotoSale $sale) => $this->salePayload($sale)),
-            'fees' => $this->fees->rules(),
+            'fees' => $this->fees->rules($profile),
+        ]);
+    }
+
+    /**
+     * Server-side simulator (JSON) — the same split the portal previews
+     * live and the one a sale would freeze right now, for this
+     * photographer's own terms: one price plus common price points.
+     */
+    public function simulate(Request $request): JsonResponse
+    {
+        $profile = $this->profile($request);
+        $rules = $this->fees->rules($profile);
+
+        $data = $request->validate([
+            'price_minor' => ['required', 'integer', 'min:0', 'max:'.$rules['max_price_minor']],
+            'items' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $terms = $this->fees->terms($profile);
+        $items = (int) ($data['items'] ?? 1);
+
+        return response()->json([
+            'split' => $this->calculator->split((int) $data['price_minor'], $terms, $items),
+            'price_points' => array_map(
+                fn (int $price) => $this->calculator->split($price, $terms, 1),
+                self::PRICE_POINTS,
+            ),
+            'rules' => $rules,
         ]);
     }
 
@@ -319,6 +360,9 @@ class PhotographerPortalController extends Controller
             'commission_percent' => (float) $sale->commission_percent,
             'currency' => $sale->currency,
             'payout_status' => $sale->payout_status,
+            'gateway_fee_absorbed_by' => $sale->gateway_fee_absorbed_by,
+            'refunded_at' => $sale->refunded_at?->toIso8601String(),
+            'reversed_net_minor' => $sale->reversed_net_minor,
             'created_at' => $sale->created_at->toIso8601String(),
         ];
     }

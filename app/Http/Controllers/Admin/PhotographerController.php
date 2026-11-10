@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Photos\RegisterPhotographerPayout;
 use App\Enums\EventPhotoStatus;
 use App\Enums\PhotographerStatus;
 use App\Http\Controllers\Controller;
 use App\Models\EventPhoto;
+use App\Models\PhotographerCommissionSetting;
 use App\Models\PhotographerPayout;
 use App\Models\PhotographerProfile;
 use App\Models\PhotoSale;
+use App\Services\Commissions\CommissionResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,6 +28,8 @@ use Inertia\Response;
  */
 class PhotographerController extends Controller
 {
+    public function __construct(private readonly CommissionResolver $resolver) {}
+
     public function index(Request $request): Response
     {
         $filters = $request->validate([
@@ -55,17 +58,44 @@ class PhotographerController extends Controller
                 'pending_applicants' => PhotographerProfile::query()->where('status', PhotographerStatus::Pending)->count(),
                 'gross_minor' => (int) PhotoSale::query()->sum('gross_minor'),
                 'platform_fee_minor' => (int) PhotoSale::query()->sum('platform_fee_minor'),
-                'pending_payout_minor' => (int) PhotoSale::query()->where('payout_status', 'pending')->sum('photographer_net_minor'),
+                'pending_payout_minor' => (int) PhotoSale::query()->payoutDue()->sum('photographer_net_minor')
+                    - (int) PhotoSale::query()->clawbackDue()->sum('reversed_net_minor'),
             ],
-            'commissionPercent' => (float) config('finisher.photos.platform_commission_percent'),
+            'commissionPercent' => $this->resolver->termsFor(null)->commissionPercent,
+            'canManageCommissions' => (bool) $request->user()?->can('photographers.commissions.manage'),
         ]);
     }
 
-    public function show(PhotographerProfile $photographer): Response
+    public function show(Request $request, PhotographerProfile $photographer): Response
     {
         $profile = $this->withTotals(PhotographerProfile::query()->whereKey($photographer->id))->with('user')->firstOrFail();
+        $terms = $this->resolver->termsFor($profile);
 
         return Inertia::render('admin/photographers/Show', [
+            'canManageCommissions' => (bool) $request->user()?->can('photographers.commissions.manage'),
+            'commission' => [
+                'commission_percent' => $terms->commissionPercent,
+                'source' => $terms->source,
+                'effective_from' => $terms->effectiveFrom?->toIso8601String(),
+                'gateway_fee_absorbed_by' => $terms->gatewayFeeAbsorbedBy,
+                'upcoming' => $this->resolver->upcomingFor($profile),
+                'clawback_minor' => (int) PhotoSale::query()->where('photographer_profile_id', $profile->id)->clawbackDue()->sum('reversed_net_minor'),
+                'overrides' => $profile->commissionSettings()
+                    ->with('author:id,first_name,last_name')
+                    ->orderByDesc('effective_from')
+                    ->orderByDesc('id')
+                    ->limit(20)
+                    ->get()
+                    ->map(fn (PhotographerCommissionSetting $s) => [
+                        'uuid' => $s->uuid,
+                        'commission_percent' => $s->commission_percent !== null ? (float) $s->commission_percent : null,
+                        'effective_from' => $s->effective_from->toIso8601String(),
+                        'notes' => $s->notes,
+                        'author' => $s->author?->name,
+                        'cancelled_at' => $s->cancelled_at?->toIso8601String(),
+                        'pending' => $s->isPending(),
+                    ]),
+            ],
             'photographer' => [
                 ...$this->row($profile),
                 'bio' => $profile->bio,
@@ -109,6 +139,12 @@ class PhotographerController extends Controller
                     'currency' => $sale->currency,
                     'payment_provider' => $sale->payment_provider,
                     'payout_status' => $sale->payout_status,
+                    'commission_percent' => $sale->commission_rate,
+                    'commission_source' => $sale->commission_source,
+                    'gateway_fee_absorbed_by' => $sale->gateway_fee_absorbed_by,
+                    'refunded_at' => $sale->refunded_at?->toIso8601String(),
+                    'reversed_net_minor' => $sale->reversed_net_minor,
+                    'reversal_reason' => $sale->reversal_reason,
                     'created_at' => $sale->created_at->toIso8601String(),
                 ]),
             'payouts' => $profile->payouts()->with('recorder:id,first_name,last_name')->latest('paid_at')->get()
@@ -117,6 +153,8 @@ class PhotographerController extends Controller
                     'amount_minor' => $payout->amount_minor,
                     'currency' => $payout->currency,
                     'sales_count' => $payout->sales_count,
+                    'reversals_minor' => $payout->reversals_minor,
+                    'reversals_count' => $payout->reversals_count,
                     'reference' => $payout->reference,
                     'notes' => $payout->notes,
                     'paid_at' => $payout->paid_at->toIso8601String(),
@@ -145,10 +183,12 @@ class PhotographerController extends Controller
     }
 
     /**
-     * Registers a transfer: settles every pending sale (per currency) and
-     * records what it covered. Nothing pending = nothing recorded.
+     * Registers a transfer: settles every sale whose net is due (per
+     * currency), deducts clawbacks of refunded sales already paid out and
+     * records what it covered (App\Actions\Photos\RegisterPhotographerPayout).
+     * Nothing pending = nothing recorded.
      */
-    public function markPaid(Request $request, PhotographerProfile $photographer): RedirectResponse
+    public function markPaid(Request $request, PhotographerProfile $photographer, RegisterPhotographerPayout $register): RedirectResponse
     {
         $data = $request->validate([
             'reference' => ['nullable', 'string', 'max:120'],
@@ -156,35 +196,7 @@ class PhotographerController extends Controller
             'paid_at' => ['nullable', 'date', 'before_or_equal:today'],
         ]);
 
-        $payouts = DB::transaction(function () use ($data, $photographer, $request) {
-            $pending = PhotoSale::query()
-                ->where('photographer_profile_id', $photographer->id)
-                ->where('payout_status', 'pending')
-                ->lockForUpdate()
-                ->get();
-
-            return $pending->groupBy('currency')->map(function ($sales, $currency) use ($data, $photographer, $request) {
-                $payout = PhotographerPayout::create([
-                    'uuid' => (string) Str::uuid(),
-                    'photographer_profile_id' => $photographer->id,
-                    'amount_minor' => (int) $sales->sum('photographer_net_minor'),
-                    'currency' => $currency,
-                    'sales_count' => $sales->count(),
-                    'reference' => $data['reference'] ?? null,
-                    'notes' => $data['notes'] ?? null,
-                    'paid_at' => isset($data['paid_at']) ? now()->parse($data['paid_at']) : now(),
-                    'recorded_by' => $request->user()->id,
-                ]);
-
-                PhotoSale::query()->whereIn('id', $sales->pluck('id'))->update([
-                    'payout_status' => 'paid',
-                    'paid_out_at' => $payout->paid_at,
-                    'photographer_payout_id' => $payout->id,
-                ]);
-
-                return $payout;
-            })->values();
-        });
+        $payouts = $register->handle($photographer, $data, $request->user());
 
         $count = (int) $payouts->sum('sales_count');
 
@@ -208,7 +220,7 @@ class PhotographerController extends Controller
             ])
             ->withSum('sales as gross_minor', 'gross_minor')
             ->withSum('sales as platform_fee_minor', 'platform_fee_minor')
-            ->withSum(['sales as pending_minor' => fn ($q) => $q->where('payout_status', 'pending')], 'photographer_net_minor')
+            ->withSum(['sales as pending_minor' => fn ($q) => $q->where('payout_status', 'pending')->whereNull('refunded_at')], 'photographer_net_minor')
             ->withSum(['sales as paid_minor' => fn ($q) => $q->where('payout_status', 'paid')], 'photographer_net_minor');
     }
 

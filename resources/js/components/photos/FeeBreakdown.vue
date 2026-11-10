@@ -41,7 +41,11 @@ const pct = (part: number) =>
         >
             <span class="bg-emerald-500" :style="{ width: pct(split.net) }" />
             <span class="bg-fl-gold" :style="{ width: pct(split.platform) }" />
-            <span class="bg-sky-500" :style="{ width: pct(split.processor) }" />
+            <span
+                v-if="!split.finisherAbsorbs"
+                class="bg-sky-500"
+                :style="{ width: pct(split.processor) }"
+            />
         </div>
         <dl
             class="grid gap-2"
@@ -79,7 +83,11 @@ const pct = (part: number) =>
                 <CreditCard class="size-4 shrink-0 text-sky-700" />
                 <div class="min-w-0">
                     <dt class="text-[11px] text-sky-800">
-                        Procesamiento de pago (est.)
+                        {{
+                            split.finisherAbsorbs
+                                ? 'Pasarela (la absorbe Finisher)'
+                                : 'Procesamiento de pago (est.)'
+                        }}
                     </dt>
                     <dd class="legacy-numeric font-semibold text-sky-900">
                         {{ money(split.processor) }}

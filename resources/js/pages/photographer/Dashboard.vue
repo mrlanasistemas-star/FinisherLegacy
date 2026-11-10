@@ -20,7 +20,7 @@ import {
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
-import FeeBreakdown from '@/components/photos/FeeBreakdown.vue';
+import PhotographerCommissionSimulator from '@/components/photos/PhotographerCommissionSimulator.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -378,11 +378,7 @@ function save() {
                         </li>
                         <li class="flex items-center gap-3">
                             <Building2 class="size-4 text-fl-gold-ink" />
-                            <span class="flex-1"
-                                >Finisher Legacy ({{
-                                    fees.platform_commission_percent
-                                }}%)</span
-                            >
+                            <span class="flex-1">Comisión Finisher Legacy</span>
                             <span class="legacy-numeric">{{
                                 money(stats.platform_fee_minor)
                             }}</span>
@@ -393,6 +389,16 @@ function save() {
                             <span class="legacy-numeric">{{
                                 money(stats.processor_fee_minor)
                             }}</span>
+                        </li>
+                        <li
+                            v-if="stats.refunded_minor"
+                            class="flex items-center gap-3 text-red-700"
+                        >
+                            <CreditCard class="size-4" />
+                            <span class="flex-1">Reembolsos (descontados)</span>
+                            <span class="legacy-numeric"
+                                >−{{ money(stats.refunded_minor) }}</span
+                            >
                         </li>
                         <li
                             class="flex items-center gap-3 border-t border-border pt-3"
@@ -423,14 +429,14 @@ function save() {
                             </span>
                         </label>
                         <div class="mt-3">
-                            <FeeBreakdown
+                            <PhotographerCommissionSimulator
                                 :rules="fees"
                                 :price-minor="
                                     Math.round(
                                         (Number(examplePrice) || 0) * 100,
                                     )
                                 "
-                                compact
+                                show-notice
                             />
                         </div>
                     </div>
