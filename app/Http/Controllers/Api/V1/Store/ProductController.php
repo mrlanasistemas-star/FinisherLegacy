@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\ProductDetailResource;
 use App\Http\Resources\Api\V1\ProductSummaryResource;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Support\I18n\ContentTranslations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -43,17 +44,25 @@ class ProductController extends Controller
             ->paginate(24)
             ->withQueryString();
 
+        $categories = ProductCategory::query()
+            ->where('active', true)
+            ->whereHas('products', fn ($q) => $q->where('active', true)->where('status', 'active')->where('type', '!=', ProductType::DigitalPhoto->value))
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
+
+        // One query per model class for the names in the request's language.
+        $content = app(ContentTranslations::class);
+        $content->preload($products->getCollection());
+        $content->preload($products->getCollection()->pluck('category')->filter());
+        $content->preload($categories);
+
         return $this->respond(ProductSummaryResource::collection($products), meta: [
             'current_page' => $products->currentPage(),
             'last_page' => $products->lastPage(),
             'total' => $products->total(),
             // Only categories that actually have something for sale — the
             // chips a client shows, filtered by `slug`.
-            'categories' => ProductCategory::query()
-                ->where('active', true)
-                ->whereHas('products', fn ($q) => $q->where('active', true)->where('status', 'active')->where('type', '!=', ProductType::DigitalPhoto->value))
-                ->orderBy('name')
-                ->get(['name', 'slug']),
+            'categories' => $categories->map(fn (ProductCategory $category) => ['name' => tr($category, 'name'), 'slug' => $category->slug])->values(),
         ]);
     }
 
@@ -61,6 +70,9 @@ class ProductController extends Controller
     {
         abort_unless($product->active && $product->status->value === 'active' && $product->type !== ProductType::DigitalPhoto, 404);
 
-        return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'collection', 'design', 'variants.inventoryLevels', 'media', 'contentSections'])));
+        $product->loadMissing(['category', 'collection', 'design', 'variants.inventoryLevels', 'media', 'contentSections']);
+        app(ContentTranslations::class)->preload([$product, ...$product->variants, ...$product->contentSections]);
+
+        return $this->respond(new ProductDetailResource($product));
     }
 }

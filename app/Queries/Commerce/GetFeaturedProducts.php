@@ -9,6 +9,7 @@ use App\Models\ProductVariant;
 use App\Services\Commerce\InventoryService;
 use App\Services\Commerce\PromotionResolver;
 use App\Support\Collections\TagDesign;
+use App\Support\I18n\Locales;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -62,12 +63,12 @@ class GetFeaturedProducts
 
         return [
             'uuid' => $product->uuid,
-            'name' => $product->name,
+            'name' => tr($product, 'name'),
             'slug' => $product->slug,
             'type' => $product->type->value,
-            'category' => $product->category?->name,
+            'category' => $product->category !== null ? tr($product->category, 'name') : null,
             'category_slug' => $product->category?->slug,
-            'tagline' => $product->tagline,
+            'tagline' => tr($product, 'tagline'),
             'availability' => $availability->value,
             'availability_label' => $availability->label(),
             'from_price_minor' => $promotion !== null ? $fromPrice - $promotion->discountFor((int) $fromPrice) : $fromPrice,
@@ -76,7 +77,8 @@ class GetFeaturedProducts
             'currency' => $firstVariant !== null ? $firstVariant->currency : config('finisher.commerce.default_currency'),
             'in_stock' => $product->variants->contains(fn (ProductVariant $variant) => $variant->isAvailable()),
             'image_url' => $product->primaryImageUrl(),
-            'image_alt' => $galleryImages->first()->alt_text ?? $product->conceptImageAlt(),
+            // Concept alts live in config, in Spanish: other languages name the product.
+            'image_alt' => $galleryImages->first()->alt_text ?? (app()->getLocale() === Locales::source() ? $product->conceptImageAlt() : tr($product, 'name')),
             'image_source' => $product->imageSource(),
             'hover_image_url' => $hoverImage?->url() ?? self::conceptHoverUrl($product, $galleryImages->isEmpty()),
             'variant_count' => $product->variants->count(),

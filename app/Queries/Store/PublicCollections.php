@@ -12,6 +12,7 @@ use App\Models\Collection;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Support\Collections\TagDesign;
+use App\Support\I18n\ContentTranslations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -51,6 +52,7 @@ class PublicCollections
         return array_values($this->query()
             ->when($limit, fn (Builder $q, int $l) => $q->limit($l))
             ->get()
+            ->tap(fn (EloquentCollection $collections) => $this->preloadTranslations($collections))
             ->map(fn (Collection $collection) => $this->card($collection))
             ->all());
     }
@@ -64,10 +66,10 @@ class PublicCollections
         $priced = $products->whereNotNull('price_minor');
 
         return [
-            'name' => $collection->name,
+            'name' => tr($collection, 'name'),
             'slug' => $collection->slug,
-            'tagline' => $collection->tagline,
-            'discipline' => $collection->discipline,
+            'tagline' => tr($collection, 'tagline'),
+            'discipline' => tr($collection, 'discipline'),
             'destination' => $collection->destination,
             'year' => $collection->year,
             'edition' => $collection->edition,
@@ -91,12 +93,13 @@ class PublicCollections
     public function detail(Collection $collection): array
     {
         $collection->loadMissing(['designs', 'products' => fn (Relation $q) => $this->listable($q)]);
+        $this->preloadTranslations([$collection]);
 
         return [
             ...$this->card($collection),
-            'description' => $collection->description,
-            'seo_title' => $collection->seo_title,
-            'seo_description' => $collection->seo_description,
+            'description' => tr($collection, 'description'),
+            'seo_title' => tr($collection, 'seo_title'),
+            'seo_description' => tr($collection, 'seo_description'),
             'products' => $collection->products->map(fn (Product $product) => $this->product($product->setRelation('collection', $collection)))->values()->all(),
         ];
     }
@@ -131,13 +134,13 @@ class PublicCollections
 
         return [
             'uuid' => $product->uuid,
-            'name' => $product->name,
+            'name' => tr($product, 'name'),
             'slug' => $product->slug,
             'type' => $product->type->value,
-            'tagline' => $product->tagline,
-            'description' => $product->description,
+            'tagline' => tr($product, 'tagline'),
+            'description' => tr($product, 'description'),
             'image_url' => $product->primaryImageUrl(),
-            'image_alt' => $image->alt_text ?? $product->name,
+            'image_alt' => $image->alt_text ?? tr($product, 'name'),
             'price_minor' => $best?->amountMinor,
             'compare_at_minor' => $best?->originalAmountMinor,
             'promotion_label' => $best?->promotionLabel,
@@ -146,9 +149,9 @@ class PublicCollections
             'availability' => $availability->value,
             'availability_label' => $availability->label(),
             'available' => $product->isPurchasable() && $variants->contains(fn (ProductVariant $v) => $this->availability->handle($v)),
-            'material' => $product->material,
-            'strap_type' => $product->strap_type,
-            'dimensions' => $product->dimensions,
+            'material' => tr($product, 'material'),
+            'strap_type' => tr($product, 'strap_type'),
+            'dimensions' => tr($product, 'dimensions'),
             'tag_design' => TagDesign::forProduct($product, false),
         ];
     }
@@ -166,6 +169,29 @@ class PublicCollections
             ->where('type', '!=', ProductType::DigitalPhoto->value)
             ->orderBy('sort_order')
             ->orderBy('name');
+    }
+
+    /**
+     * One query per model class for the translations of the collections
+     * and their products (nothing to do in Spanish).
+     *
+     * @param  iterable<Collection>  $collections
+     */
+    public function preloadTranslations(iterable $collections): void
+    {
+        $content = app(ContentTranslations::class);
+
+        foreach ($collections as $collection) {
+            $content->preload([$collection]);
+
+            if ($collection->relationLoaded('designs')) {
+                $content->preload($collection->designs);
+            }
+
+            if ($collection->relationLoaded('products')) {
+                $content->preload($collection->products);
+            }
+        }
     }
 
     /** Admin-entered accent: only a plain hex color ever reaches a style attribute. */

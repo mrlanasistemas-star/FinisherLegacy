@@ -20,7 +20,7 @@ class ProductVariantResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'sku' => $this->sku,
-            'name' => $this->name,
+            'name' => tr($this->resource, 'name'),
             'attributes' => $this->attributes,
             'base_price_minor' => $this->base_price_minor,
             'currency' => $this->currency,

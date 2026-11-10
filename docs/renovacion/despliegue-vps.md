@@ -85,6 +85,22 @@ por el navegador (limitada al máximo) y se registra `media.ffprobe_missing`.
 php artisan migrate --force
 ```
 
+### 4.1 Idiomas (después de migrar, en cada despliegue)
+
+```bash
+php artisan i18n:sync --no-translate   # carga a la base las traducciones que vienen en lang/ y regenera los catálogos
+php artisan i18n:import-content        # catálogo en inglés: productos, variantes, colecciones, categorías y paquetes
+php artisan i18n:status                # "en" debe quedar en 100%
+```
+
+Los dos son idempotentes y no llaman a ningún traductor. `i18n:import-content`
+lee `database/i18n/content-en.json` (versionado) y empareja cada registro por
+su **texto en español**, así que no depende de ids ni de slugs; nunca pisa una
+traducción revisada en el panel. La columna "Sin traducción en el archivo"
+indica lo que se capturó en producción y aún no tiene inglés: se traduce en
+**Administración → Idiomas → Contenido del catálogo** o agregándolo al
+archivo. Detalle en [idiomas.md](idiomas.md#contenido-dinámico-lo-que-se-captura-en-el-panel).
+
 ## 5. Cachés y procesos
 
 ```bash

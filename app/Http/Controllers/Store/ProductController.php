@@ -18,6 +18,8 @@ use App\Queries\Store\PublicCollections;
 use App\Queries\Store\StorefrontCatalog;
 use App\Services\Commerce\PromotionResolver;
 use App\Support\Collections\TagDesign;
+use App\Support\I18n\ContentTranslations;
+use App\Support\I18n\Locales;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -56,8 +58,8 @@ class ProductController extends Controller
             'products' => $catalog->cards($products),
             'featured' => $plate === null ? null : [
                 ...GetFeaturedProducts::summarize($plate),
-                'collection' => $plate->collection?->isPublished() ? ['name' => $plate->collection->name, 'slug' => $plate->collection->slug, 'year' => $plate->collection->year, 'destination' => $plate->collection->destination] : null,
-                'description' => $plate->description,
+                'collection' => $plate->collection?->isPublished() ? ['name' => tr($plate->collection, 'name'), 'slug' => $plate->collection->slug, 'year' => $plate->collection->year, 'destination' => $plate->collection->destination] : null,
+                'description' => tr($plate, 'description'),
                 'gallery' => $plate->media->where('type', 'image')->sortByDesc('is_primary')->take(3)->values()
                     ->map(fn (ProductMedia $m) => ['url' => $m->url(), 'alt_text' => $m->alt_text]),
             ],
@@ -104,19 +106,23 @@ class ProductController extends Controller
 
         $merch = GetFeaturedProducts::merchandising($product);
 
+        $content = app(ContentTranslations::class);
+        $content->preload([$product, ...$product->variants, ...$product->contentSections, ...$related]);
+        $content->preload(collect([$product->category, $product->collection, ...$related->pluck('category')])->filter());
+
         return Inertia::render('store/Show', [
             'product' => [
                 'uuid' => $product->uuid,
-                'name' => $product->name,
+                'name' => tr($product, 'name'),
                 'slug' => $product->slug,
-                'description' => $product->description,
-                'tagline' => $product->tagline,
+                'description' => tr($product, 'description'),
+                'tagline' => tr($product, 'tagline'),
                 'type' => $product->type->value,
                 'availability' => ($product->availability ?? ProductAvailability::Available)->value,
                 'availability_label' => ($product->availability ?? ProductAvailability::Available)->label(),
                 'is_purchasable' => $product->isPurchasable(),
                 'brand' => $product->brand,
-                'category' => $product->category?->name,
+                'category' => $product->category !== null ? tr($product->category, 'name') : null,
                 'category_slug' => $product->category?->slug,
                 // Kept for older clients; `is_nfc` is the storefront's word for it.
                 'qr_capable' => $product->qr_capable,
@@ -124,21 +130,21 @@ class ProductController extends Controller
                 'is_new' => $merch['is_new'],
                 'stock_level' => $merch['stock_level'],
                 'requires_shipping' => $product->requires_shipping,
-                'seo_title' => $product->seo_title,
-                'seo_description' => $product->seo_description,
+                'seo_title' => tr($product, 'seo_title'),
+                'seo_description' => tr($product, 'seo_description'),
                 // Tag specs: shown only when the admin filled them in.
                 'specs' => [
-                    'material' => $product->material,
-                    'strap_type' => $product->strap_type,
-                    'dimensions' => $product->dimensions,
-                    'instructions' => $product->instructions,
+                    'material' => tr($product, 'material'),
+                    'strap_type' => tr($product, 'strap_type'),
+                    'dimensions' => tr($product, 'dimensions'),
+                    'instructions' => tr($product, 'instructions'),
                 ],
                 'collection' => $product->collection !== null && $product->collection->isPublished() ? [
-                    'name' => $product->collection->name,
+                    'name' => tr($product->collection, 'name'),
                     'slug' => $product->collection->slug,
-                    'tagline' => $product->collection->tagline,
+                    'tagline' => tr($product->collection, 'tagline'),
                     'destination' => $product->collection->destination,
-                    'discipline' => $product->collection->discipline,
+                    'discipline' => tr($product->collection, 'discipline'),
                     'year' => $product->collection->year,
                     'accent_color' => PublicCollections::safeColor($product->collection->accent_color),
                 ] : null,
@@ -148,7 +154,7 @@ class ProductController extends Controller
                 'variants' => $product->variants->where('active', true)->values()->map(fn (ProductVariant $variant) => $this->tagVariant($product, $variant, [
                     'id' => $variant->id,
                     'sku' => $variant->sku,
-                    'name' => $variant->name,
+                    'name' => tr($variant, 'name'),
                     'attributes' => $variant->attributes,
                     'base_price_minor' => $variant->base_price_minor,
                     'sale_price_minor' => ($promo = $promotions->bestFor($product, $variant->base_price_minor)) !== null
@@ -160,10 +166,13 @@ class ProductController extends Controller
                     'low_stock' => $this->variantIsLow($variant),
                 ])),
                 'gallery' => $product->media->values()->map(fn (ProductMedia $m, int $i) => self::mediaItem($m, $i)),
-                'concept_gallery' => $product->media->isEmpty() && ! $product->image_path ? $product->conceptGallery() : [],
+                // Concept alts live in config, in Spanish: other languages name the product.
+                'concept_gallery' => $product->media->isEmpty() && ! $product->image_path
+                    ? array_map(fn (array $item): array => app()->getLocale() === Locales::source() ? $item : [...$item, 'alt' => tr($product, 'name')], $product->conceptGallery())
+                    : [],
                 'contentSections' => $product->contentSections->map(fn (ProductContentSection $s) => [
                     'type' => $s->type->value,
-                    'title' => $s->title,
+                    'title' => tr($s, 'title'),
                     'content' => $s->content,
                 ]),
             ],
@@ -209,9 +218,9 @@ class ProductController extends Controller
 
         return Inertia::render('store/Catalog', [
             'category' => $category === null ? null : [
-                'name' => $category->name,
+                'name' => tr($category, 'name'),
                 'slug' => $category->slug,
-                'description' => $category->description,
+                'description' => tr($category, 'description'),
             ],
             'products' => $catalog->paginate([...$filters, 'category' => $category]),
             'categories' => $catalog->categories(),
@@ -268,6 +277,7 @@ class ProductController extends Controller
     {
         return match ($type) {
             ProductType::LegacyTag => 'Finisher Legacy Tag',
+            // Retired line: only historical orders still name it.
             ProductType::LegacyPlate => 'Legacy Plate',
             ProductType::Apparel => __('Ropa'),
             ProductType::Accessory => __('Accesorios'),

@@ -21,6 +21,7 @@ class CollectionController extends Controller
     public function index(PublicCollections $collections): JsonResponse
     {
         $items = $collections->query()->limit(50)->get();
+        $collections->preloadTranslations($items);
 
         return $this->respond(CollectionResource::collection($items));
     }
@@ -31,6 +32,7 @@ class CollectionController extends Controller
 
         $collection = $collections->query()->whereKey($collection->id)->firstOrFail();
         $collection->products->load('category')->each(fn (Product $product) => $product->setRelation('collection', $collection));
+        $collections->preloadTranslations([$collection]);
 
         return $this->respond(new CollectionResource($collection));
     }

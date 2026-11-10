@@ -30,7 +30,7 @@ class EventEditionCardResource extends JsonResource
                 'slug' => $this->event->slug,
                 'cover_url' => $this->event->cover_path ? asset('storage/'.$this->event->cover_path) : null,
                 'sport' => [
-                    'name' => $this->event->sport->name,
+                    'name' => tr($this->event->sport, 'name'),
                     'slug' => $this->event->sport->slug,
                 ],
             ],

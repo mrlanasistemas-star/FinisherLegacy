@@ -401,10 +401,11 @@ textos; `I18N_ANTHROPIC_EFFORT=low` es suficiente para textos de interfaz.
 
 Tabla `model_translations` (modelo, id, idioma, campo, valor, estado,
 `source_hash`). Qué se traduce lo decide el mapa `i18n.models`:
-`Product` (name, tagline, description, seo_*), `ProductVariant` (name),
-`Collection` (name, tagline, description, tag_discipline_line,
-tag_back_line, seo_*), `ProductCategory`, `PhotoExpansionPack`,
-`ProductContentSection` (title), `CompanyMilestone`.
+`Product` (name, tagline, description, material, strap_type, dimensions,
+instructions, seo_*), `ProductVariant` (name), `Collection` (name, tagline,
+description, discipline, tag_discipline_line, tag_back_line, seo_*),
+`CollectionDesign` (name), `ProductCategory`, `PhotoExpansionPack`,
+`ProductContentSection` (title), `CompanyMilestone`, `Sport` (name).
 
 - Al crear o editar un registro, `I18nServiceProvider` encola
   `App\Jobs\I18n\TranslateModelFields` (solo si hay traductor).

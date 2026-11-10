@@ -1,0 +1,124 @@
+{
+    "locale": "en",
+    "models": {
+        "Product": {
+            "name": {
+                "Trisuit": "Trisuit",
+                "CHILL BAND": "CHILL BAND",
+                "RACEPACK": "RACEPACK",
+                "Fotografía digital": "Digital photo",
+                "Visera FL": "FL Visor",
+                "Gorra FL": "FL Cap",
+                "Jersey FL": "FL Jersey",
+                "Ampliación de fotos del recuerdo": "Extra photos for your Memory",
+                "Finisher Legacy Tag · Cozumel": "Finisher Legacy Tag · Cozumel",
+                "Finisher Legacy Tag · Cozumel · Mapache": "Finisher Legacy Tag · Cozumel · Raccoon",
+                "Finisher Legacy Tag · Valle de Bravo": "Finisher Legacy Tag · Valle de Bravo",
+                "Finisher Legacy Tag · Veracruz": "Finisher Legacy Tag · Veracruz",
+                "Portarretrato inteligente": "Smart Photo Frame"
+            },
+            "tagline": {
+                "Nada, rueda y corre con la misma prenda.": "Swim, bike and run in one piece.",
+                "Mójala, póntela y baja la temperatura.": "Wet it, wear it and cool down.",
+                "La mochila para tu día de carrera.": "The backpack for your race day.",
+                "Visera de running ligera, banda técnica y monograma FL discreto.": "Lightweight running visor with a technical band and a subtle FL monogram.",
+                "Gorra deportiva de cinco paneles en negro con FL dorado.": "Five-panel sports cap in black with a gold FL.",
+                "Jersey técnico de alto rendimiento con vivos champagne.": "High-performance technical jersey with champagne trim.",
+                "Acerca tu celular y revive tu carrera.": "Hold your phone close and relive your race.",
+                "Tu foto de meta en casa. Acerca el celular y se abre el álbum.": "Your finish line photo at home. Hold your phone close and the album opens."
+            },
+            "strap_type": {
+                "Loop de silicona negro": "Black silicone loop"
+            },
+            "material": {
+                "Acrílico transparente con base negra y chip NFC": "Clear acrylic with a black base and an NFC chip"
+            },
+            "dimensions": {
+                "Foto de 20 × 25 cm": "20 × 25 cm (8 × 10 in) photo"
+            },
+            "instructions": {
+                "Activa tu portarretrato desde la app o en la web con el código de la caja. Diseña e imprime tu foto de 20 × 25 cm y colócala en el acrílico. Para abrir el álbum, acerca el celular a la base. Evita apoyarlo sobre superficies metálicas: debilitan la lectura NFC.": "Activate your frame from the app or the website with the code in the box. Design and print your 20 × 25 cm (8 × 10 in) photo and place it in the acrylic. To open the album, hold your phone close to the base. Avoid resting it on metal surfaces: they weaken the NFC reading."
+            },
+            "description": {
+                "Traje de triatlón de una pieza Finisher Legacy: te acompaña en natación, ciclismo y carrera sin cambiarte. Disponible en varios colores y tallas S a XL.": "Finisher Legacy one-piece triathlon suit: it goes with you through the swim, the bike and the run with no changes. Available in several colors, sizes S to XL.",
+                "Banda de enfriamiento Finisher Legacy para cuello o muñeca. Mójala, escúrrela y póntela antes o después de correr para refrescarte.": "Finisher Legacy cooling band for your neck or wrist. Wet it, wring it out and wear it before or after your run to cool down.",
+                "Mochila deportiva Finisher Legacy para el día de carrera: lleva tu equipo, tu cambio de ropa y tu hidratación en un solo lugar, con un punto para colgar tu Finisher Legacy Tag.": "Finisher Legacy sports backpack for race day: carry your gear, your change of clothes and your hydration in one place, with a loop to hang your Finisher Legacy Tag.",
+                "Producto interno para las fotografías de evento vendidas por fotógrafos.": "Internal product for event photos sold by photographers.",
+                "Visera de running ligera, banda técnica y monograma FL discreto.": "Lightweight running visor with a technical band and a subtle FL monogram.",
+                "Gorra deportiva de cinco paneles en negro con FL dorado.": "Five-panel sports cap in black with a gold FL.",
+                "Jersey técnico de alto rendimiento con vivos champagne.": "High-performance technical jersey with champagne trim.",
+                "Producto interno: espacio extra de fotos para un recuerdo Finisher Legacy. Sus precios se configuran en Límites y tarifas.": "Internal product: extra photo space for a Finisher Legacy Memory. Its prices are set in Limits and rates.",
+                "Tag NFC de la colección Cozumel. Se activa desde la app o la web y abre tu recuerdo: fotos, historia, resultado y mensaje de voz.": "NFC Tag from the Cozumel collection. Activate it from the app or the website and it opens your Memory: photos, story, result and voice message.",
+                "Tag NFC de la colección Valle de Bravo. Se activa desde la app o la web y abre tu recuerdo: fotos, historia, resultado y mensaje de voz.": "NFC Tag from the Valle de Bravo collection. Activate it from the app or the website and it opens your Memory: photos, story, result and voice message.",
+                "Tag NFC de la colección Veracruz. Se activa desde la app o la web y abre tu recuerdo: fotos, historia, resultado y mensaje de voz.": "NFC Tag from the Veracruz collection. Activate it from the app or the website and it opens your Memory: photos, story, result and voice message.",
+                "Un marco de acrílico de 20 × 25 cm para tu foto de exhibición. No tiene pantalla, batería ni cables: en la base lleva un chip NFC y basta acercar el celular para abrir tu álbum digital con fotos y mensaje de voz.\n\nTú diseñas la foto: eliges la imagen, la plantilla y tus datos de carrera, y descargas el archivo al tamaño exacto del marco, listo para imprimir.\n\nSe activa una sola vez, desde la app o desde la web, con el código que viene en la caja. Tú decides quién puede ver el álbum.": "A 20 × 25 cm (8 × 10 in) acrylic frame for your display photo. No screen, no battery, no cables: there is an NFC chip in the base, so you just hold your phone close to open your digital album with photos and a voice message.\n\nYou design the photo: pick the image, the template and your race details, then download the file at the exact size of the frame, ready to print.\n\nYou activate it only once, from the app or the website, with the code that comes in the box. You decide who can see the album."
+            }
+        },
+        "ProductVariant": {
+            "name": {
+                "Única": "One size",
+                "Estándar": "Standard",
+                "20 × 25 cm": "20 × 25 cm (8 × 10 in)"
+            }
+        },
+        "Collection": {
+            "name": {
+                "Veracruz": "Veracruz",
+                "Cozumel": "Cozumel",
+                "Valle de Bravo": "Valle de Bravo"
+            },
+            "discipline": {
+                "Triatlón": "Triathlon"
+            },
+            "tag_back_line": {
+                "TU HISTORIA SIGUE VIVA": "YOUR STORY LIVES ON"
+            }
+        },
+        "CollectionDesign": {
+            "name": {
+                "Cozumel · Mapache": "Cozumel · Raccoon"
+            }
+        },
+        "ProductCategory": {
+            "name": {
+                "Finisher Legacy Tag": "Finisher Legacy Tag",
+                "Textil": "Apparel",
+                "Accesorios": "Accessories",
+                "Equipo": "Gear"
+            },
+            "description": {
+                "El tag de tu carrera: acércale el celular y se abre tu historia.": "The tag of your race: hold your phone close and your story opens.",
+                "Trisuits y prendas técnicas para competir.": "Trisuits and technical apparel to race in.",
+                "Viseras, gorras y accesorios para el día de carrera.": "Visors, caps and accessories for race day.",
+                "Mochila y equipo para el día de carrera.": "Backpack and gear for race day."
+            }
+        },
+        "Sport": {
+            "name": {
+                "Running": "Running",
+                "Trail": "Trail",
+                "Triatlón": "Triathlon",
+                "Ciclismo": "Cycling",
+                "Natación": "Swimming",
+                "Obstacle Racing": "Obstacle Racing",
+                "Otros": "Other"
+            }
+        },
+        "PhotoExpansionPack": {
+            "name": {
+                "+10 fotos": "+10 photos",
+                "+20 fotos": "+20 photos",
+                "+1 video": "+1 video",
+                "+3 videos": "+3 videos",
+                "+2 mensajes de voz": "+2 voice messages"
+            },
+            "description": {
+                "Diez fotos más para tu recuerdo. Se quedan para siempre.": "Ten more photos for your Memory. They stay forever.",
+                "Veinte fotos más durante un año. Renuévalo cuando quieras; tus fotos nunca se borran.": "Twenty more photos for one year. Renew whenever you want; your photos are never deleted.",
+                "Un video más para tu recuerdo. Se queda para siempre.": "One more video for your Memory. It stays forever.",
+                "Tres videos más durante un año. Renuévalo cuando quieras; tus videos nunca se borran.": "Three more videos for one year. Renew whenever you want; your videos are never deleted.",
+                "Dos mensajes de voz más para tu recuerdo. Se quedan para siempre.": "Two more voice messages for your Memory. They stay forever."
+            }
+        }
+    }
+}

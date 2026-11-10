@@ -12,6 +12,7 @@ use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Support\Commerce\CartSummary;
 use App\Support\Commerce\CartSummaryItem;
+use App\Support\I18n\ContentTranslations;
 
 /**
  * The one place a Cart's prices/totals are read for display (brief §28-
@@ -60,6 +61,10 @@ class GetCartSummary
             'coupon',
         ]);
 
+        $content = app(ContentTranslations::class);
+        $content->preload($cart->items->pluck('productVariant')->filter());
+        $content->preload($cart->items->pluck('productVariant.product')->filter());
+
         $subtotal = 0;
         $lineTotalsByProduct = [];
 
@@ -67,6 +72,10 @@ class GetCartSummary
             $variant = $item->productVariant;
             $product = $variant->product;
             $extras = $this->lineExtras($variant);
+            // Display names in the shopper's language; CheckoutCart
+            // snapshots the Spanish originals into the order.
+            $productName = (string) tr($product, 'name');
+            $variantName = (string) tr($variant, 'name');
 
             try {
                 $price = $this->resolvePrice->handle($product, $variant, $item->eventEdition);
@@ -77,9 +86,9 @@ class GetCartSummary
                 // must never trade "wrong price" for "broken page").
                 return new CartSummaryItem(
                     cartItemId: $item->id,
-                    productName: $product->name,
+                    productName: $productName,
                     productSlug: $product->slug,
-                    variantName: $variant->name,
+                    variantName: $variantName,
                     quantity: $item->quantity,
                     unitPriceMinor: null,
                     lineTotalMinor: null,
@@ -105,9 +114,9 @@ class GetCartSummary
 
             return new CartSummaryItem(
                 cartItemId: $item->id,
-                productName: $product->name,
+                productName: $productName,
                 productSlug: $product->slug,
-                variantName: $variant->name,
+                variantName: $variantName,
                 quantity: $item->quantity,
                 unitPriceMinor: $price->amountMinor,
                 lineTotalMinor: $lineTotal,

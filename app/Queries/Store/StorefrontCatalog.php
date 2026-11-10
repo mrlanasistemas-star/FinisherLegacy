@@ -9,6 +9,7 @@ use App\Enums\ProductType;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Queries\Commerce\GetFeaturedProducts;
+use App\Support\I18n\ContentTranslations;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -168,6 +169,7 @@ class StorefrontCatalog
             ->orderBy('name')
             ->paginate(self::PER_PAGE)
             ->withQueryString()
+            ->tap(fn (LengthAwarePaginator $page) => self::preloadTranslations($page->getCollection()))
             ->through(fn (Product $product) => GetFeaturedProducts::summarize($product));
     }
 
@@ -219,13 +221,30 @@ class StorefrontCatalog
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get(['id', 'name', 'slug', 'description'])
+            ->tap(fn (Collection $categories) => app(ContentTranslations::class)->preload($categories))
             ->map(fn (ProductCategory $category) => [
-                'name' => $category->name,
+                'name' => tr($category, 'name'),
                 'slug' => $category->slug,
-                'description' => $category->description,
+                'description' => tr($category, 'description'),
                 'products_count' => $category->products_count,
             ])
             ->all());
+    }
+
+    /**
+     * One query per model class for the names, taglines and categories of
+     * a list of products in the request's language (nothing in Spanish).
+     *
+     * @param  iterable<Product>  $products
+     */
+    public static function preloadTranslations(iterable $products): void
+    {
+        $content = app(ContentTranslations::class);
+        $products = collect($products);
+
+        $content->preload($products);
+        $content->preload($products->map(fn (Product $product) => $product->relationLoaded('category') ? $product->category : null)->filter());
+        $content->preload($products->map(fn (Product $product) => $product->relationLoaded('collection') ? $product->collection : null)->filter());
     }
 
     /**
@@ -234,6 +253,8 @@ class StorefrontCatalog
      */
     public function cards(Collection $products): array
     {
+        self::preloadTranslations($products);
+
         return array_values($products->map(fn (Product $product) => GetFeaturedProducts::summarize($product))->all());
     }
 }

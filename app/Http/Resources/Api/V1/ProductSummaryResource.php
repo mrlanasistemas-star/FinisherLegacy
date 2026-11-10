@@ -29,11 +29,11 @@ class ProductSummaryResource extends JsonResource
 
         return [
             'uuid' => $this->uuid,
-            'name' => $this->name,
+            'name' => tr($this->resource, 'name'),
             'slug' => $this->slug,
             'type' => $this->type->value,
             'brand' => $this->brand,
-            'category' => $this->category?->name,
+            'category' => $this->category !== null ? tr($this->category, 'name') : null,
             'category_slug' => $this->category?->slug,
             // Boolean only, never a stock count (brief §176-§177).
             'in_stock' => $activeVariants->contains(fn (ProductVariant $variant) => $variant->isAvailable()),

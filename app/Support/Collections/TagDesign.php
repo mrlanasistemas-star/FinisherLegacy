@@ -7,6 +7,7 @@ use App\Models\Collection;
 use App\Models\CollectionDesign;
 use App\Models\Product;
 use App\Queries\Store\PublicCollections;
+use App\Services\Portrait\PortraitProduct;
 
 /**
  * The `tag_design` payload shared by the web (Inertia) and /api/v1:
@@ -32,7 +33,7 @@ final class TagDesign
             'accent' => PublicCollections::safeColor($design?->accent ?: ($collection->tag_accent ?: $collection->accent_color)),
             'name_line' => self::nameLine($collection),
             'discipline_line' => self::disciplineLine($collection),
-            'back_line' => self::upper($collection->tag_back_line ?: self::DEFAULT_BACK_LINE),
+            'back_line' => filled($collection->tag_back_line) ? self::upper((string) tr($collection, 'tag_back_line')) : self::defaultBackLine(),
             'monogram_url' => self::monogramUrl($absolute),
         ];
     }
@@ -45,10 +46,10 @@ final class TagDesign
      */
     public static function allForCollection(Collection $collection, bool $absolute = true): array
     {
-        $designs = [['slug' => 'principal', 'name' => $collection->name, ...self::forCollection($collection, null, $absolute)]];
+        $designs = [['slug' => 'principal', 'name' => tr($collection, 'name'), ...self::forCollection($collection, null, $absolute)]];
 
         foreach ($collection->designs as $design) {
-            $designs[] = ['slug' => $design->slug, 'name' => $design->name, ...self::forCollection($collection, $design, $absolute)];
+            $designs[] = ['slug' => $design->slug, 'name' => tr($design, 'name'), ...self::forCollection($collection, $design, $absolute)];
         }
 
         return $designs;
@@ -56,12 +57,18 @@ final class TagDesign
 
     /**
      * A tag product's design: its own collection design, else the
-     * collection's primary one. Null for products that are not tags.
+     * collection's primary one. Null for products that are not tags —
+     * including the Portarretrato inteligente, which is serialized like a
+     * tag (`tracks_units`) but is a frame: clients show its photos.
      *
      * @return array<string, string|null>|null
      */
     public static function forProduct(Product $product, bool $absolute = true): ?array
     {
+        if (PortraitProduct::isFrameProduct($product)) {
+            return null;
+        }
+
         if ($product->type !== ProductType::LegacyTag && ! $product->tracks_units) {
             return null;
         }
@@ -75,9 +82,9 @@ final class TagDesign
         return [
             'front_art_url' => null,
             'accent' => null,
-            'name_line' => self::upper($product->name),
+            'name_line' => self::upper((string) tr($product, 'name')),
             'discipline_line' => null,
-            'back_line' => self::DEFAULT_BACK_LINE,
+            'back_line' => self::defaultBackLine(),
             'monogram_url' => self::monogramUrl($absolute),
         ];
     }
@@ -85,7 +92,7 @@ final class TagDesign
     /** "VERACRUZ" — the destination, or the name without a trailing year. */
     public static function nameLine(Collection $collection): string
     {
-        $name = trim((string) ($collection->destination ?: $collection->name));
+        $name = trim((string) ($collection->destination ?: tr($collection, 'name')));
         $year = $collection->year !== null ? (string) $collection->year : null;
 
         if ($year !== null && str_ends_with($name, $year)) {
@@ -99,10 +106,10 @@ final class TagDesign
     public static function disciplineLine(Collection $collection): ?string
     {
         if (filled($collection->tag_discipline_line)) {
-            return self::upper($collection->tag_discipline_line);
+            return self::upper((string) tr($collection, 'tag_discipline_line'));
         }
 
-        $parts = array_filter([$collection->discipline, $collection->year], fn ($part) => filled($part));
+        $parts = array_filter([tr($collection, 'discipline'), $collection->year], fn ($part) => filled($part));
 
         return $parts === [] ? null : self::upper(implode(' ', $parts));
     }
@@ -128,6 +135,12 @@ final class TagDesign
         $appUrl = rtrim((string) config('app.url'), '/');
 
         return $appUrl !== '' && str_starts_with($url, $appUrl.'/') ? substr($url, strlen($appUrl)) : $url;
+    }
+
+    /** The default back phrase, in the language of the request. */
+    public static function defaultBackLine(): string
+    {
+        return self::upper(__('TU HISTORIA SIGUE VIVA'));
     }
 
     public static function monogramUrl(bool $absolute = true): string

@@ -14,12 +14,14 @@
 */
 
 use App\Models\Collection;
+use App\Models\CollectionDesign;
 use App\Models\CompanyMilestone;
 use App\Models\PhotoExpansionPack;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductContentSection;
 use App\Models\ProductVariant;
+use App\Models\Sport;
 
 $locales = [
     'es' => 'Español',
@@ -194,12 +196,14 @@ return [
     | (stories, comments, cheer messages) must never be listed here.
     */
     'models' => [
-        Product::class => ['name', 'tagline', 'description', 'seo_title', 'seo_description'],
+        Product::class => ['name', 'tagline', 'description', 'material', 'strap_type', 'dimensions', 'instructions', 'seo_title', 'seo_description'],
         ProductVariant::class => ['name'],
-        Collection::class => ['name', 'tagline', 'description', 'tag_discipline_line', 'tag_back_line', 'seo_title', 'seo_description'],
+        Collection::class => ['name', 'tagline', 'description', 'discipline', 'tag_discipline_line', 'tag_back_line', 'seo_title', 'seo_description'],
         ProductCategory::class => ['name', 'description'],
         PhotoExpansionPack::class => ['name', 'description'],
         ProductContentSection::class => ['title'],
         CompanyMilestone::class => ['title', 'description'],
+        Sport::class => ['name'],
+        CollectionDesign::class => ['name'],
     ],
 ];

@@ -24,11 +24,11 @@ class CollectionResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
-            'name' => $this->name,
+            'name' => tr($this->resource, 'name'),
             'slug' => $this->slug,
-            'tagline' => $this->tagline,
-            'description' => $this->description,
-            'discipline' => $this->discipline,
+            'tagline' => tr($this->resource, 'tagline'),
+            'description' => tr($this->resource, 'description'),
+            'discipline' => tr($this->resource, 'discipline'),
             'destination' => $this->destination,
             'year' => $this->year,
             'accent_color' => PublicCollections::safeColor($this->accent_color),
