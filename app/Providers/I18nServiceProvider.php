@@ -11,10 +11,12 @@ use App\Services\I18n\Translators\DeepLTranslator;
 use App\Services\I18n\Translators\NullTranslator;
 use App\Support\I18n\ContentTranslations;
 use App\Support\I18n\Locales;
+use App\Support\I18n\Text;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -25,7 +27,8 @@ use Illuminate\Support\ServiceProvider;
  * - the translator driver chosen with I18N_TRANSLATOR,
  * - the routes in routes/i18n.php (switcher, catalogs, admin page, API),
  * - the "translate on save" hook of the models in `i18n.models`,
- * - the language a person signs up in, kept on their account.
+ * - the language a person signs up in, kept on their account,
+ * - translator notes (`||`) cut off from untranslated strings.
  *
  * The two middleware (StripLocalePrefix, SetLocale) are registered in
  * bootstrap/app.php because their position in the stack matters.
@@ -54,6 +57,12 @@ class I18nServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(base_path('routes/i18n.php'));
+
+        // `__('Nombre||nombre completo del atleta')`: the part after `||` is
+        // a note for the translator. A translated string never carries it;
+        // an untranslated one (Spanish, or a language still pending) falls
+        // back to the key, so the note is cut off here.
+        Lang::handleMissingKeysUsing(fn (string $key): string => Text::stripNote($key));
 
         // Someone who signs up while reading another language keeps it: their
         // e-mails, notifications and push are written in the saved language

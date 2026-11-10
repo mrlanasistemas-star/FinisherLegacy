@@ -248,6 +248,7 @@ class AnthropicTranslator implements ReportsUsage, Translator
         - HTML tags and their attributes are copied exactly ("<strong>", "<a href=\"…\">", "<br>"); translate only the text between the tags.
         - Line breaks are kept: the translation has the same number of line breaks as the original.
         - A vertical bar "|" separates plural forms ("{count} foto|{count} fotos"). Keep the same number of forms, in the same order, each one translated.
+        - Two vertical bars "||" start a note for you, the translator ("Nombre||nombre completo del atleta"): it says which meaning of the text is wanted. Translate ONLY the text before "||", with that meaning; the answer never contains "||" nor the note.
         - Leading and trailing spaces are kept.
         - If a string is already in the target language, is only a placeholder, a number, a symbol or one of the terms that are never translated, return it unchanged.
         - Never answer with an empty text, an explanation, a comment or an alternative. The "text" value is only the translation.

@@ -7,6 +7,9 @@
  *     <T>Compra tu Tag</T>
  *     <T :params="{ name: user.first_name }">Hola, {name}</T>
  *
+ * A translator note works here too: `<T>Meta||línea de meta</T>` shows
+ * "Meta" (the part after `||` only tells the translator which meaning).
+ *
  * The content must be literal text (no tags, no `{{ }}`): that is what
  * `php artisan i18n:sync` extracts. Line breaks and indentation inside
  * the tag are collapsed to single spaces.

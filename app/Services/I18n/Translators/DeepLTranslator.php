@@ -4,6 +4,7 @@ namespace App\Services\I18n\Translators;
 
 use App\Contracts\I18n\Translator;
 use App\Exceptions\I18n\TranslatorUnavailable;
+use App\Support\I18n\Text;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -73,7 +74,8 @@ class DeepLTranslator implements Translator
         $terms = implode('|', array_map(fn (string $term): string => preg_quote($term, '~'), $glossary));
         $pattern = '~\{\{.*?\}\}|\{[A-Za-z_][\w.]*\}|(?<![\w:]):[A-Za-z_]\w*|%[sd]'.($terms !== '' ? '|\b(?:'.$terms.')\b' : '').'~u';
 
-        $escaped = htmlspecialchars($text, ENT_NOQUOTES | ENT_XML1);
+        // DeepL cannot read a translator note (`texto||nota`): send the text alone.
+        $escaped = htmlspecialchars(Text::stripNote($text), ENT_NOQUOTES | ENT_XML1);
 
         return (string) preg_replace_callback($pattern, fn (array $match): string => '<x>'.$match[0].'</x>', $escaped);
     }

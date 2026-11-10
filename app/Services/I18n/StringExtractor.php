@@ -19,9 +19,9 @@ use Symfony\Component\Finder\Finder;
  */
 class StringExtractor
 {
-    private const string JS_CALL = '~(?:(?<![\w.$])(?:\$t|tc|t)|\bi18n\.tc?)\(\s*(?:\'((?:\\\\.|[^\'\\\\])*)\'|"((?:\\\\.|[^"\\\\])*)"|`((?:\\\\.|[^`\\\\$])*)`)~su';
+    private const string JS_CALL = '~(?:(?<![\w.$])(?:\$tc?|tc|t)|\bi18n\.tc?)\(\s*(?:\'((?:\\\\.|[^\'\\\\])*)\'|"((?:\\\\.|[^"\\\\])*)"|`((?:\\\\.|[^`\\\\$])*)`)~su';
 
-    private const string JS_COMPONENT = '~<T(?:\s[^<>]*)?>((?:[^<>{]|\{(?!\{))+)</T>~u';
+    private const string JS_COMPONENT = '~<T(?:\s[^<>]*)?>((?:[^<>{]|\{(?!\{))+)</T\s*>~u';
 
     private const string PHP_CALL = '~(?:(?<![\w>:$])(?:__|trans_choice|trans)|@lang|\bLang::(?:get|choice))\(\s*(?:\'((?:\\\\.|[^\'\\\\])*)\'|"((?:\\\\.|[^"\\\\$])*)")~su';
 

@@ -8,6 +8,7 @@
 use App\Support\I18n\ContentTranslations;
 use App\Support\I18n\LocalizedUrls;
 use App\Support\I18n\RecipientLocale;
+use App\Support\I18n\Text;
 use Illuminate\Database\Eloquent\Model;
 
 if (! function_exists('localized_url')) {
@@ -59,5 +60,16 @@ if (! function_exists('in_locale_of')) {
     function in_locale_of(mixed $recipient, Closure $callback): mixed
     {
         return RecipientLocale::render($recipient, $callback);
+    }
+}
+
+if (! function_exists('ordinal')) {
+    /**
+     * A place in the active (or given) language: `ordinal(3)` → "3.º" in
+     * Spanish, "3rd" in English.
+     */
+    function ordinal(int $number, ?string $locale = null): string
+    {
+        return Text::ordinal($number, $locale);
     }
 }

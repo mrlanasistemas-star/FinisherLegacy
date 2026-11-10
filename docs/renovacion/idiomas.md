@@ -51,12 +51,109 @@ Convenciones:
 - **Plurales:** `tc('{count} foto|{count} fotos', n)` — singular y plural
   separados por `|`; `{count}` se rellena solo. En PHP, `trans_choice`.
 - **Frases completas**, no pedazos: `t('Tienes {count} historias')`, nunca
-  `t('Tienes') + n + t('historias')` (el orden cambia entre idiomas).
+  `t('Tienes') + n + t('historias')` (el orden cambia entre idiomas). Lo
+  mismo con un sustantivo suelto pegado a un número (`n + ' ' + t('fotos')`)
+  o una etiqueta del servidor metida a media frase: una frase entera por
+  caso.
+- **Frases con un enlace o negritas en medio:** ver
+  [Frases con enlaces](#frases-con-enlaces).
+- **Palabras sueltas ambiguas:** ver
+  [Notas para quien traduce](#notas-para-quien-traduce).
+- **Lugares (1.º / 1st) y dinero:** ver [Ordinales y dinero](#ordinales-y-dinero).
+- **Nunca compares ni uses como llave un texto traducido** (`if (label ===
+  'Enviado')`, `[__('Nombre') => …]`): se compara el código
+  (`fulfillment_status`) y la etiqueta viaja aparte (`label`).
 - HTML dentro del texto se conserva (`<strong>`, `<a href>`), pero es mejor
   dejar el marcado en la plantilla y traducir solo el texto.
 - Dentro de componentes usa `useI18n()` o `$t` (correctos también con SSR);
   el `t` importado directo es para código que solo corre en el navegador
   (toasts, manejadores, `lib/`).
+
+### Notas para quien traduce
+
+La misma palabra en español puede necesitar inglés distinto según dónde
+aparece ("Nombre": *First name* / *Full name*; "Estado": *State* / *Status*;
+"Meta": *Finish line* / *Goal*). Como el texto es la llave, cada contexto
+necesita su propia llave: se le agrega una **nota** después de `||`.
+
+```ts
+t('Nombre||nombre de pila')              // → "First name"
+t('Nombre||nombre completo del atleta')  // → "Full name"
+__('Enviado||pedido enviado por paquetería')   // PHP → "Shipped"
+<T>Meta||línea de meta</T>
+tc('{count} lugar|{count} lugares||cupo de un evento', n)
+```
+
+- Lo que va después de `||` **nunca se muestra**, en ningún idioma (tampoco
+  en español: `t('Nombre||…')` pinta "Nombre"). Es parte de la llave —dos
+  notas distintas son dos textos distintos en el catálogo— y es lo que lee
+  quien traduce (persona o máquina) para saber qué significado se pide.
+- La nota se escribe en español, corta, sin marcadores ni `|`.
+- La traducción **no lleva nota**: en el catálogo queda
+  `"Nombre||nombre de pila": "First name"`. El validador rechaza (`note`) una
+  traducción que contenga `||` y compara marcadores, plurales y glosario
+  contra el texto sin la nota.
+- Funciona igual en web (`resources/js/i18n`, `stripNote`), PHP
+  (`App\Support\I18n\Text::stripNote`; `__()` / `trans_choice()` la cortan
+  cuando no hay traducción) y app (`src/i18n`).
+- Úsala solo cuando hay ambigüedad real: una palabra o etiqueta corta que en
+  otro idioma cambia según el contexto. Las frases completas no la necesitan.
+
+Notas ya en uso (reutiliza la misma llave cuando el significado coincide):
+`Nombre||nombre de pila` · `Nombre||nombre completo del atleta` ·
+`Número||número de corredor (dorsal)` · `General||clasificación general` ·
+`Meta||línea de meta` · `Apoyo||mensajes de ánimo` · `Hasta||fecha límite` ·
+`Final||tiempo final` · `Para||destinatario` ·
+`Enviado||pedido enviado por paquetería` · `más||ver más elementos` ·
+`Estado||entidad federativa` · `Estado||situación del pedido` ·
+`Pareja||relación con el atleta`.
+
+### Frases con enlaces
+
+Una frase con un enlace, una insignia o negritas en medio es **un solo
+texto** con marcadores; el marcado se pone en el lugar que la traducción
+decida:
+
+```vue
+<I18nT :text="$t('¿Ya tienes cuenta? {link}')">
+    <template #link>
+        <Link :href="login()">{{ $t('Inicia sesión') }}</Link>
+    </template>
+</I18nT>
+```
+
+```tsx
+// App
+<AppText>
+  <I18nText text={t('¿Ya tienes cuenta? {link}')} slots={{ link: <AppText onPress={go}>{t('Inicia sesión')}</AppText> }} />
+</AppText>
+```
+
+- `<I18nT>` (`components/i18n/I18nT.vue`) recibe el texto **ya traducido**
+  (`$t('…')` con cadena literal, para que el extractor lo encuentre), lo
+  corta en sus `{marcadores}` y llena cada uno con el *slot* del mismo
+  nombre. No pinta envoltorio. Un marcador sin *slot* se deja como está, así
+  que `{count}` y compañía los sigue llenando `$t`.
+- El texto del enlace es su propia cadena (`$t('Inicia sesión')`).
+- En la app: `<I18nText>` / `renderMarkers()`
+  (`src/components/i18n/i18n-text.tsx`).
+- La función pura es `splitMarkers()` (`i18n/text.ts` en los dos repos).
+
+### Ordinales y dinero
+
+- **Lugares:** `ordinal(3)` → "3.º" en español, "3rd" en inglés. Web:
+  `const { ordinal } = useI18n()`; PHP: `ordinal(3)` (helper global, idioma
+  activo o `ordinal(3, 'en')`); app: `getOrdinal(3)`. Va dentro de una frase
+  completa por marcador: `t('{place} lugar general', { place: ordinal(n) })`.
+  Nunca `{place}.º` escrito en el texto.
+- **Dinero:** siempre `$1,200.00 MXN` — símbolo, cifra con los separadores
+  del idioma y el código de la moneda al final (en inglés "$" a secas se lee
+  como dólares e `Intl` escribiría "MX$"). Web: `<Money :minor="…" />` o
+  `const { money } = useI18n()` (`formatMoney` en `@/i18n`); app:
+  `formatMoney()` de `utils/money.ts`; correos: `OrderSummary::money()`.
+  Nadie arma un precio a mano.
+- **El texto visible nunca nombra al procesador de pagos**: "Tarjeta", no
+  "Tarjeta (Openpay)".
 
 Qué **no** se traduce:
 
@@ -287,7 +384,9 @@ elegido con `I18N_TRANSLATOR`:
 Toda traducción se **valida** antes de guardarse
 (`App\Services\I18n\TranslationValidator`): no vacía, mismos marcadores,
 mismas etiquetas HTML, mismos saltos de línea y formas de plural, términos de
-marca intactos y longitud razonable. Si falla se pide una vez más; si vuelve
+marca intactos, sin nota de traductor (`||`) y longitud razonable. La nota
+del original sí viaja al traductor (Claude la lee como contexto; a DeepL se
+le manda el texto sin ella). Si falla se pide una vez más; si vuelve
 a fallar queda pendiente.
 
 **Costo.** Cada sincronización registra los tokens usados (entrada, salida,
@@ -322,14 +421,49 @@ app(ContentTranslations::class)->preload($products);   // una consulta para toda
 $category->tr('name')                                  // con el trait HasTranslations
 ```
 
+**Dónde ya se usa.** La tienda, las colecciones y el inicio (props de
+Inertia: `GetFeaturedProducts::summarize`, `StorefrontCatalog`,
+`PublicCollections`, `Store\ProductController`), `/api/v1/store/*`
+(`ProductSummaryResource`, `ProductDetailResource`, `ProductVariantResource`,
+`CollectionResource`), las líneas del carrito (`GetCartSummary`, web y API),
+el arte del Tag (`TagDesign`: líneas del frente y frase del reverso), los
+paquetes de ampliación y los hitos de Nosotros. El pedido guarda siempre los
+nombres originales en español (es un registro, no una vista).
+
+**Catálogo traducido a mano (`i18n:import-content`).** Sin traductor
+configurado, el inglés del catálogo vive en un archivo versionado,
+`database/i18n/content-en.json`, y se carga con:
+
+```bash
+php artisan i18n:import-content                 # database/i18n/content-en.json → model_translations
+php artisan i18n:import-content --dry-run       # qué cambiaría
+php artisan i18n:import-content otro.json --locale=pt --status=reviewed --force
+```
+
+- Forma del archivo: `{"models": {"Product": {"name": {"texto en español": "translation"}}}}`
+  — modelo → campo → texto original → traducción. Solo modelos y campos de
+  `i18n.models`.
+- Cada registro se empareja por **el texto en español del propio campo**: el
+  mismo archivo sirve en cualquier servidor (no usa ids ni slugs) y nunca
+  deja una traducción vieja junto a un texto que cambió.
+- Cada entrada pasa por el validador (marcadores, saltos de línea, términos
+  de marca). Nunca reemplaza una traducción *Revisada*; una *Automática*
+  vigente solo con `--force`. Se puede ejecutar en cada despliegue.
+- La columna "Sin traducción en el archivo" cuenta lo que aún sale en
+  español (por ejemplo, variantes cuyo nombre ya es un color en inglés no
+  necesitan entrada). Para un producto nuevo: agregar sus textos al archivo
+  o traducirlo en el panel (pestaña *Contenido del catálogo*).
+
 ### Web (`resources/js/i18n`)
 
 - `initializeI18n()` (en `app.ts`, antes de montar) lee el idioma que
   renderizó el servidor y descarga `/lang/{locale}.json?v={version}` solo si
   no es español; nunca bloquea más que el *timeout* de la descarga.
 - `installI18n` (`withApp`) da `$t` / `$tc` a todas las plantillas.
-- `useI18n()` → `t`, `tc`, `locale`, `locales`, `switchLocale(code)`,
-  `localizePath(path)`.
+- `useI18n()` → `t`, `tc`, `ordinal`, `money`, `locale`, `regional`,
+  `locales`, `switchLocale(code)`, `localizePath(path)`.
+- `i18n/text.ts`: reglas puras (`stripNote`, `splitMarkers`, `ordinal`,
+  `formatMoney`), probadas con Node: `node --test resources/js/i18n/text.test.mjs`.
 - `<LocaleSwitcher />` (`components/i18n`): menú accesible con los idiomas
   visibles; no se muestra si solo hay uno.
 
@@ -434,4 +568,6 @@ cambio de idioma, sincronización con traductor falso (nuevos, obsoletos,
 desactualizados, protección de revisados, validación), importación desde
 JSON (`ImportCommandTest`), contenido dinámico,
 endpoints de catálogo, panel y el controlador de Claude sin red.
-App: `src/i18n/i18n.test.ts` (Jest).
+Notas, ordinales y validador: `TranslatorNotesTest`. Web (sin corredor de
+pruebas JS): `node --test resources/js/i18n/text.test.mjs`.
+App: `src/i18n/i18n.test.ts`, `src/i18n/text.test.mjs` (Jest).

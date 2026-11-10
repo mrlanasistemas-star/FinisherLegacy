@@ -2,11 +2,14 @@
 
 namespace App\Services\I18n;
 
+use App\Support\I18n\Text;
+
 /**
  * Refuses machine translations that would break the interface
  * (docs/renovacion/idiomas.md §Validación): empty text, a lost or invented
  * placeholder, changed HTML tags, a different number of line breaks or
- * plural forms, a missing brand term or an absurd length.
+ * plural forms, a missing brand term, a leaked translator note or an
+ * absurd length.
  */
 class TranslationValidator
 {
@@ -16,6 +19,14 @@ class TranslationValidator
         if (trim($translation) === '') {
             return 'empty';
         }
+
+        // `Nombre||nombre completo del atleta`: the note is for the
+        // translator only — it is not text, and must not come back.
+        if (str_contains($translation, Text::NOTE_SEPARATOR)) {
+            return 'note';
+        }
+
+        $source = Text::stripNote($source);
 
         if ($this->placeholders($source) !== $this->placeholders($translation)) {
             return 'placeholders';

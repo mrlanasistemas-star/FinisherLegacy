@@ -9,6 +9,8 @@
  *     tc('{count} foto|{count} fotos', photos.length)
  *     <h1>{{ $t('Colecciones') }}</h1>          (templates, no import)
  *     <T>Compra tu Tag</T>                      (components/i18n/T.vue)
+ *     t('Nombre||nombre completo del atleta')   (translator note, never shown)
+ *     <I18nT :text="$t('¿Ya tienes cuenta? {link}')">   (components/i18n/I18nT.vue)
  *
  * In Spanish nothing is loaded: `t()` returns its argument. In any other
  * language the catalog `/lang/{locale}.json?v={version}` is fetched once
@@ -27,6 +29,10 @@ import { router, usePage } from '@inertiajs/vue3';
 import type { App, InjectionKey } from 'vue';
 import { computed, inject, reactive } from 'vue';
 import { update as updateLocale } from '@/routes/locale';
+import { formatMoney, ordinal, stripNote } from './text';
+
+export { formatMoney, ordinal, splitMarkers, stripNote } from './text';
+export type { Segment } from './text';
 
 export type Messages = Record<string, string>;
 export type Params = Record<string, string | number>;
@@ -57,6 +63,10 @@ export interface I18n {
     readonly regional: string;
     t: (source: string, params?: Params) => string;
     tc: (source: string, count: number, params?: Params) => string;
+    /** A place: "3.º" in Spanish, "3rd" in English. */
+    ordinal: (value: number) => string;
+    /** Cents → "$1,200.00 MXN" with the separators of the active language. */
+    money: (minor: number, currency?: string) => string;
 }
 
 interface State {
@@ -129,10 +139,13 @@ export function pluralize(
 }
 
 function createI18n(state: State): I18n {
+    // `||` starts a translator note: part of the key, never of the text.
     const lookup = (source: string): string =>
-        state.locale === state.source
-            ? source
-            : state.messages[source] || source;
+        stripNote(
+            state.locale === state.source
+                ? source
+                : state.messages[source] || source,
+        );
 
     return {
         get locale() {
@@ -150,6 +163,9 @@ function createI18n(state: State): I18n {
                 count,
                 ...params,
             }),
+        ordinal: (value) => ordinal(value, state.regional),
+        money: (minor, currency = 'MXN') =>
+            formatMoney(minor, currency, state.regional),
     };
 }
 
@@ -321,7 +337,7 @@ export function installI18n(
 /**
  * The translator plus everything a component needs about languages:
  *
- *     const { t, tc, locale, locales, switchLocale, localizePath } = useI18n();
+ *     const { t, tc, ordinal, money, locale, locales, switchLocale, localizePath } = useI18n();
  */
 export function useI18n() {
     const i18n = inject(KEY, browser);
@@ -377,6 +393,8 @@ export function useI18n() {
     return {
         t: i18n.t,
         tc: i18n.tc,
+        ordinal: i18n.ordinal,
+        money: i18n.money,
         locale,
         regional,
         locales,
