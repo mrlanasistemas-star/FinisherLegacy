@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import type { CheckoutOrderState } from '@/lib/commerce';
+import type { AppCheckoutContext, CheckoutOrderState } from '@/lib/commerce';
 
 type Line = {
     id: number;
@@ -75,6 +75,8 @@ const props = defineProps<{
         expiry_minutes: number;
     };
     order: CheckoutOrderState | null;
+    /** Set when rendered inside the mobile app (store/AppCheckout). */
+    app?: AppCheckoutContext | null;
 }>();
 
 const blocked = computed(() =>
@@ -125,7 +127,10 @@ const returnUrl = computed(() =>
 
 function goToConfirmation() {
     if (props.order) {
-        router.visit(`/checkout/${props.order.uuid}/confirmacion`);
+        router.visit(
+            props.app?.urls.confirmation ??
+                `/checkout/${props.order.uuid}/confirmacion`,
+        );
     }
 }
 
@@ -175,8 +180,11 @@ const lineDetails = (line: Line) =>
     <Head title="Checkout" />
 
     <div class="min-h-screen bg-background">
-        <div class="fl-container py-10 md:py-14">
-            <header class="mb-8">
+        <div
+            class="fl-container"
+            :class="app ? 'py-5 md:py-10' : 'py-10 md:py-14'"
+        >
+            <header :class="app ? 'mb-6' : 'mb-8'">
                 <Link
                     v-if="step === 'details'"
                     href="/carrito"
@@ -606,6 +614,7 @@ const lineDetails = (line: Line) =>
                                 :config="payment.openpay"
                                 :amount-label="amountLabel"
                                 :holder-name="contact.name"
+                                :payment-url="app?.urls.online_payment"
                                 @state="(s) => (paymentState = s)"
                                 @succeeded="goToConfirmation"
                             />
@@ -616,7 +625,14 @@ const lineDetails = (line: Line) =>
                                 El pago en línea no está disponible por ahora.
                                 Tu pedido quedó registrado; puedes pagarlo en tu
                                 evento o te contactaremos.
+                                <a
+                                    v-if="app"
+                                    :href="app.return_url"
+                                    class="mt-2 block font-medium text-foreground underline-offset-4 hover:underline"
+                                    >Volver a la app</a
+                                >
                                 <Link
+                                    v-else
                                     :href="`/mis-pedidos/${order.uuid}`"
                                     class="mt-2 block font-medium text-foreground underline-offset-4 hover:underline"
                                     >Ver mi pedido</Link

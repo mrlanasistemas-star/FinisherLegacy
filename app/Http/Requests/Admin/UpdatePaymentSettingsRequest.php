@@ -27,6 +27,9 @@ class UpdatePaymentSettingsRequest extends FormRequest
             'openpay_private_key' => is_string($this->input('openpay_private_key')) ? trim($this->input('openpay_private_key')) : null,
             'openpay_production_mode' => $this->boolean('openpay_production_mode'),
             'openpay_use_3d_secure' => $this->boolean('openpay_use_3d_secure'),
+            'openpay_webhook_user' => is_string($this->input('openpay_webhook_user')) ? trim($this->input('openpay_webhook_user')) : null,
+            'openpay_webhook_password' => is_string($this->input('openpay_webhook_password')) ? trim($this->input('openpay_webhook_password')) : null,
+            'openpay_webhook_clear' => $this->boolean('openpay_webhook_clear'),
         ]);
     }
 
@@ -43,6 +46,10 @@ class UpdatePaymentSettingsRequest extends FormRequest
             'openpay_country' => ['required', 'string', Rule::in(PaymentSettings::OPENPAY_COUNTRIES)],
             'openpay_production_mode' => ['boolean'],
             'openpay_use_3d_secure' => ['boolean'],
+            // HTTP Basic: no ":" in the user (RFC 7617).
+            'openpay_webhook_user' => ['nullable', 'string', 'max:100', 'not_regex:/:/'],
+            'openpay_webhook_password' => ['nullable', 'string', 'min:12', 'max:191'],
+            'openpay_webhook_clear' => ['boolean'],
         ];
     }
 
@@ -55,6 +62,8 @@ class UpdatePaymentSettingsRequest extends FormRequest
             'openpay_merchant_id.regex' => 'El Merchant ID solo lleva letras y números (cópialo tal cual del panel de OpenPay).',
             'openpay_public_key.starts_with' => 'La llave pública de OpenPay empieza con "pk_".',
             'openpay_private_key.starts_with' => 'La llave privada de OpenPay empieza con "sk_".',
+            'openpay_webhook_user.not_regex' => 'El usuario del webhook no puede llevar ":".',
+            'openpay_webhook_password.min' => 'Usa una contraseña de al menos 12 caracteres para el webhook.',
         ];
     }
 
@@ -67,6 +76,24 @@ class UpdatePaymentSettingsRequest extends FormRequest
     public function after(): array
     {
         return [
+            function (Validator $validator): void {
+                // Webhook Basic auth goes as a pair (a password already
+                // saved counts — it is never sent back to the page).
+                if ($this->boolean('openpay_webhook_clear')) {
+                    return;
+                }
+
+                $user = filled($this->input('openpay_webhook_user')) || filled(config('finisher.payments.openpay.webhook_user'));
+                $password = filled($this->input('openpay_webhook_password')) || filled(config('finisher.payments.openpay.webhook_password'));
+
+                if (filled($this->input('openpay_webhook_user')) && ! $password) {
+                    $validator->errors()->add('openpay_webhook_password', 'Captura también la contraseña del webhook.');
+                }
+
+                if (filled($this->input('openpay_webhook_password')) && ! $user) {
+                    $validator->errors()->add('openpay_webhook_user', 'Captura también el usuario del webhook.');
+                }
+            },
             function (Validator $validator): void {
                 if ($this->input('default_gateway') !== 'openpay') {
                     return;

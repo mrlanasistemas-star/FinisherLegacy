@@ -29,6 +29,9 @@ class PaymentSettings
     /** Last OpenPay webhook verification code (one hour, admin-only). */
     public const string VERIFICATION_CACHE_KEY = 'payment_settings.openpay_webhook_verification';
 
+    /** When the last authenticated OpenPay webhook arrived (status only, no payload). */
+    public const string LAST_WEBHOOK_CACHE_KEY = 'payment_settings.openpay_webhook_last';
+
     /** @var list<string> */
     public const array GATEWAYS = ['openpay', 'stripe'];
 
@@ -80,6 +83,15 @@ class PaymentSettings
             'finisher.payments.openpay.production_mode' => $row->openpay_production_mode,
         ], fn ($value) => $value !== null && $value !== '');
 
+        // Webhook Basic auth: user and password always travel together, so
+        // a half-configured pair can never lock OpenPay out.
+        $webhookPassword = $this->decrypted($row, 'openpay_webhook_password');
+
+        if (filled($row->openpay_webhook_user) && filled($webhookPassword)) {
+            $overrides['finisher.payments.openpay.webhook_user'] = $row->openpay_webhook_user;
+            $overrides['finisher.payments.openpay.webhook_password'] = $webhookPassword;
+        }
+
         if ($row->openpay_use_3d_secure) {
             $overrides['finisher.payments.openpay.use_3d_secure'] = true;
         }
@@ -111,6 +123,24 @@ class PaymentSettings
         if ($privateKey !== null) {
             $row->openpay_private_key = $privateKey;
             $row->openpay_private_key_last4 = substr($privateKey, -4);
+        }
+
+        // Webhook Basic auth: "clear" removes both; otherwise a blank
+        // password keeps the saved one (it is never sent back to the page).
+        if ((bool) ($data['openpay_webhook_clear'] ?? false)) {
+            $row->openpay_webhook_user = null;
+            $row->openpay_webhook_password = null;
+        } else {
+            $webhookUser = $this->clean($data['openpay_webhook_user'] ?? null);
+            $webhookPassword = $this->clean($data['openpay_webhook_password'] ?? null);
+
+            if ($webhookUser !== null) {
+                $row->openpay_webhook_user = $webhookUser;
+            }
+
+            if ($webhookPassword !== null) {
+                $row->openpay_webhook_password = $webhookPassword;
+            }
         }
 
         if ($row->isDirty(['openpay_merchant_id', 'openpay_private_key', 'openpay_production_mode', 'openpay_country'])) {
@@ -172,6 +202,22 @@ class PaymentSettings
         }
 
         $production = (bool) ($openpay['production_mode'] ?? false);
+        $webhookAuth = filled($openpay['webhook_user'] ?? null) && filled($openpay['webhook_password'] ?? null);
+        $webhookFromPanel = $row !== null && filled($row->openpay_webhook_user) && filled($row->getRawOriginal('openpay_webhook_password'));
+        $lastWebhook = Cache::get(self::LAST_WEBHOOK_CACHE_KEY);
+        $verifiedAt = $row?->openpay_verified_at?->toIso8601String();
+
+        // The "Para habilitar OpenPay" checklist (docs/renovacion/pagos.md),
+        // in order. Booleans only — never a secret.
+        $checklist = [
+            ['key' => 'merchant_id', 'label' => 'Merchant ID', 'done' => filled($openpay['merchant_id'] ?? null)],
+            ['key' => 'public_key', 'label' => 'Llave pública (pk_…)', 'done' => filled($openpay['public_key'] ?? null)],
+            ['key' => 'private_key', 'label' => 'Llave privada (sk_…), cifrada', 'done' => $privateKey !== ''],
+            ['key' => 'connection', 'label' => 'Probar conexión con OpenPay', 'done' => $verifiedAt !== null],
+            ['key' => 'webhook_auth', 'label' => 'Usuario y contraseña del webhook (recomendado)', 'done' => $webhookAuth],
+            ['key' => 'webhook', 'label' => 'Webhook creado y verificado en el panel de OpenPay', 'done' => is_array($lastWebhook)],
+            ['key' => 'gateway', 'label' => 'OpenPay como pasarela activa', 'done' => ($config['default_gateway'] ?? 'openpay') === 'openpay'],
+        ];
 
         return [
             'default_gateway' => (string) ($config['default_gateway'] ?? 'openpay'),
@@ -186,9 +232,16 @@ class PaymentSettings
                 'use_3d_secure' => (bool) ($openpay['use_3d_secure'] ?? false),
                 'configured' => $missing === [],
                 'missing' => $missing,
-                'verified_at' => $row?->openpay_verified_at?->toIso8601String(),
+                'verified_at' => $verifiedAt,
                 'webhook_url' => route('api.webhooks.openpay'),
                 'webhook_verification' => Cache::get(self::VERIFICATION_CACHE_KEY),
+                'webhook_auth' => [
+                    'configured' => $webhookAuth,
+                    'user' => $webhookAuth ? (string) $openpay['webhook_user'] : null,
+                    'source' => $webhookAuth ? ($webhookFromPanel ? 'panel' : 'env') : null,
+                ],
+                'webhook_last_received_at' => is_array($lastWebhook) ? ($lastWebhook['at'] ?? null) : null,
+                'checklist' => $checklist,
                 'dashboard_url' => $production ? 'https://dashboard.openpay.mx' : 'https://sandbox-dashboard.openpay.mx',
             ],
             'stripe' => [
@@ -249,14 +302,44 @@ class PaymentSettings
         ];
     }
 
+    /**
+     * Webhook HTTP Basic check (OpenPay's only webhook authentication).
+     * Not configured → true (trust still comes from re-reading the charge).
+     */
+    public function webhookCredentialsMatch(?string $user, ?string $password): bool
+    {
+        $expectedUser = (string) config('finisher.payments.openpay.webhook_user');
+        $expectedPassword = (string) config('finisher.payments.openpay.webhook_password');
+
+        if ($expectedUser === '' || $expectedPassword === '') {
+            return true;
+        }
+
+        return hash_equals($expectedUser, (string) $user) && hash_equals($expectedPassword, (string) $password);
+    }
+
+    /** For the admin checklist: "OpenPay already reached us". No payload kept. */
+    public function recordWebhookReceived(string $type): void
+    {
+        Cache::forever(self::LAST_WEBHOOK_CACHE_KEY, [
+            'at' => now()->toIso8601String(),
+            'type' => mb_substr($type, 0, 60),
+        ]);
+    }
+
     private function privateKey(PaymentSetting $row): ?string
     {
-        try {
-            $key = $row->getAttribute('openpay_private_key');
+        return $this->decrypted($row, 'openpay_private_key');
+    }
 
-            return is_string($key) ? $key : null;
+    private function decrypted(PaymentSetting $row, string $attribute): ?string
+    {
+        try {
+            $value = $row->getAttribute($attribute);
+
+            return is_string($value) ? $value : null;
         } catch (DecryptException) {
-            // APP_KEY rotated — the saved key can no longer be decrypted.
+            // APP_KEY rotated — the saved secret can no longer be decrypted.
             return null;
         }
     }
@@ -283,6 +366,8 @@ class PaymentSettings
             'openpay_country' => $row->openpay_country,
             'openpay_production_mode' => $row->openpay_production_mode,
             'openpay_use_3d_secure' => $row->openpay_use_3d_secure,
+            'openpay_webhook_user' => $row->openpay_webhook_user,
+            'openpay_webhook_password' => filled($row->getAttributes()['openpay_webhook_password'] ?? null) ? '••••' : null,
         ];
     }
 }

@@ -159,7 +159,18 @@ Payment.status     pending | authorized | paid | failed | refunded | partially_r
   de red — sí se verificó que compila/tipa correctamente contra el SDK
   real (phpstan) y que el camino "no configurado" nunca finge éxito.
 
-### App móvil — Stripe PaymentSheet (gateway de `/api/v1`)
+### App móvil — OpenPay en navegador dentro de la app (desde 2026-11-10)
+
+La app ya **no** usa Stripe: pide `POST /api/v1/orders/{uuid}/checkout-session`
+(URL de un solo uso, 5 min), abre el checkout web de OpenPay en
+`expo-web-browser` (`/pago/app/…`, sesión limitada a ese pedido, sin login
+web) y al volver consulta `GET /api/v1/orders/{uuid}` (que re-lee el cargo
+de OpenPay). Solo productos físicos (`AppPurchasePolicy`,
+`OrderResource.app_payable`). Detalle, auditoría y pasos de habilitación:
+`docs/renovacion/pagos.md`. Lo que sigue sobre PaymentSheet queda como
+histórico: el backend Stripe se conserva para conciliación y builds viejas.
+
+### (Histórico) App móvil — Stripe PaymentSheet (gateway de `/api/v1`)
 
 `config('finisher.payments.api_gateway')` (default `stripe`) decide el gateway de `POST /api/v1/orders/{uuid}/payments/online` cuando el cliente no manda `provider`; la web conserva `default_gateway` (OpenPay). Stripe es el gateway móvil porque tiene SDK nativo oficial (PaymentSheet: la tarjeta va del dispositivo a Stripe, nunca a Laravel); OpenPay necesita Openpay.js (web).
 

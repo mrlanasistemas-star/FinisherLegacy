@@ -8,6 +8,7 @@ use App\Exceptions\InvalidPaymentWebhookSignatureException;
 use App\Exceptions\MissingPaymentTokenException;
 use App\Exceptions\PaymentDeclinedException;
 use App\Exceptions\PaymentGatewayNotConfiguredException;
+use App\Exceptions\UnhandledPaymentWebhookEventException;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Support\Commerce\OnlinePaymentIntent;
@@ -109,7 +110,7 @@ class OpenPayPaymentGateway implements ResumablePaymentGateway
 
         $threeDs = [
             'use_3d_secure' => true,
-            'redirect_url' => route('store.checkout.confirmation', $order->uuid),
+            'redirect_url' => $this->returnUrl($order, $paymentData['return_url'] ?? null),
         ];
 
         $forced = (bool) config('finisher.payments.openpay.use_3d_secure');
@@ -165,12 +166,26 @@ class OpenPayPaymentGateway implements ResumablePaymentGateway
             throw new InvalidPaymentWebhookSignatureException;
         }
 
+        // Only card charge events move money we track. Payouts, transfers,
+        // fees, chargebacks… are acknowledged (200) without a charge lookup
+        // — otherwise OpenPay would retry them forever. Chargebacks are
+        // handled by staff from the OpenPay dashboard.
+        if (! str_starts_with($type, 'charge.')) {
+            throw new UnhandledPaymentWebhookEventException("Evento de OpenPay no manejado: {$type}");
+        }
+
         // The webhook body is never trusted for amount/status — Openpay
         // sends no signature, so re-fetching the charge by id from
         // Openpay's own API is what makes this trustworthy.
         $charge = $this->client()->charges->get($transactionId);
 
-        return $this->outcomeFromCharge($charge, "{$transactionId}:{$type}", is_array($payload) ? $payload : []);
+        // The re-read status is part of the idempotency key: a retried
+        // delivery that first saw the charge still pending must still be
+        // applied once OpenPay reports it completed — while repeats of the
+        // same (event, status) stay no-ops.
+        $chargeStatus = (string) $this->field($charge, 'status');
+
+        return $this->outcomeFromCharge($charge, "{$transactionId}:{$type}:{$chargeStatus}", is_array($payload) ? $payload : []);
     }
 
     public function isConfigured(): bool
@@ -267,6 +282,27 @@ class OpenPayPaymentGateway implements ResumablePaymentGateway
         }
 
         return $customer;
+    }
+
+    /**
+     * Where OpenPay sends the shopper after 3D Secure. Callers (the app
+     * checkout) may pass their own confirmation page, but only a URL on
+     * this app's own host — never an arbitrary redirect.
+     */
+    private function returnUrl(Order $order, mixed $requested): string
+    {
+        $default = route('store.checkout.confirmation', $order->uuid);
+
+        if (! is_string($requested) || $requested === '') {
+            return $default;
+        }
+
+        $host = parse_url($requested, PHP_URL_HOST);
+        $scheme = parse_url($requested, PHP_URL_SCHEME);
+
+        return in_array($scheme, ['https', 'http'], true) && $host === parse_url($default, PHP_URL_HOST)
+            ? $requested
+            : $default;
     }
 
     private function declined(OpenpayApiError $e): PaymentDeclinedException

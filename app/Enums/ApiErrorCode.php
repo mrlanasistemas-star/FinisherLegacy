@@ -30,6 +30,8 @@ enum ApiErrorCode: string
     case ProductUnavailable = 'PRODUCT_UNAVAILABLE';
     case PriceNotAvailable = 'PRICE_NOT_AVAILABLE';
     case OrderNotPayable = 'ORDER_NOT_PAYABLE';
+    // The Order holds digital goods — never payable from the mobile app (store policies).
+    case OrderNotAppPayable = 'ORDER_NOT_APP_PAYABLE';
     case PaymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';
     case PaymentAlreadyRecorded = 'PAYMENT_ALREADY_RECORDED';
     case PaymentDeclined = 'PAYMENT_DECLINED';

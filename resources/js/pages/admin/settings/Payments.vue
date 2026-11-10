@@ -44,6 +44,13 @@ type Settings = {
         verified_at: string | null;
         webhook_url: string;
         webhook_verification: { code: string; received_at: string } | null;
+        webhook_auth: {
+            configured: boolean;
+            user: string | null;
+            source: 'panel' | 'env' | null;
+        };
+        webhook_last_received_at: string | null;
+        checklist: { key: string; label: string; done: boolean }[];
         dashboard_url: string;
     };
     stripe: {
@@ -64,14 +71,34 @@ const form = useForm({
     openpay_country: props.settings.openpay.country || 'MX',
     openpay_production_mode: props.settings.openpay.production_mode,
     openpay_use_3d_secure: props.settings.openpay.use_3d_secure,
+    openpay_webhook_user: props.settings.openpay.webhook_auth.user ?? '',
+    openpay_webhook_password: '',
+    openpay_webhook_clear: false,
 });
 
 function save() {
     form.put(update().url, {
         preserveScroll: true,
-        onSuccess: () => form.reset('openpay_private_key'),
+        onSuccess: () =>
+            form.reset(
+                'openpay_private_key',
+                'openpay_webhook_password',
+                'openpay_webhook_clear',
+            ),
     });
 }
+
+const checklistDone = computed(
+    () => props.settings.openpay.checklist.filter((item) => item.done).length,
+);
+
+const lastWebhookLabel = computed(() =>
+    props.settings.openpay.webhook_last_received_at
+        ? dateFormat.format(
+              new Date(props.settings.openpay.webhook_last_received_at),
+          )
+        : null,
+);
 
 const testing = ref(false);
 const testResult = ref<{ ok: boolean; message: string } | null>(null);
@@ -199,8 +226,9 @@ const gateways = [
                     <h2 class="text-base font-semibold">Pasarela activa</h2>
                     <p class="mt-1 text-sm text-muted-foreground">
                         La que usa el checkout de la tienda web. La app móvil
-                        cobra con Stripe ({{ settings.api_gateway }}) porque usa
-                        su hoja de pago nativa.
+                        siempre cobra con OpenPay: abre este mismo checkout en
+                        un navegador seguro dentro de la app (solo productos
+                        físicos).
                     </p>
                     <div
                         class="mt-5 grid gap-3 md:grid-cols-2"
@@ -422,6 +450,50 @@ const gateways = [
             </div>
 
             <aside class="space-y-6">
+                <!-- Checklist: "Para habilitar OpenPay" (docs/renovacion/pagos.md) -->
+                <section class="fl-card p-6">
+                    <h2
+                        class="flex items-center justify-between gap-2 text-base font-semibold"
+                    >
+                        Para habilitar OpenPay
+                        <span class="text-sm font-medium text-muted-foreground"
+                            >{{ checklistDone }}/{{
+                                settings.openpay.checklist.length
+                            }}</span
+                        >
+                    </h2>
+                    <ol class="mt-4 space-y-2.5 text-sm">
+                        <li
+                            v-for="item in settings.openpay.checklist"
+                            :key="item.key"
+                            class="flex items-start gap-2"
+                        >
+                            <CircleCheck
+                                v-if="item.done"
+                                class="mt-0.5 size-4 shrink-0 text-emerald-600"
+                            />
+                            <CircleAlert
+                                v-else
+                                class="mt-0.5 size-4 shrink-0 text-amber-600"
+                            />
+                            <span
+                                :class="
+                                    item.done
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground'
+                                "
+                                >{{ item.label }}</span
+                            >
+                        </li>
+                    </ol>
+                    <p class="mt-4 text-xs text-muted-foreground">
+                        Prueba primero en sandbox con las tarjetas de prueba de
+                        OpenPay; activa "Modo producción" solo cuando OpenPay
+                        haya aprobado tu cuenta y tengas las llaves de
+                        producción.
+                    </p>
+                </section>
+
                 <!-- Status + test -->
                 <section class="fl-card p-6">
                     <h2 class="flex items-center gap-2 text-base font-semibold">
@@ -554,6 +626,90 @@ const gateways = [
                             </Button>
                         </div>
                     </div>
+                    <!-- HTTP Basic credentials (OpenPay's only webhook auth) -->
+                    <div class="mt-5 grid gap-3 border-t border-border pt-5">
+                        <p class="text-sm font-medium">
+                            Usuario y contraseña del webhook
+                        </p>
+                        <p class="text-xs text-muted-foreground">
+                            Al crear el webhook en OpenPay, activa la
+                            autenticación básica y escribe exactamente los
+                            mismos datos. Las notificaciones sin ellos se
+                            rechazan (401).
+                        </p>
+                        <div class="grid gap-1.5">
+                            <Label for="op-wh-user">Usuario</Label>
+                            <Input
+                                id="op-wh-user"
+                                v-model="form.openpay_webhook_user"
+                                autocomplete="off"
+                                spellcheck="false"
+                                class="h-11 font-mono"
+                                placeholder="openpay-webhook"
+                            />
+                            <InputError
+                                :message="form.errors.openpay_webhook_user"
+                            />
+                        </div>
+                        <div class="grid gap-1.5">
+                            <Label for="op-wh-pass">Contraseña</Label>
+                            <Input
+                                id="op-wh-pass"
+                                v-model="form.openpay_webhook_password"
+                                type="password"
+                                autocomplete="new-password"
+                                spellcheck="false"
+                                class="h-11 font-mono"
+                                :placeholder="
+                                    settings.openpay.webhook_auth.configured
+                                        ? 'Déjala vacía para conservar la actual'
+                                        : 'Mínimo 12 caracteres'
+                                "
+                            />
+                            <InputError
+                                :message="form.errors.openpay_webhook_password"
+                            />
+                        </div>
+                        <p
+                            v-if="settings.openpay.webhook_auth.configured"
+                            class="flex items-center gap-1.5 text-xs text-emerald-700"
+                        >
+                            <ShieldCheck class="size-3.5" />
+                            Autenticación activa
+                            {{
+                                settings.openpay.webhook_auth.source === 'env'
+                                    ? '(desde el servidor)'
+                                    : '(contraseña guardada cifrada)'
+                            }}
+                        </p>
+                        <p v-else class="text-xs text-amber-800">
+                            Sin autenticación: recomendado configurarla.
+                        </p>
+                        <label
+                            v-if="
+                                settings.openpay.webhook_auth.source === 'panel'
+                            "
+                            class="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
+                        >
+                            <Checkbox v-model="form.openpay_webhook_clear" />
+                            Quitar usuario y contraseña al guardar
+                        </label>
+                    </div>
+
+                    <p
+                        class="mt-4 rounded-xl px-3 py-2 text-xs"
+                        :class="
+                            lastWebhookLabel
+                                ? 'bg-emerald-50 text-emerald-900'
+                                : 'bg-muted/40 text-muted-foreground'
+                        "
+                    >
+                        {{
+                            lastWebhookLabel
+                                ? `Última notificación de OpenPay: ${lastWebhookLabel}.`
+                                : 'Todavía no llega ninguna notificación de OpenPay.'
+                        }}
+                    </p>
                     <p class="mt-3 text-xs text-muted-foreground">
                         Aunque el webhook no esté activo, la tienda confirma
                         cada pago consultando el cargo directamente en OpenPay.

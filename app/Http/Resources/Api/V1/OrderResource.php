@@ -6,6 +6,7 @@ use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\Commerce\AppPurchasePolicy;
 use App\Support\Commerce\OrderPaymentState;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -30,6 +31,7 @@ class OrderResource extends JsonResource
         $expiresAt = $this->status === OrderStatus::Pending && $this->payment_status !== OrderPaymentStatus::Paid
             ? $this->created_at->addMinutes((int) config('finisher.commerce.order_payment_expiry_minutes', 60))
             : null;
+        $payable = $this->isPayable($expiresAt);
 
         return [
             'uuid' => $this->uuid,
@@ -37,7 +39,10 @@ class OrderResource extends JsonResource
             'status' => $this->status->value,
             'payment_status' => $this->payment_status->value,
             'payment_state' => $this->paymentState($latest),
-            'payable' => $this->isPayable($expiresAt),
+            'payable' => $payable,
+            // The app may pay it (OpenPay in-app checkout): payable AND physical
+            // goods only — digital goods are never sold in the app (AppPurchasePolicy).
+            'app_payable' => $payable && ! AppPurchasePolicy::containsDigitalGoods($this->resource),
             'fulfillment_status' => $this->fulfillment_status->value,
             'subtotal_minor' => $this->subtotal_minor,
             'discount_minor' => $this->discount_minor,

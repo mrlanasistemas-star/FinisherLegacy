@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MomentCommentResource;
 use App\Models\LegacyMoment;
 use App\Models\LegacyMomentComment;
+use App\Rules\NoObjectionableContent;
 use App\Services\Social\SocialVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,7 +52,7 @@ class CommentController extends Controller
         abort_unless(Gate::forUser($user)->allows('interact', $moment), 404);
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'min:1', 'max:'.config('finisher.social.comment_max')],
+            'body' => ['required', 'string', 'min:1', 'max:'.config('finisher.social.comment_max'), new NoObjectionableContent],
         ], [
             'body.required' => 'Escribe un mensaje antes de enviarlo.',
             'body.max' => 'Tu mensaje es demasiado largo (máximo :max caracteres).',

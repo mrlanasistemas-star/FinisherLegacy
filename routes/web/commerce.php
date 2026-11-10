@@ -5,7 +5,9 @@ use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Admin\PaymentSettingsController as AdminPaymentSettingsController;
 use App\Http\Controllers\Admin\ProductMediaController as AdminProductMediaController;
 use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
+use App\Http\Controllers\Store\AppCheckoutController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
+use App\Http\Middleware\AuthorizeAppCheckout;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,6 +17,24 @@ use Illuminate\Support\Facades\Route;
 | The original cart/checkout/admin product/order/coupon routes stay in
 | routes/web.php with their URLs and names; this file only adds.
 */
+
+/*
+| Mobile app → OpenPay web checkout in an in-app browser (no web login):
+| a one-time token from POST /api/v1/orders/{uuid}/checkout-session opens
+| a session scoped to that one Order (AuthorizeAppCheckout). See
+| AppCheckoutController and docs/renovacion/pagos.md.
+*/
+Route::get('pago/app/{token}', [AppCheckoutController::class, 'start'])
+    ->where('token', '[A-Za-z0-9]{64}')
+    ->middleware('throttle:20,1')
+    ->name('store.app-checkout.start');
+
+Route::middleware(AuthorizeAppCheckout::class)->prefix('pago/app/pedido/{order:uuid}')->name('store.app-checkout.')->group(function () {
+    Route::get('/', [AppCheckoutController::class, 'payInApp'])->name('pay');
+    Route::post('cargo', [AppCheckoutController::class, 'chargeInApp'])->middleware('throttle:20,1')->name('charge');
+    Route::get('confirmacion', [AppCheckoutController::class, 'confirmationInApp'])->name('confirmation');
+    Route::get('estado', [AppCheckoutController::class, 'status'])->middleware('throttle:60,1')->name('status');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('checkout/{order:uuid}')->name('store.checkout.')->group(function () {

@@ -70,3 +70,19 @@ export type CheckoutOrderState = {
     total_minor: number;
     currency: string;
 };
+
+/**
+ * Present only when the checkout runs inside the mobile app's in-app
+ * browser (AppCheckoutController): scoped URLs for this one Order and the
+ * deep link that closes the browser. The app re-reads the Order from the
+ * API on return — this link carries no payment state.
+ */
+export type AppCheckoutContext = {
+    return_url: string;
+    urls: {
+        online_payment: string;
+        confirmation: string;
+        status: string;
+        retry: string;
+    };
+};

@@ -8,6 +8,8 @@ use App\Actions\Commerce\GetOrCreateCart;
 use App\Actions\Commerce\RemoveCartItem;
 use App\Actions\Commerce\RemoveCouponFromCart;
 use App\Actions\Commerce\UpdateCartItem;
+use App\Enums\ProductType;
+use App\Exceptions\ProductUnavailableException;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
@@ -42,6 +44,12 @@ class CartController extends Controller
     {
         $cart = $getOrCreateCart->handle($this->sanctumUser($request), null);
         $variant = $request->resolveVariant() ?? throw (new ModelNotFoundException)->setModel(ProductVariant::class);
+
+        // Digital goods never go through the app (AppPurchasePolicy).
+        if ($variant->product?->type === ProductType::DigitalPhoto) {
+            throw new ProductUnavailableException;
+        }
+
         $edition = $request->filled('event_edition_id') ? EventEdition::find($request->integer('event_edition_id')) : null;
         $plateModelId = $request->resolveLegacyPlateModelId();
         $metadata = $plateModelId !== null ? ['legacy_plate_model_id' => $plateModelId] : [];

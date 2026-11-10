@@ -14,18 +14,37 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * `POST /api/webhooks/openpay` — public route (no auth:sanctum, brief
- * §113), same as Stripe's. Openpay's one-time dashboard "verification"
- * handshake (brief §52) carries no `transaction` to process — it's
- * handled here, before OpenPayPaymentGateway::handleWebhook() (which
- * expects a real transaction event) is ever called.
+ * §113), same as Stripe's.
+ *
+ * Authentication, two layers:
+ *  1. HTTP Basic — OpenPay's only webhook authentication (user/password
+ *     typed in the OpenPay dashboard). Enforced whenever credentials are
+ *     configured (admin panel or OPENPAY_WEBHOOK_USER/PASSWORD); a wrong
+ *     or missing pair gets 401 before anything is read.
+ *  2. The body is never trusted: OpenPayPaymentGateway::handleWebhook()
+ *     re-fetches the charge by id from OpenPay's API with the private key.
+ *
+ * Openpay's one-time dashboard "verification" handshake (brief §52)
+ * carries no `transaction` to process — it's handled here, before the
+ * gateway (which expects a real transaction event) is ever called.
  */
 class OpenPayWebhookController extends Controller
 {
-    public function __invoke(Request $request, PaymentGatewayRegistry $gateways, ProcessPaymentWebhook $process): Response
+    public function __invoke(Request $request, PaymentGatewayRegistry $gateways, ProcessPaymentWebhook $process, PaymentSettings $settings): Response
     {
-        $payload = json_decode($request->getContent(), true);
+        if (! $settings->webhookCredentialsMatch($request->getUser(), $request->getPassword())) {
+            // Never log what was sent — only that it was rejected.
+            Log::warning('Openpay webhook rejected: HTTP Basic credentials do not match');
 
-        if (is_array($payload) && ($payload['type'] ?? null) === 'verification') {
+            return response('', 401, ['WWW-Authenticate' => 'Basic realm="openpay-webhook"']);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $type = is_array($payload) && is_string($payload['type'] ?? null) ? $payload['type'] : 'unknown';
+
+        $settings->recordWebhookReceived($type);
+
+        if ($type === 'verification') {
             // Activating the webhook still requires an admin to paste this
             // code into the Openpay dashboard by hand — Openpay exposes no
             // API to do that step (brief §52). The code itself is a bearer

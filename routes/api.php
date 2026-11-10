@@ -38,6 +38,8 @@ use App\Http\Controllers\Api\V1\Store\CollectionController as StoreCollectionCon
 use App\Http\Controllers\Api\V1\Store\OrderController;
 use App\Http\Controllers\Api\V1\Store\PaymentController;
 use App\Http\Controllers\Api\V1\Store\ProductController;
+use App\Http\Controllers\Api\V1\Training\TrainingLinkController;
+use App\Http\Controllers\Api\V1\Training\TrainingMessageController;
 use App\Http\Controllers\Api\Webhooks\OpenPayWebhookController;
 use App\Http\Controllers\Api\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -202,6 +204,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('orders/{order:uuid}/payments/online', [PaymentController::class, 'online'])
             ->middleware('api.idempotent')
             ->name('orders.payments.online');
+        // App → OpenPay web checkout (in-app browser). One-time URL.
+        Route::post('orders/{order:uuid}/checkout-session', [PaymentController::class, 'checkoutSession'])
+            ->middleware('throttle:20,1')
+            ->name('orders.checkout-session');
         Route::post('orders/{order:uuid}/payments/sync', [PaymentController::class, 'sync'])
             ->middleware('throttle:30,1')
             ->name('orders.payments.sync');
@@ -262,6 +268,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
         Route::post('me/support-messages/{message}/consumed', [MeSupportSessionController::class, 'markConsumed'])->name('me.support-messages.consumed');
 
+        // Entrenamientos — "Envíame ánimo" (docs/renovacion/entrenamientos.md). Owner-only, 404 for others.
+        Route::prefix('training')->name('training.')->group(function () {
+            Route::get('messages', [TrainingMessageController::class, 'index'])->name('messages.index');
+            Route::post('messages/{uuid}/listened', [TrainingMessageController::class, 'listened'])->whereUuid('uuid')->name('messages.listened');
+            Route::post('messages/{uuid}/favorite', [TrainingMessageController::class, 'favorite'])->whereUuid('uuid')->name('messages.favorite');
+            Route::post('messages/{uuid}/block-sender', [TrainingMessageController::class, 'blockSender'])->whereUuid('uuid')->name('messages.block-sender');
+            Route::delete('messages/{uuid}', [TrainingMessageController::class, 'destroy'])->whereUuid('uuid')->name('messages.destroy');
+            Route::get('links', [TrainingLinkController::class, 'index'])->name('links.index');
+            Route::post('links', [TrainingLinkController::class, 'store'])->middleware('throttle:30,1')->name('links.store');
+            Route::delete('links/{uuid}', [TrainingLinkController::class, 'destroy'])->whereUuid('uuid')->name('links.destroy');
+        });
         Route::post('me/push-devices', [MePushDeviceController::class, 'store'])->name('me.push-devices.store');
         Route::delete('me/push-devices/{uuid}', [MePushDeviceController::class, 'destroy'])->name('me.push-devices.destroy');
 

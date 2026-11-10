@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Store;
 
+use App\Actions\Commerce\CreateAppCheckoutSession;
 use App\Actions\Commerce\CreateOnlinePayment;
 use App\Actions\Commerce\RegisterManualPayment;
 use App\Actions\Commerce\SyncOnlinePayment;
@@ -9,6 +10,7 @@ use App\Enums\PaymentMethod;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Store\AppCheckoutController;
 use App\Http\Requests\Api\RegisterManualPaymentRequest;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Order;
@@ -55,6 +57,29 @@ class PaymentController extends Controller
             'publishable_key' => $intent->clientPayload['publishable_key'] ?? null,
             'amount_minor' => $order->total_minor,
             'currency' => $order->currency,
+        ], status: 201);
+    }
+
+    /**
+     * `POST /orders/{uuid}/checkout-session` → `{url, expires_at}`. The app
+     * opens `url` in an in-app browser: the OpenPay web checkout of THIS
+     * Order (card tokenized by Openpay.js, 3D Secure included). The URL is
+     * single use and short-lived; it opens a session scoped to this Order
+     * only. Physical goods only — see AppPurchasePolicy.
+     */
+    public function checkoutSession(Request $request, Order $order, CreateAppCheckoutSession $create): JsonResponse
+    {
+        $user = $this->sanctumUser($request);
+
+        abort_unless($order->user_id === $user->id, 403);
+
+        $session = $create->handle($user, $order, $request->ip());
+
+        return $this->respond([
+            'order_uuid' => $order->uuid,
+            'url' => $session['url'],
+            'expires_at' => $session['expires_at']->toIso8601String(),
+            'return_url' => AppCheckoutController::returnUrl($order->uuid),
         ], status: 201);
     }
 

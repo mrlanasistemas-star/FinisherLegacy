@@ -239,6 +239,23 @@ return [
             // by OpenPay's anti-fraud (error 3005) is retried once with 3DS,
             // same as OpenPay's own official WooCommerce plugin does.
             'use_3d_secure' => (bool) env('OPENPAY_USE_3D_SECURE', false),
+            // Optional HTTP Basic credentials for POST /api/webhooks/openpay
+            // — the same user/password typed in the OpenPay dashboard when
+            // the webhook is created (OpenPay only supports HTTP Basic for
+            // webhooks). Empty = not required (the charge is still re-read
+            // from OpenPay's API, so the body is never trusted).
+            'webhook_user' => env('OPENPAY_WEBHOOK_USER'),
+            'webhook_password' => env('OPENPAY_WEBHOOK_PASSWORD'),
+        ],
+
+        // Mobile app → OpenPay web checkout in an in-app browser
+        // (POST /api/v1/orders/{uuid}/checkout-session). The one-time URL
+        // expires fast; the browser session it opens is scoped to that
+        // single Order and lasts long enough to finish 3D Secure.
+        'app_checkout' => [
+            'token_ttl_minutes' => (int) env('FINISHER_APP_CHECKOUT_TOKEN_TTL', 5),
+            'session_minutes' => (int) env('FINISHER_APP_CHECKOUT_SESSION_MINUTES', 30),
+            'return_url' => env('FINISHER_APP_CHECKOUT_RETURN_URL', 'finisherlegacy://checkout/return'),
         ],
     ],
 

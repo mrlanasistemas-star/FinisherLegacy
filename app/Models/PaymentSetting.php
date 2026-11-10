@@ -15,7 +15,8 @@ use Illuminate\Support\Carbon;
  *
  * `openpay_private_key` is encrypted at rest (APP_KEY) and hidden from
  * serialization; only its last four characters are kept in clear so the
- * admin UI can say "••••1234 configurada".
+ * admin UI can say "••••1234 configurada". The webhook HTTP Basic
+ * password (`openpay_webhook_password`) is encrypted and hidden the same way.
  *
  * @property int $id
  * @property string|null $default_gateway
@@ -27,20 +28,23 @@ use Illuminate\Support\Carbon;
  * @property bool|null $openpay_production_mode
  * @property bool $openpay_use_3d_secure
  * @property Carbon|null $openpay_verified_at
+ * @property string|null $openpay_webhook_user
+ * @property string|null $openpay_webhook_password
  * @property int|null $updated_by
  */
 #[Fillable([
     'default_gateway', 'openpay_merchant_id', 'openpay_public_key', 'openpay_private_key',
     'openpay_private_key_last4', 'openpay_country', 'openpay_production_mode', 'openpay_use_3d_secure',
-    'openpay_verified_at', 'updated_by',
+    'openpay_verified_at', 'openpay_webhook_user', 'openpay_webhook_password', 'updated_by',
 ])]
-#[Hidden(['openpay_private_key'])]
+#[Hidden(['openpay_private_key', 'openpay_webhook_password'])]
 class PaymentSetting extends Model
 {
     protected function casts(): array
     {
         return [
             'openpay_private_key' => 'encrypted',
+            'openpay_webhook_password' => 'encrypted',
             'openpay_production_mode' => 'boolean',
             'openpay_use_3d_secure' => 'boolean',
             'openpay_verified_at' => 'datetime',

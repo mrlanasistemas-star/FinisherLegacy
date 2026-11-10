@@ -109,9 +109,22 @@ class CheckoutController extends Controller
             return redirect()->route('store.checkout.confirmation', $order->uuid);
         }
 
+        return Inertia::render('store/Checkout', $this->paymentPageProps($request, $order, $this->paymentProps($payments)));
+    }
+
+    /**
+     * Props of the payment step — shared with the app checkout
+     * (AppCheckoutController), which only swaps the payment options.
+     *
+     * @param  array<string, mixed>  $payment
+     * @return array<string, mixed>
+     */
+    protected function paymentPageProps(Request $request, Order $order, array $payment): array
+    {
+        $order->loadMissing(['items.product.media', 'items.productVariant', 'latestPayment']);
         $snapshot = $order->customer_snapshot ?? [];
 
-        return Inertia::render('store/Checkout', [
+        return [
             'step' => 'payment',
             'items' => $order->items->map(fn (OrderItem $item) => $this->orderItemRow($item))->values(),
             'subtotal_minor' => $order->subtotal_minor,
@@ -126,9 +139,9 @@ class CheckoutController extends Controller
                 'phone' => $snapshot['phone'] ?? null,
             ],
             'delivery' => $snapshot['delivery'] ?? null,
-            'payment' => $this->paymentProps($payments),
+            'payment' => $payment,
             'order' => $this->orderState($order),
-        ]);
+        ];
     }
 
     /**
@@ -144,15 +157,23 @@ class CheckoutController extends Controller
 
         $this->syncOpenPay($order, $sync);
 
+        return Inertia::render('store/CheckoutConfirmation', $this->confirmationPageProps($order));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function confirmationPageProps(Order $order): array
+    {
         $order->refresh()->loadMissing(['items.product.media', 'items.productVariant', 'latestPayment']);
 
-        return Inertia::render('store/CheckoutConfirmation', [
+        return [
             'order' => $this->orderState($order),
             'items' => $order->items->map(fn (OrderItem $item) => $this->orderItemRow($item))->values(),
             'currency' => $order->currency,
             'total_minor' => $order->total_minor,
             'delivery' => $order->customer_snapshot['delivery'] ?? null,
-        ]);
+        ];
     }
 
     public function status(Order $order, SyncOnlinePayment $sync): JsonResponse
@@ -177,17 +198,30 @@ class CheckoutController extends Controller
     {
         Gate::authorize('pay', $order);
 
-        $provider = $payments->options()['provider'] ?? null;
+        return $this->chargeOnline($request, $order, $createPayment, $sync, $payments->options()['provider'] ?? null);
+    }
 
+    /**
+     * Shared by the web and app checkouts. `$returnUrl` is where OpenPay
+     * sends the shopper after 3D Secure (server-chosen, never the client's).
+     */
+    protected function chargeOnline(Request $request, Order $order, CreateOnlinePayment $createPayment, SyncOnlinePayment $sync, ?string $provider, ?string $returnUrl = null): JsonResponse
+    {
         if ($provider === null) {
             return response()->json(['available' => false, 'message' => 'El pago en línea no está disponible en este momento.']);
+        }
+
+        $paymentData = $request->only(['token_id', 'device_session_id']);
+
+        if ($returnUrl !== null) {
+            $paymentData['return_url'] = $returnUrl;
         }
 
         try {
             $intent = $createPayment->handle(
                 $order,
                 provider: $provider,
-                paymentData: $request->only(['token_id', 'device_session_id']),
+                paymentData: $paymentData,
             );
         } catch (PaymentDeclinedException $e) {
             return response()->json(['available' => true, 'declined' => true, 'message' => $e->getMessage()]);
@@ -209,7 +243,7 @@ class CheckoutController extends Controller
      * applies it through the same path a webhook takes. Never throws: the
      * webhook (or the next poll) settles it if OpenPay is unreachable.
      */
-    private function syncOpenPay(Order $order, SyncOnlinePayment $sync): void
+    protected function syncOpenPay(Order $order, SyncOnlinePayment $sync): void
     {
         $latest = $order->latestPayment()->first();
 
@@ -230,7 +264,7 @@ class CheckoutController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function paymentProps(WebCheckoutPayment $payments): array
+    protected function paymentProps(WebCheckoutPayment $payments): array
     {
         return [
             ...$payments->options(),
@@ -241,7 +275,7 @@ class CheckoutController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function orderState(Order $order): array
+    protected function orderState(Order $order): array
     {
         $latest = $order->relationLoaded('latestPayment') ? $order->latestPayment : $order->latestPayment()->first();
 
@@ -262,7 +296,7 @@ class CheckoutController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function orderItemRow(OrderItem $item): array
+    protected function orderItemRow(OrderItem $item): array
     {
         $variant = $item->productVariant;
 

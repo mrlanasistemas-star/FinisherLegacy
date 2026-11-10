@@ -15,6 +15,7 @@ use App\Http\Resources\Api\V1\MomentResource;
 use App\Models\LegacyMoment;
 use App\Models\User;
 use App\Queries\Social\MomentQuery;
+use App\Rules\NoObjectionableContent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -61,7 +62,7 @@ class MomentController extends Controller
         abort_unless(Gate::forUser($user)->allows('update', $moment), 404);
 
         $data = $request->validate([
-            'caption' => ['sometimes', 'nullable', 'string', 'max:'.config('finisher.social.moment_caption_max')],
+            'caption' => ['sometimes', 'nullable', 'string', 'max:'.config('finisher.social.moment_caption_max'), new NoObjectionableContent],
             'visibility' => ['sometimes', Rule::enum(MomentVisibility::class)],
         ]);
 

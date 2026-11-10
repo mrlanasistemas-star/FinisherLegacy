@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Store;
 
+use App\Enums\ProductType;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\ProductDetailResource;
@@ -28,6 +29,9 @@ class ProductController extends Controller
             ->with(['category', 'collection', 'design', 'variants.inventoryLevels', 'media'])
             ->where('active', true)
             ->where('status', 'active')
+            // Digital goods are never sold in the mobile app (store
+            // policies — App\Support\Commerce\AppPurchasePolicy).
+            ->where('type', '!=', ProductType::DigitalPhoto->value)
             ->when($request->string('category')->toString(), fn ($q, $slug) => $q->whereHas('category', fn ($c) => $c->where('slug', $slug)))
             ->when($request->string('type')->toString(), fn ($q, $type) => $q->where('type', $type))
             ->when($search !== '', fn ($q) => $q->where(fn ($inner) => $inner->where('name', 'like', $like)->orWhere('brand', 'like', $like)))
@@ -47,7 +51,7 @@ class ProductController extends Controller
             // chips a client shows, filtered by `slug`.
             'categories' => ProductCategory::query()
                 ->where('active', true)
-                ->whereHas('products', fn ($q) => $q->where('active', true)->where('status', 'active'))
+                ->whereHas('products', fn ($q) => $q->where('active', true)->where('status', 'active')->where('type', '!=', ProductType::DigitalPhoto->value))
                 ->orderBy('name')
                 ->get(['name', 'slug']),
         ]);
@@ -55,7 +59,7 @@ class ProductController extends Controller
 
     public function show(Product $product): JsonResponse
     {
-        abort_unless($product->active && $product->status->value === 'active', 404);
+        abort_unless($product->active && $product->status->value === 'active' && $product->type !== ProductType::DigitalPhoto, 404);
 
         return $this->respond(new ProductDetailResource($product->loadMissing(['category', 'collection', 'design', 'variants.inventoryLevels', 'media', 'contentSections'])));
     }

@@ -14,7 +14,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import type { CheckoutOrderState } from '@/lib/commerce';
+import type { AppCheckoutContext, CheckoutOrderState } from '@/lib/commerce';
 import { getJson } from '@/lib/commerce';
 import { getEcho } from '@/lib/echo';
 
@@ -35,7 +35,23 @@ const props = defineProps<{
     currency: string;
     total_minor: number;
     delivery: { method: 'pickup' | 'shipping' } | null;
+    /** Set when rendered inside the mobile app (store/AppCheckoutConfirmation). */
+    app?: AppCheckoutContext | null;
 }>();
+
+const retryHref = computed(
+    () => props.app?.urls.retry ?? `/checkout/${props.order.uuid}`,
+);
+
+// In the app, a confirmed payment closes the in-app browser by itself
+// (the app then re-reads the order from the API — never from this link).
+let returnTimer: ReturnType<typeof setTimeout> | null = null;
+
+function backToApp() {
+    if (props.app) {
+        window.location.assign(props.app.return_url);
+    }
+}
 
 const state = ref<CheckoutOrderState>(props.order);
 const attempts = ref(0);
@@ -58,11 +74,18 @@ const view = computed<'confirmed' | 'processing' | 'waiting' | 'error'>(() => {
 async function refresh() {
     try {
         const { data } = await getJson<{ data: CheckoutOrderState }>(
-            `/checkout/${props.order.uuid}/estado`,
+            props.app?.urls.status ?? `/checkout/${props.order.uuid}/estado`,
         );
         state.value = data;
+        scheduleReturn();
     } catch {
         // Keep the last known state; the next tick retries.
+    }
+}
+
+function scheduleReturn() {
+    if (props.app && view.value === 'confirmed' && returnTimer === null) {
+        returnTimer = setTimeout(backToApp, 1800);
     }
 }
 
@@ -88,6 +111,7 @@ const channelName = computed(() => {
 
 onMounted(() => {
     schedule();
+    scheduleReturn();
 
     const echo = getEcho();
 
@@ -106,6 +130,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
     if (timer) {
         clearTimeout(timer);
+    }
+
+    if (returnTimer) {
+        clearTimeout(returnTimer);
     }
 
     if (channelName.value) {
@@ -127,7 +155,10 @@ function checkAgain() {
     />
 
     <div class="min-h-screen bg-background">
-        <div class="fl-container max-w-2xl py-14 md:py-20">
+        <div
+            class="fl-container max-w-2xl"
+            :class="app ? 'py-6 md:py-12' : 'py-14 md:py-20'"
+        >
             <section class="fl-card p-6 text-center md:p-10" aria-live="polite">
                 <template v-if="view === 'confirmed'">
                     <span
@@ -180,11 +211,13 @@ function checkAgain() {
                         as-child
                         class="mt-6 h-12 rounded-full px-6"
                     >
-                        <Link :href="`/checkout/${state.uuid}`"
-                            >Intentar de nuevo</Link
-                        >
+                        <Link :href="retryHref">Intentar de nuevo</Link>
                     </Button>
-                    <Button v-else as-child class="mt-6 h-12 rounded-full px-6">
+                    <Button
+                        v-else-if="!app"
+                        as-child
+                        class="mt-6 h-12 rounded-full px-6"
+                    >
                         <Link href="/tienda">Volver a la tienda</Link>
                     </Button>
                 </template>
@@ -209,8 +242,8 @@ function checkAgain() {
                         </template>
                         <template v-else>
                             Tu banco todavía no responde. Puedes cerrar esta
-                            página: el pedido se actualizará solo en Mis
-                            pedidos.
+                            página: el pedido se actualizará solo en
+                            {{ app ? 'la app' : 'Mis pedidos' }}.
                         </template>
                     </p>
                     <div
@@ -232,9 +265,7 @@ function checkAgain() {
                             variant="ghost"
                             class="h-11 rounded-full"
                         >
-                            <Link :href="`/checkout/${state.uuid}`"
-                                >Volver al pago</Link
-                            >
+                            <Link :href="retryHref">Volver al pago</Link>
                         </Button>
                     </div>
                 </template>
@@ -302,7 +333,24 @@ function checkAgain() {
                 </div>
             </section>
 
-            <div class="mt-6 flex flex-wrap justify-center gap-3">
+            <div
+                v-if="app"
+                class="mt-6 flex flex-col items-stretch gap-3 pb-[env(safe-area-inset-bottom)]"
+            >
+                <Button
+                    class="h-12 rounded-full"
+                    :variant="view === 'confirmed' ? 'default' : 'outline'"
+                    @click="backToApp"
+                    >Volver a la app</Button
+                >
+                <p
+                    v-if="view === 'confirmed'"
+                    class="text-center text-xs text-muted-foreground"
+                >
+                    Te regresamos a la app en un momento…
+                </p>
+            </div>
+            <div v-else class="mt-6 flex flex-wrap justify-center gap-3">
                 <Button as-child variant="outline" class="h-11 rounded-full">
                     <Link :href="`/mis-pedidos/${state.uuid}`"
                         >Ver mi pedido</Link
