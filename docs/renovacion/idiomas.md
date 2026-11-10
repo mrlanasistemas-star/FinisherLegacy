@@ -61,13 +61,59 @@ Convenciones:
 Qué **no** se traduce:
 
 - La marca y los nombres de producto: "Finisher Legacy", "MAKE IT LAST",
-  "Tag", "Legacy Tag"… (lista `i18n.glossary`; el traductor los copia tal
-  cual y el validador lo comprueba).
+  "Tag", "Legacy Tag", "Racepack", "NFC"… (lista `i18n.glossary`, ver
+  [Glosario](#glosario); el traductor los copia tal cual y el validador lo
+  comprueba).
 - **Contenido de las personas**: historias, comentarios, mensajes de ánimo,
   nombres. Nunca pasa por el traductor.
 - Nombres de eventos, carreras, ciudades, correos, URLs, códigos.
 - El panel de administración (se queda en español; se puede marcar después
   igual que lo demás).
+
+## Glosario
+
+Dos listas en `config/i18n.php`, las dos llegan al traductor automático (van
+en su *system prompt*) para que cada pasada use el mismo vocabulario:
+
+**`i18n.glossary` — nunca se traduce** (el validador descarta la traducción
+que pierda uno): Finisher Legacy · MAKE IT LAST / Make it last · Tag ·
+Legacy Tag · Legacy Plate · Legacy ID · Legacy Code · Legacy · Racepack ·
+Trisuit · Chill Band · NFC · OpenPay · Strava · Garmin · Apple · Google.
+
+**`i18n.terms` — cómo lo dice la marca en cada idioma.** Inglés (`en`):
+
+| Español | English |
+| --- | --- |
+| Recuerdo (la historia de una carrera) / Recuerdos | Memory / Memories |
+| Entrenamientos (la sección) | Training |
+| Entrenamiento (una sesión) · Modo entrenamiento | Workout · Training mode |
+| Envíame ánimo | Cheer me on |
+| Mensaje de ánimo / de apoyo | Cheer message |
+| Equipo de apoyo · Sesión de apoyo | Cheer crew · Cheer session |
+| Portarretrato inteligente | Smart Photo Frame |
+| Mensaje de voz | Voice message |
+| Colecciones · Comunidad · Momento | Collections · Community · Moment |
+| Activar | Activate |
+| Dorsal / número de corredor | Bib number ("Bib" en etiquetas cortas) |
+| Ritmo | Pace |
+| Meta · Salida | Finish line · Start line |
+| Pieza (Tag, prenda o accesorio con NFC) | Piece |
+| Equipo (lo que usa el atleta), gear · Mi equipo | Gear · My gear |
+| Prerregistro | Pre-registration |
+| Seguimiento en vivo | Live tracking |
+| Acerca tu teléfono | Hold your phone close |
+| Posición general / por categoría / por rama | Overall place / Category place / Gender place |
+| Entrega de kits | Packet pickup |
+| Iniciar sesión · Cerrar sesión | Log in · Log out |
+| Aviso de privacidad | Privacy Notice |
+| Carrito · Pedido · Agotado | Cart · Order · Sold out |
+
+Estilo del inglés: inglés de Estados Unidos, tono cercano y directo,
+mayúscula solo al inicio (*sentence case*) salvo que el original vaya en
+mayúsculas, botones cortos, sin abusar de los signos de admiración. Dinero,
+unidades, correos y URLs no se tocan. Para agregar un término: una línea en
+`i18n.terms` (y en esta tabla); las traducciones ya guardadas no cambian
+solas, se corrigen desde el panel.
 
 ## Arquitectura
 
@@ -188,6 +234,31 @@ php artisan i18n:sync --no-translate  # extrae y regenera sin llamar al traducto
 php artisan i18n:status               # idiomas, cobertura y traductor configurado
 ```
 
+### Importar traducciones
+
+Para cargar traducciones hechas fuera del traductor automático (una primera
+pasada a mano, una agencia, una hoja de cálculo):
+
+```bash
+php artisan i18n:import traducciones.json --locale=en --group=mobile
+```
+
+- El archivo es un objeto JSON `{"texto en español": "translation"}`.
+- Cada entrada pasa por el mismo validador que una traducción automática
+  (marcadores, plurales, saltos de línea, términos de marca); las inválidas y
+  los textos que no existen en el catálogo se listan y no se guardan.
+- `--group` limita a `ui`, `mobile`, `email` o `content`; sin él se llena el
+  texto en todos los grupos donde aparezca.
+- `--status=machine` (por defecto) las deja como *Automática*: una pasada
+  posterior o una persona las puede mejorar. `--status=reviewed` las deja
+  como definitivas.
+- Nunca reemplaza un texto *Revisado*. Uno que ya tiene traducción automática
+  solo se reemplaza con `--force` (o al importar como `reviewed`). Se puede
+  ejecutar las veces que haga falta.
+- Al terminar regenera los catálogos (`--no-build` lo evita).
+
+El inglés inicial de la app (grupo `mobile`) se cargó así, como *Automática*.
+
 Flujo recomendado: en la máquina de desarrollo (tiene los dos repos) se
 ejecuta `i18n:sync` y se suben los archivos generados. En producción,
 `php artisan i18n:sync --no-translate` tras cada despliegue importa a la base
@@ -203,6 +274,7 @@ elegido con `I18N_TRANSLATOR`:
 - **`anthropic`** — Claude, con el SDK oficial de PHP (`anthropic-ai/sdk`).
   Modelo `I18N_ANTHROPIC_MODEL` (por defecto `claude-opus-5-5`; alternativas
   más baratas: `claude-sonnet-5-5`, `claude-haiku-5-5`). El glosario de marca
+  (`i18n.glossary` + el vocabulario de `i18n.terms`)
   y las reglas van en un *system prompt* estable y **cacheado** (prompt
   caching); el idioma destino viaja en el mensaje para que todos los idiomas
   reutilicen la misma caché. Respuesta en JSON estricto (structured
@@ -359,6 +431,7 @@ Ruta **`/admin/idiomas`** (Configuración → Idiomas), permiso **`i18n.manage`*
 
 `tests/Feature/I18n/` (Pest): orden de resolución, gemela `/en` + hreflang,
 cambio de idioma, sincronización con traductor falso (nuevos, obsoletos,
-desactualizados, protección de revisados, validación), contenido dinámico,
+desactualizados, protección de revisados, validación), importación desde
+JSON (`ImportCommandTest`), contenido dinámico,
 endpoints de catálogo, panel y el controlador de Claude sin red.
 App: `src/i18n/i18n.test.ts` (Jest).

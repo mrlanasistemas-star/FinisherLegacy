@@ -102,6 +102,7 @@ it('keeps the brand glossary and the rules in a stable system prompt', function 
 
     expect($translator->systemPrompt())
         ->toContain('- Finisher Legacy', '- MAKE IT LAST', '- Tag', 'Placeholders are copied EXACTLY')
+        ->toContain('Brand vocabulary', '- Portarretrato inteligente → Smart Photo Frame', '- Envíame ánimo → Cheer me on')
         ->toBe($translator->systemPrompt());
 });
 

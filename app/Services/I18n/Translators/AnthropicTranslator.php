@@ -216,6 +216,7 @@ class AnthropicTranslator implements ReportsUsage, Translator
         /** @var list<string> $glossary */
         $glossary = config('i18n.glossary', []);
         $terms = implode("\n", array_map(fn (string $term): string => "- {$term}", $glossary));
+        $preferred = $this->preferredTerms();
 
         return <<<PROMPT
         You are the localization engine of Finisher Legacy, a Mexican brand for endurance athletes (triathlon, running, cycling, open water swimming). Finisher Legacy sells the Finisher Legacy Tag: a physical keepsake with NFC that opens the story of a race, with photos, videos, results and messages from the people who cheered. Its tagline is "MAKE IT LAST".
@@ -241,7 +242,7 @@ class AnthropicTranslator implements ReportsUsage, Translator
         Never translate (copy exactly as written, including capitalization)
         {$terms}
         Also keep unchanged: product names, collection names, event and race names, city and place names, people names and anything written between backticks.
-
+        {$preferred}
         Technical rules (a translation that breaks one of these is discarded)
         - Placeholders are copied EXACTLY and each one must appear the same number of times as in the original: ":name" style (a colon followed by a word), "{count}" style, "{{ value }}" style and "%s" / "%d" style. Never translate, rename, reformat or drop a placeholder. You may move it inside the sentence when the grammar of the target language needs it.
         - HTML tags and their attributes are copied exactly ("<strong>", "<a href=\"…\">", "<br>"); translate only the text between the tags.
@@ -251,6 +252,38 @@ class AnthropicTranslator implements ReportsUsage, Translator
         - If a string is already in the target language, is only a placeholder, a number, a symbol or one of the terms that are never translated, return it unchanged.
         - Never answer with an empty text, an explanation, a comment or an alternative. The "text" value is only the translation.
         PROMPT;
+    }
+
+    /**
+     * The brand vocabulary per target language (`i18n.terms`), as a block
+     * of the system prompt. Every language is listed — the prompt must not
+     * change with the target, or the cache would be lost.
+     */
+    private function preferredTerms(): string
+    {
+        /** @var array<string, array<string, string>> $terms */
+        $terms = config('i18n.terms', []);
+        $blocks = [];
+
+        foreach ($terms as $locale => $pairs) {
+            if ($pairs === []) {
+                continue;
+            }
+
+            $lines = [];
+
+            foreach ($pairs as $source => $target) {
+                $lines[] = "- {$source} → {$target}";
+            }
+
+            $blocks[] = "Target language \"{$locale}\":\n".implode("\n", $lines);
+        }
+
+        if ($blocks === []) {
+            return '';
+        }
+
+        return "\nBrand vocabulary (always use these translations for these Spanish terms; adapt only number and capitalization)\n".implode("\n", $blocks)."\n";
     }
 
     /** @return array<string, mixed> */

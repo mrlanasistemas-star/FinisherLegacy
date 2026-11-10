@@ -123,10 +123,55 @@ return [
         'claude-haiku-5-5' => ['input' => 0.10, 'output' => 0.50, 'cache_read' => 0.01, 'cache_write' => 0.125],
     ],
 
-    // Never translated, in any language.
+    // Never translated, in any language (the validator rejects a translation
+    // that loses one of these).
     'glossary' => [
         'Finisher Legacy', 'MAKE IT LAST', 'Make it last', 'Legacy Tag', 'Tag', 'Legacy Plate',
-        'Legacy ID', 'Portarretrato', 'OpenPay', 'Strava', 'Garmin', 'Apple', 'Google',
+        'Legacy ID', 'Legacy Code', 'Legacy', 'Racepack', 'Trisuit', 'Chill Band', 'NFC',
+        'OpenPay', 'Strava', 'Garmin', 'Apple', 'Google',
+    ],
+
+    /*
+    | Preferred translations per language (docs/renovacion/idiomas.md
+    | §Glosario): Spanish term => how the brand says it. Given to the
+    | automatic translator so every pass uses the same vocabulary as the
+    | texts already translated; a person can still word a sentence freely.
+    */
+    'terms' => [
+        'en' => [
+            'Recuerdo (la historia de una carrera)' => 'Memory',
+            'Recuerdos' => 'Memories',
+            'Entrenamientos' => 'Training',
+            'Entrenamiento (una sesión)' => 'Workout',
+            'Modo entrenamiento' => 'Training mode',
+            'Envíame ánimo' => 'Cheer me on',
+            'Mensaje de ánimo / mensaje de apoyo' => 'Cheer message',
+            'Equipo de apoyo' => 'Cheer crew',
+            'Sesión de apoyo' => 'Cheer session',
+            'Portarretrato inteligente' => 'Smart Photo Frame',
+            'Mensaje de voz' => 'Voice message',
+            'Colecciones' => 'Collections',
+            'Comunidad' => 'Community',
+            'Momento' => 'Moment',
+            'Activar' => 'Activate',
+            'Dorsal / número de corredor' => 'Bib number ("Bib" on a short label)',
+            'Ritmo' => 'Pace',
+            'Meta' => 'Finish line',
+            'Salida' => 'Start line',
+            'Pieza (Tag, prenda o accesorio con NFC)' => 'Piece',
+            'Equipo (lo que usa el atleta) / gear' => 'Gear',
+            'Mi equipo' => 'My gear',
+            'Prerregistro' => 'Pre-registration',
+            'Seguimiento en vivo' => 'Live tracking',
+            'Acerca tu teléfono' => 'Hold your phone close',
+            'Posición general / por categoría / por rama' => 'Overall place / Category place / Gender place',
+            'Entrega de kits' => 'Packet pickup',
+            'Iniciar sesión / Cerrar sesión' => 'Log in / Log out',
+            'Aviso de privacidad' => 'Privacy Notice',
+            'Carrito' => 'Cart',
+            'Pedido' => 'Order',
+            'Agotado' => 'Sold out',
+        ],
     ],
 
     /*
