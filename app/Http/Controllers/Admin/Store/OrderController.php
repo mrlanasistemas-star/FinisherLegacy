@@ -172,7 +172,8 @@ class OrderController extends Controller
                 'paid_at' => $payment->paid_at?->toDateTimeString(),
             ]),
             'inventoryLocations' => InventoryLocation::query()->orderBy('name')->get(['id', 'name']),
-            'paymentMethods' => array_map(fn ($case) => $case->value, PaymentMethod::cases()),
+            // In-app purchases are recorded only by the store verification flow.
+            'paymentMethods' => collect(PaymentMethod::cases())->reject(fn (PaymentMethod $case) => $case === PaymentMethod::InAppPurchase)->map(fn (PaymentMethod $case) => $case->value)->values()->all(),
         ]);
     }
 

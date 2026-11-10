@@ -95,6 +95,7 @@ return [
         'icon' => 'Bell',
         'permissions' => [
             'notifications.send' => 'Enviar notificaciones a atletas',
+            'notifications.broadcast' => 'Enviar campañas push masivas',
         ],
     ],
     'medals' => [
@@ -105,36 +106,12 @@ return [
             'medals.manage' => 'Gestionar medallas',
         ],
     ],
-    'plates' => [
-        'label' => 'Placas',
-        'icon' => 'Boxes',
-        'permissions' => [
-            'plates.view' => 'Ver placas',
-            'plates.manage' => 'Gestionar placas',
-        ],
-    ],
     'legacycodes' => [
         'label' => 'Legacy Codes',
         'icon' => 'QrCode',
         'permissions' => [
             'legacycodes.view' => 'Ver Legacy Codes',
             'legacycodes.manage' => 'Gestionar Legacy Codes',
-        ],
-    ],
-    'production' => [
-        'label' => 'Producción',
-        'icon' => 'Factory',
-        'permissions' => [
-            'production.view' => 'Ver producción',
-            'production.manage' => 'Gestionar producción',
-        ],
-    ],
-    'productiondevices' => [
-        'label' => 'Estaciones',
-        'icon' => 'Cpu',
-        'permissions' => [
-            'productiondevices.view' => 'Ver estaciones',
-            'productiondevices.manage' => 'Gestionar estaciones',
         ],
     ],
     'imports' => [
@@ -152,38 +129,6 @@ return [
             'integrations.view' => 'Ver integraciones',
             'integrations.manage' => 'Gestionar integraciones',
             'integrations.sync' => 'Sincronizar integraciones',
-        ],
-    ],
-    'incidents' => [
-        'label' => 'Incidencias',
-        'icon' => 'AlertTriangle',
-        'permissions' => [
-            'incidents.view' => 'Ver incidencias',
-            'incidents.manage' => 'Gestionar incidencias',
-        ],
-    ],
-    'operators' => [
-        'label' => 'Personal operativo',
-        'icon' => 'UserCog',
-        'permissions' => [
-            'operators.view' => 'Ver personal operativo',
-            'operators.manage' => 'Gestionar personal operativo',
-        ],
-    ],
-    'platetemplates' => [
-        'label' => 'Plate Studio',
-        'icon' => 'Palette',
-        'permissions' => [
-            'platetemplates.view' => 'Ver moldes',
-            'platetemplates.manage' => 'Gestionar moldes',
-        ],
-    ],
-    'legacyplates' => [
-        'label' => 'Legacy Plates',
-        'icon' => 'Award',
-        'permissions' => [
-            'legacyplates.manage' => 'Gestionar Legacy Plates',
-            'legacyplates.produce' => 'Producir Legacy Plates',
         ],
     ],
     'nfc' => [
@@ -263,6 +208,7 @@ return [
         'permissions' => [
             'photos.manage' => 'Revisar fotos, aprobar fotógrafos y registrar pagos',
             'photographer.portal' => 'Portal del fotógrafo (subir y vender fotos)',
+            'photographers.commissions.manage' => 'Configurar comisiones de fotógrafos, revertir ventas y ver reportes de pagos',
         ],
     ],
     'quotas' => [
@@ -277,8 +223,6 @@ return [
         'icon' => 'KeyRound',
         'permissions' => [
             'dashboard.admin.view' => 'Acceder al panel administrativo',
-            'operator.access' => 'Acceder a Event OS',
-            'production.access' => 'Acceder a producción',
             'audit.view' => 'Ver auditoría',
         ],
     ],

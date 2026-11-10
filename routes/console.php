@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Notifications\AlertIfPaymentGatewayUnconfigured;
+use App\Actions\Notifications\CampaignDispatcher;
 use App\Console\Commands\ExpirePendingOrders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -27,4 +29,33 @@ Schedule::command('sanctum:prune-expired --hours=24')
 // read-only or low on space.
 Schedule::command('storage:health')
     ->everyTenMinutes()
+    ->withoutOverlapping();
+
+// Campañas push programadas (docs/renovacion/campanas-push.md): starts every
+// scheduled campaign whose time has come. Starting is atomic, so an
+// overlapping run or "Enviar ahora" can never send one twice.
+Artisan::command('push-campaigns:dispatch', function (CampaignDispatcher $dispatcher) {
+    $started = $dispatcher->dispatchDue();
+    $this->info("Campañas iniciadas: {$started}");
+})->purpose('Inicia las campañas push programadas cuya hora ya llegó');
+
+Schedule::command('push-campaigns:dispatch')
+    ->everyMinute()
+    ->withoutOverlapping();
+
+// Expo push receipts (docs/renovacion/notificaciones.md): deactivates tokens
+// whose receipt says DeviceNotRegistered and prunes old tickets.
+Schedule::command('push:check-receipts')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
+// Admin alerts — Inventario digest (per-variant alerts fire on every stock
+// movement) and Pagos: OpenPay active but not configured.
+Schedule::command('inventory:check-low-stock')
+    ->dailyAt('08:00')
+    ->withoutOverlapping();
+
+Schedule::call(fn () => app(AlertIfPaymentGatewayUnconfigured::class)->handle())
+    ->name('admin-alerts:payment-gateway')
+    ->dailyAt('08:05')
     ->withoutOverlapping();

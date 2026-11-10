@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin\Commercial;
 
 use App\Actions\LegacyTags\AssignTagsToOrderItem;
 use App\Enums\DeliveryMethod;
+use App\Events\Commerce\OrderDelivered;
+use App\Events\Commerce\OrderShipped;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
@@ -30,7 +32,13 @@ class OrderOperationsController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $wasShipped = $order->shipped_at !== null;
+
         $order->update($data);
+
+        if (! $wasShipped && filled($data['shipped_at'] ?? null)) {
+            OrderShipped::dispatch($order);
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Datos de envío actualizados.']);
 
@@ -52,6 +60,8 @@ class OrderOperationsController extends Controller
             $order->update(['delivered_at' => now()]);
 
             activity()->causedBy($request->user())->performedOn($order)->log('orders.delivered');
+
+            OrderDelivered::dispatch($order);
         });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pedido marcado como entregado.']);

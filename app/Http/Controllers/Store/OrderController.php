@@ -63,6 +63,7 @@ class OrderController extends Controller
             'progress' => OrderProgress::for($order, $paidAt ? Carbon::parse($paidAt) : null),
             // Paid photographer photos of this order — full-resolution downloads.
             'photoDownloads' => PhotoSale::query()
+                ->grantingAccess()
                 ->where('order_id', $order->id)
                 ->where('buyer_user_id', $request->user()->id)
                 ->with('photo')

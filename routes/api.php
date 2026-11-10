@@ -1,25 +1,20 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AccountController;
-use App\Http\Controllers\Api\V1\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Api\V1\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\OrganizerDataSourceController;
 use App\Http\Controllers\Api\V1\Admin\ProviderConnectionController as AdminProviderConnectionController;
 use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\Devices\DeviceController;
-use App\Http\Controllers\Api\V1\Devices\PairingController;
-use App\Http\Controllers\Api\V1\Devices\ProductionJobController;
 use App\Http\Controllers\Api\V1\EventController;
-use App\Http\Controllers\Api\V1\EventOpsController;
 use App\Http\Controllers\Api\V1\GearController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\Integrations\SyncController as ApiIntegrationsSyncController;
 use App\Http\Controllers\Api\V1\LegacyCodeController;
-use App\Http\Controllers\Api\V1\LegacyPlateModelController;
 use App\Http\Controllers\Api\V1\Me\EventGearController as MeEventGearController;
 use App\Http\Controllers\Api\V1\Me\EventMediaController as MeEventMediaController;
 use App\Http\Controllers\Api\V1\Me\EventsController as MeEventsController;
 use App\Http\Controllers\Api\V1\Me\NotificationController as MeNotificationController;
+use App\Http\Controllers\Api\V1\Me\NotificationPreferenceController as MeNotificationPreferenceController;
 use App\Http\Controllers\Api\V1\Me\PushDeviceController as MePushDeviceController;
 use App\Http\Controllers\Api\V1\Me\SupportSessionController as MeSupportSessionController;
 use App\Http\Controllers\Api\V1\MedalController;
@@ -42,6 +37,7 @@ use App\Http\Controllers\Api\V1\Training\TrainingLinkController;
 use App\Http\Controllers\Api\V1\Training\TrainingMessageController;
 use App\Http\Controllers\Api\Webhooks\OpenPayWebhookController;
 use App\Http\Controllers\Api\Webhooks\StripeWebhookController;
+use App\Http\Middleware\AlertOnFailedPaymentWebhook;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -154,7 +150,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         /*
         |------------------------------------------------------------------
-        | Admin — Organizer data source, provider test, incident resolution
+        | Admin — Organizer data source, provider test, user notifications
         | (brief §16-§17/§122/§136-§138). Permission-gated inside each Form
         | Request, same pattern as the rest of this file.
         |------------------------------------------------------------------
@@ -169,10 +165,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('provider-connections/{providerConnection}/test', [AdminProviderConnectionController::class, 'test'])
                 ->middleware('can:integrations.sync')
                 ->name('provider-connections.test');
-
-            Route::post('incidents/{incident}/resolve', [AdminIncidentController::class, 'resolve'])
-                ->middleware('api.idempotent')
-                ->name('incidents.resolve');
 
             Route::post('users/{user}/notifications', [AdminNotificationController::class, 'store'])
                 ->middleware('throttle:admin-notifications')
@@ -255,6 +247,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::prefix('me/notifications')->name('me.notifications.')->group(function () {
             Route::get('/', [MeNotificationController::class, 'index'])->name('index');
+            Route::get('preferences', [MeNotificationPreferenceController::class, 'show'])->name('preferences.show');
+            Route::put('preferences', [MeNotificationPreferenceController::class, 'update'])->name('preferences.update');
             Route::post('read-all', [MeNotificationController::class, 'markAllRead'])->name('read-all');
             Route::post('{notification}/read', [MeNotificationController::class, 'markRead'])->name('read');
         });
@@ -274,6 +268,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('messages/{uuid}/listened', [TrainingMessageController::class, 'listened'])->whereUuid('uuid')->name('messages.listened');
             Route::post('messages/{uuid}/favorite', [TrainingMessageController::class, 'favorite'])->whereUuid('uuid')->name('messages.favorite');
             Route::post('messages/{uuid}/block-sender', [TrainingMessageController::class, 'blockSender'])->whereUuid('uuid')->name('messages.block-sender');
+            Route::post('messages/{uuid}/report', [TrainingMessageController::class, 'report'])->whereUuid('uuid')->middleware('throttle:20,1')->name('messages.report');
             Route::delete('messages/{uuid}', [TrainingMessageController::class, 'destroy'])->whereUuid('uuid')->name('messages.destroy');
             Route::get('links', [TrainingLinkController::class, 'index'])->name('links.index');
             Route::post('links', [TrainingLinkController::class, 'store'])->middleware('throttle:30,1')->name('links.store');
@@ -281,26 +276,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         });
         Route::post('me/push-devices', [MePushDeviceController::class, 'store'])->name('me.push-devices.store');
         Route::delete('me/push-devices/{uuid}', [MePushDeviceController::class, 'destroy'])->name('me.push-devices.destroy');
-
-        /*
-        |------------------------------------------------------------------
-        | Event Ops API (docs/adr/0006, docs/api/use-case-matrix.md) — same
-        | Queries/Services App\Http\Controllers\OperatorController (Web)
-        | uses. Staff-only: gated by the same `operator.access` permission
-        | Web already requires, never a parallel permission scheme.
-        |------------------------------------------------------------------
-        */
-        Route::middleware('can:operator.access')->prefix('event-ops')->name('event-ops.')->group(function () {
-            Route::get('{eventEdition}', [EventOpsController::class, 'dashboard'])->name('dashboard');
-            Route::get('{eventEdition}/participants/search', [EventOpsController::class, 'searchParticipants'])
-                ->middleware('throttle:60,1')
-                ->name('participants.search');
-            Route::get('participants/{eventParticipant}', [EventOpsController::class, 'participant'])
-                ->name('participants.show');
-            Route::post('participants/{eventParticipant}/plate', [EventOpsController::class, 'generatePlate'])
-                ->middleware('api.idempotent')
-                ->name('participants.plate');
-        });
 
         /*
         |------------------------------------------------------------------
@@ -347,93 +322,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('gear/{code}', [GearController::class, 'publicShow'])
         ->middleware('throttle:api-legacy-lookup')
         ->name('gear.show');
-    Route::get('legacy-plate-models', [LegacyPlateModelController::class, 'index'])->name('legacy-plate-models.index');
-
-    /*
-    |----------------------------------------------------------------------
-    | Device API (docs/adr/0002, docs/device-api/v1.md) — the contract a
-    | Finisher Event Desktop instance builds on. Still /api/v1: no parallel
-    | API surface, just a `device`/`devices`/`production` sub-namespace with
-    | its own auth (device.token, not auth:sanctum+user.token) and its own
-    | error envelope (see bootstrap/app.php).
-    |----------------------------------------------------------------------
-    */
-    Route::prefix('devices')->name('device.pairing.')->group(function () {
-        Route::post('pair', [PairingController::class, 'pair'])
-            ->middleware('throttle:api-register')
-            ->name('pair');
-        // Deliberately a looser limiter than api-register: a desktop polls
-        // this every few seconds while waiting for a Super Admin, which
-        // isn't the kind of one-shot action api-register is tuned for.
-        Route::post('pair/confirm', [PairingController::class, 'confirm'])
-            ->middleware('throttle:device-pairing-confirm')
-            ->name('confirm');
-    });
-
-    Route::middleware(['auth:sanctum', 'device.token'])->group(function () {
-        Route::get('device', [DeviceController::class, 'show'])
-            ->middleware('ability:device:heartbeat')
-            ->name('device.show');
-        Route::get('device/bootstrap', [DeviceController::class, 'bootstrap'])
-            ->middleware('ability:device:heartbeat')
-            ->name('device.bootstrap');
-        Route::post('device/heartbeat', [DeviceController::class, 'heartbeat'])
-            ->middleware('ability:device:heartbeat')
-            ->name('device.heartbeat');
-
-        Route::prefix('production/jobs')->name('device.production.jobs.')->group(function () {
-            Route::get('next', [ProductionJobController::class, 'next'])
-                ->middleware('ability:production:read')
-                ->name('next');
-            Route::get('{job}', [ProductionJobController::class, 'show'])
-                ->middleware('ability:production:read')
-                ->name('show');
-            Route::post('{job}/claim', [ProductionJobController::class, 'claim'])
-                ->middleware(['ability:production:claim', 'device.idempotent'])
-                ->name('claim');
-            Route::post('{job}/release', [ProductionJobController::class, 'release'])
-                ->middleware(['ability:production:claim', 'device.idempotent'])
-                ->name('release');
-            Route::get('{job}/artifact/{face}', [ProductionJobController::class, 'artifact'])
-                ->middleware('ability:production:read')
-                ->name('artifact');
-
-            // Slice 2 (docs/adr/0003) — physical workflow. `production:update`
-            // gates coordination steps, `production:engrave` gates the four
-            // steps that represent actual laser activity — see
-            // App\Enums\DeviceAbility.
-            Route::post('{job}/prepare', [ProductionJobController::class, 'prepare'])
-                ->middleware(['ability:production:update', 'device.idempotent'])
-                ->name('prepare');
-            Route::post('{job}/front/start', [ProductionJobController::class, 'frontStart'])
-                ->middleware(['ability:production:engrave', 'device.idempotent'])
-                ->name('front.start');
-            Route::post('{job}/front/complete', [ProductionJobController::class, 'frontComplete'])
-                ->middleware(['ability:production:engrave', 'device.idempotent'])
-                ->name('front.complete');
-            Route::post('{job}/flip/confirm', [ProductionJobController::class, 'flipConfirm'])
-                ->middleware(['ability:production:update', 'device.idempotent'])
-                ->name('flip.confirm');
-            Route::post('{job}/back/start', [ProductionJobController::class, 'backStart'])
-                ->middleware(['ability:production:engrave', 'device.idempotent'])
-                ->name('back.start');
-            Route::post('{job}/back/complete', [ProductionJobController::class, 'backComplete'])
-                ->middleware(['ability:production:engrave', 'device.idempotent'])
-                ->name('back.complete');
-            Route::post('{job}/qr/verify', [ProductionJobController::class, 'qrVerify'])
-                ->middleware(['ability:production:update', 'device.idempotent'])
-                ->name('qr.verify');
-            Route::post('{job}/deliver', [ProductionJobController::class, 'deliver'])
-                ->middleware(['ability:production:update', 'device.idempotent'])
-                ->name('deliver');
-            Route::post('{job}/fail', [ProductionJobController::class, 'fail'])
-                ->middleware(['ability:production:update', 'device.idempotent'])
-                ->name('fail');
-            Route::post('{job}/cancel', [ProductionJobController::class, 'cancel'])
-                ->middleware(['ability:production:update', 'device.idempotent'])
-                ->name('cancel');
-        });
-    });
 });
 
 /*
@@ -447,8 +335,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 | not routes/web.php).
 |--------------------------------------------------------------------------
 */
-Route::post('webhooks/stripe', StripeWebhookController::class)->name('api.webhooks.stripe');
-Route::post('webhooks/openpay', OpenPayWebhookController::class)->name('api.webhooks.openpay');
+// AlertOnFailedPaymentWebhook: a 4xx/5xx reply raises a throttled admin "Pagos" alert.
+Route::post('webhooks/stripe', StripeWebhookController::class)
+    ->middleware(AlertOnFailedPaymentWebhook::class.':stripe')
+    ->name('api.webhooks.stripe');
+Route::post('webhooks/openpay', OpenPayWebhookController::class)
+    ->middleware(AlertOnFailedPaymentWebhook::class.':openpay')
+    ->name('api.webhooks.openpay');
 
 require __DIR__.'/api/tracking.php';
 require __DIR__.'/api/platform.php';
@@ -456,3 +349,5 @@ require __DIR__.'/api/community.php';
 require __DIR__.'/api/nfc.php';
 require __DIR__.'/api/legacy.php';
 require __DIR__.'/api/quotas.php';
+require __DIR__.'/api/iap.php';
+require __DIR__.'/api/push-campaigns.php';

@@ -93,58 +93,6 @@ return [
         'max_videos_per_athlete' => 5,
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Device / Production API (ADR 0002, Slice 1)
-    |--------------------------------------------------------------------------
-    |
-    | Tunables for pairing, heartbeat and job-claim leases — centralized here
-    | instead of hardcoded in the Actions/Services that use them, so a real
-    | deployment can tune timings without touching code.
-    */
-
-    // A device counts as "online" if its last heartbeat is within this many
-    // seconds. Deliberately NOT a persisted "offline" status — a device
-    // that stops sending heartbeats doesn't need a background job to flip
-    // a flag; ProductionDevice::isOnline() derives it from `last_seen_at`
-    // on read. See App\Enums\ProductionDeviceStatus.
-    'device_online_timeout_seconds' => env('FINISHER_DEVICE_ONLINE_TIMEOUT_SECONDS', 90),
-
-    // Event Ops shows a "datos sin actualizar" warning once the last
-    // successful provider sync is older than this — see
-    // App\Queries\Operations\GetEventOperationsDashboard and
-    // docs/adr/0006-event-operations.md §11.
-    'event_ops_sync_stale_seconds' => env('FINISHER_EVENT_OPS_SYNC_STALE_SECONDS', 300),
-
-    // How long a claimed ProductionJob's lease lasts before it becomes
-    // reclaimable by another device — ONLY while the job is Assigned or
-    // Preparing (ProductionJob::isSafeToRelease()). Once physical
-    // engraving starts (engraving_front onward) the lease stops mattering
-    // entirely: there is real, irreversible physical state on the plate,
-    // so a job is never auto-reclaimed out from under a device past that
-    // point — see docs/adr/0003-production-state-machine.md §Lease.
-    'device_lease_seconds' => env('FINISHER_DEVICE_LEASE_SECONDS', 900),
-
-    // How long a pairing code/poll token stays valid before a desktop must
-    // request a new one. Short on purpose — pairing is a one-time,
-    // attended (Super Admin present) handshake, not a long-lived credential.
-    'pairing_expiration_minutes' => env('FINISHER_PAIRING_EXPIRATION_MINUTES', 10),
-
-    // Length of the human-readable pairing code shown on the desktop
-    // screen and in the admin "Estaciones" list. Not a secret — the real
-    // secret is the poll token the desktop keeps privately (docs/adr/0002).
-    'pairing_code_length' => env('FINISHER_PAIRING_CODE_LENGTH', 6),
-
-    // How long a stored device idempotency response is honored before a
-    // repeated Idempotency-Key is treated as a new request.
-    'idempotency_ttl_seconds' => env('FINISHER_IDEMPOTENCY_TTL_SECONDS', 86400),
-
-    // Private disk (never a public URL) for frozen ProductionArtifact
-    // files — served only through the authenticated, ownership-checked
-    // Device API artifact endpoint. See
-    // App\Services\Production\ProductionArtifactService.
-    'production_artifact_disk' => env('FINISHER_PRODUCTION_ARTIFACT_DISK', 'local'),
-
     // The /api/v1 contract version a client (future Desktop/Mobile) can
     // check against — bumped only on a breaking change, not every deploy.
     // `minimum_supported_client_version` is nullable and unenforced today
@@ -333,6 +281,26 @@ return [
             'keep_original' => (bool) env('FINISHER_MEDIA_KEEP_VIDEO_ORIGINAL', false),
         ],
 
+        // Voice notes (Legacy stories, Entrenamientos): real duration via
+        // ffprobe in ProcessMediaFile + optional AAC/m4a re-encode.
+        'audio' => [
+            // Fallback limit for audio not owned by a story or a cheer
+            // (those use legacy.stories / training.cheers max_audio_seconds).
+            'max_seconds' => (int) env('FINISHER_MEDIA_MAX_AUDIO_SECONDS', 600),
+            'transcode' => (bool) env('FINISHER_MEDIA_AUDIO_TRANSCODE', true),
+            // Clamped to 64–96 kbps (mono voice).
+            'bitrate_kbps' => (int) env('FINISHER_MEDIA_AUDIO_BITRATE_KBPS', 80),
+            'sample_rate' => 44100,
+            'timeout_seconds' => 300,
+            'keep_original' => (bool) env('FINISHER_MEDIA_KEEP_AUDIO_ORIGINAL', false),
+        ],
+
+        // ffmpeg/ffprobe discovery (App\Services\Media\MediaBinaries):
+        // FFMPEG_BINARY / FFPROBE_BINARY first, then the PATH.
+        'binaries' => [
+            'path_lookup' => (bool) env('FFMPEG_PATH_LOOKUP', true),
+        ],
+
         'urls' => [
             // Public media: long-lived, bucketed expiry so the same URL is
             // reused for a whole day (browser/CDN cache friendly).
@@ -455,6 +423,15 @@ return [
             ],
             'manual' => ['percent' => 0.0, 'fixed_minor' => 0],
         ],
+        // Photographer commissions (docs/renovacion/comisiones-fotografos.md):
+        // the admin panel (/admin/photographer-commissions) overrides these.
+        // Who absorbs the gateway fee: `photographer` (deducted from their
+        // net, the historical behaviour) or `finisher` (out of the commission).
+        'gateway_fee_absorbed_by' => env('PHOTOS_GATEWAY_FEE_ABSORBED_BY', 'photographer'),
+        // True only when the real OpenPay fee was set in .env; otherwise the
+        // portal says "comisión de pasarela no configurada" and uses the
+        // provisional estimate above until an admin enters the real figure.
+        'gateway_fee_configured' => env('PHOTOS_OPENPAY_FEE_PERCENT') !== null || env('PHOTOS_PROCESSOR_FEE_PERCENT') !== null,
         'default_price_minor' => (int) env('PHOTOS_DEFAULT_PRICE_MINOR', 9900),
         'min_price_minor' => 2000,
         'max_price_minor' => 500000,

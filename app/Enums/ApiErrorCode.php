@@ -4,11 +4,9 @@ namespace App\Enums;
 
 /**
  * Machine-readable codes for the general `/api/v1/*` surface's
- * `{"error": {"code", ...}}` contract (docs/api/v1.md §Errores) — mirrors
- * App\Enums\DeviceErrorCode's shape for the Device API, kept as a
- * separate enum because the Device API's contract is already documented/
- * shipped and must not shift. A client branches on `code`, never on the
- * human `message` text, which is allowed to change.
+ * `{"error": {"code", ...}}` contract (docs/api/v1.md §Errores). A client
+ * branches on `code`, never on the human `message` text, which is allowed
+ * to change.
  */
 enum ApiErrorCode: string
 {
@@ -21,8 +19,6 @@ enum ApiErrorCode: string
     case HttpError = 'HTTP_ERROR';
     case InternalError = 'INTERNAL_ERROR';
 
-    case PlateAlreadyExists = 'PLATE_ALREADY_EXISTS';
-    case PlateTemplateMissing = 'PLATE_TEMPLATE_MISSING';
     case ParticipantNotEligible = 'PARTICIPANT_NOT_ELIGIBLE';
 
     // Commerce ecosystem (brief §145).
@@ -35,8 +31,6 @@ enum ApiErrorCode: string
     case PaymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';
     case PaymentAlreadyRecorded = 'PAYMENT_ALREADY_RECORDED';
     case PaymentDeclined = 'PAYMENT_DECLINED';
-    case LegacyPlateNotPaid = 'LEGACY_PLATE_NOT_PAID';
-    case LegacyPlateAlreadyExists = 'LEGACY_PLATE_ALREADY_EXISTS';
     case LegacyPlatePresaleDuplicate = 'LEGACY_PLATE_PRESALE_DUPLICATE';
     case MediaLimitReached = 'MEDIA_LIMIT_REACHED';
     case MediaTooLarge = 'MEDIA_TOO_LARGE';
@@ -72,4 +66,13 @@ enum ApiErrorCode: string
     case NfcTransferInvalid = 'NFC_TRANSFER_INVALID';
     case TagAlreadyActivated = 'TAG_ALREADY_ACTIVATED';
     case TagNotActivatable = 'TAG_NOT_ACTIVATABLE';
+
+    // In-app purchases — StoreKit / Play Billing (docs/renovacion/compras-dentro-de-app.md).
+    case IapNotConfigured = 'IAP_NOT_CONFIGURED';
+    case IapVerificationFailed = 'IAP_VERIFICATION_FAILED';
+    case IapProductMismatch = 'IAP_PRODUCT_MISMATCH';
+    case IapPurchasePending = 'IAP_PURCHASE_PENDING';
+    case IapPurchaseNotValid = 'IAP_PURCHASE_NOT_VALID';
+    case IapPurchaseOtherAccount = 'IAP_PURCHASE_OTHER_ACCOUNT';
+    case IapStoreUnavailable = 'IAP_STORE_UNAVAILABLE';
 }

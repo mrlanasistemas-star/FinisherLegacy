@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Admin\LegacyCodeController as AdminLegacyCodeController;
 use App\Http\Controllers\Admin\OrganizerController as AdminOrganizerController;
 use App\Http\Controllers\Admin\ParticipantController as AdminParticipantController;
+use App\Http\Controllers\Admin\PhotographerCommissionController as AdminPhotographerCommissionController;
 use App\Http\Controllers\Admin\PhotographerController as AdminPhotographerController;
 use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistrationController;
 use App\Http\Controllers\Admin\ProductCategoryController as AdminProductCategoryController;
@@ -92,6 +93,7 @@ Route::middleware(['auth', 'can:photographer.portal'])->prefix('fotografo')->nam
     Route::patch('fotos/{photo}', [PhotographerPortalController::class, 'updatePhoto'])->name('photos.update');
     Route::delete('fotos/{photo}', [PhotographerPortalController::class, 'destroyPhoto'])->name('photos.destroy');
     Route::get('ventas', [PhotographerPortalController::class, 'sales'])->name('sales');
+    Route::get('simulador', [PhotographerPortalController::class, 'simulate'])->middleware('throttle:120,1')->name('simulator');
     Route::patch('perfil', [PhotographerPortalController::class, 'updateProfile'])->name('profile.update');
 });
 
@@ -399,6 +401,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('photographers/{photographer}/payouts', [AdminPhotographerController::class, 'markPaid'])->name('photographers.payouts');
         });
 
+        // Photographer commissions: terms, overrides, reports, reversals.
+        Route::middleware('can:photographers.commissions.manage')->prefix('photographer-commissions')->name('photographer-commissions.')->group(function () {
+            Route::get('/', [AdminPhotographerCommissionController::class, 'index'])->name('index');
+            Route::post('global', [AdminPhotographerCommissionController::class, 'storeGlobal'])->name('global');
+            Route::get('reporte', [AdminPhotographerCommissionController::class, 'report'])->name('report');
+            Route::post('fotografos/{photographer}', [AdminPhotographerCommissionController::class, 'storeOverride'])->name('override');
+            Route::delete('cambios/{setting}', [AdminPhotographerCommissionController::class, 'cancel'])->name('cancel');
+            Route::post('ventas/{sale}/revertir', [AdminPhotographerCommissionController::class, 'reverseSale'])->name('reverse');
+        });
+
         Route::middleware('can:inventory.manage')->prefix('inventory')->name('inventory.')->group(function () {
             Route::get('/', [AdminInventoryController::class, 'index'])->name('index');
             Route::post('adjust', [AdminInventoryController::class, 'adjust'])->name('adjust');
@@ -448,3 +460,6 @@ require __DIR__.'/web/admin-commercial.php';
 require __DIR__.'/web/admin-quotas.php';
 
 require __DIR__.'/web/training.php';
+require __DIR__.'/web/admin-training.php';
+require __DIR__.'/web/admin-notifications.php';
+require __DIR__.'/web/notifications.php';

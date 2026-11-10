@@ -15,8 +15,9 @@ use Illuminate\Http\Request;
 /**
  * Photo quota of a Legacy story and the caller's purchased rights
  * (docs/renovacion/cuotas-y-precios.md). Read-only: the app never
- * hardcodes limits, and in-app purchase is not offered (StoreKit / Play
- * Billing would be required for digital goods inside the mobile app).
+ * hardcodes limits. Buying more space inside the app goes through
+ * StoreKit / Play Billing — Api\V1\Iap\IapPurchaseController
+ * (docs/renovacion/compras-dentro-de-app.md).
  */
 class QuotaController extends Controller
 {

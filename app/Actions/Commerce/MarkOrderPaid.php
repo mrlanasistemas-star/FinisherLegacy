@@ -8,6 +8,7 @@ use App\Enums\CouponRedemptionStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
+use App\Events\Commerce\OrderPaid;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\Order;
@@ -46,6 +47,8 @@ class MarkOrderPaid
             return $order;
         }
 
+        $wasPaid = $order->payment_status === OrderPaymentStatus::Paid;
+
         $order->update(['payment_status' => OrderPaymentStatus::Paid]);
         $order = $order->fresh();
 
@@ -80,7 +83,15 @@ class MarkOrderPaid
         // from here on (docs/renovacion/cuotas-y-precios.md).
         $this->grantPhotoExpansions->handle($order);
 
-        return $order->fresh();
+        $order = $order->fresh();
+
+        // Only on the transition into `paid` (a replay never re-announces
+        // it); ShouldDispatchAfterCommit holds it until the caller commits.
+        if (! $wasPaid) {
+            OrderPaid::dispatch($order);
+        }
+
+        return $order;
     }
 
     /**

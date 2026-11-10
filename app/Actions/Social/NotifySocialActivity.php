@@ -6,13 +6,15 @@ use App\Actions\Notifications\SendAthleteNotification;
 use App\Enums\NotificationType;
 use App\Models\LegacyMoment;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 /**
- * In-app notifications for the social layer (new follower, reaction,
- * comment). Database channel only — push stays off until a real push
- * provider replaces NullPushNotificationGateway. `metadata` carries the
- * structured target so the app deep-links without parsing URLs:
- * `{kind: athlete|moment, username?, moment_uuid?}`.
+ * Notifications for the social layer (new follower, reaction, comment):
+ * in-app row + push (category Comunidad — each person can turn either off in
+ * Ajustes › Notificaciones). `metadata` carries the structured target so the
+ * app deep-links without parsing URLs: `{kind: athlete|moment, username?,
+ * moment_uuid?}`. A reaction toggled off and on again pushes at most once per
+ * hour per (moment, person) — the in-app row still records it.
  */
 class NotifySocialActivity
 {
@@ -29,6 +31,7 @@ class NotifySocialActivity
             NotificationType::NewFollower,
             $username !== null ? $this->profileUrl($username) : null,
             ['kind' => 'athlete', 'username' => $username],
+            push: Cache::add("push:follow:{$recipient->id}:{$follower->id}", 1, now()->addDay()),
         );
     }
 
@@ -43,6 +46,7 @@ class NotifySocialActivity
             NotificationType::MomentReaction,
             $this->momentUrl($moment),
             ['kind' => 'moment', 'moment_uuid' => $moment->uuid, 'username' => $reactor->athleteProfile?->username],
+            push: Cache::add("push:reaction:{$moment->id}:{$reactor->id}", 1, now()->addHour()),
         );
     }
 
@@ -55,6 +59,7 @@ class NotifySocialActivity
             NotificationType::MomentComment,
             $this->momentUrl($moment),
             ['kind' => 'moment', 'moment_uuid' => $moment->uuid, 'username' => $commenter->athleteProfile?->username],
+            push: true,
         );
     }
 

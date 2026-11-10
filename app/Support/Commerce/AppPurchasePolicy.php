@@ -11,8 +11,12 @@ use App\Models\OrderItem;
  * Google Play Payments policy): physical goods only. Digital goods —
  * event photos (`digital_photo`) and photo-space expansions
  * (`metadata.kind = photo_expansion`) — would need StoreKit / Play
- * Billing, so the app never lists them and the app checkout refuses any
- * Order that contains one. The web keeps selling them through OpenPay.
+ * Billing, so the app never lists them and the app checkout (OpenPay in
+ * the in-app browser) refuses any Order that contains one. The web keeps
+ * selling them through OpenPay. Inside the app, photo expansions are sold
+ * ONLY through the store billing: POST /api/v1/iap/purchases
+ * (App\Actions\Iap\RecordStorePurchase — docs/renovacion/compras-dentro-de-app.md),
+ * which creates its own already-paid Order and never touches OpenPay.
  *
  * Single source of truth for `OrderResource.app_payable` and
  * CreateAppCheckoutSession.

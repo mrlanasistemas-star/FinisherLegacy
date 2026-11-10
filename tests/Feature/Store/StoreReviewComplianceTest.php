@@ -20,6 +20,7 @@ use App\Rules\NoObjectionableContent;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\Sanctum;
 
 test('the public account deletion page explains deletion and is reachable without signing in', function () {
     $this->get('/eliminar-cuenta')
@@ -88,6 +89,29 @@ test('app:review-account creates a private, clearly labelled demo account that c
 
     $this->postJson('/api/v1/auth/login', ['email' => 'revision@example.com', 'password' => 'Revisor-2026'])
         ->assertOk();
+});
+
+test('the review account demo story is reachable from the app and can show "Ampliar espacio"', function () {
+    $this->seed(RolePermissionSeeder::class);
+    Artisan::call('app:review-account', ['email' => 'revision@example.com', '--password' => 'Revisor-2026']);
+
+    $story = LegacyStory::sole();
+    Sanctum::actingAs(User::where('email', 'revision@example.com')->firstOrFail());
+
+    // Recuerdos → Mis historias lists it; the reviewer opens it as its owner.
+    $this->getJson('/api/v1/me/stories')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.public_id', $story->public_id)
+        ->assertJsonPath('data.0.is_owner', true);
+    $this->getJson("/api/v1/stories/{$story->public_id}")->assertOk()->assertJsonPath('data.is_owner', true);
+
+    // The quota card (where "Ampliar espacio" lives) loads for the demo story.
+    $this->getJson("/api/v1/stories/{$story->public_id}/quota")
+        ->assertOk()
+        ->assertJsonPath('data.story', $story->public_id)
+        ->assertJsonPath('data.used', 0)
+        ->assertJsonPath('data.limit', (int) config('legacy.stories.max_photos', 12));
 });
 
 test('app:review-account is idempotent and refreshes the password', function () {

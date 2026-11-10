@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // PUSH_PROVIDER=expo → Expo Push Service (the Expo mobile app);
         // anything else → Null gateway (never fails, reports not_configured).
-        // Callers (SendPushNotificationJob, admin "Enviar también push")
+        // Callers (PushSender / SendPushBatchJob, admin "Enviar también push")
         // only ever see the contract.
         $this->app->bind(
             PushNotificationGateway::class,
@@ -104,13 +104,6 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api-claim', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
-        });
-
-        // Device pairing confirm is a poll loop (desktop waits for a Super
-        // Admin to approve), not a one-shot action — looser than
-        // api-register on purpose. See routes/api.php.
-        RateLimiter::for('device-pairing-confirm', function (Request $request) {
-            return Limit::perMinute(30)->by($request->ip());
         });
 
         // Public, unauthenticated "leave a message" form (product UX

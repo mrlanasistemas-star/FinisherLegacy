@@ -436,8 +436,11 @@ export const adminSections: AdminSection[] = [
         match: [
             '/admin/photos',
             '/admin/photographers',
+            '/admin/photographer-commissions',
             '/admin/community',
+            '/admin/entrenamientos',
             '/admin/content',
+            '/admin/notificaciones',
         ],
         tabs: [
             {
@@ -451,14 +454,29 @@ export const adminSections: AdminSection[] = [
                 permission: 'photos.manage',
             },
             {
+                label: 'Comisiones de fotógrafos',
+                href: '/admin/photographer-commissions',
+                permission: 'photographers.commissions.manage',
+            },
+            {
                 label: 'Comunidad y moderación',
                 href: '/admin/community',
+                permission: 'community.moderate',
+            },
+            {
+                label: 'Entrenamientos',
+                href: '/admin/entrenamientos',
                 permission: 'community.moderate',
             },
             {
                 label: 'Contenido del sitio',
                 href: '/admin/content',
                 permission: 'content.manage',
+            },
+            {
+                label: 'Campañas push',
+                href: '/admin/notificaciones/campanas',
+                permission: 'notifications.broadcast',
             },
         ],
     },

@@ -6,6 +6,7 @@ use App\Actions\Quotas\RevokePhotoExpansionEntitlements;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Events\Commerce\OrderRefunded;
 use App\Exceptions\PaymentAmountMismatchException;
 use App\Exceptions\UnhandledPaymentWebhookEventException;
 use App\Models\Order;
@@ -119,7 +120,7 @@ class ProcessPaymentWebhook
 
             match ($outcome->status) {
                 PaymentStatus::Paid => $this->markOrderPaid->handle($payment->order),
-                PaymentStatus::Refunded, PaymentStatus::PartiallyRefunded => $this->applyRefund($payment->order, $outcome->status),
+                PaymentStatus::Refunded, PaymentStatus::PartiallyRefunded => $this->applyRefund($payment->order, $outcome->status, $outcome->refundedMinor ?? $payment->amount_minor),
                 default => null,
             };
         });
@@ -177,7 +178,7 @@ class ProcessPaymentWebhook
         }
     }
 
-    private function applyRefund(Order $order, PaymentStatus $status): void
+    private function applyRefund(Order $order, PaymentStatus $status, int $refundedMinor): void
     {
         $order->update([
             'payment_status' => $status === PaymentStatus::Refunded
@@ -195,5 +196,8 @@ class ProcessPaymentWebhook
         if ($status === PaymentStatus::Refunded && $hasUndelivered && ! in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Completed], true)) {
             $this->cancelOrder->handle($order->fresh(), $this->inventory->defaultLocation());
         }
+
+        // Announced after commit (customer email, admin alerts / push).
+        OrderRefunded::dispatch($order->fresh() ?? $order, $refundedMinor, $status === PaymentStatus::Refunded);
     }
 }

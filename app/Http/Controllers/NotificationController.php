@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Notifications\NotificationPresenter;
+use App\Support\Notifications\UnreadCounter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class NotificationController extends Controller
         $filter = $request->query('filtro') === 'sin-leer' ? 'unread' : 'all';
         $user = $request->user();
 
-        $query = $filter === 'unread' ? $user->unreadNotifications() : $user->notifications();
+        $query = UnreadCounter::customer($filter === 'unread' ? $user->unreadNotifications() : $user->notifications());
 
         $notifications = $query
             ->latest()
@@ -35,7 +36,7 @@ class NotificationController extends Controller
         return Inertia::render('Notifications', [
             'notifications' => $notifications,
             'filter' => $filter,
-            'unreadCount' => $user->unreadNotifications()->count(),
+            'unreadCount' => UnreadCounter::customer($user->unreadNotifications())->count(),
         ]);
     }
 
@@ -48,8 +49,8 @@ class NotificationController extends Controller
         $user = $request->user();
 
         return response()->json([
-            'unread_count' => $user->unreadNotifications()->count(),
-            'latest' => $user->notifications()
+            'unread_count' => UnreadCounter::customer($user->unreadNotifications())->count(),
+            'latest' => UnreadCounter::customer($user->notifications())
                 ->latest()
                 ->limit(6)
                 ->get()
@@ -64,7 +65,7 @@ class NotificationController extends Controller
         $record->markAsRead();
 
         if ($request->wantsJson() && ! $request->header('X-Inertia')) {
-            return response()->json(['unread_count' => $request->user()->unreadNotifications()->count()]);
+            return response()->json(['unread_count' => UnreadCounter::customer($request->user()->unreadNotifications())->count()]);
         }
 
         return back();
@@ -72,7 +73,7 @@ class NotificationController extends Controller
 
     public function markAllRead(Request $request): RedirectResponse|JsonResponse
     {
-        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        UnreadCounter::customer($request->user()->unreadNotifications())->update(['read_at' => now()]);
 
         if ($request->wantsJson() && ! $request->header('X-Inertia')) {
             return response()->json(['unread_count' => 0]);
