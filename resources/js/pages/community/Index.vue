@@ -9,7 +9,7 @@
  * `?publicar=1` (navbar "+") opens the upload modal.
  */
 import { InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
-import { CalendarDays, Sparkles, Users } from '@lucide/vue';
+import { CalendarDays, Check, Sparkles, Users } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import AthleteSuggestions from '@/components/community/AthleteSuggestions.vue';
@@ -17,11 +17,14 @@ import CommunityPost from '@/components/community/CommunityPost.vue';
 import CommunityReportDialog from '@/components/community/CommunityReportDialog.vue';
 import Composer from '@/components/community/Composer.vue';
 import type { ComposerData } from '@/components/community/Composer.vue';
+import FeedSkeleton from '@/components/community/FeedSkeleton.vue';
 import PeopleStrip from '@/components/community/PeopleStrip.vue';
 import UpcomingEvents from '@/components/community/UpcomingEvents.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useAuthGate } from '@/composables/useAuthGate';
+import { vReveal } from '@/composables/useReveal';
 import { index as communityIndex, people } from '@/routes/community';
 import { connections as profileConnections } from '@/routes/profile';
 import type {
@@ -167,17 +170,34 @@ const myProfileUrl = computed(() =>
                     class="sticky top-16 z-20 mt-3 border-b border-border bg-background/90 backdrop-blur sm:mt-4"
                     aria-label="Filtrar publicaciones"
                 >
-                    <div class="flex px-2 sm:px-0">
+                    <div class="relative flex">
+                        <!-- Sliding indicator (same component across tabs, so it animates) -->
+                        <span
+                            class="pointer-events-none absolute bottom-0 left-0 h-0.5 w-1/3 transition-transform duration-500 ease-[var(--legacy-ease)] motion-reduce:transition-none"
+                            :style="{
+                                transform: `translateX(${
+                                    Math.max(
+                                        0,
+                                        tabs.findIndex((t) => t.key === tab),
+                                    ) * 100
+                                }%)`,
+                            }"
+                            aria-hidden="true"
+                        >
+                            <span
+                                class="mx-auto block h-full w-14 rounded-full bg-foreground"
+                            />
+                        </span>
                         <template v-for="item in tabs" :key="item.key">
                             <Link
                                 v-if="!item.authOnly || user"
                                 :href="tabHref(item.key)"
                                 preserve-scroll
-                                class="-mb-px inline-flex min-h-12 flex-1 items-center justify-center gap-2 border-b-2 text-sm font-semibold transition-colors"
+                                class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 text-sm font-semibold transition-colors duration-300 focus-visible:bg-fl-gold/10 focus-visible:outline-none"
                                 :class="
                                     tab === item.key
-                                        ? 'border-foreground text-foreground'
-                                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground hover:text-foreground'
                                 "
                                 :aria-current="
                                     tab === item.key ? 'page' : undefined
@@ -193,7 +213,7 @@ const myProfileUrl = computed(() =>
                             <button
                                 v-else
                                 type="button"
-                                class="-mb-px inline-flex min-h-12 flex-1 items-center justify-center gap-2 border-b-2 border-transparent text-sm font-semibold text-muted-foreground hover:text-foreground"
+                                class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 text-sm font-semibold text-muted-foreground transition-colors duration-300 hover:text-foreground focus-visible:bg-fl-gold/10 focus-visible:outline-none"
                                 @click="requireAuth(tabHref(item.key).url)"
                             >
                                 <component
@@ -220,6 +240,7 @@ const myProfileUrl = computed(() =>
                         <CommunityPost
                             v-for="post in visiblePosts"
                             :key="post.uuid"
+                            v-reveal="{ y: 14 }"
                             :post="post"
                             @deleted="onDeleted"
                         />
@@ -227,12 +248,13 @@ const myProfileUrl = computed(() =>
 
                     <div
                         v-if="!visiblePosts.length"
-                        class="mx-4 flex flex-col items-center rounded-card border border-dashed border-foreground/15 bg-card px-6 py-14 text-center sm:mx-0"
+                        v-reveal
+                        class="mx-4 flex flex-col items-center rounded-card border border-dashed border-fl-gold/40 bg-card bg-[radial-gradient(70%_60%_at_50%_0%,rgb(201_174_139/0.14),transparent_70%)] px-6 py-14 text-center sm:mx-0"
                     >
                         <span
-                            class="flex size-14 items-center justify-center rounded-full bg-fl-cream"
+                            class="fl-empty-float flex size-16 items-center justify-center rounded-full bg-fl-cream shadow-fl-soft"
                         >
-                            <Sparkles class="size-6 text-fl-gold-ink" />
+                            <Sparkles class="size-7 text-fl-gold-ink" />
                         </span>
                         <p class="mt-4 font-semibold">{{ emptyCopy.title }}</p>
                         <p class="mt-1 max-w-sm text-sm text-muted-foreground">
@@ -253,42 +275,34 @@ const myProfileUrl = computed(() =>
                         </div>
                     </div>
 
-                    <template #loading>
+                    <template #next="{ loading, hasMore }">
                         <div
-                            class="mt-2 space-y-2 sm:mt-6 sm:space-y-6"
+                            v-if="loading"
+                            class="mt-2 sm:mt-6"
                             aria-live="polite"
                         >
-                            <div
-                                v-for="n in 2"
-                                :key="n"
-                                class="animate-pulse overflow-hidden bg-card sm:rounded-card sm:border sm:border-border"
+                            <FeedSkeleton />
+                            <p
+                                class="flex items-center justify-center gap-2 py-5 text-sm text-muted-foreground"
                             >
-                                <div class="flex items-center gap-3 p-4">
-                                    <span
-                                        class="size-9 rounded-full bg-muted"
-                                    />
-                                    <span class="space-y-2">
-                                        <span
-                                            class="block h-3 w-32 rounded bg-muted"
-                                        />
-                                        <span
-                                            class="block h-2.5 w-20 rounded bg-muted"
-                                        />
-                                    </span>
-                                </div>
-                                <span class="block aspect-[4/5] bg-muted" />
-                                <div class="space-y-2 p-4">
-                                    <span
-                                        class="block h-3 w-24 rounded bg-muted"
-                                    />
-                                    <span
-                                        class="block h-3 w-3/4 rounded bg-muted"
-                                    />
-                                </div>
-                            </div>
-                            <span class="sr-only"
-                                >Cargando más publicaciones…</span
+                                <Spinner class="text-fl-gold-dim" />
+                                Cargando más publicaciones…
+                            </p>
+                        </div>
+                        <div
+                            v-else-if="!hasMore && visiblePosts.length > 2"
+                            class="flex flex-col items-center gap-2 px-6 py-10 text-center"
+                        >
+                            <span
+                                class="flex size-11 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink"
                             >
+                                <Check class="size-5" aria-hidden="true" />
+                            </span>
+                            <p class="text-sm font-semibold">Estás al día</p>
+                            <p class="text-xs text-muted-foreground">
+                                Ya viste todas las publicaciones de esta
+                                sección.
+                            </p>
                         </div>
                     </template>
                 </InfiniteScroll>
@@ -419,3 +433,21 @@ const myProfileUrl = computed(() =>
 
     <CommunityReportDialog v-if="user" :reasons="reportReasons" />
 </template>
+
+<style scoped>
+.fl-empty-float {
+    animation: fl-empty-float 4s ease-in-out infinite alternate;
+}
+
+@keyframes fl-empty-float {
+    to {
+        transform: translateY(-6px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fl-empty-float {
+        animation: none;
+    }
+}
+</style>

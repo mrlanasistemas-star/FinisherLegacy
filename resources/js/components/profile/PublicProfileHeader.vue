@@ -10,6 +10,7 @@
 import { Link } from '@inertiajs/vue3';
 import { MapPin } from '@lucide/vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
+import AnimatedCount from '@/components/profile/AnimatedCount.vue';
 
 defineProps<{
     name: string;
@@ -20,7 +21,7 @@ defineProps<{
     photoUrl?: string | null;
     coverUrl?: string | null;
     isFinisher?: boolean;
-    stats: { label: string; value: number | string; href?: string | null }[];
+    stats: { label: string; value: number | null; href?: string | null }[];
     mutuals?: string | null;
     followsYou?: boolean;
 }>();
@@ -30,13 +31,13 @@ defineProps<{
     <section>
         <!-- Cover -->
         <div
-            class="relative h-32 overflow-hidden bg-fl-cream sm:h-52 sm:rounded-card lg:h-60"
+            class="relative h-36 overflow-hidden bg-fl-cream sm:h-56 sm:rounded-[var(--fl-radius-media)] lg:h-64"
         >
             <img
                 v-if="coverUrl"
                 :src="coverUrl"
                 :alt="`Portada de ${name}`"
-                class="size-full object-cover"
+                class="fl-cover-in size-full object-cover"
                 fetchpriority="high"
             />
             <div
@@ -63,7 +64,7 @@ defineProps<{
             <div class="flex items-end gap-4 sm:gap-8">
                 <!-- Avatar -->
                 <div
-                    class="relative z-10 -mt-10 shrink-0 rounded-full p-[3px] sm:-mt-16"
+                    class="fl-avatar-in relative z-10 -mt-10 shrink-0 rounded-full p-[3px] shadow-fl-float transition-transform duration-500 ease-[var(--legacy-ease)] motion-safe:hover:scale-[1.03] sm:-mt-16"
                     :class="isFinisher ? 'fl-achievement-ring' : 'bg-border/70'"
                     :title="isFinisher ? 'Finisher' : undefined"
                 >
@@ -90,7 +91,7 @@ defineProps<{
                             class="block"
                         >
                             <dd class="legacy-numeric text-base font-semibold">
-                                {{ stat.value }}
+                                <AnimatedCount :value="stat.value" />
                             </dd>
                             <dt class="text-xs text-muted-foreground">
                                 {{ stat.label }}
@@ -133,7 +134,7 @@ defineProps<{
                                 :class="stat.href ? 'hover:opacity-70' : ''"
                             >
                                 <dd class="legacy-numeric font-semibold">
-                                    {{ stat.value }}
+                                    <AnimatedCount :value="stat.value" />
                                 </dd>
                                 <dt class="text-muted-foreground">
                                     {{ stat.label.toLowerCase() }}
@@ -188,5 +189,34 @@ defineProps<{
         var(--fl-gold) 48%,
         var(--fl-gold-dim)
     );
+}
+
+.fl-cover-in {
+    animation: fl-cover-in 1.2s var(--legacy-ease) backwards;
+}
+
+.fl-avatar-in {
+    animation: fl-avatar-in 700ms 120ms var(--legacy-ease) backwards;
+}
+
+@keyframes fl-cover-in {
+    from {
+        opacity: 0;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes fl-avatar-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.94);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fl-cover-in,
+    .fl-avatar-in {
+        animation: none;
+    }
 }
 </style>

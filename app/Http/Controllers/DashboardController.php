@@ -8,8 +8,10 @@ use App\Models\AthleteEventMedia;
 use App\Models\AthleteFollow;
 use App\Models\AthleteProfile;
 use App\Models\LegacyMoment;
+use App\Models\LegacyStory;
 use App\Queries\Athletes\GetAthleteLegado;
 use App\Queries\Social\MomentQuery;
+use App\Support\LegacyTags\StoryPresenter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -24,7 +26,10 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
-    public function index(Request $request, GetAthleteLegado $legado, MomentQuery $moments): Response
+    /** Story cards on the hub; the full library lives at /mi-legacy. */
+    private const LEGACY_CARDS = 6;
+
+    public function index(Request $request, GetAthleteLegado $legado, MomentQuery $moments, StoryPresenter $presenter): Response
     {
         $user = $request->user();
         $user->loadMissing(['legacyId', 'athleteProfile.mainSport']);
@@ -35,7 +40,35 @@ class DashboardController extends Controller
         $timeline = $athlete === null ? [] : $legado->handle($athlete);
         $upcoming = $athlete === null ? [] : $legado->upcoming($athlete, 1);
 
+        $stories = $athlete === null ? null : LegacyStory::query()->where('athlete_id', $athlete->id);
+
+        $legacies = $stories === null ? [] : (clone $stories)
+            ->with(StoryPresenter::STORY_RELATIONS)
+            ->latest('id')
+            ->limit(self::LEGACY_CARDS)
+            ->get()
+            ->map(function (LegacyStory $story) use ($presenter) {
+                $data = $presenter->story($story, forOwner: true);
+
+                return [
+                    'public_id' => $data['public_id'],
+                    'title' => $data['title'],
+                    'race' => $data['race'],
+                    'cover' => $data['cover'],
+                    'tag' => $data['tag'],
+                    'visibility' => $data['visibility'],
+                    'visibility_label' => $data['visibility_label'],
+                    'year' => $data['year'],
+                    'photo_count' => count($data['photos']),
+                    'has_audio' => $data['audio'] !== null,
+                    'needs_details' => ! $presenter->hasRace($story) && $story->completed_at === null,
+                ];
+            })
+            ->all();
+
         return Inertia::render('Dashboard', [
+            'legacies' => $legacies,
+            'legaciesTotal' => $stories === null ? 0 : $stories->count(),
             'legacyId' => $user->legacyId?->code,
             'profile' => $profile ? [
                 'username' => $profile->username,

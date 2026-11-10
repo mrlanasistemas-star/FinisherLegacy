@@ -175,8 +175,14 @@ function submit() {
         </div>
 
         <div class="text-center">
-            <Heart class="mx-auto size-8 text-fl-gold-ink" />
-            <h1 class="mt-3 text-2xl font-bold text-foreground">
+            <span
+                class="mx-auto flex size-14 items-center justify-center rounded-full bg-fl-cream shadow-fl-soft"
+            >
+                <Heart class="size-6 text-fl-gold-ink" aria-hidden="true" />
+            </span>
+            <h1
+                class="mt-3 font-heading text-3xl font-semibold tracking-tight text-foreground"
+            >
                 {{ session.athlete_name }}
             </h1>
             <p class="mt-1 text-sm text-muted-foreground">
@@ -200,33 +206,42 @@ function submit() {
 
         <form
             v-else
-            class="mt-8 space-y-4 rounded-2xl border border-border bg-card/30 p-6"
+            class="mt-8 space-y-4 rounded-3xl border border-border bg-white p-5 shadow-fl-soft sm:p-6"
             @submit.prevent="submit"
         >
             <div class="grid gap-2">
-                <label class="text-xs text-muted-foreground">Tu nombre</label>
+                <label for="support-name" class="text-xs text-muted-foreground"
+                    >Tu nombre</label
+                >
                 <Input
+                    id="support-name"
                     v-model="form.display_name"
                     class="border-border bg-background text-foreground"
                     required
                 />
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div class="grid gap-2">
-                    <label class="text-xs text-muted-foreground"
+                    <label
+                        for="support-relationship"
+                        class="text-xs text-muted-foreground"
                         >Relación (opcional)</label
                     >
                     <Input
+                        id="support-relationship"
                         v-model="form.relationship"
                         placeholder="Mamá, amigo…"
                         class="border-border bg-background text-foreground"
                     />
                 </div>
                 <div class="grid gap-2">
-                    <label class="text-xs text-muted-foreground"
+                    <label
+                        for="support-email"
+                        class="text-xs text-muted-foreground"
                         >Correo (opcional)</label
                     >
                     <Input
+                        id="support-email"
                         v-model="form.email"
                         type="email"
                         class="border-border bg-background text-foreground"

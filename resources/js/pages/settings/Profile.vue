@@ -1,111 +1,126 @@
 <script setup lang="ts">
-import { Form, Head, usePage } from '@inertiajs/vue3';
-import { Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+/**
+ * Ajustes → Datos de la cuenta: nombre, apellidos y correo as an
+ * Apple-style grouped list, the e-mail verification state, and the
+ * account deletion at the end.
+ */
+import { Form, Head, Link, usePage } from '@inertiajs/vue3';
+import { CheckCircle2, MailWarning } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import SettingsGroup from '@/components/account/SettingsGroup.vue';
+import SettingsInputRow from '@/components/account/SettingsInputRow.vue';
+import SubmitButton from '@/components/account/SubmitButton.vue';
 import DeleteUser from '@/components/DeleteUser.vue';
-import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { send } from '@/routes/verification';
 
 const page = usePage();
 // Authenticated-only surface — the route middleware guarantees a user.
 const user = computed(() => page.props.auth.user!);
+
+const firstName = ref(user.value.first_name ?? '');
+const lastName = ref(user.value.last_name ?? '');
+const email = ref(user.value.email ?? '');
 </script>
 
 <template>
-    <Head title="Configuración de perfil" />
+    <Head title="Datos de la cuenta" />
 
-    <h1 class="sr-only">Configuración de perfil</h1>
+    <h1 class="sr-only">Datos de la cuenta</h1>
 
-    <div class="flex flex-col space-y-6">
-        <Heading
-            variant="small"
-            title="Perfil"
-            description="Actualiza tu nombre y correo electrónico"
-        />
-
-        <Form
-            v-bind="ProfileController.update.form()"
-            class="space-y-6"
-            v-slot="{ errors, processing }"
+    <Form
+        v-bind="ProfileController.update.form()"
+        :options="{ preserveScroll: true }"
+        v-slot="{ errors, processing, recentlySuccessful }"
+    >
+        <SettingsGroup
+            title="Información personal"
+            note="Tu nombre aparece en tu perfil, tus pedidos y tus Finisher Legacy."
         >
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div class="grid gap-2">
-                    <Label for="first_name">Nombre</Label>
-                    <Input
-                        id="first_name"
-                        class="mt-1 block w-full"
-                        name="first_name"
-                        :default-value="user.first_name"
-                        required
-                        autocomplete="given-name"
-                        placeholder="Nombre"
-                    />
-                    <InputError class="mt-2" :message="errors.first_name" />
-                </div>
+            <SettingsInputRow
+                id="first_name"
+                v-model="firstName"
+                label="Nombre"
+                :error="errors.first_name"
+                required
+                autocomplete="given-name"
+                placeholder="Tu nombre"
+            />
+            <SettingsInputRow
+                id="last_name"
+                v-model="lastName"
+                label="Apellidos"
+                :error="errors.last_name"
+                required
+                autocomplete="family-name"
+                placeholder="Tus apellidos"
+            />
+            <SettingsInputRow
+                id="email"
+                v-model="email"
+                type="email"
+                label="Correo electrónico"
+                :error="errors.email"
+                required
+                autocomplete="username"
+                inputmode="email"
+                placeholder="tucorreo@ejemplo.com"
+            />
 
-                <div class="grid gap-2">
-                    <Label for="last_name">Apellidos</Label>
-                    <Input
-                        id="last_name"
-                        class="mt-1 block w-full"
-                        name="last_name"
-                        :default-value="user.last_name"
-                        required
-                        autocomplete="family-name"
-                        placeholder="Apellidos"
-                    />
-                    <InputError class="mt-2" :message="errors.last_name" />
-                </div>
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    name="email"
-                    :default-value="user.email"
-                    required
-                    autocomplete="username"
-                    placeholder="Correo electrónico"
+            <div
+                v-if="page.props.mustVerifyEmail && !user.email_verified_at"
+                class="flex items-start gap-3 bg-amber-50/70 px-4 py-3 text-sm"
+            >
+                <MailWarning
+                    class="mt-0.5 size-4 shrink-0 text-amber-700"
+                    aria-hidden="true"
                 />
-                <InputError class="mt-2" :message="errors.email" />
-            </div>
-
-            <div v-if="page.props.mustVerifyEmail && !user.email_verified_at">
-                <p class="-mt-4 text-sm text-muted-foreground">
-                    Tu correo electrónico no está verificado.
+                <div class="text-amber-900">
+                    Tu correo aún no está verificado.
                     <Link
                         :href="send()"
                         as="button"
-                        class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                        class="font-semibold underline underline-offset-4 hover:no-underline"
                     >
-                        Haz clic aquí para reenviar el correo de verificación.
+                        Reenviar el correo de verificación
                     </Link>
-                </p>
-
-                <div
-                    v-if="page.props.status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
-                >
-                    Se ha enviado un nuevo enlace de verificación a tu correo
-                    electrónico.
+                    <p
+                        v-if="page.props.status === 'verification-link-sent'"
+                        class="mt-1 font-medium text-emerald-700"
+                    >
+                        Te enviamos un nuevo enlace.
+                    </p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <Button :disabled="processing" data-test="update-profile-button"
-                    >Guardar</Button
+            <template #footer>
+                <Transition
+                    enter-active-class="transition duration-300"
+                    enter-from-class="opacity-0 translate-x-2"
+                    leave-active-class="transition duration-500"
+                    leave-to-class="opacity-0"
                 >
-            </div>
-        </Form>
-    </div>
+                    <p
+                        v-if="recentlySuccessful"
+                        class="mr-auto inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700"
+                        role="status"
+                    >
+                        <CheckCircle2 class="size-4" aria-hidden="true" />
+                        Guardado
+                    </p>
+                </Transition>
+                <SubmitButton
+                    :block="false"
+                    :arrow="false"
+                    class="min-h-11 px-6 text-sm"
+                    label="Guardar cambios"
+                    processing-label="Guardando…"
+                    :processing="processing"
+                    data-test="update-profile-button"
+                />
+            </template>
+        </SettingsGroup>
+    </Form>
 
     <DeleteUser />
 </template>

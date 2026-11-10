@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { Check, Copy } from '@lucide/vue';
+import { Check, Copy, MailCheck, RotateCw } from '@lucide/vue';
 import { ref } from 'vue';
 import FinisherMascot from '@/components/public/FinisherMascot.vue';
-import TextLink from '@/components/TextLink.vue';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { dashboard, logout } from '@/routes';
 import { edit as editProfile } from '@/routes/dashboard/profile';
@@ -12,9 +10,9 @@ import { send } from '@/routes/verification';
 
 defineOptions({
     layout: {
-        title: 'Tu Legacy comienza aquí',
+        title: 'Confirma tu correo',
         description:
-            'Confirma tu correo dando clic en el enlace que te enviamos.',
+            'Te enviamos un enlace. Ábrelo desde tu correo para desbloquear tu perfil.',
     },
 });
 
@@ -30,9 +28,13 @@ async function copyLegacyId() {
         return;
     }
 
-    await navigator.clipboard.writeText(legacyId);
-    copied.value = true;
-    setTimeout(() => (copied.value = false), 1800);
+    try {
+        await navigator.clipboard.writeText(legacyId);
+        copied.value = true;
+        setTimeout(() => (copied.value = false), 1800);
+    } catch {
+        // Clipboard blocked — the ID stays visible to copy by hand.
+    }
 }
 </script>
 
@@ -43,10 +45,10 @@ async function copyLegacyId() {
         <FinisherMascot variant="success" alt="" class="mx-auto mb-4" />
 
         <div
-            class="fl-hover-glow rounded-xl border border-fl-gold/30 bg-gradient-to-br from-fl-gold/10 to-transparent p-5 transition-shadow duration-300"
+            class="rounded-2xl border border-fl-gold/40 bg-gradient-to-br from-fl-cream to-white p-5 shadow-fl-soft"
         >
             <p
-                class="text-xs font-medium tracking-widest text-muted-foreground/80 uppercase"
+                class="text-[11px] font-semibold tracking-[0.2em] text-muted-foreground uppercase"
             >
                 Tu Legacy ID
             </p>
@@ -56,7 +58,7 @@ async function copyLegacyId() {
                 </p>
                 <button
                     type="button"
-                    class="fl-focus-glow flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-fl-gold-ink"
+                    class="fl-press inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white hover:text-fl-gold-ink focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                     aria-label="Copiar Legacy ID"
                     @click="copyLegacyId"
                 >
@@ -65,55 +67,69 @@ async function copyLegacyId() {
                     {{ copied ? 'Copiado' : 'Copiar' }}
                 </button>
             </div>
-            <p class="mt-3 text-sm text-muted-foreground">
-                Este es tu identificador permanente dentro de Finisher Legacy.
+            <p class="mt-2 text-sm text-muted-foreground">
+                Tu identificador permanente en Finisher Legacy.
             </p>
         </div>
     </div>
 
-    <div
-        v-if="status === 'verification-link-sent'"
-        class="mb-4 text-center text-sm font-medium text-emerald-500"
-    >
-        Se envió un nuevo enlace de verificación al correo con el que te
-        registraste.
-    </div>
-
-    <div class="space-y-6 text-center">
-        <p class="text-sm text-muted-foreground">
-            Confirma tu correo para desbloquear tu Legacy Profile.
-        </p>
-
-        <div class="flex flex-col gap-2 sm:flex-row">
-            <Button as-child class="fl-hover-lift h-11 w-full rounded-full">
-                <Link :href="editProfile()">Completar mi perfil</Link>
-            </Button>
-            <Button
-                as-child
-                variant="outline"
-                class="fl-hover-lift w-full border-border text-foreground hover:bg-foreground/[0.03]"
-            >
-                <Link :href="dashboard()">Ir a mi Legacy</Link>
-            </Button>
+    <Transition name="fl-fade" appear>
+        <div
+            v-if="status === 'verification-link-sent'"
+            class="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+            role="status"
+        >
+            <MailCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            Te enviamos un nuevo enlace al correo con el que te registraste.
         </div>
+    </Transition>
 
-        <Form v-bind="send.form()" class="space-y-4" v-slot="{ processing }">
-            <Button
-                variant="ghost"
+    <div class="flex flex-col gap-3">
+        <Link
+            :href="editProfile()"
+            class="fl-btn-primary h-13 w-full focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
+            >Completar mi perfil</Link
+        >
+        <Link
+            :href="dashboard()"
+            class="fl-btn-secondary h-12 w-full focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
+            >Ir a Mi Finisher Legacy</Link
+        >
+
+        <Form
+            v-bind="send.form()"
+            v-slot="{ processing }"
+            class="mt-2 flex justify-center"
+        >
+            <button
+                type="submit"
+                class="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-white hover:text-fl-gold-ink focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none disabled:opacity-60"
                 :disabled="processing"
-                class="text-sm text-muted-foreground hover:bg-foreground/[0.03] hover:text-fl-gold-ink"
             >
                 <Spinner v-if="processing" />
-                Reenviar correo de verificación
-            </Button>
+                <RotateCw v-else class="size-4" aria-hidden="true" />
+                {{ processing ? 'Enviando…' : 'Reenviar el correo' }}
+            </button>
         </Form>
 
-        <TextLink
+        <Link
             :href="logout()"
             as="button"
-            class="mx-auto block text-sm text-fl-gold-ink decoration-fl-gold/40"
+            class="mx-auto min-h-11 rounded-full px-4 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
         >
             Cerrar sesión
-        </TextLink>
+        </Link>
     </div>
 </template>
+
+<style scoped>
+.fl-fade-enter-active {
+    transition:
+        opacity 300ms ease,
+        transform 400ms var(--legacy-ease);
+}
+.fl-fade-enter-from {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+</style>

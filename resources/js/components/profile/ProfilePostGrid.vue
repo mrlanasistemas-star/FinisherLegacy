@@ -79,7 +79,7 @@ function onDeleted(uuid: string) {
             v-for="post in posts"
             :key="post.uuid"
             :href="showPost(post.uuid).url"
-            class="group/tile relative block aspect-square overflow-hidden bg-fl-cream focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+            class="group/tile fl-zoom relative block aspect-square overflow-hidden bg-fl-cream focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
             :aria-label="`Publicación de ${post.author.name}: ${post.kind_label}`"
             @click="onTile($event, post)"
         >
@@ -125,7 +125,7 @@ function onDeleted(uuid: string) {
             />
 
             <span
-                class="absolute inset-0 hidden items-center justify-center gap-6 bg-black/35 text-sm font-semibold text-white opacity-0 transition-opacity group-hover/tile:opacity-100 sm:flex"
+                class="absolute inset-0 hidden items-center justify-center gap-6 bg-gradient-to-t from-black/50 to-black/20 text-sm font-semibold text-white opacity-0 transition-opacity duration-300 group-hover/tile:opacity-100 group-focus-visible/tile:opacity-100 sm:flex"
                 aria-hidden="true"
             >
                 <span class="inline-flex items-center gap-1.5">

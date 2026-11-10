@@ -141,16 +141,14 @@ const location = computed(() =>
         .join(', '),
 );
 
-const formatter = new Intl.NumberFormat('es-MX', { notation: 'compact' });
-
 const headerStats = computed(() => [
     {
         label: 'Publicaciones',
-        value: props.restricted ? '—' : formatter.format(props.stats.posts),
+        value: props.restricted ? null : props.stats.posts,
     },
     {
         label: 'Seguidores',
-        value: formatter.format(props.social.followers),
+        value: props.social.followers,
         href: props.restricted
             ? null
             : profileConnections({
@@ -160,7 +158,7 @@ const headerStats = computed(() => [
     },
     {
         label: 'Siguiendo',
-        value: formatter.format(props.social.following),
+        value: props.social.following,
         href: props.restricted
             ? null
             : profileConnections({
@@ -435,14 +433,23 @@ const profileJsonLd = computed(() => {
                         role="tab"
                         :aria-selected="activeTab === tab.key"
                         :aria-controls="`panel-${tab.key}`"
-                        class="-mt-px inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 border-t text-xs font-semibold tracking-[0.12em] uppercase transition-colors sm:flex-none"
+                        class="relative inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 text-xs font-semibold tracking-[0.12em] uppercase transition-colors duration-300 focus-visible:bg-fl-gold/10 focus-visible:outline-none sm:flex-none"
                         :class="
                             activeTab === tab.key
-                                ? 'border-foreground text-foreground'
-                                : 'border-transparent text-muted-foreground hover:text-foreground'
+                                ? 'text-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
                         "
                         @click="activeTab = tab.key"
                     >
+                        <span
+                            class="absolute inset-x-0 -top-px h-px origin-center bg-foreground transition-transform duration-500 ease-[var(--legacy-ease)] motion-reduce:transition-none"
+                            :class="
+                                activeTab === tab.key
+                                    ? 'scale-x-100'
+                                    : 'scale-x-0'
+                            "
+                            aria-hidden="true"
+                        />
                         <component
                             :is="tab.icon"
                             class="size-4 sm:size-3.5"
@@ -511,7 +518,7 @@ const profileJsonLd = computed(() => {
                             <span
                                 v-for="n in 3"
                                 :key="n"
-                                class="aspect-square animate-pulse bg-muted"
+                                class="fl-skeleton aspect-square rounded-none!"
                             />
                             <span class="sr-only">Cargando publicaciones…</span>
                         </div>
@@ -596,9 +603,9 @@ const profileJsonLd = computed(() => {
                     <div
                         v-for="medal in medals"
                         :key="medal.id"
-                        class="overflow-hidden rounded-card border border-border bg-card"
+                        class="group fl-card-hover overflow-hidden rounded-card border border-border bg-card"
                     >
-                        <div class="aspect-square bg-fl-cream">
+                        <div class="fl-zoom aspect-square bg-fl-cream">
                             <img
                                 v-if="medal.thumbnail_url"
                                 :src="medal.thumbnail_url"
@@ -643,7 +650,7 @@ const profileJsonLd = computed(() => {
                     <div
                         v-for="photo in photos"
                         :key="photo.uuid"
-                        class="group/photo relative aspect-square overflow-hidden bg-muted"
+                        class="group/photo fl-zoom relative aspect-square overflow-hidden bg-muted"
                     >
                         <img
                             :src="photo.url"
@@ -672,3 +679,23 @@ const profileJsonLd = computed(() => {
         :reasons="reportReasons"
     />
 </template>
+
+<style scoped>
+/* Each tab panel fades in when it is shown (v-show restarts the animation). */
+[role='tabpanel'] {
+    animation: fl-tab-in 420ms var(--legacy-ease) backwards;
+}
+
+@keyframes fl-tab-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [role='tabpanel'] {
+        animation: none;
+    }
+}
+</style>

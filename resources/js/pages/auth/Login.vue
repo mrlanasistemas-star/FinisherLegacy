@@ -1,27 +1,22 @@
 <script setup lang="ts">
+/**
+ * Iniciar sesión — email + contraseña (no social login on the web).
+ * The /entrar gate lands here with the intended URL already stored.
+ */
 import { Form, Head, Link } from '@inertiajs/vue3';
-import {
-    ArrowRight,
-    AtSign,
-    Camera,
-    CheckCircle2,
-    LockKeyhole,
-} from '@lucide/vue';
-import InputError from '@/components/InputError.vue';
-import PasswordInput from '@/components/PasswordInput.vue';
-import { Button } from '@/components/ui/button';
+import { AtSign, Camera, CheckCircle2, LockKeyhole } from '@lucide/vue';
+import FloatingField from '@/components/account/FloatingField.vue';
+import SubmitButton from '@/components/account/SubmitButton.vue';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Inicia sesión',
-        description: 'Qué gusto verte de nuevo. Continúa tu historia.',
+        title: 'Qué gusto verte',
+        description: 'Inicia sesión para continuar tu historia.',
     },
 });
 
@@ -34,117 +29,105 @@ defineProps<{
 <template>
     <Head title="Iniciar sesión" />
 
-    <div
-        v-if="status"
-        class="mb-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
-        role="status"
-    >
-        <CheckCircle2 class="size-4 shrink-0" />
-        {{ status }}
-    </div>
+    <Transition name="fl-fade" appear>
+        <div
+            v-if="status"
+            class="mb-6 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+            role="status"
+        >
+            <CheckCircle2 class="size-4 shrink-0" aria-hidden="true" />
+            {{ status }}
+        </div>
+    </Transition>
 
     <Form
         v-bind="store.form()"
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"
-        class="flex flex-col gap-5"
+        class="flex flex-col gap-4"
     >
-        <div class="grid gap-2">
-            <Label for="email">Correo electrónico</Label>
-            <div class="relative">
-                <AtSign
-                    class="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                />
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    required
-                    autofocus
-                    :tabindex="1"
-                    autocomplete="email"
-                    placeholder="tucorreo@ejemplo.com"
-                    class="h-12 pl-10"
-                />
-            </div>
-            <InputError :message="errors.email" />
+        <FloatingField
+            id="email"
+            type="email"
+            label="Correo electrónico"
+            :icon="AtSign"
+            :error="errors.email"
+            required
+            autofocus
+            autocomplete="email"
+            inputmode="email"
+        />
+
+        <FloatingField
+            id="password"
+            type="password"
+            label="Contraseña"
+            :icon="LockKeyhole"
+            :error="errors.password"
+            :show-valid="false"
+            required
+            autocomplete="current-password"
+        />
+
+        <div class="flex items-center justify-between gap-3">
+            <Label
+                for="remember"
+                class="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-normal text-muted-foreground"
+            >
+                <Checkbox id="remember" name="remember" />
+                Mantener mi sesión
+            </Label>
+            <Link
+                v-if="canResetPassword"
+                :href="request()"
+                class="fl-link rounded text-sm font-semibold text-fl-gold-ink focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
+            >
+                ¿Olvidaste tu contraseña?
+            </Link>
         </div>
 
-        <div class="grid gap-2">
-            <div class="flex items-center justify-between">
-                <Label for="password">Contraseña</Label>
-                <Link
-                    v-if="canResetPassword"
-                    :href="request()"
-                    class="text-sm font-medium text-fl-gold-ink hover:underline"
-                    :tabindex="5"
-                >
-                    ¿La olvidaste?
-                </Link>
-            </div>
-            <div class="relative">
-                <LockKeyhole
-                    class="pointer-events-none absolute top-1/2 left-3.5 z-10 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                />
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    required
-                    :tabindex="2"
-                    autocomplete="current-password"
-                    placeholder="Tu contraseña"
-                    class="h-12 pl-10"
-                />
-            </div>
-            <InputError :message="errors.password" />
-        </div>
-
-        <Label
-            for="remember"
-            class="flex w-fit cursor-pointer items-center gap-3 font-normal"
-        >
-            <Checkbox id="remember" name="remember" :tabindex="3" />
-            Mantener mi sesión iniciada
-        </Label>
-
-        <Button
-            type="submit"
-            size="lg"
-            class="mt-1 h-12 w-full rounded-full text-[15px]"
-            :tabindex="4"
-            :disabled="processing"
+        <SubmitButton
+            class="mt-2"
+            label="Iniciar sesión"
+            processing-label="Entrando…"
+            :processing="processing"
             data-test="login-button"
-        >
-            <Spinner v-if="processing" />
-            Iniciar sesión
-            <ArrowRight v-if="!processing" class="size-4" />
-        </Button>
+        />
 
-        <div class="relative my-2 text-center text-xs text-muted-foreground">
+        <div class="relative my-3 text-center text-xs text-muted-foreground">
             <span
                 class="absolute inset-x-0 top-1/2 h-px bg-border"
                 aria-hidden="true"
             />
-            <span class="relative bg-card px-3">¿Primera vez aquí?</span>
+            <span class="relative bg-white px-3 lg:bg-background"
+                >¿Primera vez aquí?</span
+            >
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2">
-            <Link
-                :href="register()"
-                :tabindex="6"
-                class="flex items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-semibold transition-colors hover:border-foreground/30"
-            >
-                Crear mi perfil
-            </Link>
-            <Link
-                href="/fotografos/registro"
-                class="flex items-center justify-center gap-2 rounded-full border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-            >
-                <Camera class="size-4 text-fl-gold-ink" />
-                Soy fotógrafo
-            </Link>
-        </div>
+        <Link
+            :href="register()"
+            class="fl-btn-secondary h-12 w-full focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
+        >
+            Crear mi cuenta
+        </Link>
+        <Link
+            href="/fotografos/registro"
+            class="mx-auto inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
+        >
+            <Camera class="size-4 text-fl-gold-ink" aria-hidden="true" />
+            ¿Eres fotógrafo? Regístrate aquí
+        </Link>
     </Form>
 </template>
+
+<style scoped>
+.fl-fade-enter-active {
+    transition:
+        opacity 300ms ease,
+        transform 400ms var(--legacy-ease);
+}
+.fl-fade-enter-from {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+</style>

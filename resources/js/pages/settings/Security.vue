@@ -1,92 +1,92 @@
 <script setup lang="ts">
+/**
+ * Ajustes → Contraseña y seguridad, as an Apple-style grouped list.
+ */
 import { Form, Head } from '@inertiajs/vue3';
+import { CheckCircle2 } from '@lucide/vue';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
-import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
-import PasswordInput from '@/components/PasswordInput.vue';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import SettingsGroup from '@/components/account/SettingsGroup.vue';
+import SettingsInputRow from '@/components/account/SettingsInputRow.vue';
+import SubmitButton from '@/components/account/SubmitButton.vue';
 
-type Props = {
+defineProps<{
     passwordRules: string;
-};
-
-const props = defineProps<Props>();
-
+}>();
 </script>
 
 <template>
-    <Head title="Seguridad" />
+    <Head title="Contraseña y seguridad" />
 
-    <h1 class="sr-only">Configuración de seguridad</h1>
+    <h1 class="sr-only">Contraseña y seguridad</h1>
 
-    <div class="space-y-6">
-        <Heading
-            variant="small"
-            title="Actualizar contraseña"
-            description="Asegúrate de usar una contraseña larga y aleatoria para mantener tu cuenta segura"
-        />
-
-        <Form
-            v-bind="SecurityController.update.form()"
-            :options="{
-                preserveScroll: true,
-            }"
-            reset-on-success
-            :reset-on-error="[
-                'password',
-                'password_confirmation',
-                'current_password',
-            ]"
-            class="space-y-6"
-            v-slot="{ errors, processing }"
+    <Form
+        v-bind="SecurityController.update.form()"
+        :options="{ preserveScroll: true }"
+        reset-on-success
+        :reset-on-error="[
+            'password',
+            'password_confirmation',
+            'current_password',
+        ]"
+        v-slot="{ errors, processing, recentlySuccessful }"
+    >
+        <SettingsGroup
+            title="Cambiar contraseña"
+            note="Usa al menos 8 caracteres. Una frase larga es más segura y fácil de recordar."
         >
-            <div class="grid gap-2">
-                <Label for="current_password">Contraseña actual</Label>
-                <PasswordInput
-                    id="current_password"
-                    name="current_password"
-                    class="mt-1 block w-full"
-                    autocomplete="current-password"
-                    placeholder="Contraseña actual"
-                />
-                <InputError :message="errors.current_password" />
-            </div>
+            <SettingsInputRow
+                id="current_password"
+                type="password"
+                label="Contraseña actual"
+                :error="errors.current_password"
+                autocomplete="current-password"
+                placeholder="Obligatoria"
+            />
+            <SettingsInputRow
+                id="password"
+                type="password"
+                label="Nueva contraseña"
+                :error="errors.password"
+                autocomplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+                :passwordrules="passwordRules"
+            />
+            <SettingsInputRow
+                id="password_confirmation"
+                type="password"
+                label="Confirmar"
+                :error="errors.password_confirmation"
+                autocomplete="new-password"
+                placeholder="Repite la nueva contraseña"
+                :passwordrules="passwordRules"
+            />
 
-            <div class="grid gap-2">
-                <Label for="password">Nueva contraseña</Label>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    class="mt-1 block w-full"
-                    autocomplete="new-password"
-                    placeholder="Nueva contraseña"
-                    :passwordrules="props.passwordRules"
-                />
-                <InputError :message="errors.password" />
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="password_confirmation">Confirmar contraseña</Label>
-                <PasswordInput
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    class="mt-1 block w-full"
-                    autocomplete="new-password"
-                    placeholder="Confirmar contraseña"
-                    :passwordrules="props.passwordRules"
-                />
-                <InputError :message="errors.password_confirmation" />
-            </div>
-
-            <div class="flex items-center gap-4">
-                <Button
-                    :disabled="processing"
-                    data-test="update-password-button"
+            <template #footer>
+                <Transition
+                    enter-active-class="transition duration-300"
+                    enter-from-class="opacity-0 translate-x-2"
+                    leave-active-class="transition duration-500"
+                    leave-to-class="opacity-0"
                 >
-                    Guardar
-                </Button>
-            </div>
-        </Form>
-    </div>
+                    <p
+                        v-if="recentlySuccessful"
+                        class="mr-auto inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700"
+                        role="status"
+                    >
+                        <CheckCircle2 class="size-4" aria-hidden="true" />
+                        Contraseña actualizada
+                    </p>
+                </Transition>
+                <SubmitButton
+                    :block="false"
+                    :arrow="false"
+                    class="min-h-11 px-6 text-sm"
+                    label="Actualizar contraseña"
+                    processing-label="Guardando…"
+                    :processing="processing"
+                    data-test="update-password-button"
+                />
+            </template>
+        </SettingsGroup>
+    </Form>
 </template>

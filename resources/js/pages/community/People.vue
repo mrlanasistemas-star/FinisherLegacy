@@ -307,7 +307,6 @@ const empty = computed(() => {
                     <div
                         v-for="n in isGrid ? 4 : 3"
                         :key="n"
-                        class="animate-pulse"
                         :class="
                             isGrid
                                 ? 'flex flex-col items-center rounded-card border border-border bg-card p-4'
@@ -315,7 +314,7 @@ const empty = computed(() => {
                         "
                     >
                         <span
-                            class="rounded-full bg-muted"
+                            class="fl-skeleton rounded-full!"
                             :class="isGrid ? 'size-16' : 'size-11'"
                         />
                         <span
@@ -323,11 +322,11 @@ const empty = computed(() => {
                             :class="isGrid ? 'mt-3 w-full' : ''"
                         >
                             <span
-                                class="block h-3 rounded bg-muted"
+                                class="fl-skeleton block h-3"
                                 :class="isGrid ? 'mx-auto w-2/3' : 'w-32'"
                             />
                             <span
-                                class="block h-3 rounded bg-muted"
+                                class="fl-skeleton block h-3"
                                 :class="isGrid ? 'mx-auto w-1/2' : 'w-48'"
                             />
                         </span>

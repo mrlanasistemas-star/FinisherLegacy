@@ -67,7 +67,7 @@ async function share() {
         <div class="-ml-2 flex items-center gap-0.5">
             <button
                 type="button"
-                class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:scale-90"
+                class="relative flex size-10 items-center justify-center rounded-full transition-[background-color,transform] duration-150 hover:bg-muted focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none active:scale-90"
                 :aria-pressed="celebration.celebrated.value"
                 :aria-label="celebration.label.value"
                 :title="
@@ -77,6 +77,11 @@ async function share() {
                 "
                 @click="celebration.toggle()"
             >
+                <span
+                    v-if="pop && celebration.celebrated.value"
+                    class="fl-heart-ring pointer-events-none absolute inset-0 m-auto size-6 rounded-full"
+                    aria-hidden="true"
+                />
                 <Heart
                     class="size-6 transition-colors"
                     :class="[
@@ -160,9 +165,30 @@ async function share() {
     }
 }
 
+/* Ring that bursts out of the heart when it turns on. */
+.fl-heart-ring {
+    border: 2px solid rgb(244 63 94 / 0.55);
+    animation: fl-heart-ring 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fl-heart-ring {
+    from {
+        transform: scale(0.6);
+        opacity: 1;
+    }
+    to {
+        transform: scale(2.1);
+        opacity: 0;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .fl-heart-pop {
+    .fl-heart-pop,
+    .fl-heart-ring {
         animation: none;
+    }
+    .fl-heart-ring {
+        display: none;
     }
 }
 </style>

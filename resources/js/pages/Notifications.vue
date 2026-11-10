@@ -8,6 +8,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Bell, CheckCheck, ChevronRight } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import Pagination from '@/components/public/Pagination.vue';
+import { vReveal } from '@/composables/useReveal';
 import { timeAgo } from '@/lib/datetime';
 import { onNotificationCreated } from '@/lib/notificationRealtime';
 import notificationRoutes from '@/routes/notifications';
@@ -137,7 +138,10 @@ onBeforeUnmount(() => stop?.());
     <Head title="Notificaciones" />
 
     <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 md:py-10">
-        <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <header
+            v-reveal
+            class="mb-6 flex flex-wrap items-end justify-between gap-4"
+        >
             <div>
                 <p class="fl-eyebrow">Tu actividad</p>
                 <h1 class="fl-display mt-2 text-3xl sm:text-4xl">
@@ -179,6 +183,7 @@ onBeforeUnmount(() => stop?.());
         <section
             v-for="group in groups"
             :key="group.label"
+            v-reveal
             class="mb-8"
             :aria-label="group.label"
         >
@@ -191,7 +196,7 @@ onBeforeUnmount(() => stop?.());
                 <li
                     v-for="n in group.items"
                     :key="n.id"
-                    class="group relative flex items-start gap-4 px-4 py-4 transition-colors sm:px-5"
+                    class="group relative flex items-start gap-4 px-4 py-4 transition-colors duration-300 hover:bg-fl-paper sm:px-5"
                     :class="n.read_at ? '' : 'bg-fl-gold/[0.06]'"
                 >
                     <span

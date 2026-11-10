@@ -86,7 +86,7 @@ const mutuals = computed(() => mutualsLabel(props.person));
 
     <div
         v-else
-        class="flex h-full flex-col items-center rounded-card border border-border bg-card p-4 text-center transition-shadow hover:shadow-fl-soft"
+        class="fl-card-hover flex h-full flex-col items-center rounded-card border border-border bg-card p-4 text-center"
     >
         <component
             :is="href ? Link : 'div'"

@@ -303,3 +303,22 @@ const nothing = computed(
         </template>
     </section>
 </template>
+
+<style scoped>
+[role='tabpanel'] {
+    animation: fl-tab-in 380ms var(--legacy-ease) backwards;
+}
+
+@keyframes fl-tab-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [role='tabpanel'] {
+        animation: none;
+    }
+}
+</style>

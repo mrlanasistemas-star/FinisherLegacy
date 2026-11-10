@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { AtSign, LockKeyhole } from '@lucide/vue';
 import { ref } from 'vue';
-import InputError from '@/components/InputError.vue';
-import PasswordInput from '@/components/PasswordInput.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import FloatingField from '@/components/account/FloatingField.vue';
+import SubmitButton from '@/components/account/SubmitButton.vue';
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter.vue';
 import { update } from '@/routes/password';
 
 defineOptions({
     layout: {
         title: 'Elige una nueva contraseña',
-        description: 'Ingresa tu nueva contraseña para tu Legacy ID',
+        description: 'Úsala a partir de ahora para entrar a tu cuenta.',
     },
 });
 
@@ -23,6 +21,7 @@ const props = defineProps<{
 }>();
 
 const inputEmail = ref(props.email);
+const passwordValue = ref('');
 </script>
 
 <template>
@@ -33,60 +32,54 @@ const inputEmail = ref(props.email);
         :transform="(data) => ({ ...data, token, email })"
         :reset-on-success="['password', 'password_confirmation']"
         v-slot="{ errors, processing }"
+        class="flex flex-col gap-4"
     >
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">Correo electrónico</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    autocomplete="email"
-                    v-model="inputEmail"
-                    class="mt-1 block w-full"
-                    readonly
-                />
-                <InputError :message="errors.email" class="mt-2" />
-            </div>
+        <FloatingField
+            id="email"
+            v-model="inputEmail"
+            type="email"
+            label="Correo electrónico"
+            :icon="AtSign"
+            :error="errors.email"
+            :show-valid="false"
+            autocomplete="email"
+            readonly
+        />
 
-            <div class="grid gap-2">
-                <Label for="password">Nueva contraseña</Label>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    autofocus
-                    placeholder="Contraseña"
-                    :passwordrules="passwordRules"
-                />
-                <InputError :message="errors.password" />
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="password_confirmation">
-                    Confirmar contraseña
-                </Label>
-                <PasswordInput
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    autocomplete="new-password"
-                    class="mt-1 block w-full"
-                    placeholder="Confirmar contraseña"
-                    :passwordrules="passwordRules"
-                />
-                <InputError :message="errors.password_confirmation" />
-            </div>
-
-            <Button
-                type="submit"
-                class="mt-4 h-11 w-full rounded-full"
-                :disabled="processing"
-                data-test="reset-password-button"
-            >
-                <Spinner v-if="processing" />
-                Restablecer contraseña
-            </Button>
+        <div>
+            <FloatingField
+                id="password"
+                v-model="passwordValue"
+                type="password"
+                label="Nueva contraseña"
+                :icon="LockKeyhole"
+                :error="errors.password"
+                :passwordrules="passwordRules"
+                required
+                autofocus
+                autocomplete="new-password"
+            />
+            <PasswordStrengthMeter :password="passwordValue" class="mt-2" />
         </div>
+
+        <FloatingField
+            id="password_confirmation"
+            type="password"
+            label="Confirmar contraseña"
+            :icon="LockKeyhole"
+            :error="errors.password_confirmation"
+            :must-match="passwordValue"
+            :passwordrules="passwordRules"
+            required
+            autocomplete="new-password"
+        />
+
+        <SubmitButton
+            class="mt-2"
+            label="Guardar contraseña"
+            processing-label="Guardando…"
+            :processing="processing"
+            data-test="reset-password-button"
+        />
     </Form>
 </template>

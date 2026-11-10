@@ -229,7 +229,12 @@ defineExpose({ celebration });
 
 <template>
     <article
-        class="overflow-hidden bg-card transition-[box-shadow,border-color] duration-300 sm:rounded-card sm:border sm:border-border sm:shadow-fl-micro sm:hover:border-foreground/15 sm:hover:shadow-fl-soft"
+        class="overflow-hidden bg-card transition-[translate,box-shadow,border-color] duration-500 ease-[var(--legacy-ease)] sm:rounded-card sm:border sm:border-border sm:shadow-fl-micro"
+        :class="
+            detail
+                ? ''
+                : 'sm:hover:border-fl-gold/40 sm:hover:shadow-fl-float sm:motion-safe:hover:-translate-y-0.5'
+        "
         :aria-label="`Publicación de ${post.author.name}`"
     >
         <p
@@ -469,7 +474,13 @@ defineExpose({ celebration });
                             : `Ver los ${commentsCount} comentarios`
                     }}
                 </Link>
-                <ul v-if="previewComments.length" class="mt-1 space-y-0.5">
+                <TransitionGroup
+                    v-if="previewComments.length"
+                    tag="ul"
+                    class="mt-1 space-y-0.5"
+                    enter-active-class="transition duration-500 ease-[var(--legacy-ease)] motion-reduce:transition-none"
+                    enter-from-class="-translate-y-1 opacity-0"
+                >
                     <li
                         v-for="comment in previewComments"
                         :key="comment.uuid"
@@ -485,7 +496,7 @@ defineExpose({ celebration });
                         }}</span
                         >{{ comment.body }}
                     </li>
-                </ul>
+                </TransitionGroup>
             </template>
 
             <Link
