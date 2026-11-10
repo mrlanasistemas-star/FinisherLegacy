@@ -19,11 +19,13 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\I18n\Locales;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Console\Command;
 use Illuminate\Mail\Markdown;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -39,6 +41,7 @@ use Illuminate\Support\Str;
  *   php artisan mail:preview paid
  *   php artisan mail:preview all
  *   php artisan mail:preview refunded --order=FL-000123
+ *   php artisan mail:preview paid --locale=en   (writes paid.en.html)
  */
 class PreviewMail extends Command
 {
@@ -46,7 +49,8 @@ class PreviewMail extends Command
 
     protected $signature = 'mail:preview
         {type : paid|refunded|refunded-partial|shipped|delivered|verify-email|reset-password|all}
-        {--order= : uuid or order number of a real order to render}';
+        {--order= : uuid or order number of a real order to render}
+        {--locale= : Render in this language (default: the app locale); files get a .{locale} suffix}';
 
     protected $description = 'Render a transactional email to storage/app/mail-previews for review (dev only)';
 
@@ -67,6 +71,22 @@ class PreviewMail extends Command
             return self::FAILURE;
         }
 
+        $locale = (string) $this->option('locale');
+        $suffix = '';
+
+        if ($locale !== '') {
+            if (! Locales::supports($locale)) {
+                $this->error("Idioma no configurado en config/i18n.php: {$locale}");
+
+                return self::FAILURE;
+            }
+
+            // Same switch a recipient's language gets (translator + dates).
+            app()->setLocale($locale);
+            Carbon::setLocale($locale);
+            $suffix = ".{$locale}";
+        }
+
         $order = $this->order();
 
         if ($order === null) {
@@ -79,10 +99,10 @@ class PreviewMail extends Command
         foreach ($types as $t) {
             [$html, $text] = $this->render($t, $order);
 
-            File::put("{$dir}/{$t}.html", $html);
-            File::put("{$dir}/{$t}.txt", $text);
+            File::put("{$dir}/{$t}{$suffix}.html", $html);
+            File::put("{$dir}/{$t}{$suffix}.txt", $text);
 
-            $this->line("<info>✔</info> {$dir}".DIRECTORY_SEPARATOR."{$t}.html");
+            $this->line("<info>✔</info> {$dir}".DIRECTORY_SEPARATOR."{$t}{$suffix}.html");
         }
 
         return self::SUCCESS;

@@ -41,6 +41,11 @@ function fakeCatalog(string $locale, array $lines): string
 
     app('translator')->addJsonPath($directory);
 
+    // The loader merges lang/{locale}.json on top of any added path, so the
+    // real catalog would win: mark the JSON group as already loaded with
+    // only these lines.
+    app('translator')->setLoaded(['*' => ['*' => [$locale => $lines]]]);
+
     return $directory;
 }
 
