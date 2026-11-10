@@ -7,7 +7,7 @@ use App\Exceptions\Api\ApiException;
 
 /**
  * `reason` is stable and machine-readable (disabled, replaced, not_sold,
- * returned) so web and app can show the right honest message.
+ * returned, lost, stolen) so web and app can show the right honest message.
  */
 class TagNotActivatableException extends ApiException
 {
@@ -22,6 +22,8 @@ class TagNotActivatableException extends ApiException
             'disabled' => 'Este Finisher Legacy está desactivado. Escríbenos y te ayudamos.',
             'replaced' => 'Esta pieza fue reemplazada por una nueva. Usa la pieza que recibiste como reemplazo.',
             'returned' => 'Esta pieza fue devuelta y ya no puede activarse.',
+            'lost' => 'Esta pieza está reportada como extraviada. Si la recuperaste, escríbenos y la reactivamos.',
+            'stolen' => 'Esta pieza está reportada como robada y no puede activarse. Escríbenos si crees que es un error.',
             default => 'Esta pieza todavía no está registrada como vendida. Pide al punto de venta que la registre o escríbenos.',
         };
     }

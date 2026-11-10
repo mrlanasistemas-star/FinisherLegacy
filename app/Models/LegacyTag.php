@@ -31,7 +31,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'athlete_owned_product_id', 'replaces_tag_id', 'received_at', 'sold_at', 'delivered_at', 'activated_at',
     'first_opened_at', 'last_opened_at', 'open_count', 'disabled_reason', 'notes', 'metadata',
 ])]
-#[Hidden(['nfc_uid_hash'])]
+#[Hidden(['nfc_uid_hash', 'activation_code_hash'])]
 class LegacyTag extends Model
 {
     /** @use HasFactory<LegacyTagFactory> */
@@ -143,10 +143,26 @@ class LegacyTag extends Model
         return $this->hasMany(SupportCase::class);
     }
 
+    /** @return HasMany<LegacyTagActivationIntent, $this> */
+    public function activationIntents(): HasMany
+    {
+        return $this->hasMany(LegacyTagActivationIntent::class);
+    }
+
     /** Short, permanent URL written to the NFC chip. */
     public function nfcUrl(): string
     {
         return route('tag.open', $this->public_code);
+    }
+
+    /**
+     * The exact URL a customer's phone writes on a blank chip during
+     * self-activation — always on the official domain
+     * (config('legacy_tags.public_base_url')), never derived from input.
+     */
+    public function activationWriteUrl(): string
+    {
+        return rtrim((string) config('legacy_tags.public_base_url', 'https://finisherlegacy.com'), '/').'/t/'.$this->public_code;
     }
 
     /** Human form printed on the tag/packaging: XXXX-XXXX-XXXX. */

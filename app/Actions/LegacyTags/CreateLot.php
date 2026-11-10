@@ -20,12 +20,24 @@ use InvalidArgumentException;
  * piece — the codes must exist BEFORE fabrication so the factory can encode
  * the NFC chips (export: tags CSV of the lot). The tag has no printed QR.
  * Stock is not counted until the lot is received (ReceiveLot).
+ *
+ * Each tag also gets its secret activation code (proof of purchase printed
+ * on the card inside the packaging; only its HMAC is stored). The codes in
+ * clear are written ONCE to a private CSV for the printer
+ * (storage/app/private/exports/activation-codes/…, path in the activity
+ * log `tags.lot.activation_codes_generated` and in `$lastActivationCodesCsv`).
  */
 class CreateLot
 {
     public const int MAX_QUANTITY = 5000;
 
-    public function __construct(private readonly TagLifecycle $lifecycle) {}
+    /** Private-disk path of the activation-codes CSV written by the last handle() call. */
+    public ?string $lastActivationCodesCsv = null;
+
+    public function __construct(
+        private readonly TagLifecycle $lifecycle,
+        private readonly GenerateActivationCodes $activationCodes,
+    ) {}
 
     /**
      * @param  array{supplier_id?: ?int, inventory_location_id?: ?int, unit_cost_minor?: ?int, currency?: ?string, ordered_at?: mixed, reference?: ?string, notes?: ?string, code?: ?string}  $data
@@ -36,7 +48,9 @@ class CreateLot
             throw new InvalidArgumentException('La cantidad del lote debe estar entre 1 y '.self::MAX_QUANTITY.'.');
         }
 
-        return DB::transaction(function () use ($variant, $quantity, $data, $actor) {
+        $this->lastActivationCodesCsv = null;
+
+        [$lot, $codes] = DB::transaction(function () use ($variant, $quantity, $data, $actor) {
             $lot = InventoryLot::create([
                 'uuid' => (string) Str::uuid(),
                 'code' => $data['code'] ?? $this->nextLotCode(),
@@ -56,8 +70,10 @@ class CreateLot
             // Serial sequence is global and monotonic (internal only).
             $sequence = (int) LegacyTag::query()->lockForUpdate()->max('id');
 
+            $tags = [];
+
             for ($i = 1; $i <= $quantity; $i++) {
-                $tag = new LegacyTag([
+                $tags[] = $tag = new LegacyTag([
                     'uuid' => (string) Str::uuid(),
                     'serial' => TagCode::serial($sequence + $i),
                     'public_code' => TagCode::generate(),
@@ -73,8 +89,17 @@ class CreateLot
                 ->withProperties(['quantity' => $quantity, 'sku' => $variant->sku])
                 ->log('tags.lot.created');
 
-            return $lot;
+            return [$lot, $this->activationCodes->handle($tags)];
         });
+
+        // After commit: the codes in clear leave the process exactly once.
+        $this->lastActivationCodesCsv = $this->activationCodes->writeCsv($codes, 'lote-'.$lot->code);
+
+        activity()->causedBy($actor)->performedOn($lot)
+            ->withProperties(['count' => count($codes), 'path' => $this->lastActivationCodesCsv])
+            ->log('tags.lot.activation_codes_generated');
+
+        return $lot;
     }
 
     private function nextLotCode(): string

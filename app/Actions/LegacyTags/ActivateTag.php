@@ -60,6 +60,7 @@ class ActivateTag
                     LegacyTagStatus::Disabled => throw new TagNotActivatableException('disabled'),
                     LegacyTagStatus::Replaced => throw new TagNotActivatableException('replaced'),
                     LegacyTagStatus::Returned => throw new TagNotActivatableException('returned'),
+                    LegacyTagStatus::Lost, LegacyTagStatus::Stolen => throw new TagNotActivatableException($tag->status->value),
                     LegacyTagStatus::InStock => $this->inferFieldSale($tag, $user),
                     LegacyTagStatus::Sold, LegacyTagStatus::Delivered => null,
                     default => throw new TagNotActivatableException('not_sold'),

@@ -21,7 +21,10 @@ use InvalidArgumentException;
  *              story; the old one becomes `replaced` (keeps its history).
  *   return   — refund/return: ownership revoked, story detached (never
  *              deleted); optionally back to stock at a location.
- *   disable / enable — lost, stolen, revoked.
+ *   disable / enable — revoked / destroyed.
+ *   reportMissing / recover — owner reported it lost or stolen: the unit
+ *              keeps owner and story but cannot be activated, re-bound or
+ *              re-written until staff recovers it (manual-activacion-nfc.md).
  *   revokeOwnership — wrong claim resolved by support: back to `delivered`.
  */
 class ManageTag
@@ -200,6 +203,54 @@ class ManageTag
             $this->lifecycle->transition($tag, LegacyTagEventType::Enabled, $previous, ['disabled_reason' => null], $actor);
 
             activity()->causedBy($actor)->performedOn($tag)->withProperties(['serial' => $tag->serial])->log('tags.enabled');
+
+            return $tag->fresh();
+        });
+    }
+
+    public function reportMissing(LegacyTag $tag, User $actor, bool $stolen, string $reason): LegacyTag
+    {
+        return DB::transaction(function () use ($tag, $actor, $stolen, $reason) {
+            /** @var LegacyTag $tag */
+            $tag = LegacyTag::query()->lockForUpdate()->findOrFail($tag->id);
+            $to = $stolen ? LegacyTagStatus::Stolen : LegacyTagStatus::Lost;
+
+            if ($tag->status === $to) {
+                return $tag;
+            }
+
+            if (! $tag->status->isSold()) {
+                throw new InvalidArgumentException('Solo una pieza en manos de un cliente puede reportarse extraviada o robada.');
+            }
+
+            $this->lifecycle->transition($tag, LegacyTagEventType::ReportedMissing, $to, [
+                'metadata' => [...($tag->metadata ?? []), 'status_before_missing' => $tag->status->value],
+            ], $actor, $reason, ['stolen' => $stolen]);
+
+            activity()->causedBy($actor)->performedOn($tag)
+                ->withProperties(['serial' => $tag->serial, 'reason' => $reason, 'stolen' => $stolen])
+                ->log('tags.reported_missing');
+
+            return $tag->fresh();
+        });
+    }
+
+    public function recover(LegacyTag $tag, User $actor, ?string $notes = null): LegacyTag
+    {
+        return DB::transaction(function () use ($tag, $actor, $notes) {
+            /** @var LegacyTag $tag */
+            $tag = LegacyTag::query()->lockForUpdate()->findOrFail($tag->id);
+
+            if (! $tag->status->isMissing()) {
+                return $tag;
+            }
+
+            $previous = LegacyTagStatus::tryFrom((string) ($tag->metadata['status_before_missing'] ?? ''))
+                ?? ($tag->owner_athlete_id !== null ? LegacyTagStatus::Activated : LegacyTagStatus::Delivered);
+
+            $this->lifecycle->transition($tag, LegacyTagEventType::Recovered, $previous, [], $actor, $notes);
+
+            activity()->causedBy($actor)->performedOn($tag)->withProperties(['serial' => $tag->serial])->log('tags.recovered');
 
             return $tag->fresh();
         });

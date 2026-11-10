@@ -7,6 +7,7 @@ namespace App\Enums;
  *
  *   manufactured → in_stock ⇄ reserved → sold → delivered → activated
  *                                   ↘ returned / replaced / disabled (any time, staff only)
+ *                                   ↘ lost / stolen (owner report, staff-set, reversible)
  *
  * The product/SKU is ProductVariant; this is the individual unit with its own
  * public code and NFC chip. Only staff Actions move a unit between states —
@@ -38,8 +39,14 @@ enum LegacyTagStatus: string
     /** Came back (refund/return); may be re-stocked by staff. */
     case Returned = 'returned';
 
-    /** Revoked / lost / destroyed — opening it shows an honest page. */
+    /** Revoked / destroyed — opening it shows an honest page. */
     case Disabled = 'disabled';
+
+    /** Reported lost by its owner (staff-set). Cannot be activated or re-bound until recovered. */
+    case Lost = 'lost';
+
+    /** Reported stolen by its owner (staff-set). Same rules as lost. */
+    case Stolen = 'stolen';
 
     public function label(): string
     {
@@ -53,6 +60,8 @@ enum LegacyTagStatus: string
             self::Replaced => 'Reemplazado',
             self::Returned => 'Devuelto',
             self::Disabled => 'Desactivado',
+            self::Lost => 'Extraviado',
+            self::Stolen => 'Robado',
         };
     }
 
@@ -72,6 +81,12 @@ enum LegacyTagStatus: string
     public function isSold(): bool
     {
         return in_array($this, [self::Sold, self::Delivered, self::Activated], true);
+    }
+
+    /** Reported lost or stolen: blocked until staff recovers it. */
+    public function isMissing(): bool
+    {
+        return in_array($this, [self::Lost, self::Stolen], true);
     }
 
     public function isTerminal(): bool

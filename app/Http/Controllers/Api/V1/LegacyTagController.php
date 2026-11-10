@@ -55,6 +55,10 @@ class LegacyTagController extends Controller
             'message' => $state->message(),
             'can_activate' => $state->canActivate(),
             'owned_by_me' => $state->state === TagActivationState::MINE,
+            // NFC self-activation hint for the app: false when the viewer bought
+            // it online (tag_code alone is enough for activation/start).
+            'activation_requires_code' => $state->canActivate()
+                && ! ($viewer !== null && $tag->order_id !== null && $tag->order()->value('user_id') === $viewer->id),
             'tag' => ($summary = $presenter->tag($tag)) === null ? null : [
                 'collection' => $summary['collection'],
                 'design' => [

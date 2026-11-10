@@ -43,6 +43,8 @@ final readonly class TagActivationState
             LegacyTagStatus::Disabled => new self(self::UNAVAILABLE, 'disabled'),
             LegacyTagStatus::Replaced => new self(self::UNAVAILABLE, 'replaced'),
             LegacyTagStatus::Returned => new self(self::UNAVAILABLE, 'returned'),
+            LegacyTagStatus::Lost => new self(self::UNAVAILABLE, 'lost'),
+            LegacyTagStatus::Stolen => new self(self::UNAVAILABLE, 'stolen'),
             default => new self(self::UNAVAILABLE, 'not_sold'),
         };
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\LegacyTagActivationController;
 use App\Http\Controllers\Api\V1\LegacyTagController;
 use App\Support\LegacyTags\TagCode;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,17 @@ use Illuminate\Support\Facades\Route;
 | story read.
 */
 Route::prefix('v1')->name('api.v1.')->group(function () {
+    // NFC self-activation of a blank chip (docs/api/v1.md §Activación NFC). Before
+    // tags/{code} so "activation" is never read as a tag code.
+    Route::middleware(['auth:sanctum', 'user.token', 'throttle:api-claim'])
+        ->prefix('tags/activation')
+        ->name('tags.activation.')
+        ->group(function () {
+            Route::post('start', [LegacyTagActivationController::class, 'start'])->name('start');
+            Route::post('{intent}/confirm', [LegacyTagActivationController::class, 'confirm'])->whereUuid('intent')->name('confirm');
+            Route::post('{intent}/fail', [LegacyTagActivationController::class, 'fail'])->whereUuid('intent')->name('fail');
+        });
+
     Route::get('tags/{code}', [LegacyTagController::class, 'show'])
         ->where('code', TagCode::PATTERN)
         ->middleware('throttle:tag-open')

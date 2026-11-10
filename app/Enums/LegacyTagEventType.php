@@ -23,6 +23,10 @@ enum LegacyTagEventType: string
     case Disabled = 'disabled';
     case Enabled = 'enabled';
     case Note = 'note';
+    case NfcBound = 'nfc_bound';
+    case ActivationFailed = 'activation_failed';
+    case ReportedMissing = 'reported_missing';
+    case Recovered = 'recovered';
 
     public function label(): string
     {
@@ -42,6 +46,10 @@ enum LegacyTagEventType: string
             self::Disabled => 'Desactivado',
             self::Enabled => 'Reactivado',
             self::Note => 'Nota',
+            self::NfcBound => 'Chip NFC vinculado',
+            self::ActivationFailed => 'Intento de activación fallido',
+            self::ReportedMissing => 'Reportado extraviado o robado',
+            self::Recovered => 'Recuperado',
         };
     }
 }
