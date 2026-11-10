@@ -10,6 +10,7 @@ import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/datetime';
 import { show as orderShow } from '@/routes/store/orders';
 import { index as storeIndex } from '@/routes/store/products';
@@ -35,6 +36,8 @@ defineProps<{
     };
 }>();
 
+const { t } = useI18n();
+
 function tone(order: OrderRow): string {
     if (order.status === 'cancelled' || order.payment_status === 'refunded') {
         return 'bg-muted text-muted-foreground';
@@ -47,7 +50,8 @@ function tone(order: OrderRow): string {
         return 'bg-amber-100 text-amber-900';
     }
 
-    if (order.progress === 'Entregado') {
+    // `progress` arrives from the server already in the active language.
+    if (order.progress === 'Entregado' || order.progress === t('Entregado')) {
         return 'bg-emerald-100 text-emerald-900';
     }
 
@@ -56,14 +60,16 @@ function tone(order: OrderRow): string {
 </script>
 
 <template>
-    <Head title="Mis pedidos" />
+    <Head :title="$t('Mis pedidos')" />
 
     <div class="fl-container py-6 md:py-10">
         <header>
-            <p class="fl-eyebrow">Mi espacio</p>
-            <h1 class="fl-display mt-2 text-4xl sm:text-5xl">Mis pedidos</h1>
+            <p class="fl-eyebrow">{{ $t('Mi espacio') }}</p>
+            <h1 class="fl-display mt-2 text-4xl sm:text-5xl">
+                {{ $t('Mis pedidos') }}
+            </h1>
             <p class="mt-3 max-w-xl text-muted-foreground">
-                Todo lo que has pedido y en qué va cada pedido.
+                {{ $t('Todo lo que has pedido y en qué va cada pedido.') }}
             </p>
         </header>
 
@@ -102,24 +108,26 @@ function tone(order: OrderRow): string {
                                 :class="tone(order)"
                                 >{{ order.progress }}</span
                             >
-                            <span class="text-xs text-muted-foreground"
-                                >Pedido #{{ order.order_number }}</span
-                            >
+                            <span class="text-xs text-muted-foreground">{{
+                                $t('Pedido #{number}', {
+                                    number: order.order_number,
+                                })
+                            }}</span>
                         </div>
                         <p class="mt-2 truncate font-medium">
                             {{
                                 order.preview
                                     .map((item) => item.name)
-                                    .join(', ') || 'Pedido'
+                                    .join(', ') || $t('Pedido')
                             }}
                         </p>
                         <p class="mt-0.5 text-sm text-muted-foreground">
                             {{ shortDate(order.created_at) }} ·
-                            {{ order.items_count }}
                             {{
-                                order.items_count === 1
-                                    ? 'artículo'
-                                    : 'artículos'
+                                $tc(
+                                    '{count} artículo|{count} artículos',
+                                    order.items_count,
+                                )
                             }}
                         </p>
                     </div>
@@ -150,13 +158,18 @@ function tone(order: OrderRow): string {
             class="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-foreground/15 bg-card px-6 py-16 text-center"
         >
             <ShoppingBag class="size-9 text-fl-gold-ink" />
-            <p class="font-serif text-2xl">Aún no tienes pedidos.</p>
+            <p class="font-serif text-2xl">
+                {{ $t('Aún no tienes pedidos.') }}
+            </p>
             <p class="max-w-md text-sm text-muted-foreground">
-                Tu Legacy Plate, tu equipo y lo que uses para correr también
-                forman parte de tu historia.
+                {{
+                    $t(
+                        'Tu Legacy Plate, tu equipo y lo que uses para correr también forman parte de tu historia.',
+                    )
+                }}
             </p>
             <Button as-child class="mt-2 rounded-full">
-                <Link :href="storeIndex()">Ir a la tienda</Link>
+                <Link :href="storeIndex()">{{ $t('Ir a la tienda') }}</Link>
             </Button>
         </div>
     </div>

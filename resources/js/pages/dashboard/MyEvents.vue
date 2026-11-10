@@ -12,6 +12,7 @@ import Reveal from '@/components/motion/Reveal.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 import { index as eventsIndex } from '@/routes/events';
 import type { LegadoEntry, LegadoTotals, UpcomingEntry } from '@/types/legado';
 
@@ -25,24 +26,37 @@ defineProps<{
     };
     totals: LegadoTotals;
 }>();
+
+const { regional } = useI18n();
 </script>
 
 <template>
-    <Head title="Mis eventos" />
+    <Head :title="$t('Mis eventos')" />
 
     <div class="fl-container py-6 md:py-10">
         <header>
-            <p class="fl-eyebrow">Mi espacio</p>
-            <h1 class="fl-display mt-2 text-4xl sm:text-5xl">Mis eventos</h1>
+            <p class="fl-eyebrow">{{ $t('Mi espacio') }}</p>
+            <h1 class="fl-display mt-2 text-4xl sm:text-5xl">
+                {{ $t('Mis eventos') }}
+            </h1>
             <p class="mt-3 max-w-xl text-muted-foreground">
-                Lo que viene y todo lo que ya corriste.
-                <template v-if="totals.races">
-                    {{ totals.races }}
-                    {{ totals.races === 1 ? 'carrera' : 'carreras' }}
-                    <template v-if="totals.km"
-                        >y {{ totals.km.toLocaleString('es-MX') }} km</template
-                    >
-                    en tu historia.
+                {{ $t('Lo que viene y todo lo que ya corriste.') }}
+                <template v-if="totals.races && totals.km">
+                    {{
+                        $tc(
+                            '{count} carrera y {km} km en tu historia.|{count} carreras y {km} km en tu historia.',
+                            totals.races,
+                            { km: totals.km.toLocaleString(regional) },
+                        )
+                    }}
+                </template>
+                <template v-else-if="totals.races">
+                    {{
+                        $tc(
+                            '{count} carrera en tu historia.|{count} carreras en tu historia.',
+                            totals.races,
+                        )
+                    }}
                 </template>
             </p>
         </header>
@@ -53,7 +67,7 @@ defineProps<{
                 id="upcoming-title"
                 class="font-serif text-2xl font-medium sm:text-3xl"
             >
-                Próximos
+                {{ $t('Próximos') }}
             </h2>
             <div
                 v-if="upcoming.length"
@@ -70,11 +84,15 @@ defineProps<{
                 class="mt-5 flex flex-col gap-4 rounded-2xl border border-dashed border-foreground/15 bg-card p-6 sm:flex-row sm:items-center sm:justify-between"
             >
                 <p class="text-sm text-muted-foreground">
-                    No tienes carreras próximas. Encuentra tu siguiente reto.
+                    {{
+                        $t(
+                            'No tienes carreras próximas. Encuentra tu siguiente reto.',
+                        )
+                    }}
                 </p>
                 <Button as-child class="w-fit rounded-full">
                     <Link :href="eventsIndex()">
-                        Explorar eventos
+                        {{ $t('Explorar eventos') }}
                         <ArrowRight class="size-4" />
                     </Link>
                 </Button>
@@ -88,11 +106,11 @@ defineProps<{
                     id="past-title"
                     class="font-serif text-2xl font-medium sm:text-3xl"
                 >
-                    Carreras corridas
+                    {{ $t('Carreras corridas') }}
                 </h2>
-                <span v-if="past.total" class="text-sm text-muted-foreground"
-                    >{{ past.total }} en total</span
-                >
+                <span v-if="past.total" class="text-sm text-muted-foreground">{{
+                    $t('{count} en total', { count: past.total })
+                }}</span>
             </div>
 
             <ol v-if="past.data.length" class="mt-5 grid gap-4 xl:grid-cols-2">
@@ -108,11 +126,14 @@ defineProps<{
             >
                 <Flag class="size-8 text-fl-gold-ink" />
                 <p class="font-serif text-2xl">
-                    Tu primera meta te está esperando.
+                    {{ $t('Tu primera meta te está esperando.') }}
                 </p>
                 <p class="max-w-md text-sm text-muted-foreground">
-                    Cuando termines un evento, tu resultado, fotos y medalla
-                    quedarán guardados aquí.
+                    {{
+                        $t(
+                            'Cuando termines un evento, tu resultado, fotos y medalla quedarán guardados aquí.',
+                        )
+                    }}
                 </p>
             </div>
 

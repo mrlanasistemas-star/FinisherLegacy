@@ -52,7 +52,7 @@ withDefaults(
             <img
                 v-if="coverUrl"
                 :src="coverUrl"
-                :alt="`Portada de ${name}`"
+                :alt="$t('Portada de {name}', { name })"
                 class="size-full object-cover"
                 fetchpriority="high"
             />

@@ -3,6 +3,7 @@
  * timeline (App\Queries\Athletes\GetAthleteLegado), upcoming races and the
  * customer's order journey (App\Support\Commerce\OrderProgress).
  */
+import { t } from '@/i18n';
 
 export type LegadoEntry = {
     id: number;
@@ -69,18 +70,22 @@ export type OrderProgress = {
 };
 
 /** Human label for a Legacy Plate's preparation state (never internal codes). */
-export const legacyPlateStatusLabel: Record<string, string> = {
-    pending_payment: 'Pendiente de pago',
-    paid: 'Apartada',
-    linked: 'En preparación',
-    draft: 'En preparación',
-    pending_confirmation: 'En preparación',
-    queued: 'En preparación',
-    processing: 'En preparación',
-    reprint: 'En preparación',
-    produced: 'Personalizada',
-    quality_check: 'Personalizada',
-    ready: 'Lista para entrega',
-    delivered: 'Entregada',
-    cancelled: 'Cancelada',
-};
+export function legacyPlateStatusLabel(status: string): string | undefined {
+    const labels: Record<string, string> = {
+        pending_payment: t('Pendiente de pago'),
+        paid: t('Apartada'),
+        linked: t('En preparación'),
+        draft: t('En preparación'),
+        pending_confirmation: t('En preparación'),
+        queued: t('En preparación'),
+        processing: t('En preparación'),
+        reprint: t('En preparación'),
+        produced: t('Personalizada'),
+        quality_check: t('Personalizada'),
+        ready: t('Lista para entrega'),
+        delivered: t('Entregada'),
+        cancelled: t('Cancelada'),
+    };
+
+    return labels[status];
+}

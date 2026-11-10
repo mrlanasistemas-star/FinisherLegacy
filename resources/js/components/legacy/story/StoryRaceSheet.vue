@@ -9,6 +9,7 @@
  */
 import { BadgeCheck } from '@lucide/vue';
 import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 import type { StoryRaceExtended } from './types';
 
 const props = defineProps<{
@@ -16,6 +17,8 @@ const props = defineProps<{
     /** Already formatted date (formatStoryDate). */
     date: string | null;
 }>();
+
+const { t, regional } = useI18n();
 
 type Stat = { key: string; label: string; value: string; note?: string };
 
@@ -31,7 +34,9 @@ function text(value: string | number | null | undefined): string | null {
 
 /** "12" → "12.º"; anything already worded ("3 de 240") stays as typed. */
 function place(value: string | null): string | null {
-    return value !== null && /^\d+$/.test(value) ? `${value}.º` : value;
+    return value !== null && /^\d+$/.test(value)
+        ? t('{place}.º', { place: value })
+        : value;
 }
 
 const name = computed(() => text(props.race.athlete_name));
@@ -50,49 +55,49 @@ const stats = computed<Stat[]>(() => {
     const r = props.race;
     const elevation =
         typeof r.elevation_gain_m === 'number' && r.elevation_gain_m > 0
-            ? `+${r.elevation_gain_m.toLocaleString('es-MX')} m`
+            ? `+${r.elevation_gain_m.toLocaleString(regional.value)} m`
             : null;
     const categoryPlace = place(text(r.category_position));
     const category = text(r.category);
 
     const rows: Array<Omit<Stat, 'value'> & { value: string | null }> = [
-        { key: 'result_time', label: 'Tiempo', value: text(r.time) },
+        { key: 'result_time', label: t('Tiempo'), value: text(r.time) },
         {
             key: 'pace',
-            label: 'Ritmo',
+            label: t('Ritmo'),
             value: text(r.pace) ?? text(r.suggested_pace),
         },
         {
             key: 'result_position',
-            label: 'Lugar general',
+            label: t('Lugar general'),
             value: place(text(r.position)),
         },
         category !== null
             ? {
                   key: 'category',
-                  label: 'Categoría',
+                  label: t('Categoría'),
                   value: category,
                   note:
                       categoryPlace !== null
-                          ? `Lugar ${categoryPlace}`
+                          ? t('Lugar {place}', { place: categoryPlace })
                           : undefined,
               }
             : {
                   key: 'category_position',
-                  label: 'Lugar en categoría',
+                  label: t('Lugar en categoría'),
                   value: categoryPlace,
               },
         {
             key: 'gender_position',
-            label: 'Lugar por rama',
+            label: t('Lugar por rama'),
             value: place(text(r.gender_position)),
         },
-        { key: 'race', label: 'Carrera', value: text(r.race) },
-        { key: 'distance', label: 'Distancia', value: text(r.distance) },
-        { key: 'elevation_gain_m', label: 'Desnivel', value: elevation },
-        { key: 'sport', label: 'Deporte', value: text(r.sport) },
-        { key: 'race_date', label: 'Fecha', value: props.date },
-        { key: 'location', label: 'Lugar', value: text(r.location) },
+        { key: 'race', label: t('Carrera'), value: text(r.race) },
+        { key: 'distance', label: t('Distancia'), value: text(r.distance) },
+        { key: 'elevation_gain_m', label: t('Desnivel'), value: elevation },
+        { key: 'sport', label: t('Deporte'), value: text(r.sport) },
+        { key: 'race_date', label: t('Fecha'), value: props.date },
+        { key: 'location', label: t('Lugar'), value: text(r.location) },
     ];
 
     return rows.filter((row): row is Stat => row.value !== null);
@@ -136,7 +141,7 @@ const visible = computed(
     <section
         v-if="visible"
         class="border-t border-foreground/10 py-10"
-        aria-label="Datos de la carrera"
+        :aria-label="$t('Datos de la carrera')"
     >
         <div
             v-if="name || bib || status"
@@ -152,7 +157,8 @@ const visible = computed(
                 v-if="bib"
                 class="legacy-numeric inline-flex items-center rounded-lg border border-fl-gold/40 bg-white px-3 py-1 text-sm font-semibold tracking-wide text-foreground shadow-fl-micro"
             >
-                <span class="sr-only">Número de corredor </span>{{ bib }}
+                <span class="sr-only">{{ $t('Número de corredor') }} </span
+                >{{ bib }}
             </span>
             <span
                 v-if="status"
@@ -191,7 +197,7 @@ const visible = computed(
             class="mt-7 inline-flex items-center gap-1.5 text-xs text-muted-foreground"
         >
             <BadgeCheck class="size-4 text-fl-gold-ink" aria-hidden="true" />
-            Resultados oficiales del evento
+            {{ $t('Resultados oficiales del evento') }}
         </p>
     </section>
 </template>

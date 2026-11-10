@@ -13,6 +13,7 @@ import { computed, ref } from 'vue';
 import PersonCard from '@/components/community/PersonCard.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 import { unblock } from '@/routes/athletes';
 import {
     index as communityIndex,
@@ -40,14 +41,18 @@ const props = defineProps<{
     };
 }>();
 
-const tabs: { key: Tab; label: string; count?: keyof typeof props.counts }[] = [
-    { key: 'sugeridos', label: 'Sugeridos para ti' },
-    { key: 'amigos-de-amigos', label: 'Amigos de amigos' },
-    { key: 'amigos', label: 'Amigos', count: 'amigos' },
-    { key: 'seguidores', label: 'Seguidores', count: 'seguidores' },
-    { key: 'siguiendo', label: 'Siguiendo', count: 'siguiendo' },
-    { key: 'bloqueados', label: 'Bloqueados', count: 'bloqueados' },
-];
+const { t } = useI18n();
+
+const tabs = computed<
+    { key: Tab; label: string; count?: keyof typeof props.counts }[]
+>(() => [
+    { key: 'sugeridos', label: t('Sugeridos para ti') },
+    { key: 'amigos-de-amigos', label: t('Amigos de amigos') },
+    { key: 'amigos', label: t('Amigos'), count: 'amigos' },
+    { key: 'seguidores', label: t('Seguidores'), count: 'seguidores' },
+    { key: 'siguiendo', label: t('Siguiendo'), count: 'siguiendo' },
+    { key: 'bloqueados', label: t('Bloqueados'), count: 'bloqueados' },
+]);
 
 const isGrid = computed(
     () => props.tab === 'sugeridos' || props.tab === 'amigos-de-amigos',
@@ -112,41 +117,53 @@ function doUnblock(username: string) {
 const empty = computed(() => {
     if (props.q) {
         return {
-            title: `Nadie coincide con “${props.q}”.`,
-            text: 'Prueba con otro nombre o @usuario.',
+            title: t('Nadie coincide con “{query}”.', { query: props.q }),
+            text: t('Prueba con otro nombre o @usuario.'),
         };
     }
 
     switch (props.tab) {
         case 'amigos-de-amigos':
             return {
-                title: 'Aún no hay amigos de amigos.',
-                text: 'Sigue a más atletas y aquí verás a quién siguen ellos.',
+                title: t('Aún no hay amigos de amigos.'),
+                text: t(
+                    'Sigue a más atletas y aquí verás a quién siguen ellos.',
+                ),
             };
         case 'amigos':
             return {
-                title: 'Todavía no tienes amigos.',
-                text: 'Cuando tú y otro atleta se sigan mutuamente, aparecerá aquí.',
+                title: t('Todavía no tienes amigos.'),
+                text: t(
+                    'Cuando tú y otro atleta se sigan mutuamente, aparecerá aquí.',
+                ),
             };
         case 'seguidores':
             return {
-                title: 'Aún no tienes seguidores.',
-                text: 'Comparte tus carreras en la comunidad para que te encuentren.',
+                title: t('Aún no tienes seguidores.'),
+                text: t(
+                    'Comparte tus carreras en la comunidad para que te encuentren.',
+                ),
             };
         case 'siguiendo':
             return {
-                title: 'Todavía no sigues a nadie.',
-                text: 'Empieza por las sugerencias: atletas con perfil público.',
+                title: t('Todavía no sigues a nadie.'),
+                text: t(
+                    'Empieza por las sugerencias: atletas con perfil público.',
+                ),
             };
         case 'bloqueados':
             return {
-                title: 'No has bloqueado a nadie.',
-                text: 'Las personas que bloquees aparecerán aquí para que puedas desbloquearlas.',
+                title: t('No has bloqueado a nadie.'),
+                text: t(
+                    'Las personas que bloquees aparecerán aquí para que puedas desbloquearlas.',
+                ),
             };
         default:
             return {
-                title: 'Sin sugerencias por ahora.',
-                text: 'Cuando más atletas hagan público su perfil aparecerán aquí.',
+                title: t('Sin sugerencias por ahora.'),
+                text: t(
+                    'Cuando más atletas hagan público su perfil aparecerán aquí.',
+                ),
             };
     }
 });
@@ -154,8 +171,8 @@ const empty = computed(() => {
 
 <template>
     <SeoHead
-        title="Personas"
-        description="Encuentra atletas en Finisher Legacy."
+        :title="$t('Personas')"
+        :description="$t('Encuentra atletas en Finisher Legacy.')"
         noindex
     />
 
@@ -165,24 +182,27 @@ const empty = computed(() => {
             class="inline-flex min-h-10 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-4" />
-            Comunidad
+            {{ $t('Comunidad') }}
         </Link>
 
         <header class="mt-1">
             <h1 class="font-serif text-3xl tracking-tight sm:text-4xl">
-                Personas
+                {{ $t('Personas') }}
             </h1>
             <p class="mt-1 text-sm text-muted-foreground">
-                Encuentra a tus compañeros de carrera y a quienes siguen tus
-                amigos.
+                {{
+                    $t(
+                        'Encuentra a tus compañeros de carrera y a quienes siguen tus amigos.',
+                    )
+                }}
             </p>
         </header>
 
         <!-- Search -->
         <div class="relative mt-5" role="search">
-            <label for="people-search" class="sr-only"
-                >Buscar por nombre o @usuario</label
-            >
+            <label for="people-search" class="sr-only">{{
+                $t('Buscar por nombre o @usuario')
+            }}</label>
             <Search
                 class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
@@ -192,14 +212,14 @@ const empty = computed(() => {
                 v-model="term"
                 type="search"
                 autocomplete="off"
-                placeholder="Buscar por nombre o @usuario"
+                :placeholder="$t('Buscar por nombre o @usuario')"
                 class="h-11 w-full rounded-full border border-input bg-card pr-10 pl-11 text-sm shadow-fl-micro placeholder:text-muted-foreground focus:border-foreground/30 focus:ring-2 focus:ring-ring/30 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
             />
             <button
                 v-if="term"
                 type="button"
                 class="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Limpiar búsqueda"
+                :aria-label="$t('Limpiar búsqueda')"
                 @click="term = ''"
             >
                 <X class="size-4" />
@@ -209,7 +229,7 @@ const empty = computed(() => {
         <!-- Tabs -->
         <nav
             class="sticky top-16 z-20 -mx-4 mt-4 border-b border-border bg-background/90 px-4 backdrop-blur sm:mx-0 sm:px-0"
-            aria-label="Listas de personas"
+            :aria-label="$t('Listas de personas')"
         >
             <div
                 class="flex [scrollbar-width:none] gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden"
@@ -267,7 +287,7 @@ const empty = computed(() => {
                             class="rounded-full"
                             @click="doUnblock(person.username)"
                         >
-                            Desbloquear
+                            {{ $t('Desbloquear') }}
                         </Button>
                     </template>
                 </PersonCard>
@@ -291,7 +311,9 @@ const empty = computed(() => {
                     as-child
                     class="mt-5 rounded-full"
                 >
-                    <Link :href="peopleRoute()">Ver sugerencias</Link>
+                    <Link :href="peopleRoute()">{{
+                        $t('Ver sugerencias')
+                    }}</Link>
                 </Button>
             </div>
 
@@ -331,7 +353,9 @@ const empty = computed(() => {
                             />
                         </span>
                     </div>
-                    <span class="sr-only">Cargando más personas…</span>
+                    <span class="sr-only">{{
+                        $t('Cargando más personas…')
+                    }}</span>
                 </div>
             </template>
         </InfiniteScroll>

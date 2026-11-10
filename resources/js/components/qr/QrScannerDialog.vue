@@ -18,6 +18,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useI18n } from '@/i18n';
+
+const { t } = useI18n();
 
 const open = defineModel<boolean>('open', { default: false });
 
@@ -59,8 +62,9 @@ function handleDecode(result: { data: string }) {
     const code = extractLegacyCode(result.data);
 
     if (!code) {
-        error.value =
-            'Este código QR no pertenece a una placa Finisher Legacy.';
+        error.value = t(
+            'Este código QR no pertenece a una placa Finisher Legacy.',
+        );
 
         return;
     }
@@ -87,8 +91,9 @@ async function start() {
     try {
         await scanner.start();
     } catch {
-        error.value =
-            'No pudimos acceder a tu cámara. Revisa los permisos del navegador e inténtalo de nuevo.';
+        error.value = t(
+            'No pudimos acceder a tu cámara. Revisa los permisos del navegador e inténtalo de nuevo.',
+        );
     }
 }
 
@@ -108,16 +113,17 @@ onBeforeUnmount(stop);
         <DialogContent class="sm:max-w-sm">
             <DialogHeader>
                 <DialogTitle>{{
-                    title ?? 'Escanea tu Legacy Code'
+                    title ?? $t('Escanea tu Legacy Code')
                 }}</DialogTitle>
                 <DialogDescription v-if="description">{{
                     description
                 }}</DialogDescription>
                 <DialogDescription v-else>
-                    Apunta la cámara a un QR de Legacy Code (placas anteriores o
-                    tarjetas impresas). Cargaremos el evento, el tiempo y el
-                    ritmo por ti. Con la Legacy Plate actual basta acercar el
-                    teléfono al frente (NFC).
+                    {{
+                        $t(
+                            'Apunta la cámara a un QR de Legacy Code (placas anteriores o tarjetas impresas). Cargaremos el evento, el tiempo y el ritmo por ti. Con la Legacy Plate actual basta acercar el teléfono al frente (NFC).',
+                        )
+                    }}
                 </DialogDescription>
             </DialogHeader>
 

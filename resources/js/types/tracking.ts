@@ -1,5 +1,7 @@
 /** Live tracking shapes (mirror App\Queries\Tracking\*). */
 
+import { activeRegional } from '@/i18n';
+
 export type TrackingMapConfig = { tile_url: string; attribution: string };
 
 export type LiveSupportMessage = {
@@ -73,7 +75,7 @@ export type ParticipantTracking = {
 export function formatKm(meters: number): string {
     const km = meters / 1000;
 
-    return `${km.toLocaleString('es-MX', {
+    return `${km.toLocaleString(activeRegional(), {
         minimumFractionDigits: km < 10 ? 2 : 1,
         maximumFractionDigits: km < 10 ? 2 : 1,
     })} km`;

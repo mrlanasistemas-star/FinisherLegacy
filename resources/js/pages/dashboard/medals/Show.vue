@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Award, Pencil, QrCode, Trash2 } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 import { confirmDestructive } from '@/lib/swal';
 import { destroy, edit } from '@/routes/dashboard/medals';
 import { show as legacyCodeShow } from '@/routes/legacy-code';
@@ -12,11 +13,15 @@ const { medal } = defineProps<{
     medal: MedalDetail;
 }>();
 
+const { t } = useI18n();
+
 async function handleDelete() {
     const result = await confirmDestructive({
-        title: '¿Archivar esta medalla?',
-        text: 'Se ocultará de tu colección. Esta acción no borra permanentemente tu historial ni afecta placas ya vinculadas.',
-        confirmButtonText: 'Sí, archivar',
+        title: t('¿Archivar esta medalla?'),
+        text: t(
+            'Se ocultará de tu colección. Esta acción no borra permanentemente tu historial ni afecta placas ya vinculadas.',
+        ),
+        confirmButtonText: t('Sí, archivar'),
     });
 
     if (result.isConfirmed) {
@@ -32,7 +37,9 @@ async function handleDelete() {
         <div class="mb-6 flex items-start justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="font-serif text-3xl tracking-tight text-foreground md:text-4xl">
+                    <h1
+                        class="font-serif text-3xl tracking-tight text-foreground md:text-4xl"
+                    >
                         {{ medal.title }}
                     </h1>
                     <Badge
@@ -40,14 +47,14 @@ async function handleDelete() {
                         variant="outline"
                         class="border-fl-gold/30 text-fl-gold-ink"
                     >
-                        Resultado oficial
+                        {{ $t('Resultado oficial') }}
                     </Badge>
                     <Badge
                         v-if="medal.visibility === 'private'"
                         variant="outline"
                         class="border-border text-muted-foreground"
                     >
-                        Privada
+                        {{ $t('Privada') }}
                     </Badge>
                 </div>
                 <p
@@ -68,7 +75,7 @@ async function handleDelete() {
                     variant="outline"
                     size="icon"
                     class="border-border text-foreground hover:bg-foreground/5 hover:text-foreground"
-                    aria-label="Editar medalla"
+                    :aria-label="$t('Editar medalla')"
                 >
                     <Link :href="edit(medal.id)">
                         <Pencil class="size-4" />
@@ -78,7 +85,7 @@ async function handleDelete() {
                     variant="outline"
                     size="icon"
                     class="border-border text-red-700 hover:bg-red-500/10 hover:text-red-700"
-                    aria-label="Archivar medalla"
+                    :aria-label="$t('Archivar medalla')"
                     @click="handleDelete"
                 >
                     <Trash2 class="size-4" />
@@ -93,13 +100,13 @@ async function handleDelete() {
                 <div
                     class="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground/80 uppercase"
                 >
-                    Frente
+                    {{ $t('Frente') }}
                 </div>
                 <div class="aspect-square bg-background">
                     <img
                         v-if="medal.front_image_url"
                         :src="medal.front_image_url"
-                        :alt="`${medal.title} — frente`"
+                        :alt="$t('{title} — frente', { title: medal.title })"
                         class="size-full object-cover"
                     />
                     <div
@@ -118,12 +125,12 @@ async function handleDelete() {
                 <div
                     class="px-4 py-2 text-xs text-muted-foreground/80 uppercase"
                 >
-                    Reverso
+                    {{ $t('Reverso') }}
                 </div>
                 <div class="aspect-square bg-background">
                     <img
                         :src="medal.back_image_url"
-                        :alt="`${medal.title} — reverso`"
+                        :alt="$t('{title} — reverso', { title: medal.title })"
                         class="size-full object-cover"
                     />
                 </div>
@@ -135,7 +142,9 @@ async function handleDelete() {
                 v-if="medal.event_date"
                 class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xs text-muted-foreground/80 uppercase">Fecha</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    {{ $t('Fecha') }}
+                </p>
                 <p class="mt-1 font-medium text-foreground">
                     {{ medal.event_date }}
                 </p>
@@ -144,7 +153,9 @@ async function handleDelete() {
                 v-if="medal.official_time"
                 class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xs text-muted-foreground/80 uppercase">Tiempo</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    {{ $t('Tiempo') }}
+                </p>
                 <p class="mt-1 font-mono font-medium text-fl-gold-ink">
                     {{ medal.official_time }}
                 </p>
@@ -153,7 +164,9 @@ async function handleDelete() {
                 v-if="medal.pace"
                 class="rounded-xl border border-border bg-card/40 p-4"
             >
-                <p class="text-xs text-muted-foreground/80 uppercase">Ritmo</p>
+                <p class="text-xs text-muted-foreground/80 uppercase">
+                    {{ $t('Ritmo') }}
+                </p>
                 <p class="mt-1 font-medium text-foreground">{{ medal.pace }}</p>
             </div>
         </div>
@@ -162,7 +175,7 @@ async function handleDelete() {
             <h2
                 class="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase"
             >
-                Galería
+                {{ $t('Galería') }}
             </h2>
             <div class="grid grid-cols-3 gap-3 sm:grid-cols-5">
                 <div
@@ -173,7 +186,7 @@ async function handleDelete() {
                     <img
                         v-if="image.url"
                         :src="image.url"
-                        alt="Foto de la galería"
+                        :alt="$t('Foto de la galería')"
                         class="size-full object-cover"
                     />
                 </div>
@@ -184,7 +197,7 @@ async function handleDelete() {
             <h2
                 class="text-sm font-semibold tracking-wide text-muted-foreground uppercase"
             >
-                Mi historia
+                {{ $t('Mi historia') }}
             </h2>
             <p
                 class="mt-2 leading-relaxed whitespace-pre-line text-muted-foreground"
@@ -201,7 +214,7 @@ async function handleDelete() {
                 <QrCode class="size-5 text-fl-gold-ink" />
                 <div>
                     <p class="text-sm font-medium text-foreground">
-                        Legacy Code vinculado
+                        {{ $t('Legacy Code vinculado') }}
                     </p>
                     <p class="font-mono text-xs text-muted-foreground">
                         {{ medal.legacy_code.code }}
@@ -214,7 +227,9 @@ async function handleDelete() {
                 size="sm"
                 class="border-fl-gold/30 text-fl-gold-ink hover:bg-fl-gold/10"
             >
-                <Link :href="legacyCodeShow(medal.legacy_code.code)">Ver</Link>
+                <Link :href="legacyCodeShow(medal.legacy_code.code)">{{
+                    $t('Ver')
+                }}</Link>
             </Button>
         </div>
     </div>

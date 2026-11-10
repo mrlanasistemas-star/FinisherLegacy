@@ -7,18 +7,24 @@
 import { useIntersectionObserver } from '@vueuse/core';
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{ value: number | null }>();
 
 const el = useTemplateRef<HTMLElement>('el');
 const reducedMotion = useReducedMotion();
 const shown = ref(props.value ?? 0);
-const formatter = new Intl.NumberFormat('es-MX', { notation: 'compact' });
+const { regional } = useI18n();
+const formatter = computed(
+    () => new Intl.NumberFormat(regional.value, { notation: 'compact' }),
+);
 let frame: number | null = null;
 let played = false;
 
 const text = computed(() =>
-    props.value === null ? '—' : formatter.format(Math.round(shown.value)),
+    props.value === null
+        ? '—'
+        : formatter.value.format(Math.round(shown.value)),
 );
 
 function play() {

@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/i18n';
 import {
     matchParticipant,
     searchEvents,
@@ -25,14 +26,16 @@ import {
 } from '@/routes/dashboard/medals';
 import type { EventSearchResult } from '@/types';
 
-const steps = [
-    'Origen',
-    'Resultado',
-    'Imágenes',
-    'Historia',
-    'Privacidad',
-    'Confirmar',
-];
+const { t } = useI18n();
+
+const steps = computed(() => [
+    t('Origen'),
+    t('Resultado'),
+    t('Imágenes'),
+    t('Historia'),
+    t('Privacidad'),
+    t('Confirmar'),
+]);
 const currentStep = ref(1);
 const todayCalendarDate = today(getLocalTimeZone());
 
@@ -155,7 +158,7 @@ const quotaError = computed(
 );
 
 function next() {
-    if (currentStep.value < steps.length && canProceed.value) {
+    if (currentStep.value < steps.value.length && canProceed.value) {
         currentStep.value += 1;
     }
 }
@@ -172,7 +175,7 @@ function submit() {
 </script>
 
 <template>
-    <Head title="Agregar medalla" />
+    <Head :title="$t('Agregar medalla')" />
 
     <div class="fl-container max-w-2xl py-8 md:py-12">
         <!-- Step indicator -->
@@ -221,8 +224,11 @@ function submit() {
         <!-- Step 1: Origin -->
         <div v-if="currentStep === 1" class="space-y-5">
             <h2 class="text-lg font-semibold text-foreground">
-                ¿Esta medalla pertenece a un evento registrado en Finisher
-                Legacy?
+                {{
+                    $t(
+                        '¿Esta medalla pertenece a un evento registrado en Finisher Legacy?',
+                    )
+                }}
             </h2>
 
             <div class="grid grid-cols-2 gap-3">
@@ -236,9 +242,11 @@ function submit() {
                     "
                     @click="form.origin = 'registered'"
                 >
-                    <p class="font-medium text-foreground">Buscar evento</p>
+                    <p class="font-medium text-foreground">
+                        {{ $t('Buscar evento') }}
+                    </p>
                     <p class="mt-1 text-xs text-muted-foreground">
-                        Ya está en Finisher Legacy
+                        {{ $t('Ya está en Finisher Legacy') }}
                     </p>
                 </button>
                 <button
@@ -252,10 +260,10 @@ function submit() {
                     @click="form.origin = 'manual'"
                 >
                     <p class="font-medium text-foreground">
-                        Registrar manualmente
+                        {{ $t('Registrar manualmente') }}
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
-                        No está en nuestro catálogo
+                        {{ $t('No está en nuestro catálogo') }}
                     </p>
                 </button>
             </div>
@@ -267,7 +275,7 @@ function submit() {
                     />
                     <Input
                         v-model="searchQuery"
-                        placeholder="Buscar evento por nombre…"
+                        :placeholder="$t('Buscar evento por nombre…')"
                         class="pl-9"
                         @focus="runSearch"
                     />
@@ -277,7 +285,8 @@ function submit() {
                     v-if="searching"
                     class="flex items-center gap-2 text-sm text-muted-foreground/80"
                 >
-                    <Loader2 class="size-4 animate-spin" /> Buscando…
+                    <Loader2 class="size-4 animate-spin" />
+                    {{ $t('Buscando…') }}
                 </div>
 
                 <div v-else-if="searchResults.length" class="space-y-2">
@@ -305,11 +314,11 @@ function submit() {
                 </div>
 
                 <p v-else class="text-sm text-muted-foreground/80">
-                    Escribe para buscar un evento publicado.
+                    {{ $t('Escribe para buscar un evento publicado.') }}
                 </p>
 
                 <div v-if="selectedEdition" class="space-y-2">
-                    <Label>Distancia</Label>
+                    <Label>{{ $t('Distancia') }}</Label>
                     <div class="flex flex-wrap gap-2">
                         <button
                             v-for="race in selectedEdition.races"
@@ -331,7 +340,9 @@ function submit() {
 
             <div v-else class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="event_name_manual">Nombre del evento</Label>
+                    <Label for="event_name_manual">{{
+                        $t('Nombre del evento')
+                    }}</Label>
                     <Input
                         id="event_name_manual"
                         v-model="form.event_name_manual"
@@ -339,7 +350,7 @@ function submit() {
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="event_date">Fecha</Label>
+                    <Label for="event_date">{{ $t('Fecha') }}</Label>
                     <DatePicker
                         :model-value="form.event_date || null"
                         :max-value="todayCalendarDate"
@@ -349,7 +360,7 @@ function submit() {
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="distance_label">Distancia</Label>
+                    <Label for="distance_label">{{ $t('Distancia') }}</Label>
                     <Input
                         id="distance_label"
                         v-model="form.distance_label"
@@ -357,11 +368,11 @@ function submit() {
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="city">Ciudad</Label>
+                    <Label for="city">{{ $t('Ciudad') }}</Label>
                     <Input id="city" v-model="form.city" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="country">País</Label>
+                    <Label for="country">{{ $t('País') }}</Label>
                     <Input id="country" v-model="form.country" />
                 </div>
             </div>
@@ -369,14 +380,16 @@ function submit() {
 
         <!-- Step 2: Result -->
         <div v-else-if="currentStep === 2" class="space-y-5">
-            <h2 class="text-lg font-semibold text-foreground">Tu resultado</h2>
+            <h2 class="text-lg font-semibold text-foreground">
+                {{ $t('Tu resultado') }}
+            </h2>
 
             <div
                 v-if="checkingMatch"
                 class="flex items-center gap-2 text-sm text-muted-foreground/80"
             >
-                <Loader2 class="size-4 animate-spin" /> Buscando tu resultado
-                oficial…
+                <Loader2 class="size-4 animate-spin" />
+                {{ $t('Buscando tu resultado oficial…') }}
             </div>
 
             <Badge
@@ -384,12 +397,14 @@ function submit() {
                 variant="outline"
                 class="border-fl-gold/30 text-fl-gold-ink"
             >
-                Resultado oficial encontrado y verificado
+                {{ $t('Resultado oficial encontrado y verificado') }}
             </Badge>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="official_time">Tiempo oficial</Label>
+                    <Label for="official_time">{{
+                        $t('Tiempo oficial')
+                    }}</Label>
                     <Input
                         id="official_time"
                         v-model="form.official_time"
@@ -399,7 +414,7 @@ function submit() {
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="pace">Ritmo</Label>
+                    <Label for="pace">{{ $t('Ritmo') }}</Label>
                     <Input
                         id="pace"
                         v-model="form.pace"
@@ -410,19 +425,21 @@ function submit() {
                 </div>
             </div>
             <p class="text-xs text-muted-foreground/80">
-                Ambos campos son opcionales.
+                {{ $t('Ambos campos son opcionales.') }}
             </p>
         </div>
 
         <!-- Step 3: Images -->
         <div v-else-if="currentStep === 3" class="space-y-5">
             <h2 class="text-lg font-semibold text-foreground">
-                Fotografías de tu medalla
+                {{ $t('Fotografías de tu medalla') }}
             </h2>
 
             <div class="grid gap-5 sm:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="front_image">Frente (obligatorio)</Label>
+                    <Label for="front_image">{{
+                        $t('Frente (obligatorio)')
+                    }}</Label>
                     <div
                         class="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-card/40"
                     >
@@ -430,7 +447,7 @@ function submit() {
                             v-if="frontPreview"
                             :src="frontPreview"
                             class="size-full object-cover"
-                            alt="Frente"
+                            :alt="$t('Frente')"
                         />
                         <Award v-else class="size-8 text-muted-foreground/80" />
                     </div>
@@ -449,7 +466,9 @@ function submit() {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="back_image">Reverso (opcional)</Label>
+                    <Label for="back_image">{{
+                        $t('Reverso (opcional)')
+                    }}</Label>
                     <div
                         class="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-card/40"
                     >
@@ -457,7 +476,7 @@ function submit() {
                             v-if="backPreview"
                             :src="backPreview"
                             class="size-full object-cover"
-                            alt="Reverso"
+                            :alt="$t('Reverso')"
                         />
                         <Award v-else class="size-8 text-muted-foreground/80" />
                     </div>
@@ -477,7 +496,7 @@ function submit() {
             </div>
 
             <div class="grid gap-2">
-                <Label>Fotos adicionales (opcional)</Label>
+                <Label>{{ $t('Fotos adicionales (opcional)') }}</Label>
                 <GalleryImagePicker
                     v-model="form.gallery_images"
                     :max="3"
@@ -489,30 +508,32 @@ function submit() {
         <!-- Step 4: Story -->
         <div v-else-if="currentStep === 4" class="space-y-5">
             <h2 class="text-lg font-semibold text-foreground">
-                ¿Qué hace especial esta medalla?
+                {{ $t('¿Qué hace especial esta medalla?') }}
             </h2>
             <Textarea
                 v-model="form.story"
                 maxlength="2000"
                 class="min-h-40"
-                placeholder="Cuenta tu historia…"
+                :placeholder="$t('Cuenta tu historia…')"
             />
         </div>
 
         <!-- Step 5: Privacy -->
         <div v-else-if="currentStep === 5" class="space-y-5">
-            <h2 class="text-lg font-semibold text-foreground">Privacidad</h2>
+            <h2 class="text-lg font-semibold text-foreground">
+                {{ $t('Privacidad') }}
+            </h2>
             <Select v-model="form.visibility">
                 <SelectTrigger class="w-full sm:w-64">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="public"
-                        >Pública — visible en tu Legacy Profile</SelectItem
-                    >
-                    <SelectItem value="private"
-                        >Privada — solo tú la ves</SelectItem
-                    >
+                    <SelectItem value="public">{{
+                        $t('Pública — visible en tu Legacy Profile')
+                    }}</SelectItem>
+                    <SelectItem value="private">{{
+                        $t('Privada — solo tú la ves')
+                    }}</SelectItem>
                 </SelectContent>
             </Select>
         </div>
@@ -520,7 +541,7 @@ function submit() {
         <!-- Step 6: Confirm -->
         <div v-else class="space-y-5">
             <h2 class="text-lg font-semibold text-foreground">
-                Confirma tu medalla
+                {{ $t('Confirma tu medalla') }}
             </h2>
 
             <div
@@ -530,7 +551,7 @@ function submit() {
                     v-if="frontPreview"
                     :src="frontPreview"
                     class="size-20 shrink-0 rounded-lg object-cover"
-                    alt="Frente"
+                    :alt="$t('Frente')"
                 />
                 <div class="min-w-0">
                     <p class="truncate font-medium text-foreground">
@@ -558,7 +579,9 @@ function submit() {
                         class="mt-2 border-border text-muted-foreground"
                     >
                         {{
-                            form.visibility === 'public' ? 'Pública' : 'Privada'
+                            form.visibility === 'public'
+                                ? $t('Pública')
+                                : $t('Privada')
                         }}
                     </Badge>
                 </div>
@@ -585,7 +608,7 @@ function submit() {
                 :disabled="currentStep === 1"
                 @click="back"
             >
-                Atrás
+                {{ $t('Atrás') }}
             </Button>
 
             <Button
@@ -595,7 +618,7 @@ function submit() {
                 :disabled="!canProceed"
                 @click="next"
             >
-                Siguiente
+                {{ $t('Siguiente') }}
             </Button>
             <Button
                 v-else
@@ -604,7 +627,7 @@ function submit() {
                 :disabled="form.processing"
                 @click="submit"
             >
-                Guardar medalla
+                {{ $t('Guardar medalla') }}
             </Button>
         </div>
     </div>

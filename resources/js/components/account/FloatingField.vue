@@ -12,6 +12,7 @@
 import { AlertCircle, Check, Eye, EyeOff } from '@lucide/vue';
 import type { Component } from 'vue';
 import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from '@/i18n';
 
 defineOptions({ inheritAttrs: false });
 
@@ -39,10 +40,12 @@ const props = withDefaults(
         hint: undefined,
         icon: undefined,
         mustMatch: undefined,
-        matchMessage: 'No coincide con la contraseña.',
+        matchMessage: undefined,
         showValid: true,
     },
 );
+
+const { t } = useI18n();
 
 const model = defineModel<string>({ default: '' });
 
@@ -73,19 +76,22 @@ function validate() {
     const v = el.validity;
 
     if (v.valueMissing) {
-        clientError.value = 'Este campo es obligatorio.';
+        clientError.value = t('Este campo es obligatorio.');
     } else if (v.typeMismatch && props.type === 'email') {
-        clientError.value = 'Revisa el formato: tucorreo@ejemplo.com';
+        clientError.value = t('Revisa el formato: tucorreo@ejemplo.com');
     } else if (v.tooShort) {
-        clientError.value = `Usa al menos ${el.minLength} caracteres.`;
+        clientError.value = t('Usa al menos {count} caracteres.', {
+            count: el.minLength,
+        });
     } else if (
         props.mustMatch !== undefined &&
         el.value !== '' &&
         el.value !== props.mustMatch
     ) {
-        clientError.value = props.matchMessage;
+        clientError.value =
+            props.matchMessage ?? t('No coincide con la contraseña.');
     } else if (!v.valid) {
-        clientError.value = el.validationMessage || 'Revisa este campo.';
+        clientError.value = el.validationMessage || t('Revisa este campo.');
     } else {
         clientError.value = null;
     }
@@ -183,7 +189,7 @@ defineExpose({ focus: () => input.value?.focus() });
                 type="button"
                 class="absolute inset-y-0 right-1 my-auto flex size-11 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                 :aria-label="
-                    reveal ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                    reveal ? $t('Ocultar contraseña') : $t('Mostrar contraseña')
                 "
                 :aria-pressed="reveal"
                 @click="reveal = !reveal"

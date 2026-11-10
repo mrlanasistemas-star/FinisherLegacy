@@ -3,6 +3,8 @@
  * /t, /activar, /legacy, /mi-legacy and GET /api/v1/stories/{publicId}.
  */
 
+import { activeRegional, t } from '@/i18n';
+
 export type TagCollectionSummary = {
     name: string;
     slug: string;
@@ -104,11 +106,14 @@ export function formatStoryDate(date: string | null): string | null {
 
     const [y, m, d] = date.split('-').map(Number);
 
-    return new Date(y, (m ?? 1) - 1, d ?? 1).toLocaleDateString('es-MX', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    });
+    return new Date(y, (m ?? 1) - 1, d ?? 1).toLocaleDateString(
+        activeRegional(),
+        {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        },
+    );
 }
 
 /**
@@ -116,5 +121,7 @@ export function formatStoryDate(date: string | null): string | null {
  * themselves, so it is never printed twice ("Para Para mamá").
  */
 export function forRecipient(label: string): string {
-    return `Para ${label.trim().replace(/^para\s+/i, '')}`;
+    return t('Para {name}', {
+        name: label.trim().replace(/^para\s+/i, ''),
+    });
 }

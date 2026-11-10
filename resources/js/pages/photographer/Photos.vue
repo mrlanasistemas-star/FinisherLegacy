@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useI18n } from '@/i18n';
 import type { PhotoFeeRules } from '@/lib/photoFees';
 import { confirmAction } from '@/lib/swal';
 
@@ -68,8 +69,10 @@ const props = defineProps<{
     pricePoints: number[];
 }>();
 
+const { t, regional } = useI18n();
+
 const money = (minor: number) =>
-    new Intl.NumberFormat('es-MX', {
+    new Intl.NumberFormat(regional.value, {
         style: 'currency',
         currency: 'MXN',
     }).format(minor / 100);
@@ -140,12 +143,12 @@ function upload() {
 
 // --- Filters -------------------------------------------------------------
 
-const statusTabs = [
-    { value: null, label: 'Todas', icon: ImagePlus },
-    { value: 'review', label: 'Por revisar', icon: Clock },
-    { value: 'published', label: 'Publicadas', icon: CheckCircle2 },
-    { value: 'rejected', label: 'Rechazadas', icon: XCircle },
-];
+const statusTabs = computed(() => [
+    { value: null, label: t('Todas'), icon: ImagePlus },
+    { value: 'review', label: t('Por revisar'), icon: Clock },
+    { value: 'published', label: t('Publicadas'), icon: CheckCircle2 },
+    { value: 'rejected', label: t('Rechazadas'), icon: XCircle },
+]);
 
 function filter(next: {
     evento?: string | number | null;
@@ -172,11 +175,11 @@ const statusChip: Record<string, string> = {
     published: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     rejected: 'bg-red-50 text-red-700 border-red-200',
 };
-const statusLabel: Record<string, string> = {
-    review: 'Por revisar',
-    published: 'Publicada',
-    rejected: 'Rechazada',
-};
+const statusLabel = computed<Record<string, string>>(() => ({
+    review: t('Por revisar'),
+    published: t('Publicada'),
+    rejected: t('Rechazada'),
+}));
 
 // --- Edit ------------------------------------------------------------------
 
@@ -208,9 +211,11 @@ function saveEdit() {
 async function remove(photo: Photo) {
     if (
         await confirmAction({
-            title: '¿Eliminar esta foto?',
-            text: 'Se quitará de la venta. Solo puedes eliminar fotos que no se han vendido.',
-            confirmButtonText: 'Eliminar',
+            title: t('¿Eliminar esta foto?'),
+            text: t(
+                'Se quitará de la venta. Solo puedes eliminar fotos que no se han vendido.',
+            ),
+            confirmButtonText: t('Eliminar'),
         })
     ) {
         router.delete(`/fotografo/fotos/${photo.uuid}`, {
@@ -221,7 +226,7 @@ async function remove(photo: Photo) {
 </script>
 
 <template>
-    <Head title="Mis fotos en venta" />
+    <Head :title="$t('Mis fotos en venta')" />
 
     <div class="w-full space-y-8 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div class="flex items-center gap-3">
@@ -231,9 +236,15 @@ async function remove(photo: Photo) {
                 <ImagePlus class="size-5" />
             </span>
             <div>
-                <h1 class="text-xl font-semibold">Mis fotos en venta</h1>
+                <h1 class="text-xl font-semibold">
+                    {{ $t('Mis fotos en venta') }}
+                </h1>
                 <p class="text-sm text-muted-foreground">
-                    Sube, pon precio y etiqueta los números de corredor.
+                    {{
+                        $t(
+                            'Sube, pon precio y etiqueta los números de corredor.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -245,16 +256,18 @@ async function remove(photo: Photo) {
         >
             <div class="space-y-4 lg:col-span-2">
                 <div class="grid gap-1.5">
-                    <Label>Evento</Label>
+                    <Label>{{ $t('Evento') }}</Label>
                     <FancySelect
                         v-model="form.event_edition_id"
                         :options="eventOptions"
-                        placeholder="Selecciona el evento"
+                        :placeholder="$t('Selecciona el evento')"
                     />
                     <InputError :message="form.errors.event_edition_id" />
                 </div>
                 <div class="grid gap-1.5">
-                    <Label for="up-price">Precio por foto (MXN)</Label>
+                    <Label for="up-price">{{
+                        $t('Precio por foto (MXN)')
+                    }}</Label>
                     <div class="relative">
                         <span
                             class="absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground"
@@ -277,17 +290,20 @@ async function remove(photo: Photo) {
                 />
                 <div class="grid gap-1.5">
                     <Label for="up-bibs" class="flex items-center gap-1.5"
-                        ><Hash class="size-3.5" /> Números de corredor en estas
-                        fotos</Label
+                        ><Hash class="size-3.5" />
+                        {{ $t('Números de corredor en estas fotos') }}</Label
                     >
                     <Input
                         id="up-bibs"
                         v-model="form.bibs"
-                        placeholder="Ej. 482, 1203, 77"
+                        :placeholder="$t('Ej. 482, 1203, 77')"
                     />
                     <p class="text-xs text-muted-foreground">
-                        Se aplican a todo el lote; luego puedes ajustar cada
-                        foto.
+                        {{
+                            $t(
+                                'Se aplican a todo el lote; luego puedes ajustar cada foto.',
+                            )
+                        }}
                     </p>
                 </div>
             </div>
@@ -309,20 +325,25 @@ async function remove(photo: Photo) {
                 >
                     <UploadCloud class="size-8 text-fl-gold-ink" />
                     <p class="mt-3 font-medium">
-                        Arrastra tus fotos o
+                        {{ $t('Arrastra tus fotos o') }}
                         <button
                             type="button"
                             class="underline underline-offset-4"
                             @click="fileInput?.click()"
                         >
-                            selecciónalas
+                            {{ $t('selecciónalas') }}
                         </button>
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
-                        JPG, PNG o WEBP · hasta {{ limits.max_files }} por lote
-                        · máx. {{ Math.round(limits.max_file_kb / 1024) }} MB
-                        c/u. Publicamos una versión con marca de agua; el
-                        original solo lo recibe quien compra.
+                        {{
+                            $t(
+                                'JPG, PNG o WEBP · hasta {max} por lote · máx. {size} MB c/u. Publicamos una versión con marca de agua; el original solo lo recibe quien compra.',
+                                {
+                                    max: limits.max_files,
+                                    size: Math.round(limits.max_file_kb / 1024),
+                                },
+                            )
+                        }}
                     </p>
                     <input
                         ref="fileInput"
@@ -351,7 +372,11 @@ async function remove(photo: Photo) {
                         <button
                             type="button"
                             class="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white"
-                            :aria-label="`Quitar foto ${index + 1}`"
+                            :aria-label="
+                                $t('Quitar foto {number}', {
+                                    number: index + 1,
+                                })
+                            "
                             @click="removeFile(index)"
                         >
                             <X class="size-3.5" />
@@ -365,12 +390,12 @@ async function remove(photo: Photo) {
                     "
                 />
                 <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-muted-foreground"
-                        >{{ form.files.length }} foto{{
-                            form.files.length === 1 ? '' : 's'
-                        }}
-                        listas</span
-                    >
+                    <span class="text-sm text-muted-foreground">{{
+                        $tc(
+                            '{count} foto lista|{count} fotos listas',
+                            form.files.length,
+                        )
+                    }}</span>
                     <Button
                         class="h-11 rounded-full px-6"
                         :disabled="
@@ -383,8 +408,10 @@ async function remove(photo: Photo) {
                         <UploadCloud class="size-4" />
                         {{
                             form.processing
-                                ? `Subiendo… ${form.progress?.percentage ?? 0}%`
-                                : 'Enviar a revisión'
+                                ? $t('Subiendo… {percent}%', {
+                                      percent: form.progress?.percentage ?? 0,
+                                  })
+                                : $t('Enviar a revisión')
                         }}
                     </Button>
                 </div>
@@ -394,13 +421,15 @@ async function remove(photo: Photo) {
             v-else
             class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
         >
-            Podrás subir fotos en cuanto aprobemos tu perfil.
+            {{ $t('Podrás subir fotos en cuanto aprobemos tu perfil.') }}
         </div>
 
         <!-- Commission notice + common price points -->
         <section class="fl-card grid gap-4 p-5 lg:grid-cols-2 lg:p-6">
             <div class="space-y-2">
-                <h2 class="font-semibold">Cuánto recibes por foto</h2>
+                <h2 class="font-semibold">
+                    {{ $t('Cuánto recibes por foto') }}
+                </h2>
                 <PhotographerCommissionSimulator
                     :rules="fees"
                     :price-minor="0"
@@ -440,13 +469,13 @@ async function remove(photo: Photo) {
             </div>
             <FancySelect
                 :model-value="filters.evento"
-                placeholder="Todos los eventos"
+                :placeholder="$t('Todos los eventos')"
                 :options="[
-                    { value: null, label: 'Todos los eventos', icon: Flag },
+                    { value: null, label: $t('Todos los eventos'), icon: Flag },
                     ...eventOptions,
                 ]"
                 class="sm:w-72"
-                aria-label="Filtrar por evento"
+                :aria-label="$t('Filtrar por evento')"
                 @update:model-value="(v) => filter({ evento: v })"
             />
         </div>
@@ -464,7 +493,9 @@ async function remove(photo: Photo) {
                 <div class="relative aspect-[4/5] bg-muted">
                     <img
                         :src="photo.thumb_url"
-                        :alt="`Foto en ${photo.event}`"
+                        :alt="
+                            $t('Foto en {event}', { event: photo.event ?? '' })
+                        "
                         loading="lazy"
                         class="size-full object-cover"
                     />
@@ -476,8 +507,11 @@ async function remove(photo: Photo) {
                     <span
                         v-if="photo.sales_count"
                         class="absolute top-2 right-2 rounded-full bg-foreground px-2 py-0.5 text-[10px] font-semibold text-background"
-                        >{{ photo.sales_count }} vendida{{
-                            photo.sales_count === 1 ? '' : 's'
+                        >{{
+                            $tc(
+                                '{count} vendida|{count} vendidas',
+                                photo.sales_count,
+                            )
                         }}</span
                     >
                 </div>
@@ -492,9 +526,11 @@ async function remove(photo: Photo) {
                                 money(photo.price_minor)
                             }}</span
                         >
-                        <span class="text-[11px] text-emerald-700"
-                            >recibes {{ money(photo.net_minor) }}</span
-                        >
+                        <span class="text-[11px] text-emerald-700">{{
+                            $t('recibes {amount}', {
+                                amount: money(photo.net_minor),
+                            })
+                        }}</span>
                     </p>
                     <p class="flex flex-wrap gap-1">
                         <span
@@ -506,7 +542,7 @@ async function remove(photo: Photo) {
                         <span
                             v-if="!photo.bib_numbers.length"
                             class="text-[11px] text-amber-700"
-                            >Sin números</span
+                            >{{ $t('Sin números') }}</span
                         >
                     </p>
                     <p
@@ -521,14 +557,15 @@ async function remove(photo: Photo) {
                             variant="outline"
                             class="h-8 flex-1 rounded-full text-xs"
                             @click="openEdit(photo)"
-                            ><Pencil class="size-3" /> Editar</Button
+                            ><Pencil class="size-3" />
+                            {{ $t('Editar') }}</Button
                         >
                         <Button
                             size="icon"
                             variant="ghost"
                             class="size-8 text-red-700"
                             :disabled="photo.sales_count > 0"
-                            aria-label="Eliminar"
+                            :aria-label="$t('Eliminar')"
                             @click="remove(photo)"
                             ><Trash2 class="size-3.5"
                         /></Button>
@@ -541,7 +578,7 @@ async function remove(photo: Photo) {
             class="fl-card flex flex-col items-center gap-3 p-12 text-center"
         >
             <ImagePlus class="size-8 text-fl-gold-ink" />
-            <p class="font-semibold">Aquí aparecerán tus fotos</p>
+            <p class="font-semibold">{{ $t('Aquí aparecerán tus fotos') }}</p>
         </div>
 
         <Pagination :links="photos.links" />
@@ -549,7 +586,9 @@ async function remove(photo: Photo) {
         <Dialog :open="!!editing" @update:open="(v) => !v && (editing = null)">
             <DialogContent class="sm:max-w-md">
                 <DialogHeader
-                    ><DialogTitle>Editar foto</DialogTitle></DialogHeader
+                    ><DialogTitle>{{
+                        $t('Editar foto')
+                    }}</DialogTitle></DialogHeader
                 >
                 <div v-if="editing" class="space-y-4">
                     <img
@@ -558,7 +597,7 @@ async function remove(photo: Photo) {
                         class="aspect-video w-full rounded-lg object-cover"
                     />
                     <div class="grid gap-1.5">
-                        <Label for="ed-price">Precio (MXN)</Label>
+                        <Label for="ed-price">{{ $t('Precio (MXN)') }}</Label>
                         <Input
                             id="ed-price"
                             v-model.number="editPrice"
@@ -573,7 +612,9 @@ async function remove(photo: Photo) {
                         "
                     />
                     <div class="grid gap-1.5">
-                        <Label for="ed-bibs">Números de corredor</Label>
+                        <Label for="ed-bibs">{{
+                            $t('Números de corredor')
+                        }}</Label>
                         <Input
                             id="ed-bibs"
                             v-model="editBibs"
@@ -582,9 +623,9 @@ async function remove(photo: Photo) {
                     </div>
                 </div>
                 <DialogFooter
-                    ><Button class="rounded-full" @click="saveEdit"
-                        >Guardar</Button
-                    ></DialogFooter
+                    ><Button class="rounded-full" @click="saveEdit">{{
+                        $t('Guardar')
+                    }}</Button></DialogFooter
                 >
             </DialogContent>
         </Dialog>

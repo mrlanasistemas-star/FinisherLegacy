@@ -9,6 +9,7 @@
  */
 import { ArrowRight, CalendarClock, Info, TriangleAlert } from '@lucide/vue';
 import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 import { splitPhotoPrice } from '@/lib/photoFees';
 import type { PhotoFeeRules } from '@/lib/photoFees';
 
@@ -29,6 +30,8 @@ const props = withDefaults(
     },
 );
 
+const { regional } = useI18n();
+
 const split = computed(() =>
     splitPhotoPrice(props.rules, Math.max(props.priceMinor || 0, 0)),
 );
@@ -37,13 +40,13 @@ const rows = computed(() =>
 );
 
 const money = (minor: number) =>
-    new Intl.NumberFormat('es-MX', {
+    new Intl.NumberFormat(regional.value, {
         style: 'currency',
         currency: 'MXN',
     }).format(minor / 100);
 
 const longDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('es-MX', {
+    new Date(iso).toLocaleDateString(regional.value, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -71,13 +74,17 @@ const belowMin = computed(
             <Info class="mt-0.5 size-4 shrink-0 text-fl-gold-ink" />
             <div class="space-y-1">
                 <p>
-                    Comisión actual de Finisher Legacy:
+                    {{ $t('Comisión actual de Finisher Legacy:') }}
                     <strong class="legacy-numeric">{{ rate }}%</strong>
                     <span v-if="rules.commission_source === 'override'">
-                        (tarifa personalizada para ti)</span
+                        {{ $t('(tarifa personalizada para ti)') }}</span
                     ><span v-if="rules.commission_effective_from">
-                        · vigente desde el
-                        {{ longDate(rules.commission_effective_from) }}</span
+                        ·
+                        {{
+                            $t('vigente desde el {date}', {
+                                date: longDate(rules.commission_effective_from),
+                            })
+                        }}</span
                     >.
                 </p>
                 <p
@@ -85,18 +92,30 @@ const belowMin = computed(
                     class="flex items-center gap-1.5 font-medium text-fl-gold-ink"
                 >
                     <CalendarClock class="size-4 shrink-0" />
-                    Cambia a
-                    {{ rules.upcoming_change.commission_percent }}% a partir del
-                    {{ longDate(rules.upcoming_change.effective_from) }}.
+                    {{
+                        $t('Cambia a {percent}% a partir del {date}.', {
+                            percent: rules.upcoming_change.commission_percent,
+                            date: longDate(
+                                rules.upcoming_change.effective_from,
+                            ),
+                        })
+                    }}
                 </p>
                 <p class="text-xs text-muted-foreground">
                     {{
                         finisherAbsorbs
-                            ? 'La comisión de la pasarela de pago la absorbe Finisher Legacy.'
-                            : 'La comisión de la pasarela de pago se descuenta de tu ganancia.'
+                            ? $t(
+                                  'La comisión de la pasarela de pago la absorbe Finisher Legacy.',
+                              )
+                            : $t(
+                                  'La comisión de la pasarela de pago se descuenta de tu ganancia.',
+                              )
                     }}
-                    Cada venta conserva la comisión vigente el día en que se
-                    pagó.
+                    {{
+                        $t(
+                            'Cada venta conserva la comisión vigente el día en que se pagó.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -110,43 +129,45 @@ const belowMin = computed(
             <p
                 class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
             >
-                Simulación antes de guardar
+                {{ $t('Simulación antes de guardar') }}
             </p>
             <ol class="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
                 <li>
-                    <span class="text-muted-foreground">Precio al cliente</span>
+                    <span class="text-muted-foreground">{{
+                        $t('Precio al cliente')
+                    }}</span>
                     <strong class="legacy-numeric ml-1">{{
                         money(split.gross)
                     }}</strong>
                 </li>
                 <ArrowRight class="size-3.5 text-muted-foreground" />
                 <li>
-                    <span class="text-muted-foreground"
-                        >Comisión Finisher Legacy ({{ rate }}%)</span
-                    >
+                    <span class="text-muted-foreground">{{
+                        $t('Comisión Finisher Legacy ({rate}%)', { rate })
+                    }}</span>
                     <strong class="legacy-numeric ml-1 text-fl-gold-ink"
                         >−{{ money(split.platform) }}</strong
                     >
                 </li>
                 <ArrowRight class="size-3.5 text-muted-foreground" />
                 <li>
-                    <span class="text-muted-foreground"
-                        >Comisión de pasarela</span
-                    >
+                    <span class="text-muted-foreground">{{
+                        $t('Comisión de pasarela')
+                    }}</span>
                     <strong
                         v-if="!finisherAbsorbs"
                         class="legacy-numeric ml-1 text-sky-800"
                         >−{{ money(split.processor) }}</strong
                     >
-                    <strong v-else class="ml-1 text-sky-800"
-                        >$0.00 (la absorbe Finisher)</strong
-                    >
+                    <strong v-else class="ml-1 text-sky-800">{{
+                        $t('$0.00 (la absorbe Finisher)')
+                    }}</strong>
                 </li>
                 <ArrowRight class="size-3.5 text-muted-foreground" />
                 <li
                     class="rounded-full bg-emerald-50 px-2.5 py-0.5 ring-1 ring-emerald-200"
                 >
-                    <span class="text-emerald-800">Tú recibes</span>
+                    <span class="text-emerald-800">{{ $t('Tú recibes') }}</span>
                     <strong class="legacy-numeric ml-1 text-emerald-900">{{
                         money(split.net)
                     }}</strong>
@@ -157,14 +178,23 @@ const belowMin = computed(
                 class="mt-2 flex items-start gap-1.5 text-xs text-amber-800"
             >
                 <TriangleAlert class="mt-0.5 size-3.5 shrink-0" />
-                Comisión de pasarela no configurada: se muestra una estimación
-                provisional ({{ rules.processor_fee_percent }}% +
-                {{ money(rules.processor_fee_fixed_minor) }} + IVA
-                {{ rules.processor_fee_vat_percent }}%).
+                {{
+                    $t(
+                        'Comisión de pasarela no configurada: se muestra una estimación provisional ({percent}% + {fixed} + IVA {vat}%).',
+                        {
+                            percent: rules.processor_fee_percent,
+                            fixed: money(rules.processor_fee_fixed_minor),
+                            vat: rules.processor_fee_vat_percent,
+                        },
+                    )
+                }}
             </p>
             <p v-if="belowMin" class="mt-2 text-xs text-red-700">
-                El precio mínimo por foto es
-                {{ money(rules.min_price_minor) }}.
+                {{
+                    $t('El precio mínimo por foto es {price}.', {
+                        price: money(rules.min_price_minor),
+                    })
+                }}
             </p>
         </div>
 
@@ -175,19 +205,23 @@ const belowMin = computed(
         >
             <table class="w-full text-sm">
                 <caption class="sr-only">
-                    Lo que recibes en precios comunes
+                    {{
+                        $t('Lo que recibes en precios comunes')
+                    }}
                 </caption>
                 <thead class="bg-muted/50 text-xs text-muted-foreground">
                     <tr>
-                        <th class="px-3 py-2 text-left font-medium">Precio</th>
+                        <th class="px-3 py-2 text-left font-medium">
+                            {{ $t('Precio') }}
+                        </th>
                         <th class="px-3 py-2 text-right font-medium">
                             Finisher ({{ rate }}%)
                         </th>
                         <th class="px-3 py-2 text-right font-medium">
-                            Pasarela
+                            {{ $t('Pasarela') }}
                         </th>
                         <th class="px-3 py-2 text-right font-medium">
-                            Tú recibes
+                            {{ $t('Tú recibes') }}
                         </th>
                     </tr>
                 </thead>

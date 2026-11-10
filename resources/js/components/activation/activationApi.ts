@@ -3,6 +3,7 @@
  * the app API `/api/v1/tags/activation/*` (docs/api/v1.md §Activación NFC).
  * Session auth + XSRF cookie, like lib/commerce.ts.
  */
+import { t } from '@/i18n';
 
 export type ActivationPlatform = 'android' | 'ios' | 'web';
 
@@ -99,7 +100,9 @@ async function post<T>(
     } catch {
         throw new ActivationError(
             'NETWORK',
-            'Parece que no hay conexión. Revisa tu internet e inténtalo de nuevo.',
+            t(
+                'Parece que no hay conexión. Revisa tu internet e inténtalo de nuevo.',
+            ),
         );
     }
 
@@ -118,7 +121,7 @@ async function post<T>(
     if (response.status === 401 || response.status === 419) {
         throw new ActivationError(
             'SESSION_EXPIRED',
-            'Tu sesión expiró. Recarga la página e inicia sesión de nuevo.',
+            t('Tu sesión expiró. Recarga la página e inicia sesión de nuevo.'),
         );
     }
 
@@ -127,7 +130,7 @@ async function post<T>(
 
         throw new ActivationError(
             'VALIDATION',
-            first ?? 'Revisa los datos e inténtalo de nuevo.',
+            first ?? t('Revisa los datos e inténtalo de nuevo.'),
         );
     }
 
@@ -136,7 +139,7 @@ async function post<T>(
     throw new ActivationError(
         response.status === 429 ? 'TOO_MANY_REQUESTS' : code,
         json.message ??
-            'Algo salió mal. Inténtalo de nuevo en un momento o escríbenos.',
+            t('Algo salió mal. Inténtalo de nuevo en un momento o escríbenos.'),
     );
 }
 

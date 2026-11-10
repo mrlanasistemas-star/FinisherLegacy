@@ -6,6 +6,7 @@
  */
 import { computed } from 'vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
+import { useI18n } from '@/i18n';
 import type { TagSummary } from '@/types/legacy-tags';
 
 const props = withDefaults(
@@ -15,6 +16,8 @@ const props = withDefaults(
     }>(),
     { tilt: true },
 );
+
+const { t } = useI18n();
 
 const collection = computed(() => props.tag?.collection ?? null);
 const name = computed(
@@ -30,9 +33,12 @@ const subtitle = computed(
             .filter(Boolean)
             .join(' · ') || null,
 );
-const label = computed(
-    () =>
-        `Tu Finisher Legacy Tag${collection.value ? ` de la colección ${collection.value.name}` : ''}`,
+const label = computed(() =>
+    collection.value
+        ? t('Tu Finisher Legacy Tag de la colección {name}', {
+              name: collection.value.name,
+          })
+        : t('Tu Finisher Legacy Tag'),
 );
 </script>
 

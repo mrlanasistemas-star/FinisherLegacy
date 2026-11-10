@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/i18n';
 import { show, update } from '@/routes/dashboard/profile';
 import type { AthleteProfileFormData, SportOption } from '@/types';
 
@@ -21,6 +22,8 @@ const { profile, sports, visibilityOptions } = defineProps<{
     sports: SportOption[];
     visibilityOptions: { value: string; label: string; description: string }[];
 }>();
+
+const { t } = useI18n();
 
 const form = useForm({
     username: profile?.username ?? '',
@@ -35,7 +38,7 @@ const form = useForm({
 });
 
 const sportOptions = computed(() => [
-    { value: null, label: 'Sin especificar' },
+    { value: null, label: t('Sin especificar') },
     ...sports.map((s) => ({ value: s.id, label: s.name })),
 ]);
 
@@ -71,8 +74,8 @@ function submit() {
 }
 
 const previewProfile = computed(() => ({
-    username: form.username || 'tunombre',
-    name: 'Tu perfil',
+    username: form.username || t('tunombre'),
+    name: t('Tu perfil'),
     bio: form.bio || null,
     city: form.city || null,
     country: form.country || null,
@@ -85,22 +88,22 @@ const previewProfile = computed(() => ({
 </script>
 
 <template>
-    <Head title="Editar mi perfil" />
+    <Head :title="$t('Editar mi perfil')" />
 
     <div class="fl-container py-6 md:py-10">
         <Link
             :href="show()"
             class="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
-            <ArrowLeft class="size-4" /> Mi perfil
+            <ArrowLeft class="size-4" /> {{ $t('Mi perfil') }}
         </Link>
 
         <div class="mt-2 grid gap-10 lg:grid-cols-[1fr_400px]">
             <form class="space-y-8" @submit.prevent="submit">
                 <header>
-                    <p class="fl-eyebrow">Mi perfil</p>
+                    <p class="fl-eyebrow">{{ $t('Mi perfil') }}</p>
                     <h1 class="fl-display mt-2 text-4xl sm:text-5xl">
-                        Así te verán los demás.
+                        {{ $t('Así te verán los demás.') }}
                     </h1>
                 </header>
 
@@ -110,8 +113,8 @@ const previewProfile = computed(() => ({
                     <ImageDropzone
                         :model-value="form.profile_photo"
                         :initial-url="profile?.profile_photo_url ?? null"
-                        label="Foto de perfil"
-                        help-text="JPG, PNG o WEBP · máx. 4 MB"
+                        :label="$t('Foto de perfil')"
+                        :help-text="$t('JPG, PNG o WEBP · máx. 4 MB')"
                         :max-size-mb="4"
                         aspect="square"
                         :error="form.errors.profile_photo"
@@ -120,8 +123,8 @@ const previewProfile = computed(() => ({
                     <ImageDropzone
                         :model-value="form.cover_photo"
                         :initial-url="profile?.cover_photo_url ?? null"
-                        label="Foto de portada"
-                        help-text="JPG, PNG o WEBP · máx. 6 MB"
+                        :label="$t('Foto de portada')"
+                        :help-text="$t('JPG, PNG o WEBP · máx. 6 MB')"
                         :max-size-mb="6"
                         aspect="wide"
                         :error="form.errors.cover_photo"
@@ -130,11 +133,11 @@ const previewProfile = computed(() => ({
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="username">Nombre de usuario</Label>
+                    <Label for="username">{{ $t('Nombre de usuario') }}</Label>
                     <Input
                         id="username"
                         v-model="form.username"
-                        placeholder="tunombre"
+                        :placeholder="$t('tunombre')"
                         autocomplete="username"
                         required
                     />
@@ -142,20 +145,26 @@ const previewProfile = computed(() => ({
                         {{ form.errors.username }}
                     </p>
                     <p v-else class="text-xs text-muted-foreground">
-                        Tu perfil público estará en /@{{
-                            form.username || 'tunombre'
+                        {{
+                            $t('Tu perfil público estará en /@{username}', {
+                                username: form.username || $t('tunombre'),
+                            })
                         }}
                     </p>
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="bio">Tu frase</Label>
+                    <Label for="bio">{{ $t('Tu frase') }}</Label>
                     <Textarea
                         id="bio"
                         v-model="form.bio"
                         maxlength="500"
                         rows="3"
-                        placeholder="Triatleta. Siempre buscando la mejor versión de mí."
+                        :placeholder="
+                            $t(
+                                'Triatleta. Siempre buscando la mejor versión de mí.',
+                            )
+                        "
                     />
                     <p v-if="form.errors.bio" class="text-sm text-red-700">
                         {{ form.errors.bio }}
@@ -164,7 +173,7 @@ const previewProfile = computed(() => ({
 
                 <div class="grid gap-4 sm:grid-cols-3">
                     <div class="grid gap-2">
-                        <Label for="city">Ciudad</Label>
+                        <Label for="city">{{ $t('Ciudad') }}</Label>
                         <Input
                             id="city"
                             v-model="form.city"
@@ -172,7 +181,7 @@ const previewProfile = computed(() => ({
                         />
                     </div>
                     <div class="grid gap-2">
-                        <Label for="state">Estado</Label>
+                        <Label for="state">{{ $t('Estado') }}</Label>
                         <Input
                             id="state"
                             v-model="form.state"
@@ -180,7 +189,7 @@ const previewProfile = computed(() => ({
                         />
                     </div>
                     <div class="grid gap-2">
-                        <Label for="country">País</Label>
+                        <Label for="country">{{ $t('País') }}</Label>
                         <Input
                             id="country"
                             v-model="form.country"
@@ -191,12 +200,14 @@ const previewProfile = computed(() => ({
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="grid gap-2">
-                        <Label for="main_sport_id">Deporte principal</Label>
+                        <Label for="main_sport_id">{{
+                            $t('Deporte principal')
+                        }}</Label>
                         <FancySelect
                             id="main_sport_id"
                             :model-value="form.main_sport_id"
                             :options="sportOptions"
-                            placeholder="Selecciona un deporte"
+                            :placeholder="$t('Selecciona un deporte')"
                             @update:model-value="
                                 (v) =>
                                     (form.main_sport_id =
@@ -206,9 +217,9 @@ const previewProfile = computed(() => ({
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="profile_visibility"
-                            >¿Quién puede ver tu perfil?</Label
-                        >
+                        <Label for="profile_visibility">{{
+                            $t('¿Quién puede ver tu perfil?')
+                        }}</Label>
                         <FancySelect
                             id="profile_visibility"
                             :model-value="form.profile_visibility"
@@ -235,19 +246,25 @@ const previewProfile = computed(() => ({
                         class="min-h-11 rounded-full px-6"
                         :disabled="form.processing"
                     >
-                        {{ form.processing ? 'Guardando…' : 'Guardar cambios' }}
+                        {{
+                            form.processing
+                                ? $t('Guardando…')
+                                : $t('Guardar cambios')
+                        }}
                     </Button>
                     <span
                         v-if="form.recentlySuccessful"
                         class="text-sm text-emerald-700"
                         role="status"
-                        >Guardado.</span
+                        >{{ $t('Guardado.') }}</span
                     >
                 </div>
             </form>
 
             <div class="lg:sticky lg:top-6 lg:self-start">
-                <p class="mb-3 text-sm font-semibold">Vista previa</p>
+                <p class="mb-3 text-sm font-semibold">
+                    {{ $t('Vista previa') }}
+                </p>
                 <div
                     class="rounded-2xl border border-border bg-card p-6 sm:p-8"
                 >

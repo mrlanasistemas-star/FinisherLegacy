@@ -9,6 +9,7 @@ import { Bell, CheckCheck, ChevronRight, Settings2 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import Pagination from '@/components/public/Pagination.vue';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { timeAgo } from '@/lib/datetime';
 import { onNotificationCreated } from '@/lib/notificationRealtime';
 import { edit as editNotificationPreferences } from '@/routes/notification-preferences';
@@ -36,18 +37,20 @@ const props = defineProps<{
     unreadCount: number;
 }>();
 
+const { t } = useI18n();
+
 const tabs = computed(() => [
     {
         key: 'all' as const,
-        label: 'Todas',
+        label: t('Todas'),
         href: notificationRoutes.index(),
     },
     {
         key: 'unread' as const,
         label:
             props.unreadCount > 0
-                ? `Sin leer · ${props.unreadCount}`
-                : 'Sin leer',
+                ? t('Sin leer · {count}', { count: props.unreadCount })
+                : t('Sin leer'),
         href: notificationRoutes.index({ query: { filtro: 'sin-leer' } }),
     },
 ]);
@@ -59,14 +62,15 @@ const groups = computed(() => {
     const weekAgo = startOfToday.getTime() - 6 * 24 * 60 * 60 * 1000;
 
     const buckets: { label: string; items: NotificationRow[] }[] = [
-        { label: 'Hoy', items: [] },
-        { label: 'Esta semana', items: [] },
-        { label: 'Anteriores', items: [] },
+        { label: t('Hoy'), items: [] },
+        { label: t('Esta semana'), items: [] },
+        { label: t('Anteriores'), items: [] },
     ];
 
     for (const n of props.notifications.data) {
-        const t = n.created_at ? new Date(n.created_at).getTime() : 0;
-        const bucket = t >= startOfToday.getTime() ? 0 : t >= weekAgo ? 1 : 2;
+        const time = n.created_at ? new Date(n.created_at).getTime() : 0;
+        const bucket =
+            time >= startOfToday.getTime() ? 0 : time >= weekAgo ? 1 : 2;
         buckets[bucket].items.push(n);
     }
 
@@ -138,7 +142,7 @@ onBeforeUnmount(() => stop?.());
 </script>
 
 <template>
-    <Head title="Notificaciones" />
+    <Head :title="$t('Notificaciones')" />
 
     <div class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 md:py-10">
         <header
@@ -146,9 +150,9 @@ onBeforeUnmount(() => stop?.());
             class="mb-6 flex flex-wrap items-end justify-between gap-4"
         >
             <div>
-                <p class="fl-eyebrow">Tu actividad</p>
+                <p class="fl-eyebrow">{{ $t('Tu actividad') }}</p>
                 <h1 class="fl-display mt-2 text-3xl sm:text-4xl">
-                    Notificaciones
+                    {{ $t('Notificaciones') }}
                 </h1>
             </div>
             <button
@@ -158,14 +162,14 @@ onBeforeUnmount(() => stop?.());
                 @click="markAllRead"
             >
                 <CheckCheck class="size-4" />
-                Marcar todas como leídas
+                {{ $t('Marcar todas como leídas') }}
             </button>
         </header>
 
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <nav
                 class="inline-flex rounded-full border border-border bg-card p-1"
-                aria-label="Filtrar notificaciones"
+                :aria-label="$t('Filtrar notificaciones')"
             >
                 <Link
                     v-for="tab in tabs"
@@ -188,7 +192,7 @@ onBeforeUnmount(() => stop?.());
                 class="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-fl-gold-ink focus-visible:ring-2 focus-visible:ring-fl-gold/60 focus-visible:outline-none"
             >
                 <Settings2 class="size-4" />
-                Preferencias
+                {{ $t('Preferencias') }}
             </Link>
         </div>
 
@@ -245,7 +249,7 @@ onBeforeUnmount(() => stop?.());
                         >
                             {{ n.created_at ? timeAgo(n.created_at) : '' }}
                             <span v-if="!n.read_at" class="sr-only">
-                                · sin leer</span
+                                {{ $t('· sin leer') }}</span
                             >
                         </span>
                     </button>
@@ -256,7 +260,7 @@ onBeforeUnmount(() => stop?.());
                             class="inline-flex min-h-11 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-fl-gold-ink focus-visible:ring-2 focus-visible:ring-fl-gold/60 focus-visible:outline-none"
                             @click.stop="markRead(n)"
                         >
-                            Marcar leída
+                            {{ $t('Marcar leída') }}
                         </button>
                         <ChevronRight
                             v-if="n.action_url"
@@ -279,14 +283,20 @@ onBeforeUnmount(() => stop?.());
             </span>
             <p class="fl-display text-xl">
                 {{
-                    filter === 'unread' ? 'Todo leído' : 'Aún no hay nada aquí'
+                    filter === 'unread'
+                        ? $t('Todo leído')
+                        : $t('Aún no hay nada aquí')
                 }}
             </p>
             <p class="max-w-sm text-sm text-muted-foreground">
                 {{
                     filter === 'unread'
-                        ? 'Estás al día. Te avisaremos cuando pase algo nuevo.'
-                        : 'Aquí verás nuevos seguidores, mensajes de apoyo y avisos de tus pedidos y eventos.'
+                        ? $t(
+                              'Estás al día. Te avisaremos cuando pase algo nuevo.',
+                          )
+                        : $t(
+                              'Aquí verás nuevos seguidores, mensajes de apoyo y avisos de tus pedidos y eventos.',
+                          )
                 }}
             </p>
         </div>

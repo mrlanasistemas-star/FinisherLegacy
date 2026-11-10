@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/i18n';
 import type { AppCheckoutContext, CheckoutOrderState } from '@/lib/commerce';
 
 type Line = {
@@ -79,6 +80,8 @@ const props = defineProps<{
     app?: AppCheckoutContext | null;
 }>();
 
+const { t, regional } = useI18n();
+
 const blocked = computed(() =>
     props.items.some((item) => !item.price_available || !item.in_stock),
 );
@@ -88,7 +91,7 @@ const itemCount = computed(() =>
 );
 
 const amountLabel = computed(() =>
-    new Intl.NumberFormat('es-MX', {
+    new Intl.NumberFormat(regional.value, {
         style: 'currency',
         currency: props.currency,
     }).format(props.total_minor / 100),
@@ -161,7 +164,7 @@ const deliveryText = computed(() => {
     }
 
     if (props.delivery.method === 'pickup') {
-        return 'Entrega en mano / recoger';
+        return t('Entrega en mano / recoger');
     }
 
     return Object.values(props.delivery.address ?? {})
@@ -170,14 +173,14 @@ const deliveryText = computed(() => {
 });
 
 const lineDetails = (line: Line) =>
-    [line.size ? `Talla ${line.size}` : null, line.color]
+    [line.size ? t('Talla {size}', { size: line.size }) : null, line.color]
         .filter(Boolean)
         .join(' · ') ||
     (line.variant_name !== line.product_name ? line.variant_name : '');
 </script>
 
 <template>
-    <Head title="Checkout" />
+    <Head :title="$t('Checkout')" />
 
     <div class="min-h-screen bg-background">
         <div
@@ -190,24 +193,28 @@ const lineDetails = (line: Line) =>
                     href="/carrito"
                     class="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
-                    <ArrowLeft class="size-4" /> Volver al carrito
+                    <ArrowLeft class="size-4" /> {{ $t('Volver al carrito') }}
                 </Link>
-                <p class="fl-eyebrow">Checkout seguro</p>
+                <p class="fl-eyebrow">{{ $t('Checkout seguro') }}</p>
                 <h1 class="mt-2 font-serif text-3xl font-semibold md:text-4xl">
                     {{
                         step === 'details'
-                            ? 'Confirma tu pedido'
-                            : 'Último paso: el pago'
+                            ? $t('Confirma tu pedido')
+                            : $t('Último paso: el pago')
                     }}
                 </h1>
 
                 <!-- Progress: datos → entrega → pago -->
                 <ol
                     class="mt-6 flex items-center gap-2 text-xs font-medium sm:text-sm"
-                    aria-label="Pasos del checkout"
+                    :aria-label="$t('Pasos del checkout')"
                 >
                     <li
-                        v-for="(label, i) in ['Tus datos', 'Entrega', 'Pago']"
+                        v-for="(label, i) in [
+                            $t('Tus datos'),
+                            $t('Entrega'),
+                            $t('Pago'),
+                        ]"
                         :key="label"
                         class="flex items-center gap-2"
                         :aria-current="
@@ -256,11 +263,19 @@ const lineDetails = (line: Line) =>
                     class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-fl-cream px-3 py-1.5 text-sm text-foreground/80"
                 >
                     <Clock class="size-4 text-fl-gold-ink" />
-                    Pedido #{{ order.order_number }} · apartamos tus piezas
                     {{
                         minutesLeft > 0
-                            ? `${minutesLeft} min más`
-                            : 'unos minutos más'
+                            ? $t(
+                                  'Pedido #{number} · apartamos tus piezas {minutes} min más',
+                                  {
+                                      number: order.order_number,
+                                      minutes: minutesLeft,
+                                  },
+                              )
+                            : $t(
+                                  'Pedido #{number} · apartamos tus piezas unos minutos más',
+                                  { number: order.order_number },
+                              )
                     }}
                 </p>
 
@@ -268,13 +283,12 @@ const lineDetails = (line: Line) =>
                 <div
                     class="mt-5 flex items-center justify-between rounded-2xl border border-border bg-white px-4 py-3 lg:hidden"
                 >
-                    <span class="text-sm text-muted-foreground"
-                        >{{ itemCount }}
-                        {{ itemCount === 1 ? 'producto' : 'productos' }}</span
-                    >
-                    <span class="legacy-numeric text-base font-semibold"
-                        >Total {{ amountLabel }}</span
-                    >
+                    <span class="text-sm text-muted-foreground">{{
+                        $tc('{count} producto|{count} productos', itemCount)
+                    }}</span>
+                    <span class="legacy-numeric text-base font-semibold">{{
+                        $t('Total {amount}', { amount: amountLabel })
+                    }}</span>
                 </div>
             </header>
 
@@ -301,7 +315,7 @@ const lineDetails = (line: Line) =>
                                 />
                                 <template v-else>1</template>
                             </span>
-                            Tus datos
+                            {{ $t('Tus datos') }}
                         </h2>
 
                         <div
@@ -319,7 +333,9 @@ const lineDetails = (line: Line) =>
 
                         <div v-else class="grid gap-4 sm:grid-cols-2">
                             <div class="grid gap-1.5 sm:col-span-2">
-                                <Label for="co-name">Nombre completo</Label>
+                                <Label for="co-name">{{
+                                    $t('Nombre completo')
+                                }}</Label>
                                 <Input
                                     id="co-name"
                                     v-model="form.name"
@@ -330,7 +346,7 @@ const lineDetails = (line: Line) =>
                                 <InputError :message="form.errors.name" />
                             </div>
                             <div class="grid gap-1.5">
-                                <Label for="co-email">Correo</Label>
+                                <Label for="co-email">{{ $t('Correo') }}</Label>
                                 <Input
                                     id="co-email"
                                     v-model="form.email"
@@ -343,13 +359,13 @@ const lineDetails = (line: Line) =>
                             </div>
                             <div class="grid gap-1.5">
                                 <Label for="co-phone">
-                                    Teléfono
+                                    {{ $t('Teléfono') }}
                                     <span
                                         v-if="
                                             form.delivery_method !== 'shipping'
                                         "
                                         class="font-normal text-muted-foreground"
-                                        >(opcional)</span
+                                        >{{ $t('(opcional)') }}</span
                                     >
                                 </Label>
                                 <Input
@@ -383,7 +399,7 @@ const lineDetails = (line: Line) =>
                                 />
                                 <template v-else>2</template>
                             </span>
-                            Entrega
+                            {{ $t('Entrega') }}
                         </h2>
 
                         <p
@@ -391,14 +407,16 @@ const lineDetails = (line: Line) =>
                             class="flex items-start gap-2 text-sm text-muted-foreground"
                         >
                             <MapPin class="mt-0.5 size-4 shrink-0" />
-                            {{ deliveryText ?? 'Entrega en mano / recoger' }}
+                            {{
+                                deliveryText ?? $t('Entrega en mano / recoger')
+                            }}
                         </p>
 
                         <template v-else>
                             <div
                                 class="grid gap-3 sm:grid-cols-2"
                                 role="radiogroup"
-                                aria-label="Método de entrega"
+                                :aria-label="$t('Método de entrega')"
                             >
                                 <button
                                     type="button"
@@ -416,13 +434,16 @@ const lineDetails = (line: Line) =>
                                 >
                                     <Store class="mt-0.5 size-5 shrink-0" />
                                     <span>
-                                        <span class="block font-medium"
-                                            >Recoger / entrega en mano</span
-                                        >
+                                        <span class="block font-medium">{{
+                                            $t('Recoger / entrega en mano')
+                                        }}</span>
                                         <span
                                             class="text-sm text-muted-foreground"
-                                            >En tu evento o punto de entrega.
-                                            Sin costo.</span
+                                            >{{
+                                                $t(
+                                                    'En tu evento o punto de entrega. Sin costo.',
+                                                )
+                                            }}</span
                                         >
                                     </span>
                                 </button>
@@ -442,13 +463,16 @@ const lineDetails = (line: Line) =>
                                 >
                                     <Truck class="mt-0.5 size-5 shrink-0" />
                                     <span>
-                                        <span class="block font-medium"
-                                            >Envío a domicilio</span
-                                        >
+                                        <span class="block font-medium">{{
+                                            $t('Envío a domicilio')
+                                        }}</span>
                                         <span
                                             class="text-sm text-muted-foreground"
-                                            >Te contactamos para coordinar la
-                                            paquetería.</span
+                                            >{{
+                                                $t(
+                                                    'Te contactamos para coordinar la paquetería.',
+                                                )
+                                            }}</span
                                         >
                                     </span>
                                 </button>
@@ -459,7 +483,9 @@ const lineDetails = (line: Line) =>
                                 class="mt-5 grid gap-4 sm:grid-cols-2"
                             >
                                 <div class="grid gap-1.5 sm:col-span-2">
-                                    <Label for="co-line">Calle y número</Label>
+                                    <Label for="co-line">{{
+                                        $t('Calle y número')
+                                    }}</Label>
                                     <Input
                                         id="co-line"
                                         v-model="form.address_line"
@@ -471,7 +497,9 @@ const lineDetails = (line: Line) =>
                                     />
                                 </div>
                                 <div class="grid gap-1.5">
-                                    <Label for="co-col">Colonia</Label>
+                                    <Label for="co-col">{{
+                                        $t('Colonia')
+                                    }}</Label>
                                     <Input
                                         id="co-col"
                                         v-model="form.address_neighborhood"
@@ -480,7 +508,9 @@ const lineDetails = (line: Line) =>
                                     />
                                 </div>
                                 <div class="grid gap-1.5">
-                                    <Label for="co-cp">Código postal</Label>
+                                    <Label for="co-cp">{{
+                                        $t('Código postal')
+                                    }}</Label>
                                     <Input
                                         id="co-cp"
                                         v-model="form.address_postal_code"
@@ -496,7 +526,9 @@ const lineDetails = (line: Line) =>
                                     />
                                 </div>
                                 <div class="grid gap-1.5">
-                                    <Label for="co-city">Ciudad</Label>
+                                    <Label for="co-city">{{
+                                        $t('Ciudad')
+                                    }}</Label>
                                     <Input
                                         id="co-city"
                                         v-model="form.address_city"
@@ -508,7 +540,9 @@ const lineDetails = (line: Line) =>
                                     />
                                 </div>
                                 <div class="grid gap-1.5">
-                                    <Label for="co-state">Estado</Label>
+                                    <Label for="co-state">{{
+                                        $t('Estado')
+                                    }}</Label>
                                     <Input
                                         id="co-state"
                                         v-model="form.address_state"
@@ -523,10 +557,10 @@ const lineDetails = (line: Line) =>
 
                             <div class="mt-5 grid gap-1.5">
                                 <Label for="co-notes"
-                                    >Notas para la entrega
+                                    >{{ $t('Notas para la entrega') }}
                                     <span
                                         class="font-normal text-muted-foreground"
-                                        >(opcional)</span
+                                        >{{ $t('(opcional)') }}</span
                                     ></Label
                                 >
                                 <Textarea
@@ -553,14 +587,16 @@ const lineDetails = (line: Line) =>
                                 "
                                 >3</span
                             >
-                            Pago
+                            {{ $t('Pago') }}
                         </h2>
 
                         <template v-if="step === 'details'">
                             <p class="mb-5 text-sm text-muted-foreground">
-                                Al continuar apartamos tus piezas y abrimos el
-                                pago seguro con tarjeta. El total lo calcula
-                                nuestro servidor.
+                                {{
+                                    $t(
+                                        'Al continuar apartamos tus piezas y abrimos el pago seguro con tarjeta. El total lo calcula nuestro servidor.',
+                                    )
+                                }}
                             </p>
                             <Button
                                 class="h-12 w-full rounded-full text-base"
@@ -575,17 +611,22 @@ const lineDetails = (line: Line) =>
                                 />
                                 {{
                                     form.processing
-                                        ? 'Apartando tus piezas…'
-                                        : 'Continuar al pago'
+                                        ? $t('Apartando tus piezas…')
+                                        : $t('Continuar al pago')
                                 }}
                             </Button>
                             <p
                                 v-if="blocked"
                                 class="mt-3 text-sm text-amber-800"
                             >
-                                Hay productos sin precio o sin existencias.
-                                <Link href="/carrito" class="underline"
-                                    >Revisa tu carrito</Link
+                                {{
+                                    $t(
+                                        'Hay productos sin precio o sin existencias.',
+                                    )
+                                }}
+                                <Link href="/carrito" class="underline">{{
+                                    $t('Revisa tu carrito')
+                                }}</Link
                                 >.
                             </p>
                         </template>
@@ -622,28 +663,33 @@ const lineDetails = (line: Line) =>
                                 v-else
                                 class="rounded-control border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
                             >
-                                El pago en línea no está disponible por ahora.
-                                Tu pedido quedó registrado; puedes pagarlo en tu
-                                evento o te contactaremos.
+                                {{
+                                    $t(
+                                        'El pago en línea no está disponible por ahora. Tu pedido quedó registrado; puedes pagarlo en tu evento o te contactaremos.',
+                                    )
+                                }}
                                 <a
                                     v-if="app"
                                     :href="app.return_url"
                                     class="mt-2 block font-medium text-foreground underline-offset-4 hover:underline"
-                                    >Volver a la app</a
+                                    >{{ $t('Volver a la app') }}</a
                                 >
                                 <Link
                                     v-else
                                     :href="`/mis-pedidos/${order.uuid}`"
                                     class="mt-2 block font-medium text-foreground underline-offset-4 hover:underline"
-                                    >Ver mi pedido</Link
+                                    >{{ $t('Ver mi pedido') }}</Link
                                 >
                             </div>
                             <p
                                 class="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground"
                             >
-                                <Lock class="size-3" /> Los datos de tu tarjeta
-                                van directo al procesador de pagos; nunca pasan
-                                por Finisher Legacy.
+                                <Lock class="size-3" />
+                                {{
+                                    $t(
+                                        'Los datos de tu tarjeta van directo al procesador de pagos; nunca pasan por Finisher Legacy.',
+                                    )
+                                }}
                             </p>
                         </template>
                     </section>
@@ -653,7 +699,7 @@ const lineDetails = (line: Line) =>
                 <aside class="lg:sticky lg:top-24 lg:self-start">
                     <div class="fl-card p-6">
                         <h2 class="mb-4 font-serif text-xl font-semibold">
-                            Tu pedido
+                            {{ $t('Tu pedido') }}
                         </h2>
                         <ul class="space-y-4">
                             <li
@@ -694,8 +740,8 @@ const lineDetails = (line: Line) =>
                                         v-if="line.connected"
                                         class="mt-0.5 inline-flex items-center gap-1 text-xs text-fl-gold-ink"
                                     >
-                                        <Nfc class="size-3" /> Producto
-                                        conectado
+                                        <Nfc class="size-3" />
+                                        {{ $t('Producto conectado') }}
                                     </p>
                                 </div>
                                 <p class="legacy-numeric shrink-0 text-sm">
@@ -713,7 +759,7 @@ const lineDetails = (line: Line) =>
                             <div
                                 class="flex justify-between text-muted-foreground"
                             >
-                                <dt>Subtotal</dt>
+                                <dt>{{ $t('Subtotal') }}</dt>
                                 <dd class="legacy-numeric">
                                     <Money
                                         :minor="subtotal_minor"
@@ -726,8 +772,12 @@ const lineDetails = (line: Line) =>
                                 class="flex justify-between text-emerald-700"
                             >
                                 <dt>
-                                    Descuento{{
-                                        coupon ? ` (${coupon.code})` : ''
+                                    {{
+                                        coupon
+                                            ? $t('Descuento ({code})', {
+                                                  code: coupon.code,
+                                              })
+                                            : $t('Descuento')
                                     }}
                                 </dt>
                                 <dd class="legacy-numeric">
@@ -740,7 +790,7 @@ const lineDetails = (line: Line) =>
                             <div
                                 class="flex items-baseline justify-between border-t border-border pt-3 text-base font-semibold"
                             >
-                                <dt>Total</dt>
+                                <dt>{{ $t('Total') }}</dt>
                                 <dd class="legacy-numeric text-xl">
                                     <Money
                                         :minor="total_minor"
@@ -753,15 +803,18 @@ const lineDetails = (line: Line) =>
                             v-if="step === 'details'"
                             href="/carrito"
                             class="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground hover:text-foreground"
-                            >← Editar carrito</Link
+                            >← {{ $t('Editar carrito') }}</Link
                         >
                         <p
                             v-if="paymentState === 'processing'"
                             class="mt-4 text-xs text-muted-foreground"
                             role="status"
                         >
-                            No cierres esta ventana mientras confirmamos tu
-                            pago.
+                            {{
+                                $t(
+                                    'No cierres esta ventana mientras confirmamos tu pago.',
+                                )
+                            }}
                         </p>
                     </div>
                 </aside>

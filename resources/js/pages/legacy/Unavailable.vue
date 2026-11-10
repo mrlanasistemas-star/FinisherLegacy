@@ -28,7 +28,7 @@ defineProps<{ kind: string; title: string; message: string }>();
                 :href="home().url"
                 class="mt-8 inline-flex h-12 items-center justify-center rounded-full border border-border bg-white px-6 text-sm font-semibold"
             >
-                Conoce Finisher Legacy
+                {{ $t('Conoce Finisher Legacy') }}
             </Link>
         </div>
     </section>

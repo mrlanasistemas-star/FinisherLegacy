@@ -174,6 +174,15 @@ export const t: I18n['t'] = (source, params) => browser.t(source, params);
 export const tc: I18n['tc'] = (source, count, params) =>
     browser.tc(source, count, params);
 
+/**
+ * BCP 47 tag of the active language ("es-MX", "en-US") for `Intl` in plain
+ * TS that only runs in the browser (`lib/`); components use
+ * `useI18n().regional`.
+ */
+export function activeRegional(): string {
+    return browser.regional;
+}
+
 async function fetchCatalog(url: string, timeoutMs = 4000): Promise<Messages> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);

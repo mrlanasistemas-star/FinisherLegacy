@@ -9,7 +9,16 @@
  * `?publicar=1` (navbar "+") opens the upload modal.
  */
 import { InfiniteScroll, Link, router, usePage } from '@inertiajs/vue3';
-import { CalendarDays, Check, Sparkles, Users } from '@lucide/vue';
+import {
+    ArrowRight,
+    CalendarDays,
+    Check,
+    Medal,
+    Sparkles,
+    Timer,
+    UserRoundPlus,
+    Users,
+} from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import AthleteSuggestions from '@/components/community/AthleteSuggestions.vue';
@@ -20,11 +29,15 @@ import type { ComposerData } from '@/components/community/Composer.vue';
 import FeedSkeleton from '@/components/community/FeedSkeleton.vue';
 import PeopleStrip from '@/components/community/PeopleStrip.vue';
 import UpcomingEvents from '@/components/community/UpcomingEvents.vue';
+import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
+import PageHero from '@/components/marketing/PageHero.vue';
+import PhoneFrame from '@/components/marketing/PhoneFrame.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthGate } from '@/composables/useAuthGate';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { index as communityIndex, people } from '@/routes/community';
 import { connections as profileConnections } from '@/routes/profile';
 import type {
@@ -57,6 +70,7 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const profile = computed(() => page.props.auth.profile);
 const { requireAuth, loginUrl } = useAuthGate();
+const { t } = useI18n();
 
 const composerOpen = ref(false);
 const composerKind = ref<PostKind>('photo');
@@ -97,11 +111,18 @@ function onDeleted(uuid: string) {
     removed.value = new Set([...removed.value, uuid]);
 }
 
-const tabs = [
-    { key: 'para-ti', label: 'Para ti', icon: Sparkles, authOnly: false },
-    { key: 'siguiendo', label: 'Siguiendo', icon: Users, authOnly: true },
-    { key: 'eventos', label: 'Eventos', icon: CalendarDays, authOnly: false },
-] as const;
+const tabs = computed<
+    { key: Tab; label: string; icon: typeof Sparkles; authOnly: boolean }[]
+>(() => [
+    { key: 'para-ti', label: t('Para ti'), icon: Sparkles, authOnly: false },
+    { key: 'siguiendo', label: t('Siguiendo'), icon: Users, authOnly: true },
+    {
+        key: 'eventos',
+        label: t('Eventos'),
+        icon: CalendarDays,
+        authOnly: false,
+    },
+]);
 
 function tabHref(key: Tab) {
     return communityIndex({ query: key === 'para-ti' ? {} : { tab: key } });
@@ -110,23 +131,60 @@ function tabHref(key: Tab) {
 const emptyCopy = computed(() => {
     if (props.tab === 'siguiendo') {
         return {
-            title: 'Tu feed de Siguiendo está vacío.',
-            text: 'Sigue a otros atletas y aquí verás sus carreras, fotos y logros.',
+            title: t('Tu feed de Siguiendo está vacío.'),
+            text: t(
+                'Sigue a otros atletas y aquí verás sus carreras, fotos y logros.',
+            ),
         };
     }
 
     if (props.tab === 'eventos') {
         return {
-            title: 'Todavía no hay publicaciones de eventos.',
-            text: 'Comparte tu próxima carrera y etiqueta el evento.',
+            title: t('Todavía no hay publicaciones de eventos.'),
+            text: t('Comparte tu próxima carrera y etiqueta el evento.'),
         };
     }
 
     return {
-        title: 'Todavía no hay publicaciones.',
-        text: '¡Comparte el primer logro de la comunidad!',
+        title: t('Todavía no hay publicaciones.'),
+        text: t('¡Comparte el primer logro de la comunidad!'),
     };
 });
+
+// Guest teaser: what the community is, before the real public feed.
+const signUpHref = computed(() => loginUrl(page.url, 'registro'));
+const signInHref = computed(() => loginUrl(page.url));
+
+const guestBenefits = computed(() => [
+    {
+        icon: Sparkles,
+        title: t('Un feed de puro deporte'),
+        text: t(
+            'Carreras, entrenamientos, fotos y momentos de atletas de running, triatlón, ciclismo, HYROX y más.',
+        ),
+    },
+    {
+        icon: Timer,
+        title: t('Tus resultados, en tu perfil'),
+        text: t(
+            'Cada carrera que terminas queda en tu historial, con su tiempo y su distancia.',
+        ),
+    },
+    {
+        icon: Medal,
+        title: t('Tu vitrina de medallas'),
+        text: t(
+            'Guarda cada medalla con su foto y su historia, y decide quién puede verla.',
+        ),
+    },
+    {
+        icon: UserRoundPlus,
+        title: t('Sigue y celebra'),
+        text: t(
+            'Sigue a tus amigos y a tus atletas favoritos, celebra sus logros y coméntalos.',
+        ),
+    },
+]);
 
 const myProfileUrl = computed(() =>
     profile.value?.username ? `/@${profile.value.username}` : null,
@@ -135,9 +193,79 @@ const myProfileUrl = computed(() =>
 
 <template>
     <SeoHead
-        title="Comunidad deportiva"
-        description="Resultados, fotos, entrenamientos y momentos compartidos por atletas de Finisher Legacy. Celebra, comenta y sigue a otros atletas."
+        :title="$t('Comunidad deportiva')"
+        :description="
+            $t(
+                'Resultados, fotos, entrenamientos y momentos compartidos por atletas de Finisher Legacy. Celebra, comenta y sigue a otros atletas.',
+            )
+        "
     />
+
+    <!-- Guests: explain the community before showing the public feed. -->
+    <template v-if="!user">
+        <PageHero
+            :eyebrow="$t('Comunidad')"
+            :title="$t('Tu deporte,')"
+            :accent="$t('en buena compañía.')"
+            :lede="
+                $t(
+                    'La red social de Finisher Legacy: comparte tus carreras y entrenamientos, guarda tus resultados y medallas, y sigue a quienes corren, nadan y ruedan como tú.',
+                )
+            "
+        >
+            <template #actions>
+                <a :href="signUpHref" class="fl-btn-primary">
+                    {{ $t('Crear mi cuenta') }}
+                    <ArrowRight class="size-4" aria-hidden="true" />
+                </a>
+                <a :href="signInHref" class="fl-btn-secondary">{{
+                    $t('Entrar')
+                }}</a>
+            </template>
+            <p class="text-sm text-muted-foreground">
+                {{
+                    $t('Crear tu cuenta es gratis. Tú decides qué es público.')
+                }}
+            </p>
+            <template #visual>
+                <div class="relative flex items-end justify-center gap-5">
+                    <PhoneFrame
+                        src="/images/app/eventos.webp"
+                        :alt="
+                            $t('Pantalla de eventos en la app Finisher Legacy')
+                        "
+                        tilt="left"
+                        class="hidden w-52 translate-y-6 sm:block"
+                    />
+                    <PhoneFrame
+                        src="/images/app/inicio.webp"
+                        :alt="
+                            $t('Pantalla de inicio de la app Finisher Legacy')
+                        "
+                        float
+                        eager
+                        class="w-60"
+                    />
+                </div>
+            </template>
+        </PageHero>
+
+        <section class="fl-container pt-8 pb-6 sm:pt-10 sm:pb-10">
+            <FeatureGrid :items="guestBenefits" :columns="4" />
+        </section>
+
+        <div class="fl-container pt-8 sm:pt-12">
+            <div
+                v-reveal
+                class="mx-auto flex max-w-[1010px] flex-col gap-1 border-t border-border pt-8 sm:px-6 lg:px-8"
+            >
+                <p class="fl-eyebrow">{{ $t('En la comunidad') }}</p>
+                <h2 class="fl-display text-2xl sm:text-3xl">
+                    {{ $t('Lo que se está compartiendo') }}
+                </h2>
+            </div>
+        </div>
+    </template>
 
     <div class="pb-20">
         <div
@@ -148,7 +276,9 @@ const myProfileUrl = computed(() =>
                 class="w-full max-w-[600px] min-w-0"
                 aria-labelledby="community-title"
             >
-                <h1 id="community-title" class="sr-only">Comunidad</h1>
+                <h1 id="community-title" class="sr-only">
+                    {{ $t('Comunidad') }}
+                </h1>
 
                 <!-- People strip -->
                 <div class="pt-4 sm:pt-8">
@@ -167,8 +297,8 @@ const myProfileUrl = computed(() =>
 
                 <!-- Sticky tabs -->
                 <nav
-                    class="sticky top-16 z-20 mt-3 border-b border-border bg-background/90 backdrop-blur sm:mt-4"
-                    aria-label="Filtrar publicaciones"
+                    class="sticky top-14 z-20 mt-3 border-b border-border bg-background/90 backdrop-blur sm:mt-4"
+                    :aria-label="$t('Filtrar publicaciones')"
                 >
                     <div class="relative flex">
                         <!-- Sliding indicator (same component across tabs, so it animates) -->
@@ -178,7 +308,9 @@ const myProfileUrl = computed(() =>
                                 transform: `translateX(${
                                     Math.max(
                                         0,
-                                        tabs.findIndex((t) => t.key === tab),
+                                        tabs.findIndex(
+                                            (entry) => entry.key === tab,
+                                        ),
                                     ) * 100
                                 }%)`,
                             }"
@@ -262,7 +394,7 @@ const myProfileUrl = computed(() =>
                         </p>
                         <div class="mt-5 flex flex-wrap justify-center gap-2">
                             <Button class="rounded-full" @click="publish()">
-                                Publicar
+                                {{ $t('Publicar') }}
                             </Button>
                             <Button
                                 v-if="tab === 'siguiendo'"
@@ -270,7 +402,9 @@ const myProfileUrl = computed(() =>
                                 variant="outline"
                                 class="rounded-full"
                             >
-                                <Link :href="people()">Encontrar personas</Link>
+                                <Link :href="people()">{{
+                                    $t('Encontrar personas')
+                                }}</Link>
                             </Button>
                         </div>
                     </div>
@@ -286,7 +420,7 @@ const myProfileUrl = computed(() =>
                                 class="flex items-center justify-center gap-2 py-5 text-sm text-muted-foreground"
                             >
                                 <Spinner class="text-fl-gold-dim" />
-                                Cargando más publicaciones…
+                                {{ $t('Cargando más publicaciones…') }}
                             </p>
                         </div>
                         <div
@@ -298,10 +432,15 @@ const myProfileUrl = computed(() =>
                             >
                                 <Check class="size-5" aria-hidden="true" />
                             </span>
-                            <p class="text-sm font-semibold">Estás al día</p>
+                            <p class="text-sm font-semibold">
+                                {{ $t('Estás al día') }}
+                            </p>
                             <p class="text-xs text-muted-foreground">
-                                Ya viste todas las publicaciones de esta
-                                sección.
+                                {{
+                                    $t(
+                                        'Ya viste todas las publicaciones de esta sección.',
+                                    )
+                                }}
                             </p>
                         </div>
                     </template>
@@ -339,7 +478,7 @@ const myProfileUrl = computed(() =>
                             v-if="myProfileUrl"
                             :href="myProfileUrl"
                             class="text-xs font-semibold text-fl-gold-ink hover:text-foreground"
-                            >Ver perfil</Link
+                            >{{ $t('Ver perfil') }}</Link
                         >
                     </div>
                     <dl
@@ -348,7 +487,7 @@ const myProfileUrl = computed(() =>
                     >
                         <div>
                             <dt class="text-[11px] text-muted-foreground">
-                                Publicaciones
+                                {{ $t('Publicaciones') }}
                             </dt>
                             <dd class="legacy-numeric text-base font-semibold">
                                 {{ me.posts }}
@@ -367,7 +506,7 @@ const myProfileUrl = computed(() =>
                             class="border-x border-border hover:bg-muted/40"
                         >
                             <dt class="text-[11px] text-muted-foreground">
-                                Seguidores
+                                {{ $t('Seguidores') }}
                             </dt>
                             <dd class="legacy-numeric text-base font-semibold">
                                 {{ me.followers }}
@@ -386,7 +525,7 @@ const myProfileUrl = computed(() =>
                             class="hover:bg-muted/40"
                         >
                             <dt class="text-[11px] text-muted-foreground">
-                                Siguiendo
+                                {{ $t('Siguiendo') }}
                             </dt>
                             <dd class="legacy-numeric text-base font-semibold">
                                 {{ me.following }}
@@ -398,24 +537,27 @@ const myProfileUrl = computed(() =>
                         class="rounded-card border border-border bg-card p-5"
                     >
                         <p class="font-serif text-xl leading-snug">
-                            Tu historia también cuenta.
+                            {{ $t('Tu historia también cuenta.') }}
                         </p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Comparte tus carreras, celebra las de otros y sigue
-                            a tus atletas favoritos.
+                            {{
+                                $t(
+                                    'Comparte tus carreras, celebra las de otros y sigue a tus atletas favoritos.',
+                                )
+                            }}
                         </p>
                         <div class="mt-4 flex gap-2">
                             <Button as-child class="rounded-full">
-                                <a :href="loginUrl(undefined, 'registro')"
-                                    >Crear cuenta</a
-                                >
+                                <a :href="signUpHref">{{
+                                    $t('Crear cuenta')
+                                }}</a>
                             </Button>
                             <Button
                                 as-child
                                 variant="outline"
                                 class="rounded-full"
                             >
-                                <a :href="loginUrl()">Iniciar sesión</a>
+                                <a :href="signInHref">{{ $t('Entrar') }}</a>
                             </Button>
                         </div>
                     </div>

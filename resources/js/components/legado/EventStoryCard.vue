@@ -25,7 +25,7 @@ const meta = computed(() =>
 
 const plateLabel = computed(() =>
     props.entry.legacy_plate_status
-        ? (legacyPlateStatusLabel[props.entry.legacy_plate_status] ?? null)
+        ? (legacyPlateStatusLabel(props.entry.legacy_plate_status) ?? null)
         : null,
 );
 </script>
@@ -43,7 +43,11 @@ const plateLabel = computed(() =>
             <img
                 v-if="visual"
                 :src="visual"
-                :alt="entry.image_url ? `Medalla de ${entry.event}` : ''"
+                :alt="
+                    entry.image_url
+                        ? $t('Medalla de {event}', { event: entry.event ?? '' })
+                        : ''
+                "
                 loading="lazy"
                 decoding="async"
                 class="absolute inset-0 size-full object-cover"
@@ -68,13 +72,14 @@ const plateLabel = computed(() =>
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-muted-foreground">
                         {{
-                            shortDate(entry.event_date) || 'Fecha por confirmar'
+                            shortDate(entry.event_date) ||
+                            $t('Fecha por confirmar')
                         }}
                     </p>
                     <h3
                         class="mt-1 font-serif text-xl leading-snug font-medium text-foreground sm:text-2xl"
                     >
-                        {{ entry.event ?? 'Evento' }}
+                        {{ entry.event ?? $t('Evento') }}
                     </h3>
                     <p
                         v-if="meta"
@@ -94,7 +99,9 @@ const plateLabel = computed(() =>
                 class="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-4"
             >
                 <div v-if="entry.official_time">
-                    <dt class="text-[11px] text-muted-foreground">Tiempo</dt>
+                    <dt class="text-[11px] text-muted-foreground">
+                        {{ $t('Tiempo') }}
+                    </dt>
                     <dd
                         class="legacy-numeric mt-0.5 text-base font-semibold tabular-nums sm:text-lg"
                     >
@@ -102,7 +109,9 @@ const plateLabel = computed(() =>
                     </dd>
                 </div>
                 <div v-if="entry.position">
-                    <dt class="text-[11px] text-muted-foreground">Posición</dt>
+                    <dt class="text-[11px] text-muted-foreground">
+                        {{ $t('Posición') }}
+                    </dt>
                     <dd
                         class="legacy-numeric mt-0.5 text-base font-semibold tabular-nums sm:text-lg"
                     >
@@ -110,7 +119,9 @@ const plateLabel = computed(() =>
                     </dd>
                 </div>
                 <div v-if="entry.pace">
-                    <dt class="text-[11px] text-muted-foreground">Ritmo</dt>
+                    <dt class="text-[11px] text-muted-foreground">
+                        {{ $t('Ritmo') }}
+                    </dt>
                     <dd
                         class="legacy-numeric mt-0.5 text-base font-semibold tabular-nums sm:text-lg"
                     >
@@ -122,12 +133,12 @@ const plateLabel = computed(() =>
                 v-else-if="!entry.upcoming"
                 class="mt-4 border-t border-border pt-4 text-sm text-muted-foreground"
             >
-                Tu resultado aparecerá aquí en cuanto se publique.
+                {{ $t('Tu resultado aparecerá aquí en cuanto se publique.') }}
             </p>
 
             <ul
                 class="mt-auto flex flex-wrap items-center gap-2 pt-4 text-xs"
-                aria-label="Lo que guarda esta carrera"
+                :aria-label="$t('Lo que guarda esta carrera')"
             >
                 <li
                     v-if="entry.has_legacy_plate"
@@ -149,30 +160,31 @@ const plateLabel = computed(() =>
                     v-if="entry.has_medal"
                     class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-foreground"
                 >
-                    <Medal class="size-3.5 text-fl-gold-ink" /> Medalla
+                    <Medal class="size-3.5 text-fl-gold-ink" />
+                    {{ $t('Medalla') }}
                 </li>
                 <li
                     v-if="entry.photo_count"
                     class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-foreground"
                 >
                     <Camera class="size-3.5" />
-                    {{ entry.photo_count }}
-                    {{ entry.photo_count === 1 ? 'foto' : 'fotos' }}
+                    {{ $tc('{count} foto|{count} fotos', entry.photo_count) }}
                 </li>
                 <li
                     v-if="entry.video_count"
                     class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-foreground"
                 >
                     <Video class="size-3.5" />
-                    {{ entry.video_count }}
-                    {{ entry.video_count === 1 ? 'video' : 'videos' }}
+                    {{ $tc('{count} video|{count} videos', entry.video_count) }}
                 </li>
                 <li
                     v-if="entry.gear_count"
                     class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-foreground"
                 >
                     <Package class="size-3.5" />
-                    {{ entry.gear_count }} de tu equipo
+                    {{
+                        $t('{count} de tu equipo', { count: entry.gear_count })
+                    }}
                 </li>
             </ul>
         </div>

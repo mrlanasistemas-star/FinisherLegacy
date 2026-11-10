@@ -24,16 +24,16 @@ defineProps<{ gear: NonNullable<CommunityPost['gear']> }>();
             <ShoppingBag class="size-5 text-fl-gold-ink" />
         </span>
         <span class="min-w-0 flex-1">
-            <span class="fl-eyebrow block">Mi equipo</span>
+            <span class="fl-eyebrow block">{{ $t('Mi equipo') }}</span>
             <span class="block truncate font-serif text-lg leading-tight">
-                {{ gear.product_name ?? 'Equipo Finisher' }}
+                {{ gear.product_name ?? $t('Equipo Finisher') }}
             </span>
         </span>
         <Link
             :href="storeIndex()"
             class="shrink-0 rounded-full border border-border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/30"
         >
-            Ver tienda
+            {{ $t('Ver tienda') }}
         </Link>
     </div>
 </template>

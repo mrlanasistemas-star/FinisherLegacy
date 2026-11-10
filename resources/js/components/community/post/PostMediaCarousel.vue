@@ -125,8 +125,8 @@ function onPointerUp(event: PointerEvent) {
         <div
             ref="track"
             class="flex size-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden"
-            :aria-label="`Fotos de ${authorName}`"
-            aria-roledescription="carrusel"
+            :aria-label="$t('Fotos de {name}', { name: authorName })"
+            :aria-roledescription="$t('carrusel')"
             tabindex="0"
             @scroll.passive="onScroll"
             @keydown.left.prevent="go(index - 1)"
@@ -137,8 +137,10 @@ function onPointerUp(event: PointerEvent) {
                 :key="`${item.url}-${i}`"
                 class="relative size-full shrink-0 snap-center snap-always"
                 role="group"
-                aria-roledescription="foto"
-                :aria-label="`${i + 1} de ${count}`"
+                :aria-roledescription="$t('foto')"
+                :aria-label="
+                    $t('{current} de {total}', { current: i + 1, total: count })
+                "
             >
                 <video
                     v-if="item.type === 'video'"
@@ -152,7 +154,12 @@ function onPointerUp(event: PointerEvent) {
                 <img
                     v-else
                     :src="item.url"
-                    :alt="`Foto ${i + 1} de ${authorName}`"
+                    :alt="
+                        $t('Foto {number} de {name}', {
+                            number: i + 1,
+                            name: authorName,
+                        })
+                    "
                     :loading="i === 0 ? 'eager' : 'lazy'"
                     decoding="async"
                     draggable="false"
@@ -189,7 +196,7 @@ function onPointerUp(event: PointerEvent) {
                 v-if="index > 0"
                 type="button"
                 class="absolute top-1/2 left-3 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow-fl-soft transition-opacity group-hover/media:opacity-100 focus-visible:opacity-100 sm:flex sm:opacity-0"
-                aria-label="Foto anterior"
+                :aria-label="$t('Foto anterior')"
                 @click="go(index - 1)"
             >
                 <ChevronLeft class="size-4" />
@@ -198,7 +205,7 @@ function onPointerUp(event: PointerEvent) {
                 v-if="index < count - 1"
                 type="button"
                 class="absolute top-1/2 right-3 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow-fl-soft transition-opacity group-hover/media:opacity-100 focus-visible:opacity-100 sm:flex sm:opacity-0"
-                aria-label="Foto siguiente"
+                :aria-label="$t('Foto siguiente')"
                 @click="go(index + 1)"
             >
                 <ChevronRight class="size-4" />

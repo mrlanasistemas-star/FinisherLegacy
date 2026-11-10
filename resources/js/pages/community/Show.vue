@@ -17,6 +17,7 @@ import PostMediaCarousel from '@/components/community/post/PostMediaCarousel.vue
 import { useCelebrate } from '@/components/community/post/useCelebrate';
 import PostComments from '@/components/community/PostComments.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
+import { useI18n } from '@/i18n';
 import { index as communityIndex } from '@/routes/community';
 import type {
     CommunityComment,
@@ -32,6 +33,7 @@ const props = defineProps<{
     reportReasons: ReportReason[];
 }>();
 
+const { t } = useI18n();
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -47,13 +49,15 @@ function focusComment() {
 const description = computed(
     () =>
         props.post.caption?.slice(0, 160) ||
-        `Publicación de ${props.post.author.name} en la comunidad de Finisher Legacy.`,
+        t('Publicación de {name} en la comunidad de Finisher Legacy.', {
+            name: props.post.author.name,
+        }),
 );
 </script>
 
 <template>
     <SeoHead
-        :title="`${post.author.name} en la comunidad`"
+        :title="$t('{name} en la comunidad', { name: post.author.name })"
         :description="description"
         :image="post.media[0]?.url ?? null"
         type="article"
@@ -66,7 +70,7 @@ const description = computed(
             class="mx-4 inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground sm:mx-0"
         >
             <ArrowLeft class="size-4" />
-            Comunidad
+            {{ $t('Comunidad') }}
         </Link>
 
         <!-- Desktop split -->
@@ -98,7 +102,7 @@ const description = computed(
                     id="comentarios"
                     class="flex min-h-0 flex-1 flex-col border-t border-border"
                 >
-                    <h2 class="sr-only">Comentarios</h2>
+                    <h2 class="sr-only">{{ $t('Comentarios') }}</h2>
                     <PostComments
                         ref="thread"
                         split
@@ -126,7 +130,7 @@ const description = computed(
                 aria-labelledby="comentarios-title"
             >
                 <h2 id="comentarios-title" class="mb-4 text-sm font-semibold">
-                    Comentarios
+                    {{ $t('Comentarios') }}
                     <span class="font-normal text-muted-foreground">{{
                         post.comments_count
                     }}</span>

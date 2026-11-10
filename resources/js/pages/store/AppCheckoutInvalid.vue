@@ -15,7 +15,7 @@ defineProps<{ return_url: string }>();
 </script>
 
 <template>
-    <Head title="Enlace de pago vencido" />
+    <Head :title="$t('Enlace de pago vencido')" />
 
     <div
         class="flex min-h-dvh items-center justify-center bg-background px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
@@ -27,15 +27,17 @@ defineProps<{ return_url: string }>();
                 <CircleAlert class="size-7" />
             </span>
             <h1 class="mt-5 font-serif text-2xl font-semibold">
-                Este enlace de pago ya no es válido
+                {{ $t('Este enlace de pago ya no es válido') }}
             </h1>
             <p class="mt-3 text-sm text-muted-foreground">
-                Por seguridad, cada enlace sirve una sola vez y por pocos
-                minutos. No se hizo ningún cargo. Vuelve a la app y toca “Pagar”
-                otra vez.
+                {{
+                    $t(
+                        'Por seguridad, cada enlace sirve una sola vez y por pocos minutos. No se hizo ningún cargo. Vuelve a la app y toca “Pagar” otra vez.',
+                    )
+                }}
             </p>
             <Button as-child class="mt-6 h-12 w-full rounded-full">
-                <a :href="return_url">Volver a la app</a>
+                <a :href="return_url">{{ $t('Volver a la app') }}</a>
             </Button>
         </section>
     </div>

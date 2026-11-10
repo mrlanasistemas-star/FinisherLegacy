@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/i18n';
 import { timeAgo } from '@/lib/datetime';
 import type { PhotoFeeRules } from '@/lib/photoFees';
 
@@ -64,8 +65,10 @@ const props = defineProps<{
     recentSales?: Sale[];
 }>();
 
+const { t, regional } = useI18n();
+
 const money = (minor: number) =>
-    new Intl.NumberFormat('es-MX', {
+    new Intl.NumberFormat(regional.value, {
         style: 'currency',
         currency: 'MXN',
     }).format(minor / 100);
@@ -74,25 +77,25 @@ const cards = computed(() =>
     props.stats
         ? [
               {
-                  label: 'Ingresos (neto)',
+                  label: t('Ingresos (neto)'),
                   value: money(props.stats.net_minor),
                   icon: Wallet,
                   tone: 'bg-emerald-100 text-emerald-700',
               },
               {
-                  label: 'Saldo pendiente',
+                  label: t('Saldo pendiente'),
                   value: money(props.stats.pending_payout_minor),
                   icon: Hourglass,
                   tone: 'bg-amber-100 text-amber-700',
               },
               {
-                  label: 'Fotos vendidas',
+                  label: t('Fotos vendidas'),
                   value: String(props.stats.sales),
                   icon: ShoppingBag,
                   tone: 'bg-sky-100 text-sky-700',
               },
               {
-                  label: 'Fotos publicadas',
+                  label: t('Fotos publicadas'),
                   value: String(props.stats.published),
                   icon: Camera,
                   tone: 'bg-fl-cream text-fl-gold-ink',
@@ -106,17 +109,17 @@ const steps = computed(() =>
     props.profile && props.stats
         ? [
               {
-                  label: 'Perfil aprobado',
+                  label: t('Perfil aprobado'),
                   done: props.profile.status === 'approved',
                   href: null,
               },
               {
-                  label: 'Datos bancarios para tus pagos',
+                  label: t('Datos bancarios para tus pagos'),
                   done: !!props.profile.payout_clabe_masked,
                   href: '#perfil',
               },
               {
-                  label: 'Primeras fotos subidas',
+                  label: t('Primeras fotos subidas'),
                   done:
                       props.stats.published +
                           props.stats.review +
@@ -125,7 +128,7 @@ const steps = computed(() =>
                   href: '/fotografo/fotos',
               },
               {
-                  label: 'Primera venta',
+                  label: t('Primera venta'),
                   done: props.stats.sales > 0,
                   href: null,
               },
@@ -142,29 +145,30 @@ const maxMonth = computed(() =>
 );
 const monthLabel = (key: string) =>
     new Date(`${key}-01T12:00:00`)
-        .toLocaleDateString('es-MX', { month: 'short' })
+        .toLocaleDateString(regional.value, { month: 'short' })
         .replace('.', '');
 
-const statusBanner: Record<
-    string,
-    { icon: typeof Clock; class: string; text: string }
-> = {
+const statusBanner = computed<
+    Record<string, { icon: typeof Clock; class: string; text: string }>
+>(() => ({
     pending: {
         icon: Clock,
         class: 'border-amber-200 bg-amber-50 text-amber-900',
-        text: 'Estamos revisando tu solicitud. Te avisaremos cuando puedas empezar a subir fotos.',
+        text: t(
+            'Estamos revisando tu solicitud. Te avisaremos cuando puedas empezar a subir fotos.',
+        ),
     },
     approved: {
         icon: BadgeCheck,
         class: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-        text: 'Perfil aprobado: ya puedes subir y vender tus fotos.',
+        text: t('Perfil aprobado: ya puedes subir y vender tus fotos.'),
     },
     suspended: {
         icon: XCircle,
         class: 'border-red-200 bg-red-50 text-red-900',
-        text: 'Tu perfil está suspendido. Contáctanos para revisarlo.',
+        text: t('Tu perfil está suspendido. Contáctanos para revisarlo.'),
     },
-};
+}));
 
 const examplePrice = ref(
     (props.profile?.default_price_minor ?? props.fees.default_price_minor) /
@@ -195,7 +199,7 @@ function save() {
 </script>
 
 <template>
-    <Head title="Portal del fotógrafo" />
+    <Head :title="$t('Portal del fotógrafo')" />
 
     <div class="w-full space-y-8 px-4 py-6 md:px-6 md:py-8 xl:px-8">
         <div
@@ -204,12 +208,12 @@ function save() {
         >
             <Camera class="size-8 text-fl-gold-ink" />
             <h1 class="font-serif text-3xl">
-                Aún no tienes perfil de fotógrafo
+                {{ $t('Aún no tienes perfil de fotógrafo') }}
             </h1>
             <Button as-child class="rounded-full"
-                ><Link href="/fotografos/registro"
-                    >Solicitar perfil</Link
-                ></Button
+                ><Link href="/fotografos/registro">{{
+                    $t('Solicitar perfil')
+                }}</Link></Button
             >
         </div>
 
@@ -224,7 +228,9 @@ function save() {
                         <Camera class="size-5" />
                     </span>
                     <div>
-                        <p class="fl-eyebrow">Portal del fotógrafo</p>
+                        <p class="fl-eyebrow">
+                            {{ $t('Portal del fotógrafo') }}
+                        </p>
                         <h1 class="font-serif text-3xl">
                             {{ profile.display_name }}
                         </h1>
@@ -236,7 +242,7 @@ function save() {
                     class="h-11 rounded-full px-6"
                 >
                     <Link href="/fotografo/fotos"
-                        ><Upload class="size-4" /> Subir fotos</Link
+                        ><Upload class="size-4" /> {{ $t('Subir fotos') }}</Link
                     >
                 </Button>
             </div>
@@ -282,9 +288,17 @@ function save() {
                 class="fl-card p-5"
             >
                 <div class="flex items-center justify-between gap-3">
-                    <h2 class="text-sm font-semibold">Primeros pasos</h2>
-                    <span class="legacy-numeric text-xs text-muted-foreground"
-                        >{{ stepsDone }} de {{ steps.length }}</span
+                    <h2 class="text-sm font-semibold">
+                        {{ $t('Primeros pasos') }}
+                    </h2>
+                    <span
+                        class="legacy-numeric text-xs text-muted-foreground"
+                        >{{
+                            $t('{done} de {total}', {
+                                done: stepsDone,
+                                total: steps.length,
+                            })
+                        }}</span
                     >
                 </div>
                 <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -328,13 +342,17 @@ function save() {
                 <!-- Monthly chart -->
                 <section class="fl-card relative p-5 lg:col-span-3">
                     <h2 class="text-sm font-semibold">
-                        Ingresos netos por mes
+                        {{ $t('Ingresos netos por mes') }}
                     </h2>
                     <p
                         v-if="!hasMonthly"
                         class="absolute inset-x-5 top-1/2 text-center text-sm text-muted-foreground"
                     >
-                        Tus ingresos aparecerán aquí con tu primera venta.
+                        {{
+                            $t(
+                                'Tus ingresos aparecerán aquí con tu primera venta.',
+                            )
+                        }}
                     </p>
                     <div
                         class="mt-6 flex h-48 items-end gap-3 border-b border-border"
@@ -366,26 +384,34 @@ function save() {
                 <!-- Where the money goes -->
                 <section class="fl-card space-y-4 p-5 lg:col-span-2">
                     <h2 class="text-sm font-semibold">
-                        Total vendido: {{ money(stats.gross_minor) }}
+                        {{
+                            $t('Total vendido: {amount}', {
+                                amount: money(stats.gross_minor),
+                            })
+                        }}
                     </h2>
                     <ul class="space-y-3 text-sm">
                         <li class="flex items-center gap-3">
                             <Wallet class="size-4 text-emerald-700" />
-                            <span class="flex-1">Para ti</span>
+                            <span class="flex-1">{{ $t('Para ti') }}</span>
                             <span class="legacy-numeric font-semibold">{{
                                 money(stats.net_minor)
                             }}</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <Building2 class="size-4 text-fl-gold-ink" />
-                            <span class="flex-1">Comisión Finisher Legacy</span>
+                            <span class="flex-1">{{
+                                $t('Comisión Finisher Legacy')
+                            }}</span>
                             <span class="legacy-numeric">{{
                                 money(stats.platform_fee_minor)
                             }}</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <CreditCard class="size-4 text-sky-700" />
-                            <span class="flex-1">Procesamiento de pago</span>
+                            <span class="flex-1">{{
+                                $t('Procesamiento de pago')
+                            }}</span>
                             <span class="legacy-numeric">{{
                                 money(stats.processor_fee_minor)
                             }}</span>
@@ -395,7 +421,9 @@ function save() {
                             class="flex items-center gap-3 text-red-700"
                         >
                             <CreditCard class="size-4" />
-                            <span class="flex-1">Reembolsos (descontados)</span>
+                            <span class="flex-1">{{
+                                $t('Reembolsos (descontados)')
+                            }}</span>
                             <span class="legacy-numeric"
                                 >−{{ money(stats.refunded_minor) }}</span
                             >
@@ -404,7 +432,9 @@ function save() {
                             class="flex items-center gap-3 border-t border-border pt-3"
                         >
                             <Landmark class="size-4 text-muted-foreground" />
-                            <span class="flex-1">Ya pagado a tu cuenta</span>
+                            <span class="flex-1">{{
+                                $t('Ya pagado a tu cuenta')
+                            }}</span>
                             <span class="legacy-numeric">{{
                                 money(stats.paid_out_minor)
                             }}</span>
@@ -414,7 +444,7 @@ function save() {
                         <label
                             class="flex items-center justify-between gap-3 text-xs text-muted-foreground"
                         >
-                            Simula un precio
+                            {{ $t('Simula un precio') }}
                             <span class="relative">
                                 <span
                                     class="absolute top-1/2 left-2 -translate-y-1/2"
@@ -446,11 +476,13 @@ function save() {
             <!-- Recent sales -->
             <section v-if="recentSales">
                 <div class="mb-3 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold">Ventas recientes</h2>
+                    <h2 class="text-sm font-semibold">
+                        {{ $t('Ventas recientes') }}
+                    </h2>
                     <Link
                         href="/fotografo/ventas"
                         class="text-xs font-medium text-muted-foreground hover:text-foreground"
-                        >Ver todas →</Link
+                        >{{ $t('Ver todas') }} →</Link
                     >
                 </div>
                 <div
@@ -481,7 +513,11 @@ function save() {
                                     >+{{ money(sale.net_minor) }}</span
                                 >
                                 <span class="text-muted-foreground">
-                                    de {{ money(sale.gross_minor) }}</span
+                                    {{
+                                        $t('de {amount}', {
+                                            amount: money(sale.gross_minor),
+                                        })
+                                    }}</span
                                 >
                             </p>
                         </div>
@@ -494,8 +530,8 @@ function save() {
                             "
                             >{{
                                 sale.payout_status === 'paid'
-                                    ? 'Pagada'
-                                    : 'Por pagar'
+                                    ? $t('Pagada')
+                                    : $t('Por pagar')
                             }}</span
                         >
                     </article>
@@ -504,7 +540,11 @@ function save() {
                     v-else
                     class="fl-card p-8 text-center text-sm text-muted-foreground"
                 >
-                    Aún no tienes ventas. Sube las fotos de tu próximo evento.
+                    {{
+                        $t(
+                            'Aún no tienes ventas. Sube las fotos de tu próximo evento.',
+                        )
+                    }}
                 </p>
             </section>
 
@@ -515,15 +555,15 @@ function save() {
                 @submit.prevent="save"
             >
                 <h2 class="text-sm font-semibold md:col-span-2">
-                    Perfil y datos de pago
+                    {{ $t('Perfil y datos de pago') }}
                 </h2>
                 <div class="grid gap-1.5">
-                    <Label for="pf-name">Nombre comercial</Label>
+                    <Label for="pf-name">{{ $t('Nombre comercial') }}</Label>
                     <Input id="pf-name" v-model="form.display_name" />
                     <InputError :message="form.errors.display_name" />
                 </div>
                 <div class="grid gap-1.5">
-                    <Label for="pf-city">Ciudad</Label>
+                    <Label for="pf-city">{{ $t('Ciudad') }}</Label>
                     <Input id="pf-city" v-model="form.city" />
                 </div>
                 <div class="grid gap-1.5">
@@ -532,7 +572,7 @@ function save() {
                     <InputError :message="form.errors.instagram_url" />
                 </div>
                 <div class="grid gap-1.5">
-                    <Label for="pf-web">Portafolio (URL)</Label>
+                    <Label for="pf-web">{{ $t('Portafolio (URL)') }}</Label>
                     <Input
                         id="pf-web"
                         v-model="form.portfolio_url"
@@ -541,19 +581,23 @@ function save() {
                     <InputError :message="form.errors.portfolio_url" />
                 </div>
                 <div class="grid gap-1.5 md:col-span-2">
-                    <Label for="pf-bio">Sobre tu trabajo</Label>
+                    <Label for="pf-bio">{{ $t('Sobre tu trabajo') }}</Label>
                     <Textarea id="pf-bio" v-model="form.bio" rows="2" />
                 </div>
                 <div class="grid gap-1.5">
-                    <Label for="pf-holder">Titular de la cuenta</Label>
+                    <Label for="pf-holder">{{
+                        $t('Titular de la cuenta')
+                    }}</Label>
                     <Input id="pf-holder" v-model="form.payout_holder" />
                 </div>
                 <div class="grid gap-1.5">
-                    <Label for="pf-bank">Banco</Label>
+                    <Label for="pf-bank">{{ $t('Banco') }}</Label>
                     <Input id="pf-bank" v-model="form.payout_bank" />
                 </div>
                 <div class="grid gap-1.5 md:col-span-2">
-                    <Label for="pf-clabe">CLABE interbancaria</Label>
+                    <Label for="pf-clabe">{{
+                        $t('CLABE interbancaria')
+                    }}</Label>
                     <Input
                         id="pf-clabe"
                         v-model="form.payout_clabe"
@@ -561,8 +605,11 @@ function save() {
                         maxlength="18"
                         :placeholder="
                             profile.payout_clabe_masked
-                                ? `Guardada (${profile.payout_clabe_masked}) — escribe para cambiarla`
-                                : '18 dígitos'
+                                ? $t(
+                                      'Guardada ({clabe}) — escribe para cambiarla',
+                                      { clabe: profile.payout_clabe_masked },
+                                  )
+                                : $t('18 dígitos')
                         "
                         class="font-mono"
                     />
@@ -573,7 +620,7 @@ function save() {
                         type="submit"
                         class="rounded-full"
                         :disabled="form.processing"
-                        >Guardar</Button
+                        >{{ $t('Guardar') }}</Button
                     >
                 </div>
             </form>

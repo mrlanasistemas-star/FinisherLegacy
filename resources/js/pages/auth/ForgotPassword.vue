@@ -3,14 +3,16 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, AtSign, MailCheck } from '@lucide/vue';
 import FloatingField from '@/components/account/FloatingField.vue';
 import SubmitButton from '@/components/account/SubmitButton.vue';
+import { t } from '@/i18n';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Recupera tu acceso',
-        description:
+        title: t('Recupera tu acceso'),
+        description: t(
             'Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una nueva contraseña.',
+        ),
     },
 });
 
@@ -20,7 +22,7 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Recuperar contraseña" />
+    <Head :title="$t('Recuperar contraseña')" />
 
     <Transition name="fl-fade" appear>
         <div
@@ -30,7 +32,9 @@ defineProps<{
         >
             <MailCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <span
-                ><strong class="font-semibold">Revisa tu correo.</strong>
+                ><strong class="font-semibold">{{
+                    $t('Revisa tu correo.')
+                }}</strong>
                 {{ status }}</span
             >
         </div>
@@ -44,7 +48,7 @@ defineProps<{
         <FloatingField
             id="email"
             type="email"
-            label="Correo electrónico"
+            :label="$t('Correo electrónico')"
             :icon="AtSign"
             :error="errors.email"
             required
@@ -55,8 +59,8 @@ defineProps<{
 
         <SubmitButton
             class="mt-2"
-            label="Enviar enlace"
-            processing-label="Enviando…"
+            :label="$t('Enviar enlace')"
+            :processing-label="$t('Enviando…')"
             :processing="processing"
             data-test="email-password-reset-link-button"
         />
@@ -70,7 +74,7 @@ defineProps<{
             class="size-4 transition-transform duration-300 group-hover:-translate-x-0.5"
             aria-hidden="true"
         />
-        Volver a iniciar sesión
+        {{ $t('Volver a iniciar sesión') }}
     </Link>
 </template>
 

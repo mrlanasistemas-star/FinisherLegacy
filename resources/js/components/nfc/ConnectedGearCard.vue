@@ -116,19 +116,23 @@ const usedIn = computed(() =>
                 v-else-if="usedIn"
                 class="mt-2 truncate text-sm text-foreground/80"
             >
-                Usado en {{ usedIn }}
+                {{ $t('Usado en {event}', { event: usedIn }) }}
             </p>
 
             <div class="mt-auto flex items-center justify-between gap-2 pt-4">
                 <span class="text-xs text-muted-foreground">
-                    {{ item.connected ? 'Conectado' : 'Desde' }} {{ since }}
+                    {{
+                        item.connected
+                            ? $t('Conectado {date}', { date: since })
+                            : $t('Desde {date}', { date: since })
+                    }}
                 </span>
                 <Link
                     v-if="item.story_url"
                     :href="item.story_url"
                     class="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-sm font-medium text-fl-gold-ink hover:bg-fl-cream focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                 >
-                    Abrir historia
+                    {{ $t('Abrir historia') }}
                     <ArrowUpRight class="size-4" />
                 </Link>
             </div>

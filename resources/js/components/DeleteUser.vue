@@ -27,9 +27,13 @@ const passwordInput = useTemplateRef('passwordInput');
 
 <template>
     <SettingsGroup
-        title="Zona delicada"
+        :title="$t('Zona delicada')"
         tone="danger"
-        note="Se borrarán tu perfil, tus publicaciones y tus datos. Esta acción no se puede deshacer."
+        :note="
+            $t(
+                'Se borrarán tu perfil, tus publicaciones y tus datos. Esta acción no se puede deshacer.',
+            )
+        "
     >
         <Dialog>
             <DialogTrigger as-child>
@@ -43,7 +47,7 @@ const passwordInput = useTemplateRef('passwordInput');
                     >
                         <Trash2 class="size-4" aria-hidden="true" />
                     </span>
-                    <span class="flex-1">Eliminar mi cuenta</span>
+                    <span class="flex-1">{{ $t('Eliminar mi cuenta') }}</span>
                     <ChevronRight
                         class="size-4 opacity-60 transition-transform duration-300 group-hover:translate-x-0.5"
                         aria-hidden="true"
@@ -62,13 +66,15 @@ const passwordInput = useTemplateRef('passwordInput');
                     v-slot="{ errors, processing, reset, clearErrors }"
                 >
                     <DialogHeader class="space-y-3">
-                        <DialogTitle class="font-heading text-xl"
-                            >¿Eliminar tu cuenta para siempre?</DialogTitle
-                        >
+                        <DialogTitle class="font-heading text-xl">{{
+                            $t('¿Eliminar tu cuenta para siempre?')
+                        }}</DialogTitle>
                         <DialogDescription>
-                            Tu perfil, tus publicaciones y todos tus datos se
-                            eliminarán de forma permanente. Escribe tu
-                            contraseña para confirmar.
+                            {{
+                                $t(
+                                    'Tu perfil, tus publicaciones y todos tus datos se eliminarán de forma permanente. Escribe tu contraseña para confirmar.',
+                                )
+                            }}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -77,7 +83,7 @@ const passwordInput = useTemplateRef('passwordInput');
                         ref="passwordInput"
                         name="password"
                         type="password"
-                        label="Contraseña"
+                        :label="$t('Contraseña')"
                         :error="errors.password"
                         :show-valid="false"
                         autocomplete="current-password"
@@ -95,7 +101,7 @@ const passwordInput = useTemplateRef('passwordInput');
                                     }
                                 "
                             >
-                                Cancelar
+                                {{ $t('Cancelar') }}
                             </Button>
                         </DialogClose>
 
@@ -107,7 +113,7 @@ const passwordInput = useTemplateRef('passwordInput');
                             data-test="confirm-delete-user-button"
                         >
                             <Spinner v-if="processing" />
-                            Eliminar cuenta
+                            {{ $t('Eliminar cuenta') }}
                         </Button>
                     </DialogFooter>
                 </Form>

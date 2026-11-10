@@ -22,7 +22,7 @@ import {
     WifiOff,
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { CHEER_ICONS } from '@/components/training/cheerIcons';
+import { CHEER_ICONS, cheerLabel } from '@/components/training/cheerIcons';
 import { vReveal } from '@/composables/useReveal';
 import {
     formatClock,
@@ -31,6 +31,7 @@ import {
     useVoiceRecorder,
 } from '@/composables/useVoiceRecorder';
 import type { RecorderError } from '@/composables/useVoiceRecorder';
+import { useI18n } from '@/i18n';
 import { store as storeCheer } from '@/routes/cheer';
 
 defineOptions({ layout: [] });
@@ -48,6 +49,8 @@ const props = defineProps<{
     };
 }>();
 
+const { t } = useI18n();
+
 const firstName = computed(() => props.athlete.name.split(' ')[0]);
 const initials = computed(() =>
     props.athlete.name
@@ -62,18 +65,27 @@ const unavailable = computed(() => {
     switch (props.state) {
         case 'revoked':
             return {
-                title: 'Este enlace ya no está activo',
-                message: `${firstName.value} lo desactivó. Si quieres mandarle ánimo, pídele un enlace nuevo.`,
+                title: t('Este enlace ya no está activo'),
+                message: t(
+                    '{name} lo desactivó. Si quieres mandarle ánimo, pídele un enlace nuevo.',
+                    { name: firstName.value },
+                ),
             };
         case 'expired':
             return {
-                title: 'Este enlace ya venció',
-                message: `El enlace tenía fecha de vencimiento. Pídele a ${firstName.value} uno nuevo.`,
+                title: t('Este enlace ya venció'),
+                message: t(
+                    'El enlace tenía fecha de vencimiento. Pídele a {name} uno nuevo.',
+                    { name: firstName.value },
+                ),
             };
         case 'full':
             return {
-                title: 'Este enlace ya recibió muchos mensajes',
-                message: `¡${firstName.value} tiene mucho apoyo! Pídele un enlace nuevo para dejarle el tuyo.`,
+                title: t('Este enlace ya recibió muchos mensajes'),
+                message: t(
+                    '¡{name} tiene mucho apoyo! Pídele un enlace nuevo para dejarle el tuyo.',
+                    { name: firstName.value },
+                ),
             };
         default:
             return null;
@@ -87,15 +99,15 @@ const online = ref(true);
 const fileError = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 
-const relationshipSuggestions = [
-    'Mamá',
-    'Papá',
-    'Pareja',
-    'Hermano/a',
-    'Amigo/a',
-    'Hijo/a',
-    'Entrenador/a',
-];
+const relationshipSuggestions = computed(() => [
+    t('Mamá'),
+    t('Papá'),
+    t('Pareja'),
+    t('Hermano/a'),
+    t('Amigo/a'),
+    t('Hijo/a'),
+    t('Entrenador/a'),
+]);
 
 const form = useForm({
     sender_name: '',
@@ -111,16 +123,23 @@ const formErrors = computed(
     () => form.errors as Partial<Record<string, string>>,
 );
 
-const recorderMessage: Record<RecorderError, string> = {
-    denied: 'No tenemos permiso para usar tu micrófono. Actívalo en los ajustes del navegador o sube un audio que ya tengas.',
-    'no-device':
+const recorderMessage = computed<Record<RecorderError, string>>(() => ({
+    denied: t(
+        'No tenemos permiso para usar tu micrófono. Actívalo en los ajustes del navegador o sube un audio que ya tengas.',
+    ),
+    'no-device': t(
         'No encontramos un micrófono en este dispositivo. Puedes subir un audio grabado.',
-    unsupported:
+    ),
+    unsupported: t(
         'Este navegador no puede grabar audio. Prueba con Chrome o Safari actualizados, o sube un archivo.',
-    insecure:
+    ),
+    insecure: t(
         'La grabación solo funciona en una conexión segura (https). Puedes subir un archivo.',
-    failed: 'No pudimos iniciar la grabación. Intenta de nuevo o sube un archivo.',
-};
+    ),
+    failed: t(
+        'No pudimos iniciar la grabación. Intenta de nuevo o sube un archivo.',
+    ),
+}));
 
 const hasAudio = computed(() => recorder.file.value !== null);
 const bodyLength = computed(() => form.body.length);
@@ -174,7 +193,7 @@ async function onFilePicked(event: Event) {
     }
 
     if (picked.size > props.limits.max_audio_bytes) {
-        fileError.value = `El audio pesa más de ${maxMb} MB.`;
+        fileError.value = t('El audio pesa más de {size} MB.', { size: maxMb });
 
         return;
     }
@@ -182,7 +201,10 @@ async function onFilePicked(event: Event) {
     const duration = await probeDuration(picked);
 
     if (duration > props.limits.max_audio_seconds + 1) {
-        fileError.value = `El audio dura más de ${maxMinutes} minutos. Elige uno más corto.`;
+        fileError.value = t(
+            'El audio dura más de {minutes} minutos. Elige uno más corto.',
+            { minutes: maxMinutes },
+        );
 
         return;
     }
@@ -218,11 +240,16 @@ function sendAnother() {
 </script>
 
 <template>
-    <Head :title="`Envíale ánimo a ${firstName}`">
+    <Head :title="$t('Envíale ánimo a {name}', { name: firstName })">
         <meta name="robots" content="noindex, nofollow" />
         <meta
             name="description"
-            :content="`Deja un mensaje de voz para ${firstName}. Lo escuchará mientras entrena.`"
+            :content="
+                $t(
+                    'Deja un mensaje de voz para {name}. Lo escuchará mientras entrena.',
+                    { name: firstName },
+                )
+            "
         />
     </Head>
 
@@ -261,14 +288,16 @@ function sendAnother() {
                         >{{ initials }}</span
                     >
                 </div>
-                <p class="fl-eyebrow mt-5">Envíame ánimo</p>
+                <p class="fl-eyebrow mt-5">{{ $t('Envíame ánimo') }}</p>
                 <h1
                     class="fl-display mt-2 text-3xl leading-tight text-balance sm:text-4xl"
                 >
                     {{
                         sent
-                            ? `¡${firstName} lo va a escuchar!`
-                            : `Mándale ánimo a ${firstName}`
+                            ? $t('¡{name} lo va a escuchar!', {
+                                  name: firstName,
+                              })
+                            : $t('Mándale ánimo a {name}', { name: firstName })
                     }}
                 </h1>
                 <p class="mt-2 text-sm text-muted-foreground">{{ title }}</p>
@@ -309,20 +338,24 @@ function sendAnother() {
                     <Check class="size-7" />
                 </span>
                 <h2 class="mt-5 font-heading text-2xl font-semibold">
-                    Mensaje enviado
+                    {{ $t('Mensaje enviado') }}
                 </h2>
                 <p
                     class="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground"
                 >
-                    {{ firstName }} lo escuchará durante su entrenamiento.
-                    Gracias por acompañarle en cada kilómetro.
+                    {{
+                        $t(
+                            '{name} lo escuchará durante su entrenamiento. Gracias por acompañarle en cada kilómetro.',
+                            { name: firstName },
+                        )
+                    }}
                 </p>
                 <button
                     type="button"
                     class="fl-btn-secondary fl-press mt-8"
                     @click="sendAnother"
                 >
-                    Enviar otro mensaje
+                    {{ $t('Enviar otro mensaje') }}
                 </button>
             </section>
 
@@ -342,8 +375,11 @@ function sendAnother() {
                         class="mt-0.5 size-4 shrink-0"
                         aria-hidden="true"
                     />
-                    Estás sin conexión. Puedes grabar tu mensaje y enviarlo en
-                    cuanto vuelva el internet.
+                    {{
+                        $t(
+                            'Estás sin conexión. Puedes grabar tu mensaje y enviarlo en cuanto vuelva el internet.',
+                        )
+                    }}
                 </p>
 
                 <p
@@ -361,11 +397,15 @@ function sendAnother() {
                 <!-- Recorder -->
                 <section v-reveal="{ delay: 120 }" class="fl-card p-6 sm:p-8">
                     <h2 class="font-heading text-lg font-semibold">
-                        Tu mensaje de voz
+                        {{ $t('Tu mensaje de voz') }}
                     </h2>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Hasta {{ maxMinutes }} minutos. Habla como si estuvieras
-                        en la meta.
+                        {{
+                            $t(
+                                'Hasta {minutes} minutos. Habla como si estuvieras en la meta.',
+                                { minutes: maxMinutes },
+                            )
+                        }}
                     </p>
 
                     <div
@@ -383,8 +423,8 @@ function sendAnother() {
                             "
                             :aria-label="
                                 recorder.recording.value
-                                    ? 'Detener grabación'
-                                    : 'Empezar a grabar'
+                                    ? $t('Detener grabación')
+                                    : $t('Empezar a grabar')
                             "
                             :aria-pressed="recorder.recording.value"
                             @click="toggleRecording"
@@ -445,10 +485,12 @@ function sendAnother() {
                         <p class="mt-1 text-sm text-muted-foreground">
                             {{
                                 recorder.recording.value
-                                    ? 'Grabando… toca para terminar'
+                                    ? $t('Grabando… toca para terminar')
                                     : supported
-                                      ? 'Toca para grabar'
-                                      : 'La grabación no está disponible aquí'
+                                      ? $t('Toca para grabar')
+                                      : $t(
+                                            'La grabación no está disponible aquí',
+                                        )
                             }}
                         </p>
                     </div>
@@ -467,8 +509,12 @@ function sendAnother() {
                             <span class="text-muted-foreground">
                                 {{
                                     recorder.seconds.value > 0
-                                        ? `Duración ${formatClock(recorder.seconds.value)}`
-                                        : 'Audio listo'
+                                        ? $t('Duración {time}', {
+                                              time: formatClock(
+                                                  recorder.seconds.value,
+                                              ),
+                                          })
+                                        : $t('Audio listo')
                                 }}
                             </span>
                             <div class="flex gap-2">
@@ -485,7 +531,7 @@ function sendAnother() {
                                         class="size-4"
                                         aria-hidden="true"
                                     />
-                                    Grabar de nuevo
+                                    {{ $t('Grabar de nuevo') }}
                                 </button>
                                 <button
                                     type="button"
@@ -493,7 +539,7 @@ function sendAnother() {
                                     @click="recorder.reset()"
                                 >
                                     <Trash2 class="size-4" aria-hidden="true" />
-                                    Quitar
+                                    {{ $t('Quitar') }}
                                 </button>
                             </div>
                         </div>
@@ -524,7 +570,14 @@ function sendAnother() {
                             @click="fileInput?.click()"
                         >
                             <Upload class="size-4" aria-hidden="true" />
-                            ¿Ya tienes un audio? Súbelo (máx. {{ maxMb }} MB)
+                            {{
+                                $t(
+                                    '¿Ya tienes un audio? Súbelo (máx. {size} MB)',
+                                    {
+                                        size: maxMb,
+                                    },
+                                )
+                            }}
                         </button>
                         <input
                             ref="fileInput"
@@ -543,9 +596,9 @@ function sendAnother() {
                     class="fl-card space-y-5 p-6 sm:p-8"
                 >
                     <div>
-                        <label for="cheer-name" class="text-sm font-semibold"
-                            >Tu nombre</label
-                        >
+                        <label for="cheer-name" class="text-sm font-semibold">{{
+                            $t('Tu nombre')
+                        }}</label>
                         <input
                             id="cheer-name"
                             v-model="form.sender_name"
@@ -554,7 +607,7 @@ function sendAnother() {
                             autocomplete="name"
                             required
                             class="fl-focus-glow mt-1.5 h-12 w-full rounded-xl border border-border bg-white px-4 text-base"
-                            placeholder="Ej. Lucía"
+                            :placeholder="$t('Ej. Lucía')"
                         />
                         <p
                             v-if="formErrors.sender_name"
@@ -568,10 +621,14 @@ function sendAnother() {
                         <label
                             for="cheer-relationship"
                             class="text-sm font-semibold"
-                            >¿Quién eres para {{ firstName }}?
-                            <span class="font-normal text-muted-foreground"
-                                >(opcional)</span
-                            ></label
+                            >{{
+                                $t('¿Quién eres para {name}?', {
+                                    name: firstName,
+                                })
+                            }}
+                            <span class="font-normal text-muted-foreground">{{
+                                $t('(opcional)')
+                            }}</span></label
                         >
                         <input
                             id="cheer-relationship"
@@ -579,7 +636,7 @@ function sendAnother() {
                             type="text"
                             maxlength="40"
                             class="fl-focus-glow mt-1.5 h-12 w-full rounded-xl border border-border bg-white px-4 text-base"
-                            placeholder="Ej. Hermana"
+                            :placeholder="$t('Ej. Hermana')"
                         />
                         <div class="mt-2 flex flex-wrap gap-2">
                             <button
@@ -607,9 +664,11 @@ function sendAnother() {
 
                     <div>
                         <label for="cheer-body" class="text-sm font-semibold"
-                            >Unas palabras
+                            >{{ $t('Unas palabras') }}
                             <span class="font-normal text-muted-foreground">{{
-                                hasAudio ? '(opcional)' : '(o graba tu voz)'
+                                hasAudio
+                                    ? $t('(opcional)')
+                                    : $t('(o graba tu voz)')
                             }}</span></label
                         >
                         <textarea
@@ -618,7 +677,11 @@ function sendAnother() {
                             rows="3"
                             :maxlength="limits.max_body"
                             class="fl-focus-glow mt-1.5 w-full resize-none rounded-xl border border-border bg-white px-4 py-3 text-base"
-                            :placeholder="`¡Vamos, ${firstName}! Cada kilómetro cuenta.`"
+                            :placeholder="
+                                $t('¡Vamos, {name}! Cada kilómetro cuenta.', {
+                                    name: firstName,
+                                })
+                            "
                         />
                         <div
                             class="mt-1 flex justify-between text-xs text-muted-foreground"
@@ -632,7 +695,7 @@ function sendAnother() {
 
                     <fieldset>
                         <legend class="text-sm font-semibold">
-                            Elige un ícono
+                            {{ $t('Elige un ícono') }}
                         </legend>
                         <div class="mt-2 grid grid-cols-4 gap-2">
                             <label
@@ -657,7 +720,7 @@ function sendAnother() {
                                     class="size-6"
                                     aria-hidden="true"
                                 />
-                                {{ CHEER_ICONS[key]?.label ?? key }}
+                                {{ cheerLabel(key) }}
                             </label>
                         </div>
                         <p
@@ -690,7 +753,7 @@ function sendAnother() {
                         :aria-valuenow="form.progress.percentage ?? 0"
                         aria-valuemin="0"
                         aria-valuemax="100"
-                        aria-label="Subiendo mensaje"
+                        :aria-label="$t('Subiendo mensaje')"
                     >
                         <div
                             class="h-full rounded-full bg-fl-gold transition-[width]"
@@ -707,14 +770,21 @@ function sendAnother() {
                         {{
                             form.processing
                                 ? form.progress
-                                    ? `Enviando… ${form.progress.percentage ?? 0}%`
-                                    : 'Enviando…'
-                                : `Enviar a ${firstName}`
+                                    ? $t('Enviando… {percent}%', {
+                                          percent:
+                                              form.progress.percentage ?? 0,
+                                      })
+                                    : $t('Enviando…')
+                                : $t('Enviar a {name}', { name: firstName })
                         }}
                     </button>
                     <p class="text-center text-xs text-muted-foreground">
-                        Solo {{ firstName }} podrá escuchar tu mensaje. No
-                        necesitas cuenta ni app.
+                        {{
+                            $t(
+                                'Solo {name} podrá escuchar tu mensaje. No necesitas cuenta ni app.',
+                                { name: firstName },
+                            )
+                        }}
                     </p>
                 </div>
             </form>

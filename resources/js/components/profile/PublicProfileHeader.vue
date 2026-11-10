@@ -36,7 +36,7 @@ defineProps<{
             <img
                 v-if="coverUrl"
                 :src="coverUrl"
-                :alt="`Portada de ${name}`"
+                :alt="$t('Portada de {name}', { name })"
                 class="fl-cover-in size-full object-cover"
                 fetchpriority="high"
             />
@@ -114,7 +114,7 @@ defineProps<{
                             <span
                                 v-if="followsYou"
                                 class="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground"
-                                >Te sigue</span
+                                >{{ $t('Te sigue') }}</span
                             >
                         </h1>
                         <div

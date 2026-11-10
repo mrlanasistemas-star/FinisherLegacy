@@ -5,12 +5,13 @@ import { ref } from 'vue';
 import FloatingField from '@/components/account/FloatingField.vue';
 import SubmitButton from '@/components/account/SubmitButton.vue';
 import PasswordStrengthMeter from '@/components/PasswordStrengthMeter.vue';
+import { t } from '@/i18n';
 import { update } from '@/routes/password';
 
 defineOptions({
     layout: {
-        title: 'Elige una nueva contraseña',
-        description: 'Úsala a partir de ahora para entrar a tu cuenta.',
+        title: t('Elige una nueva contraseña'),
+        description: t('Úsala a partir de ahora para entrar a tu cuenta.'),
     },
 });
 
@@ -25,7 +26,7 @@ const passwordValue = ref('');
 </script>
 
 <template>
-    <Head title="Restablecer contraseña" />
+    <Head :title="$t('Restablecer contraseña')" />
 
     <Form
         v-bind="update.form()"
@@ -38,7 +39,7 @@ const passwordValue = ref('');
             id="email"
             v-model="inputEmail"
             type="email"
-            label="Correo electrónico"
+            :label="$t('Correo electrónico')"
             :icon="AtSign"
             :error="errors.email"
             :show-valid="false"
@@ -51,7 +52,7 @@ const passwordValue = ref('');
                 id="password"
                 v-model="passwordValue"
                 type="password"
-                label="Nueva contraseña"
+                :label="$t('Nueva contraseña')"
                 :icon="LockKeyhole"
                 :error="errors.password"
                 :passwordrules="passwordRules"
@@ -65,7 +66,7 @@ const passwordValue = ref('');
         <FloatingField
             id="password_confirmation"
             type="password"
-            label="Confirmar contraseña"
+            :label="$t('Confirmar contraseña')"
             :icon="LockKeyhole"
             :error="errors.password_confirmation"
             :must-match="passwordValue"
@@ -76,8 +77,8 @@ const passwordValue = ref('');
 
         <SubmitButton
             class="mt-2"
-            label="Guardar contraseña"
-            processing-label="Guardando…"
+            :label="$t('Guardar contraseña')"
+            :processing-label="$t('Guardando…')"
             :processing="processing"
             data-test="reset-password-button"
         />

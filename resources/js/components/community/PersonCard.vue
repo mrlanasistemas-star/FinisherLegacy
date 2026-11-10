@@ -58,7 +58,7 @@ const mutuals = computed(() => mutualsLabel(props.person));
                     <span
                         v-if="person.follows_you && !isMe"
                         class="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
-                        >Te sigue</span
+                        >{{ $t('Te sigue') }}</span
                     >
                 </span>
                 <span class="block truncate text-sm text-muted-foreground"
@@ -109,7 +109,7 @@ const mutuals = computed(() => mutualsLabel(props.person));
         <span
             class="mt-1 line-clamp-2 min-h-8 text-[11px] leading-4 text-muted-foreground"
             >{{
-                mutuals || meta || (person.follows_you ? 'Te sigue' : '')
+                mutuals || meta || (person.follows_you ? $t('Te sigue') : '')
             }}</span
         >
         <div class="mt-3 w-full">

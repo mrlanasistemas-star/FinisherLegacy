@@ -33,6 +33,7 @@ import StoryVideoPlayer from '@/components/legacy/story/StoryVideoPlayer.vue';
 import StoryVoiceMessage from '@/components/legacy/story/StoryVoiceMessage.vue';
 import type { StoryViewExtended } from '@/components/legacy/story/types';
 import { Toaster } from '@/components/ui/sonner';
+import { useI18n } from '@/i18n';
 import { home } from '@/routes';
 import {
     index as myLegacyIndex,
@@ -57,6 +58,8 @@ const props = defineProps<{
     shares: StoryShare[];
 }>();
 
+const { t } = useI18n();
+
 const isOwner = computed(() => props.mode === 'owner');
 const race = computed(() => props.story.race);
 // Portarretrato inteligente: the page presents itself as an album.
@@ -68,7 +71,9 @@ const eyebrow = computed(() => {
         props.story.tag?.collection?.name ??
         (isAlbum.value ? null : 'Finisher Legacy');
 
-    return isAlbum.value ? ['Álbum', base].filter(Boolean).join(' · ') : base;
+    return isAlbum.value
+        ? [t('Álbum'), base].filter(Boolean).join(' · ')
+        : base;
 });
 const metaLine = computed(() =>
     [race.value.race ?? race.value.distance, race.value.time]
@@ -219,7 +224,13 @@ async function nativeShare() {
 </script>
 
 <template>
-    <Head :title="isAlbum ? `Álbum · ${story.title}` : story.title">
+    <Head
+        :title="
+            isAlbum
+                ? $t('Álbum · {title}', { title: story.title })
+                : story.title
+        "
+    >
         <meta v-if="noindex" name="robots" content="noindex, nofollow" />
         <meta name="theme-color" content="#171714" />
         <meta property="og:title" :content="story.title" />
@@ -241,7 +252,7 @@ async function nativeShare() {
                 :href="isOwner ? myLegacyIndex().url : home().url"
                 class="rounded-full border border-foreground/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase shadow-fl-micro backdrop-blur-md"
             >
-                {{ isOwner ? '← Mi Legacy' : 'Finisher Legacy' }}
+                {{ isOwner ? $t('← Mi Legacy') : 'Finisher Legacy' }}
             </Link>
             <Link
                 v-if="isOwner"
@@ -249,7 +260,7 @@ async function nativeShare() {
                 class="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-fl-float transition-colors hover:bg-fl-graphite"
             >
                 <PenLine class="size-4" aria-hidden="true" />
-                Editar
+                {{ $t('Editar') }}
             </Link>
         </header>
 
@@ -354,7 +365,7 @@ async function nativeShare() {
             <section
                 v-if="story.dedication"
                 class="reveal border-t border-foreground/10 py-12"
-                aria-label="Dedicatoria"
+                :aria-label="$t('Dedicatoria')"
             >
                 <span class="block h-px w-12 bg-fl-gold" aria-hidden="true" />
                 <p
@@ -385,8 +396,8 @@ async function nativeShare() {
                 class="reveal space-y-3 border-t border-foreground/10 py-10"
                 :aria-label="
                     voiceMessages.length > 1
-                        ? 'Mensajes de voz'
-                        : 'Mensaje de voz'
+                        ? $t('Mensajes de voz')
+                        : $t('Mensaje de voz')
                 "
             >
                 <StoryVoiceMessage
@@ -396,8 +407,8 @@ async function nativeShare() {
                     :url="message.url ?? ''"
                     :title="
                         voiceMessages.length > 1
-                            ? `Mensaje de voz ${i + 1}`
-                            : 'Un mensaje de voz'
+                            ? $t('Mensaje de voz {number}', { number: i + 1 })
+                            : $t('Un mensaje de voz')
                     "
                     :duration-seconds="message.duration_seconds ?? null"
                     @play="onMediaPlay(`audio:${message.uuid}`)"
@@ -408,7 +419,7 @@ async function nativeShare() {
             <section
                 v-if="story.body"
                 class="reveal border-t border-foreground/10 py-12"
-                aria-label="Mi historia"
+                :aria-label="$t('Mi historia')"
             >
                 <p
                     class="text-[17px] leading-[1.8] whitespace-pre-line text-foreground/85"
@@ -421,7 +432,7 @@ async function nativeShare() {
             <section
                 v-if="videos.length"
                 class="reveal border-t border-foreground/10 py-12"
-                aria-label="Videos"
+                :aria-label="$t('Videos')"
             >
                 <h2
                     class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
@@ -429,8 +440,8 @@ async function nativeShare() {
                     <Video class="size-4" aria-hidden="true" />
                     {{
                         videos.length === 1
-                            ? 'Video'
-                            : `${videos.length} videos`
+                            ? $t('Video')
+                            : $t('{count} videos', { count: videos.length })
                     }}
                 </h2>
                 <div class="mt-5 space-y-8">
@@ -439,7 +450,7 @@ async function nativeShare() {
                         :key="video.uuid"
                         :ref="(el) => registerPlayer(`video:${video.uuid}`, el)"
                         :video="video"
-                        :label="`Video ${i + 1}`"
+                        :label="$t('Video {number}', { number: i + 1 })"
                         @play="onMediaPlay(`video:${video.uuid}`)"
                     />
                 </div>
@@ -449,13 +460,19 @@ async function nativeShare() {
             <section
                 v-if="gallery.length > 1"
                 class="story-gallery reveal border-t border-foreground/10 py-12"
-                :aria-label="isAlbum ? 'Álbum de fotos' : 'Fotos'"
+                :aria-label="isAlbum ? $t('Álbum de fotos') : $t('Fotos')"
             >
                 <h2
                     class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     <Images class="size-4" aria-hidden="true" />
-                    {{ isAlbum ? 'Álbum · ' : '' }}{{ gallery.length }} fotos
+                    {{
+                        isAlbum
+                            ? $t('Álbum · {count} fotos', {
+                                  count: gallery.length,
+                              })
+                            : $t('{count} fotos', { count: gallery.length })
+                    }}
                 </h2>
                 <ul class="mt-5 columns-2 gap-3 sm:columns-3">
                     <li
@@ -466,7 +483,10 @@ async function nativeShare() {
                         <button
                             type="button"
                             class="group block w-full overflow-hidden rounded-xl bg-fl-cream shadow-fl-micro focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-                            :aria-label="photo.caption ?? `Ver foto ${i + 1}`"
+                            :aria-label="
+                                photo.caption ??
+                                $t('Ver foto {number}', { number: i + 1 })
+                            "
                             @click="openPhoto(i)"
                         >
                             <img
@@ -506,12 +526,12 @@ async function nativeShare() {
                         aria-hidden="true"
                     />
                     <span>
-                        <span class="block text-sm font-semibold"
-                            >Certificado</span
-                        >
-                        <span class="block text-xs text-muted-foreground"
-                            >Ver o descargar</span
-                        >
+                        <span class="block text-sm font-semibold">{{
+                            $t('Certificado')
+                        }}</span>
+                        <span class="block text-xs text-muted-foreground">{{
+                            $t('Ver o descargar')
+                        }}</span>
                     </span>
                 </a>
                 <a
@@ -526,7 +546,9 @@ async function nativeShare() {
                         aria-hidden="true"
                     />
                     <span class="min-w-0">
-                        <span class="block text-sm font-semibold">Enlace</span>
+                        <span class="block text-sm font-semibold">{{
+                            $t('Enlace')
+                        }}</span>
                         <span
                             class="block truncate text-xs text-muted-foreground"
                             >{{ story.external_url }}</span
@@ -538,7 +560,7 @@ async function nativeShare() {
             <!-- The tag -->
             <section
                 class="reveal flex items-center gap-6 border-t border-foreground/10 py-12"
-                aria-label="El tag de esta historia"
+                :aria-label="$t('El tag de esta historia')"
             >
                 <div class="w-20 shrink-0 sm:w-24">
                     <LegacyTagArt :tag="story.tag" :tilt="false" />
@@ -550,10 +572,17 @@ async function nativeShare() {
                         Finisher Legacy Tag
                     </p>
                     <p class="mt-2 font-serif text-xl">
-                        {{ story.tag?.collection?.name ?? 'Edición Finisher' }}
+                        {{
+                            story.tag?.collection?.name ??
+                            $t('Edición Finisher')
+                        }}
                     </p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Acerca un teléfono a este tag y abre esta historia.
+                        {{
+                            $t(
+                                'Acerca un teléfono a este tag y abre esta historia.',
+                            )
+                        }}
                     </p>
                 </div>
             </section>
@@ -565,14 +594,18 @@ async function nativeShare() {
                 aria-labelledby="owner-panel"
             >
                 <h2 id="owner-panel" class="font-serif text-2xl">
-                    Comparte tu recuerdo
+                    {{ $t('Comparte tu recuerdo') }}
                 </h2>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Ahora: {{ story.visibility_label }}.
+                    {{
+                        $t('Ahora: {visibility}.', {
+                            visibility: story.visibility_label,
+                        })
+                    }}
                     <Link
                         :href="edit(story.public_id).url"
                         class="text-fl-gold-ink underline underline-offset-4"
-                        >Cambiar</Link
+                        >{{ $t('Cambiar') }}</Link
                     >
                 </p>
 
@@ -584,7 +617,7 @@ async function nativeShare() {
                         @click="nativeShare"
                     >
                         <Share2 class="size-4" aria-hidden="true" />
-                        Compartir
+                        {{ $t('Compartir') }}
                     </button>
                     <button
                         v-if="story.visibility !== 'private'"
@@ -594,7 +627,9 @@ async function nativeShare() {
                     >
                         <Copy class="size-4" aria-hidden="true" />
                         {{
-                            copied === story.url ? '¡Copiado!' : 'Copiar enlace'
+                            copied === story.url
+                                ? $t('¡Copiado!')
+                                : $t('Copiar enlace')
                         }}
                     </button>
                     <Link
@@ -602,21 +637,24 @@ async function nativeShare() {
                         class="owner-chip"
                     >
                         <Printer class="size-4" aria-hidden="true" />
-                        Portarretrato
+                        {{ $t('Portarretrato') }}
                     </Link>
                     <Link :href="print(story.public_id).url" class="owner-chip">
                         <Printer class="size-4" aria-hidden="true" />
-                        Imprimir
+                        {{ $t('Imprimir') }}
                     </Link>
                 </div>
 
                 <form class="mt-7" @submit.prevent="createShare">
-                    <label for="share-label" class="text-sm font-semibold"
-                        >Enlace personal para alguien especial</label
-                    >
+                    <label for="share-label" class="text-sm font-semibold">{{
+                        $t('Enlace personal para alguien especial')
+                    }}</label>
                     <p class="mt-1 text-xs text-muted-foreground">
-                        Lo abre sin cuenta ni app, aunque tu recuerdo sea
-                        privado. Lo puedes desactivar cuando quieras.
+                        {{
+                            $t(
+                                'Lo abre sin cuenta ni app, aunque tu recuerdo sea privado. Lo puedes desactivar cuando quieras.',
+                            )
+                        }}
                     </p>
                     <div class="mt-3 flex gap-2">
                         <input
@@ -624,7 +662,7 @@ async function nativeShare() {
                             v-model="shareForm.label"
                             type="text"
                             maxlength="80"
-                            placeholder="Mamá, Mi entrenador…"
+                            :placeholder="$t('Mamá, Mi entrenador…')"
                             class="h-11 min-w-0 flex-1 rounded-full border border-input bg-background px-4 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
                         />
                         <button
@@ -632,7 +670,7 @@ async function nativeShare() {
                             class="h-11 shrink-0 rounded-full bg-foreground px-5 text-sm font-semibold text-background transition-colors hover:bg-fl-graphite disabled:opacity-60"
                             :disabled="shareForm.processing || !shareForm.label"
                         >
-                            Crear
+                            {{ $t('Crear') }}
                         </button>
                     </div>
                     <InputError
@@ -671,8 +709,11 @@ async function nativeShare() {
                             <p class="text-xs text-muted-foreground">
                                 {{
                                     share.active
-                                        ? `Abierto ${share.open_count} ${share.open_count === 1 ? 'vez' : 'veces'}`
-                                        : 'Desactivado'
+                                        ? $tc(
+                                              'Abierto {count} vez|Abierto {count} veces',
+                                              share.open_count,
+                                          )
+                                        : $t('Desactivado')
                                 }}
                             </p>
                         </div>
@@ -684,14 +725,18 @@ async function nativeShare() {
                             >
                                 {{
                                     copied === share.url
-                                        ? '¡Copiado!'
-                                        : 'Copiar'
+                                        ? $t('¡Copiado!')
+                                        : $t('Copiar')
                                 }}
                             </button>
                             <button
                                 type="button"
                                 class="rounded-lg p-1.5 text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
-                                :aria-label="`Desactivar enlace para ${share.label}`"
+                                :aria-label="
+                                    $t('Desactivar enlace para {name}', {
+                                        name: share.label,
+                                    })
+                                "
                                 @click="revokeShare(share)"
                             >
                                 <Trash2 class="size-4" />
@@ -712,13 +757,15 @@ async function nativeShare() {
                     Finisher Legacy
                 </p>
                 <p class="mt-3 font-serif text-2xl text-balance">
-                    Cada meta merece una historia que se pueda tocar.
+                    {{
+                        $t('Cada meta merece una historia que se pueda tocar.')
+                    }}
                 </p>
                 <Link
                     :href="home().url"
                     class="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-colors hover:bg-fl-graphite"
                 >
-                    Conoce Finisher Legacy
+                    {{ $t('Conoce Finisher Legacy') }}
                 </Link>
             </section>
         </main>
@@ -729,14 +776,14 @@ async function nativeShare() {
             class="fixed inset-0 z-50 flex flex-col bg-fl-paper/95 backdrop-blur-md"
             role="dialog"
             aria-modal="true"
-            :aria-label="current.caption ?? 'Foto'"
+            :aria-label="current.caption ?? $t('Foto')"
             @click.self="openIndex = null"
         >
             <div class="flex justify-end p-3">
                 <button
                     type="button"
                     class="rounded-full p-2 text-foreground/80 hover:bg-foreground/5"
-                    aria-label="Cerrar"
+                    :aria-label="$t('Cerrar')"
                     @click="openIndex = null"
                 >
                     <X class="size-6" />
@@ -755,7 +802,7 @@ async function nativeShare() {
                     v-if="gallery.length > 1"
                     type="button"
                     class="absolute left-2 rounded-full bg-white/90 p-2 text-foreground shadow-fl-soft"
-                    aria-label="Foto anterior"
+                    :aria-label="$t('Foto anterior')"
                     @click="step(-1)"
                 >
                     <ChevronLeft class="size-6" />
@@ -764,7 +811,7 @@ async function nativeShare() {
                     v-if="gallery.length > 1"
                     type="button"
                     class="absolute right-2 rounded-full bg-white/90 p-2 text-foreground shadow-fl-soft"
-                    aria-label="Foto siguiente"
+                    :aria-label="$t('Foto siguiente')"
                     @click="step(1)"
                 >
                     <ChevronRight class="size-6" />

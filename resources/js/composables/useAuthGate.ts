@@ -12,12 +12,13 @@ export function useAuthGate() {
     const page = usePage();
     const isAuthenticated = computed(() => page.props.auth?.user != null);
 
-    function loginUrl(back?: string, mode: 'login' | 'registro' = 'login'): string {
-        const here =
-            back ??
-            (typeof window !== 'undefined'
-                ? window.location.pathname + window.location.search
-                : '/');
+    function loginUrl(
+        back?: string,
+        mode: 'login' | 'registro' = 'login',
+    ): string {
+        // page.url is the same on the server render and in the browser, so
+        // links built here never cause a hydration mismatch.
+        const here = back ?? page.url ?? '/';
         const params = new URLSearchParams({ volver: here });
 
         if (mode === 'registro') {

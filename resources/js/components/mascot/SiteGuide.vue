@@ -239,6 +239,12 @@ function schedulePeek() {
         return;
     }
 
+    // Phones: the greeting card would cover the page's first screen (hero
+    // copy, buy buttons). The bubble stays; the card opens on tap only.
+    if (!window.matchMedia('(min-width: 768px)').matches) {
+        return;
+    }
+
     peekTimers.push(
         window.setTimeout(() => {
             if (open.value || hidden.value) {

@@ -9,6 +9,7 @@ import { ArrowLeft, Download, ImagePlus } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { edit, portrait } from '@/routes/my-legacy';
 import { download as downloadRoute } from '@/routes/my-legacy/print';
 import { formatStoryDate, forRecipient } from '@/types/legacy-tags';
@@ -26,6 +27,8 @@ const props = defineProps<{
     photos: StoryMediaItem[];
     layouts: Layout[];
 }>();
+
+const { t } = useI18n();
 
 const layout = ref<Layout>(props.layouts[0]);
 const photoId = ref<number | null>(props.photos[0]?.id ?? null);
@@ -135,7 +138,7 @@ async function download() {
 
         if (!response.ok) {
             errors.value = {
-                photo: 'No pudimos generar el archivo. Intenta de nuevo.',
+                photo: t('No pudimos generar el archivo. Intenta de nuevo.'),
             };
 
             return;
@@ -151,7 +154,7 @@ async function download() {
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 4000);
     } catch {
-        errors.value = { photo: 'Sin conexión. Intenta de nuevo.' };
+        errors.value = { photo: t('Sin conexión. Intenta de nuevo.') };
     } finally {
         busy.value = false;
     }
@@ -159,7 +162,7 @@ async function download() {
 </script>
 
 <template>
-    <Head :title="`Imprimir · ${story.title}`" />
+    <Head :title="$t('Imprimir · {title}', { title: story.title })" />
 
     <div class="fl-container py-8 md:py-12">
         <div class="mx-auto max-w-5xl">
@@ -168,29 +171,34 @@ async function download() {
                 class="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
                 <ArrowLeft class="size-4" aria-hidden="true" />
-                Volver a tu recuerdo
+                {{ $t('Volver a tu recuerdo') }}
             </Link>
-            <p class="fl-eyebrow mt-5">Imprimir</p>
-            <h1 class="fl-display mt-1 text-3xl">Llévalo a la pared</h1>
+            <p class="fl-eyebrow mt-5">{{ $t('Imprimir') }}</p>
+            <h1 class="fl-display mt-1 text-3xl">
+                {{ $t('Llévalo a la pared') }}
+            </h1>
             <p class="mt-2 text-sm text-muted-foreground">
-                Elige una foto y un diseño. Descargas un PDF listo para imprimir
-                en cualquier imprenta.
+                {{
+                    $t(
+                        'Elige una foto y un diseño. Descargas un PDF listo para imprimir en cualquier imprenta.',
+                    )
+                }}
             </p>
             <Link
                 :href="portrait(story.public_id).url"
                 class="mt-4 flex items-center justify-between gap-3 rounded-xl border border-fl-gold/40 bg-fl-paper px-4 py-3 text-sm transition hover:border-fl-gold hover:shadow-sm"
             >
                 <span>
-                    <span class="block font-semibold"
-                        >¿Tienes el marco Finisher Legacy?</span
-                    >
-                    <span class="block text-muted-foreground"
-                        >Prepara la foto exacta para tu portarretrato.</span
-                    >
+                    <span class="block font-semibold">{{
+                        $t('¿Tienes el marco Finisher Legacy?')
+                    }}</span>
+                    <span class="block text-muted-foreground">{{
+                        $t('Prepara la foto exacta para tu portarretrato.')
+                    }}</span>
                 </span>
-                <span class="shrink-0 font-semibold text-fl-gold-ink"
-                    >Portarretrato →</span
-                >
+                <span class="shrink-0 font-semibold text-fl-gold-ink">{{
+                    $t('Portarretrato →')
+                }}</span>
             </Link>
 
             <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_minmax(0,420px)]">
@@ -210,7 +218,7 @@ async function download() {
                             color: dark ? '#f8f7f3' : '#171714',
                             containerType: 'inline-size',
                         }"
-                        aria-label="Vista previa de impresión"
+                        :aria-label="$t('Vista previa de impresión')"
                     >
                         <div
                             class="absolute top-0 left-0 bg-fl-graphite"
@@ -305,7 +313,9 @@ async function download() {
                 <!-- Controls -->
                 <div class="grid content-start gap-6">
                     <fieldset>
-                        <legend class="text-sm font-semibold">Diseño</legend>
+                        <legend class="text-sm font-semibold">
+                            {{ $t('Diseño') }}
+                        </legend>
                         <div class="mt-2 grid grid-cols-3 gap-2">
                             <button
                                 v-for="l in layouts"
@@ -326,7 +336,9 @@ async function download() {
                     </fieldset>
 
                     <fieldset>
-                        <legend class="text-sm font-semibold">Foto</legend>
+                        <legend class="text-sm font-semibold">
+                            {{ $t('Foto') }}
+                        </legend>
                         <div class="mt-2 grid grid-cols-4 gap-2">
                             <button
                                 v-for="p in photos"
@@ -339,7 +351,9 @@ async function download() {
                                         : 'border-transparent'
                                 "
                                 :aria-pressed="photoId === p.id && !ownFile"
-                                :aria-label="p.caption ?? 'Foto del recuerdo'"
+                                :aria-label="
+                                    p.caption ?? $t('Foto del recuerdo')
+                                "
                                 @click="chooseStoryPhoto(p.id)"
                             >
                                 <img
@@ -356,7 +370,7 @@ async function download() {
                                 "
                             >
                                 <ImagePlus class="size-5" aria-hidden="true" />
-                                Otra
+                                {{ $t('Otra') }}
                                 <input
                                     type="file"
                                     class="sr-only"
@@ -375,7 +389,7 @@ async function download() {
                         <label
                             for="print-dedication"
                             class="text-sm font-semibold"
-                            >Dedicatoria</label
+                            >{{ $t('Dedicatoria') }}</label
                         >
                         <textarea
                             id="print-dedication"
@@ -396,15 +410,18 @@ async function download() {
                         <Spinner v-if="busy" class="size-4" />
                         <template v-else>
                             <Download class="size-4" aria-hidden="true" />
-                            Descargar PDF
+                            {{ $t('Descargar PDF') }}
                         </template>
                     </button>
                     <p
                         v-if="!photos.length && !ownFile"
                         class="text-xs text-muted-foreground"
                     >
-                        Tu recuerdo aún no tiene fotos listas: sube una aquí o
-                        agrégalas en tu recuerdo.
+                        {{
+                            $t(
+                                'Tu recuerdo aún no tiene fotos listas: sube una aquí o agrégalas en tu recuerdo.',
+                            )
+                        }}
                     </p>
                 </div>
             </div>

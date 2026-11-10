@@ -17,7 +17,7 @@ const isAuthenticated = computed(() => page.props.auth?.user != null);
 </script>
 
 <template>
-    <Head title="Este recuerdo es privado">
+    <Head :title="$t('Este recuerdo es privado')">
         <meta name="robots" content="noindex, nofollow" />
     </Head>
 
@@ -33,11 +33,14 @@ const isAuthenticated = computed(() => page.props.auth?.user != null);
                 <Lock class="size-5" />
             </span>
             <h1 class="fl-display mt-4 text-3xl leading-tight">
-                Este recuerdo es privado
+                {{ $t('Este recuerdo es privado') }}
             </h1>
             <p class="mt-3 text-base leading-relaxed text-muted-foreground">
-                Su dueño decidió guardarlo solo para sí. Si te lo quiere
-                mostrar, puede enviarte un enlace personal.
+                {{
+                    $t(
+                        'Su dueño decidió guardarlo solo para sí. Si te lo quiere mostrar, puede enviarte un enlace personal.',
+                    )
+                }}
             </p>
             <div class="mt-8 flex flex-col items-center gap-4">
                 <Link
@@ -45,13 +48,13 @@ const isAuthenticated = computed(() => page.props.auth?.user != null);
                     :href="loginUrl"
                     class="inline-flex h-11 items-center justify-center rounded-full bg-fl-black px-6 text-sm font-semibold text-white transition hover:bg-fl-graphite"
                 >
-                    ¿Es tuyo? Inicia sesión
+                    {{ $t('¿Es tuyo? Inicia sesión') }}
                 </Link>
                 <Link
                     :href="home().url"
                     class="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
-                    Conoce Finisher Legacy
+                    {{ $t('Conoce Finisher Legacy') }}
                 </Link>
             </div>
         </div>

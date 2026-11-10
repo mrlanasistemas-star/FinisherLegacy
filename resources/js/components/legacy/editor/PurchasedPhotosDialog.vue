@@ -19,6 +19,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { purchasedPhotos } from '@/routes/my-legacy';
 import { importMethod as importMedia } from '@/routes/my-legacy/media';
 import type { PurchasedPhoto } from './types';
@@ -30,6 +31,8 @@ const props = defineProps<{
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
+
+const { t, tc, regional } = useI18n();
 
 const photos = ref<PurchasedPhoto[]>([]);
 const page = ref(0);
@@ -97,8 +100,11 @@ function toggle(photo: PurchasedPhoto) {
     } else {
         toast.info(
             props.remaining > 0
-                ? `Solo te ${props.remaining === 1 ? 'queda' : 'quedan'} ${props.remaining} ${props.remaining === 1 ? 'lugar' : 'lugares'} para fotos.`
-                : 'Tu recuerdo ya tiene el máximo de fotos.',
+                ? tc(
+                      'Solo te queda {count} lugar para fotos.|Solo te quedan {count} lugares para fotos.',
+                      props.remaining,
+                  )
+                : t('Tu recuerdo ya tiene el máximo de fotos.'),
         );
     }
 }
@@ -134,7 +140,7 @@ function submit() {
                 toast.error(
                     errors.sale_ids ??
                         errors.file ??
-                        'No pudimos agregar esas fotos. Intenta de nuevo.',
+                        t('No pudimos agregar esas fotos. Intenta de nuevo.'),
                 );
             },
             onFinish: () => (importing.value = false),
@@ -143,11 +149,19 @@ function submit() {
 }
 
 function purchasedOn(iso: string): string {
-    return new Date(iso).toLocaleDateString('es-MX', {
+    return new Date(iso).toLocaleDateString(regional.value, {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
     });
+}
+
+function photoLabel(photo: PurchasedPhoto): string {
+    const event = photo.event_name ?? t('tu evento');
+
+    return photo.in_story
+        ? t('Foto de {event}, ya está en tu recuerdo', { event })
+        : t('Foto de {event}', { event });
 }
 </script>
 
@@ -155,18 +169,18 @@ function purchasedOn(iso: string): string {
     <Dialog v-model:open="open">
         <DialogScrollContent class="sm:max-w-2xl">
             <DialogHeader>
-                <DialogTitle>Fotos que compraste</DialogTitle>
+                <DialogTitle>{{ $t('Fotos que compraste') }}</DialogTitle>
                 <DialogDescription>
-                    Elige las fotos del evento que quieres en tu recuerdo. Se
-                    agregan en alta calidad y cuentan dentro de tu límite de
-                    fotos
-                    <template v-if="remaining > 0">
-                        ({{ remaining }}
-                        {{
-                            remaining === 1 ? 'lugar libre' : 'lugares libres'
-                        }}).
-                    </template>
-                    <template v-else>(ya no tienes lugares libres).</template>
+                    {{
+                        remaining > 0
+                            ? $tc(
+                                  'Elige las fotos del evento que quieres en tu recuerdo. Se agregan en alta calidad y cuentan dentro de tu límite de fotos ({count} lugar libre).|Elige las fotos del evento que quieres en tu recuerdo. Se agregan en alta calidad y cuentan dentro de tu límite de fotos ({count} lugares libres).',
+                                  remaining,
+                              )
+                            : $t(
+                                  'Elige las fotos del evento que quieres en tu recuerdo. Se agregan en alta calidad y cuentan dentro de tu límite de fotos (ya no tienes lugares libres).',
+                              )
+                    }}
                 </DialogDescription>
             </DialogHeader>
 
@@ -187,13 +201,13 @@ function purchasedOn(iso: string): string {
                 v-else-if="failed && photos.length === 0"
                 class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
             >
-                No pudimos cargar tus fotos.
+                {{ $t('No pudimos cargar tus fotos.') }}
                 <button
                     type="button"
                     class="font-semibold underline underline-offset-4"
                     @click="load(1)"
                 >
-                    Reintentar
+                    {{ $t('Reintentar') }}
                 </button>
             </p>
 
@@ -202,7 +216,7 @@ function purchasedOn(iso: string): string {
                 class="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border p-8 text-center text-sm text-muted-foreground"
             >
                 <ImageOff class="size-6" aria-hidden="true" />
-                Todavía no tienes fotos compradas.
+                {{ $t('Todavía no tienes fotos compradas.') }}
             </p>
 
             <ul v-else class="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -220,7 +234,7 @@ function purchasedOn(iso: string): string {
                         ]"
                         :aria-pressed="selected.includes(photo.sale_id)"
                         :aria-disabled="photo.in_story"
-                        :aria-label="`Foto de ${photo.event_name ?? 'tu evento'}${photo.in_story ? ', ya está en tu recuerdo' : ''}`"
+                        :aria-label="photoLabel(photo)"
                         @click="toggle(photo)"
                     >
                         <img
@@ -234,7 +248,7 @@ function purchasedOn(iso: string): string {
                             v-if="photo.in_story"
                             class="absolute inset-x-1.5 bottom-1.5 rounded-full bg-white/95 px-2 py-1 text-center text-[10px] font-semibold"
                         >
-                            Ya está en tu recuerdo
+                            {{ $t('Ya está en tu recuerdo') }}
                         </span>
                         <span
                             v-else-if="selected.includes(photo.sale_id)"
@@ -246,7 +260,7 @@ function purchasedOn(iso: string): string {
                             v-if="!photo.in_story"
                             class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/65 to-transparent px-2 pt-5 pb-1.5 text-[10px] font-medium text-white"
                         >
-                            {{ photo.event_name ?? 'Evento' }} ·
+                            {{ photo.event_name ?? $t('Evento') }} ·
                             {{ purchasedOn(photo.purchased_at) }}
                         </span>
                     </button>
@@ -261,7 +275,7 @@ function purchasedOn(iso: string): string {
                     @click="load(page + 1)"
                 >
                     <Spinner v-if="loading" class="size-4" />
-                    Ver más fotos
+                    {{ $t('Ver más fotos') }}
                 </button>
             </div>
 
@@ -271,7 +285,7 @@ function purchasedOn(iso: string): string {
                     class="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-semibold"
                     @click="open = false"
                 >
-                    Cancelar
+                    {{ $t('Cancelar') }}
                 </button>
                 <button
                     type="button"
@@ -282,10 +296,11 @@ function purchasedOn(iso: string): string {
                     <Spinner v-if="importing" class="size-4" />
                     {{
                         selected.length === 0
-                            ? 'Elige fotos'
-                            : selected.length === 1
-                              ? 'Agregar 1 foto'
-                              : `Agregar ${selected.length} fotos`
+                            ? $t('Elige fotos')
+                            : $tc(
+                                  'Agregar {count} foto|Agregar {count} fotos',
+                                  selected.length,
+                              )
                     }}
                 </button>
             </DialogFooter>

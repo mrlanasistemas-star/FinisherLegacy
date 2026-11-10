@@ -6,6 +6,7 @@
  */
 import { Building2, CreditCard, Wallet } from '@lucide/vue';
 import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 import { splitPhotoPrice } from '@/lib/photoFees';
 import type { PhotoFeeRules } from '@/lib/photoFees';
 
@@ -18,12 +19,14 @@ const props = withDefaults(
     { compact: false },
 );
 
+const { regional } = useI18n();
+
 const split = computed(() =>
     splitPhotoPrice(props.rules, Math.max(props.priceMinor || 0, 0)),
 );
 
 const money = (minor: number) =>
-    new Intl.NumberFormat('es-MX', {
+    new Intl.NumberFormat(regional.value, {
         style: 'currency',
         currency: 'MXN',
     }).format(minor / 100);
@@ -37,7 +40,12 @@ const pct = (part: number) =>
         <div
             class="flex h-3 w-full overflow-hidden rounded-full bg-muted"
             role="img"
-            :aria-label="`Recibes ${money(split.net)} de ${money(split.gross)}`"
+            :aria-label="
+                $t('Recibes {net} de {gross}', {
+                    net: money(split.net),
+                    gross: money(split.gross),
+                })
+            "
         >
             <span class="bg-emerald-500" :style="{ width: pct(split.net) }" />
             <span class="bg-fl-gold" :style="{ width: pct(split.platform) }" />
@@ -56,7 +64,9 @@ const pct = (part: number) =>
             >
                 <Wallet class="size-4 shrink-0 text-emerald-700" />
                 <div class="min-w-0">
-                    <dt class="text-[11px] text-emerald-800">Tú recibes</dt>
+                    <dt class="text-[11px] text-emerald-800">
+                        {{ $t('Tú recibes') }}
+                    </dt>
                     <dd class="legacy-numeric font-semibold text-emerald-900">
                         {{ money(split.net) }}
                     </dd>
@@ -85,8 +95,8 @@ const pct = (part: number) =>
                     <dt class="text-[11px] text-sky-800">
                         {{
                             split.finisherAbsorbs
-                                ? 'Pasarela (la absorbe Finisher)'
-                                : 'Procesamiento de pago (est.)'
+                                ? $t('Pasarela (la absorbe Finisher)')
+                                : $t('Procesamiento de pago (est.)')
                         }}
                     </dt>
                     <dd class="legacy-numeric font-semibold text-sky-900">
@@ -96,14 +106,16 @@ const pct = (part: number) =>
             </div>
         </dl>
         <p v-if="!compact" class="text-xs text-muted-foreground">
-            El procesamiento de pago es una estimación:
-            {{ rules.processor_fee_percent }}% +
-            {{ money(rules.processor_fee_fixed_minor) }} por pago, más IVA ({{
-                rules.processor_fee_vat_percent
-            }}%). El cargo real depende de la pasarela con la que pague el
-            cliente (tarjeta o pago manual) y queda registrado en cada venta. El
-            cargo fijo se reparte entre las fotos del mismo pedido. Publicar tus
-            fotos no tiene costo inicial.
+            {{
+                $t(
+                    'El procesamiento de pago es una estimación: {percent}% + {fixed} por pago, más IVA ({vat}%). El cargo real depende de la pasarela con la que pague el cliente (tarjeta o pago manual) y queda registrado en cada venta. El cargo fijo se reparte entre las fotos del mismo pedido. Publicar tus fotos no tiene costo inicial.',
+                    {
+                        percent: rules.processor_fee_percent,
+                        fixed: money(rules.processor_fee_fixed_minor),
+                        vat: rules.processor_fee_vat_percent,
+                    },
+                )
+            }}
         </p>
     </div>
 </template>

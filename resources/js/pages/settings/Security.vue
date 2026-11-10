@@ -15,9 +15,9 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Contraseña y seguridad" />
+    <Head :title="$t('Contraseña y seguridad')" />
 
-    <h1 class="sr-only">Contraseña y seguridad</h1>
+    <h1 class="sr-only">{{ $t('Contraseña y seguridad') }}</h1>
 
     <Form
         v-bind="SecurityController.update.form()"
@@ -31,33 +31,37 @@ defineProps<{
         v-slot="{ errors, processing, recentlySuccessful }"
     >
         <SettingsGroup
-            title="Cambiar contraseña"
-            note="Usa al menos 8 caracteres. Una frase larga es más segura y fácil de recordar."
+            :title="$t('Cambiar contraseña')"
+            :note="
+                $t(
+                    'Usa al menos 8 caracteres. Una frase larga es más segura y fácil de recordar.',
+                )
+            "
         >
             <SettingsInputRow
                 id="current_password"
                 type="password"
-                label="Contraseña actual"
+                :label="$t('Contraseña actual')"
                 :error="errors.current_password"
                 autocomplete="current-password"
-                placeholder="Obligatoria"
+                :placeholder="$t('Obligatoria')"
             />
             <SettingsInputRow
                 id="password"
                 type="password"
-                label="Nueva contraseña"
+                :label="$t('Nueva contraseña')"
                 :error="errors.password"
                 autocomplete="new-password"
-                placeholder="Mínimo 8 caracteres"
+                :placeholder="$t('Mínimo 8 caracteres')"
                 :passwordrules="passwordRules"
             />
             <SettingsInputRow
                 id="password_confirmation"
                 type="password"
-                label="Confirmar"
+                :label="$t('Confirmar')"
                 :error="errors.password_confirmation"
                 autocomplete="new-password"
-                placeholder="Repite la nueva contraseña"
+                :placeholder="$t('Repite la nueva contraseña')"
                 :passwordrules="passwordRules"
             />
 
@@ -74,15 +78,15 @@ defineProps<{
                         role="status"
                     >
                         <CheckCircle2 class="size-4" aria-hidden="true" />
-                        Contraseña actualizada
+                        {{ $t('Contraseña actualizada') }}
                     </p>
                 </Transition>
                 <SubmitButton
                     :block="false"
                     :arrow="false"
                     class="min-h-11 px-6 text-sm"
-                    label="Actualizar contraseña"
-                    processing-label="Guardando…"
+                    :label="$t('Actualizar contraseña')"
+                    :processing-label="$t('Guardando…')"
                     :processing="processing"
                     data-test="update-password-button"
                 />

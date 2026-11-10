@@ -38,6 +38,7 @@ import Money from '@/components/shared/Money.vue';
 import LiveTrackingCard from '@/components/tracking/LiveTrackingCard.vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
+import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/datetime';
 import { dashboard } from '@/routes';
 import { show as eventShow } from '@/routes/events';
@@ -158,6 +159,8 @@ const props = defineProps<{
     supportSession: SupportSession | null;
 }>();
 
+const { t } = useI18n();
+
 const heroImage = computed(
     () => props.story.cover_url ?? props.medals[0]?.image_url ?? null,
 );
@@ -180,12 +183,14 @@ const raceLine = computed(() =>
 
 const positions = computed(() =>
     [
-        { label: 'General', value: props.result?.overall_position },
-        { label: 'Rama', value: props.result?.gender_position },
+        { label: t('General'), value: props.result?.overall_position },
+        { label: t('Rama'), value: props.result?.gender_position },
         {
             label: props.story.category
-                ? `Categoría ${props.story.category}`
-                : 'Categoría',
+                ? t('Categoría {category}', {
+                      category: props.story.category,
+                  })
+                : t('Categoría'),
             value: props.result?.category_position,
         },
     ].filter((p) => p.value),
@@ -209,7 +214,7 @@ function toggleVisibility(item: Media) {
 }
 
 function removeMedia(item: Media) {
-    if (!window.confirm('¿Eliminar este recuerdo? No se puede deshacer.')) {
+    if (!window.confirm(t('¿Eliminar este recuerdo? No se puede deshacer.'))) {
         return;
     }
 
@@ -251,7 +256,9 @@ function removeGear(gear: GearUsed) {
 
 /* Support */
 const supportForm = useForm({
-    title: `Apoya mi carrera en ${props.participant.event ?? 'mi próximo evento'}`,
+    title: props.participant.event
+        ? t('Apoya mi carrera en {event}', { event: props.participant.event })
+        : t('Apoya mi carrera en mi próximo evento'),
 });
 
 function createSupportSession() {
@@ -294,7 +301,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
 </script>
 
 <template>
-    <Head :title="participant.event ?? 'Mi legado'" />
+    <Head :title="participant.event ?? $t('Mi legado')" />
 
     <article class="pb-16">
         <!-- Hero -->
@@ -321,7 +328,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                     :href="dashboard()"
                     class="inline-flex min-h-11 items-center gap-1.5 rounded-full text-sm text-white/80 hover:text-white focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                 >
-                    <ArrowLeft class="size-4" /> Mi legado
+                    <ArrowLeft class="size-4" /> {{ $t('Mi legado') }}
                 </Link>
 
                 <div class="mt-16 max-w-3xl sm:mt-24 lg:mt-32">
@@ -331,13 +338,13 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         {{
                             [shortDate(participant.event_date), place]
                                 .filter(Boolean)
-                                .join(' · ') || 'Tu carrera'
+                                .join(' · ') || $t('Tu carrera')
                         }}
                     </p>
                     <h1
                         class="mt-3 font-serif text-4xl leading-[1.05] font-medium tracking-tight sm:text-6xl"
                     >
-                        {{ participant.event ?? 'Evento' }}
+                        {{ participant.event ?? $t('Evento') }}
                     </h1>
                     <p v-if="raceLine" class="mt-3 text-base text-white/85">
                         {{ raceLine }}
@@ -349,7 +356,9 @@ function moderate(id: number, action: 'approve' | 'reject') {
                     class="mt-8 flex flex-wrap items-end gap-x-10 gap-y-4"
                 >
                     <div>
-                        <p class="text-xs text-white/70">Tiempo oficial</p>
+                        <p class="text-xs text-white/70">
+                            {{ $t('Tiempo oficial') }}
+                        </p>
                         <p
                             class="legacy-numeric font-serif text-5xl leading-none font-medium tabular-nums sm:text-7xl"
                         >
@@ -357,7 +366,9 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         </p>
                     </div>
                     <div v-if="result.overall_position">
-                        <p class="text-xs text-white/70">Posición general</p>
+                        <p class="text-xs text-white/70">
+                            {{ $t('Posición general') }}
+                        </p>
                         <p
                             class="legacy-numeric font-serif text-3xl leading-none tabular-nums sm:text-4xl"
                         >
@@ -369,7 +380,11 @@ function moderate(id: number, action: 'approve' | 'reject') {
                     v-else-if="story.upcoming"
                     class="mt-8 inline-flex rounded-full bg-white/15 px-4 py-2 text-sm backdrop-blur"
                 >
-                    Estás inscrito. Esta página se llenará el día de la carrera.
+                    {{
+                        $t(
+                            'Estás inscrito. Esta página se llenará el día de la carrera.',
+                        )
+                    }}
                 </p>
             </div>
         </header>
@@ -377,18 +392,18 @@ function moderate(id: number, action: 'approve' | 'reject') {
         <!-- Section index -->
         <nav
             class="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur"
-            aria-label="Secciones de la carrera"
+            :aria-label="$t('Secciones de la carrera')"
         >
             <div
                 class="fl-container flex [scrollbar-width:none] gap-1 overflow-x-auto py-2 text-sm"
             >
                 <a
                     v-for="link in [
-                        { id: 'resultado', label: 'Resultado' },
-                        { id: 'seguimiento', label: 'Apoyo' },
-                        { id: 'recuerdos', label: 'Recuerdos' },
+                        { id: 'resultado', label: $t('Resultado') },
+                        { id: 'seguimiento', label: $t('Apoyo') },
+                        { id: 'recuerdos', label: $t('Recuerdos') },
                         { id: 'legacy-plate', label: 'Legacy Plate' },
-                        { id: 'equipo', label: 'Equipo' },
+                        { id: 'equipo', label: $t('Equipo') },
                     ]"
                     :key="link.id"
                     :href="`#${link.id}`"
@@ -405,15 +420,15 @@ function moderate(id: number, action: 'approve' | 'reject') {
                 class="scroll-mt-20"
                 aria-labelledby="resultado-title"
             >
-                <p class="fl-eyebrow">El resultado</p>
+                <p class="fl-eyebrow">{{ $t('El resultado') }}</p>
                 <h2
                     id="resultado-title"
                     class="fl-display mt-2 text-3xl sm:text-4xl"
                 >
                     {{
                         result
-                            ? 'Así cruzaste la meta.'
-                            : 'Tu resultado está en camino.'
+                            ? $t('Así cruzaste la meta.')
+                            : $t('Tu resultado está en camino.')
                     }}
                 </h2>
 
@@ -423,7 +438,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                     >
                         <div class="bg-card p-5">
                             <dt class="text-xs text-muted-foreground">
-                                Tiempo oficial
+                                {{ $t('Tiempo oficial') }}
                             </dt>
                             <dd
                                 class="legacy-numeric mt-1 font-serif text-2xl tabular-nums sm:text-3xl"
@@ -433,7 +448,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         </div>
                         <div class="bg-card p-5">
                             <dt class="text-xs text-muted-foreground">
-                                Tiempo chip
+                                {{ $t('Tiempo chip') }}
                             </dt>
                             <dd
                                 class="legacy-numeric mt-1 font-serif text-2xl tabular-nums sm:text-3xl"
@@ -442,7 +457,9 @@ function moderate(id: number, action: 'approve' | 'reject') {
                             </dd>
                         </div>
                         <div class="bg-card p-5">
-                            <dt class="text-xs text-muted-foreground">Ritmo</dt>
+                            <dt class="text-xs text-muted-foreground">
+                                {{ $t('Ritmo') }}
+                            </dt>
                             <dd
                                 class="legacy-numeric mt-1 font-serif text-2xl tabular-nums sm:text-3xl"
                             >
@@ -451,7 +468,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         </div>
                         <div class="bg-card p-5">
                             <dt class="text-xs text-muted-foreground">
-                                Distancia
+                                {{ $t('Distancia') }}
                             </dt>
                             <dd
                                 class="legacy-numeric mt-1 font-serif text-2xl tabular-nums sm:text-3xl"
@@ -481,7 +498,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
 
                     <div v-if="result.splits.length" class="mt-8">
                         <h3 class="text-sm font-semibold">
-                            Tu carrera, tramo a tramo
+                            {{ $t('Tu carrera, tramo a tramo') }}
                         </h3>
                         <ol
                             class="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card"
@@ -518,8 +535,12 @@ function moderate(id: number, action: 'approve' | 'reject') {
                 <p v-else class="mt-4 max-w-xl text-muted-foreground">
                     {{
                         story.upcoming
-                            ? 'Cuando cruces la meta, aquí verás tu tiempo, tu ritmo y tu posición.'
-                            : 'En cuanto el evento publique los resultados, tu tiempo y posición aparecerán aquí.'
+                            ? $t(
+                                  'Cuando cruces la meta, aquí verás tu tiempo, tu ritmo y tu posición.',
+                              )
+                            : $t(
+                                  'En cuanto el evento publique los resultados, tu tiempo y posición aparecerán aquí.',
+                              )
                     }}
                 </p>
             </section>
@@ -530,12 +551,12 @@ function moderate(id: number, action: 'approve' | 'reject') {
                 class="scroll-mt-20"
                 aria-labelledby="apoyo-title"
             >
-                <p class="fl-eyebrow">Apoyo</p>
+                <p class="fl-eyebrow">{{ $t('Apoyo') }}</p>
                 <h2
                     id="apoyo-title"
                     class="fl-display mt-2 text-3xl sm:text-4xl"
                 >
-                    Tu gente también corre contigo.
+                    {{ $t('Tu gente también corre contigo.') }}
                 </h2>
 
                 <div class="mt-8 grid gap-5 lg:grid-cols-12">
@@ -551,12 +572,14 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         >
                             <Heart class="size-6 text-fl-gold-ink" />
                             <p class="mt-3 font-semibold">
-                                Recibe mensajes de apoyo
+                                {{ $t('Recibe mensajes de apoyo') }}
                             </p>
                             <p class="mt-1 text-sm text-muted-foreground">
-                                Crea un enlace para que tu familia y amigos te
-                                manden mensajes de texto o de voz durante esta
-                                carrera.
+                                {{
+                                    $t(
+                                        'Crea un enlace para que tu familia y amigos te manden mensajes de texto o de voz durante esta carrera.',
+                                    )
+                                }}
                             </p>
                             <Button
                                 class="mt-5 min-h-11 rounded-full"
@@ -564,7 +587,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                 @click="createSupportSession"
                             >
                                 <Heart class="size-4" />
-                                Crear mi enlace de apoyo
+                                {{ $t('Crear mi enlace de apoyo') }}
                             </Button>
                         </div>
                         <div
@@ -575,8 +598,11 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                 {{ supportSession.title }}
                             </p>
                             <p class="mt-1 text-sm text-muted-foreground">
-                                Comparte este enlace con quien quieras que te
-                                acompañe.
+                                {{
+                                    $t(
+                                        'Comparte este enlace con quien quieras que te acompañe.',
+                                    )
+                                }}
                             </p>
                             <p
                                 class="mt-4 truncate rounded-lg bg-muted px-3 py-2.5 font-mono text-xs text-foreground"
@@ -592,8 +618,8 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                 <Share2 v-else class="size-4" />
                                 {{
                                     linkCopied
-                                        ? 'Enlace copiado'
-                                        : 'Compartir enlace'
+                                        ? $t('Enlace copiado')
+                                        : $t('Compartir enlace')
                                 }}
                             </Button>
                         </div>
@@ -613,12 +639,12 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                         <p class="font-semibold">
                                             {{
                                                 msg.contributor_name ??
-                                                'Alguien que te quiere'
+                                                $t('Alguien que te quiere')
                                             }}
                                             <span
                                                 v-if="msg.is_surprise"
                                                 class="ml-1 rounded-full bg-fl-cream px-2 py-0.5 text-xs font-medium text-fl-gold-ink"
-                                                >Sorpresa</span
+                                                >{{ $t('Sorpresa') }}</span
                                             >
                                         </p>
                                         <p
@@ -635,7 +661,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                             size="icon"
                                             variant="ghost"
                                             class="size-11 rounded-full text-emerald-700 hover:bg-emerald-500/10"
-                                            aria-label="Aprobar mensaje"
+                                            :aria-label="$t('Aprobar mensaje')"
                                             @click="moderate(msg.id, 'approve')"
                                         >
                                             <Check class="size-4" />
@@ -644,7 +670,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                             size="icon"
                                             variant="ghost"
                                             class="size-11 rounded-full text-red-700 hover:bg-red-500/10"
-                                            aria-label="Rechazar mensaje"
+                                            :aria-label="$t('Rechazar mensaje')"
                                             @click="moderate(msg.id, 'reject')"
                                         >
                                             <X class="size-4" />
@@ -668,7 +694,11 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                     v-else-if="msg.is_surprise"
                                     class="mt-3 text-sm text-muted-foreground"
                                 >
-                                    Un mensaje sorpresa te espera en la carrera.
+                                    {{
+                                        $t(
+                                            'Un mensaje sorpresa te espera en la carrera.',
+                                        )
+                                    }}
                                 </p>
                             </Reveal>
                         </div>
@@ -678,8 +708,11 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         >
                             <Heart class="size-6 text-muted-foreground" />
                             <p class="mt-3 text-sm text-muted-foreground">
-                                Los mensajes de apoyo que recibas aparecerán
-                                aquí.
+                                {{
+                                    $t(
+                                        'Los mensajes de apoyo que recibas aparecerán aquí.',
+                                    )
+                                }}
                             </p>
                         </div>
                     </div>
@@ -694,19 +727,18 @@ function moderate(id: number, action: 'approve' | 'reject') {
             >
                 <div class="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <p class="fl-eyebrow">Recuerdos</p>
+                        <p class="fl-eyebrow">{{ $t('Recuerdos') }}</p>
                         <h2
                             id="recuerdos-title"
                             class="fl-display mt-2 text-3xl sm:text-4xl"
                         >
-                            Lo que guardaste de este día.
+                            {{ $t('Lo que guardaste de este día.') }}
                         </h2>
                     </div>
                     <p class="text-sm text-muted-foreground">
-                        {{ photos.length }}
-                        {{ photos.length === 1 ? 'foto' : 'fotos' }} ·
-                        {{ videos.length }}
-                        {{ videos.length === 1 ? 'video' : 'videos' }}
+                        {{ $tc('{count} foto|{count} fotos', photos.length) }}
+                        ·
+                        {{ $tc('{count} video|{count} videos', videos.length) }}
                     </p>
                 </div>
 
@@ -727,7 +759,13 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         <img
                             v-if="item.type === 'image'"
                             :src="item.url"
-                            :alt="`Foto en ${participant.event ?? 'la carrera'}`"
+                            :alt="
+                                participant.event
+                                    ? $t('Foto en {event}', {
+                                          event: participant.event,
+                                      })
+                                    : $t('Foto en la carrera')
+                            "
                             loading="lazy"
                             class="size-full object-cover"
                         />
@@ -747,7 +785,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                 class="size-3"
                             />
                             <Camera v-else class="size-3" />
-                            {{ item.is_public ? 'Pública' : 'Solo tú' }}
+                            {{ item.is_public ? $t('Pública') : $t('Solo tú') }}
                         </span>
                         <figcaption
                             class="absolute top-2 right-2 flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
@@ -757,13 +795,13 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                 class="flex size-11 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm hover:bg-white focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none sm:size-9"
                                 :aria-label="
                                     item.is_public
-                                        ? 'Hacer privada'
-                                        : 'Hacer pública'
+                                        ? $t('Hacer privada')
+                                        : $t('Hacer pública')
                                 "
                                 :title="
                                     item.is_public
-                                        ? 'Hacer privada'
-                                        : 'Hacer pública'
+                                        ? $t('Hacer privada')
+                                        : $t('Hacer pública')
                                 "
                                 @click="toggleVisibility(item)"
                             >
@@ -773,8 +811,8 @@ function moderate(id: number, action: 'approve' | 'reject') {
                             <button
                                 type="button"
                                 class="flex size-11 items-center justify-center rounded-full bg-white/90 text-red-700 shadow-sm hover:bg-white focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none sm:size-9"
-                                aria-label="Eliminar"
-                                title="Eliminar"
+                                :aria-label="$t('Eliminar')"
+                                :title="$t('Eliminar')"
                                 @click="removeMedia(item)"
                             >
                                 <Trash2 class="size-4" />
@@ -800,12 +838,12 @@ function moderate(id: number, action: 'approve' | 'reject') {
                 class="scroll-mt-20"
                 aria-labelledby="plate-title"
             >
-                <p class="fl-eyebrow">Lo que te llevaste</p>
+                <p class="fl-eyebrow">{{ $t('Lo que te llevaste') }}</p>
                 <h2
                     id="plate-title"
                     class="fl-display mt-2 text-3xl sm:text-4xl"
                 >
-                    Tu medalla y tu Legacy Plate.
+                    {{ $t('Tu medalla y tu Legacy Plate.') }}
                 </h2>
 
                 <div class="mt-8 grid gap-5 lg:grid-cols-12">
@@ -818,7 +856,11 @@ function moderate(id: number, action: 'approve' | 'reject') {
                             <img
                                 v-if="medal.image_url"
                                 :src="medal.image_url"
-                                :alt="`Medalla ${medal.title}`"
+                                :alt="
+                                    $t('Medalla {title}', {
+                                        title: medal.title,
+                                    })
+                                "
                                 loading="lazy"
                                 class="size-24 shrink-0 rounded-xl object-cover"
                             />
@@ -839,7 +881,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                 <Link
                                     :href="`/dashboard/medals/${medal.id}`"
                                     class="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline"
-                                    >Ver medalla</Link
+                                    >{{ $t('Ver medalla') }}</Link
                                 >
                             </div>
                         </div>
@@ -847,12 +889,15 @@ function moderate(id: number, action: 'approve' | 'reject') {
                             v-if="!medals.length"
                             class="rounded-2xl border border-dashed border-foreground/15 p-6 text-sm text-muted-foreground"
                         >
-                            ¿Tienes la medalla de esta carrera? Tómale una foto
-                            y agrégala a tu historia.
+                            {{
+                                $t(
+                                    '¿Tienes la medalla de esta carrera? Tómale una foto y agrégala a tu historia.',
+                                )
+                            }}
                             <Link
                                 href="/dashboard/medals/create"
                                 class="mt-2 block min-h-11 font-semibold text-foreground underline-offset-4 hover:underline"
-                                >Agregar medalla</Link
+                                >{{ $t('Agregar medalla') }}</Link
                             >
                         </div>
                     </div>
@@ -871,9 +916,9 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                     class="rounded-full bg-fl-cream px-3 py-1 text-xs font-medium text-fl-gold-ink"
                                 >
                                     {{
-                                        legacyPlateStatusLabel[
-                                            legacyPlate.status
-                                        ] ?? 'En preparación'
+                                        legacyPlateStatusLabel(
+                                            legacyPlate.status,
+                                        ) ?? $t('En preparación')
                                     }}
                                 </span>
                             </div>
@@ -887,8 +932,11 @@ function moderate(id: number, action: 'approve' | 'reject') {
                                 v-else
                                 class="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground"
                             >
-                                Tu Legacy Plate está en preparación. Verás cómo
-                                queda en cuanto tenga su diseño.
+                                {{
+                                    $t(
+                                        'Tu Legacy Plate está en preparación. Verás cómo queda en cuanto tenga su diseño.',
+                                    )
+                                }}
                             </p>
                         </div>
                         <div
@@ -905,19 +953,27 @@ function moderate(id: number, action: 'approve' | 'reject') {
                             />
                             <div class="flex flex-col justify-center p-6">
                                 <p class="font-serif text-2xl leading-tight">
-                                    Convierte esta carrera en una pieza.
+                                    {{
+                                        $t(
+                                            'Convierte esta carrera en una pieza.',
+                                        )
+                                    }}
                                 </p>
                                 <p class="mt-2 text-sm text-muted-foreground">
-                                    Una pieza física que conecta tu medalla con
-                                    tu historia digital: tu nombre, tu tiempo y
-                                    tu distancia.
+                                    {{
+                                        $t(
+                                            'Una pieza física que conecta tu medalla con tu historia digital: tu nombre, tu tiempo y tu distancia.',
+                                        )
+                                    }}
                                 </p>
                                 <Button
                                     as-child
                                     variant="outline"
                                     class="mt-4 w-fit rounded-full"
                                 >
-                                    <Link href="/tienda">Ver Legacy Plate</Link>
+                                    <Link href="/tienda">{{
+                                        $t('Ver Legacy Plate')
+                                    }}</Link>
                                 </Button>
                             </div>
                         </div>
@@ -931,12 +987,12 @@ function moderate(id: number, action: 'approve' | 'reject') {
                 class="scroll-mt-20"
                 aria-labelledby="equipo-title"
             >
-                <p class="fl-eyebrow">Tu equipo</p>
+                <p class="fl-eyebrow">{{ $t('Tu equipo') }}</p>
                 <h2
                     id="equipo-title"
                     class="fl-display mt-2 text-3xl sm:text-4xl"
                 >
-                    Lo que llevabas puesto.
+                    {{ $t('Lo que llevabas puesto.') }}
                 </h2>
 
                 <ul
@@ -970,13 +1026,16 @@ function moderate(id: number, action: 'approve' | 'reject') {
                             class="inline-flex min-h-11 shrink-0 items-center px-2 text-xs text-muted-foreground hover:text-red-700"
                             @click="removeGear(item)"
                         >
-                            Quitar
+                            {{ $t('Quitar') }}
                         </button>
                     </li>
                 </ul>
                 <p v-else class="mt-4 text-muted-foreground">
-                    Agrega el equipo de Finisher Legacy que usaste en esta
-                    carrera.
+                    {{
+                        $t(
+                            'Agrega el equipo de Finisher Legacy que usaste en esta carrera.',
+                        )
+                    }}
                 </p>
 
                 <div
@@ -986,8 +1045,8 @@ function moderate(id: number, action: 'approve' | 'reject') {
                     <FancySelect
                         v-model="selectedOwnedProduct"
                         :options="gearOptions"
-                        placeholder="Elige de tu equipo"
-                        aria-label="Producto de tu equipo"
+                        :placeholder="$t('Elige de tu equipo')"
+                        :aria-label="$t('Producto de tu equipo')"
                         class="sm:w-72"
                     />
                     <Button
@@ -997,14 +1056,14 @@ function moderate(id: number, action: 'approve' | 'reject') {
                         @click="assignGear"
                     >
                         <Plus class="size-4" />
-                        Agregar a esta carrera
+                        {{ $t('Agregar a esta carrera') }}
                     </Button>
                 </div>
 
                 <!-- Purchases for this event -->
                 <div v-if="purchases.length" class="mt-10">
                     <h3 class="text-sm font-semibold">
-                        Lo que compraste para este evento
+                        {{ $t('Lo que compraste para este evento') }}
                     </h3>
                     <ul
                         class="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card"
@@ -1041,7 +1100,7 @@ function moderate(id: number, action: 'approve' | 'reject') {
                     :href="eventShow(story.event_slug)"
                     class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline"
                 >
-                    Ver la página del evento
+                    {{ $t('Ver la página del evento') }}
                 </Link>
             </div>
         </div>

@@ -1,4 +1,19 @@
-const rtf = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
+import { activeRegional, t } from '@/i18n';
+
+const formatters = new Map<string, Intl.RelativeTimeFormat>();
+
+/** One formatter per language, built on first use. */
+function relativeFormatter(): Intl.RelativeTimeFormat {
+    const regional = activeRegional();
+    let formatter = formatters.get(regional);
+
+    if (!formatter) {
+        formatter = new Intl.RelativeTimeFormat(regional, { numeric: 'auto' });
+        formatters.set(regional, formatter);
+    }
+
+    return formatter;
+}
 
 const steps: [Intl.RelativeTimeFormatUnit, number][] = [
     ['year', 60 * 60 * 24 * 365],
@@ -15,11 +30,11 @@ export function timeAgo(iso: string): string {
 
     for (const [unit, size] of steps) {
         if (Math.abs(seconds) >= size) {
-            return rtf.format(Math.round(seconds / size), unit);
+            return relativeFormatter().format(Math.round(seconds / size), unit);
         }
     }
 
-    return 'justo ahora';
+    return t('justo ahora');
 }
 
 /** "12 abr 2026" — dates without a time component (YYYY-MM-DD). */
@@ -31,7 +46,7 @@ export function shortDate(date: string | null | undefined): string {
     const value = new Date(date.length === 10 ? `${date}T00:00:00` : date);
 
     return value
-        .toLocaleDateString('es-MX', {
+        .toLocaleDateString(activeRegional(), {
             day: 'numeric',
             month: 'short',
             year: 'numeric',

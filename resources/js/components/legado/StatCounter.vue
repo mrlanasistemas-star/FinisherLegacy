@@ -8,6 +8,7 @@
 import { useIntersectionObserver } from '@vueuse/core';
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 
 const props = withDefaults(
     defineProps<{
@@ -20,6 +21,7 @@ const props = withDefaults(
     { decimals: 0, suffix: '', hint: null },
 );
 
+const { regional } = useI18n();
 const el = useTemplateRef<HTMLElement>('el');
 const reducedMotion = useReducedMotion();
 const shown = ref(props.value);
@@ -27,7 +29,7 @@ let frame: number | null = null;
 let played = false;
 
 const formatted = computed(() =>
-    shown.value.toLocaleString('es-MX', {
+    shown.value.toLocaleString(regional.value, {
         minimumFractionDigits: 0,
         maximumFractionDigits: props.decimals,
     }),

@@ -62,7 +62,7 @@ const isPassword = computed(() => props.type === 'password');
                 type="button"
                 class="absolute inset-y-0 right-0 my-auto flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                 :aria-label="
-                    reveal ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                    reveal ? $t('Ocultar contraseña') : $t('Mostrar contraseña')
                 "
                 :aria-pressed="reveal"
                 @click="reveal = !reveal"

@@ -29,6 +29,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { useAuthGate } from '@/composables/useAuthGate';
+import { useI18n } from '@/i18n';
 import { edit as editProfile } from '@/routes/dashboard/profile';
 import type { PostKind, VisibilityOption } from '@/types';
 
@@ -60,16 +61,19 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const profile = computed(() => page.props.auth.profile);
 const { requireAuth } = useAuthGate();
+const { t } = useI18n();
 
 const isDesktop = useMediaQuery('(min-width: 640px)');
 const formKey = ref(0);
 
-const quickActions: { label: string; kind: PostKind; icon: typeof Camera }[] = [
-    { label: 'Foto', kind: 'photo', icon: Camera },
-    { label: 'Resultado', kind: 'race_result', icon: Timer },
-    { label: 'Momento', kind: 'moment', icon: Sparkles },
-    { label: 'Equipo', kind: 'gear', icon: ShoppingBag },
-];
+const quickActions = computed<
+    { label: string; kind: PostKind; icon: typeof Camera }[]
+>(() => [
+    { label: t('Foto'), kind: 'photo', icon: Camera },
+    { label: t('Resultado'), kind: 'race_result', icon: Timer },
+    { label: t('Momento'), kind: 'moment', icon: Sparkles },
+    { label: t('Equipo'), kind: 'gear', icon: ShoppingBag },
+]);
 
 const ready = computed(() => !!props.composer?.has_profile);
 
@@ -108,7 +112,7 @@ function onPublished() {
     >
         <div class="flex items-center gap-3">
             <AthleteAvatar
-                :name="user?.name ?? 'Tú'"
+                :name="user?.name ?? $t('Tú')"
                 :photo-url="profile?.photo_url"
                 size="sm"
             />
@@ -119,8 +123,10 @@ function onPublished() {
             >
                 {{
                     user
-                        ? `¿Qué quieres compartir, ${user.name.split(' ')[0]}?`
-                        : '¿Qué quieres compartir hoy?'
+                        ? $t('¿Qué quieres compartir, {name}?', {
+                              name: user.name.split(' ')[0],
+                          })
+                        : $t('¿Qué quieres compartir hoy?')
                 }}
             </button>
         </div>
@@ -142,14 +148,14 @@ function onPublished() {
             v-if="user && composer && !composer.has_profile"
             class="mt-2 flex flex-wrap items-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground"
         >
-            Crea tu perfil de atleta para publicar.
+            {{ $t('Crea tu perfil de atleta para publicar.') }}
             <Button
                 as-child
                 size="sm"
                 variant="outline"
                 class="h-8 rounded-full"
             >
-                <Link :href="editProfile()">Crear mi perfil</Link>
+                <Link :href="editProfile()">{{ $t('Crear mi perfil') }}</Link>
             </Button>
         </p>
     </div>
@@ -164,11 +170,14 @@ function onPublished() {
                     class="border-b border-border px-6 py-4 text-center"
                 >
                     <DialogTitle class="text-base font-semibold">
-                        Crear publicación
+                        {{ $t('Crear publicación') }}
                     </DialogTitle>
                     <DialogDescription class="sr-only">
-                        Sube fotos, escribe una descripción y elige quién puede
-                        verla.
+                        {{
+                            $t(
+                                'Sube fotos, escribe una descripción y elige quién puede verla.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
                 <ComposerForm
@@ -193,11 +202,14 @@ function onPublished() {
                     class="border-b border-border px-4 py-3 text-center"
                 >
                     <SheetTitle class="text-base font-semibold">
-                        Crear publicación
+                        {{ $t('Crear publicación') }}
                     </SheetTitle>
                     <SheetDescription class="sr-only">
-                        Sube fotos, escribe una descripción y elige quién puede
-                        verla.
+                        {{
+                            $t(
+                                'Sube fotos, escribe una descripción y elige quién puede verla.',
+                            )
+                        }}
                     </SheetDescription>
                 </SheetHeader>
                 <ComposerForm

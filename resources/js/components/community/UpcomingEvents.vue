@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { useI18n } from '@/i18n';
 import { index as eventsIndex, show as eventShow } from '@/routes/events';
 import type { EventEditionCard } from '@/types';
 
 defineProps<{ events: EventEditionCard[] }>();
 
+const { regional } = useI18n();
+
 function day(date: string) {
-    return new Date(`${date}T00:00:00`).toLocaleDateString('es-MX', {
+    return new Date(`${date}T00:00:00`).toLocaleDateString(regional.value, {
         day: 'numeric',
     });
 }
 
 function month(date: string) {
     return new Date(`${date}T00:00:00`)
-        .toLocaleDateString('es-MX', { month: 'short' })
+        .toLocaleDateString(regional.value, { month: 'short' })
         .replace('.', '');
 }
 </script>
@@ -21,11 +24,13 @@ function month(date: string) {
 <template>
     <section class="fl-card p-5" aria-labelledby="proximos-title">
         <div class="flex items-center justify-between">
-            <h2 id="proximos-title" class="font-semibold">Próximos eventos</h2>
+            <h2 id="proximos-title" class="font-semibold">
+                {{ $t('Próximos eventos') }}
+            </h2>
             <Link
                 :href="eventsIndex()"
                 class="text-xs font-medium text-muted-foreground hover:text-foreground"
-                >Ver todos</Link
+                >{{ $t('Ver todos') }}</Link
             >
         </div>
         <ul v-if="events.length" class="mt-4 space-y-3">
@@ -60,7 +65,7 @@ function month(date: string) {
             </li>
         </ul>
         <p v-else class="mt-3 text-sm text-muted-foreground">
-            Pronto anunciaremos nuevos eventos.
+            {{ $t('Pronto anunciaremos nuevos eventos.') }}
         </p>
     </section>
 </template>

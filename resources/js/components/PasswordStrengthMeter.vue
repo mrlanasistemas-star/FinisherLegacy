@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 
 const { password } = defineProps<{ password: string }>();
 
@@ -35,15 +36,17 @@ function scorePassword(value: string): number {
 
 const score = computed(() => scorePassword(password));
 
-const levels = [
-    { label: 'Muy débil', class: 'bg-red-500' },
-    { label: 'Débil', class: 'bg-red-500' },
-    { label: 'Regular', class: 'bg-amber-500' },
-    { label: 'Buena', class: 'bg-fl-gold-soft' },
-    { label: 'Fuerte', class: 'bg-emerald-500' },
-];
+const { t } = useI18n();
 
-const current = computed(() => levels[score.value]);
+const levels = computed(() => [
+    { label: t('Muy débil'), class: 'bg-red-500' },
+    { label: t('Débil'), class: 'bg-red-500' },
+    { label: t('Regular'), class: 'bg-amber-500' },
+    { label: t('Buena'), class: 'bg-fl-gold-soft' },
+    { label: t('Fuerte'), class: 'bg-emerald-500' },
+]);
+
+const current = computed(() => levels.value[score.value]);
 </script>
 
 <template>
@@ -57,7 +60,7 @@ const current = computed(() => levels[score.value]);
             />
         </div>
         <p class="text-xs text-muted-foreground/80">
-            Seguridad de la contraseña:
+            {{ $t('Seguridad de la contraseña:') }}
             <span class="font-medium text-muted-foreground">{{
                 current.label
             }}</span>

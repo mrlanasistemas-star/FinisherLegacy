@@ -9,6 +9,7 @@
 import { Boxes, Nfc } from '@lucide/vue';
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{
     presaleStatus: string;
@@ -21,14 +22,16 @@ const props = defineProps<{
     legacyCode: string | null;
 }>();
 
-const labels: Record<string, string> = {
-    pending_payment: 'Pago pendiente',
-    paid: 'Preventa pagada',
-    linked: 'Vinculado a tu participación',
-    queued: 'En producción',
-    produced: 'Lista',
-    delivered: 'Entregada',
-};
+const { t } = useI18n();
+
+const labels = computed<Record<string, string>>(() => ({
+    pending_payment: t('Pago pendiente'),
+    paid: t('Preventa pagada'),
+    linked: t('Vinculado a tu participación'),
+    queued: t('En producción'),
+    produced: t('Lista'),
+    delivered: t('Entregada'),
+}));
 
 const classes: Record<string, string> = {
     pending_payment: 'border-amber-500/30 text-amber-700',
@@ -39,22 +42,26 @@ const classes: Record<string, string> = {
     delivered: 'border-emerald-500/30 text-emerald-700',
 };
 
-const helper: Record<string, string> = {
-    pending_payment: 'Completa tu pago para asegurar tu Legacy Plate.',
-    paid: 'Esperando el evento — tu Legacy Plate se producirá con tu resultado.',
-    linked: 'Ya identificamos tu participación — falta tu resultado oficial.',
-    queued: 'Tu Legacy Plate está en producción.',
-};
+const helper = computed<Record<string, string>>(() => ({
+    pending_payment: t('Completa tu pago para asegurar tu Legacy Plate.'),
+    paid: t(
+        'Esperando el evento — tu Legacy Plate se producirá con tu resultado.',
+    ),
+    linked: t(
+        'Ya identificamos tu participación — falta tu resultado oficial.',
+    ),
+    queued: t('Tu Legacy Plate está en producción.'),
+}));
 
 const label = computed(
-    () => labels[props.presaleStatus] ?? props.presaleStatus,
+    () => labels.value[props.presaleStatus] ?? props.presaleStatus,
 );
 const className = computed(
     () =>
         classes[props.presaleStatus] ??
         'border-foreground/15 text-muted-foreground',
 );
-const helperText = computed(() => helper[props.presaleStatus] ?? null);
+const helperText = computed(() => helper.value[props.presaleStatus] ?? null);
 </script>
 
 <template>
@@ -70,10 +77,12 @@ const helperText = computed(() => helper[props.presaleStatus] ?? null);
         </div>
 
         <p class="mt-4 text-lg font-semibold text-foreground">
-            {{ engravingDisplayName ?? eventName ?? 'Evento por confirmar' }}
+            {{
+                engravingDisplayName ?? eventName ?? $t('Evento por confirmar')
+            }}
         </p>
         <p class="text-sm text-muted-foreground">
-            {{ eventName ?? editionName ?? 'Evento no asignado'
+            {{ eventName ?? editionName ?? $t('Evento no asignado')
             }}<span v-if="raceName"> · {{ raceName }}</span>
         </p>
         <p v-if="helperText" class="mt-2 text-xs text-muted-foreground/80">
@@ -84,7 +93,7 @@ const helperText = computed(() => helper[props.presaleStatus] ?? null);
             v-if="serialNumber || legacyCode"
             class="mt-4 flex items-center justify-between text-xs text-muted-foreground/80"
         >
-            <span>{{ serialNumber ?? 'Sin folio' }}</span>
+            <span>{{ serialNumber ?? $t('Sin folio') }}</span>
             <span v-if="legacyCode" class="flex items-center gap-1"
                 ><Nfc class="size-3.5" /> {{ legacyCode }}</span
             >

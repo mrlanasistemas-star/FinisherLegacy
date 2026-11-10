@@ -22,6 +22,7 @@ import ProfileHeader from '@/components/profile/ProfileHeader.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/datetime';
 import { show as profileShow } from '@/routes/dashboard/profile';
 import { legacyPlateStatusLabel } from '@/types/legado';
@@ -81,6 +82,8 @@ const props = defineProps<{
     participations: { data: Participation[]; links: PaginationLink[] };
 }>();
 
+const { t, regional } = useI18n();
+
 const location = computed(() =>
     [props.profile?.city, props.profile?.state, props.profile?.country]
         .filter(Boolean)
@@ -88,19 +91,21 @@ const location = computed(() =>
 );
 
 const headerStats = computed(() => [
-    { label: 'Carreras', value: props.stats.event_count },
+    { label: t('Carreras'), value: props.stats.event_count },
     ...(props.stats.total_distance_km
         ? [
               {
-                  label: 'Km',
-                  value: props.stats.total_distance_km.toLocaleString('es-MX'),
+                  label: t('Km'),
+                  value: props.stats.total_distance_km.toLocaleString(
+                      regional.value,
+                  ),
               },
           ]
         : []),
-    { label: 'Medallas', value: props.stats.medal_count },
+    { label: t('Medallas'), value: props.stats.medal_count },
     { label: 'Legacy Plates', value: props.stats.legacy_plate_count },
-    { label: 'Seguidores', value: props.social.followers },
-    { label: 'Siguiendo', value: props.social.following },
+    { label: t('Seguidores'), value: props.social.followers },
+    { label: t('Siguiendo'), value: props.social.following },
 ]);
 
 const visibility = computed(
@@ -155,22 +160,22 @@ function applyFilters(next: Partial<typeof props.filters>) {
 }
 
 const eventOptions = computed(() => [
-    { value: null, label: 'Todos los eventos' },
+    { value: null, label: t('Todos los eventos') },
     ...props.filterOptions.events.map((e) => ({ value: e.id, label: e.name })),
 ]);
 const sportOptions = computed(() => [
-    { value: null, label: 'Todos los deportes' },
+    { value: null, label: t('Todos los deportes') },
     ...props.filterOptions.sports.map((s) => ({ value: s.id, label: s.name })),
 ]);
-const plateOptions = [
-    { value: null, label: 'Con y sin Legacy Plate' },
-    { value: 'paid', label: 'Con Legacy Plate' },
-    { value: 'none', label: 'Sin Legacy Plate' },
-];
+const plateOptions = computed(() => [
+    { value: null, label: t('Con y sin Legacy Plate') },
+    { value: 'paid', label: t('Con Legacy Plate') },
+    { value: 'none', label: t('Sin Legacy Plate') },
+]);
 </script>
 
 <template>
-    <Head title="Mi perfil" />
+    <Head :title="$t('Mi perfil')" />
 
     <div class="fl-container py-6 md:py-10">
         <ProfileHeader
@@ -187,7 +192,7 @@ const plateOptions = [
                 <Button as-child class="rounded-full">
                     <Link href="/dashboard/profile/edit">
                         <PenLine class="size-4" />
-                        Editar perfil
+                        {{ $t('Editar perfil') }}
                     </Link>
                 </Button>
                 <Button
@@ -198,7 +203,7 @@ const plateOptions = [
                 >
                     <Check v-if="shared" class="size-4" />
                     <Share2 v-else class="size-4" />
-                    {{ shared ? 'Enlace copiado' : 'Compartir perfil' }}
+                    {{ shared ? $t('Enlace copiado') : $t('Compartir perfil') }}
                 </Button>
             </template>
         </ProfileHeader>
@@ -211,25 +216,27 @@ const plateOptions = [
                     class="size-5 text-fl-gold-ink"
                 />
                 <h2 id="privacy-title" class="mt-3 font-semibold">
-                    {{ visibility?.label ?? 'Crea tu perfil' }}
+                    {{ visibility?.label ?? $t('Crea tu perfil') }}
                 </h2>
                 <p class="mt-1 text-sm text-muted-foreground">
                     {{
                         visibility?.description ??
-                        'Elige tu nombre de usuario y quién puede ver tu historia.'
+                        $t(
+                            'Elige tu nombre de usuario y quién puede ver tu historia.',
+                        )
                     }}
                 </p>
                 <Link
                     href="/dashboard/profile/edit"
                     class="mt-3 inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline"
-                    >Cambiar privacidad</Link
+                    >{{ $t('Cambiar privacidad') }}</Link
                 >
             </section>
 
             <section class="fl-card p-5" aria-labelledby="public-title">
                 <Globe class="size-5 text-fl-gold-ink" />
                 <h2 id="public-title" class="mt-3 font-semibold">
-                    Tu perfil público
+                    {{ $t('Tu perfil público') }}
                 </h2>
                 <template v-if="profile?.public_url">
                     <p
@@ -240,30 +247,37 @@ const plateOptions = [
                     <Link
                         :href="`/@${profile.username}`"
                         class="mt-3 inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline"
-                        >Ver como lo ven los demás</Link
+                        >{{ $t('Ver como lo ven los demás') }}</Link
                     >
                 </template>
                 <p v-else class="mt-1 text-sm text-muted-foreground">
-                    Elige un nombre de usuario para tener tu página pública.
+                    {{
+                        $t(
+                            'Elige un nombre de usuario para tener tu página pública.',
+                        )
+                    }}
                 </p>
             </section>
 
             <section class="fl-card p-5" aria-labelledby="account-title">
                 <UserCog class="size-5 text-fl-gold-ink" />
-                <h2 id="account-title" class="mt-3 font-semibold">Tu cuenta</h2>
+                <h2 id="account-title" class="mt-3 font-semibold">
+                    {{ $t('Tu cuenta') }}
+                </h2>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Nombre, correo y contraseña.
+                    {{ $t('Nombre, correo y contraseña.') }}
                 </p>
                 <div class="mt-3 flex flex-wrap gap-x-4">
                     <Link
                         href="/settings/profile"
                         class="inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline"
-                        >Datos de la cuenta</Link
+                        >{{ $t('Datos de la cuenta') }}</Link
                     >
                     <Link
                         href="/settings/security"
                         class="inline-flex min-h-11 items-center gap-1 text-sm font-semibold underline-offset-4 hover:underline"
-                        ><KeyRound class="size-3.5" /> Seguridad</Link
+                        ><KeyRound class="size-3.5" />
+                        {{ $t('Seguridad') }}</Link
                     >
                 </div>
             </section>
@@ -272,7 +286,7 @@ const plateOptions = [
         <!-- History -->
         <section class="mt-14" aria-labelledby="history-title">
             <h2 id="history-title" class="fl-display text-3xl sm:text-4xl">
-                Mi historial
+                {{ $t('Mi historial') }}
             </h2>
 
             <div
@@ -281,20 +295,20 @@ const plateOptions = [
                 <DatePicker
                     :model-value="filters.from ?? null"
                     :range-with="filters.to ?? null"
-                    placeholder="Desde"
+                    :placeholder="$t('Desde')"
                     @update:model-value="(v) => applyFilters({ from: v })"
                 />
                 <DatePicker
                     :model-value="filters.to ?? null"
                     :range-with="filters.from ?? null"
-                    placeholder="Hasta"
+                    :placeholder="$t('Hasta')"
                     @update:model-value="(v) => applyFilters({ to: v })"
                 />
                 <FancySelect
                     :model-value="filters.event_id"
                     :options="eventOptions"
-                    placeholder="Evento"
-                    aria-label="Filtrar por evento"
+                    :placeholder="$t('Evento')"
+                    :aria-label="$t('Filtrar por evento')"
                     @update:model-value="
                         (v) =>
                             applyFilters({
@@ -305,8 +319,8 @@ const plateOptions = [
                 <FancySelect
                     :model-value="filters.sport_id"
                     :options="sportOptions"
-                    placeholder="Deporte"
-                    aria-label="Filtrar por deporte"
+                    :placeholder="$t('Deporte')"
+                    :aria-label="$t('Filtrar por deporte')"
                     @update:model-value="
                         (v) =>
                             applyFilters({
@@ -318,7 +332,7 @@ const plateOptions = [
                     :model-value="filters.legacy_plate"
                     :options="plateOptions"
                     placeholder="Legacy Plate"
-                    aria-label="Filtrar por Legacy Plate"
+                    :aria-label="$t('Filtrar por Legacy Plate')"
                     @update:model-value="
                         (v) =>
                             applyFilters({
@@ -339,7 +353,7 @@ const plateOptions = [
                     >
                         <span class="min-w-0">
                             <span class="block truncate font-medium">{{
-                                p.event ?? p.edition ?? 'Evento'
+                                p.event ?? p.edition ?? $t('Evento')
                             }}</span>
                             <span
                                 class="block truncate text-sm text-muted-foreground"
@@ -362,9 +376,9 @@ const plateOptions = [
                                 class="rounded-full bg-fl-cream px-2.5 py-1 text-xs font-medium text-fl-gold-ink"
                                 >Legacy Plate ·
                                 {{
-                                    legacyPlateStatusLabel[
-                                        p.legacy_plate_status
-                                    ] ?? 'En preparación'
+                                    legacyPlateStatusLabel(
+                                        p.legacy_plate_status,
+                                    ) ?? $t('En preparación')
                                 }}</span
                             >
                             <span
@@ -380,7 +394,7 @@ const plateOptions = [
                 v-else
                 class="mt-6 rounded-2xl border border-dashed border-foreground/15 p-8 text-center text-sm text-muted-foreground"
             >
-                No hay carreras con estos filtros.
+                {{ $t('No hay carreras con estos filtros.') }}
             </p>
             <Pagination
                 v-if="participations.data.length"

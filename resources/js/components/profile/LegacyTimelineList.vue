@@ -188,15 +188,21 @@ onBeforeUnmount(() => {
                         class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm"
                     >
                         <span v-if="entry.time" class="legacy-numeric">
-                            <span class="text-muted-foreground">Tiempo </span>
+                            <span class="text-muted-foreground"
+                                >{{ $t('Tiempo') }}{{ ' ' }}</span
+                            >
                             <span class="font-semibold">{{ entry.time }}</span>
                         </span>
                         <span v-if="entry.pace" class="legacy-numeric">
-                            <span class="text-muted-foreground">Ritmo </span>
+                            <span class="text-muted-foreground"
+                                >{{ $t('Ritmo') }}{{ ' ' }}</span
+                            >
                             <span class="font-semibold">{{ entry.pace }}</span>
                         </span>
                         <span v-if="entry.position" class="legacy-numeric">
-                            <span class="text-muted-foreground">Posición </span>
+                            <span class="text-muted-foreground"
+                                >{{ $t('Posición') }}{{ ' ' }}</span
+                            >
                             <span class="font-semibold"
                                 >#{{ entry.position }}</span
                             >

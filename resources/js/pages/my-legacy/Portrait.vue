@@ -45,6 +45,7 @@ import {
     xsrfToken,
 } from '@/components/portrait/usePortraitRender';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { edit, print } from '@/routes/my-legacy';
 import {
     download as downloadRoute,
@@ -80,23 +81,35 @@ const props = defineProps<{
     isAlbum: boolean;
 }>();
 
+const { t } = useI18n();
+
 const monogram = '/images/brand/logo/fl-monograma.png';
 
 // ── Steps ───────────────────────────────────────────────────────────────
-const steps: (PortraitStep & { icon: typeof Crop })[] = [
-    { key: 'photo', label: 'Foto', hint: 'Elige la imagen', icon: ImagePlus },
-    { key: 'crop', label: 'Recorte', hint: 'Encuadra', icon: Crop },
+const steps = computed<(PortraitStep & { icon: typeof Crop })[]>(() => [
+    {
+        key: 'photo',
+        label: t('Foto'),
+        hint: t('Elige la imagen'),
+        icon: ImagePlus,
+    },
+    { key: 'crop', label: t('Recorte'), hint: t('Encuadra'), icon: Crop },
     {
         key: 'template',
-        label: 'Plantilla',
-        hint: 'Elige el diseño',
+        label: t('Plantilla'),
+        hint: t('Elige el diseño'),
         icon: LayoutTemplate,
     },
-    { key: 'data', label: 'Datos', hint: 'Tu resultado', icon: PenLine },
-    { key: 'download', label: 'Descargar', hint: 'Listo', icon: Download },
-];
+    { key: 'data', label: t('Datos'), hint: t('Tu resultado'), icon: PenLine },
+    {
+        key: 'download',
+        label: t('Descargar'),
+        hint: t('Listo'),
+        icon: Download,
+    },
+]);
 const step = ref(0);
-const current = computed(() => steps[step.value].key);
+const current = computed(() => steps.value[step.value].key);
 
 // ── Photo source ────────────────────────────────────────────────────────
 const errors = ref<Record<string, string>>({});
@@ -162,14 +175,16 @@ async function useFile(file: File | undefined) {
     }
 
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        errors.value = { photo: 'Sube una foto JPG, PNG o WebP.' };
+        errors.value = { photo: t('Sube una foto JPG, PNG o WebP.') };
 
         return;
     }
 
     if (file.size > props.maxUploadMb * 1024 * 1024) {
         errors.value = {
-            photo: `La foto pesa más de ${props.maxUploadMb} MB.`,
+            photo: t('La foto pesa más de {max} MB.', {
+                max: props.maxUploadMb,
+            }),
         };
 
         return;
@@ -216,7 +231,7 @@ function chooseStoryPhoto(id: number) {
 const templateKey = ref(props.defaultTemplate);
 const template = computed(
     () =>
-        props.templates.find((t) => t.value === templateKey.value) ??
+        props.templates.find((tpl) => tpl.value === templateKey.value) ??
         props.templates[0],
 );
 const crop = ref<PortraitCrop | null>(null);
@@ -274,9 +289,9 @@ const qualityPercent = computed(() =>
 const qualityLabel = computed(
     () =>
         ({
-            ok: 'Calidad excelente',
-            warn: 'Calidad aceptable',
-            low: 'Foto demasiado pequeña',
+            ok: t('Calidad excelente'),
+            warn: t('Calidad aceptable'),
+            low: t('Foto demasiado pequeña'),
         })[quality.value ?? 'ok'],
 );
 
@@ -284,7 +299,7 @@ const qualityLabel = computed(
 const endpoint = () => previewRoute(props.story.public_id).url;
 const main = usePortraitPreview(endpoint);
 const thumbs = Object.fromEntries(
-    props.templates.map((t) => [t.value, usePortraitPreview(endpoint)]),
+    props.templates.map((tpl) => [tpl.value, usePortraitPreview(endpoint)]),
 );
 
 const previewSource = computed(() => ({
@@ -319,10 +334,10 @@ function renderThumbs() {
         return;
     }
 
-    for (const t of props.templates) {
+    for (const tpl of props.templates) {
         // The server re-fits the crop to each template's photo box.
-        void thumbs[t.value].render(
-            portraitBody(t.value, previewSource.value, crop.value, form),
+        void thumbs[tpl.value].render(
+            portraitBody(tpl.value, previewSource.value, crop.value, form),
             320,
         );
     }
@@ -354,11 +369,13 @@ watch(
 // ── Navigation between steps ────────────────────────────────────────────
 const blocked = computed<string | null>(() => {
     if (!sourceUrl.value) {
-        return 'Elige una foto de tu recuerdo o sube una.';
+        return t('Elige una foto de tu recuerdo o sube una.');
     }
 
     if (quality.value === 'low') {
-        return 'Esa foto es muy pequeña para imprimir: aleja el encuadre o elige otra.';
+        return t(
+            'Esa foto es muy pequeña para imprimir: aleja el encuadre o elige otra.',
+        );
     }
 
     return null;
@@ -377,7 +394,7 @@ function canOpen(index: number): boolean {
 }
 
 function go(index: number) {
-    if (index < 0 || index >= steps.length) {
+    if (index < 0 || index >= steps.value.length) {
         return;
     }
 
@@ -403,9 +420,9 @@ const resultIsImage = ref(true);
 const phaseLabel = computed(
     () =>
         ({
-            upload: 'Enviando tu foto…',
-            render: `Componiendo a ${props.spec.dpi} dpi…`,
-            download: 'Descargando tu archivo…',
+            upload: t('Enviando tu foto…'),
+            render: t('Componiendo a {dpi} dpi…', { dpi: props.spec.dpi }),
+            download: t('Descargando tu archivo…'),
         })[phase.value],
 );
 
@@ -475,7 +492,7 @@ function download() {
 
     xhr.onerror = () => {
         busy.value = false;
-        errors.value = { download: 'Sin conexión. Intenta de nuevo.' };
+        errors.value = { download: t('Sin conexión. Intenta de nuevo.') };
     };
 
     xhr.onload = async () => {
@@ -489,11 +506,12 @@ function download() {
                 };
                 const first = Object.values(json.errors ?? {})[0]?.[0];
                 errors.value = {
-                    download: first ?? 'Revisa los datos e intenta de nuevo.',
+                    download:
+                        first ?? t('Revisa los datos e intenta de nuevo.'),
                 };
             } catch {
                 errors.value = {
-                    download: 'Revisa los datos e intenta de nuevo.',
+                    download: t('Revisa los datos e intenta de nuevo.'),
                 };
             }
 
@@ -504,8 +522,8 @@ function download() {
             errors.value = {
                 download:
                     xhr.status === 429
-                        ? 'Demasiados intentos seguidos. Espera un minuto.'
-                        : 'No pudimos generar el archivo. Intenta de nuevo.',
+                        ? t('Demasiados intentos seguidos. Espera un minuto.')
+                        : t('No pudimos generar el archivo. Intenta de nuevo.'),
             };
 
             return;
@@ -524,7 +542,7 @@ function download() {
         document.body.appendChild(a);
         a.click();
         a.remove();
-        toast.success('Tu portarretrato está listo para imprimir.');
+        toast.success(t('Tu portarretrato está listo para imprimir.'));
     };
 
     xhr.send(body);
@@ -544,10 +562,15 @@ onBeforeUnmount(() => {
 const inputClass =
     'mt-1.5 h-11 w-full rounded-xl border border-border bg-white px-3 text-base text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/20';
 const labelClass = 'text-sm font-medium';
+
+/** The privacy sentence around its link (the link's place can move). */
+const privacyNote = computed(() =>
+    t('Tú decides quién puede verlo desde {link}.').split('{link}'),
+);
 </script>
 
 <template>
-    <Head :title="`Portarretrato · ${story.title}`">
+    <Head :title="$t('Portarretrato · {title}', { title: story.title })">
         <meta name="robots" content="noindex, nofollow" />
     </Head>
 
@@ -559,27 +582,34 @@ const labelClass = 'text-sm font-medium';
                     class="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
                 >
                     <ArrowLeft class="size-4" aria-hidden="true" />
-                    Volver a tu {{ isAlbum ? 'álbum' : 'recuerdo' }}
+                    {{
+                        isAlbum
+                            ? $t('Volver a tu álbum')
+                            : $t('Volver a tu recuerdo')
+                    }}
                 </Link>
                 <Link
                     :href="print(story.public_id).url"
                     class="fl-link text-sm font-medium text-muted-foreground hover:text-foreground"
-                    >Otras plantillas en PDF</Link
+                    >{{ $t('Otras plantillas en PDF') }}</Link
                 >
             </div>
 
-            <p class="fl-eyebrow mt-5">Portarretrato inteligente</p>
+            <p class="fl-eyebrow mt-5">{{ $t('Portarretrato inteligente') }}</p>
             <h1 class="fl-display mt-1 text-3xl sm:text-4xl">
-                Diseña la foto de tu marco
+                {{ $t('Diseña la foto de tu marco') }}
             </h1>
             <p class="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Cinco pasos y descargas un archivo de {{ spec.label }} listo
-                para imprimir. Al acercar el celular al marco se abre tu álbum
-                con fotos y mensaje de voz.
+                {{
+                    $t(
+                        'Cinco pasos y descargas un archivo de {size} listo para imprimir. Al acercar el celular al marco se abre tu álbum con fotos y mensaje de voz.',
+                        { size: spec.label },
+                    )
+                }}
             </p>
 
             <!-- Stepper -->
-            <nav class="mt-7" aria-label="Pasos">
+            <nav class="mt-7" :aria-label="$t('Pasos')">
                 <ol class="stepper">
                     <li
                         v-for="(s, i) in steps"
@@ -635,12 +665,18 @@ const labelClass = 'text-sm font-medium';
                         aria-labelledby="st-photo"
                     >
                         <h2 id="st-photo" class="text-xl font-semibold">
-                            Elige la foto
+                            {{ $t('Elige la foto') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Una foto de tu
-                            {{ isAlbum ? 'álbum' : 'recuerdo' }} o una tuya.
-                            Entre más grande, mejor se imprime.
+                            {{
+                                isAlbum
+                                    ? $t(
+                                          'Una foto de tu álbum o una tuya. Entre más grande, mejor se imprime.',
+                                      )
+                                    : $t(
+                                          'Una foto de tu recuerdo o una tuya. Entre más grande, mejor se imprime.',
+                                      )
+                            }}
                         </p>
 
                         <ul
@@ -658,7 +694,7 @@ const labelClass = 'text-sm font-medium';
                                     "
                                     :aria-pressed="photoId === p.id && !ownUrl"
                                     :aria-label="
-                                        p.caption ?? 'Foto del recuerdo'
+                                        p.caption ?? $t('Foto del recuerdo')
                                     "
                                     @click="chooseStoryPhoto(p.id)"
                                 >
@@ -704,14 +740,15 @@ const labelClass = 'text-sm font-medium';
                                 ownFile
                                     ? ownFile.name
                                     : photos.length
-                                      ? 'O sube otra foto tuya'
-                                      : 'Sube tu foto'
+                                      ? $t('O sube otra foto tuya')
+                                      : $t('Sube tu foto')
                             }}</span>
-                            <span class="text-xs text-muted-foreground"
-                                >Arrastra aquí o toca para elegir · JPG, PNG o
-                                WebP, hasta {{ maxUploadMb }} MB. Solo se usa
-                                para crear tu archivo: no la guardamos.</span
-                            >
+                            <span class="text-xs text-muted-foreground">{{
+                                $t(
+                                    'Arrastra aquí o toca para elegir · JPG, PNG o WebP, hasta {max} MB. Solo se usa para crear tu archivo: no la guardamos.',
+                                    { max: maxUploadMb },
+                                )
+                            }}</span>
                             <input
                                 type="file"
                                 class="sr-only"
@@ -732,12 +769,15 @@ const labelClass = 'text-sm font-medium';
                         aria-labelledby="st-crop"
                     >
                         <h2 id="st-crop" class="text-xl font-semibold">
-                            Encuadra tu foto
+                            {{ $t('Encuadra tu foto') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Arrastra para mover y usa la barra para acercar. El
-                            recuadro tiene la proporción exacta de la plantilla
-                            «{{ template.label }}».
+                            {{
+                                $t(
+                                    'Arrastra para mover y usa la barra para acercar. El recuadro tiene la proporción exacta de la plantilla «{template}».',
+                                    { template: template.label },
+                                )
+                            }}
                         </p>
                         <div class="mt-5">
                             <PortraitCropper
@@ -750,13 +790,17 @@ const labelClass = 'text-sm font-medium';
                             <div
                                 v-else-if="sourceUrl"
                                 class="fl-skeleton aspect-[4/3] rounded-xl"
-                                aria-label="Cargando foto"
+                                :aria-label="$t('Cargando foto')"
                             />
                             <p
                                 v-else
                                 class="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
                             >
-                                Elige o sube una foto para encuadrarla.
+                                {{
+                                    $t(
+                                        'Elige o sube una foto para encuadrarla.',
+                                    )
+                                }}
                             </p>
                         </div>
 
@@ -792,7 +836,7 @@ const labelClass = 'text-sm font-medium';
                             <div
                                 class="quality-track"
                                 role="meter"
-                                aria-label="Calidad de impresión"
+                                :aria-label="$t('Calidad de impresión')"
                                 :aria-valuemin="0"
                                 :aria-valuemax="spec.dpi"
                                 :aria-valuenow="
@@ -817,20 +861,25 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <p class="mt-2 text-xs">
-                                <template v-if="quality === 'ok'"
-                                    >Se verá nítida a
-                                    {{ spec.label }}.</template
-                                >
-                                <template v-else-if="quality === 'warn'"
-                                    >Se verá bien a distancia, pero puede
-                                    notarse suave de cerca. Acerca menos o usa
-                                    una foto más grande.</template
-                                >
-                                <template v-else
-                                    >El mínimo para {{ spec.label }} es
-                                    {{ spec.min_dpi }} dpi. Aleja el encuadre o
-                                    elige una foto más grande.</template
-                                >
+                                <template v-if="quality === 'ok'">{{
+                                    $t('Se verá nítida a {size}.', {
+                                        size: spec.label,
+                                    })
+                                }}</template>
+                                <template v-else-if="quality === 'warn'">{{
+                                    $t(
+                                        'Se verá bien a distancia, pero puede notarse suave de cerca. Acerca menos o usa una foto más grande.',
+                                    )
+                                }}</template>
+                                <template v-else>{{
+                                    $t(
+                                        'El mínimo para {size} es {dpi} dpi. Aleja el encuadre o elige una foto más grande.',
+                                        {
+                                            size: spec.label,
+                                            dpi: spec.min_dpi,
+                                        },
+                                    )
+                                }}</template>
                             </p>
                         </div>
                     </section>
@@ -842,41 +891,49 @@ const labelClass = 'text-sm font-medium';
                         aria-labelledby="st-template"
                     >
                         <h2 id="st-template" class="text-xl font-semibold">
-                            Elige tu plantilla
+                            {{ $t('Elige tu plantilla') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Así se ve tu foto en cada diseño. Puedes cambiarla
-                            cuando quieras.
+                            {{
+                                $t(
+                                    'Así se ve tu foto en cada diseño. Puedes cambiarla cuando quieras.',
+                                )
+                            }}
                         </p>
 
                         <div
                             class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
                             role="radiogroup"
-                            aria-label="Plantilla"
+                            :aria-label="$t('Plantilla')"
                         >
                             <button
-                                v-for="t in templates"
-                                :key="t.value"
+                                v-for="tpl in templates"
+                                :key="tpl.value"
                                 type="button"
                                 role="radio"
-                                :aria-checked="templateKey === t.value"
+                                :aria-checked="templateKey === tpl.value"
                                 class="template-card fl-card-hover"
                                 :class="{
-                                    'is-selected': templateKey === t.value,
+                                    'is-selected': templateKey === tpl.value,
                                 }"
-                                @click="templateKey = t.value"
+                                @click="templateKey = tpl.value"
                             >
                                 <span
                                     class="template-thumb"
                                     :style="{
                                         aspectRatio: `${spec.width_px} / ${spec.height_px}`,
-                                        background: t.background,
+                                        background: tpl.background,
                                     }"
                                 >
                                     <img
-                                        v-if="thumbs[t.value].url.value"
-                                        :src="thumbs[t.value].url.value ?? ''"
-                                        :alt="`Vista previa de la plantilla ${t.label}`"
+                                        v-if="thumbs[tpl.value].url.value"
+                                        :src="thumbs[tpl.value].url.value ?? ''"
+                                        :alt="
+                                            $t(
+                                                'Vista previa de la plantilla {name}',
+                                                { name: tpl.label },
+                                            )
+                                        "
                                         class="size-full object-cover"
                                     />
                                     <span
@@ -884,7 +941,7 @@ const labelClass = 'text-sm font-medium';
                                         class="fl-skeleton absolute inset-0 rounded-none"
                                     />
                                     <span
-                                        v-if="templateKey === t.value"
+                                        v-if="templateKey === tpl.value"
                                         class="absolute top-2 right-2 rounded-full bg-fl-gold p-1 text-fl-black shadow"
                                     >
                                         <Check class="size-3.5" />
@@ -892,11 +949,11 @@ const labelClass = 'text-sm font-medium';
                                 </span>
                                 <span class="mt-3 block text-left">
                                     <span class="block text-sm font-semibold">{{
-                                        t.label
+                                        tpl.label
                                     }}</span>
                                     <span
                                         class="mt-0.5 block text-xs text-muted-foreground"
-                                        >{{ t.description }}</span
+                                        >{{ tpl.description }}</span
                                     >
                                 </span>
                             </button>
@@ -910,18 +967,21 @@ const labelClass = 'text-sm font-medium';
                         aria-labelledby="st-data"
                     >
                         <h2 id="st-data" class="text-xl font-semibold">
-                            Tus datos de carrera
+                            {{ $t('Tus datos de carrera') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Lo que dejes vacío no se imprime y el diseño se
-                            reacomoda solo.
+                            {{
+                                $t(
+                                    'Lo que dejes vacío no se imprime y el diseño se reacomoda solo.',
+                                )
+                            }}
                         </p>
 
                         <div class="mt-5 grid gap-4 sm:grid-cols-6">
                             <div class="sm:col-span-6">
-                                <label for="pt-name" :class="labelClass"
-                                    >Nombre</label
-                                >
+                                <label for="pt-name" :class="labelClass">{{
+                                    $t('Nombre')
+                                }}</label>
                                 <input
                                     id="pt-name"
                                     v-model="form.name"
@@ -931,9 +991,9 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <div class="sm:col-span-6">
-                                <label for="pt-event" :class="labelClass"
-                                    >Carrera</label
-                                >
+                                <label for="pt-event" :class="labelClass">{{
+                                    $t('Carrera')
+                                }}</label>
                                 <input
                                     id="pt-event"
                                     v-model="form.event"
@@ -943,21 +1003,23 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <div class="sm:col-span-6">
-                                <label for="pt-details" :class="labelClass"
-                                    >Lugar y fecha</label
-                                >
+                                <label for="pt-details" :class="labelClass">{{
+                                    $t('Lugar y fecha')
+                                }}</label>
                                 <input
                                     id="pt-details"
                                     v-model="form.details"
                                     maxlength="160"
-                                    placeholder="Cozumel · 20 de septiembre de 2026"
+                                    :placeholder="
+                                        $t('Cozumel · 20 de septiembre de 2026')
+                                    "
                                     :class="inputClass"
                                 />
                             </div>
                             <div class="sm:col-span-3">
-                                <label for="pt-time" :class="labelClass"
-                                    >Tiempo oficial</label
-                                >
+                                <label for="pt-time" :class="labelClass">{{
+                                    $t('Tiempo oficial')
+                                }}</label>
                                 <input
                                     id="pt-time"
                                     v-model="form.time"
@@ -968,9 +1030,9 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <div class="sm:col-span-3">
-                                <label for="pt-distance" :class="labelClass"
-                                    >Distancia</label
-                                >
+                                <label for="pt-distance" :class="labelClass">{{
+                                    $t('Distancia')
+                                }}</label>
                                 <input
                                     id="pt-distance"
                                     v-model="form.distance"
@@ -980,9 +1042,9 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <div class="sm:col-span-2">
-                                <label for="pt-pace" :class="labelClass"
-                                    >Ritmo</label
-                                >
+                                <label for="pt-pace" :class="labelClass">{{
+                                    $t('Ritmo')
+                                }}</label>
                                 <input
                                     id="pt-pace"
                                     v-model="form.pace"
@@ -992,9 +1054,9 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <div class="sm:col-span-2">
-                                <label for="pt-position" :class="labelClass"
-                                    >Lugar</label
-                                >
+                                <label for="pt-position" :class="labelClass">{{
+                                    $t('Lugar')
+                                }}</label>
                                 <input
                                     id="pt-position"
                                     v-model="form.position"
@@ -1004,9 +1066,9 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <div class="sm:col-span-2">
-                                <label for="pt-bib" :class="labelClass"
-                                    >Número</label
-                                >
+                                <label for="pt-bib" :class="labelClass">{{
+                                    $t('Número')
+                                }}</label>
                                 <input
                                     id="pt-bib"
                                     v-model="form.bib"
@@ -1016,20 +1078,22 @@ const labelClass = 'text-sm font-medium';
                                 />
                             </div>
                             <div class="sm:col-span-6">
-                                <label for="pt-category" :class="labelClass"
-                                    >Categoría</label
-                                >
+                                <label for="pt-category" :class="labelClass">{{
+                                    $t('Categoría')
+                                }}</label>
                                 <input
                                     id="pt-category"
                                     v-model="form.category"
                                     maxlength="40"
-                                    placeholder="Varonil 35-39"
+                                    :placeholder="$t('Varonil 35-39')"
                                     :class="inputClass"
                                 />
                                 <p class="mt-1 text-xs text-muted-foreground">
-                                    Se imprimen hasta cuatro datos, en este
-                                    orden: distancia, ritmo, lugar, categoría y
-                                    número.
+                                    {{
+                                        $t(
+                                            'Se imprimen hasta cuatro datos, en este orden: distancia, ritmo, lugar, categoría y número.',
+                                        )
+                                    }}
                                 </p>
                             </div>
                             <div class="sm:col-span-6">
@@ -1041,25 +1105,29 @@ const labelClass = 'text-sm font-medium';
                                         type="checkbox"
                                         class="size-4 accent-[var(--fl-gold-dim)]"
                                     />
-                                    Incluir dedicatoria
+                                    {{ $t('Incluir dedicatoria') }}
                                 </label>
                                 <textarea
                                     v-if="form.withDedication"
                                     v-model="form.dedication"
                                     rows="2"
                                     maxlength="600"
-                                    placeholder="Para mamá, que me esperó en cada meta."
+                                    :placeholder="
+                                        $t(
+                                            'Para mamá, que me esperó en cada meta.',
+                                        )
+                                    "
                                     class="mt-2 w-full rounded-xl border border-border bg-white px-3 py-3 text-base outline-none focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/20"
                                 />
                                 <p
                                     v-if="form.withDedication"
                                     class="mt-1 flex justify-between gap-3 text-xs text-muted-foreground"
                                 >
-                                    <span
-                                        >Caben dos líneas: una frase corta luce
-                                        más. Si es larga, se recorta con
-                                        «…».</span
-                                    >
+                                    <span>{{
+                                        $t(
+                                            'Caben dos líneas: una frase corta luce más. Si es larga, se recorta con «…».',
+                                        )
+                                    }}</span>
                                     <span
                                         class="legacy-numeric shrink-0"
                                         :class="{
@@ -1080,16 +1148,20 @@ const labelClass = 'text-sm font-medium';
                         aria-labelledby="st-download"
                     >
                         <h2 id="st-download" class="text-xl font-semibold">
-                            Descarga tu archivo
+                            {{ $t('Descarga tu archivo') }}
                         </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Lo generamos a tamaño real, a {{ spec.dpi }} dpi.
+                            {{
+                                $t('Lo generamos a tamaño real, a {dpi} dpi.', {
+                                    dpi: spec.dpi,
+                                })
+                            }}
                         </p>
 
                         <div
                             class="mt-5 grid gap-3 sm:grid-cols-2"
                             role="radiogroup"
-                            aria-label="Tipo de archivo"
+                            :aria-label="$t('Tipo de archivo')"
                         >
                             <button
                                 type="button"
@@ -1103,14 +1175,18 @@ const labelClass = 'text-sm font-medium';
                                     class="size-5 text-fl-gold-ink"
                                     aria-hidden="true"
                                 />
-                                <span class="mt-2 block text-sm font-semibold"
-                                    >Para mi marco</span
+                                <span
+                                    class="mt-2 block text-sm font-semibold"
+                                    >{{ $t('Para mi marco') }}</span
                                 >
                                 <span
                                     class="mt-0.5 block text-xs text-muted-foreground"
-                                    >Tamaño exacto {{ spec.label }}. Imprime
-                                    «sin ajustar» y deslízala en el
-                                    acrílico.</span
+                                    >{{
+                                        $t(
+                                            'Tamaño exacto {size}. Imprime «sin ajustar» y deslízala en el acrílico.',
+                                            { size: spec.label },
+                                        )
+                                    }}</span
                                 >
                             </button>
                             <button
@@ -1127,13 +1203,18 @@ const labelClass = 'text-sm font-medium';
                                     class="size-5 text-fl-gold-ink"
                                     aria-hidden="true"
                                 />
-                                <span class="mt-2 block text-sm font-semibold"
-                                    >Para imprenta</span
+                                <span
+                                    class="mt-2 block text-sm font-semibold"
+                                    >{{ $t('Para imprenta') }}</span
                                 >
                                 <span
                                     class="mt-0.5 block text-xs text-muted-foreground"
-                                    >Con {{ bleedMm }} mm de sangrado por lado
-                                    para que la corten al ras.</span
+                                    >{{
+                                        $t(
+                                            'Con {mm} mm de sangrado por lado para que la corten al ras.',
+                                            { mm: bleedMm },
+                                        )
+                                    }}</span
                                 >
                             </button>
                         </div>
@@ -1154,12 +1235,12 @@ const labelClass = 'text-sm font-medium';
                                     class="size-4 text-muted-foreground"
                                     aria-hidden="true"
                                 />
-                                Marcas de corte
+                                {{ $t('Marcas de corte') }}
                             </label>
                             <div
                                 class="inline-flex rounded-full border border-border bg-white p-0.5 text-sm"
                                 role="radiogroup"
-                                aria-label="Formato"
+                                :aria-label="$t('Formato')"
                             >
                                 <button
                                     v-for="f in ['jpg', 'pdf'] as const"
@@ -1192,7 +1273,11 @@ const labelClass = 'text-sm font-medium';
                                 class="size-4"
                                 aria-hidden="true"
                             />
-                            {{ busy ? phaseLabel : 'Descargar para imprimir' }}
+                            {{
+                                busy
+                                    ? phaseLabel
+                                    : $t('Descargar para imprimir')
+                            }}
                         </button>
 
                         <div
@@ -1237,35 +1322,48 @@ const labelClass = 'text-sm font-medium';
                                 <img
                                     v-if="resultIsImage"
                                     :src="resultUrl"
-                                    alt="Archivo de impresión generado"
+                                    :alt="$t('Archivo de impresión generado')"
                                     class="w-24 shrink-0 self-start rounded shadow-fl-float"
                                 />
                                 <div class="min-w-0 text-sm">
                                     <p class="font-semibold">
-                                        ¡Listo! Tu archivo se descargó.
+                                        {{
+                                            $t(
+                                                '¡Listo! Tu archivo se descargó.',
+                                            )
+                                        }}
                                     </p>
                                     <ol
                                         class="mt-2 list-decimal space-y-1 pl-4 text-muted-foreground"
                                     >
                                         <li>
-                                            Imprímelo a {{ spec.label }} en
-                                            papel fotográfico mate o lustre, al
-                                            100 % (sin «ajustar a la página»).
+                                            {{
+                                                $t(
+                                                    'Imprímelo a {size} en papel fotográfico mate o lustre, al 100 % (sin «ajustar a la página»).',
+                                                    { size: spec.label },
+                                                )
+                                            }}
                                         </li>
                                         <li>
-                                            Colócalo en el acrílico de tu
-                                            portarretrato.
+                                            {{
+                                                $t(
+                                                    'Colócalo en el acrílico de tu portarretrato.',
+                                                )
+                                            }}
                                         </li>
                                         <li>
-                                            Acerca el celular a la base y se
-                                            abre tu álbum.
+                                            {{
+                                                $t(
+                                                    'Acerca el celular a la base y se abre tu álbum.',
+                                                )
+                                            }}
                                         </li>
                                     </ol>
                                     <a
                                         :href="resultUrl"
                                         :download="`finisher-legacy-portarretrato.${format}`"
                                         class="fl-link fl-link--gold mt-3 inline-block font-semibold text-fl-gold-ink"
-                                        >Descargar otra vez</a
+                                        >{{ $t('Descargar otra vez') }}</a
                                     >
                                 </div>
                             </div>
@@ -1281,7 +1379,7 @@ const labelClass = 'text-sm font-medium';
                             @click="go(step - 1)"
                         >
                             <ArrowLeft class="size-4" aria-hidden="true" />
-                            Atrás
+                            {{ $t('Atrás') }}
                         </button>
                         <button
                             v-if="step < steps.length - 1"
@@ -1290,7 +1388,11 @@ const labelClass = 'text-sm font-medium';
                             :disabled="!canOpen(step + 1)"
                             @click="go(step + 1)"
                         >
-                            Siguiente: {{ steps[step + 1].label }}
+                            {{
+                                $t('Siguiente: {step}', {
+                                    step: steps[step + 1].label,
+                                })
+                            }}
                             <ArrowRight class="size-4" aria-hidden="true" />
                         </button>
                     </div>
@@ -1305,18 +1407,24 @@ const labelClass = 'text-sm font-medium';
                             <Nfc class="size-4" aria-hidden="true" />
                         </span>
                         <p class="text-muted-foreground">
-                            <strong class="font-semibold text-foreground"
-                                >La foto no lleva códigos.</strong
-                            >
-                            El chip NFC está en la base del marco: quien acerque
-                            su celular abre este
-                            {{ isAlbum ? 'álbum' : 'recuerdo' }}. Tú decides
-                            quién puede verlo desde
-                            <Link
+                            <strong class="font-semibold text-foreground">{{
+                                $t('La foto no lleva códigos.')
+                            }}</strong>
+                            {{
+                                isAlbum
+                                    ? $t(
+                                          'El chip NFC está en la base del marco: quien acerque su celular abre este álbum.',
+                                      )
+                                    : $t(
+                                          'El chip NFC está en la base del marco: quien acerque su celular abre este recuerdo.',
+                                      )
+                            }}
+                            {{ privacyNote[0]
+                            }}<Link
                                 :href="edit(story.public_id).url"
                                 class="fl-link fl-link--gold font-medium text-fl-gold-ink"
-                                >su privacidad</Link
-                            >.
+                                >{{ $t('su privacidad') }}</Link
+                            >{{ privacyNote[1] }}
                         </p>
                     </aside>
                 </div>
@@ -1341,12 +1449,12 @@ const labelClass = 'text-sm font-medium';
                         <img
                             v-if="main.url.value"
                             :src="main.url.value"
-                            alt="Vista previa de tu portarretrato"
+                            :alt="$t('Vista previa de tu portarretrato')"
                         />
                         <div
                             v-else-if="canPreview"
                             class="fl-skeleton absolute inset-0 rounded-none"
-                            aria-label="Preparando la vista previa"
+                            :aria-label="$t('Preparando la vista previa')"
                         />
                         <div
                             v-else
@@ -1357,7 +1465,11 @@ const labelClass = 'text-sm font-medium';
                                     class="mx-auto mb-2 size-7 text-fl-gold"
                                     aria-hidden="true"
                                 />
-                                Elige una foto para ver tu portarretrato
+                                {{
+                                    $t(
+                                        'Elige una foto para ver tu portarretrato',
+                                    )
+                                }}
                             </span>
                         </div>
                     </PortraitFrame>
@@ -1380,10 +1492,12 @@ const labelClass = 'text-sm font-medium';
                             />
                             {{
                                 main.failed.value
-                                    ? 'No pudimos actualizar la vista previa'
+                                    ? $t(
+                                          'No pudimos actualizar la vista previa',
+                                      )
                                     : main.loading.value
-                                      ? 'Actualizando vista previa…'
-                                      : 'Vista previa real del archivo'
+                                      ? $t('Actualizando vista previa…')
+                                      : $t('Vista previa real del archivo')
                             }}
                         </span>
                         <span

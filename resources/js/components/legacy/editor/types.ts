@@ -4,6 +4,7 @@
  * ::summaryAll), editor media items (StoryPresenter::media) and the race
  * data with its "official" map (App\Support\LegacyTags\StoryRaceData).
  */
+import { t, tc } from '@/i18n';
 import type { StoryMediaItem, StoryView } from '@/types/legacy-tags';
 
 export type QuotaKind = 'photos' | 'videos' | 'audio';
@@ -86,17 +87,6 @@ export type PurchasedPhoto = {
     in_story: boolean;
 };
 
-/** Spanish nouns per kind: [singular, plural]. */
-export const KIND_NOUNS: Record<QuotaKind, [string, string]> = {
-    photos: ['foto', 'fotos'],
-    videos: ['video', 'videos'],
-    audio: ['mensaje de voz', 'mensajes de voz'],
-};
-
-export function kindNoun(kind: QuotaKind, count: number): string {
-    return KIND_NOUNS[kind][count === 1 ? 0 : 1];
-}
-
 /** "1:05" from seconds. */
 export function clock(seconds: number | null | undefined): string | null {
     if (seconds === null || seconds === undefined) {
@@ -111,15 +101,17 @@ export function clock(seconds: number | null | undefined): string | null {
 /** "60 segundos" / "3 minutos" / "1:30 min". */
 export function humanSeconds(seconds: number): string {
     if (seconds < 60) {
-        return `${seconds} segundos`;
+        return tc('{count} segundo|{count} segundos', seconds);
     }
 
     const minutes = Math.floor(seconds / 60);
     const rest = seconds % 60;
 
     if (rest === 0) {
-        return minutes === 1 ? '1 minuto' : `${minutes} minutos`;
+        return tc('{count} minuto|{count} minutos', minutes);
     }
 
-    return `${minutes}:${String(rest).padStart(2, '0')} min`;
+    return t('{time} min', {
+        time: `${minutes}:${String(rest).padStart(2, '0')}`,
+    });
 }

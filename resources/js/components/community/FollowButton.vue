@@ -11,6 +11,7 @@ import { Check, UserMinus, UserPlus } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { useAuthGate } from '@/composables/useAuthGate';
+import { useI18n } from '@/i18n';
 import { follow, unfollow } from '@/routes/athletes';
 
 const props = withDefaults(
@@ -38,6 +39,7 @@ const emit = defineEmits<{ change: [following: boolean] }>();
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 const { requireAuth } = useAuthGate();
+const { t } = useI18n();
 const state = ref(props.following);
 const busy = ref(false);
 const pop = ref(false);
@@ -66,8 +68,8 @@ function toggle() {
             if (next) {
                 toast.success(
                     props.name
-                        ? `Ahora sigues a ${props.name}`
-                        : 'Ahora sigues a este atleta',
+                        ? t('Ahora sigues a {name}', { name: props.name })
+                        : t('Ahora sigues a este atleta'),
                 );
             }
         },
@@ -75,7 +77,7 @@ function toggle() {
             state.value = !next;
             emit('change', !next);
             toast.error(
-                'No pudimos actualizar el seguimiento. Intenta de nuevo.',
+                t('No pudimos actualizar el seguimiento. Intenta de nuevo.'),
             );
         },
         onFinish: () => {
@@ -84,6 +86,15 @@ function toggle() {
         },
     });
 }
+
+const followLabel = computed(() =>
+    props.name ? t('Seguir a {name}', { name: props.name }) : t('Seguir'),
+);
+const unfollowLabel = computed(() =>
+    props.name
+        ? t('Dejar de seguir a {name}', { name: props.name })
+        : t('Dejar de seguir'),
+);
 
 const sizing = computed(() =>
     props.size === 'sm' ? 'h-8 px-4 text-xs gap-1' : 'h-10 px-5 text-sm gap-2',
@@ -96,11 +107,11 @@ const sizing = computed(() =>
         type="button"
         class="inline-flex shrink-0 items-center justify-center rounded-full bg-foreground font-semibold text-background transition-colors hover:bg-fl-graphite"
         :class="sizing"
-        :aria-label="`Seguir${name ? ` a ${name}` : ''}`"
+        :aria-label="followLabel"
         @click="requireAuth()"
     >
         <UserPlus :class="size === 'sm' ? 'size-3' : 'size-4'" />
-        Seguir
+        {{ $t('Seguir') }}
     </button>
     <button
         v-else
@@ -114,11 +125,7 @@ const sizing = computed(() =>
             pop ? 'fl-follow-pop' : '',
         ]"
         :aria-pressed="state"
-        :aria-label="
-            state
-                ? `Dejar de seguir${name ? ` a ${name}` : ''}`
-                : `Seguir${name ? ` a ${name}` : ''}`
-        "
+        :aria-label="state ? unfollowLabel : followLabel"
         :disabled="busy"
         @click="toggle"
     >
@@ -130,18 +137,18 @@ const sizing = computed(() =>
                     class="fl-follow-check text-emerald-600"
                     :class="size === 'sm' ? 'size-3' : 'size-4'"
                 />
-                Siguiendo
+                {{ $t('Siguiendo') }}
             </span>
             <span
                 class="hidden items-center gap-[inherit] group-hover/follow:inline-flex group-focus-visible/follow:inline-flex"
             >
                 <UserMinus :class="size === 'sm' ? 'size-3' : 'size-4'" />
-                Dejar de seguir
+                {{ $t('Dejar de seguir') }}
             </span>
         </template>
         <template v-else>
             <UserPlus :class="size === 'sm' ? 'size-3' : 'size-4'" />
-            {{ followsYou ? 'Seguir también' : 'Seguir' }}
+            {{ followsYou ? $t('Seguir también') : $t('Seguir') }}
         </template>
     </button>
 </template>

@@ -19,14 +19,19 @@ const progress = computed(
 </script>
 
 <template>
-    <nav aria-label="Progreso de la activación">
+    <nav :aria-label="$t('Progreso de la activación')">
         <p
             class="text-xs font-semibold tracking-[0.18em] text-fl-gold-ink uppercase"
         >
             <template v-if="current < steps.length">
-                Paso {{ current + 1 }} de {{ steps.length }}
+                {{
+                    $t('Paso {current} de {total}', {
+                        current: current + 1,
+                        total: steps.length,
+                    })
+                }}
             </template>
-            <template v-else>Listo</template>
+            <template v-else>{{ $t('Listo') }}</template>
         </p>
 
         <div class="relative mt-4">

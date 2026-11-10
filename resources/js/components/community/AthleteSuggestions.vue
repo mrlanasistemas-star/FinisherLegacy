@@ -24,12 +24,12 @@ const { isAuthenticated, loginUrl } = useAuthGate();
                 id="sugeridos-title"
                 class="text-sm font-semibold text-muted-foreground"
             >
-                Sugerencias para ti
+                {{ $t('Sugerencias para ti') }}
             </h2>
             <Link
                 :href="isAuthenticated ? people().url : loginUrl(people().url)"
                 class="text-xs font-semibold text-foreground hover:text-muted-foreground"
-                >Ver todo</Link
+                >{{ $t('Ver todo') }}</Link
             >
         </div>
         <ul v-if="athletes.length" class="mt-3 space-y-3">
@@ -75,7 +75,11 @@ const { isAuthenticated, loginUrl } = useAuthGate();
             </li>
         </ul>
         <p v-else class="mt-3 text-sm text-muted-foreground">
-            Cuando más atletas hagan público su perfil aparecerán aquí.
+            {{
+                $t(
+                    'Cuando más atletas hagan público su perfil aparecerán aquí.',
+                )
+            }}
         </p>
     </section>
 </template>

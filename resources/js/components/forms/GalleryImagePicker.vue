@@ -66,7 +66,7 @@ function remove(index: number) {
                 <button
                     type="button"
                     class="fl-focus-glow absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-background/80 text-muted-foreground hover:text-foreground"
-                    aria-label="Quitar imagen"
+                    :aria-label="$t('Quitar imagen')"
                     @click="remove(index)"
                 >
                     <X class="size-3" />
@@ -84,7 +84,9 @@ function remove(index: number) {
                 @click="inputRef?.click()"
             >
                 <ImagePlus class="size-5" />
-                <span class="text-[10px]">{{ remaining }} más</span>
+                <span class="text-[10px]">{{
+                    $t('{count} más', { count: remaining })
+                }}</span>
             </button>
         </div>
 

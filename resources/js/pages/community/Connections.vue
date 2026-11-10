@@ -14,6 +14,7 @@ import PersonCard from '@/components/community/PersonCard.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
+import { useI18n } from '@/i18n';
 import { connections as profileConnections } from '@/routes/profile';
 import type { CommunityAthlete } from '@/types';
 
@@ -31,10 +32,27 @@ const props = defineProps<{
     counts: { siguiendo: number; seguidores: number };
 }>();
 
-const tabs: { key: Tab; label: string }[] = [
-    { key: 'seguidores', label: 'Seguidores' },
-    { key: 'siguiendo', label: 'Siguiendo' },
-];
+const { t, regional } = useI18n();
+
+const tabs = computed<{ key: Tab; label: string }[]>(() => [
+    { key: 'seguidores', label: t('Seguidores') },
+    { key: 'siguiendo', label: t('Siguiendo') },
+]);
+
+const seoTitle = computed(() =>
+    props.tab === 'seguidores'
+        ? t('{name} · Seguidores', { name: props.owner.name })
+        : t('{name} · Siguiendo', { name: props.owner.name }),
+);
+const seoDescription = computed(() =>
+    props.tab === 'seguidores'
+        ? t('Seguidores de {name} en Finisher Legacy.', {
+              name: props.owner.name,
+          })
+        : t('Atletas que sigue {name} en Finisher Legacy.', {
+              name: props.owner.name,
+          }),
+);
 
 function tabHref(key: Tab): string {
     return profileConnections({
@@ -63,21 +81,21 @@ watchDebounced(
 
 const emptyTitle = computed(() => {
     if (props.q) {
-        return `Nadie coincide con “${props.q}”.`;
+        return t('Nadie coincide con “{query}”.', { query: props.q });
     }
 
     return props.tab === 'siguiendo'
-        ? `${props.owner.name} aún no sigue a nadie visible para ti.`
-        : `${props.owner.name} aún no tiene seguidores visibles para ti.`;
+        ? t('{name} aún no sigue a nadie visible para ti.', {
+              name: props.owner.name,
+          })
+        : t('{name} aún no tiene seguidores visibles para ti.', {
+              name: props.owner.name,
+          });
 });
 </script>
 
 <template>
-    <SeoHead
-        :title="`${owner.name} · ${tab === 'seguidores' ? 'Seguidores' : 'Siguiendo'}`"
-        :description="`${tab === 'seguidores' ? 'Seguidores' : 'Atletas que sigue'} ${owner.name} en Finisher Legacy.`"
-        noindex
-    />
+    <SeoHead :title="seoTitle" :description="seoDescription" noindex />
 
     <div class="fl-container max-w-2xl pt-6 pb-16 sm:pt-10">
         <Link
@@ -98,30 +116,32 @@ const emptyTitle = computed(() => {
 
         <nav
             class="mt-5 grid grid-cols-2 border-b border-border"
-            aria-label="Listas"
+            :aria-label="$t('Listas')"
         >
             <Link
-                v-for="t in tabs"
-                :key="t.key"
-                :href="tabHref(t.key)"
+                v-for="item in tabs"
+                :key="item.key"
+                :href="tabHref(item.key)"
                 preserve-scroll
-                :aria-current="tab === t.key ? 'page' : undefined"
+                :aria-current="tab === item.key ? 'page' : undefined"
                 class="-mb-px inline-flex min-h-12 items-center justify-center gap-1.5 border-b-2 text-sm font-semibold transition-colors"
                 :class="
-                    tab === t.key
+                    tab === item.key
                         ? 'border-foreground text-foreground'
                         : 'border-transparent text-muted-foreground hover:text-foreground'
                 "
             >
                 <span class="legacy-numeric">{{
-                    counts[t.key].toLocaleString('es-MX')
+                    counts[item.key].toLocaleString(regional)
                 }}</span>
-                {{ t.label }}
+                {{ item.label }}
             </Link>
         </nav>
 
         <div class="relative mt-4" role="search">
-            <label for="connections-search" class="sr-only">Buscar</label>
+            <label for="connections-search" class="sr-only">{{
+                $t('Buscar')
+            }}</label>
             <Search
                 class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
@@ -131,14 +151,14 @@ const emptyTitle = computed(() => {
                 v-model="term"
                 type="search"
                 autocomplete="off"
-                placeholder="Buscar"
+                :placeholder="$t('Buscar')"
                 class="h-10 w-full rounded-full border border-input bg-card pr-10 pl-11 text-sm placeholder:text-muted-foreground focus:border-foreground/30 focus:ring-2 focus:ring-ring/30 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
             />
             <button
                 v-if="term"
                 type="button"
                 class="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-                aria-label="Limpiar búsqueda"
+                :aria-label="$t('Limpiar búsqueda')"
                 @click="term = ''"
             >
                 <X class="size-4" />

@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useI18n } from '@/i18n';
 import { dashboard, login, register } from '@/routes';
 import { landing as photographersLanding } from '@/routes/photographers';
 import {
@@ -88,6 +89,8 @@ const props = defineProps<{
     purchase: { available: boolean; currency: string };
 }>();
 
+const { regional } = useI18n();
+
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 
@@ -122,14 +125,14 @@ function search() {
 }
 
 const money = (minor: number) =>
-    new Intl.NumberFormat('es-MX', {
+    new Intl.NumberFormat(regional.value, {
         style: 'currency',
         currency: props.purchase.currency || 'MXN',
     }).format(minor / 100);
 
 const forSale = computed(() => props.results.filter((p) => p.kind === 'pro'));
 const fmtDate = (iso: string) =>
-    new Date(`${iso}T12:00:00`).toLocaleDateString('es-MX', {
+    new Date(`${iso}T12:00:00`).toLocaleDateString(regional.value, {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -253,36 +256,57 @@ function toggleFromLightbox() {
 
 <template>
     <SeoHead
-        title="Fotos"
-        description="Busca tus fotografías de evento por número de participante, cómpralas en alta resolución y revive la emoción de cada carrera."
+        :title="$t('Fotos de evento')"
+        :description="
+            $t(
+                'Busca tus fotografías de evento por número de participante, cómpralas en alta resolución y revive la emoción de cada carrera.',
+            )
+        "
     />
 
-    <section class="fl-container pt-12 pb-8 sm:pt-16">
+    <div class="relative">
+        <div
+            class="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(60%_80%_at_85%_0%,#f4eedf,transparent_70%)]"
+            aria-hidden="true"
+        />
+    </div>
+    <section class="fl-container relative pt-12 pb-8 sm:pt-16">
         <div
             class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
         >
             <div>
                 <p class="fl-eyebrow flex items-center gap-3">
                     <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
-                    Fotografías
+                    {{ $t('Fotos de evento') }}
                 </p>
-                <h1 class="fl-display mt-5 text-5xl sm:text-6xl lg:text-7xl">
-                    Encuentra tu momento.
+                <h1
+                    class="fl-display mt-5 text-[2.4rem] leading-[1.04] sm:text-6xl"
+                >
+                    {{ $t('Encuentra') }}
+                    <span class="font-medium text-fl-gold-ink italic">{{
+                        $t('tu momento.')
+                    }}</span>
                 </h1>
-                <p class="mt-4 max-w-xl text-lg text-muted-foreground">
+                <p
+                    class="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+                >
                     {{
                         myEvents.length
-                            ? 'Ya sabemos en qué eventos corriste y con qué número: aquí están tus fotos. Solo elige cuáles quieres.'
-                            : 'Busca tus fotografías y revive la emoción de cada evento.'
+                            ? $t(
+                                  'Ya sabemos en qué eventos corriste y con qué número: aquí están tus fotos. Solo elige cuáles quieres.',
+                              )
+                            : $t(
+                                  'Elige el evento, escribe tu número de participante y mira las fotos que los fotógrafos tomaron de ti en la carrera.',
+                              )
                     }}
                 </p>
             </div>
             <Link
                 :href="photographersLanding()"
-                class="inline-flex items-center gap-2 self-start rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-foreground/25 lg:self-auto"
+                class="inline-flex min-h-10 items-center gap-2 self-start rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:border-fl-gold lg:self-auto"
             >
                 <Camera class="size-4 text-fl-gold-ink" />
-                ¿Eres fotógrafo? Vende tus fotos
+                {{ $t('¿Eres fotógrafo? Vende tus fotos') }}
             </Link>
         </div>
 
@@ -293,7 +317,7 @@ function toggleFromLightbox() {
             @click="showSearch = true"
         >
             <Search class="size-4" />
-            ¿Buscas fotos de otro evento o de otro número?
+            {{ $t('¿Buscas fotos de otro evento o de otro número?') }}
         </button>
         <div v-if="showSearch" class="mt-10 grid gap-4 lg:grid-cols-12">
             <form
@@ -302,23 +326,25 @@ function toggleFromLightbox() {
                 @submit.prevent="search"
             >
                 <div class="grid gap-2">
-                    <Label for="photo-event">Evento</Label>
+                    <Label for="photo-event">{{ $t('Evento') }}</Label>
                     <FancySelect
                         id="photo-event"
                         v-model="eventId"
                         :options="eventOptions"
-                        placeholder="Selecciona un evento"
+                        :placeholder="$t('Selecciona un evento')"
                         class="h-11"
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="photo-bib">Número de participante</Label>
+                    <Label for="photo-bib">{{
+                        $t('Número de participante')
+                    }}</Label>
                     <Input
                         id="photo-bib"
                         v-model="bib"
                         inputmode="numeric"
                         autocomplete="off"
-                        placeholder="Ej. 482"
+                        :placeholder="$t('Ej. 482')"
                         class="legacy-numeric h-11"
                     />
                 </div>
@@ -328,7 +354,7 @@ function toggleFromLightbox() {
                     :disabled="!eventId || !bib.trim() || searching"
                 >
                     <Search class="size-4" />
-                    Buscar
+                    {{ $t('Buscar') }}
                 </Button>
             </form>
             <div
@@ -341,15 +367,18 @@ function toggleFromLightbox() {
                 </span>
                 <div>
                     <p class="flex flex-wrap items-center gap-2 font-semibold">
-                        Buscar con mi selfie
+                        {{ $t('Buscar con mi selfie') }}
                         <span
                             class="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
-                            >Opcional · Próximamente</span
+                            >{{ $t('Opcional · Próximamente') }}</span
                         >
                     </p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        El reconocimiento facial será una integración futura y
-                        siempre con tu consentimiento.
+                        {{
+                            $t(
+                                'El reconocimiento facial será una integración futura y siempre con tu consentimiento.',
+                            )
+                        }}
                     </p>
                 </div>
             </div>
@@ -364,7 +393,9 @@ function toggleFromLightbox() {
                     <section
                         v-for="ev in myEvents"
                         :key="ev.edition_id"
-                        :aria-label="`Tus fotos de ${ev.event}`"
+                        :aria-label="
+                            $t('Tus fotos de {event}', { event: ev.event })
+                        "
                     >
                         <div
                             class="flex flex-wrap items-end justify-between gap-3"
@@ -380,16 +411,17 @@ function toggleFromLightbox() {
                                     <template v-if="ev.date"
                                         >{{ fmtDate(ev.date) }} ·
                                     </template>
-                                    Tu número
+                                    {{ $t('Tu número') }}
                                     <span
                                         class="legacy-numeric font-semibold text-foreground"
                                         >#{{ ev.bib }}</span
                                     >
-                                    · {{ ev.photos.length }}
+                                    ·
                                     {{
-                                        ev.photos.length === 1
-                                            ? 'foto'
-                                            : 'fotos'
+                                        $tc(
+                                            '{count} foto|{count} fotos',
+                                            ev.photos.length,
+                                        )
                                     }}
                                 </p>
                             </div>
@@ -399,7 +431,7 @@ function toggleFromLightbox() {
                                 class="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:border-foreground/25"
                                 @click="selectAll(ev.photos)"
                             >
-                                Seleccionar todas
+                                {{ $t('Seleccionar todas') }}
                             </button>
                         </div>
                         <div
@@ -421,16 +453,22 @@ function toggleFromLightbox() {
                             class="mt-3 flex items-start gap-3 rounded-card border border-dashed border-foreground/15 bg-card p-4 text-sm text-muted-foreground"
                         >
                             <ImageOff class="size-5 shrink-0" />
-                            Aún no hay fotos de fotógrafos con tu número en este
-                            evento. Se publican después de la carrera.
+                            {{
+                                $t(
+                                    'Aún no hay fotos de fotógrafos con tu número en este evento. Se publican después de la carrera.',
+                                )
+                            }}
                         </p>
                     </section>
                     <p
                         v-if="myPhotoCount === 0"
                         class="text-sm text-muted-foreground"
                     >
-                        Te avisaremos aquí en cuanto un fotógrafo publique fotos
-                        con tu número.
+                        {{
+                            $t(
+                                'Te avisaremos aquí en cuanto un fotógrafo publique fotos con tu número.',
+                            )
+                        }}
                     </p>
                 </div>
 
@@ -438,33 +476,39 @@ function toggleFromLightbox() {
                 <ol
                     v-if="!searched && !myEvents.length"
                     class="grid gap-3 sm:grid-cols-3"
-                    aria-label="Cómo encontrar tus fotos"
+                    :aria-label="$t('Cómo encontrar tus fotos')"
                 >
                     <li
                         v-for="(step, i) in [
                             {
-                                t: 'Elige tu evento',
-                                d: 'Todos los eventos con fotos publicadas por fotógrafos.',
+                                title: $t('Elige tu evento'),
+                                text: $t(
+                                    'Todos los eventos con fotos publicadas por fotógrafos.',
+                                ),
                             },
                             {
-                                t: 'Escribe tu número',
-                                d: 'El número de participante que llevabas en tu dorsal.',
+                                title: $t('Escribe tu número'),
+                                text: $t(
+                                    'El número de participante que llevabas en tu dorsal.',
+                                ),
                             },
                             {
-                                t: 'Selecciona y descarga',
-                                d: 'Marca tus fotos, paga una sola vez y descarga en alta resolución.',
+                                title: $t('Selecciona y descarga'),
+                                text: $t(
+                                    'Marca tus fotos, paga una sola vez y descarga en alta resolución.',
+                                ),
                             },
                         ]"
-                        :key="step.t"
+                        :key="i"
                         class="fl-card p-5"
                     >
                         <span
                             class="flex size-8 items-center justify-center rounded-full bg-fl-cream font-serif text-fl-gold-ink"
                             >{{ i + 1 }}</span
                         >
-                        <p class="mt-3 font-semibold">{{ step.t }}</p>
+                        <p class="mt-3 font-semibold">{{ step.title }}</p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            {{ step.d }}
+                            {{ step.text }}
                         </p>
                     </li>
                 </ol>
@@ -473,7 +517,7 @@ function toggleFromLightbox() {
                     <div>
                         <h2 class="flex items-center gap-2 font-serif text-2xl">
                             <Camera class="size-5 text-fl-gold-ink" />
-                            Resultado de tu búsqueda
+                            {{ $t('Resultado de tu búsqueda') }}
                             <span class="text-base text-muted-foreground">{{
                                 forSale.length
                             }}</span>
@@ -497,22 +541,31 @@ function toggleFromLightbox() {
                             class="mt-4 flex items-start gap-3 rounded-card border border-dashed border-foreground/15 bg-card p-5 text-sm text-muted-foreground"
                         >
                             <ImageOff class="size-5 shrink-0" />
-                            Aún no hay fotos de fotógrafos con ese número.
-                            Vuelve pronto: se publican después del evento.
+                            {{
+                                $t(
+                                    'Aún no hay fotos de fotógrafos con ese número. Vuelve pronto: se publican después del evento.',
+                                )
+                            }}
                         </p>
                     </div>
 
                     <div v-if="athletePhotos.length">
                         <h2 class="flex items-center gap-2 font-serif text-2xl">
                             <UserRound class="size-5 text-fl-gold-ink" />
-                            Compartidas por atletas
+                            {{ $t('Compartidas por atletas') }}
                         </h2>
                         <div class="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4">
                             <img
                                 v-for="photo in athletePhotos"
                                 :key="photo.uuid"
                                 :src="photo.thumb_url"
-                                :alt="`Foto de ${photo.event ?? 'evento'}`"
+                                :alt="
+                                    photo.event
+                                        ? $t('Foto de {event}', {
+                                              event: photo.event,
+                                          })
+                                        : $t('Foto de evento')
+                                "
                                 loading="lazy"
                                 class="aspect-square w-full rounded-control bg-muted object-cover"
                             />
@@ -523,7 +576,7 @@ function toggleFromLightbox() {
                 <div v-if="purchased && purchased.length" id="compradas">
                     <h2 class="flex items-center gap-2 font-serif text-2xl">
                         <Download class="size-5 text-fl-gold-ink" />
-                        Compradas
+                        {{ $t('Compradas') }}
                         <span class="text-base text-muted-foreground">{{
                             purchased.length
                         }}</span>
@@ -536,7 +589,13 @@ function toggleFromLightbox() {
                         >
                             <img
                                 :src="item.thumb_url"
-                                :alt="`Foto de ${item.event}`"
+                                :alt="
+                                    item.event
+                                        ? $t('Foto de {event}', {
+                                              event: item.event,
+                                          })
+                                        : $t('Foto de evento')
+                                "
                                 loading="lazy"
                                 class="aspect-[4/5] w-full object-cover"
                             />
@@ -551,7 +610,7 @@ function toggleFromLightbox() {
                                     class="inline-flex shrink-0 items-center gap-1 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-semibold text-background"
                                 >
                                     <Download class="size-3" />
-                                    Alta resolución
+                                    {{ $t('Alta resolución') }}
                                 </a>
                             </div>
                         </article>
@@ -560,7 +619,7 @@ function toggleFromLightbox() {
 
                 <div v-if="mine !== null && mine.length" id="mis-fotos">
                     <h2 class="font-serif text-2xl">
-                        Mis fotos subidas
+                        {{ $t('Mis fotos subidas') }}
                         <span class="text-base text-muted-foreground">{{
                             mine.length
                         }}</span>
@@ -576,23 +635,34 @@ function toggleFromLightbox() {
                         >
                             <img
                                 :src="photo.thumb_url"
-                                :alt="`Mi foto en ${photo.event ?? 'evento'}`"
+                                :alt="
+                                    photo.event
+                                        ? $t('Mi foto en {event}', {
+                                              event: photo.event,
+                                          })
+                                        : $t('Mi foto en evento')
+                                "
                                 loading="lazy"
                                 class="aspect-square w-full rounded-control bg-muted object-cover"
                             />
                             <span
                                 v-if="!photo.is_public"
                                 class="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-1.5 py-0.5 text-[10px]"
-                                ><Lock class="size-3" /> Privada</span
+                                ><Lock class="size-3" />
+                                {{ $t('Privada') }}</span
                             >
                         </div>
                     </div>
                     <p v-else class="mt-4 text-sm text-muted-foreground">
-                        Sube tus fotos desde el detalle de cada evento en
+                        {{
+                            $t(
+                                'Sube tus fotos desde el detalle de cada evento en',
+                            )
+                        }}
                         <Link
                             :href="dashboard()"
                             class="font-medium text-foreground underline underline-offset-4"
-                            >Mi Legado</Link
+                            >{{ $t('Mi Legado') }}</Link
                         >.
                     </p>
                 </div>
@@ -601,17 +671,22 @@ function toggleFromLightbox() {
                     v-if="isGuest && !searched"
                     class="rounded-card border border-border bg-card p-6"
                 >
-                    <p class="font-semibold">¿Ya tienes cuenta?</p>
+                    <p class="font-semibold">{{ $t('¿Ya tienes cuenta?') }}</p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Inicia sesión para comprar y descargar tus fotos en alta
-                        resolución.
+                        {{
+                            $t(
+                                'Inicia sesión para comprar y descargar tus fotos en alta resolución.',
+                            )
+                        }}
                     </p>
                     <div class="mt-4 flex gap-2">
                         <Button as-child class="rounded-full">
-                            <Link :href="login()">Iniciar sesión</Link>
+                            <Link :href="login()">{{ $t('Entrar') }}</Link>
                         </Button>
                         <Button as-child variant="outline" class="rounded-full">
-                            <Link :href="register()">Crear mi perfil</Link>
+                            <Link :href="register()">{{
+                                $t('Crear cuenta')
+                            }}</Link>
                         </Button>
                     </div>
                 </div>
@@ -620,7 +695,9 @@ function toggleFromLightbox() {
             <!-- Selection -->
             <aside class="lg:col-span-4">
                 <div class="fl-card p-6 lg:sticky lg:top-24">
-                    <h2 class="font-serif text-2xl">Tu selección</h2>
+                    <h2 class="font-serif text-2xl">
+                        {{ $t('Tu selección') }}
+                    </h2>
                     <div
                         v-if="selectedPhotos.length"
                         class="mt-4 flex -space-x-3"
@@ -635,7 +712,9 @@ function toggleFromLightbox() {
                     </div>
                     <dl class="mt-5 space-y-3 text-sm">
                         <div class="flex justify-between">
-                            <dt class="text-muted-foreground">Fotografías</dt>
+                            <dt class="text-muted-foreground">
+                                {{ $t('Fotografías') }}
+                            </dt>
                             <dd class="legacy-numeric font-semibold">
                                 {{ selectedPhotos.length }}
                             </dd>
@@ -643,7 +722,7 @@ function toggleFromLightbox() {
                         <div
                             class="flex justify-between border-t border-border pt-3"
                         >
-                            <dt class="font-medium">Total</dt>
+                            <dt class="font-medium">{{ $t('Total') }}</dt>
                             <dd class="legacy-numeric font-serif text-2xl">
                                 {{ money(total) }}
                             </dd>
@@ -654,15 +733,15 @@ function toggleFromLightbox() {
                     >
                         <li class="flex items-center gap-2.5">
                             <ShieldCheck class="size-4 text-fl-gold-ink" />
-                            Licencia de uso personal
+                            {{ $t('Licencia de uso personal') }}
                         </li>
                         <li class="flex items-center gap-2.5">
                             <Sparkles class="size-4 text-fl-gold-ink" />
-                            Alta resolución, sin marca de agua
+                            {{ $t('Alta resolución, sin marca de agua') }}
                         </li>
                         <li class="flex items-center gap-2.5">
                             <Download class="size-4 text-fl-gold-ink" />
-                            Descarga inmediata al pagar
+                            {{ $t('Descarga inmediata al pagar') }}
                         </li>
                     </ul>
                     <Button
@@ -670,7 +749,9 @@ function toggleFromLightbox() {
                         as-child
                         class="mt-6 h-11 w-full rounded-full"
                     >
-                        <Link :href="login()">Inicia sesión para comprar</Link>
+                        <Link :href="login()">{{
+                            $t('Inicia sesión para comprar')
+                        }}</Link>
                     </Button>
                     <Button
                         v-else
@@ -679,11 +760,16 @@ function toggleFromLightbox() {
                         @click="buy"
                     >
                         <ShoppingBag class="size-4" />
-                        {{ buying ? 'Preparando…' : 'Comprar selección' }}
+                        {{
+                            buying ? $t('Preparando…') : $t('Comprar selección')
+                        }}
                     </Button>
                     <p class="mt-3 text-center text-xs text-muted-foreground">
-                        Pago seguro con tarjeta. Cada fotógrafo recibe su parte
-                        de la venta.
+                        {{
+                            $t(
+                                'Pago seguro con tarjeta. Cada fotógrafo recibe su parte de la venta.',
+                            )
+                        }}
                     </p>
                 </div>
             </aside>
@@ -703,14 +789,18 @@ function toggleFromLightbox() {
                 <div class="relative bg-fl-black">
                     <img
                         :src="lightbox.url"
-                        :alt="`Vista previa con marca de agua · ${lightbox.source}`"
+                        :alt="
+                            $t('Vista previa con marca de agua · {source}', {
+                                source: lightbox.source,
+                            })
+                        "
                         class="max-h-[75vh] w-full object-contain"
                     />
                     <button
                         v-if="buyable.length > 1"
                         type="button"
                         class="fl-focus-glow absolute top-1/2 left-3 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
-                        aria-label="Foto anterior"
+                        :aria-label="$t('Foto anterior')"
                         @click="stepLightbox(-1)"
                     >
                         <ChevronLeft class="size-5" />
@@ -719,7 +809,7 @@ function toggleFromLightbox() {
                         v-if="buyable.length > 1"
                         type="button"
                         class="fl-focus-glow absolute top-1/2 right-3 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60"
-                        aria-label="Foto siguiente"
+                        :aria-label="$t('Foto siguiente')"
                         @click="stepLightbox(1)"
                     >
                         <ChevronRight class="size-5" />
@@ -733,8 +823,8 @@ function toggleFromLightbox() {
                             lightbox.source
                         }}</DialogTitle>
                         <DialogDescription class="truncate">
-                            {{ lightbox.event }} · vista previa con marca de
-                            agua
+                            {{ lightbox.event }} ·
+                            {{ $t('vista previa con marca de agua') }}
                         </DialogDescription>
                     </div>
                     <div class="flex gap-2">
@@ -745,14 +835,18 @@ function toggleFromLightbox() {
                         >
                             {{
                                 selected.has(lightbox.uuid)
-                                    ? 'Quitar'
-                                    : `Agregar · ${money(lightbox.price_minor ?? 0)}`
+                                    ? $t('Quitar')
+                                    : $t('Agregar · {price}', {
+                                          price: money(
+                                              lightbox.price_minor ?? 0,
+                                          ),
+                                      })
                             }}
                         </Button>
                         <DialogClose as-child>
-                            <Button variant="outline" class="rounded-full"
-                                >Cerrar</Button
-                            >
+                            <Button variant="outline" class="rounded-full">{{
+                                $t('Cerrar')
+                            }}</Button>
                         </DialogClose>
                     </div>
                 </div>

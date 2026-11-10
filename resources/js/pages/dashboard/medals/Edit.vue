@@ -15,6 +15,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/i18n';
 import { confirmDestructive } from '@/lib/swal';
 import { update } from '@/routes/dashboard/medals';
 import { destroy as destroyGalleryImage } from '@/routes/dashboard/medals/gallery';
@@ -23,6 +24,8 @@ import type { MedalDetail } from '@/types';
 const { medal } = defineProps<{
     medal: MedalDetail;
 }>();
+
+const { t } = useI18n();
 
 const form = useForm({
     event_name_manual: medal.event_name_manual ?? medal.title,
@@ -70,9 +73,9 @@ function submit() {
 
 async function removeGalleryImage(medalImageId: number) {
     const result = await confirmDestructive({
-        title: '¿Quitar esta imagen?',
-        text: 'Se eliminará de la galería de esta medalla.',
-        confirmButtonText: 'Sí, quitar',
+        title: t('¿Quitar esta imagen?'),
+        text: t('Se eliminará de la galería de esta medalla.'),
+        confirmButtonText: t('Sí, quitar'),
     });
 
     if (result.isConfirmed) {
@@ -88,10 +91,12 @@ async function removeGalleryImage(medalImageId: number) {
 </script>
 
 <template>
-    <Head :title="`Editar ${medal.title}`" />
+    <Head :title="$t('Editar {title}', { title: medal.title })" />
 
     <div class="fl-container max-w-2xl space-y-6 py-8 md:py-12">
-        <h1 class="font-serif text-3xl tracking-tight text-foreground">Editar medalla</h1>
+        <h1 class="font-serif text-3xl tracking-tight text-foreground">
+            {{ $t('Editar medalla') }}
+        </h1>
 
         <div
             v-if="medal.is_official"
@@ -99,9 +104,11 @@ async function removeGalleryImage(medalImageId: number) {
         >
             <Lock class="mt-0.5 size-4 shrink-0 text-fl-gold-ink" />
             <p class="text-sm text-muted-foreground">
-                Esta medalla está vinculada a un resultado oficial verificado.
-                El evento, la fecha y el resultado no se pueden editar aquí para
-                proteger la información oficial.
+                {{
+                    $t(
+                        'Esta medalla está vinculada a un resultado oficial verificado. El evento, la fecha y el resultado no se pueden editar aquí para proteger la información oficial.',
+                    )
+                }}
             </p>
         </div>
 
@@ -112,19 +119,19 @@ async function removeGalleryImage(medalImageId: number) {
             >
                 <div>
                     <p class="text-xs text-muted-foreground/80 uppercase">
-                        Evento
+                        {{ $t('Evento') }}
                     </p>
                     <p class="text-foreground">{{ medal.event_name }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-muted-foreground/80 uppercase">
-                        Distancia
+                        {{ $t('Distancia') }}
                     </p>
                     <p class="text-foreground">{{ medal.race_name }}</p>
                 </div>
                 <div v-if="medal.official_time">
                     <p class="text-xs text-muted-foreground/80 uppercase">
-                        Tiempo
+                        {{ $t('Tiempo') }}
                     </p>
                     <p class="font-mono text-fl-gold-ink">
                         {{ medal.official_time }}
@@ -132,7 +139,7 @@ async function removeGalleryImage(medalImageId: number) {
                 </div>
                 <div v-if="medal.pace">
                     <p class="text-xs text-muted-foreground/80 uppercase">
-                        Ritmo
+                        {{ $t('Ritmo') }}
                     </p>
                     <p class="text-foreground">{{ medal.pace }}</p>
                 </div>
@@ -140,14 +147,16 @@ async function removeGalleryImage(medalImageId: number) {
 
             <div v-else class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="event_name_manual">Nombre del evento</Label>
+                    <Label for="event_name_manual">{{
+                        $t('Nombre del evento')
+                    }}</Label>
                     <Input
                         id="event_name_manual"
                         v-model="form.event_name_manual"
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="event_date">Fecha</Label>
+                    <Label for="event_date">{{ $t('Fecha') }}</Label>
                     <DatePicker
                         :model-value="form.event_date || null"
                         @update:model-value="
@@ -156,29 +165,29 @@ async function removeGalleryImage(medalImageId: number) {
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="distance_label">Distancia</Label>
+                    <Label for="distance_label">{{ $t('Distancia') }}</Label>
                     <Input id="distance_label" v-model="form.distance_label" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="city">Ciudad</Label>
+                    <Label for="city">{{ $t('Ciudad') }}</Label>
                     <Input id="city" v-model="form.city" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="country">País</Label>
+                    <Label for="country">{{ $t('País') }}</Label>
                     <Input id="country" v-model="form.country" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="official_time">Tiempo</Label>
+                    <Label for="official_time">{{ $t('Tiempo') }}</Label>
                     <Input id="official_time" v-model="form.official_time" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="pace">Ritmo</Label>
+                    <Label for="pace">{{ $t('Ritmo') }}</Label>
                     <Input id="pace" v-model="form.pace" />
                 </div>
             </div>
 
             <div class="grid gap-2">
-                <Label for="story">Mi historia</Label>
+                <Label for="story">{{ $t('Mi historia') }}</Label>
                 <Textarea
                     id="story"
                     v-model="form.story"
@@ -188,21 +197,27 @@ async function removeGalleryImage(medalImageId: number) {
             </div>
 
             <div class="grid gap-2">
-                <Label>Visibilidad</Label>
+                <Label>{{ $t('Visibilidad') }}</Label>
                 <Select v-model="form.visibility">
                     <SelectTrigger class="w-full sm:w-64">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="public">Pública</SelectItem>
-                        <SelectItem value="private">Privada</SelectItem>
+                        <SelectItem value="public">{{
+                            $t('Pública')
+                        }}</SelectItem>
+                        <SelectItem value="private">{{
+                            $t('Privada')
+                        }}</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
 
             <div class="grid gap-5 sm:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label for="front_image">Reemplazar frente</Label>
+                    <Label for="front_image">{{
+                        $t('Reemplazar frente')
+                    }}</Label>
                     <div
                         class="aspect-square overflow-hidden rounded-xl border border-border bg-background"
                     >
@@ -210,7 +225,7 @@ async function removeGalleryImage(medalImageId: number) {
                             v-if="frontPreview"
                             :src="frontPreview"
                             class="size-full object-cover"
-                            alt="Frente"
+                            :alt="$t('Frente')"
                         />
                     </div>
                     <Input
@@ -227,7 +242,9 @@ async function removeGalleryImage(medalImageId: number) {
                     </p>
                 </div>
                 <div class="grid gap-2">
-                    <Label for="back_image">Reemplazar reverso</Label>
+                    <Label for="back_image">{{
+                        $t('Reemplazar reverso')
+                    }}</Label>
                     <div
                         class="aspect-square overflow-hidden rounded-xl border border-border bg-background"
                     >
@@ -235,7 +252,7 @@ async function removeGalleryImage(medalImageId: number) {
                             v-if="backPreview"
                             :src="backPreview"
                             class="size-full object-cover"
-                            alt="Reverso"
+                            :alt="$t('Reverso')"
                         />
                     </div>
                     <Input
@@ -254,7 +271,7 @@ async function removeGalleryImage(medalImageId: number) {
             </div>
 
             <div class="grid gap-2">
-                <Label>Galería</Label>
+                <Label>{{ $t('Galería') }}</Label>
 
                 <div
                     v-if="medal.gallery_images.length"
@@ -269,12 +286,12 @@ async function removeGalleryImage(medalImageId: number) {
                             v-if="image.url"
                             :src="image.url"
                             class="size-full object-cover"
-                            alt="Foto de la galería"
+                            :alt="$t('Foto de la galería')"
                         />
                         <button
                             type="button"
                             class="fl-focus-glow absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-background/80 text-muted-foreground hover:text-foreground"
-                            aria-label="Quitar imagen"
+                            :aria-label="$t('Quitar imagen')"
                             @click="removeGalleryImage(image.id)"
                         >
                             <X class="size-3" />
@@ -302,7 +319,7 @@ async function removeGalleryImage(medalImageId: number) {
                 class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
                 :disabled="form.processing"
             >
-                Guardar cambios
+                {{ $t('Guardar cambios') }}
             </Button>
         </form>
     </div>

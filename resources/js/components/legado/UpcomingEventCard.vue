@@ -6,6 +6,7 @@
 import { Link } from '@inertiajs/vue3';
 import { CalendarDays, MapPin } from '@lucide/vue';
 import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/datetime';
 import { show as legadoShow } from '@/routes/dashboard/legado';
 import { show as eventShow } from '@/routes/events';
@@ -15,6 +16,8 @@ const props = withDefaults(
     defineProps<{ entry: UpcomingEntry; featured?: boolean }>(),
     { featured: false },
 );
+
+const { t } = useI18n();
 
 const daysLeft = computed(() => {
     if (!props.entry.event_date) {
@@ -37,10 +40,12 @@ const countdown = computed(() => {
     }
 
     if (daysLeft.value === 0) {
-        return 'Hoy';
+        return t('Hoy');
     }
 
-    return daysLeft.value === 1 ? 'Mañana' : `${daysLeft.value} días`;
+    return daysLeft.value === 1
+        ? t('Mañana')
+        : t('{count} días', { count: daysLeft.value });
 });
 
 const href = computed(() => {
@@ -103,15 +108,15 @@ const meta = computed(() =>
                 >
                     {{
                         entry.kind === 'preregistered'
-                            ? 'Prerregistro'
-                            : 'Inscrito'
+                            ? $t('Prerregistro')
+                            : $t('Inscrito')
                     }}
                 </p>
                 <h3
                     class="mt-2 font-serif leading-tight font-medium"
                     :class="featured ? 'text-3xl sm:text-4xl' : 'text-xl'"
                 >
-                    {{ entry.event ?? 'Evento' }}
+                    {{ entry.event ?? $t('Evento') }}
                 </h3>
                 <p
                     v-if="meta"
@@ -179,7 +184,7 @@ const meta = computed(() =>
                             : 'text-muted-foreground'
                     "
                 >
-                    {{ daysLeft === 1 ? 'día' : 'días' }}
+                    {{ $tc('día|días', daysLeft ?? 0) }}
                 </p>
             </div>
         </div>

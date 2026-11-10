@@ -73,7 +73,11 @@ defineExpose({ pause });
         <button
             type="button"
             class="flex size-14 shrink-0 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-fl-graphite focus-visible:ring-4 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
-            :aria-label="playing ? `Pausar: ${title}` : `Escuchar: ${title}`"
+            :aria-label="
+                playing
+                    ? $t('Pausar: {title}', { title })
+                    : $t('Escuchar: {title}', { title })
+            "
             @click="toggle"
         >
             <Pause v-if="playing" class="size-6" />
@@ -88,7 +92,7 @@ defineExpose({ pause });
                 step="0.001"
                 :value="progress"
                 class="voice-range mt-2 w-full"
-                aria-label="Avance del mensaje"
+                :aria-label="$t('Avance del mensaje')"
                 @input="seek"
             />
             <p class="legacy-numeric mt-1 text-xs text-muted-foreground">

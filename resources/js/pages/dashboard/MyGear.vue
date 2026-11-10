@@ -10,14 +10,17 @@ import { computed, onMounted, ref } from 'vue';
 import ConnectedGearCard from '@/components/nfc/ConnectedGearCard.vue';
 import type { GearItem } from '@/components/nfc/ConnectedGearCard.vue';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{ items: GearItem[]; highlight: string | null }>();
+
+const { t } = useI18n();
 
 type Filter = 'all' | 'legacy_plate' | 'product';
 
 const filter = ref<Filter>('all');
 const filters = computed(() => [
-    { key: 'all' as const, label: 'Todo', count: props.items.length },
+    { key: 'all' as const, label: t('Todo'), count: props.items.length },
     {
         key: 'legacy_plate' as const,
         label: 'Legacy Plates',
@@ -25,7 +28,7 @@ const filters = computed(() => [
     },
     {
         key: 'product' as const,
-        label: 'Productos',
+        label: t('Productos'),
         count: props.items.filter((i) => i.kind === 'product').length,
     },
 ]);
@@ -49,24 +52,30 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Mi equipo" />
+    <Head :title="$t('Mi equipo')" />
 
     <div class="fl-container py-8 md:py-12">
         <header
             class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
         >
             <div>
-                <p class="fl-eyebrow">Mi espacio</p>
-                <h1 class="fl-display mt-2 text-4xl md:text-5xl">Mi equipo</h1>
+                <p class="fl-eyebrow">{{ $t('Mi espacio') }}</p>
+                <h1 class="fl-display mt-2 text-4xl md:text-5xl">
+                    {{ $t('Mi equipo') }}
+                </h1>
                 <p class="mt-3 max-w-xl text-muted-foreground">
-                    Tus Legacy Plates y el equipo que te acompaña en cada meta.
+                    {{
+                        $t(
+                            'Tus Legacy Plates y el equipo que te acompaña en cada meta.',
+                        )
+                    }}
                     <span v-if="connectedCount" class="text-foreground">
-                        {{ connectedCount }}
                         {{
-                            connectedCount === 1
-                                ? 'pieza conectada'
-                                : 'piezas conectadas'
-                        }}.
+                            $tc(
+                                '{count} pieza conectada.|{count} piezas conectadas.',
+                                connectedCount,
+                            )
+                        }}
                     </span>
                 </p>
             </div>
@@ -75,7 +84,7 @@ onMounted(() => {
                 v-if="items.length"
                 class="flex gap-2 overflow-x-auto"
                 role="group"
-                aria-label="Filtrar equipo"
+                :aria-label="$t('Filtrar equipo')"
             >
                 <button
                     v-for="option in filters"
@@ -119,13 +128,18 @@ onMounted(() => {
             >
                 <Nfc class="size-7" />
             </span>
-            <h2 class="fl-display mt-6 text-2xl">Tu equipo empieza aquí</h2>
+            <h2 class="fl-display mt-6 text-2xl">
+                {{ $t('Tu equipo empieza aquí') }}
+            </h2>
             <p class="mt-3 max-w-md text-muted-foreground">
-                Acerca tu teléfono a tu Legacy Plate o a un producto Finisher
-                Legacy y aparecerá aquí, conectado a tu historia.
+                {{
+                    $t(
+                        'Acerca tu teléfono a tu Legacy Plate o a un producto Finisher Legacy y aparecerá aquí, conectado a tu historia.',
+                    )
+                }}
             </p>
             <Button as-child class="mt-6 h-11 rounded-full px-6">
-                <Link href="/tienda">Ver la tienda</Link>
+                <Link href="/tienda">{{ $t('Ver la tienda') }}</Link>
             </Button>
         </div>
     </div>

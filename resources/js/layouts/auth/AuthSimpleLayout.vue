@@ -8,7 +8,9 @@
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowLeft, Camera, IdCard, Nfc, Users } from '@lucide/vue';
+import { computed } from 'vue';
 import { Toaster } from '@/components/ui/sonner';
+import { useI18n } from '@/i18n';
 import { home, privacy, terms } from '@/routes';
 
 defineProps<{
@@ -16,28 +18,30 @@ defineProps<{
     description?: string;
 }>();
 
-const benefits = [
+const { t } = useI18n();
+
+const benefits = computed(() => [
     {
         icon: Nfc,
-        label: 'Tu Finisher Legacy Tag',
-        text: 'Acércalo y abre tu historia.',
+        label: t('Tu Finisher Legacy Tag'),
+        text: t('Acércalo y abre tu historia.'),
     },
     {
         icon: IdCard,
-        label: 'Tu perfil de atleta',
-        text: 'Carreras, tiempos y medallas.',
+        label: t('Tu perfil de atleta'),
+        text: t('Carreras, tiempos y medallas.'),
     },
     {
         icon: Camera,
-        label: 'Tus fotos de evento',
-        text: 'Encuéntralas por tu número.',
+        label: t('Tus fotos de evento'),
+        text: t('Encuéntralas por tu número.'),
     },
     {
         icon: Users,
-        label: 'Una comunidad que celebra',
-        text: 'Comparte y sigue a otros.',
+        label: t('Una comunidad que celebra'),
+        text: t('Comparte y sigue a otros.'),
     },
-];
+]);
 const year = new Date().getFullYear();
 </script>
 
@@ -56,7 +60,7 @@ const year = new Date().getFullYear();
                 <Link
                     :href="home()"
                     class="fl-press w-fit rounded-lg focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-4 focus-visible:outline-none"
-                    aria-label="Finisher Legacy — Inicio"
+                    :aria-label="$t('Finisher Legacy — Inicio')"
                 >
                     <img
                         src="/images/brand/logo/fl-firma-horizontal-claro.png"
@@ -71,15 +75,20 @@ const year = new Date().getFullYear();
                     <h2
                         class="fl-auth-rise max-w-md font-heading text-[2.6rem] leading-[1.08] font-semibold tracking-tight xl:text-5xl"
                     >
-                        Tu esfuerzo merece
-                        <span class="text-fl-gold-dim">una historia.</span>
+                        {{ $t('Tu esfuerzo merece') }}
+                        <span class="text-fl-gold-dim">{{
+                            $t('una historia.')
+                        }}</span>
                     </h2>
                     <p
                         class="fl-auth-rise mt-4 max-w-sm text-[15px] leading-relaxed text-muted-foreground"
                         style="animation-delay: 80ms"
                     >
-                        Guarda cada meta cruzada en un lugar que puedes tocar,
-                        compartir y conservar para siempre.
+                        {{
+                            $t(
+                                'Guarda cada meta cruzada en un lugar que puedes tocar, compartir y conservar para siempre.',
+                            )
+                        }}
                     </p>
 
                     <ul class="mt-10 grid max-w-lg grid-cols-2 gap-3">
@@ -132,9 +141,9 @@ const year = new Date().getFullYear();
                             width="1200"
                             height="100"
                         />
-                        <span class="text-sm text-white/80"
-                            >Haz que perdure.</span
-                        >
+                        <span class="text-sm text-white/80">{{
+                            $t('Haz que perdure.')
+                        }}</span>
                     </figcaption>
                 </figure>
 
@@ -159,7 +168,7 @@ const year = new Date().getFullYear();
                 <Link
                     :href="home()"
                     class="fl-press rounded-lg focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-4 focus-visible:outline-none lg:hidden"
-                    aria-label="Finisher Legacy — Inicio"
+                    :aria-label="$t('Finisher Legacy — Inicio')"
                 >
                     <img
                         src="/images/brand/logo/fl-firma-horizontal-claro.png"
@@ -177,8 +186,10 @@ const year = new Date().getFullYear();
                         class="size-4 transition-transform duration-300 group-hover:-translate-x-0.5"
                         aria-hidden="true"
                     />
-                    <span class="hidden sm:inline">Volver al sitio</span>
-                    <span class="sm:hidden">Inicio</span>
+                    <span class="hidden sm:inline">{{
+                        $t('Volver al sitio')
+                    }}</span>
+                    <span class="sm:hidden">{{ $t('Inicio') }}</span>
                 </Link>
             </header>
 
@@ -200,13 +211,17 @@ const year = new Date().getFullYear();
                         <h1
                             class="font-heading text-[1.9rem] leading-tight font-semibold tracking-tight sm:text-[2.25rem]"
                         >
-                            {{ title }}
+                            <!-- Pages mark these with t(); translating again
+                                 here covers a page module that was loaded
+                                 before the catalog (an already translated
+                                 text comes back unchanged). -->
+                            {{ title ? $t(title) : '' }}
                         </h1>
                         <p
                             v-if="description"
                             class="mt-2 text-[15px] leading-relaxed text-muted-foreground"
                         >
-                            {{ description }}
+                            {{ $t(description) }}
                         </p>
                     </div>
 
@@ -222,17 +237,17 @@ const year = new Date().getFullYear();
                     <Link
                         :href="privacy()"
                         class="rounded-md px-2 py-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-                        >Privacidad</Link
+                        >{{ $t('Privacidad') }}</Link
                     >
                     <Link
                         :href="terms()"
                         class="rounded-md px-2 py-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-                        >Términos</Link
+                        >{{ $t('Términos') }}</Link
                     >
                     <Link
                         href="/contact"
                         class="rounded-md px-2 py-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-                        >Ayuda</Link
+                        >{{ $t('Ayuda') }}</Link
                     >
                 </nav>
             </footer>

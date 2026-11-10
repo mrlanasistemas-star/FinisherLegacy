@@ -52,6 +52,7 @@ import type {
 } from '@/components/legacy/editor/types';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { show as storyShow } from '@/routes/legacy/story';
 import {
     archive,
@@ -125,6 +126,8 @@ const props = defineProps<{
         max_video_seconds: number;
     };
 }>();
+
+const { t, tc } = useI18n();
 
 /** Race fields the linked participation may answer officially. */
 const EXTRA_RACE_FIELDS = [
@@ -286,13 +289,14 @@ function uploadOne(
                     item.error =
                         errors.file ??
                         errors.role ??
-                        'No pudimos subir este archivo.';
+                        t('No pudimos subir este archivo.');
                 },
                 onFinish: () => {
                     if (item.state === 'uploading') {
                         item.state = 'error';
-                        item.error =
-                            'Se interrumpió la subida. Intenta de nuevo.';
+                        item.error = t(
+                            'Se interrumpió la subida. Intenta de nuevo.',
+                        );
                     }
 
                     resolve();
@@ -335,15 +339,34 @@ function roomFor(role: Role): number {
     return Math.max(0, props.quota[kind].remaining);
 }
 
-const SUCCESS: Record<Role, [string, string]> = {
-    photo: ['Foto agregada.', 'fotos agregadas.'],
-    video: [
-        'Video subido. Lo estamos preparando.',
-        'videos subidos. Los estamos preparando.',
-    ],
-    audio: ['Mensaje de voz guardado.', 'mensajes de voz guardados.'],
-    certificate: ['Certificado guardado.', 'certificados guardados.'],
-};
+function successMessage(role: Role, count: number): string {
+    switch (role) {
+        case 'photo':
+            return tc('Foto agregada.|{count} fotos agregadas.', count);
+        case 'video':
+            return tc(
+                'Video subido. Lo estamos preparando.|{count} videos subidos. Los estamos preparando.',
+                count,
+            );
+        case 'audio':
+            return tc(
+                'Mensaje de voz guardado.|{count} mensajes de voz guardados.',
+                count,
+            );
+        default:
+            return tc(
+                'Certificado guardado.|{count} certificados guardados.',
+                count,
+            );
+    }
+}
+
+/** The sentence around the "Oficial" badge, split where the badge goes. */
+const officialHint = computed(() =>
+    t(
+        'Aparecen en tu recuerdo. Los que vienen de los resultados del evento llevan la marca {badge} y no se editan; lo demás es opcional.',
+    ).split('{badge}'),
+);
 
 async function enqueue(files: FileList | null, role: Role) {
     if (!files || files.length === 0) {
@@ -377,16 +400,21 @@ async function enqueue(files: FileList | null, role: Role) {
             item.state = 'error';
             item.error =
                 kind === 'photos'
-                    ? `Llegaste al límite de ${props.quota.photos.limit} fotos.`
+                    ? t('Llegaste al límite de {limit} fotos.', {
+                          limit: props.quota.photos.limit,
+                      })
                     : kind === 'videos'
-                      ? `Llegaste al límite de ${props.quota.videos.limit} ${props.quota.videos.limit === 1 ? 'video' : 'videos'}.`
-                      : 'Llegaste al límite de mensajes de voz.';
+                      ? tc(
+                            'Llegaste al límite de {count} video.|Llegaste al límite de {count} videos.',
+                            props.quota.videos.limit,
+                        )
+                      : t('Llegaste al límite de mensajes de voz.');
             continue;
         }
 
         if (file.size > maxMb * 1024 * 1024) {
             item.state = 'error';
-            item.error = `Pesa más de ${maxMb} MB.`;
+            item.error = t('Pesa más de {size} MB.', { size: maxMb });
             continue;
         }
 
@@ -404,8 +432,13 @@ async function enqueue(files: FileList | null, role: Role) {
                 item.state = 'error';
                 item.error =
                     role === 'video'
-                        ? `Dura más de ${humanSeconds(max)}. Recórtalo y vuelve a subirlo.`
-                        : `Dura más de ${humanSeconds(max)}.`;
+                        ? t(
+                              'Dura más de {duration}. Recórtalo y vuelve a subirlo.',
+                              { duration: humanSeconds(max) },
+                          )
+                        : t('Dura más de {duration}.', {
+                              duration: humanSeconds(max),
+                          });
                 continue;
             }
         }
@@ -420,9 +453,7 @@ async function enqueue(files: FileList | null, role: Role) {
     const done = items.filter(([, item]) => item.state === 'done').length;
 
     if (done > 0) {
-        toast.success(
-            done === 1 ? SUCCESS[role][0] : `${done} ${SUCCESS[role][1]}`,
-        );
+        toast.success(successMessage(role, done));
     }
 
     setTimeout(() => {
@@ -560,7 +591,7 @@ function remove(item: EditorMediaItem) {
         {
             preserveScroll: true,
             only: MEDIA_PROPS,
-            onSuccess: () => toast.success('Listo, lo quitamos.'),
+            onSuccess: () => toast.success(t('Listo, lo quitamos.')),
         },
     );
 }
@@ -620,7 +651,7 @@ const playing = ref<number | null>(null);
 </script>
 
 <template>
-    <Head :title="`Editar · ${story.title}`" />
+    <Head :title="$t('Editar · {title}', { title: story.title })" />
 
     <div class="fl-container py-8 pb-32 md:py-12">
         <div class="mx-auto max-w-2xl">
@@ -630,7 +661,7 @@ const playing = ref<number | null>(null);
                     class="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft class="size-4" aria-hidden="true" />
-                    Mi Legacy
+                    {{ $t('Mi Legacy') }}
                 </Link>
                 <div class="flex flex-wrap justify-end gap-2">
                     <Link
@@ -638,14 +669,14 @@ const playing = ref<number | null>(null);
                         class="inline-flex h-10 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-semibold transition hover:border-fl-gold hover:bg-fl-paper"
                     >
                         <Frame class="size-4" aria-hidden="true" />
-                        Portarretrato
+                        {{ $t('Portarretrato') }}
                     </Link>
                     <Link
                         :href="storyShow(story.public_id).url"
                         class="inline-flex h-10 items-center gap-1.5 rounded-full bg-fl-black px-4 text-sm font-semibold text-white"
                     >
                         <Eye class="size-4" aria-hidden="true" />
-                        Ver
+                        {{ $t('Ver') }}
                     </Link>
                 </div>
             </div>
@@ -655,7 +686,7 @@ const playing = ref<number | null>(null);
                     <LegacyTagArt :tag="story.tag" :tilt="false" />
                 </div>
                 <div class="min-w-0">
-                    <p class="fl-eyebrow">Tu recuerdo</p>
+                    <p class="fl-eyebrow">{{ $t('Tu recuerdo') }}</p>
                     <h1
                         class="fl-display mt-1 line-clamp-2 text-2xl sm:text-3xl"
                     >
@@ -685,12 +716,15 @@ const playing = ref<number | null>(null);
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="min-w-0">
                         <h2 id="photos-h" class="text-lg font-semibold">
-                            Fotos
+                            {{ $t('Fotos') }}
                         </h2>
                         <p class="text-xs text-muted-foreground">
-                            La primera es la portada. JPG, PNG o WebP de hasta
-                            {{ limits.max_photo_mb }} MB · arrastra aquí tus
-                            fotos; arrástralas entre sí para ordenarlas.
+                            {{
+                                $t(
+                                    'La primera es la portada. JPG, PNG o WebP de hasta {size} MB · arrastra aquí tus fotos; arrástralas entre sí para ordenarlas.',
+                                    { size: limits.max_photo_mb },
+                                )
+                            }}
                         </p>
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2">
@@ -701,7 +735,7 @@ const playing = ref<number | null>(null);
                             @click="pickingPurchased = true"
                         >
                             <Images class="size-4" aria-hidden="true" />
-                            Agregar fotos que compré
+                            {{ $t('Agregar fotos que compré') }}
                         </button>
                         <label
                             class="inline-flex h-11 cursor-pointer items-center gap-2 rounded-full bg-fl-black px-4 text-sm font-semibold text-white transition focus-within:ring-4 focus-within:ring-fl-gold/40 hover:bg-fl-graphite"
@@ -711,7 +745,7 @@ const playing = ref<number | null>(null);
                             :aria-disabled="photosFull"
                         >
                             <ImagePlus class="size-4" aria-hidden="true" />
-                            Subir
+                            {{ $t('Subir') }}
                             <input
                                 type="file"
                                 class="sr-only"
@@ -769,7 +803,10 @@ const playing = ref<number | null>(null);
                             <img
                                 v-if="photo.thumb_url"
                                 :src="photo.thumb_url"
-                                :alt="photo.caption ?? `Foto ${i + 1}`"
+                                :alt="
+                                    photo.caption ??
+                                    $t('Foto {number}', { number: i + 1 })
+                                "
                                 class="size-full object-cover transition duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                                 loading="lazy"
                             />
@@ -781,12 +818,12 @@ const playing = ref<number | null>(null);
                             <span
                                 v-if="i === 0"
                                 class="absolute top-2 left-2 rounded-full bg-fl-black/80 px-2.5 py-1 text-[11px] font-semibold text-fl-gold-soft"
-                                >Portada</span
+                                >{{ $t('Portada') }}</span
                             >
                             <span
                                 v-if="photo.source === 'purchased'"
                                 class="absolute top-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-fl-gold-ink"
-                                >Comprada</span
+                                >{{ $t('Comprada') }}</span
                             >
                             <span
                                 v-if="isFailed(photo)"
@@ -796,14 +833,18 @@ const playing = ref<number | null>(null);
                                     class="size-3"
                                     aria-hidden="true"
                                 />
-                                No se pudo procesar · quítala y súbela de nuevo
+                                {{
+                                    $t(
+                                        'No se pudo procesar · quítala y súbela de nuevo',
+                                    )
+                                }}
                             </span>
                             <span
                                 v-else-if="isProcessing(photo)"
                                 class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium"
                             >
                                 <Spinner class="size-3" />
-                                Procesando
+                                {{ $t('Procesando') }}
                             </span>
                         </div>
                         <div class="flex items-center gap-1 p-2">
@@ -815,8 +856,12 @@ const playing = ref<number | null>(null);
                                 type="text"
                                 maxlength="280"
                                 :value="photo.caption ?? ''"
-                                placeholder="Agrega un pie de foto"
-                                :aria-label="`Pie de la foto ${i + 1}`"
+                                :placeholder="$t('Agrega un pie de foto')"
+                                :aria-label="
+                                    $t('Pie de la foto {number}', {
+                                        number: i + 1,
+                                    })
+                                "
                                 class="h-10 min-w-0 flex-1 rounded-lg px-2 text-sm outline-none focus:bg-fl-paper"
                                 @blur="
                                     saveCaption(
@@ -833,7 +878,11 @@ const playing = ref<number | null>(null);
                                 type="button"
                                 class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
                                 :disabled="i === 0"
-                                :aria-label="`Mover foto ${i + 1} antes`"
+                                :aria-label="
+                                    $t('Mover foto {number} antes', {
+                                        number: i + 1,
+                                    })
+                                "
                                 @click="move(story.photos, photo, -1)"
                             >
                                 <ArrowUp class="size-4" />
@@ -842,7 +891,11 @@ const playing = ref<number | null>(null);
                                 type="button"
                                 class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
                                 :disabled="i === story.photos.length - 1"
-                                :aria-label="`Mover foto ${i + 1} después`"
+                                :aria-label="
+                                    $t('Mover foto {number} después', {
+                                        number: i + 1,
+                                    })
+                                "
                                 @click="move(story.photos, photo, 1)"
                             >
                                 <ArrowDown class="size-4" />
@@ -857,8 +910,10 @@ const playing = ref<number | null>(null);
                                 "
                                 :aria-label="
                                     confirmingRemove === photo.id
-                                        ? 'Confirmar: quitar foto'
-                                        : `Quitar foto ${i + 1}`
+                                        ? $t('Confirmar: quitar foto')
+                                        : $t('Quitar foto {number}', {
+                                              number: i + 1,
+                                          })
                                 "
                                 @click="remove(photo)"
                             >
@@ -880,11 +935,14 @@ const playing = ref<number | null>(null);
                         class="size-6 text-fl-gold-ink"
                         aria-hidden="true"
                     />
-                    <span class="font-semibold text-foreground"
-                        >Sube la foto que mejor cuente tu carrera</span
-                    >
-                    Arrastra tus fotos aquí o toca para elegirlas. La primera
-                    será la portada.
+                    <span class="font-semibold text-foreground">{{
+                        $t('Sube la foto que mejor cuente tu carrera')
+                    }}</span>
+                    {{
+                        $t(
+                            'Arrastra tus fotos aquí o toca para elegirlas. La primera será la portada.',
+                        )
+                    }}
                     <input
                         type="file"
                         class="sr-only"
@@ -918,12 +976,20 @@ const playing = ref<number | null>(null);
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="min-w-0">
                         <h2 id="videos-h" class="text-lg font-semibold">
-                            Videos
+                            {{ $t('Videos') }}
                         </h2>
                         <p class="text-xs text-muted-foreground">
-                            MP4, MOV o WebM de hasta
-                            {{ humanSeconds(limits.max_video_seconds) }} y
-                            {{ limits.max_video_mb }} MB · arrástralos aquí.
+                            {{
+                                $t(
+                                    'MP4, MOV o WebM de hasta {duration} y {size} MB · arrástralos aquí.',
+                                    {
+                                        duration: humanSeconds(
+                                            limits.max_video_seconds,
+                                        ),
+                                        size: limits.max_video_mb,
+                                    },
+                                )
+                            }}
                         </p>
                     </div>
                     <label
@@ -934,7 +1000,7 @@ const playing = ref<number | null>(null);
                         :aria-disabled="videosFull"
                     >
                         <Film class="size-4" aria-hidden="true" />
-                        Subir video
+                        {{ $t('Subir video') }}
                         <input
                             type="file"
                             class="sr-only"
@@ -983,7 +1049,10 @@ const playing = ref<number | null>(null);
                                         (video.poster_url ??
                                             video.thumb_url) as string
                                     "
-                                    :alt="video.caption ?? `Video ${i + 1}`"
+                                    :alt="
+                                        video.caption ??
+                                        $t('Video {number}', { number: i + 1 })
+                                    "
                                     loading="lazy"
                                     class="size-full object-cover"
                                 />
@@ -1008,7 +1077,11 @@ const playing = ref<number | null>(null);
                                     "
                                     type="button"
                                     class="group/play absolute inset-0 grid place-items-center focus-visible:outline-none"
-                                    :aria-label="`Reproducir video ${i + 1}`"
+                                    :aria-label="
+                                        $t('Reproducir video {number}', {
+                                            number: i + 1,
+                                        })
+                                    "
                                     @click="playing = video.id"
                                 >
                                     <span
@@ -1037,31 +1110,42 @@ const playing = ref<number | null>(null);
                                     class="size-3"
                                     aria-hidden="true"
                                 />
-                                No se pudo procesar
+                                {{ $t('No se pudo procesar') }}
                             </span>
                             <span
                                 v-else-if="isProcessing(video)"
                                 class="absolute right-2 bottom-2 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium"
                             >
                                 <Spinner class="size-3" />
-                                Procesando…
+                                {{ $t('Procesando…') }}
                             </span>
                         </div>
                         <p
                             v-if="isFailed(video)"
                             class="px-3 pt-2 text-xs text-red-700"
                         >
-                            Puede que dure más de
-                            {{ humanSeconds(limits.max_video_seconds) }} o que
-                            el archivo esté dañado. Quítalo y sube otro.
+                            {{
+                                $t(
+                                    'Puede que dure más de {duration} o que el archivo esté dañado. Quítalo y sube otro.',
+                                    {
+                                        duration: humanSeconds(
+                                            limits.max_video_seconds,
+                                        ),
+                                    },
+                                )
+                            }}
                         </p>
                         <div class="flex items-center gap-1 p-2">
                             <input
                                 type="text"
                                 maxlength="280"
                                 :value="video.caption ?? ''"
-                                placeholder="Agrega una descripción"
-                                :aria-label="`Descripción del video ${i + 1}`"
+                                :placeholder="$t('Agrega una descripción')"
+                                :aria-label="
+                                    $t('Descripción del video {number}', {
+                                        number: i + 1,
+                                    })
+                                "
                                 class="h-10 min-w-0 flex-1 rounded-lg px-2 text-sm outline-none focus:bg-fl-paper"
                                 @blur="
                                     saveCaption(
@@ -1079,7 +1163,11 @@ const playing = ref<number | null>(null);
                                 type="button"
                                 class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
                                 :disabled="i === 0"
-                                :aria-label="`Mover video ${i + 1} antes`"
+                                :aria-label="
+                                    $t('Mover video {number} antes', {
+                                        number: i + 1,
+                                    })
+                                "
                                 @click="move(videos, video, -1)"
                             >
                                 <ArrowUp class="size-4" />
@@ -1089,7 +1177,11 @@ const playing = ref<number | null>(null);
                                 type="button"
                                 class="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-30"
                                 :disabled="i === videos.length - 1"
-                                :aria-label="`Mover video ${i + 1} después`"
+                                :aria-label="
+                                    $t('Mover video {number} después', {
+                                        number: i + 1,
+                                    })
+                                "
                                 @click="move(videos, video, 1)"
                             >
                                 <ArrowDown class="size-4" />
@@ -1104,8 +1196,10 @@ const playing = ref<number | null>(null);
                                 "
                                 :aria-label="
                                     confirmingRemove === video.id
-                                        ? 'Confirmar: quitar video'
-                                        : `Quitar video ${i + 1}`
+                                        ? $t('Confirmar: quitar video')
+                                        : $t('Quitar video {number}', {
+                                              number: i + 1,
+                                          })
                                 "
                                 @click="remove(video)"
                             >
@@ -1124,10 +1218,10 @@ const playing = ref<number | null>(null);
                     "
                 >
                     <Film class="size-6 text-fl-gold-ink" aria-hidden="true" />
-                    <span class="font-semibold text-foreground"
-                        >Sube el video de tu llegada a la meta</span
-                    >
-                    Arrastra tu video aquí o toca para elegirlo.
+                    <span class="font-semibold text-foreground">{{
+                        $t('Sube el video de tu llegada a la meta')
+                    }}</span>
+                    {{ $t('Arrastra tu video aquí o toca para elegirlo.') }}
                     <input
                         type="file"
                         class="sr-only"
@@ -1183,9 +1277,9 @@ const playing = ref<number | null>(null);
                             u.state === 'uploading'
                                 ? `${u.progress}%`
                                 : u.state === 'waiting'
-                                  ? 'En espera'
+                                  ? $t('En espera')
                                   : u.state === 'done'
-                                    ? 'Listo'
+                                    ? $t('Listo')
                                     : u.error
                         }}</span
                     >
@@ -1195,7 +1289,7 @@ const playing = ref<number | null>(null);
                         class="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold underline-offset-4 hover:underline"
                         @click="dismissUpload(u.key)"
                     >
-                        Cerrar
+                        {{ $t('Cerrar') }}
                     </button>
                 </li>
             </ul>
@@ -1204,19 +1298,19 @@ const playing = ref<number | null>(null);
                 <!-- Title + race -->
                 <section class="fl-card p-5 sm:p-6" aria-labelledby="race-h">
                     <h2 id="race-h" class="text-lg font-semibold">
-                        Tu carrera
+                        {{ $t('Tu carrera') }}
                     </h2>
 
                     <div class="mt-4">
-                        <label for="title" class="text-sm font-medium"
-                            >Título</label
-                        >
+                        <label for="title" class="text-sm font-medium">{{
+                            $t('Título')
+                        }}</label>
                         <input
                             id="title"
                             v-model="form.title"
                             type="text"
                             maxlength="120"
-                            placeholder="Mi primer medio Ironman"
+                            :placeholder="$t('Mi primer medio Ironman')"
                             :class="inputClass"
                         />
                         <InputError :message="form.errors.title" />
@@ -1224,7 +1318,7 @@ const playing = ref<number | null>(null);
 
                     <fieldset class="mt-5">
                         <legend class="text-sm font-medium">
-                            ¿De qué carrera es?
+                            {{ $t('¿De qué carrera es?') }}
                         </legend>
                         <div class="mt-2 grid gap-2">
                             <label
@@ -1253,7 +1347,7 @@ const playing = ref<number | null>(null);
                                 />
                                 <span class="min-w-0 text-sm">
                                     <span class="block font-semibold">{{
-                                        p.event_name ?? 'Carrera'
+                                        p.event_name ?? $t('Carrera')
                                     }}</span>
                                     <span
                                         class="legacy-numeric text-muted-foreground"
@@ -1284,7 +1378,7 @@ const playing = ref<number | null>(null);
                                     :checked="form.race_mode === 'manual'"
                                     @change="form.race_mode = 'manual'"
                                 />
-                                Otra carrera (la escribo yo)
+                                {{ $t('Otra carrera (la escribo yo)') }}
                             </label>
                         </div>
                         <InputError
@@ -1298,9 +1392,9 @@ const playing = ref<number | null>(null);
                         class="mt-4 grid gap-4 rounded-xl bg-fl-paper p-4"
                     >
                         <div>
-                            <label for="ev" class="text-sm font-medium"
-                                >Nombre de la carrera</label
-                            >
+                            <label for="ev" class="text-sm font-medium">{{
+                                $t('Nombre de la carrera')
+                            }}</label>
                             <input
                                 id="ev"
                                 v-model="form.event_name"
@@ -1312,9 +1406,9 @@ const playing = ref<number | null>(null);
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label for="dist" class="text-sm font-medium"
-                                    >Distancia</label
-                                >
+                                <label for="dist" class="text-sm font-medium">{{
+                                    $t('Distancia')
+                                }}</label>
                                 <input
                                     id="dist"
                                     v-model="form.distance"
@@ -1325,9 +1419,9 @@ const playing = ref<number | null>(null);
                                 />
                             </div>
                             <div>
-                                <label for="time" class="text-sm font-medium"
-                                    >Tiempo</label
-                                >
+                                <label for="time" class="text-sm font-medium">{{
+                                    $t('Tiempo')
+                                }}</label>
                                 <input
                                     id="time"
                                     v-model="form.result_time"
@@ -1343,10 +1437,10 @@ const playing = ref<number | null>(null);
                             </div>
                             <div class="col-span-2">
                                 <label for="pos" class="text-sm font-medium"
-                                    >Lugar en la clasificación
+                                    >{{ $t('Lugar en la clasificación') }}
                                     <span
                                         class="font-normal text-muted-foreground"
-                                        >(opcional)</span
+                                        >{{ $t('(opcional)') }}</span
                                     ></label
                                 >
                                 <input
@@ -1354,7 +1448,9 @@ const playing = ref<number | null>(null);
                                     v-model="form.result_position"
                                     type="text"
                                     maxlength="60"
-                                    placeholder="12 de 340 · 3º en mi categoría"
+                                    :placeholder="
+                                        $t('12 de 340 · 3º en mi categoría')
+                                    "
                                     :class="inputClass"
                                 />
                                 <InputError
@@ -1362,9 +1458,9 @@ const playing = ref<number | null>(null);
                                 />
                             </div>
                             <div>
-                                <label for="date" class="text-sm font-medium"
-                                    >Fecha</label
-                                >
+                                <label for="date" class="text-sm font-medium">{{
+                                    $t('Fecha')
+                                }}</label>
                                 <input
                                     id="date"
                                     v-model="form.race_date"
@@ -1374,9 +1470,9 @@ const playing = ref<number | null>(null);
                                 <InputError :message="form.errors.race_date" />
                             </div>
                             <div>
-                                <label for="loc" class="text-sm font-medium"
-                                    >Lugar</label
-                                >
+                                <label for="loc" class="text-sm font-medium">{{
+                                    $t('Lugar')
+                                }}</label>
                                 <input
                                     id="loc"
                                     v-model="form.location"
@@ -1391,22 +1487,21 @@ const playing = ref<number | null>(null);
                     <!-- Race data (official values are read-only) -->
                     <div class="mt-6 border-t border-border pt-5">
                         <h3 class="text-sm font-semibold">
-                            Datos de tu carrera
+                            {{ $t('Datos de tu carrera') }}
                         </h3>
                         <p class="mt-0.5 text-xs text-muted-foreground">
-                            Aparecen en tu recuerdo. Los que vienen de los
-                            resultados del evento llevan la marca
-                            <span class="font-semibold text-fl-gold-ink"
-                                >Oficial</span
-                            >
-                            y no se editan; lo demás es opcional.
+                            {{ officialHint[0]
+                            }}<span class="font-semibold text-fl-gold-ink">{{
+                                $t('Oficial')
+                            }}</span
+                            >{{ officialHint[1] }}
                         </p>
 
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <RaceField
                                 id="rd-name"
                                 class="sm:col-span-2"
-                                label="Tu nombre en el recuerdo"
+                                :label="$t('Tu nombre en el recuerdo')"
                                 :official="false"
                                 :error="form.errors.athlete_display_name"
                             >
@@ -1420,7 +1515,7 @@ const playing = ref<number | null>(null);
                                         String(
                                             raceData.values
                                                 .athlete_display_name ??
-                                                'Tu nombre completo',
+                                                $t('Tu nombre completo'),
                                         )
                                     "
                                     :class="inputClass"
@@ -1429,7 +1524,7 @@ const playing = ref<number | null>(null);
 
                             <RaceField
                                 id="rd-bib"
-                                label="Número de corredor"
+                                :label="$t('Número de corredor')"
                                 optional
                                 :official="isOfficial('bib_number')"
                                 :official-value="officialValue('bib_number')"
@@ -1447,7 +1542,7 @@ const playing = ref<number | null>(null);
 
                             <RaceField
                                 id="rd-pace"
-                                label="Ritmo"
+                                :label="$t('Ritmo')"
                                 optional
                                 :official="isOfficial('pace')"
                                 :official-value="officialValue('pace')"
@@ -1468,7 +1563,7 @@ const playing = ref<number | null>(null);
                                     "
                                     class="mt-1.5 text-xs text-muted-foreground"
                                 >
-                                    Sugerido:
+                                    {{ $t('Sugerido:') }}
                                     <span class="legacy-numeric font-medium">{{
                                         raceData.suggested_pace
                                     }}</span>
@@ -1479,7 +1574,7 @@ const playing = ref<number | null>(null);
                                             form.pace = raceData.suggested_pace
                                         "
                                     >
-                                        Usar
+                                        {{ $t('Usar') }}
                                     </button>
                                 </p>
                             </RaceField>
@@ -1487,7 +1582,7 @@ const playing = ref<number | null>(null);
                             <RaceField
                                 id="rd-cat"
                                 class="sm:col-span-2"
-                                label="Categoría"
+                                :label="$t('Categoría')"
                                 optional
                                 :official="isOfficial('category')"
                                 :official-value="officialValue('category')"
@@ -1498,14 +1593,14 @@ const playing = ref<number | null>(null);
                                     v-model="form.category"
                                     type="text"
                                     maxlength="40"
-                                    placeholder="Femenil 30-34"
+                                    :placeholder="$t('Femenil 30-34')"
                                     :class="inputClass"
                                 />
                             </RaceField>
 
                             <RaceField
                                 id="rd-catpos"
-                                label="Lugar en tu categoría"
+                                :label="$t('Lugar en tu categoría')"
                                 optional
                                 :official="isOfficial('category_position')"
                                 :official-value="
@@ -1518,14 +1613,14 @@ const playing = ref<number | null>(null);
                                     v-model="form.category_position"
                                     type="text"
                                     maxlength="20"
-                                    placeholder="3 de 48"
+                                    :placeholder="$t('3 de 48')"
                                     :class="[inputClass, 'legacy-numeric']"
                                 />
                             </RaceField>
 
                             <RaceField
                                 id="rd-genpos"
-                                label="Lugar por rama"
+                                :label="$t('Lugar por rama')"
                                 optional
                                 :official="isOfficial('gender_position')"
                                 :official-value="
@@ -1538,14 +1633,14 @@ const playing = ref<number | null>(null);
                                     v-model="form.gender_position"
                                     type="text"
                                     maxlength="20"
-                                    placeholder="25 de 310"
+                                    :placeholder="$t('25 de 310')"
                                     :class="[inputClass, 'legacy-numeric']"
                                 />
                             </RaceField>
 
                             <RaceField
                                 id="rd-status"
-                                label="Resultado"
+                                :label="$t('Resultado')"
                                 optional
                                 :official="isOfficial('finish_status')"
                                 :official-value="finishStatusLabel"
@@ -1556,7 +1651,9 @@ const playing = ref<number | null>(null);
                                     v-model="form.finish_status"
                                     :class="inputClass"
                                 >
-                                    <option value="">Sin indicar</option>
+                                    <option value="">
+                                        {{ $t('Sin indicar') }}
+                                    </option>
                                     <option
                                         v-for="s in finishStatuses"
                                         :key="s.value"
@@ -1569,7 +1666,7 @@ const playing = ref<number | null>(null);
 
                             <RaceField
                                 id="rd-elev"
-                                label="Desnivel positivo (m)"
+                                :label="$t('Desnivel positivo (m)')"
                                 optional
                                 :official="isOfficial('elevation_gain_m')"
                                 :official-value="
@@ -1594,7 +1691,7 @@ const playing = ref<number | null>(null);
                                 v-if="sports.length || isOfficial('sport')"
                                 id="rd-sport"
                                 class="sm:col-span-2"
-                                label="Deporte"
+                                :label="$t('Deporte')"
                                 optional
                                 :official="isOfficial('sport')"
                                 :official-value="raceData.sport?.name ?? null"
@@ -1605,7 +1702,9 @@ const playing = ref<number | null>(null);
                                     v-model="form.sport_id"
                                     :class="inputClass"
                                 >
-                                    <option value="">Sin indicar</option>
+                                    <option value="">
+                                        {{ $t('Sin indicar') }}
+                                    </option>
                                     <option
                                         v-for="s in sports"
                                         :key="s.id"
@@ -1622,58 +1721,62 @@ const playing = ref<number | null>(null);
                 <!-- Dedication + words -->
                 <section class="fl-card p-5 sm:p-6" aria-labelledby="words-h">
                     <h2 id="words-h" class="text-lg font-semibold">
-                        Tus palabras
+                        {{ $t('Tus palabras') }}
                     </h2>
                     <div class="mt-4">
                         <label for="recipient" class="text-sm font-medium"
-                            >¿Para quién es?
-                            <span class="font-normal text-muted-foreground"
-                                >(opcional)</span
-                            ></label
+                            >{{ $t('¿Para quién es?') }}
+                            <span class="font-normal text-muted-foreground">{{
+                                $t('(opcional)')
+                            }}</span></label
                         >
                         <input
                             id="recipient"
                             v-model="form.recipient_label"
                             type="text"
                             maxlength="80"
-                            placeholder="Mamá"
+                            :placeholder="$t('Mamá')"
                             :class="inputClass"
                         />
                     </div>
                     <div class="mt-4">
-                        <label for="dedication" class="text-sm font-medium"
-                            >Dedicatoria</label
-                        >
+                        <label for="dedication" class="text-sm font-medium">{{
+                            $t('Dedicatoria')
+                        }}</label>
                         <textarea
                             id="dedication"
                             v-model="form.dedication"
                             rows="3"
                             maxlength="600"
-                            placeholder="Cada kilómetro fue por ti."
+                            :placeholder="$t('Cada kilómetro fue por ti.')"
                             :class="areaClass"
                         />
                         <InputError :message="form.errors.dedication" />
                     </div>
                     <div class="mt-4">
-                        <label for="body" class="text-sm font-medium"
-                            >Tu historia</label
-                        >
+                        <label for="body" class="text-sm font-medium">{{
+                            $t('Tu historia')
+                        }}</label>
                         <textarea
                             id="body"
                             v-model="form.body"
                             rows="7"
                             maxlength="8000"
-                            placeholder="Cómo llegaste a la salida, qué pasó en el kilómetro 30, quién te esperaba en la meta…"
+                            :placeholder="
+                                $t(
+                                    'Cómo llegaste a la salida, qué pasó en el kilómetro 30, quién te esperaba en la meta…',
+                                )
+                            "
                             :class="areaClass"
                         />
                         <InputError :message="form.errors.body" />
                     </div>
                     <div class="mt-4">
                         <label for="link" class="text-sm font-medium"
-                            >Enlace
-                            <span class="font-normal text-muted-foreground"
-                                >(tu video, Strava…)</span
-                            ></label
+                            >{{ $t('Enlace') }}
+                            <span class="font-normal text-muted-foreground">{{
+                                $t('(tu video, Strava…)')
+                            }}</span></label
                         >
                         <input
                             id="link"
@@ -1694,7 +1797,7 @@ const playing = ref<number | null>(null);
                     aria-labelledby="extras-h"
                 >
                     <h2 id="extras-h" class="text-lg font-semibold">
-                        Voz y certificado
+                        {{ $t('Voz y certificado') }}
                     </h2>
 
                     <div
@@ -1715,7 +1818,7 @@ const playing = ref<number | null>(null);
                                     class="size-4 text-fl-gold-ink"
                                     aria-hidden="true"
                                 />
-                                Mensaje de voz
+                                {{ $t('Mensaje de voz') }}
                             </p>
                             <label
                                 class="inline-flex h-10 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-semibold focus-within:ring-4 focus-within:ring-fl-gold/30"
@@ -1727,10 +1830,10 @@ const playing = ref<number | null>(null);
                             >
                                 {{
                                     singleAudio && audios.length
-                                        ? 'Cambiar'
+                                        ? $t('Cambiar')
                                         : audios.length
-                                          ? 'Agregar otro'
-                                          : 'Subir audio'
+                                          ? $t('Agregar otro')
+                                          : $t('Subir audio')
                                 }}
                                 <input
                                     type="file"
@@ -1742,14 +1845,21 @@ const playing = ref<number | null>(null);
                             </label>
                         </div>
                         <p class="mt-1 text-xs text-muted-foreground">
-                            Hasta
-                            {{ humanSeconds(limits.max_audio_seconds) }} y
-                            {{ limits.max_audio_mb }} MB · M4A, MP3, AAC, WebM u
-                            OGG. Puedes arrastrarlo aquí.
+                            {{
+                                $t(
+                                    'Hasta {duration} y {size} MB · M4A, MP3, AAC, WebM u OGG. Puedes arrastrarlo aquí.',
+                                    {
+                                        duration: humanSeconds(
+                                            limits.max_audio_seconds,
+                                        ),
+                                        size: limits.max_audio_mb,
+                                    },
+                                )
+                            }}
                             <template
                                 v-if="singleAudio && quota.audio.limit === 1"
                             >
-                                Uno nuevo reemplaza al anterior.
+                                {{ $t('Uno nuevo reemplaza al anterior.') }}
                             </template>
                         </p>
                         <QuotaMeter
@@ -1792,8 +1902,10 @@ const playing = ref<number | null>(null);
                                     <Spinner v-else class="size-3.5" />
                                     {{
                                         isFailed(clip)
-                                            ? 'No se pudo procesar. Quítalo y sube otro.'
-                                            : 'Procesando…'
+                                            ? $t(
+                                                  'No se pudo procesar. Quítalo y sube otro.',
+                                              )
+                                            : $t('Procesando…')
                                     }}
                                 </span>
                                 <button
@@ -1806,8 +1918,13 @@ const playing = ref<number | null>(null);
                                     "
                                     :aria-label="
                                         confirmingRemove === clip.id
-                                            ? 'Confirmar: quitar mensaje de voz'
-                                            : `Quitar mensaje de voz ${i + 1}`
+                                            ? $t(
+                                                  'Confirmar: quitar mensaje de voz',
+                                              )
+                                            : $t(
+                                                  'Quitar mensaje de voz {number}',
+                                                  { number: i + 1 },
+                                              )
                                     "
                                     @click="remove(clip)"
                                 >
@@ -1826,12 +1943,16 @@ const playing = ref<number | null>(null);
                                     class="size-4 text-fl-gold-ink"
                                     aria-hidden="true"
                                 />
-                                Certificado
+                                {{ $t('Certificado') }}
                             </p>
                             <label
                                 class="inline-flex h-10 cursor-pointer items-center rounded-full border border-border px-4 text-sm font-semibold focus-within:ring-4 focus-within:ring-fl-gold/30"
                             >
-                                {{ story.certificate ? 'Cambiar' : 'Subir' }}
+                                {{
+                                    story.certificate
+                                        ? $t('Cambiar')
+                                        : $t('Subir')
+                                }}
                                 <input
                                     type="file"
                                     class="sr-only"
@@ -1841,8 +1962,11 @@ const playing = ref<number | null>(null);
                             </label>
                         </div>
                         <p class="mt-1 text-xs text-muted-foreground">
-                            PDF o imagen, hasta
-                            {{ limits.max_certificate_mb }} MB.
+                            {{
+                                $t('PDF o imagen, hasta {size} MB.', {
+                                    size: limits.max_certificate_mb,
+                                })
+                            }}
                         </p>
                         <div
                             v-if="story.certificate"
@@ -1854,7 +1978,7 @@ const playing = ref<number | null>(null);
                                 target="_blank"
                                 rel="noopener"
                                 class="min-w-0 flex-1 truncate text-fl-gold-ink underline underline-offset-4"
-                                >Ver certificado</a
+                                >{{ $t('Ver certificado') }}</a
                             >
                             <button
                                 type="button"
@@ -1864,7 +1988,7 @@ const playing = ref<number | null>(null);
                                         ? 'bg-red-50 text-red-700'
                                         : 'text-muted-foreground'
                                 "
-                                aria-label="Quitar certificado"
+                                :aria-label="$t('Quitar certificado')"
                                 @click="remove(story.certificate)"
                             >
                                 <Trash2 class="size-4" />
@@ -1876,7 +2000,7 @@ const playing = ref<number | null>(null);
                 <!-- Visibility -->
                 <section class="fl-card p-5 sm:p-6" aria-labelledby="vis-h">
                     <h2 id="vis-h" class="text-lg font-semibold">
-                        ¿Quién puede verlo?
+                        {{ $t('¿Quién puede verlo?') }}
                     </h2>
                     <div class="mt-4 grid gap-2">
                         <label
@@ -1917,7 +2041,7 @@ const playing = ref<number | null>(null);
                 <!-- Keep it / get help -->
                 <section
                     class="fl-card grid gap-3 p-5 sm:grid-cols-2 sm:p-6"
-                    aria-label="Descargar y ayuda"
+                    :aria-label="$t('Descargar y ayuda')"
                 >
                     <a
                         :href="archive(story.public_id).url"
@@ -1928,13 +2052,14 @@ const playing = ref<number | null>(null);
                             aria-hidden="true"
                         />
                         <span>
-                            <span class="block text-sm font-semibold"
-                                >Descargar mi recuerdo</span
-                            >
-                            <span class="block text-xs text-muted-foreground"
-                                >Fotos, videos, voz, certificado y tus palabras
-                                en un ZIP.</span
-                            >
+                            <span class="block text-sm font-semibold">{{
+                                $t('Descargar mi recuerdo')
+                            }}</span>
+                            <span class="block text-xs text-muted-foreground">{{
+                                $t(
+                                    'Fotos, videos, voz, certificado y tus palabras en un ZIP.',
+                                )
+                            }}</span>
                         </span>
                     </a>
                     <a
@@ -1946,14 +2071,19 @@ const playing = ref<number | null>(null);
                             aria-hidden="true"
                         />
                         <span>
-                            <span class="block text-sm font-semibold"
-                                >¿Necesitas ayuda?</span
-                            >
-                            <span class="block text-xs text-muted-foreground"
-                                >Escríbenos sobre tu tag o tu recuerdo ({{
-                                    story.display_code ?? story.public_id
-                                }}).</span
-                            >
+                            <span class="block text-sm font-semibold">{{
+                                $t('¿Necesitas ayuda?')
+                            }}</span>
+                            <span class="block text-xs text-muted-foreground">{{
+                                $t(
+                                    'Escríbenos sobre tu tag o tu recuerdo ({code}).',
+                                    {
+                                        code:
+                                            story.display_code ??
+                                            story.public_id,
+                                    },
+                                )
+                            }}</span>
                         </span>
                     </a>
                 </section>
@@ -1968,7 +2098,9 @@ const playing = ref<number | null>(null);
                     >
                         <Spinner v-if="form.processing" class="size-4" />
                         <template v-else>{{
-                            form.recentlySuccessful ? 'Guardado ✓' : 'Guardar'
+                            form.recentlySuccessful
+                                ? $t('Guardado ✓')
+                                : $t('Guardar')
                         }}</template>
                     </button>
                 </div>

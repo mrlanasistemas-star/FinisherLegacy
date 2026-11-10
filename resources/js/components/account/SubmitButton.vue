@@ -17,7 +17,7 @@ withDefaults(
     }>(),
     {
         processing: false,
-        processingLabel: 'Un momento…',
+        processingLabel: undefined,
         arrow: true,
         block: true,
     },
@@ -33,7 +33,9 @@ withDefaults(
         :aria-busy="processing"
     >
         <Spinner v-if="processing" class="size-[18px]" />
-        <span>{{ processing ? processingLabel : label }}</span>
+        <span>{{
+            processing ? (processingLabel ?? $t('Un momento…')) : label
+        }}</span>
         <ArrowRight
             v-if="arrow && !processing"
             class="size-4 transition-transform duration-300 group-hover:translate-x-0.5"

@@ -25,7 +25,7 @@ const sizes = {
         <AvatarImage
             v-if="photoUrl"
             :src="photoUrl"
-            :alt="`Foto de ${name}`"
+            :alt="$t('Foto de {name}', { name })"
             class="object-cover"
         />
         <AvatarFallback

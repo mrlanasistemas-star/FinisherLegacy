@@ -24,7 +24,7 @@ defineProps<{ post: CommunityPost }>();
         >
             <img
                 :src="post.media[0].url"
-                :alt="`Foto de ${post.author.name}`"
+                :alt="$t('Foto de {name}', { name: post.author.name })"
                 loading="lazy"
                 decoding="async"
                 class="size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"

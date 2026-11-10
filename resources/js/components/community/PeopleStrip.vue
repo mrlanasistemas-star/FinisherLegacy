@@ -24,7 +24,7 @@ const profile = computed(() => page.props.auth.profile);
     <div
         class="flex [scrollbar-width:none] gap-4 overflow-x-auto px-4 py-1 sm:px-1 [&::-webkit-scrollbar]:hidden"
         role="list"
-        aria-label="Personas"
+        :aria-label="$t('Personas')"
     >
         <div role="listitem" class="shrink-0">
             <button
@@ -37,7 +37,7 @@ const profile = computed(() => page.props.auth.profile);
                 >
                     <span class="block rounded-full bg-background p-[2px]">
                         <AthleteAvatar
-                            :name="user?.name ?? 'Tú'"
+                            :name="user?.name ?? $t('Tú')"
                             :photo-url="profile?.photo_url"
                             size="lg"
                         />
@@ -51,7 +51,7 @@ const profile = computed(() => page.props.auth.profile);
                 </span>
                 <span
                     class="w-full truncate text-center text-xs text-muted-foreground"
-                    >Publicar</span
+                    >{{ $t('Publicar') }}</span
                 >
             </button>
         </div>
@@ -65,7 +65,13 @@ const profile = computed(() => page.props.auth.profile);
             <Link
                 :href="person.username ? `/@${person.username}` : '#'"
                 class="group flex w-[4.5rem] flex-col items-center gap-1.5 focus-visible:outline-none"
-                :aria-label="`${person.name}${person.recent ? ', publicó recientemente' : ''}`"
+                :aria-label="
+                    person.recent
+                        ? $t('{name}, publicó recientemente', {
+                              name: person.name,
+                          })
+                        : person.name
+                "
             >
                 <span
                     class="rounded-full p-[3px] transition-transform group-hover:scale-[1.03] group-focus-visible:ring-2 group-focus-visible:ring-ring"

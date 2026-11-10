@@ -41,7 +41,9 @@ defineProps<{
             <div class="frame-base">
                 <img :src="monogram" alt="" class="frame-base-mark" />
                 <span class="frame-base-rule" aria-hidden="true" />
-                <span class="frame-base-text">Acerca tu celular</span>
+                <span class="frame-base-text">{{
+                    $t('Acerca tu celular')
+                }}</span>
             </div>
             <div class="frame-shadow" aria-hidden="true" />
         </div>

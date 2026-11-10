@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { useAuthGate } from '@/composables/useAuthGate';
+import { useI18n } from '@/i18n';
 import { celebrate, uncelebrate } from '@/routes/community/posts';
 import type { CommunityPost } from '@/types';
 
@@ -14,6 +15,7 @@ import type { CommunityPost } from '@/types';
  */
 export function useCelebrate(post: Ref<CommunityPost>) {
     const { requireAuth } = useAuthGate();
+    const { t, tc } = useI18n();
 
     const celebrated = ref(post.value.my_reactions.length > 0);
     const count = ref(post.value.reactions.total);
@@ -50,7 +52,9 @@ export function useCelebrate(post: Ref<CommunityPost>) {
                     celebrated.value = was;
                     count.value = Math.max(0, count.value + (next ? -1 : 1));
                     toast.error(
-                        'No pudimos registrar tu celebración. Intenta de nuevo.',
+                        t(
+                            'No pudimos registrar tu celebración. Intenta de nuevo.',
+                        ),
                     );
                 },
                 onFinish: () => (busy.value = false),
@@ -82,11 +86,19 @@ export function useCelebrate(post: Ref<CommunityPost>) {
     }
 
     const label = computed(() => {
-        const action = celebrated.value ? 'Quitar celebración' : 'Celebrar';
+        if (count.value <= 0) {
+            return celebrated.value ? t('Quitar celebración') : t('Celebrar');
+        }
 
-        return count.value > 0
-            ? `${action} · ${count.value} ${count.value === 1 ? 'celebración' : 'celebraciones'}`
-            : action;
+        return celebrated.value
+            ? tc(
+                  'Quitar celebración · {count} celebración|Quitar celebración · {count} celebraciones',
+                  count.value,
+              )
+            : tc(
+                  'Celebrar · {count} celebración|Celebrar · {count} celebraciones',
+                  count.value,
+              );
     });
 
     return { celebrated, count, busy, burst, toggle, celebrateOnce, label };

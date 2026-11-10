@@ -13,11 +13,13 @@ import { Lock } from '@lucide/vue';
 import type {
     Stripe,
     StripeElements,
+    StripeElementLocale,
     StripePaymentElement,
 } from '@stripe/stripe-js';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { postJson } from '@/lib/commerce';
 
 const props = defineProps<{
@@ -35,6 +37,8 @@ const emit = defineEmits<{
         state: 'loading' | 'ready' | 'processing' | 'error' | 'unavailable',
     ];
 }>();
+
+const { t, locale } = useI18n();
 
 const container = ref<HTMLDivElement | null>(null);
 const status = ref<
@@ -68,14 +72,18 @@ async function init() {
         if (!data.available || !clientSecret) {
             message.value =
                 data.message ??
-                'El pago con tarjeta no está disponible en este momento.';
+                t('El pago con tarjeta no está disponible en este momento.');
             setStatus('unavailable');
 
             return;
         }
 
         const { loadStripe } = await import('@stripe/stripe-js');
-        stripe = await loadStripe(props.publishableKey, { locale: 'es-419' });
+        stripe = await loadStripe(props.publishableKey, {
+            locale: (locale.value === 'es'
+                ? 'es-419'
+                : locale.value) as StripeElementLocale,
+        });
 
         if (!stripe || !container.value) {
             throw new Error('Stripe.js no cargó');
@@ -121,8 +129,9 @@ async function init() {
         paymentElement.on('ready', () => setStatus('ready'));
         paymentElement.mount(container.value);
     } catch {
-        message.value =
-            'No pudimos cargar el formulario de pago. Revisa tu conexión e inténtalo de nuevo.';
+        message.value = t(
+            'No pudimos cargar el formulario de pago. Revisa tu conexión e inténtalo de nuevo.',
+        );
         setStatus('error');
     }
 }
@@ -146,8 +155,10 @@ async function pay() {
     if (error) {
         message.value =
             error.type === 'card_error' || error.type === 'validation_error'
-                ? (error.message ?? 'Tu tarjeta fue rechazada.')
-                : 'Algo falló al procesar el pago. No se hizo ningún cargo; inténtalo de nuevo.';
+                ? (error.message ?? t('Tu tarjeta fue rechazada.'))
+                : t(
+                      'Algo falló al procesar el pago. No se hizo ningún cargo; inténtalo de nuevo.',
+                  );
         setStatus('ready');
 
         return;
@@ -174,7 +185,7 @@ onBeforeUnmount(() => {
             class="flex items-center gap-3 rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground"
             role="status"
         >
-            <Spinner class="size-4" /> Preparando el pago seguro…
+            <Spinner class="size-4" /> {{ $t('Preparando el pago seguro…') }}
         </div>
 
         <div
@@ -201,7 +212,7 @@ onBeforeUnmount(() => {
             variant="outline"
             class="mt-4 h-11 rounded-full"
             @click="init"
-            >Reintentar</Button
+            >{{ $t('Reintentar') }}</Button
         >
 
         <Button
@@ -214,8 +225,8 @@ onBeforeUnmount(() => {
             <Lock v-else class="size-4" />
             {{
                 status === 'processing'
-                    ? 'Procesando pago…'
-                    : `Pagar ${amountLabel}`
+                    ? $t('Procesando pago…')
+                    : $t('Pagar {amount}', { amount: amountLabel })
             }}
         </Button>
     </div>

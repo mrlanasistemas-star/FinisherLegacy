@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { postJson } from '@/lib/commerce';
 
 type OpenPayError = {
@@ -68,6 +69,8 @@ const emit = defineEmits<{
     succeeded: [];
     state: [state: 'loading' | 'ready' | 'processing' | 'error'];
 }>();
+
+const { t } = useI18n();
 
 // Official OpenPay MX CDN (see OpenPay's Openpay.js docs).
 const OPENPAY_JS = 'https://js.openpay.mx/openpay.v1.min.js';
@@ -146,8 +149,9 @@ async function init() {
         deviceSessionId = openpay.deviceData.setup();
         setStatus('ready');
     } catch {
-        message.value =
-            'No pudimos cargar el formulario de pago. Revisa tu conexión (o desactiva el bloqueador de anuncios) e intenta de nuevo.';
+        message.value = t(
+            'No pudimos cargar el formulario de pago. Revisa tu conexión (o desactiva el bloqueador de anuncios) e intenta de nuevo.',
+        );
         setStatus('error');
     }
 }
@@ -209,19 +213,19 @@ function validate(openpay: OpenPaySdk): boolean {
 
     errors.holderName =
         card.holderName.trim().length < 3
-            ? 'Escribe el nombre como aparece en la tarjeta.'
+            ? t('Escribe el nombre como aparece en la tarjeta.')
             : undefined;
     errors.number = !openpay.card.validateCardNumber(number)
-        ? 'Revisa el número de tarjeta.'
+        ? t('Revisa el número de tarjeta.')
         : undefined;
     errors.expiry =
         month.length !== 2 ||
         year.length !== 2 ||
         !openpay.card.validateExpiry(month, year)
-            ? 'Revisa la fecha de vencimiento (MM/AA).'
+            ? t('Revisa la fecha de vencimiento (MM/AA).')
             : undefined;
     errors.cvv = !openpay.card.validateCVC(card.cvv, number)
-        ? 'Revisa el código de seguridad.'
+        ? t('Revisa el código de seguridad.')
         : undefined;
 
     return !Object.values(errors).some(Boolean);
@@ -233,22 +237,26 @@ function tokenizeError(error: OpenPayError): string {
     const code = error.data?.error_code;
 
     if (code === 2004) {
-        return 'El número de tarjeta no es válido.';
+        return t('El número de tarjeta no es válido.');
     }
 
     if (code === 2005) {
-        return 'La tarjeta está vencida.';
+        return t('La tarjeta está vencida.');
     }
 
     if (code === 2006 || code === 2009) {
-        return 'Revisa el código de seguridad (CVV).';
+        return t('Revisa el código de seguridad (CVV).');
     }
 
     if (error.status === 0) {
-        return 'No pudimos contactar al procesador de pagos. Revisa tu conexión.';
+        return t(
+            'No pudimos contactar al procesador de pagos. Revisa tu conexión.',
+        );
     }
 
-    return 'No pudimos validar la tarjeta. Revisa los datos e intenta de nuevo.';
+    return t(
+        'No pudimos validar la tarjeta. Revisa los datos e intenta de nuevo.',
+    );
 }
 
 async function charge(tokenId: string) {
@@ -260,7 +268,8 @@ async function charge(tokenId: string) {
 
         if (!data.available || data.declined) {
             message.value =
-                data.message ?? 'El pago no está disponible en este momento.';
+                data.message ??
+                t('El pago no está disponible en este momento.');
             setStatus(data.available ? 'ready' : 'error');
 
             return;
@@ -278,8 +287,9 @@ async function charge(tokenId: string) {
 
         emit('succeeded');
     } catch {
-        message.value =
-            'No pudimos confirmar el pago. Revisa “Mis pedidos” antes de intentar de nuevo para evitar un doble cargo.';
+        message.value = t(
+            'No pudimos confirmar el pago. Revisa “Mis pedidos” antes de intentar de nuevo para evitar un doble cargo.',
+        );
         setStatus('ready');
     }
 }
@@ -328,7 +338,7 @@ const busy = computed(
             class="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 px-4 py-6 text-sm text-muted-foreground"
             role="status"
         >
-            <Spinner class="size-4" /> Preparando el pago seguro…
+            <Spinner class="size-4" /> {{ $t('Preparando el pago seguro…') }}
         </div>
 
         <div
@@ -342,7 +352,7 @@ const busy = computed(
                 class="mt-3 h-10 rounded-full bg-white"
                 @click="init"
             >
-                Reintentar
+                {{ $t('Reintentar') }}
             </Button>
         </div>
 
@@ -354,7 +364,7 @@ const busy = computed(
             @submit.prevent="submit"
         >
             <div class="grid gap-1.5">
-                <Label for="op-number">Número de tarjeta</Label>
+                <Label for="op-number">{{ $t('Número de tarjeta') }}</Label>
                 <div class="relative">
                     <Input
                         id="op-number"
@@ -378,7 +388,7 @@ const busy = computed(
             </div>
 
             <div class="grid gap-1.5">
-                <Label for="op-name">Nombre en la tarjeta</Label>
+                <Label for="op-name">{{ $t('Nombre en la tarjeta') }}</Label>
                 <Input
                     id="op-name"
                     v-model="card.holderName"
@@ -392,12 +402,12 @@ const busy = computed(
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="grid gap-1.5">
-                    <Label for="op-exp">Vencimiento</Label>
+                    <Label for="op-exp">{{ $t('Vencimiento') }}</Label>
                     <Input
                         id="op-exp"
                         :model-value="card.expiry"
                         inputmode="numeric"
-                        placeholder="MM/AA"
+                        :placeholder="$t('MM/AA')"
                         autocomplete="cc-exp"
                         class="legacy-numeric h-12 text-base"
                         :aria-invalid="!!errors.expiry"
@@ -407,13 +417,15 @@ const busy = computed(
                     <InputError :message="errors.expiry" />
                 </div>
                 <div class="grid gap-1.5">
-                    <Label for="op-cvv">Código de seguridad</Label>
+                    <Label for="op-cvv">{{ $t('Código de seguridad') }}</Label>
                     <Input
                         id="op-cvv"
                         :model-value="card.cvv"
                         inputmode="numeric"
                         type="password"
-                        :placeholder="isAmex ? '4 dígitos' : '3 dígitos'"
+                        :placeholder="
+                            isAmex ? $t('4 dígitos') : $t('3 dígitos')
+                        "
                         autocomplete="cc-csc"
                         class="legacy-numeric h-12 text-base"
                         :aria-invalid="!!errors.cvv"
@@ -441,10 +453,10 @@ const busy = computed(
                 <Lock v-else class="size-4" />
                 {{
                     status === 'redirecting'
-                        ? 'Abriendo la verificación de tu banco…'
+                        ? $t('Abriendo la verificación de tu banco…')
                         : status === 'processing'
-                          ? 'Procesando pago…'
-                          : `Pagar ${amountLabel}`
+                          ? $t('Procesando pago…')
+                          : $t('Pagar {amount}', { amount: amountLabel })
                 }}
             </Button>
 
@@ -453,7 +465,7 @@ const busy = computed(
             >
                 <span class="inline-flex items-center gap-1.5">
                     <ShieldCheck class="size-3.5 text-emerald-700" />
-                    Pago seguro con cifrado bancario
+                    {{ $t('Pago seguro con cifrado bancario') }}
                 </span>
                 <span>Visa · Mastercard · American Express · Carnet</span>
             </div>
@@ -461,8 +473,11 @@ const busy = computed(
                 v-if="config.sandbox"
                 class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900"
             >
-                Modo de pruebas (sandbox): usa una tarjeta de prueba;
-                no se hace ningún cargo real.
+                {{
+                    $t(
+                        'Modo de pruebas (sandbox): usa una tarjeta de prueba; no se hace ningún cargo real.',
+                    )
+                }}
             </p>
         </form>
     </div>

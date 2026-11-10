@@ -180,7 +180,7 @@ const aspect = computed(() =>
                     <div
                         class="inline-flex rounded-full border border-border bg-card p-1"
                         role="group"
-                        aria-label="Cara de la placa"
+                        :aria-label="$t('Cara de la placa')"
                     >
                         <button
                             type="button"
@@ -193,7 +193,7 @@ const aspect = computed(() =>
                             :aria-pressed="!showingBack"
                             @click="showingBack = false"
                         >
-                            {{ printedBack ? 'Frente' : 'Ver frente' }}
+                            {{ printedBack ? $t('Frente') : $t('Ver frente') }}
                         </button>
                         <button
                             type="button"
@@ -206,7 +206,7 @@ const aspect = computed(() =>
                             :aria-pressed="showingBack"
                             @click="showingBack = true"
                         >
-                            {{ printedBack ? 'Reverso' : 'Ver broche' }}
+                            {{ printedBack ? $t('Reverso') : $t('Ver broche') }}
                         </button>
                     </div>
                     <button
@@ -220,7 +220,7 @@ const aspect = computed(() =>
                             class="size-3.5"
                             :class="spinning ? 'animate-spin' : ''"
                         />
-                        Girar
+                        {{ $t('Girar') }}
                     </button>
                     <button
                         v-if="interactive"
@@ -229,7 +229,7 @@ const aspect = computed(() =>
                         @click="reset"
                     >
                         <RotateCcw class="size-3.5" />
-                        Restablecer
+                        {{ $t('Restablecer') }}
                     </button>
                 </div>
 
@@ -240,29 +240,44 @@ const aspect = computed(() =>
                         class="inline-flex items-center gap-1.5 rounded-full bg-fl-cream px-2.5 py-1 font-semibold text-fl-gold-ink"
                     >
                         <Nfc class="size-3.5" />
-                        Chip NFC
+                        {{ $t('Chip NFC') }}
                     </span>
                     <span v-if="personalization.nfc_code" class="font-mono">{{
                         personalization.nfc_code
                     }}</span>
-                    <span v-else
-                        >Acerca el teléfono al frente de la placa para abrir tu
-                        Legacy</span
-                    >
+                    <span v-else>{{
+                        $t(
+                            'Acerca el teléfono al frente de la placa para abrir tu Legacy',
+                        )
+                    }}</span>
                 </p>
                 <p
                     v-if="interactive"
                     class="mt-2 text-center text-[11px] text-muted-foreground/80"
                 >
-                    Arrastra para inclinar · {{ model.name }} ·
-                    {{ model.width_mm }} × {{ model.height_mm }} mm
-                    <template v-if="!printedBack">
-                        · clip de acero inoxidable en el reverso</template
-                    >
+                    {{
+                        printedBack
+                            ? $t(
+                                  'Arrastra para inclinar · {name} · {width} × {height} mm',
+                                  {
+                                      name: model.name,
+                                      width: model.width_mm,
+                                      height: model.height_mm,
+                                  },
+                              )
+                            : $t(
+                                  'Arrastra para inclinar · {name} · {width} × {height} mm · clip de acero inoxidable en el reverso',
+                                  {
+                                      name: model.name,
+                                      width: model.width_mm,
+                                      height: model.height_mm,
+                                  },
+                              )
+                    }}
                 </p>
             </template>
             <p v-else class="py-10 text-center text-sm text-muted-foreground">
-                Esta placa aún no tiene layout asignado.
+                {{ $t('Esta placa aún no tiene layout asignado.') }}
             </p>
         </div>
     </div>

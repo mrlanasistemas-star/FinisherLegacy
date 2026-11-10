@@ -8,6 +8,7 @@
 import { useForm } from '@inertiajs/vue3';
 import { Image as ImageIcon, UploadCloud, Video } from '@lucide/vue';
 import { ref } from 'vue';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{
     uploadUrl: string;
@@ -16,6 +17,8 @@ const props = defineProps<{
     videosRemaining: number;
     videosLimit: number;
 }>();
+
+const { t } = useI18n();
 
 const isDragging = ref(false);
 const clientError = ref<string | null>(null);
@@ -42,8 +45,9 @@ function handleFiles(files: FileList | null) {
     }
 
     if (!ACCEPTED.includes(file.type)) {
-        clientError.value =
-            'Formato no soportado. Usa JPG, PNG, WEBP, MP4 o WEBM.';
+        clientError.value = t(
+            'Formato no soportado. Usa JPG, PNG, WEBP, MP4 o WEBM.',
+        );
 
         return;
     }
@@ -51,15 +55,17 @@ function handleFiles(files: FileList | null) {
     const isVideo = file.type.startsWith('video/');
 
     if (isVideo && props.videosRemaining <= 0) {
-        clientError.value =
-            'Alcanzaste el límite de videos incluidos para este evento.';
+        clientError.value = t(
+            'Alcanzaste el límite de videos incluidos para este evento.',
+        );
 
         return;
     }
 
     if (!isVideo && props.imagesRemaining <= 0) {
-        clientError.value =
-            'Alcanzaste el límite de fotos incluidas para este evento.';
+        clientError.value = t(
+            'Alcanzaste el límite de fotos incluidas para este evento.',
+        );
 
         return;
     }
@@ -82,12 +88,22 @@ function onDrop(event: DragEvent) {
     <div>
         <div class="mb-3 flex gap-4 text-xs text-muted-foreground">
             <span class="flex items-center gap-1"
-                ><ImageIcon class="size-3.5" /> Fotos
-                {{ imagesLimit - imagesRemaining }}/{{ imagesLimit }}</span
+                ><ImageIcon class="size-3.5" />
+                {{
+                    $t('Fotos {used}/{limit}', {
+                        used: imagesLimit - imagesRemaining,
+                        limit: imagesLimit,
+                    })
+                }}</span
             >
             <span class="flex items-center gap-1"
-                ><Video class="size-3.5" /> Video
-                {{ videosLimit - videosRemaining }}/{{ videosLimit }}</span
+                ><Video class="size-3.5" />
+                {{
+                    $t('Video {used}/{limit}', {
+                        used: videosLimit - videosRemaining,
+                        limit: videosLimit,
+                    })
+                }}</span
             >
         </div>
 
@@ -104,10 +120,14 @@ function onDrop(event: DragEvent) {
         >
             <UploadCloud class="size-8 text-muted-foreground/80" />
             <p class="text-sm text-muted-foreground">
-                Arrastra una foto o video, o haz clic para elegir un archivo
+                {{
+                    $t(
+                        'Arrastra una foto o video, o haz clic para elegir un archivo',
+                    )
+                }}
             </p>
             <p class="text-xs text-muted-foreground/80">
-                JPG, PNG, WEBP, MP4 o WEBM
+                {{ $t('JPG, PNG, WEBP, MP4 o WEBM') }}
             </p>
             <input
                 type="file"
@@ -124,7 +144,7 @@ function onDrop(event: DragEvent) {
             {{ form.errors.file }}
         </p>
         <p v-if="form.processing" class="mt-2 text-sm text-muted-foreground/80">
-            Subiendo…
+            {{ $t('Subiendo…') }}
         </p>
     </div>
 </template>

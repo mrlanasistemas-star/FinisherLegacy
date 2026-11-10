@@ -41,7 +41,7 @@ defineProps<{
                         medal?.title ??
                         activity?.event ??
                         gear?.product_name ??
-                        'Mi Legacy Plate'
+                        $t('Mi Legacy Plate')
                     }}
                 </span>
                 <span
@@ -55,7 +55,11 @@ defineProps<{
                     }}
                 </span>
                 <span class="mt-1 block text-xs text-muted-foreground">
-                    Una pieza física que conecta la medalla con su historia.
+                    {{
+                        $t(
+                            'Una pieza física que conecta la medalla con su historia.',
+                        )
+                    }}
                 </span>
             </span>
         </div>

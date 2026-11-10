@@ -16,7 +16,9 @@ import {
     UserRound,
     UserRoundPen,
 } from '@lucide/vue';
+import { computed } from 'vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
+import { useI18n } from '@/i18n';
 import { dashboard } from '@/routes';
 import { edit as editAthleteProfile } from '@/routes/dashboard/profile';
 import { edit as editNotificationPreferences } from '@/routes/notification-preferences';
@@ -25,41 +27,43 @@ import { edit as editProfile } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { index as ordersIndex } from '@/routes/store/orders';
 
-const items = [
+const { t } = useI18n();
+
+const items = computed(() => [
     {
-        title: 'Datos de la cuenta',
-        short: 'Cuenta',
+        title: t('Datos de la cuenta'),
+        short: t('Cuenta'),
         href: editProfile.url(),
         icon: UserRound,
     },
     {
-        title: 'Contraseña y seguridad',
-        short: 'Seguridad',
+        title: t('Contraseña y seguridad'),
+        short: t('Seguridad'),
         href: editSecurity.url(),
         icon: KeyRound,
     },
     {
-        title: 'Notificaciones',
-        short: 'Avisos',
+        title: t('Notificaciones'),
+        short: t('Avisos'),
         href: editNotificationPreferences.url(),
         icon: BellRing,
     },
-];
+]);
 
-const shortcuts = [
-    { title: 'Mi Finisher Legacy', href: dashboard.url(), icon: Nfc },
+const shortcuts = computed(() => [
+    { title: t('Mi Finisher Legacy'), href: dashboard.url(), icon: Nfc },
     {
-        title: 'Perfil de atleta',
+        title: t('Perfil de atleta'),
         href: editAthleteProfile.url(),
         icon: UserRoundPen,
     },
     {
-        title: 'Centro de notificaciones',
+        title: t('Centro de notificaciones'),
         href: notificationsIndex.url(),
         icon: Bell,
     },
-    { title: 'Mis pedidos', href: ordersIndex.url(), icon: Receipt },
-];
+    { title: t('Mis pedidos'), href: ordersIndex.url(), icon: Receipt },
+]);
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
@@ -67,18 +71,18 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 <template>
     <div class="fl-container max-w-5xl py-8 md:py-12">
         <header class="mb-8">
-            <p class="fl-eyebrow">Tu cuenta</p>
+            <p class="fl-eyebrow">{{ $t('Tu cuenta') }}</p>
             <h1
                 class="mt-2 font-heading text-3xl font-semibold tracking-tight md:text-4xl"
             >
-                Ajustes
+                {{ $t('Ajustes') }}
             </h1>
         </header>
 
         <!-- Phones / tablets: segmented control -->
         <nav
             class="mb-6 grid grid-cols-3 rounded-full border border-border bg-white p-1 shadow-fl-micro lg:hidden"
-            aria-label="Ajustes"
+            :aria-label="$t('Ajustes')"
         >
             <Link
                 v-for="item in items"
@@ -103,11 +107,11 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
         <div class="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
             <!-- Desktop sidebar: grouped lists -->
             <aside class="hidden space-y-6 lg:block">
-                <nav aria-label="Ajustes">
+                <nav :aria-label="$t('Ajustes')">
                     <p
                         class="px-4 pb-2 text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
                     >
-                        Cuenta
+                        {{ $t('Cuenta') }}
                     </p>
                     <ul
                         class="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-white shadow-fl-micro"
@@ -151,11 +155,11 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                     </ul>
                 </nav>
 
-                <nav aria-label="Accesos de tu cuenta">
+                <nav :aria-label="$t('Accesos de tu cuenta')">
                     <p
                         class="px-4 pb-2 text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
                     >
-                        Tu Finisher Legacy
+                        {{ $t('Tu Finisher Legacy') }}
                     </p>
                     <ul
                         class="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-white shadow-fl-micro"
@@ -189,11 +193,11 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                 <slot />
 
                 <!-- Phones: shortcuts as a grouped list at the end -->
-                <nav class="lg:hidden" aria-label="Accesos de tu cuenta">
+                <nav class="lg:hidden" :aria-label="$t('Accesos de tu cuenta')">
                     <p
                         class="px-4 pb-2 text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
                     >
-                        Tu Finisher Legacy
+                        {{ $t('Tu Finisher Legacy') }}
                     </p>
                     <ul
                         class="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-white shadow-fl-micro"

@@ -29,6 +29,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { cheerIcon } from '@/components/training/cheerIcons';
 import { vReveal } from '@/composables/useReveal';
 import { formatClock } from '@/composables/useVoiceRecorder';
+import { useI18n } from '@/i18n';
 import { shortDate, timeAgo } from '@/lib/datetime';
 import { confirmAction } from '@/lib/swal';
 import { index as trainingIndex } from '@/routes/training';
@@ -89,6 +90,7 @@ const props = defineProps<{
 // (`page.flash`), never inside `page.props`. Kept in a ref so the fresh link
 // stays on screen while the runner keeps using the page (flash is one-shot).
 const page = usePage();
+const { t } = useI18n();
 const newLinkUrl = ref<string | null>(page.flash?.cheer_link_url ?? null);
 
 // ── Links ────────────────────────────────────────────────────────────────
@@ -121,15 +123,17 @@ async function copy(url: string) {
             }
         }, 2000);
     } catch {
-        window.prompt('Copia tu enlace:', url);
+        window.prompt(t('Copia tu enlace:'), url);
     }
 }
 
 async function share(link: { title: string; url: string }) {
     try {
         await navigator.share({
-            title: 'Envíame ánimo',
-            text: `Déjame un mensaje de voz para mi entrenamiento: ${link.title}`,
+            title: t('Envíame ánimo'),
+            text: t('Déjame un mensaje de voz para mi entrenamiento: {title}', {
+                title: link.title,
+            }),
             url: link.url,
         });
     } catch {
@@ -139,9 +143,11 @@ async function share(link: { title: string; url: string }) {
 
 async function revoke(link: CheerLink) {
     const ok = await confirmAction({
-        title: '¿Desactivar este enlace?',
-        text: 'Nadie más podrá dejarte mensajes con él. Los que ya recibiste se quedan.',
-        confirmButtonText: 'Desactivar',
+        title: t('¿Desactivar este enlace?'),
+        text: t(
+            'Nadie más podrá dejarte mensajes con él. Los que ya recibiste se quedan.',
+        ),
+        confirmButtonText: t('Desactivar'),
     });
 
     if (ok) {
@@ -149,20 +155,20 @@ async function revoke(link: CheerLink) {
     }
 }
 
-const stateLabel: Record<CheerLink['state'], string> = {
-    active: 'Activo',
-    revoked: 'Desactivado',
-    expired: 'Vencido',
-    full: 'Lleno',
-};
+const stateLabel = computed<Record<CheerLink['state'], string>>(() => ({
+    active: t('Activo'),
+    revoked: t('Desactivado'),
+    expired: t('Vencido'),
+    full: t('Lleno'),
+}));
 
 // ── Messages ─────────────────────────────────────────────────────────────
 
-const filters: { key: Filter; label: string }[] = [
-    { key: 'all', label: 'Todos' },
-    { key: 'unheard', label: 'Sin escuchar' },
-    { key: 'favorites', label: 'Favoritos' },
-];
+const filters = computed<{ key: Filter; label: string }[]>(() => [
+    { key: 'all', label: t('Todos') },
+    { key: 'unheard', label: t('Sin escuchar') },
+    { key: 'favorites', label: t('Favoritos') },
+]);
 
 /** Local copy so listened/favorite update instantly (server confirms). */
 const items = ref<CheerMessage[]>(props.messages.data.map((m) => ({ ...m })));
@@ -219,9 +225,9 @@ function toggleFavorite(message: CheerMessage) {
 
 async function hide(message: CheerMessage) {
     const ok = await confirmAction({
-        title: '¿Quitar este mensaje?',
-        text: 'Dejará de aparecer en tu lista de entrenamiento.',
-        confirmButtonText: 'Quitar',
+        title: t('¿Quitar este mensaje?'),
+        text: t('Dejará de aparecer en tu lista de entrenamiento.'),
+        confirmButtonText: t('Quitar'),
     });
 
     if (ok) {
@@ -232,9 +238,11 @@ async function hide(message: CheerMessage) {
 
 async function block(message: CheerMessage) {
     const ok = await confirmAction({
-        title: `¿Bloquear a ${message.sender_name}?`,
-        text: 'Quitaremos sus mensajes de ese enlace y ya no podrá enviarte más por él. No se le avisa.',
-        confirmButtonText: 'Bloquear',
+        title: t('¿Bloquear a {name}?', { name: message.sender_name }),
+        text: t(
+            'Quitaremos sus mensajes de ese enlace y ya no podrá enviarte más por él. No se le avisa.',
+        ),
+        confirmButtonText: t('Bloquear'),
     });
 
     if (ok) {
@@ -250,21 +258,23 @@ async function block(message: CheerMessage) {
 /** «Reportar mensaje»: only a reported message becomes reviewable by our team. */
 async function report(message: CheerMessage) {
     const result = await Swal.fire({
-        title: 'Reportar mensaje',
-        text: 'Nuestro equipo podrá revisar solo este mensaje (y su audio). Lo quitaremos de tu lista.',
+        title: t('Reportar mensaje'),
+        text: t(
+            'Nuestro equipo podrá revisar solo este mensaje (y su audio). Lo quitaremos de tu lista.',
+        ),
         input: 'select',
         inputOptions: {
-            harassment: 'Acoso',
-            threat: 'Amenaza',
-            inappropriate: 'Contenido inapropiado',
-            spam: 'Spam',
-            other: 'Otro',
+            harassment: t('Acoso'),
+            threat: t('Amenaza'),
+            inappropriate: t('Contenido inapropiado'),
+            spam: t('Spam'),
+            other: t('Otro'),
         },
-        inputPlaceholder: 'Elige un motivo',
-        inputValidator: (value) => (value ? null : 'Elige un motivo.'),
+        inputPlaceholder: t('Elige un motivo'),
+        inputValidator: (value) => (value ? null : t('Elige un motivo.')),
         showCancelButton: true,
-        confirmButtonText: 'Reportar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: t('Reportar'),
+        cancelButtonText: t('Cancelar'),
         background: '#ffffff',
         color: '#171714',
         confirmButtonColor: '#171714',
@@ -325,8 +335,9 @@ function play(message: CheerMessage) {
         audio.value.playbackRate = speed.value;
         audio.value.volume = volume.value;
         audio.value.play().catch(() => {
-            playError.value =
-                'No pudimos reproducir este audio. Recarga la página e inténtalo de nuevo.';
+            playError.value = t(
+                'No pudimos reproducir este audio. Recarga la página e inténtalo de nuevo.',
+            );
         });
     });
 }
@@ -421,25 +432,27 @@ const hasNext = computed(() => {
 </script>
 
 <template>
-    <Head title="Mi entrenamiento" />
+    <Head :title="$t('Mi entrenamiento')" />
 
     <div class="fl-container py-8 pb-40 md:py-12 md:pb-40">
         <header v-reveal>
-            <p class="fl-eyebrow">Entrenamientos</p>
+            <p class="fl-eyebrow">{{ $t('Entrenamientos') }}</p>
             <h1 class="fl-display mt-2 text-3xl md:text-5xl">
-                Mi entrenamiento
+                {{ $t('Mi entrenamiento') }}
             </h1>
             <p class="mt-3 max-w-2xl text-[15px] text-muted-foreground">
-                Comparte tu enlace «Envíame ánimo» con tu familia y amigos. Te
-                dejan un mensaje de voz desde su navegador, sin cuenta ni app, y
-                tú los escuchas mientras entrenas.
+                {{
+                    $t(
+                        'Comparte tu enlace «Envíame ánimo» con tu familia y amigos. Te dejan un mensaje de voz desde su navegador, sin cuenta ni app, y tú los escuchas mientras entrenas.',
+                    )
+                }}
             </p>
         </header>
 
         <!-- Links -->
         <section v-reveal="{ delay: 60 }" class="fl-card mt-8 p-5 sm:p-7">
             <h2 class="font-heading text-xl font-semibold">
-                Tus enlaces «Envíame ánimo»
+                {{ $t('Tus enlaces «Envíame ánimo»') }}
             </h2>
 
             <form
@@ -447,23 +460,23 @@ const hasNext = computed(() => {
                 @submit.prevent="createLink"
             >
                 <div class="flex-1">
-                    <label for="link-title" class="text-sm font-semibold"
-                        >Nombre del enlace</label
-                    >
+                    <label for="link-title" class="text-sm font-semibold">{{
+                        $t('Nombre del enlace')
+                    }}</label>
                     <input
                         id="link-title"
                         v-model="linkForm.title"
                         type="text"
                         maxlength="80"
                         required
-                        placeholder="Ej. Mi maratón de Mérida"
+                        :placeholder="$t('Ej. Mi maratón de Mérida')"
                         class="fl-focus-glow mt-1.5 h-11 w-full rounded-xl border border-border bg-white px-4"
                     />
                 </div>
                 <div>
-                    <label for="link-expiry" class="text-sm font-semibold"
-                        >Vence en</label
-                    >
+                    <label for="link-expiry" class="text-sm font-semibold">{{
+                        $t('Vence en')
+                    }}</label>
                     <select
                         id="link-expiry"
                         v-model="linkForm.expires_in_days"
@@ -474,9 +487,11 @@ const hasNext = computed(() => {
                             :key="days"
                             :value="days"
                         >
-                            {{ days }} días
+                            {{ $tc('{count} día|{count} días', days) }}
                         </option>
-                        <option :value="null">Sin vencimiento</option>
+                        <option :value="null">
+                            {{ $t('Sin vencimiento') }}
+                        </option>
                     </select>
                 </div>
                 <button
@@ -485,7 +500,7 @@ const hasNext = computed(() => {
                     :disabled="linkForm.processing || !linkForm.title.trim()"
                 >
                     <Link2 class="size-4" aria-hidden="true" />
-                    Crear enlace
+                    {{ $t('Crear enlace') }}
                 </button>
             </form>
             <p
@@ -513,7 +528,9 @@ const hasNext = computed(() => {
                             class="size-4"
                             aria-hidden="true"
                         />
-                        {{ copied === newLinkUrl ? 'Copiado' : 'Copiar' }}
+                        {{
+                            copied === newLinkUrl ? $t('Copiado') : $t('Copiar')
+                        }}
                     </button>
                     <button
                         v-if="canShare"
@@ -521,13 +538,13 @@ const hasNext = computed(() => {
                         class="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-border bg-white px-4 text-sm font-semibold"
                         @click="
                             share({
-                                title: linkForm.title || 'Mi entrenamiento',
+                                title: linkForm.title || $t('Mi entrenamiento'),
                                 url: newLinkUrl,
                             })
                         "
                     >
                         <Share2 class="size-4" aria-hidden="true" />
-                        Compartir
+                        {{ $t('Compartir') }}
                     </button>
                 </div>
             </div>
@@ -554,19 +571,23 @@ const hasNext = computed(() => {
                             >
                         </div>
                         <p class="mt-0.5 text-sm text-muted-foreground">
-                            {{ link.messages_count }}
                             {{
-                                link.messages_count === 1
-                                    ? 'mensaje'
-                                    : 'mensajes'
+                                $tc(
+                                    '{count} mensaje|{count} mensajes',
+                                    link.messages_count,
+                                )
                             }}
                             ·
                             {{
                                 link.expires_at
                                     ? link.state === 'expired'
-                                        ? `Venció el ${shortDate(link.expires_at)}`
-                                        : `Vence el ${shortDate(link.expires_at)}`
-                                    : 'Sin vencimiento'
+                                        ? $t('Venció el {date}', {
+                                              date: shortDate(link.expires_at),
+                                          })
+                                        : $t('Vence el {date}', {
+                                              date: shortDate(link.expires_at),
+                                          })
+                                    : $t('Sin vencimiento')
                             }}
                         </p>
                     </div>
@@ -584,7 +605,11 @@ const hasNext = computed(() => {
                                 class="size-4"
                                 aria-hidden="true"
                             />
-                            {{ copied === link.url ? 'Copiado' : 'Copiar' }}
+                            {{
+                                copied === link.url
+                                    ? $t('Copiado')
+                                    : $t('Copiar')
+                            }}
                         </button>
                         <button
                             v-if="canShare"
@@ -593,21 +618,24 @@ const hasNext = computed(() => {
                             @click="share(link)"
                         >
                             <Share2 class="size-4" aria-hidden="true" />
-                            Compartir
+                            {{ $t('Compartir') }}
                         </button>
                         <button
                             type="button"
                             class="inline-flex min-h-10 items-center rounded-full px-3 text-sm font-medium text-red-700 hover:bg-red-50"
                             @click="revoke(link)"
                         >
-                            Desactivar
+                            {{ $t('Desactivar') }}
                         </button>
                     </div>
                 </li>
             </ul>
             <p v-else class="mt-6 text-sm text-muted-foreground">
-                Aún no tienes enlaces. Crea el primero y compártelo con tu
-                gente.
+                {{
+                    $t(
+                        'Aún no tienes enlaces. Crea el primero y compártelo con tu gente.',
+                    )
+                }}
             </p>
         </section>
 
@@ -617,11 +645,11 @@ const hasNext = computed(() => {
                 class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
             >
                 <h2 class="font-heading text-2xl font-semibold">
-                    Mensajes de ánimo
+                    {{ $t('Mensajes de ánimo') }}
                 </h2>
                 <nav
                     class="flex gap-1 rounded-full bg-fl-line/60 p-1"
-                    aria-label="Filtrar mensajes"
+                    :aria-label="$t('Filtrar mensajes')"
                 >
                     <Link
                         v-for="f in filters"
@@ -661,19 +689,25 @@ const hasNext = computed(() => {
                 <p class="mt-4 font-heading text-xl font-semibold">
                     {{
                         filter === 'all'
-                            ? 'Todavía no hay mensajes'
+                            ? $t('Todavía no hay mensajes')
                             : filter === 'unheard'
-                              ? 'Ya escuchaste todo'
-                              : 'Sin favoritos aún'
+                              ? $t('Ya escuchaste todo')
+                              : $t('Sin favoritos aún')
                     }}
                 </p>
                 <p class="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
                     {{
                         filter === 'all'
-                            ? 'Comparte tu enlace y aquí aparecerán las voces de tu gente.'
+                            ? $t(
+                                  'Comparte tu enlace y aquí aparecerán las voces de tu gente.',
+                              )
                             : filter === 'unheard'
-                              ? 'Cuando llegue un mensaje nuevo lo verás aquí.'
-                              : 'Marca con una estrella los mensajes que quieras volver a escuchar.'
+                              ? $t(
+                                    'Cuando llegue un mensaje nuevo lo verás aquí.',
+                                )
+                              : $t(
+                                    'Marca con una estrella los mensajes que quieras volver a escuchar.',
+                                )
                     }}
                 </p>
             </div>
@@ -700,9 +734,15 @@ const hasNext = computed(() => {
                         :aria-label="
                             message.audio_url
                                 ? current?.uuid === message.uuid && playing
-                                    ? `Pausar mensaje de ${message.sender_name}`
-                                    : `Escuchar mensaje de ${message.sender_name}`
-                                : `Mensaje de texto de ${message.sender_name}`
+                                    ? $t('Pausar mensaje de {name}', {
+                                          name: message.sender_name,
+                                      })
+                                    : $t('Escuchar mensaje de {name}', {
+                                          name: message.sender_name,
+                                      })
+                                : $t('Mensaje de texto de {name}', {
+                                      name: message.sender_name,
+                                  })
                         "
                         @click="toggle(message)"
                     >
@@ -744,7 +784,7 @@ const hasNext = computed(() => {
                             <span
                                 v-if="!message.listened_at"
                                 class="rounded-full bg-fl-gold/20 px-2 py-0.5 text-xs font-semibold text-fl-gold-ink"
-                                >Nuevo</span
+                                >{{ $t('Nuevo') }}</span
                             >
                         </div>
                         <p
@@ -773,7 +813,7 @@ const hasNext = computed(() => {
                                     !message.body
                                 "
                             >
-                                · Procesando audio…</span
+                                · {{ $t('Procesando audio…') }}</span
                             >
                         </p>
                     </div>
@@ -784,8 +824,8 @@ const hasNext = computed(() => {
                             class="flex size-10 items-center justify-center rounded-full hover:bg-fl-cream"
                             :aria-label="
                                 message.favorite
-                                    ? 'Quitar de favoritos'
-                                    : 'Marcar como favorito'
+                                    ? $t('Quitar de favoritos')
+                                    : $t('Marcar como favorito')
                             "
                             :aria-pressed="message.favorite"
                             @click="toggleFavorite(message)"
@@ -803,7 +843,7 @@ const hasNext = computed(() => {
                         <button
                             type="button"
                             class="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-fl-cream"
-                            aria-label="Quitar mensaje"
+                            :aria-label="$t('Quitar mensaje')"
                             @click="hide(message)"
                         >
                             <EyeOff class="size-5" aria-hidden="true" />
@@ -811,7 +851,11 @@ const hasNext = computed(() => {
                         <button
                             type="button"
                             class="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-700"
-                            :aria-label="`Bloquear a ${message.sender_name}`"
+                            :aria-label="
+                                $t('Bloquear a {name}', {
+                                    name: message.sender_name,
+                                })
+                            "
                             @click="block(message)"
                         >
                             <Ban class="size-5" aria-hidden="true" />
@@ -819,8 +863,8 @@ const hasNext = computed(() => {
                         <button
                             type="button"
                             class="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-700"
-                            aria-label="Reportar mensaje"
-                            title="Reportar mensaje"
+                            :aria-label="$t('Reportar mensaje')"
+                            :title="$t('Reportar mensaje')"
                             @click="report(message)"
                         >
                             <Flag class="size-5" aria-hidden="true" />
@@ -832,7 +876,7 @@ const hasNext = computed(() => {
             <nav
                 v-if="messages.last_page > 1"
                 class="mt-6 flex items-center justify-center gap-3 text-sm"
-                aria-label="Páginas"
+                :aria-label="$t('Páginas')"
             >
                 <button
                     type="button"
@@ -840,7 +884,7 @@ const hasNext = computed(() => {
                     :disabled="messages.current_page <= 1"
                     @click="goToPage(messages.current_page - 1)"
                 >
-                    Anteriores
+                    {{ $t('Anteriores') }}
                 </button>
                 <span class="text-muted-foreground tabular-nums"
                     >{{ messages.current_page }} /
@@ -852,7 +896,7 @@ const hasNext = computed(() => {
                     :disabled="messages.current_page >= messages.last_page"
                     @click="goToPage(messages.current_page + 1)"
                 >
-                    Siguientes
+                    {{ $t('Siguientes') }}
                 </button>
             </nav>
         </section>
@@ -871,14 +915,14 @@ const hasNext = computed(() => {
         @loadedmetadata="onTime"
         @error="
             current &&
-            (playError = 'No pudimos cargar este audio. Recarga la página.')
+            (playError = $t('No pudimos cargar este audio. Recarga la página.'))
         "
     />
     <div
         v-if="current"
         class="fixed inset-x-0 bottom-16 z-40 px-3 md:bottom-4"
         role="region"
-        aria-label="Reproductor"
+        :aria-label="$t('Reproductor')"
     >
         <div
             class="mx-auto max-w-3xl rounded-3xl border border-border bg-white/95 p-3 shadow-fl-float backdrop-blur sm:p-4"
@@ -905,7 +949,7 @@ const hasNext = computed(() => {
                             step="0.1"
                             :value="position"
                             class="h-1 flex-1 accent-fl-gold"
-                            aria-label="Posición"
+                            :aria-label="$t('Posición')"
                             @input="seek"
                         />
                         <span
@@ -919,7 +963,7 @@ const hasNext = computed(() => {
                     <button
                         type="button"
                         class="flex size-10 items-center justify-center rounded-full hover:bg-fl-cream disabled:opacity-30"
-                        aria-label="Anterior"
+                        :aria-label="$t('Anterior')"
                         :disabled="!hasPrev"
                         @click="step(-1)"
                     >
@@ -928,7 +972,7 @@ const hasNext = computed(() => {
                     <button
                         type="button"
                         class="fl-press flex size-12 items-center justify-center rounded-full bg-fl-black text-white"
-                        :aria-label="playing ? 'Pausar' : 'Reproducir'"
+                        :aria-label="playing ? $t('Pausar') : $t('Reproducir')"
                         @click="toggle(current)"
                     >
                         <Pause
@@ -945,7 +989,7 @@ const hasNext = computed(() => {
                     <button
                         type="button"
                         class="flex size-10 items-center justify-center rounded-full hover:bg-fl-cream disabled:opacity-30"
-                        aria-label="Siguiente"
+                        :aria-label="$t('Siguiente')"
                         :disabled="!hasNext"
                         @click="step(1)"
                     >
@@ -958,7 +1002,7 @@ const hasNext = computed(() => {
                 <button
                     type="button"
                     class="min-h-9 rounded-full border border-border px-3 font-semibold tabular-nums"
-                    :aria-label="`Velocidad ${speed}x`"
+                    :aria-label="$t('Velocidad {speed}x', { speed })"
                     @click="cycleSpeed"
                 >
                     {{ speed }}×
@@ -968,7 +1012,7 @@ const hasNext = computed(() => {
                         class="size-4 text-muted-foreground"
                         aria-hidden="true"
                     />
-                    <span class="sr-only">Volumen</span>
+                    <span class="sr-only">{{ $t('Volumen') }}</span>
                     <input
                         v-model.number="volume"
                         type="range"

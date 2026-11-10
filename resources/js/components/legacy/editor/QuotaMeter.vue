@@ -19,8 +19,8 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { store as buyExpansion } from '@/routes/my-legacy/expansion';
-import { kindNoun } from './types';
 import type { ExpansionOffer, KindQuota, QuotaKind } from './types';
 
 const props = defineProps<{
@@ -28,6 +28,8 @@ const props = defineProps<{
     kind: QuotaKind;
     quota: KindQuota;
 }>();
+
+const { t, tc, regional } = useI18n();
 
 const full = computed(() => props.quota.remaining <= 0);
 const percent = computed(() =>
@@ -38,7 +40,144 @@ const percent = computed(() =>
           )
         : 100,
 );
-const plural = computed(() => kindNoun(props.kind, 2));
+
+/** Whole sentences per kind: nouns and gender change with the language. */
+const copy = computed(() => {
+    const counts = { used: props.quota.used, limit: props.quota.limit };
+
+    switch (props.kind) {
+        case 'photos':
+            return {
+                usage: t('{used} de {limit} fotos', counts),
+                meter: t('Espacio de fotos usado'),
+                expired: t(
+                    'Todo tu contenido sigue aquí, visible y descargable. Para agregar más fotos, renueva tu plan o quita alguna.',
+                ),
+                maxed: t('Llegaste al máximo de fotos'),
+                makeRoom: props.quota.can_expand
+                    ? t(
+                          'Todo lo que subiste sigue aquí, visible. Amplía tu espacio o quita una para subir otra.',
+                      )
+                    : t(
+                          'Todo lo que subiste sigue aquí, visible. Quita una para subir otra.',
+                      ),
+                more: t('Más espacio para tus fotos'),
+            };
+        case 'videos':
+            return {
+                usage: t('{used} de {limit} videos', counts),
+                meter: t('Espacio de videos usado'),
+                expired: t(
+                    'Todo tu contenido sigue aquí, visible y descargable. Para agregar más videos, renueva tu plan o quita alguno.',
+                ),
+                maxed: t('Llegaste al máximo de videos'),
+                makeRoom: props.quota.can_expand
+                    ? t(
+                          'Todo lo que subiste sigue aquí, visible. Amplía tu espacio o quita uno para subir otro.',
+                      )
+                    : t(
+                          'Todo lo que subiste sigue aquí, visible. Quita uno para subir otro.',
+                      ),
+                more: t('Más espacio para tus videos'),
+            };
+        default:
+            return {
+                usage: t('{used} de {limit} mensajes de voz', counts),
+                meter: t('Espacio de mensajes de voz usado'),
+                expired: t(
+                    'Todo tu contenido sigue aquí, visible y descargable. Para agregar más mensajes de voz, renueva tu plan o quita alguno.',
+                ),
+                maxed: t('Llegaste al máximo de mensajes de voz'),
+                makeRoom: props.quota.can_expand
+                    ? t(
+                          'Todo lo que subiste sigue aquí, visible. Amplía tu espacio o quita uno para subir otro.',
+                      )
+                    : t(
+                          'Todo lo que subiste sigue aquí, visible. Quita uno para subir otro.',
+                      ),
+                more: t('Más espacio para tus mensajes de voz'),
+            };
+    }
+});
+
+/** "+5 fotos" */
+function extraUnits(units: number): string {
+    switch (props.kind) {
+        case 'photos':
+            return tc('+{count} foto|+{count} fotos', units);
+        case 'videos':
+            return tc('+{count} video|+{count} videos', units);
+        default:
+            return tc(
+                '+{count} mensaje de voz|+{count} mensajes de voz',
+                units,
+            );
+    }
+}
+
+/** "+5 fotos hasta el 12 de mayo de 2026. Si renuevas hoy…" */
+function planNote(units: number, date: string): string {
+    switch (props.kind) {
+        case 'photos':
+            return tc(
+                '+{count} foto hasta el {date}. Si renuevas hoy, el nuevo periodo empieza cuando termine el actual.|+{count} fotos hasta el {date}. Si renuevas hoy, el nuevo periodo empieza cuando termine el actual.',
+                units,
+                { date },
+            );
+        case 'videos':
+            return tc(
+                '+{count} video hasta el {date}. Si renuevas hoy, el nuevo periodo empieza cuando termine el actual.|+{count} videos hasta el {date}. Si renuevas hoy, el nuevo periodo empieza cuando termine el actual.',
+                units,
+                { date },
+            );
+        default:
+            return tc(
+                '+{count} mensaje de voz hasta el {date}. Si renuevas hoy, el nuevo periodo empieza cuando termine el actual.|+{count} mensajes de voz hasta el {date}. Si renuevas hoy, el nuevo periodo empieza cuando termine el actual.',
+                units,
+                { date },
+            );
+    }
+}
+
+function stepFromNote(from: number): string {
+    switch (props.kind) {
+        case 'photos':
+            return tc(
+                'Precio para recuerdos con {count} foto o más.|Precio para recuerdos con {count} fotos o más.',
+                from,
+            );
+        case 'videos':
+            return tc(
+                'Precio para recuerdos con {count} video o más.|Precio para recuerdos con {count} videos o más.',
+                from,
+            );
+        default:
+            return tc(
+                'Precio para recuerdos con {count} mensaje de voz o más.|Precio para recuerdos con {count} mensajes de voz o más.',
+                from,
+            );
+    }
+}
+
+function stepToNote(to: number): string {
+    switch (props.kind) {
+        case 'photos':
+            return tc(
+                'Precio para recuerdos con hasta {count} foto.|Precio para recuerdos con hasta {count} fotos.',
+                to,
+            );
+        case 'videos':
+            return tc(
+                'Precio para recuerdos con hasta {count} video.|Precio para recuerdos con hasta {count} videos.',
+                to,
+            );
+        default:
+            return tc(
+                'Precio para recuerdos con hasta {count} mensaje de voz.|Precio para recuerdos con hasta {count} mensajes de voz.',
+                to,
+            );
+    }
+}
 const plan = computed(() => props.quota.plan);
 const expiringSoon = computed(
     () =>
@@ -83,15 +222,15 @@ function stepNote(offer: ExpansionOffer): string | null {
     }
 
     return offer.step.from > 0
-        ? `Precio para recuerdos con ${offer.step.from} ${kindNoun(props.kind, offer.step.from)} o más.`
+        ? stepFromNote(offer.step.from)
         : offer.step.to !== null
-          ? `Precio para recuerdos con hasta ${offer.step.to} ${kindNoun(props.kind, offer.step.to)}.`
+          ? stepToNote(offer.step.to)
           : null;
 }
 
 function expiryDate(iso: string | null): string | null {
     return iso
-        ? new Date(iso).toLocaleDateString('es-MX', {
+        ? new Date(iso).toLocaleDateString(regional.value, {
               day: 'numeric',
               month: 'long',
               year: 'numeric',
@@ -106,13 +245,16 @@ function expiryDate(iso: string | null): string | null {
             class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs font-medium"
         >
             <span class="legacy-numeric">
-                {{ quota.used }} de {{ quota.limit }} {{ plural }}
+                {{ copy.usage }}
             </span>
             <span class="flex items-center gap-3 text-muted-foreground">
                 {{
                     full
-                        ? 'Límite alcanzado'
-                        : `Te ${quota.remaining === 1 ? 'queda' : 'quedan'} ${quota.remaining}`
+                        ? $t('Límite alcanzado')
+                        : $tc(
+                              'Te queda {count}|Te quedan {count}',
+                              quota.remaining,
+                          )
                 }}
                 <button
                     v-if="quota.can_expand"
@@ -122,7 +264,7 @@ function expiryDate(iso: string | null): string | null {
                     @click="open = true"
                 >
                     <Sparkles class="size-3.5" aria-hidden="true" />
-                    Ampliar
+                    {{ $t('Ampliar') }}
                 </button>
             </span>
         </div>
@@ -131,7 +273,7 @@ function expiryDate(iso: string | null): string | null {
             role="progressbar"
             :aria-valuenow="quota.used"
             :aria-valuemax="quota.limit"
-            :aria-label="`Espacio de ${plural} usado`"
+            :aria-label="copy.meter"
         >
             <div
                 class="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
@@ -146,13 +288,11 @@ function expiryDate(iso: string | null): string | null {
             class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm"
         >
             <p class="min-w-0">
-                <span class="block font-semibold text-amber-900"
-                    >Tu plan venció — renuévalo</span
-                >
+                <span class="block font-semibold text-amber-900">{{
+                    $t('Tu plan venció — renuévalo')
+                }}</span>
                 <span class="block text-xs text-amber-900/80">
-                    Todo tu contenido sigue aquí, visible y descargable. Para
-                    agregar más {{ plural }}, renueva tu plan o quita
-                    {{ kind === 'photos' ? 'alguna' : 'alguno' }}.
+                    {{ copy.expired }}
                 </span>
             </p>
             <button
@@ -164,7 +304,7 @@ function expiryDate(iso: string | null): string | null {
             >
                 <Spinner v-if="buying" class="size-4" />
                 <CalendarClock v-else class="size-4" aria-hidden="true" />
-                Renovar
+                {{ $t('Renovar') }}
                 <template v-if="plan.renew_price_label">
                     · {{ plan.renew_price_label }}
                 </template>
@@ -180,14 +320,16 @@ function expiryDate(iso: string | null): string | null {
                 <span class="block font-semibold">
                     {{
                         plan.expires_in_days === 1
-                            ? 'Tu plan vence mañana'
-                            : `Tu plan vence en ${plan.expires_in_days} días`
+                            ? $t('Tu plan vence mañana')
+                            : $t('Tu plan vence en {days} días', {
+                                  days: plan.expires_in_days ?? 0,
+                              })
                     }}
                 </span>
                 <span class="block text-xs text-muted-foreground">
-                    +{{ plan.units }} {{ kindNoun(kind, plan.units) }} hasta el
-                    {{ expiryDate(plan.expires_at) }}. Si renuevas hoy, el nuevo
-                    periodo empieza cuando termine el actual.
+                    {{
+                        planNote(plan.units, expiryDate(plan.expires_at) ?? '')
+                    }}
                 </span>
             </p>
             <button
@@ -197,7 +339,7 @@ function expiryDate(iso: string | null): string | null {
                 @click="renew"
             >
                 <Spinner v-if="buying" class="size-4" />
-                Renovar
+                {{ $t('Renovar') }}
                 <template v-if="plan.renew_price_label">
                     · {{ plan.renew_price_label }}
                 </template>
@@ -210,16 +352,9 @@ function expiryDate(iso: string | null): string | null {
             class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-fl-gold/40 bg-fl-paper p-3 text-sm"
         >
             <p class="min-w-0">
-                <span class="block font-semibold"
-                    >Llegaste al máximo de {{ plural }}</span
-                >
+                <span class="block font-semibold">{{ copy.maxed }}</span>
                 <span class="block text-xs text-muted-foreground">
-                    Todo lo que subiste sigue aquí, visible.
-                    {{
-                        quota.can_expand
-                            ? `Amplía tu espacio o quita ${kind === 'photos' ? 'una' : 'uno'} para subir ${kind === 'photos' ? 'otra' : 'otro'}.`
-                            : `Quita ${kind === 'photos' ? 'una' : 'uno'} para subir ${kind === 'photos' ? 'otra' : 'otro'}.`
-                    }}
+                    {{ copy.makeRoom }}
                 </span>
             </p>
             <button
@@ -230,7 +365,7 @@ function expiryDate(iso: string | null): string | null {
                 @click="open = true"
             >
                 <Sparkles class="size-4" aria-hidden="true" />
-                Ampliar
+                {{ $t('Ampliar') }}
                 <template v-if="quota.expansion">
                     · {{ quota.expansion.price_label }}
                 </template>
@@ -240,11 +375,13 @@ function expiryDate(iso: string | null): string | null {
         <Dialog v-model:open="open">
             <DialogContent class="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Más espacio para tus {{ plural }}</DialogTitle>
+                    <DialogTitle>{{ copy.more }}</DialogTitle>
                     <DialogDescription>
-                        Elige una ampliación. Te llevamos a tu pedido para
-                        pagarla; el espacio se agrega en cuanto se confirma el
-                        pago.
+                        {{
+                            $t(
+                                'Elige una ampliación. Te llevamos a tu pedido para pagarla; el espacio se agrega en cuanto se confirma el pago.',
+                            )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -271,8 +408,7 @@ function expiryDate(iso: string | null): string | null {
                                 class="flex flex-wrap items-baseline justify-between gap-x-3"
                             >
                                 <span class="font-semibold">
-                                    +{{ offer.units }}
-                                    {{ kindNoun(kind, offer.units) }}
+                                    {{ extraUnits(offer.units) }}
                                 </span>
                                 <span class="legacy-numeric font-semibold">{{
                                     offer.price_label
@@ -288,9 +424,12 @@ function expiryDate(iso: string | null): string | null {
                                 v-if="offer.months"
                                 class="mt-1 block text-xs text-muted-foreground"
                             >
-                                Un solo pago por {{ offer.months }} meses. No se
-                                renueva ni se cobra solo: tú decides si lo
-                                renuevas.
+                                {{
+                                    $t(
+                                        'Un solo pago por {months} meses. No se renueva ni se cobra solo: tú decides si lo renuevas.',
+                                        { months: offer.months },
+                                    )
+                                }}
                             </span>
                             <span
                                 v-if="stepNote(offer)"
@@ -308,7 +447,7 @@ function expiryDate(iso: string | null): string | null {
                         class="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-semibold"
                         @click="open = false"
                     >
-                        Ahora no
+                        {{ $t('Ahora no') }}
                     </button>
                     <button
                         type="button"
@@ -318,7 +457,7 @@ function expiryDate(iso: string | null): string | null {
                     >
                         <Spinner v-if="buying" class="size-4" />
                         <Check v-else class="size-4" aria-hidden="true" />
-                        Continuar al pago
+                        {{ $t('Continuar al pago') }}
                     </button>
                 </DialogFooter>
             </DialogContent>

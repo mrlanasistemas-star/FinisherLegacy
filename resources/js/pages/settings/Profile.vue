@@ -24,9 +24,9 @@ const email = ref(user.value.email ?? '');
 </script>
 
 <template>
-    <Head title="Datos de la cuenta" />
+    <Head :title="$t('Datos de la cuenta')" />
 
-    <h1 class="sr-only">Datos de la cuenta</h1>
+    <h1 class="sr-only">{{ $t('Datos de la cuenta') }}</h1>
 
     <Form
         v-bind="ProfileController.update.form()"
@@ -34,37 +34,41 @@ const email = ref(user.value.email ?? '');
         v-slot="{ errors, processing, recentlySuccessful }"
     >
         <SettingsGroup
-            title="Información personal"
-            note="Tu nombre aparece en tu perfil, tus pedidos y tus Finisher Legacy."
+            :title="$t('Información personal')"
+            :note="
+                $t(
+                    'Tu nombre aparece en tu perfil, tus pedidos y tus Finisher Legacy.',
+                )
+            "
         >
             <SettingsInputRow
                 id="first_name"
                 v-model="firstName"
-                label="Nombre"
+                :label="$t('Nombre')"
                 :error="errors.first_name"
                 required
                 autocomplete="given-name"
-                placeholder="Tu nombre"
+                :placeholder="$t('Tu nombre')"
             />
             <SettingsInputRow
                 id="last_name"
                 v-model="lastName"
-                label="Apellidos"
+                :label="$t('Apellidos')"
                 :error="errors.last_name"
                 required
                 autocomplete="family-name"
-                placeholder="Tus apellidos"
+                :placeholder="$t('Tus apellidos')"
             />
             <SettingsInputRow
                 id="email"
                 v-model="email"
                 type="email"
-                label="Correo electrónico"
+                :label="$t('Correo electrónico')"
                 :error="errors.email"
                 required
                 autocomplete="username"
                 inputmode="email"
-                placeholder="tucorreo@ejemplo.com"
+                :placeholder="$t('tucorreo@ejemplo.com')"
             />
 
             <div
@@ -76,19 +80,19 @@ const email = ref(user.value.email ?? '');
                     aria-hidden="true"
                 />
                 <div class="text-amber-900">
-                    Tu correo aún no está verificado.
+                    {{ $t('Tu correo aún no está verificado.') }}
                     <Link
                         :href="send()"
                         as="button"
                         class="font-semibold underline underline-offset-4 hover:no-underline"
                     >
-                        Reenviar el correo de verificación
+                        {{ $t('Reenviar el correo de verificación') }}
                     </Link>
                     <p
                         v-if="page.props.status === 'verification-link-sent'"
                         class="mt-1 font-medium text-emerald-700"
                     >
-                        Te enviamos un nuevo enlace.
+                        {{ $t('Te enviamos un nuevo enlace.') }}
                     </p>
                 </div>
             </div>
@@ -106,15 +110,15 @@ const email = ref(user.value.email ?? '');
                         role="status"
                     >
                         <CheckCircle2 class="size-4" aria-hidden="true" />
-                        Guardado
+                        {{ $t('Guardado') }}
                     </p>
                 </Transition>
                 <SubmitButton
                     :block="false"
                     :arrow="false"
                     class="min-h-11 px-6 text-sm"
-                    label="Guardar cambios"
-                    processing-label="Guardando…"
+                    :label="$t('Guardar cambios')"
+                    :processing-label="$t('Guardando…')"
                     :processing="processing"
                     data-test="update-profile-button"
                 />

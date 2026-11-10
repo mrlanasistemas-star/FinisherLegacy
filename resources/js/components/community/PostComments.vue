@@ -14,6 +14,7 @@ import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
 import InputError from '@/components/InputError.vue';
 import { useAuthGate } from '@/composables/useAuthGate';
 import { useCommunityReport } from '@/composables/useCommunityReport';
+import { useI18n } from '@/i18n';
 import { timeAgo } from '@/lib/datetime';
 import { confirmAction } from '@/lib/swal';
 import { destroy as destroyComment } from '@/routes/community/comments';
@@ -36,6 +37,7 @@ const user = computed(() => page.props.auth.user);
 const profile = computed(() => page.props.auth.profile);
 const { openReport } = useCommunityReport();
 const { loginUrl } = useAuthGate();
+const { t } = useI18n();
 
 const form = useForm({ body: '' });
 const input = ref<HTMLTextAreaElement | null>(null);
@@ -60,7 +62,7 @@ function submit() {
         },
         onError: (errors) => {
             if (!errors.body) {
-                toast.error('No pudimos publicar tu comentario.');
+                toast.error(t('No pudimos publicar tu comentario.'));
             }
         },
     });
@@ -78,8 +80,8 @@ function onEnter(event: KeyboardEvent) {
 async function remove(comment: CommunityComment) {
     if (
         !(await confirmAction({
-            title: '¿Eliminar este comentario?',
-            confirmButtonText: 'Eliminar',
+            title: t('¿Eliminar este comentario?'),
+            confirmButtonText: t('Eliminar'),
         }))
     ) {
         return;
@@ -88,7 +90,7 @@ async function remove(comment: CommunityComment) {
     router.visit(destroyComment(comment.uuid), {
         preserveScroll: true,
         only: ['comments', 'post'],
-        onError: () => toast.error('No pudimos eliminar el comentario.'),
+        onError: () => toast.error(t('No pudimos eliminar el comentario.')),
     });
 }
 
@@ -125,7 +127,11 @@ defineExpose({ focus });
                                 : '#'
                         "
                         class="shrink-0 rounded-full"
-                        :aria-label="`Perfil de ${comment.author.name}`"
+                        :aria-label="
+                            $t('Perfil de {name}', {
+                                name: comment.author.name,
+                            })
+                        "
                     >
                         <AthleteAvatar
                             :name="comment.author.name"
@@ -151,8 +157,8 @@ defineExpose({ focus });
                             v-if="comment.is_hidden"
                             class="mt-1 flex items-center gap-1 text-xs text-amber-800"
                         >
-                            <EyeOff class="size-3" /> Oculto por moderación:
-                            solo tú lo ves.
+                            <EyeOff class="size-3" />
+                            {{ $t('Oculto por moderación: solo tú lo ves.') }}
                         </p>
                         <div
                             class="mt-1 flex items-center gap-3 text-xs text-muted-foreground"
@@ -171,7 +177,7 @@ defineExpose({ focus });
                                     })
                                 "
                             >
-                                <Flag class="size-3" /> Reportar
+                                <Flag class="size-3" /> {{ $t('Reportar') }}
                             </button>
                             <button
                                 v-if="comment.can_delete"
@@ -179,7 +185,7 @@ defineExpose({ focus });
                                 class="inline-flex items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
                                 @click="remove(comment)"
                             >
-                                <Trash2 class="size-3" /> Eliminar
+                                <Trash2 class="size-3" /> {{ $t('Eliminar') }}
                             </button>
                         </div>
                     </div>
@@ -190,9 +196,9 @@ defineExpose({ focus });
                 class="py-8 text-center"
                 :class="split ? 'flex h-full flex-col justify-center' : ''"
             >
-                <p class="font-semibold">Aún no hay comentarios.</p>
+                <p class="font-semibold">{{ $t('Aún no hay comentarios.') }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Inicia la conversación y celebra este logro.
+                    {{ $t('Inicia la conversación y celebra este logro.') }}
                 </p>
             </div>
         </div>
@@ -209,9 +215,9 @@ defineExpose({ focus });
                     size="sm"
                 />
                 <div class="min-w-0 flex-1">
-                    <label for="comment-body" class="sr-only"
-                        >Añade un comentario</label
-                    >
+                    <label for="comment-body" class="sr-only">{{
+                        $t('Añade un comentario')
+                    }}</label>
                     <div class="flex items-end gap-2">
                         <textarea
                             id="comment-body"
@@ -219,7 +225,7 @@ defineExpose({ focus });
                             v-model="form.body"
                             rows="1"
                             :maxlength="commentMax"
-                            placeholder="Añade un comentario…"
+                            :placeholder="$t('Añade un comentario…')"
                             class="field-sizing-content max-h-32 min-h-9 w-full resize-none bg-transparent py-2 text-sm placeholder:text-muted-foreground focus:outline-none"
                             aria-describedby="comment-body-error"
                             @keydown.enter="onEnter"
@@ -229,7 +235,7 @@ defineExpose({ focus });
                             class="min-h-9 shrink-0 text-sm font-semibold text-fl-gold-ink hover:text-foreground disabled:opacity-40"
                             :disabled="form.processing || !form.body.trim()"
                         >
-                            Publicar
+                            {{ $t('Publicar') }}
                         </button>
                     </div>
                     <InputError
@@ -242,9 +248,9 @@ defineExpose({ focus });
                 <Link
                     :href="loginUrl()"
                     class="font-semibold text-foreground underline underline-offset-4"
-                    >Inicia sesión</Link
+                    >{{ $t('Inicia sesión') }}</Link
                 >
-                para comentar y celebrar.
+                {{ $t('para comentar y celebrar.') }}
             </p>
         </div>
     </div>

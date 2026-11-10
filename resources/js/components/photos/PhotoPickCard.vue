@@ -32,12 +32,21 @@ const emit = defineEmits<{ toggle: []; open: [] }>();
         <button
             type="button"
             class="block w-full"
-            :aria-label="`Ver foto de ${photo.source}`"
+            :aria-label="$t('Ver foto de {source}', { source: photo.source })"
             @click="emit('open')"
         >
             <img
                 :src="photo.thumb_url"
-                :alt="`Foto de ${photo.event ?? 'evento'} por ${photo.source}`"
+                :alt="
+                    photo.event
+                        ? $t('Foto de {event} por {source}', {
+                              event: photo.event,
+                              source: photo.source,
+                          })
+                        : $t('Foto de evento por {source}', {
+                              source: photo.source,
+                          })
+                "
                 loading="lazy"
                 decoding="async"
                 class="aspect-[4/5] w-full bg-muted object-cover transition-transform duration-500 group-hover:scale-[1.03]"
@@ -54,7 +63,9 @@ const emit = defineEmits<{ toggle: []; open: [] }>();
             "
             :aria-pressed="selected"
             :aria-label="
-                selected ? 'Quitar de la selección' : 'Agregar a la selección'
+                selected
+                    ? $t('Quitar de la selección')
+                    : $t('Agregar a la selección')
             "
             @click="emit('toggle')"
         >
@@ -64,7 +75,7 @@ const emit = defineEmits<{ toggle: []; open: [] }>();
         <span
             v-else
             class="absolute top-2 right-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white"
-            >Ya es tuya</span
+            >{{ $t('Ya es tuya') }}</span
         >
         <div class="flex items-center justify-between gap-2 px-3 py-2.5">
             <span class="min-w-0">

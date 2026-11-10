@@ -10,6 +10,7 @@ import { Link } from '@inertiajs/vue3';
 import { ArrowRight, Nfc, Plus } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import { detectNfcSupport } from '@/components/activation/webNfc';
+import { useI18n } from '@/i18n';
 import { index as activateIndex } from '@/routes/activate';
 import { show as activateNfc } from '@/routes/activate/nfc';
 
@@ -22,6 +23,8 @@ const props = withDefaults(
     { hasAny: false, compact: false },
 );
 
+const { t } = useI18n();
+
 const webNfc = ref(false);
 
 onMounted(() => {
@@ -32,12 +35,18 @@ const href = computed(() =>
     webNfc.value ? activateNfc().url : activateIndex().url,
 );
 const title = computed(() =>
-    props.hasAny ? 'Activa otro Finisher Legacy' : 'Activar mi Finisher Legacy',
+    props.hasAny
+        ? t('Activa otro Finisher Legacy')
+        : t('Activar mi Finisher Legacy'),
 );
 const text = computed(() =>
     webNfc.value
-        ? 'Tu teléfono puede leer el tag: acércalo y tu historia se abre en segundos.'
-        : 'Acerca tu teléfono al tag o escribe su código. Tu historia empieza aquí.',
+        ? t(
+              'Tu teléfono puede leer el tag: acércalo y tu historia se abre en segundos.',
+          )
+        : t(
+              'Acerca tu teléfono al tag o escribe su código. Tu historia empieza aquí.',
+          ),
 );
 </script>
 
@@ -77,7 +86,7 @@ const text = computed(() =>
             :class="compact ? 'size-11 min-h-0 px-0' : ''"
         >
             <template v-if="!compact">
-                {{ hasAny ? 'Activar otro' : 'Activar ahora' }}
+                {{ hasAny ? $t('Activar otro') : $t('Activar ahora') }}
                 <ArrowRight
                     class="size-4 transition-transform duration-300 group-hover:translate-x-0.5"
                     aria-hidden="true"

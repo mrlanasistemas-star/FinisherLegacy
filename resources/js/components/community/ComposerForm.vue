@@ -38,6 +38,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { useI18n } from '@/i18n';
 import { store } from '@/routes/community/posts';
 import type { PostKind, VisibilityOption } from '@/types';
 import type { ComposerData } from './Composer.vue';
@@ -54,50 +55,53 @@ const emit = defineEmits<{ published: []; close: [] }>();
 const page = usePage();
 const user = computed(() => page.props.auth.user!);
 const profile = computed(() => page.props.auth.profile);
+const { t } = useI18n();
 
-const kinds: {
-    value: PostKind;
-    label: string;
-    icon: typeof PenLine;
-    hint: string;
-}[] = [
+const kinds = computed<
+    {
+        value: PostKind;
+        label: string;
+        icon: typeof PenLine;
+        hint: string;
+    }[]
+>(() => [
     {
         value: 'moment',
-        label: 'Momento',
+        label: t('Momento'),
         icon: Sparkles,
-        hint: 'Un entrenamiento, una marca o un recuerdo.',
+        hint: t('Un entrenamiento, una marca o un recuerdo.'),
     },
     {
         value: 'race_result',
-        label: 'Resultado',
+        label: t('Resultado'),
         icon: Timer,
-        hint: 'Comparte tu tiempo oficial de una carrera.',
+        hint: t('Comparte tu tiempo oficial de una carrera.'),
     },
     {
         value: 'photo',
-        label: 'Foto',
+        label: t('Foto'),
         icon: Camera,
-        hint: 'Las fotos de tu día.',
+        hint: t('Las fotos de tu día.'),
     },
     {
         value: 'gear',
-        label: 'Mi equipo',
+        label: t('Mi equipo'),
         icon: ShoppingBag,
-        hint: 'El equipo que te acompaña.',
+        hint: t('El equipo que te acompaña.'),
     },
     {
         value: 'legacy_plate',
         label: 'Legacy Plate',
         icon: Medal,
-        hint: 'Tu medalla y su historia.',
+        hint: t('Tu medalla y su historia.'),
     },
     {
         value: 'text',
-        label: 'Texto',
+        label: t('Texto'),
         icon: PenLine,
-        hint: 'Una idea, un ánimo, una meta.',
+        hint: t('Una idea, un ánimo, una meta.'),
     },
-];
+]);
 
 const kind = ref<PostKind>(props.initialKind ?? 'text');
 const captionInput = ref<HTMLTextAreaElement | null>(null);
@@ -151,11 +155,17 @@ function addFiles(files: File[]) {
     const accepted = fitting.slice(0, Math.max(room, 0));
 
     if (images.length < files.length) {
-        sizeError.value = 'Solo puedes subir fotos JPG, PNG o WebP.';
+        sizeError.value = t('Solo puedes subir fotos JPG, PNG o WebP.');
     } else if (tooBig.length) {
-        sizeError.value = `Alguna foto pesa más de ${Math.round(maxBytes / 1024 / 1024)} MB; elige una más ligera.`;
+        sizeError.value = t(
+            'Alguna foto pesa más de {size} MB; elige una más ligera.',
+            { size: Math.round(maxBytes / 1024 / 1024) },
+        );
     } else if (fitting.length > accepted.length) {
-        sizeError.value = `Puedes subir hasta ${props.limits.max_photos} fotos por publicación.`;
+        sizeError.value = t(
+            'Puedes subir hasta {count} fotos por publicación.',
+            { count: props.limits.max_photos },
+        );
     } else {
         sizeError.value = null;
     }
@@ -294,19 +304,19 @@ const resolvedType = computed(() => {
 
 const missing = computed<string | null>(() => {
     if (kind.value === 'race_result' && !form.event_participant_id) {
-        return 'Elige la carrera de tu resultado.';
+        return t('Elige la carrera de tu resultado.');
     }
 
     if (kind.value === 'photo' && !form.photos.length) {
-        return 'Agrega al menos una foto.';
+        return t('Agrega al menos una foto.');
     }
 
     if (kind.value === 'gear' && !form.gear_uuid) {
-        return 'Elige un producto de Mi equipo.';
+        return t('Elige un producto de Mi equipo.');
     }
 
     if (kind.value === 'legacy_plate' && !form.medal_uuid && !form.gear_uuid) {
-        return 'Elige la medalla de tu Legacy Plate.';
+        return t('Elige la medalla de tu Legacy Plate.');
     }
 
     if (
@@ -316,7 +326,7 @@ const missing = computed<string | null>(() => {
         !form.medal_uuid &&
         !hasMetrics.value
     ) {
-        return 'Escribe algo para publicar.';
+        return t('Escribe algo para publicar.');
     }
 
     return null;
@@ -358,7 +368,7 @@ function submit() {
         only: ['posts', 'me'],
         reset: ['posts'],
         onError: () =>
-            toast.error('No pudimos publicar. Revisa los campos marcados.'),
+            toast.error(t('No pudimos publicar. Revisa los campos marcados.')),
         onSuccess: () => {
             previews.value.forEach((url) => URL.revokeObjectURL(url));
             previews.value = [];
@@ -402,7 +412,9 @@ const gearOptions = computed(() =>
     props.composer.gear.map((g) => ({ value: g.uuid, label: g.label })),
 );
 
-const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
+const activeKind = computed(() =>
+    kinds.value.find((k) => k.value === kind.value)!,
+);
 </script>
 
 <template>
@@ -418,7 +430,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
             class="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center rounded-card border-2 border-dashed border-fl-gold bg-fl-cream/90 text-sm font-semibold text-fl-gold-ink"
         >
             <ImagePlus class="mb-2 size-8" />
-            Suelta tus fotos aquí
+            {{ $t('Suelta tus fotos aquí') }}
         </div>
         <div class="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-4 sm:px-6">
             <!-- Photos: dropzone, or cover + reorderable thumbnails -->
@@ -438,13 +450,15 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                         :class="kind === 'photo' ? 'size-6' : 'size-5'"
                     />
                 </span>
-                <span class="mt-3 text-sm font-semibold text-foreground"
-                    >Arrastra tus fotos aquí</span
-                >
-                <span class="mt-0.5 text-xs text-muted-foreground"
-                    >o toca para elegirlas · hasta {{ limits.max_photos }} ·
-                    JPG, PNG o WebP</span
-                >
+                <span class="mt-3 text-sm font-semibold text-foreground">{{
+                    $t('Arrastra tus fotos aquí')
+                }}</span>
+                <span class="mt-0.5 text-xs text-muted-foreground">{{
+                    $t(
+                        'o toca para elegirlas · hasta {count} · JPG, PNG o WebP',
+                        { count: limits.max_photos },
+                    )
+                }}</span>
             </button>
             <div v-else class="mb-4">
                 <div
@@ -452,17 +466,19 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                 >
                     <img
                         :src="previews[0]"
-                        alt="Portada de la publicación"
+                        :alt="$t('Portada de la publicación')"
                         class="size-full object-cover"
                     />
                     <span
                         class="absolute top-2 left-2 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white"
-                        >Portada</span
+                        >{{ $t('Portada') }}</span
                     >
                 </div>
                 <ul
                     class="mt-2 flex gap-2 overflow-x-auto p-1"
-                    aria-label="Fotos seleccionadas (arrastra para reordenar)"
+                    :aria-label="
+                        $t('Fotos seleccionadas (arrastra para reordenar)')
+                    "
                 >
                     <li
                         v-for="(src, index) in previews"
@@ -480,14 +496,18 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                     >
                         <img
                             :src="src"
-                            :alt="`Foto ${index + 1}`"
+                            :alt="$t('Foto {number}', { number: index + 1 })"
                             class="size-full object-cover"
                             draggable="false"
                         />
                         <button
                             type="button"
                             class="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
-                            :aria-label="`Quitar foto ${index + 1}`"
+                            :aria-label="
+                                $t('Quitar foto {number}', {
+                                    number: index + 1,
+                                })
+                            "
                             @click="removePhoto(index)"
                         >
                             <X class="size-3.5" />
@@ -499,7 +519,11 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                                 type="button"
                                 class="flex size-6 items-center justify-center rounded-full bg-white/90 text-foreground disabled:invisible"
                                 :disabled="index === 0"
-                                :aria-label="`Mover foto ${index + 1} a la izquierda`"
+                                :aria-label="
+                                    $t('Mover foto {number} a la izquierda', {
+                                        number: index + 1,
+                                    })
+                                "
                                 @click="movePhoto(index, index - 1)"
                             >
                                 <ChevronLeft class="size-3.5" />
@@ -508,7 +532,11 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                                 type="button"
                                 class="flex size-6 items-center justify-center rounded-full bg-white/90 text-foreground disabled:invisible"
                                 :disabled="index === previews.length - 1"
-                                :aria-label="`Mover foto ${index + 1} a la derecha`"
+                                :aria-label="
+                                    $t('Mover foto {number} a la derecha', {
+                                        number: index + 1,
+                                    })
+                                "
                                 @click="movePhoto(index, index + 1)"
                             >
                                 <ChevronRight class="size-3.5" />
@@ -525,7 +553,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                             @click="fileInput?.click()"
                         >
                             <ImagePlus class="size-4" />
-                            Agregar
+                            {{ $t('Agregar') }}
                         </button>
                     </li>
                 </ul>
@@ -555,16 +583,16 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                 </div>
             </div>
 
-            <label for="composer-caption" class="sr-only"
-                >¿Qué quieres compartir?</label
-            >
+            <label for="composer-caption" class="sr-only">{{
+                $t('¿Qué quieres compartir?')
+            }}</label>
             <textarea
                 id="composer-caption"
                 ref="captionInput"
                 v-model="form.caption"
                 rows="3"
                 :maxlength="limits.caption_max"
-                placeholder="Escribe una descripción…"
+                :placeholder="$t('Escribe una descripción…')"
                 class="mt-3 w-full resize-none rounded-control border border-input bg-card px-3.5 py-3 text-[15px] shadow-fl-micro placeholder:text-muted-foreground focus:border-foreground/30 focus:ring-2 focus:ring-ring/30 focus:outline-none"
                 aria-describedby="composer-caption-error"
             />
@@ -577,7 +605,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
             <div
                 class="-mx-1 mt-3 flex [scrollbar-width:none] gap-1.5 overflow-x-auto px-1 pb-1"
                 role="radiogroup"
-                aria-label="Tipo de publicación"
+                :aria-label="$t('Tipo de publicación')"
             >
                 <button
                     v-for="item in kinds"
@@ -606,15 +634,18 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                         id="composer-participation"
                         v-model="form.event_participant_id"
                         :options="participationOptions"
-                        aria-label="Tu carrera"
-                        placeholder="Elige tu carrera"
+                        :aria-label="$t('Tu carrera')"
+                        :placeholder="$t('Elige tu carrera')"
                     />
                     <p
                         v-else
                         class="rounded-control bg-fl-paper p-3 text-sm text-muted-foreground"
                     >
-                        Aún no tienes resultados registrados. Aparecerán aquí
-                        después de tu próxima carrera.
+                        {{
+                            $t(
+                                'Aún no tienes resultados registrados. Aparecerán aquí después de tu próxima carrera.',
+                            )
+                        }}
                     </p>
                 </div>
 
@@ -627,15 +658,15 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                         v-if="composer.medals.length"
                         v-model="form.medal_uuid"
                         :options="medalOptions"
-                        aria-label="Medalla (opcional)"
-                        placeholder="Medalla (opcional)"
+                        :aria-label="$t('Medalla (opcional)')"
+                        :placeholder="$t('Medalla (opcional)')"
                     />
                     <div class="grid gap-2 sm:grid-cols-3">
                         <Input
                             v-model="form.metrics.title"
                             maxlength="80"
-                            placeholder="Título (ej. Fondo largo)"
-                            aria-label="Título"
+                            :placeholder="$t('Título (ej. Fondo largo)')"
+                            :aria-label="$t('Título')"
                             class="sm:col-span-3"
                         />
                         <Input
@@ -644,8 +675,8 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                             inputmode="decimal"
                             min="0"
                             step="0.01"
-                            placeholder="Distancia (km)"
-                            aria-label="Distancia en kilómetros"
+                            :placeholder="$t('Distancia (km)')"
+                            :aria-label="$t('Distancia en kilómetros')"
                         />
                         <Input
                             v-model="form.metrics.duration_minutes"
@@ -653,8 +684,8 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                             inputmode="numeric"
                             min="0"
                             step="1"
-                            placeholder="Tiempo (min)"
-                            aria-label="Tiempo en minutos"
+                            :placeholder="$t('Tiempo (min)')"
+                            :aria-label="$t('Tiempo en minutos')"
                         />
                         <label
                             class="flex h-10 items-center gap-2 rounded-control border border-input bg-card px-3 text-sm"
@@ -666,7 +697,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                                         (form.metrics.is_personal_record = !!v)
                                 "
                             />
-                            Marca personal
+                            {{ $t('Marca personal') }}
                         </label>
                     </div>
                 </div>
@@ -677,15 +708,15 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                         v-if="kind === 'legacy_plate' && composer.medals.length"
                         v-model="form.medal_uuid"
                         :options="medalOptions"
-                        aria-label="Medalla de tu Legacy Plate"
-                        placeholder="Medalla de tu Legacy Plate"
+                        :aria-label="$t('Medalla de tu Legacy Plate')"
+                        :placeholder="$t('Medalla de tu Legacy Plate')"
                     />
                     <FancySelect
                         v-else-if="composer.gear.length"
                         v-model="form.gear_uuid"
                         :options="gearOptions"
-                        aria-label="Producto de Mi equipo"
-                        placeholder="Elige un producto de Mi equipo"
+                        :aria-label="$t('Producto de Mi equipo')"
+                        :placeholder="$t('Elige un producto de Mi equipo')"
                     />
                     <p
                         v-else
@@ -693,8 +724,12 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                     >
                         {{
                             kind === 'gear'
-                                ? 'Cuando conectes un producto aparecerá aquí.'
-                                : 'Registra una medalla en Mi legado para mostrar tu Legacy Plate.'
+                                ? $t(
+                                      'Cuando conectes un producto aparecerá aquí.',
+                                  )
+                                : $t(
+                                      'Registra una medalla en Mi legado para mostrar tu Legacy Plate.',
+                                  )
                         }}
                     </p>
                 </div>
@@ -712,8 +747,8 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                         id="composer-event"
                         v-model="form.event_edition_id"
                         :options="editionOptions"
-                        aria-label="Evento relacionado (opcional)"
-                        placeholder="Evento relacionado (opcional)"
+                        :aria-label="$t('Evento relacionado (opcional)')"
+                        :placeholder="$t('Evento relacionado (opcional)')"
                         size="sm"
                         class="flex-1"
                     />
@@ -721,7 +756,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                         v-if="form.event_edition_id"
                         type="button"
                         class="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-                        aria-label="Quitar evento"
+                        :aria-label="$t('Quitar evento')"
                         @click="form.event_edition_id = null"
                     >
                         <X class="size-4" />
@@ -740,7 +775,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                 accept="image/jpeg,image/png,image/webp"
                 multiple
                 class="sr-only"
-                aria-label="Agregar fotos"
+                :aria-label="$t('Agregar fotos')"
                 @change="pickPhotos"
             />
             <button
@@ -750,16 +785,16 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                 @click="fileInput?.click()"
             >
                 <ImagePlus class="size-4 text-fl-gold-ink" />
-                Fotos
+                {{ $t('Fotos') }}
                 <span v-if="form.photos.length" class="legacy-numeric text-xs"
                     >{{ form.photos.length }}/{{ limits.max_photos }}</span
                 >
             </button>
 
             <div class="ml-auto flex items-center gap-2">
-                <label class="sr-only" for="composer-visibility"
-                    >Quién puede verlo</label
-                >
+                <label class="sr-only" for="composer-visibility">{{
+                    $t('Quién puede verlo')
+                }}</label>
                 <FancySelect
                     id="composer-visibility"
                     v-model="form.visibility"
@@ -773,7 +808,7 @@ const activeKind = computed(() => kinds.find((k) => k.value === kind.value)!);
                     :disabled="form.processing || !!missing"
                     :title="missing ?? undefined"
                 >
-                    {{ form.processing ? 'Publicando…' : 'Publicar' }}
+                    {{ form.processing ? $t('Publicando…') : $t('Publicar') }}
                 </Button>
             </div>
 

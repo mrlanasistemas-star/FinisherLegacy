@@ -7,12 +7,15 @@ import MascotEmptyState from '@/components/public/MascotEmptyState.vue';
 import QrScannerDialog from '@/components/qr/QrScannerDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 import { create, show } from '@/routes/dashboard/medals';
 import type { MedalCard } from '@/types';
 
 defineProps<{
     medals: MedalCard[];
 }>();
+
+const { regional } = useI18n();
 
 const scannerOpen = ref(false);
 
@@ -21,7 +24,7 @@ function formatDate(value: string | null): string | null {
         return null;
     }
 
-    return new Date(`${value}T00:00:00`).toLocaleDateString('es-MX', {
+    return new Date(`${value}T00:00:00`).toLocaleDateString(regional.value, {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -30,19 +33,19 @@ function formatDate(value: string | null): string | null {
 </script>
 
 <template>
-    <Head title="Mis Medallas" />
+    <Head :title="$t('Mis Medallas')" />
 
     <QrScannerDialog v-model:open="scannerOpen" />
 
     <div class="fl-container py-8 md:py-12">
         <div class="mb-8 flex items-end justify-between">
             <div>
-                <p class="fl-eyebrow">Mi legado</p>
+                <p class="fl-eyebrow">{{ $t('Mi legado') }}</p>
                 <h1 class="mt-2 font-serif text-3xl tracking-tight md:text-4xl">
-                    Mis medallas
+                    {{ $t('Mis medallas') }}
                 </h1>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Tu vitrina digital de logros.
+                    {{ $t('Tu vitrina digital de logros.') }}
                 </p>
             </div>
         </div>
@@ -63,11 +66,14 @@ function formatDate(value: string | null): string | null {
                 </div>
                 <div>
                     <p class="font-semibold text-foreground">
-                        Escanear un código Legacy
+                        {{ $t('Escanear un código Legacy') }}
                     </p>
                     <p class="mt-0.5 text-xs text-muted-foreground">
-                        El evento, tiempo y ritmo se cargan solos. Con tu Legacy
-                        Plate basta acercar el teléfono (NFC).
+                        {{
+                            $t(
+                                'El evento, tiempo y ritmo se cargan solos. Con tu Legacy Plate basta acercar el teléfono (NFC).',
+                            )
+                        }}
                     </p>
                 </div>
             </button>
@@ -83,10 +89,12 @@ function formatDate(value: string | null): string | null {
                 </div>
                 <div>
                     <p class="font-semibold text-foreground">
-                        Agregar manualmente
+                        {{ $t('Agregar manualmente') }}
                     </p>
                     <p class="mt-0.5 text-xs text-muted-foreground">
-                        Busca tu evento o captura los datos tú mismo.
+                        {{
+                            $t('Busca tu evento o captura los datos tú mismo.')
+                        }}
                     </p>
                 </div>
             </Link>
@@ -94,14 +102,20 @@ function formatDate(value: string | null): string | null {
 
         <MascotEmptyState
             v-if="medals.length === 0"
-            title="Tu colección comienza con una meta."
-            description="Acerca tu teléfono a tu Legacy Plate, escanea un código Legacy o registra tu primera medalla a mano."
+            :title="$t('Tu colección comienza con una meta.')"
+            :description="
+                $t(
+                    'Acerca tu teléfono a tu Legacy Plate, escanea un código Legacy o registra tu primera medalla a mano.',
+                )
+            "
         >
             <Button
                 as-child
                 class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
             >
-                <Link :href="create()">Agregar mi primera medalla</Link>
+                <Link :href="create()">{{
+                    $t('Agregar mi primera medalla')
+                }}</Link>
             </Button>
         </MascotEmptyState>
 
@@ -137,7 +151,7 @@ function formatDate(value: string | null): string | null {
                         variant="outline"
                         class="absolute top-2 right-2 border-border bg-background/70 text-[10px] text-muted-foreground"
                     >
-                        Privada
+                        {{ $t('Privada') }}
                     </Badge>
                     <div
                         class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent px-3 pt-6 pb-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100"

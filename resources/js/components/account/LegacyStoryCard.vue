@@ -141,7 +141,7 @@ const meta = computed(
                             v-if="story.has_audio"
                             class="inline-flex items-center gap-1"
                             ><Mic class="size-3.5" aria-hidden="true" />
-                            Voz</span
+                            {{ $t('Voz') }}</span
                         >
                         <span>{{ story.visibility_label }}</span>
                     </div>
@@ -153,7 +153,7 @@ const meta = computed(
             :href="edit(story.public_id).url"
             class="fl-link fl-link--gold mt-2.5 inline-flex text-xs font-semibold text-fl-gold-ink"
         >
-            Completa tu recuerdo →
+            {{ $t('Completa tu recuerdo →') }}
         </Link>
     </div>
 </template>

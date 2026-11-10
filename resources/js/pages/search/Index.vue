@@ -20,6 +20,8 @@ import PersonCard from '@/components/community/PersonCard.vue';
 import EventCard from '@/components/public/EventCard.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
+import { COLLECTIONS_URL, EVENTS_URL, PHOTOS_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { search as searchRoute } from '@/routes';
 import { index as communityIndex } from '@/routes/community';
 import type {
@@ -38,25 +40,27 @@ const props = defineProps<{
 
 type Tab = 'personas' | 'eventos' | 'productos';
 
+const { t } = useI18n();
+
 const term = ref(props.query);
 const loading = ref(false);
 
 const tabs = computed(() => [
     {
         key: 'personas' as Tab,
-        label: 'Personas',
+        label: t('Personas'),
         icon: Users,
         count: props.athletes.length,
     },
     {
         key: 'eventos' as Tab,
-        label: 'Eventos',
+        label: t('Eventos'),
         icon: CalendarDays,
         count: props.events.length,
     },
     {
         key: 'productos' as Tab,
-        label: 'Productos',
+        label: t('Productos'),
         icon: ShoppingBag,
         count: props.products.length,
     },
@@ -101,22 +105,41 @@ const nothing = computed(
         !props.events.length &&
         !props.products.length,
 );
+
+// Places to go when there is nothing typed yet.
+const shortcuts = computed(() => [
+    { label: t('Comunidad'), href: communityIndex().url },
+    { label: t('Eventos'), href: EVENTS_URL },
+    { label: t('Colecciones'), href: COLLECTIONS_URL },
+    { label: t('Fotos de evento'), href: PHOTOS_URL },
+]);
 </script>
 
 <template>
     <SeoHead
-        title="Buscar"
-        description="Busca atletas, eventos y productos en Finisher Legacy."
+        :title="$t('Buscar')"
+        :description="
+            $t('Busca atletas, eventos y productos en Finisher Legacy.')
+        "
         noindex
     />
 
-    <section class="fl-container max-w-4xl pt-6 pb-16 sm:pt-10">
-        <h1 class="font-serif text-3xl tracking-tight sm:text-4xl">Buscar</h1>
+    <section class="fl-container max-w-4xl pt-8 pb-20 sm:pt-14">
+        <p class="fl-eyebrow inline-flex items-center gap-3">
+            <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
+            {{ $t('Buscar') }}
+        </p>
+        <h1 class="fl-display mt-3 text-3xl sm:text-5xl">
+            {{ $t('¿Qué estás') }}
+            <span class="font-medium text-fl-gold-ink italic">{{
+                $t('buscando?')
+            }}</span>
+        </h1>
 
         <form class="relative mt-5" role="search" @submit.prevent="run(term)">
-            <label for="search-input" class="sr-only"
-                >Buscar atletas, eventos o productos</label
-            >
+            <label for="search-input" class="sr-only">{{
+                $t('Buscar atletas, eventos o productos')
+            }}</label>
             <Search
                 class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
@@ -127,14 +150,14 @@ const nothing = computed(
                 type="search"
                 autofocus
                 autocomplete="off"
-                placeholder="Atletas, eventos, productos…"
+                :placeholder="$t('Atletas, eventos, productos…')"
                 class="h-12 w-full rounded-full border border-input bg-card pr-12 pl-11 text-[15px] shadow-fl-micro placeholder:text-muted-foreground focus:border-foreground/30 focus:ring-2 focus:ring-ring/30 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
             />
             <button
                 v-if="term"
                 type="button"
                 class="absolute top-1/2 right-2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Limpiar búsqueda"
+                :aria-label="$t('Limpiar búsqueda')"
                 @click="term = ''"
             >
                 <X class="size-4" />
@@ -143,7 +166,7 @@ const nothing = computed(
 
         <div
             v-if="!searched"
-            class="mt-10 flex flex-col items-center text-center"
+            class="mt-12 flex flex-col items-center text-center"
         >
             <span
                 class="flex size-14 items-center justify-center rounded-full bg-fl-cream"
@@ -151,23 +174,27 @@ const nothing = computed(
                 <UserRoundSearch class="size-6 text-fl-gold-ink" />
             </span>
             <p class="mt-4 font-semibold">
-                Encuentra atletas, eventos y equipo
+                {{ $t('Encuentra atletas, eventos y equipo') }}
             </p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Escribe al menos 2 letras para buscar.
+                {{ $t('Escribe al menos 2 letras para buscar.') }}
             </p>
-            <Link
-                :href="communityIndex()"
-                class="mt-4 text-sm font-semibold text-fl-gold-ink hover:text-foreground"
-                >Explorar la comunidad</Link
-            >
+            <ul class="mt-6 flex flex-wrap justify-center gap-2">
+                <li v-for="shortcut in shortcuts" :key="shortcut.label">
+                    <Link
+                        :href="shortcut.href"
+                        class="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground/80 transition-colors hover:border-fl-gold hover:text-foreground"
+                        >{{ shortcut.label }}</Link
+                    >
+                </li>
+            </ul>
         </div>
 
         <template v-else>
             <nav
                 class="mt-6 grid grid-cols-3 border-b border-border"
                 role="tablist"
-                aria-label="Tipo de resultado"
+                :aria-label="$t('Tipo de resultado')"
             >
                 <button
                     v-for="tab in tabs"
@@ -206,7 +233,11 @@ const nothing = computed(
                     v-if="nothing"
                     class="mt-8 rounded-card border border-dashed border-foreground/15 bg-card p-10 text-center text-muted-foreground"
                 >
-                    No encontramos resultados para “{{ query }}”.
+                    {{
+                        $t('No encontramos resultados para “{query}”.', {
+                            query,
+                        })
+                    }}
                 </p>
 
                 <template v-else>
@@ -230,9 +261,12 @@ const nothing = computed(
                             v-else
                             class="py-12 text-center text-sm text-muted-foreground"
                         >
-                            Ningún atleta con perfil público coincide con “{{
-                                query
-                            }}”.
+                            {{
+                                $t(
+                                    'Ningún atleta con perfil público coincide con “{query}”.',
+                                    { query },
+                                )
+                            }}
                         </p>
                     </section>
 
@@ -257,7 +291,11 @@ const nothing = computed(
                             v-else
                             class="py-12 text-center text-sm text-muted-foreground"
                         >
-                            Ningún evento coincide con “{{ query }}”.
+                            {{
+                                $t('Ningún evento coincide con “{query}”.', {
+                                    query,
+                                })
+                            }}
                         </p>
                     </section>
 
@@ -295,7 +333,11 @@ const nothing = computed(
                             v-else
                             class="py-12 text-center text-sm text-muted-foreground"
                         >
-                            Ningún producto coincide con “{{ query }}”.
+                            {{
+                                $t('Ningún producto coincide con “{query}”.', {
+                                    query,
+                                })
+                            }}
                         </p>
                     </section>
                 </template>

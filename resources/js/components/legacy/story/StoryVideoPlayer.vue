@@ -119,7 +119,9 @@ onBeforeUnmount(() => observer?.disconnect());
                 v-if="!started"
                 type="button"
                 class="group absolute inset-0 flex items-center justify-center focus-visible:ring-4 focus-visible:ring-fl-gold/60 focus-visible:outline-none focus-visible:ring-inset"
-                :aria-label="`Reproducir ${video.caption ?? label}`"
+                :aria-label="
+                    $t('Reproducir {title}', { title: video.caption ?? label })
+                "
                 @click="start"
             >
                 <img
@@ -152,8 +154,11 @@ onBeforeUnmount(() => observer?.disconnect());
                 class="absolute inset-x-0 bottom-0 bg-black/70 px-4 py-3 text-center text-xs text-white"
                 role="status"
             >
-                No pudimos reproducir este video. Recarga la página e intenta de
-                nuevo.
+                {{
+                    $t(
+                        'No pudimos reproducir este video. Recarga la página e intenta de nuevo.',
+                    )
+                }}
             </p>
         </div>
         <figcaption

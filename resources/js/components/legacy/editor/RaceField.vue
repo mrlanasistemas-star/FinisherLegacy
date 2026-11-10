@@ -27,16 +27,16 @@ defineProps<{
                 <span
                     v-if="optional && !official"
                     class="font-normal text-muted-foreground"
-                    >(opcional)</span
+                    >{{ $t('(opcional)') }}</span
                 >
             </label>
             <span
                 v-if="official"
                 class="inline-flex items-center gap-1 rounded-full bg-fl-gold/15 px-2 py-0.5 text-[11px] font-semibold text-fl-gold-ink"
-                title="Dato oficial del evento: no se puede editar"
+                :title="$t('Dato oficial del evento: no se puede editar')"
             >
                 <BadgeCheck class="size-3.5" aria-hidden="true" />
-                Oficial
+                {{ $t('Oficial') }}
             </span>
         </div>
         <p

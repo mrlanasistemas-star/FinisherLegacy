@@ -26,7 +26,7 @@ const attrs = useAttrs();
 </script>
 
 <template>
-    <Head title="Pago seguro" />
+    <Head :title="$t('Pago seguro')" />
 
     <div
         class="min-h-dvh bg-background pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
@@ -38,7 +38,7 @@ const attrs = useAttrs();
                 :href="props.app.return_url"
                 class="-ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-                <X class="size-4" /> Cancelar
+                <X class="size-4" /> {{ $t('Cancelar') }}
             </a>
             <span class="font-serif text-base font-semibold"
                 >Finisher Legacy</span
@@ -46,7 +46,7 @@ const attrs = useAttrs();
             <span
                 class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground"
             >
-                <Lock class="size-3.5" /> Seguro
+                <Lock class="size-3.5" /> {{ $t('Seguro') }}
             </span>
         </header>
 

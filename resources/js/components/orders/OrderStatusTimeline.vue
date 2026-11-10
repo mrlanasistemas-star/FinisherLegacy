@@ -6,9 +6,12 @@
  * wide screens, vertical on phones.
  */
 import { Check, CircleAlert, CircleSlash } from '@lucide/vue';
+import { useI18n } from '@/i18n';
 import type { OrderProgress } from '@/types/legado';
 
 defineProps<{ progress: OrderProgress }>();
+
+const { regional } = useI18n();
 
 function when(iso: string | null): string {
     if (!iso) {
@@ -16,7 +19,7 @@ function when(iso: string | null): string {
     }
 
     return new Date(iso)
-        .toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+        .toLocaleDateString(regional.value, { day: 'numeric', month: 'short' })
         .replace('.', '');
 }
 </script>
@@ -49,7 +52,7 @@ function when(iso: string | null): string {
         <ol
             class="grid gap-0 sm:grid-cols-5"
             :class="progress.closed ? 'opacity-50' : ''"
-            aria-label="Estado del pedido"
+            :aria-label="$t('Estado del pedido')"
         >
             <li
                 v-for="(step, index) in progress.steps"
@@ -100,14 +103,14 @@ function when(iso: string | null): string {
                         v-else-if="step.state === 'current'"
                         class="text-xs text-fl-gold-ink"
                     >
-                        Ahora
+                        {{ $t('Ahora') }}
                     </p>
                     <span class="sr-only">{{
                         step.state === 'done'
-                            ? '(completado)'
+                            ? $t('(completado)')
                             : step.state === 'current'
-                              ? '(en curso)'
-                              : '(pendiente)'
+                              ? $t('(en curso)')
+                              : $t('(pendiente)')
                     }}</span>
                 </div>
             </li>

@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useI18n } from '@/i18n';
 
 const { session, audioMaxSeconds } = defineProps<{
     session: {
@@ -36,20 +37,22 @@ const { session, audioMaxSeconds } = defineProps<{
     audioMaxBytes: number;
 }>();
 
+const { t } = useI18n();
+
 const messageType = ref<'text' | 'audio'>(
     session.allow_text ? 'text' : 'audio',
 );
 
-const triggerPresets = [
-    { value: 'start', label: 'Inicio' },
+const triggerPresets = computed(() => [
+    { value: 'start', label: t('Inicio') },
     { value: '1000', label: '1 KM' },
     { value: '2000', label: '2 KM' },
     { value: '5000', label: '5 KM' },
     { value: '10000', label: '10 KM' },
     { value: '21000', label: '21 KM' },
-    { value: 'finish', label: 'Final' },
-    { value: 'manual', label: 'Sin momento específico' },
-];
+    { value: 'finish', label: t('Final') },
+    { value: 'manual', label: t('Sin momento específico') },
+]);
 
 const triggerPreset = ref('manual');
 
@@ -167,7 +170,7 @@ function submit() {
 </script>
 
 <template>
-    <Head :title="`Apoya a ${session.athlete_name}`" />
+    <Head :title="$t('Apoya a {name}', { name: session.athlete_name })" />
 
     <section class="mx-auto max-w-lg px-4 py-16 sm:px-6 lg:px-8">
         <div class="mb-8 flex justify-center">
@@ -201,7 +204,7 @@ function submit() {
             v-if="!session.accepting"
             class="mt-8 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground/80"
         >
-            Esta sesión de apoyo ya no acepta mensajes.
+            {{ $t('Esta sesión de apoyo ya no acepta mensajes.') }}
         </div>
 
         <form
@@ -210,8 +213,10 @@ function submit() {
             @submit.prevent="submit"
         >
             <div class="grid gap-2">
-                <label for="support-name" class="text-xs text-muted-foreground"
-                    >Tu nombre</label
+                <label
+                    for="support-name"
+                    class="text-xs text-muted-foreground"
+                    >{{ $t('Tu nombre') }}</label
                 >
                 <Input
                     id="support-name"
@@ -225,12 +230,12 @@ function submit() {
                     <label
                         for="support-relationship"
                         class="text-xs text-muted-foreground"
-                        >Relación (opcional)</label
+                        >{{ $t('Relación (opcional)') }}</label
                     >
                     <Input
                         id="support-relationship"
                         v-model="form.relationship"
-                        placeholder="Mamá, amigo…"
+                        :placeholder="$t('Mamá, amigo…')"
                         class="border-border bg-background text-foreground"
                     />
                 </div>
@@ -238,7 +243,7 @@ function submit() {
                     <label
                         for="support-email"
                         class="text-xs text-muted-foreground"
-                        >Correo (opcional)</label
+                        >{{ $t('Correo (opcional)') }}</label
                     >
                     <Input
                         id="support-email"
@@ -250,9 +255,9 @@ function submit() {
             </div>
 
             <div class="grid gap-2">
-                <label class="text-xs text-muted-foreground"
-                    >¿Cuándo debe sonar?</label
-                >
+                <label class="text-xs text-muted-foreground">{{
+                    $t('¿Cuándo debe sonar?')
+                }}</label>
                 <Select
                     :model-value="triggerPreset"
                     @update:model-value="(v) => applyTriggerPreset(String(v))"
@@ -288,7 +293,7 @@ function submit() {
                     "
                     @click="messageType = 'text'"
                 >
-                    Texto
+                    {{ $t('Texto') }}
                 </button>
                 <button
                     type="button"
@@ -300,12 +305,14 @@ function submit() {
                     "
                     @click="messageType = 'audio'"
                 >
-                    Audio
+                    {{ $t('Audio') }}
                 </button>
             </div>
 
             <div v-if="messageType === 'text'" class="grid gap-2">
-                <label class="text-xs text-muted-foreground">Tu mensaje</label>
+                <label class="text-xs text-muted-foreground">{{
+                    $t('Tu mensaje')
+                }}</label>
                 <Textarea
                     v-model="form.message_text"
                     rows="4"
@@ -326,15 +333,17 @@ function submit() {
                         <Mic v-else class="size-4" />
                         {{
                             recording
-                                ? `Detener (${recordedSeconds}s)`
-                                : 'Grabar'
+                                ? $t('Detener ({seconds}s)', {
+                                      seconds: recordedSeconds,
+                                  })
+                                : $t('Grabar')
                         }}
                     </Button>
                     <label
                         class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                     >
                         <Upload class="size-3.5" />
-                        Subir archivo
+                        {{ $t('Subir archivo') }}
                         <input
                             type="file"
                             accept="audio/*"
@@ -350,7 +359,11 @@ function submit() {
                     class="w-full"
                 />
                 <p class="text-[11px] text-muted-foreground/80">
-                    Máximo {{ audioMaxSeconds }} segundos.
+                    {{
+                        $t('Máximo {seconds} segundos.', {
+                            seconds: audioMaxSeconds,
+                        })
+                    }}
                 </p>
             </div>
 
@@ -358,8 +371,12 @@ function submit() {
                 class="flex items-center gap-2 text-xs text-muted-foreground"
             >
                 <input v-model="form.is_surprise" type="checkbox" />
-                Que sea sorpresa — {{ session.athlete_name }} no lo verá antes
-                de escucharlo
+                {{
+                    $t(
+                        'Que sea sorpresa — {name} no lo verá antes de escucharlo',
+                        { name: session.athlete_name },
+                    )
+                }}
             </label>
 
             <Button
@@ -368,7 +385,7 @@ function submit() {
                 :disabled="!canSubmit || form.processing"
             >
                 <Send class="size-4" />
-                Enviar mensaje
+                {{ $t('Enviar mensaje') }}
             </Button>
         </form>
     </section>

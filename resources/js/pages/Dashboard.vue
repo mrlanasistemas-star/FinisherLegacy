@@ -33,6 +33,7 @@ import LegacyTimeline from '@/components/legado/LegacyTimeline.vue';
 import StatCounter from '@/components/legado/StatCounter.vue';
 import UpcomingEventCard from '@/components/legado/UpcomingEventCard.vue';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { index as communityIndex } from '@/routes/community';
 import { myEvents, myGear } from '@/routes/dashboard';
 import { show as legadoShow } from '@/routes/dashboard/legado';
@@ -86,78 +87,116 @@ const props = defineProps<{
     recentPosts: CommunityPost[];
 }>();
 
+const { t, tc, regional } = useI18n();
+
 const story = computed(() => props.legado.filter((entry) => !entry.upcoming));
 const hasMore = computed(() => props.legado.length >= props.legadoLimit);
 
 const greeting = computed(() => {
     const hour = new Date().getHours();
+    const name = props.athlete.first_name;
 
     if (hour < 12) {
-        return 'Buenos días';
+        return t('Buenos días, {name}', { name });
     }
 
-    return hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+    return hour < 19
+        ? t('Buenas tardes, {name}', { name })
+        : t('Buenas noches, {name}', { name });
 });
 
 const yearsHint = computed(() =>
-    props.totals.first_year ? `Desde ${props.totals.first_year}` : null,
+    props.totals.first_year
+        ? t('Desde {year}', { year: props.totals.first_year })
+        : null,
 );
 
-const plural = (n: number, one: string, many: string) =>
-    `${n.toLocaleString('es-MX')} ${n === 1 ? one : many}`;
+/** The count with the thousands separator of the active language. */
+const grouped = (n: number) => ({ count: n.toLocaleString(regional.value) });
 
 // Only what the athlete actually has — no row of zeros.
 const keepsakes = computed(() =>
     [
-        { value: props.stats.medals, label: ['medalla', 'medallas'] },
-        { value: props.stats.media, label: ['recuerdo', 'recuerdos'] },
-        { value: props.social.posts, label: ['publicación', 'publicaciones'] },
-        { value: props.social.followers, label: ['seguidor', 'seguidores'] },
-    ]
-        .filter((item) => item.value > 0)
-        .map((item) => ({
-            key: item.label[1],
-            text: plural(item.value, item.label[0], item.label[1]),
-        })),
+        {
+            key: 'medallas',
+            value: props.stats.medals,
+            text: tc(
+                '{count} medalla|{count} medallas',
+                props.stats.medals,
+                grouped(props.stats.medals),
+            ),
+        },
+        {
+            key: 'recuerdos',
+            value: props.stats.media,
+            text: tc(
+                '{count} recuerdo|{count} recuerdos',
+                props.stats.media,
+                grouped(props.stats.media),
+            ),
+        },
+        {
+            key: 'publicaciones',
+            value: props.social.posts,
+            text: tc(
+                '{count} publicación|{count} publicaciones',
+                props.social.posts,
+                grouped(props.social.posts),
+            ),
+        },
+        {
+            key: 'seguidores',
+            value: props.social.followers,
+            text: tc(
+                '{count} seguidor|{count} seguidores',
+                props.social.followers,
+                grouped(props.social.followers),
+            ),
+        },
+    ].filter((item) => item.value > 0),
 );
 
 const quickActions = computed(() => [
     {
-        label: 'Mis eventos',
-        hint: 'Próximos y corridos',
+        label: t('Mis eventos'),
+        hint: t('Próximos y corridos'),
         href: myEvents().url,
         icon: CalendarPlus,
     },
     {
-        label: 'Mis fotos',
-        hint: 'Búscalas por tu número',
+        label: t('Mis fotos'),
+        hint: t('Búscalas por tu número'),
         href: photosIndex().url,
         icon: Images,
     },
     {
-        label: 'Publicar',
-        hint: 'Comparte un momento',
+        label: t('Publicar'),
+        hint: t('Comparte un momento'),
         href: communityIndex({ query: { publicar: 1 } }).url,
         icon: MessageCirclePlus,
     },
     {
-        label: 'Mis pedidos',
-        hint: 'Sigue tus compras',
+        label: t('Mis pedidos'),
+        hint: t('Sigue tus compras'),
         href: ordersIndex().url,
         icon: Receipt,
     },
     {
-        label: 'Mi equipo',
+        label: t('Mi equipo'),
         hint:
             props.stats.ownedProducts > 0
-                ? plural(props.stats.ownedProducts, 'producto', 'productos')
-                : 'Tu equipo registrado',
+                ? tc(
+                      '{count} producto|{count} productos',
+                      props.stats.ownedProducts,
+                      grouped(props.stats.ownedProducts),
+                  )
+                : t('Tu equipo registrado'),
         href: myGear().url,
         icon: Package,
     },
     {
-        label: 'Agregar medalla',
-        hint: 'De una carrera anterior',
+        label: t('Agregar medalla'),
+        hint: t('De una carrera anterior'),
         href: createMedal().url,
         icon: Medal,
     },
@@ -185,7 +224,7 @@ async function copyLegacyId() {
 </script>
 
 <template>
-    <Head title="Mi Finisher Legacy" />
+    <Head :title="$t('Mi Finisher Legacy')" />
 
     <div class="fl-container py-6 md:py-10">
         <!-- Greeting -->
@@ -202,12 +241,12 @@ async function copyLegacyId() {
                 />
                 <div class="min-w-0">
                     <p class="fl-eyebrow truncate">
-                        {{ greeting }}, {{ athlete.first_name }}
+                        {{ greeting }}
                     </p>
                     <h1
                         class="mt-1.5 font-heading text-[1.85rem] leading-[1.1] font-semibold tracking-tight sm:text-4xl lg:text-5xl"
                     >
-                        Mi Finisher Legacy
+                        {{ $t('Mi Finisher Legacy') }}
                     </h1>
                 </div>
             </div>
@@ -217,7 +256,7 @@ async function copyLegacyId() {
                     class="fl-btn-secondary min-h-11 px-5 text-sm focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                 >
                     <PenLine class="size-4" aria-hidden="true" />
-                    Editar perfil
+                    {{ $t('Editar perfil') }}
                 </Link>
                 <Link
                     v-if="athlete.username"
@@ -225,7 +264,7 @@ async function copyLegacyId() {
                     class="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold text-foreground/80 transition-colors hover:bg-white hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                 >
                     <ExternalLink class="size-4" aria-hidden="true" />
-                    Ver mi perfil público
+                    {{ $t('Ver mi perfil público') }}
                 </Link>
             </div>
         </header>
@@ -252,13 +291,14 @@ async function copyLegacyId() {
             <span class="min-w-0 flex-1">
                 <span class="block font-semibold text-foreground">{{
                     profile
-                        ? `Tu perfil está al ${profile.completion}%`
-                        : 'Crea tu perfil de atleta'
+                        ? $t('Tu perfil está al {percent}%', {
+                              percent: profile.completion,
+                          })
+                        : $t('Crea tu perfil de atleta')
                 }}</span>
-                <span class="block text-muted-foreground"
-                    >Agrega tu foto, portada y una frase que te
-                    represente.</span
-                >
+                <span class="block text-muted-foreground">{{
+                    $t('Agrega tu foto, portada y una frase que te represente.')
+                }}</span>
             </span>
             <ArrowRight
                 class="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1"
@@ -278,12 +318,12 @@ async function copyLegacyId() {
                 class="flex flex-wrap items-end justify-between gap-3"
             >
                 <div>
-                    <p class="fl-eyebrow">Tus recuerdos</p>
+                    <p class="fl-eyebrow">{{ $t('Tus recuerdos') }}</p>
                     <h2
                         id="legacies-title"
                         class="mt-1.5 font-heading text-2xl font-semibold tracking-tight sm:text-3xl"
                     >
-                        Mis Finisher Legacy
+                        {{ $t('Mis Finisher Legacy') }}
                     </h2>
                 </div>
                 <Link
@@ -293,8 +333,8 @@ async function copyLegacyId() {
                 >
                     <span class="fl-link">{{
                         legaciesTotal > legacies.length
-                            ? `Ver los ${legaciesTotal}`
-                            : 'Ver biblioteca'
+                            ? $t('Ver los {count}', { count: legaciesTotal })
+                            : $t('Ver biblioteca')
                     }}</span>
                     <ArrowRight
                         class="size-4 transition-transform duration-300 group-hover:translate-x-0.5"
@@ -320,14 +360,19 @@ async function copyLegacyId() {
                 v-reveal
                 class="mt-4 rounded-2xl border border-dashed border-foreground/15 bg-white px-5 py-6 text-sm leading-relaxed text-muted-foreground"
             >
-                Aún no has activado ningún Finisher Legacy. Cuando lo hagas,
-                cada historia — con sus fotos, tu tiempo y tu voz — vivirá aquí.
+                {{
+                    $t(
+                        'Aún no has activado ningún Finisher Legacy. Cuando lo hagas, cada historia — con sus fotos, tu tiempo y tu voz — vivirá aquí.',
+                    )
+                }}
             </p>
         </section>
 
         <!-- Quick actions -->
         <nav class="mt-12" aria-labelledby="quick-title">
-            <h2 id="quick-title" class="sr-only">Accesos rápidos</h2>
+            <h2 id="quick-title" class="sr-only">
+                {{ $t('Accesos rápidos') }}
+            </h2>
             <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
                 <li
                     v-for="(action, i) in quickActions"
@@ -366,7 +411,7 @@ async function copyLegacyId() {
         <div class="mt-12 grid gap-5 lg:grid-cols-12">
             <div v-reveal class="lg:col-span-7">
                 <p class="mb-3 text-sm font-semibold text-foreground">
-                    Tu próxima meta
+                    {{ $t('Tu próxima meta') }}
                 </p>
                 <UpcomingEventCard
                     v-if="nextEvent"
@@ -381,18 +426,21 @@ async function copyLegacyId() {
                         <p
                             class="font-heading text-2xl leading-tight font-semibold sm:text-3xl"
                         >
-                            ¿Cuál es tu siguiente carrera?
+                            {{ $t('¿Cuál es tu siguiente carrera?') }}
                         </p>
                         <p class="mt-2 max-w-md text-sm text-muted-foreground">
-                            Inscríbete a un evento y aquí contaremos los días
-                            que faltan para la salida.
+                            {{
+                                $t(
+                                    'Inscríbete a un evento y aquí contaremos los días que faltan para la salida.',
+                                )
+                            }}
                         </p>
                     </div>
                     <Link
                         :href="eventsIndex()"
                         class="fl-btn-primary w-fit text-sm focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
-                        Explorar eventos
+                        {{ $t('Explorar eventos') }}
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>
                 </div>
@@ -407,28 +455,31 @@ async function copyLegacyId() {
                     id="totals-title"
                     class="text-sm font-semibold text-foreground"
                 >
-                    Tu legado en números
+                    {{ $t('Tu legado en números') }}
                 </p>
                 <p
                     v-if="!totals.races"
                     class="mt-6 font-heading text-xl leading-snug text-foreground"
                 >
-                    Tus carreras, tus kilómetros y tus temporadas se sumarán
-                    aquí desde tu primera meta.
+                    {{
+                        $t(
+                            'Tus carreras, tus kilómetros y tus temporadas se sumarán aquí desde tu primera meta.',
+                        )
+                    }}
                 </p>
                 <div v-else class="mt-6 grid grid-cols-3 gap-4">
                     <StatCounter
                         :value="totals.races"
-                        :label="totals.races === 1 ? 'Carrera' : 'Carreras'"
+                        :label="$tc('Carrera|Carreras', totals.races)"
                     />
                     <StatCounter
                         :value="totals.km"
                         :decimals="1"
-                        label="Kilómetros"
+                        :label="$t('Kilómetros')"
                     />
                     <StatCounter
                         :value="totals.years"
-                        :label="totals.years === 1 ? 'Temporada' : 'Temporadas'"
+                        :label="$tc('Temporada|Temporadas', totals.years)"
                         :hint="yearsHint"
                     />
                 </div>
@@ -446,7 +497,7 @@ async function copyLegacyId() {
                 >
                     <div class="min-w-0">
                         <p class="text-[11px] text-muted-foreground">
-                            Tu Legacy ID
+                            {{ $t('Tu Legacy ID') }}
                         </p>
                         <p class="truncate font-mono text-sm text-fl-gold-ink">
                             {{ legacyId }}
@@ -455,7 +506,9 @@ async function copyLegacyId() {
                     <button
                         type="button"
                         class="fl-press flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-                        :aria-label="copied ? 'Copiado' : 'Copiar Legacy ID'"
+                        :aria-label="
+                            copied ? $t('Copiado') : $t('Copiar Legacy ID')
+                        "
                         @click="copyLegacyId"
                     >
                         <Check
@@ -477,12 +530,12 @@ async function copyLegacyId() {
                     class="flex flex-wrap items-end justify-between gap-3"
                 >
                     <div>
-                        <p class="fl-eyebrow">Tu historia</p>
+                        <p class="fl-eyebrow">{{ $t('Tu historia') }}</p>
                         <h2
                             id="story"
                             class="mt-1.5 font-heading text-2xl font-semibold tracking-tight sm:text-3xl"
                         >
-                            Cada carrera suma una página
+                            {{ $t('Cada carrera suma una página') }}
                         </h2>
                     </div>
                     <Link
@@ -491,7 +544,9 @@ async function copyLegacyId() {
                         class="group inline-flex min-h-11 items-center gap-1 text-sm font-semibold"
                     >
                         <span class="fl-link">{{
-                            hasMore ? 'Ver todas mis carreras' : 'Mis eventos'
+                            hasMore
+                                ? $t('Ver todas mis carreras')
+                                : $t('Mis eventos')
                         }}</span>
                         <ArrowRight
                             class="size-4 transition-transform duration-300 group-hover:translate-x-0.5"
@@ -512,33 +567,38 @@ async function copyLegacyId() {
                     <p
                         class="font-heading text-2xl leading-tight font-semibold"
                     >
-                        Tu primera página está por escribirse.
+                        {{ $t('Tu primera página está por escribirse.') }}
                     </p>
                     <p
                         class="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground"
                     >
-                        Cuando cruces la meta de un evento Finisher Legacy, tu
-                        resultado, tus fotos y tu medalla aparecerán aquí.
+                        {{
+                            $t(
+                                'Cuando cruces la meta de un evento Finisher Legacy, tu resultado, tus fotos y tu medalla aparecerán aquí.',
+                            )
+                        }}
                     </p>
                     <div class="mt-6 flex flex-col gap-2 sm:flex-row">
                         <Link
                             :href="eventsIndex()"
                             class="fl-btn-primary text-sm focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
-                            >Explorar eventos</Link
+                            >{{ $t('Explorar eventos') }}</Link
                         >
                         <Link
                             :href="storeIndex()"
                             class="fl-btn-secondary text-sm focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                         >
                             <ShoppingBag class="size-4" aria-hidden="true" />
-                            Ver la tienda
+                            {{ $t('Ver la tienda') }}
                         </Link>
                     </div>
                     <Link
                         :href="createMedal()"
                         class="mt-4 inline-flex min-h-11 items-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                     >
-                        ¿Ya tienes medallas? Agrégalas a tu historia.
+                        {{
+                            $t('¿Ya tienes medallas? Agrégalas a tu historia.')
+                        }}
                     </Link>
                 </div>
             </section>
@@ -553,12 +613,12 @@ async function copyLegacyId() {
                         id="moments-title"
                         class="font-heading text-xl font-semibold"
                     >
-                        Actividad reciente
+                        {{ $t('Actividad reciente') }}
                     </h2>
                     <Link
                         :href="photosIndex()"
                         class="fl-link inline-flex min-h-11 items-center text-sm font-semibold"
-                        >Buscar mis fotos</Link
+                        >{{ $t('Buscar mis fotos') }}</Link
                     >
                 </div>
 
@@ -577,8 +637,10 @@ async function copyLegacyId() {
                             :src="photo.url"
                             :alt="
                                 photo.event
-                                    ? `Foto en ${photo.event}`
-                                    : 'Foto de evento'
+                                    ? $t('Foto en {event}', {
+                                          event: photo.event,
+                                      })
+                                    : $t('Foto de evento')
                             "
                             loading="lazy"
                             class="size-full object-cover"
@@ -586,7 +648,7 @@ async function copyLegacyId() {
                         <span
                             v-if="!photo.is_public"
                             class="absolute top-1 right-1 rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-medium"
-                            >Privada</span
+                            >{{ $t('Privada') }}</span
                         >
                     </Link>
                 </div>
@@ -616,11 +678,14 @@ async function copyLegacyId() {
                         />
                     </span>
                     <p class="mt-3 text-sm font-semibold">
-                        Aún no hay actividad
+                        {{ $t('Aún no hay actividad') }}
                     </p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Tus fotos de evento y lo que publiques en la comunidad
-                        aparecerán aquí.
+                        {{
+                            $t(
+                                'Tus fotos de evento y lo que publiques en la comunidad aparecerán aquí.',
+                            )
+                        }}
                     </p>
                 </div>
 
@@ -629,7 +694,7 @@ async function copyLegacyId() {
                     class="fl-btn-secondary mt-4 w-full text-sm focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
                 >
                     <MessageCirclePlus class="size-4" aria-hidden="true" />
-                    Compartir un momento
+                    {{ $t('Compartir un momento') }}
                 </Link>
             </aside>
         </div>

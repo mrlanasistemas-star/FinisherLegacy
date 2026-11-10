@@ -42,6 +42,7 @@ import {
 import { useAuthGate } from '@/composables/useAuthGate';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 import { useCommunityReport } from '@/composables/useCommunityReport';
+import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/datetime';
 import { confirmAction } from '@/lib/swal';
 import { block } from '@/routes/athletes';
@@ -88,11 +89,15 @@ const props = defineProps<{
     reportReasons: ReportReason[];
 }>();
 
+const { t } = useI18n();
+
 const page = usePage();
 const signedIn = computed(() => !!page.props.auth.user);
 const canonicalUrl = useCanonicalUrl();
 const { openReport } = useCommunityReport();
-const { requireAuth } = useAuthGate();
+const { requireAuth, loginUrl } = useAuthGate();
+// Guest invitation at the end of a public profile.
+const joinHref = computed(() => loginUrl(page.url, 'registro'));
 
 type Tab = 'publicaciones' | 'legado' | 'medallas' | 'fotos';
 const tabs = computed(() =>
@@ -100,20 +105,20 @@ const tabs = computed(() =>
         [
             {
                 key: 'publicaciones',
-                label: 'Publicaciones',
+                label: t('Publicaciones'),
                 icon: Grid3x3,
                 show: true,
             },
-            { key: 'legado', label: 'Legado', icon: Trophy, show: true },
+            { key: 'legado', label: t('Legado'), icon: Trophy, show: true },
             {
                 key: 'medallas',
-                label: 'Medallas',
+                label: t('Medallas'),
                 icon: Award,
                 show: props.medals.length > 0,
             },
             {
                 key: 'fotos',
-                label: 'Fotos',
+                label: t('Fotos'),
                 icon: Images,
                 show: props.photos.length > 0,
             },
@@ -143,11 +148,11 @@ const location = computed(() =>
 
 const headerStats = computed(() => [
     {
-        label: 'Publicaciones',
+        label: t('Publicaciones'),
         value: props.restricted ? null : props.stats.posts,
     },
     {
-        label: 'Seguidores',
+        label: t('Seguidores'),
         value: props.social.followers,
         href: props.restricted
             ? null
@@ -157,7 +162,7 @@ const headerStats = computed(() => [
               }).url,
     },
     {
-        label: 'Siguiendo',
+        label: t('Siguiendo'),
         value: props.social.following,
         href: props.restricted
             ? null
@@ -212,7 +217,7 @@ const timeline = computed<TimelineEntry[]>(() =>
         return {
             key: `${event.event_slug}-${index}`,
             date: event.event_date,
-            title: event.event ?? 'Evento',
+            title: event.event ?? t('Evento'),
             subtitle: event.race,
             distance: event.distance,
             time: event.official_time,
@@ -232,7 +237,7 @@ async function share() {
             await navigator.share({ title: props.profile.name, url });
         } else {
             await navigator.clipboard.writeText(url);
-            toast.success('Enlace del perfil copiado.');
+            toast.success(t('Enlace del perfil copiado.'));
         }
     } catch {
         // Share sheet dismissed.
@@ -241,14 +246,16 @@ async function share() {
 
 async function blockAthlete() {
     const confirmed = await confirmAction({
-        title: `¿Bloquear a ${props.profile.name}?`,
-        text: 'Ya no verán el perfil ni las publicaciones del otro, y se quitarán los seguimientos entre ustedes. Puedes desbloquear cuando quieras desde Personas → Bloqueados.',
-        confirmButtonText: 'Bloquear',
+        title: t('¿Bloquear a {name}?', { name: props.profile.name }),
+        text: t(
+            'Ya no verán el perfil ni las publicaciones del otro, y se quitarán los seguimientos entre ustedes. Puedes desbloquear cuando quieras desde Personas → Bloqueados.',
+        ),
+        confirmButtonText: t('Bloquear'),
     });
 
     if (confirmed) {
         router.visit(block(props.profile.username), {
-            onError: () => toast.error('No pudimos bloquear a este atleta.'),
+            onError: () => toast.error(t('No pudimos bloquear a este atleta.')),
         });
     }
 }
@@ -262,7 +269,14 @@ function report() {
 const metaDescription = computed(
     () =>
         props.profile.bio ??
-        `El perfil de ${props.profile.name} en Finisher Legacy: ${props.stats.events} eventos y ${props.stats.medals} medallas.`,
+        t(
+            'El perfil de {name} en Finisher Legacy: {events} eventos y {medals} medallas.',
+            {
+                name: props.profile.name,
+                events: props.stats.events,
+                medals: props.stats.medals,
+            },
+        ),
 );
 
 // ProfilePage/Person structured data — only fields the page renders.
@@ -340,14 +354,16 @@ const profileJsonLd = computed(() => {
                         variant="secondary"
                         class="h-9 flex-1 rounded-full px-5 sm:flex-none"
                     >
-                        <Link :href="editProfile()">Editar perfil</Link>
+                        <Link :href="editProfile()">{{
+                            $t('Editar perfil')
+                        }}</Link>
                     </Button>
                     <Button
                         variant="secondary"
                         class="h-9 flex-1 rounded-full px-5 sm:flex-none"
                         @click="share"
                     >
-                        Compartir perfil
+                        {{ $t('Compartir perfil') }}
                     </Button>
                 </template>
                 <template v-else>
@@ -363,7 +379,7 @@ const profileJsonLd = computed(() => {
                         variant="secondary"
                         size="icon"
                         class="size-10 rounded-full"
-                        aria-label="Compartir perfil"
+                        :aria-label="$t('Compartir perfil')"
                         @click="share"
                     >
                         <Share2 class="size-4" />
@@ -374,7 +390,7 @@ const profileJsonLd = computed(() => {
                                 variant="ghost"
                                 size="icon"
                                 class="size-10 rounded-full"
-                                aria-label="Más opciones"
+                                :aria-label="$t('Más opciones')"
                             >
                                 <MoreHorizontal class="size-5" />
                             </Button>
@@ -382,7 +398,7 @@ const profileJsonLd = computed(() => {
                         <DropdownMenuContent align="end" class="w-52">
                             <DropdownMenuItem @select="report">
                                 <Flag class="mr-2 size-4" />
-                                Reportar perfil
+                                {{ $t('Reportar perfil') }}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 v-if="signedIn"
@@ -390,7 +406,7 @@ const profileJsonLd = computed(() => {
                                 @select="blockAthlete"
                             >
                                 <Ban class="mr-2 size-4" />
-                                Bloquear
+                                {{ $t('Bloquear') }}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -409,11 +425,15 @@ const profileJsonLd = computed(() => {
                 <Lock class="size-7" />
             </span>
             <h2 class="mt-5 text-lg font-semibold">
-                Esta cuenta es solo para sus seguidores
+                {{ $t('Esta cuenta es solo para sus seguidores') }}
             </h2>
             <p class="mt-1 text-sm text-muted-foreground">
-                Sigue a {{ profile.name }} para ver sus carreras, medallas y
-                publicaciones.
+                {{
+                    $t(
+                        'Sigue a {name} para ver sus carreras, medallas y publicaciones.',
+                        { name: profile.name },
+                    )
+                }}
             </p>
         </section>
 
@@ -422,7 +442,7 @@ const profileJsonLd = computed(() => {
             <div
                 class="sticky top-16 z-30 mt-8 border-t border-border bg-background/90 backdrop-blur-sm"
                 role="tablist"
-                aria-label="Secciones del perfil"
+                :aria-label="$t('Secciones del perfil')"
             >
                 <div class="flex justify-center gap-2 sm:gap-12">
                     <button
@@ -492,22 +512,27 @@ const profileJsonLd = computed(() => {
                         <p class="mt-4 text-xl font-semibold">
                             {{
                                 isOwner
-                                    ? 'Comparte tu primer momento'
-                                    : 'Aún no hay publicaciones'
+                                    ? $t('Comparte tu primer momento')
+                                    : $t('Aún no hay publicaciones')
                             }}
                         </p>
                         <p class="mt-1 text-sm text-muted-foreground">
                             {{
                                 isOwner
-                                    ? 'Tus fotos y logros aparecerán en tu perfil.'
-                                    : `Cuando ${profile.name} publique, lo verás aquí.`
+                                    ? $t(
+                                          'Tus fotos y logros aparecerán en tu perfil.',
+                                      )
+                                    : $t(
+                                          'Cuando {name} publique, lo verás aquí.',
+                                          { name: profile.name },
+                                      )
                             }}
                         </p>
                         <Link
                             v-if="isOwner"
                             :href="communityIndex({ query: { publicar: 1 } })"
                             class="mt-4 text-sm font-semibold text-fl-gold-ink hover:text-foreground"
-                            >Publicar ahora</Link
+                            >{{ $t('Publicar ahora') }}</Link
                         >
                     </div>
                     <template #loading>
@@ -520,7 +545,9 @@ const profileJsonLd = computed(() => {
                                 :key="n"
                                 class="fl-skeleton aspect-square rounded-none!"
                             />
-                            <span class="sr-only">Cargando publicaciones…</span>
+                            <span class="sr-only">{{
+                                $t('Cargando publicaciones…')
+                            }}</span>
                         </div>
                     </template>
                 </InfiniteScroll>
@@ -576,7 +603,7 @@ const profileJsonLd = computed(() => {
                                 class="size-3 text-fl-gold-ink"
                                 aria-hidden="true"
                             />
-                            Tiempo oficial
+                            {{ $t('Tiempo oficial') }}
                         </p>
                     </component>
                 </div>
@@ -587,7 +614,11 @@ const profileJsonLd = computed(() => {
                     v-else
                     class="py-14 text-center text-sm text-muted-foreground"
                 >
-                    {{ profile.name }} aún no tiene participaciones públicas.
+                    {{
+                        $t('{name} aún no tiene participaciones públicas.', {
+                            name: profile.name,
+                        })
+                    }}
                 </p>
             </section>
 
@@ -656,8 +687,13 @@ const profileJsonLd = computed(() => {
                             :src="photo.url"
                             :alt="
                                 photo.event
-                                    ? `${profile.name} en ${photo.event}`
-                                    : `Foto de ${profile.name}`
+                                    ? $t('{name} en {event}', {
+                                          name: profile.name,
+                                          event: photo.event,
+                                      })
+                                    : $t('Foto de {name}', {
+                                          name: profile.name,
+                                      })
                             "
                             loading="lazy"
                             decoding="async"
@@ -672,6 +708,31 @@ const profileJsonLd = computed(() => {
                 </div>
             </section>
         </template>
+
+        <aside
+            v-if="!signedIn"
+            class="mx-4 mt-10 flex flex-col items-start gap-4 rounded-card border border-border bg-card p-6 shadow-fl-soft sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:p-7"
+            :aria-label="$t('Únete a Finisher Legacy')"
+        >
+            <div>
+                <p class="font-serif text-lg font-semibold text-foreground">
+                    {{ $t('Tu historia deportiva también merece un lugar.') }}
+                </p>
+                <p class="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {{
+                        $t(
+                            'Crea tu perfil, guarda tus resultados y medallas y sigue a otros atletas.',
+                        )
+                    }}
+                </p>
+            </div>
+            <a
+                :href="joinHref"
+                class="fl-btn-primary !min-h-11 shrink-0 !px-6 !text-sm"
+            >
+                {{ $t('Crear mi cuenta') }}
+            </a>
+        </aside>
     </div>
 
     <CommunityReportDialog

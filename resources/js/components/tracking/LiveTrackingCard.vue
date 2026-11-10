@@ -26,6 +26,7 @@ import {
 } from '@/actions/App/Http/Controllers/AthleteTrackingController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useI18n } from '@/i18n';
 import { shortDate, timeAgo } from '@/lib/datetime';
 import { formatKm } from '@/types/tracking';
 import type { ParticipantTracking } from '@/types/tracking';
@@ -34,6 +35,8 @@ const props = defineProps<{
     participantId: number;
     tracking: ParticipantTracking;
 }>();
+
+const { t } = useI18n();
 
 const newLink = ref<{ url: string; expires_at: string } | null>(null);
 const pairing = ref<{ code: string; expires_at: string | null } | null>(null);
@@ -54,7 +57,7 @@ const summary = computed(() => {
     const parts = [formatKm(s.distance_m)];
 
     if (s.status === 'active' && s.last_point_at) {
-        parts.push(`actualizado ${timeAgo(s.last_point_at)}`);
+        parts.push(t('actualizado {time}', { time: timeAgo(s.last_point_at) }));
     }
 
     return parts.join(' · ');
@@ -98,8 +101,8 @@ async function nativeShare(): Promise<void> {
 
     try {
         await navigator.share({
-            title: 'Sígueme en vivo',
-            text: 'Sigue mi carrera en vivo en Finisher Legacy:',
+            title: t('Sígueme en vivo'),
+            text: t('Sigue mi carrera en vivo en Finisher Legacy:'),
             url: newLink.value.url,
         });
     } catch {
@@ -143,7 +146,7 @@ function disconnect(uuid: string): void {
             class="mb-3 flex items-center gap-1.5 text-sm tracking-wide text-muted-foreground/80 uppercase"
         >
             <MapPin class="size-3.5" />
-            Seguimiento en vivo
+            {{ $t('Seguimiento en vivo') }}
         </h2>
 
         <div class="fl-card p-5">
@@ -157,23 +160,32 @@ function disconnect(uuid: string): void {
                             class="size-2 animate-pulse rounded-full bg-emerald-600 motion-reduce:animate-none"
                             aria-hidden="true"
                         />
-                        En vivo · {{ summary }}
+                        {{
+                            $t('En vivo · {summary}', {
+                                summary: summary ?? '',
+                            })
+                        }}
                     </p>
                     <p
                         v-else-if="session"
                         class="text-sm font-medium text-foreground"
                     >
-                        Último seguimiento · {{ summary }}
+                        {{
+                            $t('Último seguimiento · {summary}', {
+                                summary: summary ?? '',
+                            })
+                        }}
                     </p>
                     <p
                         class="mt-1 flex items-start gap-2 text-sm text-muted-foreground"
                     >
                         <Smartphone class="mt-0.5 size-4 shrink-0" />
                         <span>
-                            El seguimiento se inicia desde la app Finisher
-                            Legacy, solo cuando tú lo decides. Comparte el
-                            enlace y tu familia te verá avanzar en el mapa, sin
-                            crear cuenta.
+                            {{
+                                $t(
+                                    'El seguimiento se inicia desde la app Finisher Legacy, solo cuando tú lo decides. Comparte el enlace y tu familia te verá avanzar en el mapa, sin crear cuenta.',
+                                )
+                            }}
                         </span>
                     </p>
                 </div>
@@ -183,7 +195,7 @@ function disconnect(uuid: string): void {
                     @click="createShare"
                 >
                     <Share2 class="size-4" />
-                    Compartir seguimiento
+                    {{ $t('Compartir seguimiento') }}
                 </Button>
             </div>
 
@@ -193,12 +205,14 @@ function disconnect(uuid: string): void {
                 class="mt-5 rounded-xl border border-fl-gold/40 bg-fl-cream/60 p-4"
                 role="status"
             >
-                <p class="text-sm font-medium">Tu enlace está listo</p>
+                <p class="text-sm font-medium">
+                    {{ $t('Tu enlace está listo') }}
+                </p>
                 <div class="mt-2 flex flex-col gap-2 sm:flex-row">
                     <Input
                         :model-value="newLink.url"
                         readonly
-                        aria-label="Enlace de seguimiento"
+                        :aria-label="$t('Enlace de seguimiento')"
                         class="bg-white text-xs"
                         @focus="($event.target as HTMLInputElement).select()"
                     />
@@ -210,7 +224,7 @@ function disconnect(uuid: string): void {
                         >
                             <Check v-if="copied" class="size-4" />
                             <Copy v-else class="size-4" />
-                            {{ copied ? 'Copiado' : 'Copiar' }}
+                            {{ copied ? $t('Copiado') : $t('Copiar') }}
                         </Button>
                         <Button
                             v-if="canNativeShare"
@@ -219,14 +233,17 @@ function disconnect(uuid: string): void {
                             @click="nativeShare"
                         >
                             <Share2 class="size-4" />
-                            Enviar
+                            {{ $t('Enviar') }}
                         </Button>
                     </div>
                 </div>
                 <p class="mt-2 text-xs text-muted-foreground">
-                    Por seguridad solo lo mostramos esta vez. Vence el
-                    {{ shortDate(newLink.expires_at) }}; puedes desactivarlo
-                    cuando quieras.
+                    {{
+                        $t(
+                            'Por seguridad solo lo mostramos esta vez. Vence el {date}; puedes desactivarlo cuando quieras.',
+                            { date: shortDate(newLink.expires_at) },
+                        )
+                    }}
                 </p>
             </div>
 
@@ -243,14 +260,20 @@ function disconnect(uuid: string): void {
                     <div class="flex min-w-0 items-center gap-2">
                         <Link2 class="size-4 shrink-0 text-fl-gold-ink" />
                         <span class="truncate">
-                            Enlace activo · vence
-                            {{ timeAgo(share.expires_at) }}
+                            {{
+                                $t('Enlace activo · vence {time}', {
+                                    time: timeAgo(share.expires_at),
+                                })
+                            }}
                             <span
                                 v-if="share.last_viewed_at"
                                 class="text-muted-foreground"
                             >
-                                · visto
-                                {{ timeAgo(share.last_viewed_at) }}</span
+                                {{
+                                    $t('· visto {time}', {
+                                        time: timeAgo(share.last_viewed_at),
+                                    })
+                                }}</span
                             >
                         </span>
                     </div>
@@ -261,7 +284,7 @@ function disconnect(uuid: string): void {
                         @click="revoke(share.uuid)"
                     >
                         <X class="size-4" />
-                        Desactivar
+                        {{ $t('Desactivar') }}
                     </Button>
                 </li>
             </ul>
@@ -274,7 +297,7 @@ function disconnect(uuid: string): void {
                     role="status"
                 >
                     <p class="text-xs text-muted-foreground">
-                        Código para tu dispositivo de seguimiento
+                        {{ $t('Código para tu dispositivo de seguimiento') }}
                     </p>
                     <p
                         class="mt-1 font-mono text-3xl tracking-[0.3em] text-foreground"
@@ -282,12 +305,16 @@ function disconnect(uuid: string): void {
                         {{ pairing.code }}
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
-                        Escríbelo en tu dispositivo. Vence
                         {{
                             pairing.expires_at
-                                ? timeAgo(pairing.expires_at)
-                                : 'pronto'
-                        }}.
+                                ? $t(
+                                      'Escríbelo en tu dispositivo. Vence {time}.',
+                                      { time: timeAgo(pairing.expires_at) },
+                                  )
+                                : $t(
+                                      'Escríbelo en tu dispositivo. Vence pronto.',
+                                  )
+                        }}
                     </p>
                 </div>
 
@@ -303,8 +330,8 @@ function disconnect(uuid: string): void {
                                 {{ device.name }} ·
                                 {{
                                     device.status === 'paired'
-                                        ? 'Conectado'
-                                        : 'Esperando conexión'
+                                        ? $t('Conectado')
+                                        : $t('Esperando conexión')
                                 }}
                                 <template v-if="device.battery !== null">
                                     · {{ device.battery }}%</template
@@ -317,7 +344,7 @@ function disconnect(uuid: string): void {
                             class="min-h-11 shrink-0 text-muted-foreground"
                             @click="disconnect(device.uuid)"
                         >
-                            Desconectar
+                            {{ $t('Desconectar') }}
                         </Button>
                     </li>
                 </ul>
@@ -329,7 +356,7 @@ function disconnect(uuid: string): void {
                     @click="pairDevice"
                 >
                     <Watch class="size-4" />
-                    Conectar dispositivo de seguimiento
+                    {{ $t('Conectar dispositivo de seguimiento') }}
                 </button>
             </div>
         </div>

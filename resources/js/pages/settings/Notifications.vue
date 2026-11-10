@@ -41,9 +41,9 @@ function save() {
 </script>
 
 <template>
-    <Head title="Notificaciones" />
+    <Head :title="$t('Notificaciones')" />
 
-    <h1 class="sr-only">Notificaciones</h1>
+    <h1 class="sr-only">{{ $t('Notificaciones') }}</h1>
 
     <form class="space-y-6" @submit.prevent="save">
         <div
@@ -52,14 +52,21 @@ function save() {
         >
             <Smartphone class="mt-0.5 size-4 shrink-0 text-fl-gold-ink" />
             <p>
-                Descarga la app e inicia sesión para recibir avisos en tu
-                teléfono.
+                {{
+                    $t(
+                        'Descarga la app e inicia sesión para recibir avisos en tu teléfono.',
+                    )
+                }}
             </p>
         </div>
 
         <SettingsGroup
-            title="Qué te avisamos"
-            note="«En la app y la web» guarda el aviso en tu centro de notificaciones. «Push» además lo envía a tu teléfono."
+            :title="$t('Qué te avisamos')"
+            :note="
+                $t(
+                    '«En la app y la web» guarda el aviso en tu centro de notificaciones. «Push» además lo envía a tu teléfono.',
+                )
+            "
         >
             <div
                 v-for="(category, index) in categories"
@@ -76,9 +83,13 @@ function save() {
                     <label class="flex items-center gap-1 text-sm">
                         <ToggleSwitch
                             v-model="form.preferences[index].in_app"
-                            :label="`${category.label}: en la app y la web`"
+                            :label="
+                                $t('{label}: en la app y la web', {
+                                    label: category.label,
+                                })
+                            "
                         />
-                        En la app y la web
+                        {{ $t('En la app y la web') }}
                     </label>
                     <label
                         class="flex items-center gap-1 text-sm"
@@ -86,9 +97,13 @@ function save() {
                     >
                         <ToggleSwitch
                             v-model="form.preferences[index].push"
-                            :label="`${category.label}: push al teléfono`"
+                            :label="
+                                $t('{label}: push al teléfono', {
+                                    label: category.label,
+                                })
+                            "
                         />
-                        Push al teléfono
+                        {{ $t('Push al teléfono') }}
                     </label>
                 </div>
             </div>
@@ -98,13 +113,13 @@ function save() {
                     :href="notificationsIndex()"
                     class="mr-auto text-sm font-medium text-fl-gold-ink hover:underline"
                 >
-                    Ver mis notificaciones
+                    {{ $t('Ver mis notificaciones') }}
                 </Link>
                 <div class="w-full sm:w-auto">
                     <SubmitButton
                         :processing="form.processing"
-                        label="Guardar"
-                        processing-label="Guardando…"
+                        :label="$t('Guardar')"
+                        :processing-label="$t('Guardando…')"
                         :arrow="false"
                     />
                 </div>

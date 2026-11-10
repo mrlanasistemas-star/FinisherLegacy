@@ -27,7 +27,9 @@ defineProps<{
                 <Timer v-else class="size-4 text-muted-foreground" />
                 {{
                     metrics.title ||
-                    (metrics.is_personal_record ? 'Nueva marca personal' : '')
+                    (metrics.is_personal_record
+                        ? $t('Nueva marca personal')
+                        : '')
                 }}
             </p>
             <dl class="grid grid-cols-3 divide-x divide-border">
@@ -35,7 +37,7 @@ defineProps<{
                     <dt
                         class="text-[10px] tracking-[0.14em] text-muted-foreground uppercase"
                     >
-                        Distancia
+                        {{ $t('Distancia') }}
                     </dt>
                     <dd
                         class="legacy-numeric mt-0.5 font-serif text-base whitespace-nowrap sm:text-xl"
@@ -51,7 +53,7 @@ defineProps<{
                     <dt
                         class="text-[10px] tracking-[0.14em] text-muted-foreground uppercase"
                     >
-                        Tiempo
+                        {{ $t('Tiempo') }}
                     </dt>
                     <dd
                         class="legacy-numeric mt-0.5 font-serif text-base whitespace-nowrap sm:text-xl"
@@ -63,7 +65,7 @@ defineProps<{
                     <dt
                         class="text-[10px] tracking-[0.14em] text-muted-foreground uppercase"
                     >
-                        Ritmo
+                        {{ $t('Ritmo') }}
                     </dt>
                     <dd
                         class="legacy-numeric mt-0.5 font-serif text-base whitespace-nowrap sm:text-xl"
@@ -92,7 +94,7 @@ defineProps<{
                 <Trophy class="size-6 text-fl-gold-ink" />
             </span>
             <span class="min-w-0">
-                <span class="fl-eyebrow block">Medalla</span>
+                <span class="fl-eyebrow block">{{ $t('Medalla') }}</span>
                 <span class="block truncate font-serif text-lg leading-tight">{{
                     medal.title
                 }}</span>

@@ -150,7 +150,9 @@ function checkAgain() {
 <template>
     <Head
         :title="
-            view === 'confirmed' ? 'Pedido confirmado' : 'Confirmando tu pago'
+            view === 'confirmed'
+                ? $t('Pedido confirmado')
+                : $t('Confirmando tu pago')
         "
     />
 
@@ -167,21 +169,31 @@ function checkAgain() {
                         <CircleCheck class="size-8" />
                     </span>
                     <p class="fl-eyebrow mt-6">
-                        Pedido #{{ state.order_number }}
+                        {{
+                            $t('Pedido #{number}', {
+                                number: state.order_number,
+                            })
+                        }}
                     </p>
                     <h1 class="mt-2 font-serif text-3xl font-semibold">
-                        ¡Listo! Tu pago está confirmado.
+                        {{ $t('¡Listo! Tu pago está confirmado.') }}
                     </h1>
                     <p class="mx-auto mt-3 max-w-md text-muted-foreground">
-                        Te avisaremos cuando tu pedido esté listo para
                         {{
                             delivery?.method === 'shipping'
-                                ? 'enviarse'
-                                : 'entregarse'
-                        }}.
+                                ? $t(
+                                      'Te avisaremos cuando tu pedido esté listo para enviarse.',
+                                  )
+                                : $t(
+                                      'Te avisaremos cuando tu pedido esté listo para entregarse.',
+                                  )
+                        }}
                         <template v-if="items.some((i) => i.connected)">
-                            Tus productos conectados aparecerán en Mi equipo
-                            cuando los recibas.
+                            {{
+                                $t(
+                                    'Tus productos conectados aparecerán en Mi equipo cuando los recibas.',
+                                )
+                            }}
                         </template>
                     </p>
                 </template>
@@ -195,15 +207,19 @@ function checkAgain() {
                     <h1 class="mt-6 font-serif text-3xl font-semibold">
                         {{
                             state.payment_state === 'cancelled'
-                                ? 'Este pedido ya no está activo.'
-                                : 'No pudimos completar el pago.'
+                                ? $t('Este pedido ya no está activo.')
+                                : $t('No pudimos completar el pago.')
                         }}
                     </h1>
                     <p class="mx-auto mt-3 max-w-md text-muted-foreground">
                         {{
                             state.payable
-                                ? 'No se hizo ningún cargo. Puedes intentarlo de nuevo con otra tarjeta.'
-                                : 'El tiempo para pagarlo terminó y liberamos las piezas. Puedes volver a armar tu pedido.'
+                                ? $t(
+                                      'No se hizo ningún cargo. Puedes intentarlo de nuevo con otra tarjeta.',
+                                  )
+                                : $t(
+                                      'El tiempo para pagarlo terminó y liberamos las piezas. Puedes volver a armar tu pedido.',
+                                  )
                         }}
                     </p>
                     <Button
@@ -211,14 +227,18 @@ function checkAgain() {
                         as-child
                         class="mt-6 h-12 rounded-full px-6"
                     >
-                        <Link :href="retryHref">Intentar de nuevo</Link>
+                        <Link :href="retryHref">{{
+                            $t('Intentar de nuevo')
+                        }}</Link>
                     </Button>
                     <Button
                         v-else-if="!app"
                         as-child
                         class="mt-6 h-12 rounded-full px-6"
                     >
-                        <Link href="/tienda">Volver a la tienda</Link>
+                        <Link href="/tienda">{{
+                            $t('Volver a la tienda')
+                        }}</Link>
                     </Button>
                 </template>
 
@@ -230,20 +250,33 @@ function checkAgain() {
                         <Clock v-else class="size-7" />
                     </span>
                     <p class="fl-eyebrow mt-6">
-                        Pedido #{{ state.order_number }}
+                        {{
+                            $t('Pedido #{number}', {
+                                number: state.order_number,
+                            })
+                        }}
                     </p>
                     <h1 class="mt-2 font-serif text-3xl font-semibold">
-                        Estamos confirmando tu pago…
+                        {{ $t('Estamos confirmando tu pago…') }}
                     </h1>
                     <p class="mx-auto mt-3 max-w-md text-muted-foreground">
                         <template v-if="view === 'processing'">
-                            Suele tardar unos segundos. No hace falta que
-                            recargues la página.
+                            {{
+                                $t(
+                                    'Suele tardar unos segundos. No hace falta que recargues la página.',
+                                )
+                            }}
                         </template>
                         <template v-else>
-                            Tu banco todavía no responde. Puedes cerrar esta
-                            página: el pedido se actualizará solo en
-                            {{ app ? 'la app' : 'Mis pedidos' }}.
+                            {{
+                                app
+                                    ? $t(
+                                          'Tu banco todavía no responde. Puedes cerrar esta página: el pedido se actualizará solo en la app.',
+                                      )
+                                    : $t(
+                                          'Tu banco todavía no responde. Puedes cerrar esta página: el pedido se actualizará solo en Mis pedidos.',
+                                      )
+                            }}
                         </template>
                     </p>
                     <div
@@ -254,7 +287,7 @@ function checkAgain() {
                             variant="outline"
                             class="h-11 rounded-full"
                             @click="checkAgain"
-                            >Revisar de nuevo</Button
+                            >{{ $t('Revisar de nuevo') }}</Button
                         >
                         <Button
                             v-if="
@@ -265,7 +298,9 @@ function checkAgain() {
                             variant="ghost"
                             class="h-11 rounded-full"
                         >
-                            <Link :href="retryHref">Volver al pago</Link>
+                            <Link :href="retryHref">{{
+                                $t('Volver al pago')
+                            }}</Link>
                         </Button>
                     </div>
                 </template>
@@ -300,7 +335,11 @@ function checkAgain() {
                             <p class="truncate text-muted-foreground">
                                 {{
                                     [
-                                        line.size ? `Talla ${line.size}` : null,
+                                        line.size
+                                            ? $t('Talla {size}', {
+                                                  size: line.size,
+                                              })
+                                            : null,
                                         line.color,
                                     ]
                                         .filter(Boolean)
@@ -309,7 +348,8 @@ function checkAgain() {
                                 <span
                                     v-if="line.connected"
                                     class="inline-flex items-center gap-1 text-fl-gold-ink"
-                                    ><Nfc class="size-3" /> conectado</span
+                                    ><Nfc class="size-3" />
+                                    {{ $t('conectado') }}</span
                                 >
                             </p>
                         </div>
@@ -324,7 +364,7 @@ function checkAgain() {
                 <div
                     class="mt-4 flex items-baseline justify-between border-t border-border pt-4 font-semibold"
                 >
-                    <span>Total</span>
+                    <span>{{ $t('Total') }}</span>
                     <Money
                         class="legacy-numeric text-lg"
                         :minor="total_minor"
@@ -341,23 +381,23 @@ function checkAgain() {
                     class="h-12 rounded-full"
                     :variant="view === 'confirmed' ? 'default' : 'outline'"
                     @click="backToApp"
-                    >Volver a la app</Button
+                    >{{ $t('Volver a la app') }}</Button
                 >
                 <p
                     v-if="view === 'confirmed'"
                     class="text-center text-xs text-muted-foreground"
                 >
-                    Te regresamos a la app en un momento…
+                    {{ $t('Te regresamos a la app en un momento…') }}
                 </p>
             </div>
             <div v-else class="mt-6 flex flex-wrap justify-center gap-3">
                 <Button as-child variant="outline" class="h-11 rounded-full">
-                    <Link :href="`/mis-pedidos/${state.uuid}`"
-                        >Ver mi pedido</Link
-                    >
+                    <Link :href="`/mis-pedidos/${state.uuid}`">{{
+                        $t('Ver mi pedido')
+                    }}</Link>
                 </Button>
                 <Button as-child variant="ghost" class="h-11 rounded-full">
-                    <Link href="/tienda">Seguir en la tienda</Link>
+                    <Link href="/tienda">{{ $t('Seguir en la tienda') }}</Link>
                 </Button>
             </div>
         </div>

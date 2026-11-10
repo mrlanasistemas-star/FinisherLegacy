@@ -21,7 +21,7 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Mis Finisher Legacy" />
+    <Head :title="$t('Mis Finisher Legacy')" />
 
     <div class="fl-container py-8 md:py-12">
         <Link
@@ -32,19 +32,24 @@ defineProps<{
                 class="size-4 transition-transform duration-300 group-hover:-translate-x-0.5"
                 aria-hidden="true"
             />
-            Mi Finisher Legacy
+            {{ $t('Mi Finisher Legacy') }}
         </Link>
 
         <header v-reveal>
-            <p class="fl-eyebrow">Mi Legacy</p>
-            <h1 class="fl-display mt-2 text-3xl md:text-5xl">Tus recuerdos</h1>
+            <p class="fl-eyebrow">{{ $t('Mi Legacy') }}</p>
+            <h1 class="fl-display mt-2 text-3xl md:text-5xl">
+                {{ $t('Tus recuerdos') }}
+            </h1>
             <p class="mt-3 text-[15px] text-muted-foreground">
                 {{
                     total === 0
-                        ? 'Cada Finisher Legacy que actives abre una historia aquí.'
-                        : total === 1
-                          ? '1 recuerdo que se puede tocar.'
-                          : `${total} recuerdos que se pueden tocar.`
+                        ? $t(
+                              'Cada Finisher Legacy que actives abre una historia aquí.',
+                          )
+                        : $tc(
+                              '{count} recuerdo que se puede tocar.|{count} recuerdos que se pueden tocar.',
+                              total,
+                          )
                 }}
             </p>
         </header>
@@ -63,13 +68,16 @@ defineProps<{
                 <LegacyTagArt :tag="null" />
             </div>
             <h2 class="mt-6 font-heading text-2xl font-semibold">
-                Tu biblioteca está lista
+                {{ $t('Tu biblioteca está lista') }}
             </h2>
             <p
                 class="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground"
             >
-                Cuando actives tu primer tag, su historia — fotos, tiempo y tu
-                voz — aparecerá aquí, ordenada por año.
+                {{
+                    $t(
+                        'Cuando actives tu primer tag, su historia — fotos, tiempo y tu voz — aparecerá aquí, ordenada por año.',
+                    )
+                }}
             </p>
         </section>
 
@@ -89,8 +97,12 @@ defineProps<{
                 </h2>
                 <span class="h-px flex-1 bg-fl-line" aria-hidden="true" />
                 <span class="text-xs text-muted-foreground">
-                    {{ group.stories.length }}
-                    {{ group.stories.length === 1 ? 'recuerdo' : 'recuerdos' }}
+                    {{
+                        $tc(
+                            '{count} recuerdo|{count} recuerdos',
+                            group.stories.length,
+                        )
+                    }}
                 </span>
             </div>
 

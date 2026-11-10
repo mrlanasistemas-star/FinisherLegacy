@@ -8,16 +8,19 @@
  */
 import { computed } from 'vue';
 import Reveal from '@/components/motion/Reveal.vue';
+import { useI18n } from '@/i18n';
 import type { LegadoEntry } from '@/types/legado';
 import EventStoryCard from './EventStoryCard.vue';
 
 const props = defineProps<{ entries: LegadoEntry[] }>();
 
+const { t } = useI18n();
+
 const seasons = computed(() => {
     const groups = new Map<string, LegadoEntry[]>();
 
     for (const entry of props.entries) {
-        const key = entry.year ? String(entry.year) : 'Sin fecha';
+        const key = entry.year ? String(entry.year) : t('Sin fecha');
         groups.set(key, [...(groups.get(key) ?? []), entry]);
     }
 
@@ -37,7 +40,7 @@ const seasons = computed(() => {
             v-for="season in seasons"
             :key="season.year"
             class="relative pb-10 last:pb-0"
-            :aria-label="`Temporada ${season.year}`"
+            :aria-label="$t('Temporada {year}', { year: season.year })"
         >
             <div class="relative flex items-center gap-4 md:gap-0">
                 <span
@@ -52,8 +55,12 @@ const seasons = computed(() => {
                 <span
                     class="ml-1 text-sm text-muted-foreground md:order-3 md:ml-4"
                 >
-                    {{ season.items.length }}
-                    {{ season.items.length === 1 ? 'carrera' : 'carreras' }}
+                    {{
+                        $tc(
+                            '{count} carrera|{count} carreras',
+                            season.items.length,
+                        )
+                    }}
                 </span>
             </div>
 

@@ -51,7 +51,13 @@ defineProps<{
 </script>
 
 <template>
-    <Head :title="`Pedido #${order.order_number} — Finisher Legacy`" />
+    <Head
+        :title="
+            $t('Pedido #{number} — Finisher Legacy', {
+                number: order.order_number,
+            })
+        "
+    />
 
     <div class="bg-background">
         <div class="fl-container max-w-3xl py-8 md:py-12">
@@ -59,18 +65,24 @@ defineProps<{
                 :href="ordersIndex()"
                 class="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             >
-                <ArrowLeft class="size-4" /> Mis pedidos
+                <ArrowLeft class="size-4" /> {{ $t('Mis pedidos') }}
             </Link>
 
             <header class="mt-2 mb-8">
-                <p class="fl-eyebrow">Pedido #{{ order.order_number }}</p>
+                <p class="fl-eyebrow">
+                    {{ $t('Pedido #{number}', { number: order.order_number }) }}
+                </p>
                 <h1 class="mt-2 font-serif text-3xl font-semibold sm:text-4xl">
-                    {{ progress?.headline ?? 'Tu pedido' }}
+                    {{ progress?.headline ?? $t('Tu pedido') }}
                 </h1>
                 <div
                     class="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
                 >
-                    <span>Realizado el {{ shortDate(order.created_at) }}</span>
+                    <span>{{
+                        $t('Realizado el {date}', {
+                            date: shortDate(order.created_at),
+                        })
+                    }}</span>
                     <PaymentStatusBadge :status="order.payment_status" />
                 </div>
             </header>
@@ -78,7 +90,7 @@ defineProps<{
             <section
                 v-if="progress"
                 class="fl-card mb-8 p-5 sm:p-6"
-                aria-label="Seguimiento del pedido"
+                :aria-label="$t('Seguimiento del pedido')"
             >
                 <OrderStatusTimeline :progress="progress" />
             </section>
@@ -88,7 +100,7 @@ defineProps<{
                 class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"
             >
                 <p class="font-semibold text-emerald-900">
-                    Tus fotos están listas para descargar
+                    {{ $t('Tus fotos están listas para descargar') }}
                 </p>
                 <div class="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
                     <a
@@ -104,12 +116,12 @@ defineProps<{
                         />
                         <span
                             class="absolute inset-x-1 bottom-1 rounded-full bg-white/95 py-1 text-center text-[11px] font-semibold"
-                            >Descargar</span
+                            >{{ $t('Descargar') }}</span
                         >
                     </a>
                 </div>
             </section>
-            <h2 class="text-sm font-semibold">Lo que pediste</h2>
+            <h2 class="text-sm font-semibold">{{ $t('Lo que pediste') }}</h2>
             <div
                 class="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card"
             >
@@ -142,14 +154,19 @@ defineProps<{
                             <span v-if="item.variant"
                                 >{{ item.variant }} ·
                             </span>
-                            {{ item.quantity }}
-                            {{ item.quantity === 1 ? 'pieza' : 'piezas' }}
+                            {{
+                                $tc(
+                                    '{count} pieza|{count} piezas',
+                                    item.quantity,
+                                )
+                            }}
                         </p>
                         <span
                             v-if="item.fulfilled"
                             class="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700"
                         >
-                            <CheckCircle2 class="size-3.5" /> Entregado
+                            <CheckCircle2 class="size-3.5" />
+                            {{ $t('Entregado') }}
                         </span>
                     </div>
                     <p class="shrink-0 text-foreground">
@@ -160,7 +177,7 @@ defineProps<{
                     </p>
                 </div>
                 <div class="flex items-center justify-between px-5 py-4">
-                    <p class="font-medium text-foreground">Total</p>
+                    <p class="font-medium text-foreground">{{ $t('Total') }}</p>
                     <p class="text-lg font-semibold text-fl-gold-ink">
                         <Money
                             :minor="order.total_minor"
@@ -176,15 +193,19 @@ defineProps<{
             >
                 <div>
                     <p class="font-semibold text-foreground">
-                        Tu pedido está apartado, falta el pago
+                        {{ $t('Tu pedido está apartado, falta el pago') }}
                     </p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Paga con tarjeta de forma segura para confirmarlo.
+                        {{
+                            $t(
+                                'Paga con tarjeta de forma segura para confirmarlo.',
+                            )
+                        }}
                     </p>
                 </div>
                 <Button as-child class="h-11 shrink-0 rounded-full px-6">
                     <Link :href="`/checkout/${order.uuid}`">
-                        <CreditCard class="size-4" /> Completar pago
+                        <CreditCard class="size-4" /> {{ $t('Completar pago') }}
                     </Link>
                 </Button>
             </section>

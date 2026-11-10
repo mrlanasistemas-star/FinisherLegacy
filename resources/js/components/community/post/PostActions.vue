@@ -9,6 +9,7 @@ import { Link } from '@inertiajs/vue3';
 import { Heart, MessageCircle, Send } from '@lucide/vue';
 import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { useI18n } from '@/i18n';
 import { show } from '@/routes/community/posts';
 import type { CommunityPost } from '@/types';
 import type { Celebration } from './useCelebrate';
@@ -21,6 +22,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ comment: [] }>();
+
+const { t, regional } = useI18n();
 
 const pop = ref(false);
 
@@ -41,7 +44,9 @@ async function share() {
     if (typeof navigator.share === 'function') {
         try {
             await navigator.share({
-                title: `${props.post.author.name} en Finisher Legacy`,
+                title: t('{name} en Finisher Legacy', {
+                    name: props.post.author.name,
+                }),
                 url,
             });
 
@@ -55,9 +60,9 @@ async function share() {
 
     try {
         await navigator.clipboard.writeText(url);
-        toast.success('Enlace copiado.');
+        toast.success(t('Enlace copiado.'));
     } catch {
-        toast.error('No pudimos copiar el enlace.');
+        toast.error(t('No pudimos copiar el enlace.'));
     }
 }
 </script>
@@ -72,8 +77,8 @@ async function share() {
                 :aria-label="celebration.label.value"
                 :title="
                     celebration.celebrated.value
-                        ? 'Quitar celebración'
-                        : 'Celebrar'
+                        ? $t('Quitar celebración')
+                        : $t('Celebrar')
                 "
                 @click="celebration.toggle()"
             >
@@ -98,7 +103,7 @@ async function share() {
                 v-if="detail"
                 type="button"
                 class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                aria-label="Comentar"
+                :aria-label="$t('Comentar')"
                 @click="emit('comment')"
             >
                 <MessageCircle class="size-6 -scale-x-100" aria-hidden="true" />
@@ -109,8 +114,11 @@ async function share() {
                 class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 :aria-label="
                     post.comments_count > 0
-                        ? `Comentar · ${post.comments_count} ${post.comments_count === 1 ? 'comentario' : 'comentarios'}`
-                        : 'Comentar'
+                        ? $tc(
+                              'Comentar · {count} comentario|Comentar · {count} comentarios',
+                              post.comments_count,
+                          )
+                        : $t('Comentar')
                 "
             >
                 <MessageCircle class="size-6 -scale-x-100" aria-hidden="true" />
@@ -119,8 +127,8 @@ async function share() {
             <button
                 type="button"
                 class="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                aria-label="Compartir publicación"
-                title="Compartir"
+                :aria-label="$t('Compartir publicación')"
+                :title="$t('Compartir')"
                 @click="share"
             >
                 <Send class="size-[22px]" aria-hidden="true" />
@@ -133,17 +141,13 @@ async function share() {
         >
             <template v-if="celebration.count.value > 0">
                 <span class="legacy-numeric">{{
-                    celebration.count.value.toLocaleString('es-MX')
+                    celebration.count.value.toLocaleString(regional)
                 }}</span>
-                {{
-                    celebration.count.value === 1
-                        ? 'celebración'
-                        : 'celebraciones'
-                }}
+                {{ $tc('celebración|celebraciones', celebration.count.value) }}
             </template>
-            <span v-else class="font-normal text-muted-foreground"
-                >Sé el primero en celebrarlo</span
-            >
+            <span v-else class="font-normal text-muted-foreground">{{
+                $t('Sé el primero en celebrarlo')
+            }}</span>
         </p>
     </div>
 </template>

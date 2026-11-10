@@ -26,16 +26,19 @@ defineProps<{ plates: PlateEntitlement[] }>();
 </script>
 
 <template>
-    <Head title="Mis Legacy Plates" />
+    <Head :title="$t('Mis Legacy Plates')" />
 
     <div class="fl-container py-8 md:py-12">
-        <p class="fl-eyebrow">Mi legado</p>
+        <p class="fl-eyebrow">{{ $t('Mi legado') }}</p>
         <h1 class="mt-2 font-serif text-3xl tracking-tight md:text-4xl">
-            Mis Legacy Plates
+            {{ $t('Mis Legacy Plates') }}
         </h1>
         <p class="mt-2 max-w-2xl text-sm text-muted-foreground">
-            La pieza física que guarda tu historia deportiva — incluye tus
-            preventas, aunque el evento todavía no haya pasado.
+            {{
+                $t(
+                    'La pieza física que guarda tu historia deportiva — incluye tus preventas, aunque el evento todavía no haya pasado.',
+                )
+            }}
         </p>
 
         <div
@@ -63,10 +66,10 @@ defineProps<{ plates: PlateEntitlement[] }>();
             class="mt-16 flex flex-col items-center gap-3 py-16 text-center text-muted-foreground/80"
         >
             <Boxes class="size-10" />
-            <p>Todavía no tienes una Legacy Plate.</p>
-            <Link href="/events" class="text-fl-gold-ink hover:underline"
-                >Explorar eventos</Link
-            >
+            <p>{{ $t('Todavía no tienes una Legacy Plate.') }}</p>
+            <Link href="/events" class="text-fl-gold-ink hover:underline">{{
+                $t('Explorar eventos')
+            }}</Link>
         </div>
     </div>
 </template>

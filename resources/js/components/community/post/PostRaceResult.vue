@@ -35,7 +35,7 @@ const subtitle = computed(() =>
         />
         <div class="flex items-start justify-between gap-4">
             <div class="min-w-0">
-                <p class="fl-eyebrow">Resultado oficial</p>
+                <p class="fl-eyebrow">{{ $t('Resultado oficial') }}</p>
                 <p
                     class="mt-1 truncate font-serif text-lg leading-tight text-foreground"
                 >
@@ -67,7 +67,7 @@ const subtitle = computed(() =>
                 <dt
                     class="text-[10px] tracking-[0.14em] text-muted-foreground uppercase"
                 >
-                    Tiempo
+                    {{ $t('Tiempo') }}
                 </dt>
                 <dd
                     class="legacy-numeric mt-0.5 font-serif text-xl leading-none font-medium whitespace-nowrap text-foreground sm:text-3xl"
@@ -79,7 +79,7 @@ const subtitle = computed(() =>
                 <dt
                     class="text-[10px] tracking-[0.14em] text-muted-foreground uppercase"
                 >
-                    Ritmo
+                    {{ $t('Ritmo') }}
                 </dt>
                 <dd class="legacy-numeric mt-1.5 text-sm font-semibold">
                     {{ activity.pace ?? '—' }}
@@ -89,7 +89,7 @@ const subtitle = computed(() =>
                 <dt
                     class="text-[10px] tracking-[0.14em] text-muted-foreground uppercase"
                 >
-                    Posición
+                    {{ $t('Posición') }}
                 </dt>
                 <dd
                     class="legacy-numeric mt-1.5 flex items-center gap-1 text-sm font-semibold"

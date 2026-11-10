@@ -115,7 +115,7 @@ function onKey(event: KeyboardEvent) {
         >
             <img
                 :src="src"
-                alt="Foto a recortar"
+                :alt="$t('Foto a recortar')"
                 class="block size-full object-contain"
                 draggable="false"
             />
@@ -130,7 +130,11 @@ function onKey(event: KeyboardEvent) {
                 }"
                 tabindex="0"
                 role="slider"
-                aria-label="Encuadre de la foto. Usa las flechas para moverlo y + o - para acercar."
+                :aria-label="
+                    $t(
+                        'Encuadre de la foto. Usa las flechas para moverlo y + o - para acercar.',
+                    )
+                "
                 :aria-valuenow="Math.round(zoom * 100)"
                 aria-valuemin="100"
                 aria-valuemax="400"
@@ -161,7 +165,7 @@ function onKey(event: KeyboardEvent) {
             <button
                 type="button"
                 class="rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                aria-label="Alejar"
+                :aria-label="$t('Alejar')"
                 @click="zoom = clamp(zoom - 0.2, 1, 4)"
             >
                 <Minus class="size-4" />
@@ -173,12 +177,12 @@ function onKey(event: KeyboardEvent) {
                 max="4"
                 step="0.01"
                 class="h-2 flex-1 accent-[var(--fl-gold-dim)]"
-                aria-label="Acercar foto"
+                :aria-label="$t('Acercar foto')"
             />
             <button
                 type="button"
                 class="rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                aria-label="Acercar"
+                :aria-label="$t('Acercar')"
                 @click="zoom = clamp(zoom + 0.2, 1, 4)"
             >
                 <Plus class="size-4" />

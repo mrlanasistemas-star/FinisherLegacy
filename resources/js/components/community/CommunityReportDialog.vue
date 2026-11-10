@@ -18,12 +18,14 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useCommunityReport } from '@/composables/useCommunityReport';
+import { useI18n } from '@/i18n';
 import { store as storeReport } from '@/routes/community/reports';
 import type { ReportReason } from '@/types';
 
 defineProps<{ reasons: ReportReason[] }>();
 
 const { target, closeReport } = useCommunityReport();
+const { t } = useI18n();
 
 const form = useForm({
     target_type: '',
@@ -51,12 +53,12 @@ const open = computed({
     },
 });
 
-const subject = computed(
+const title = computed(
     () =>
         ({
-            moment: 'esta publicación',
-            comment: 'este comentario',
-            profile: 'este perfil',
+            moment: t('Reportar esta publicación'),
+            comment: t('Reportar este comentario'),
+            profile: t('Reportar este perfil'),
         })[target.value?.type ?? 'moment'],
 );
 
@@ -76,17 +78,22 @@ function submit() {
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2 font-serif text-xl">
                     <Flag class="size-4 text-fl-gold-ink" />
-                    Reportar {{ subject }}
+                    {{ title }}
                 </DialogTitle>
                 <DialogDescription>
-                    Tu reporte es confidencial. Nuestro equipo lo revisa y actúa
-                    si rompe las reglas de la comunidad.
+                    {{
+                        $t(
+                            'Tu reporte es confidencial. Nuestro equipo lo revisa y actúa si rompe las reglas de la comunidad.',
+                        )
+                    }}
                 </DialogDescription>
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
                 <fieldset>
-                    <legend class="text-sm font-medium">¿Qué pasa?</legend>
+                    <legend class="text-sm font-medium">
+                        {{ $t('¿Qué pasa?') }}
+                    </legend>
                     <div class="mt-2 grid gap-2">
                         <label
                             v-for="reason in reasons"
@@ -127,10 +134,10 @@ function submit() {
 
                 <div>
                     <label for="report-details" class="text-sm font-medium"
-                        >Detalles
-                        <span class="font-normal text-muted-foreground"
-                            >(opcional)</span
-                        ></label
+                        >{{ $t('Detalles') }}
+                        <span class="font-normal text-muted-foreground">{{
+                            $t('(opcional)')
+                        }}</span></label
                     >
                     <textarea
                         id="report-details"
@@ -147,14 +154,14 @@ function submit() {
                         variant="ghost"
                         class="rounded-full"
                         @click="closeReport()"
-                        >Cancelar</Button
+                        >{{ $t('Cancelar') }}</Button
                     >
                     <Button
                         type="submit"
                         class="rounded-full"
                         :disabled="!form.reason || form.processing"
                     >
-                        Enviar reporte
+                        {{ $t('Enviar reporte') }}
                     </Button>
                 </DialogFooter>
             </form>

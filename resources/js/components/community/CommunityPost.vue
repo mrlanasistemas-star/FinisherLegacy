@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuthGate } from '@/composables/useAuthGate';
 import { useCommunityReport } from '@/composables/useCommunityReport';
+import { useI18n } from '@/i18n';
 import { shortDate, timeAgo } from '@/lib/datetime';
 import { confirmAction } from '@/lib/swal';
 import { destroy, show, update } from '@/routes/community/posts';
@@ -65,16 +66,16 @@ const page = usePage();
 const isSignedIn = computed(() => !!page.props.auth.user);
 const { requireAuth } = useAuthGate();
 const { openReport } = useCommunityReport();
+const { t } = useI18n();
 const celebration = props.celebration ?? useCelebrate(toRef(props, 'post'));
 
-const visibilityMeta: Record<
-    MomentVisibility,
-    { label: string; icon: typeof Globe2 }
-> = {
-    public: { label: 'Público', icon: Globe2 },
-    followers: { label: 'Seguidores', icon: Users },
-    private: { label: 'Solo yo', icon: Lock },
-};
+const visibilityMeta = computed<
+    Record<MomentVisibility, { label: string; icon: typeof Globe2 }>
+>(() => ({
+    public: { label: t('Público'), icon: Globe2 },
+    followers: { label: t('Seguidores'), icon: Users },
+    private: { label: t('Solo yo'), icon: Lock },
+}));
 
 const authorHref = computed(() =>
     props.post.author.username ? `/@${props.post.author.username}` : null,
@@ -132,16 +133,18 @@ function changeVisibility(next: MomentVisibility) {
         only: ['__post'],
         onError: () => {
             visibility.value = previous;
-            toast.error('No pudimos cambiar la visibilidad.');
+            toast.error(t('No pudimos cambiar la visibilidad.'));
         },
     });
 }
 
 async function remove() {
     const confirmed = await confirmAction({
-        title: '¿Eliminar publicación?',
-        text: 'Se eliminará de tu perfil y de la comunidad. Esta acción no se puede deshacer.',
-        confirmButtonText: 'Eliminar',
+        title: t('¿Eliminar publicación?'),
+        text: t(
+            'Se eliminará de tu perfil y de la comunidad. Esta acción no se puede deshacer.',
+        ),
+        confirmButtonText: t('Eliminar'),
     });
 
     if (!confirmed) {
@@ -154,7 +157,7 @@ async function remove() {
         preserveState: !props.detail,
         only: props.detail ? undefined : ['__post'],
         onSuccess: () => emit('deleted', props.post.uuid),
-        onError: () => toast.error('No pudimos eliminar la publicación.'),
+        onError: () => toast.error(t('No pudimos eliminar la publicación.')),
     });
 }
 
@@ -164,9 +167,9 @@ async function copyLink() {
             props.post.share_url ||
                 new URL(detailHref.value, window.location.origin).href,
         );
-        toast.success('Enlace copiado.');
+        toast.success(t('Enlace copiado.'));
     } catch {
-        toast.error('No pudimos copiar el enlace.');
+        toast.error(t('No pudimos copiar el enlace.'));
     }
 }
 
@@ -212,7 +215,7 @@ function submitComment() {
                     body,
                     author: {
                         username: page.props.auth.profile?.username ?? null,
-                        name: page.props.auth.user?.name ?? 'Tú',
+                        name: page.props.auth.user?.name ?? t('Tú'),
                     },
                 },
             ];
@@ -220,7 +223,7 @@ function submitComment() {
             commentForm.reset();
         },
         onError: (errors) =>
-            toast.error(errors.body ?? 'No pudimos publicar tu comentario.'),
+            toast.error(errors.body ?? t('No pudimos publicar tu comentario.')),
     });
 }
 
@@ -235,14 +238,14 @@ defineExpose({ celebration });
                 ? ''
                 : 'sm:hover:border-fl-gold/40 sm:hover:shadow-fl-float sm:motion-safe:hover:-translate-y-0.5'
         "
-        :aria-label="`Publicación de ${post.author.name}`"
+        :aria-label="$t('Publicación de {name}', { name: post.author.name })"
     >
         <p
             v-if="post.is_hidden"
             class="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900"
         >
             <EyeOff class="size-3.5" />
-            Oculta por moderación: solo tú la ves.
+            {{ $t('Oculta por moderación: solo tú la ves.') }}
         </p>
 
         <!-- Author -->
@@ -252,7 +255,9 @@ defineExpose({ celebration });
                 :href="authorHref ?? undefined"
                 class="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 :aria-label="
-                    authorHref ? `Perfil de ${post.author.name}` : undefined
+                    authorHref
+                        ? $t('Perfil de {name}', { name: post.author.name })
+                        : undefined
                 "
             >
                 <AthleteAvatar
@@ -306,15 +311,16 @@ defineExpose({ celebration });
                     <button
                         type="button"
                         class="flex size-10 items-center justify-center rounded-full text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        aria-label="Opciones de la publicación"
+                        :aria-label="$t('Opciones de la publicación')"
                     >
                         <MoreHorizontal class="size-5" />
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" class="w-56">
                     <template v-if="post.is_owner">
-                        <DropdownMenuLabel class="text-xs text-muted-foreground"
-                            >¿Quién puede verla?</DropdownMenuLabel
+                        <DropdownMenuLabel
+                            class="text-xs text-muted-foreground"
+                            >{{ $t('¿Quién puede verla?') }}</DropdownMenuLabel
                         >
                         <DropdownMenuItem
                             v-for="(meta, key) in visibilityMeta"
@@ -329,7 +335,7 @@ defineExpose({ celebration });
                     </template>
                     <DropdownMenuItem @select="copyLink">
                         <Link2 class="mr-2 size-4" />
-                        Copiar enlace
+                        {{ $t('Copiar enlace') }}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         v-if="post.is_owner"
@@ -337,7 +343,7 @@ defineExpose({ celebration });
                         @select="remove"
                     >
                         <Trash2 class="mr-2 size-4" />
-                        Eliminar
+                        {{ $t('Eliminar') }}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         v-else
@@ -347,7 +353,7 @@ defineExpose({ celebration });
                         "
                     >
                         <Flag class="mr-2 size-4" />
-                        Reportar publicación
+                        {{ $t('Reportar publicación') }}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -441,7 +447,7 @@ defineExpose({ celebration });
                     class="text-sm text-muted-foreground hover:text-foreground"
                     @click="expanded = true"
                 >
-                    más
+                    {{ $t('más') }}
                 </button>
             </div>
 
@@ -469,9 +475,10 @@ defineExpose({ celebration });
                     class="mt-1.5 block text-sm text-muted-foreground hover:text-foreground"
                 >
                     {{
-                        commentsCount === 1
-                            ? 'Ver el comentario'
-                            : `Ver los ${commentsCount} comentarios`
+                        $tc(
+                            'Ver el comentario|Ver los {count} comentarios',
+                            commentsCount,
+                        )
                     }}
                 </Link>
                 <TransitionGroup
@@ -515,9 +522,9 @@ defineExpose({ celebration });
                 class="mt-3 flex items-center gap-2 border-t border-border pt-3"
                 @submit.prevent="submitComment"
             >
-                <label :for="`quick-comment-${post.uuid}`" class="sr-only"
-                    >Añade un comentario</label
-                >
+                <label :for="`quick-comment-${post.uuid}`" class="sr-only">{{
+                    $t('Añade un comentario')
+                }}</label>
                 <input
                     :id="`quick-comment-${post.uuid}`"
                     ref="commentInput"
@@ -525,7 +532,7 @@ defineExpose({ celebration });
                     type="text"
                     maxlength="500"
                     autocomplete="off"
-                    placeholder="Añade un comentario…"
+                    :placeholder="$t('Añade un comentario…')"
                     class="min-h-9 min-w-0 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
                     @focus="gateComment"
                 />
@@ -535,7 +542,7 @@ defineExpose({ celebration });
                     class="shrink-0 text-sm font-semibold text-fl-gold-ink hover:text-foreground disabled:opacity-50"
                     :disabled="commentForm.processing"
                 >
-                    Publicar
+                    {{ $t('Publicar') }}
                 </button>
             </form>
         </div>

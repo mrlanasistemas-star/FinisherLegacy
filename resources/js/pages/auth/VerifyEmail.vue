@@ -4,15 +4,17 @@ import { Check, Copy, MailCheck, RotateCw } from '@lucide/vue';
 import { ref } from 'vue';
 import FinisherMascot from '@/components/public/FinisherMascot.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { t } from '@/i18n';
 import { dashboard, logout } from '@/routes';
 import { edit as editProfile } from '@/routes/dashboard/profile';
 import { send } from '@/routes/verification';
 
 defineOptions({
     layout: {
-        title: 'Confirma tu correo',
-        description:
+        title: t('Confirma tu correo'),
+        description: t(
             'Te enviamos un enlace. Ábrelo desde tu correo para desbloquear tu perfil.',
+        ),
     },
 });
 
@@ -39,7 +41,7 @@ async function copyLegacyId() {
 </script>
 
 <template>
-    <Head title="Verificación de correo" />
+    <Head :title="$t('Verificación de correo')" />
 
     <div v-if="legacyId" class="mb-6 text-center">
         <FinisherMascot variant="success" alt="" class="mx-auto mb-4" />
@@ -50,7 +52,7 @@ async function copyLegacyId() {
             <p
                 class="text-[11px] font-semibold tracking-[0.2em] text-muted-foreground uppercase"
             >
-                Tu Legacy ID
+                {{ $t('Tu Legacy ID') }}
             </p>
             <div class="mt-2 flex items-center justify-center gap-2">
                 <p class="font-mono text-2xl font-bold text-fl-gold-ink">
@@ -59,16 +61,16 @@ async function copyLegacyId() {
                 <button
                     type="button"
                     class="fl-press inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white hover:text-fl-gold-ink focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-                    aria-label="Copiar Legacy ID"
+                    :aria-label="$t('Copiar Legacy ID')"
                     @click="copyLegacyId"
                 >
                     <Check v-if="copied" class="size-3.5" />
                     <Copy v-else class="size-3.5" />
-                    {{ copied ? 'Copiado' : 'Copiar' }}
+                    {{ copied ? $t('Copiado') : $t('Copiar') }}
                 </button>
             </div>
             <p class="mt-2 text-sm text-muted-foreground">
-                Tu identificador permanente en Finisher Legacy.
+                {{ $t('Tu identificador permanente en Finisher Legacy.') }}
             </p>
         </div>
     </div>
@@ -80,7 +82,11 @@ async function copyLegacyId() {
             role="status"
         >
             <MailCheck class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            Te enviamos un nuevo enlace al correo con el que te registraste.
+            {{
+                $t(
+                    'Te enviamos un nuevo enlace al correo con el que te registraste.',
+                )
+            }}
         </div>
     </Transition>
 
@@ -88,12 +94,12 @@ async function copyLegacyId() {
         <Link
             :href="editProfile()"
             class="fl-btn-primary h-13 w-full focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
-            >Completar mi perfil</Link
+            >{{ $t('Completar mi perfil') }}</Link
         >
         <Link
             :href="dashboard()"
             class="fl-btn-secondary h-12 w-full focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-            >Ir a Mi Finisher Legacy</Link
+            >{{ $t('Ir a Mi Finisher Legacy') }}</Link
         >
 
         <Form
@@ -108,7 +114,7 @@ async function copyLegacyId() {
             >
                 <Spinner v-if="processing" />
                 <RotateCw v-else class="size-4" aria-hidden="true" />
-                {{ processing ? 'Enviando…' : 'Reenviar el correo' }}
+                {{ processing ? $t('Enviando…') : $t('Reenviar el correo') }}
             </button>
         </Form>
 
@@ -117,7 +123,7 @@ async function copyLegacyId() {
             as="button"
             class="mx-auto min-h-11 rounded-full px-4 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
         >
-            Cerrar sesión
+            {{ $t('Cerrar sesión') }}
         </Link>
     </div>
 </template>

@@ -80,7 +80,12 @@ function onDeleted(uuid: string) {
             :key="post.uuid"
             :href="showPost(post.uuid).url"
             class="group/tile fl-zoom relative block aspect-square overflow-hidden bg-fl-cream focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
-            :aria-label="`Publicación de ${post.author.name}: ${post.kind_label}`"
+            :aria-label="
+                $t('Publicación de {name}: {kind}', {
+                    name: post.author.name,
+                    kind: post.kind_label,
+                })
+            "
             @click="onTile($event, post)"
         >
             <img
@@ -108,7 +113,7 @@ function onDeleted(uuid: string) {
                         class="mt-1 inline-flex items-center gap-1 truncate text-[10px] text-muted-foreground sm:text-xs"
                     >
                         <Timer class="size-3 shrink-0" aria-hidden="true" />
-                        {{ post.activity.event ?? 'Tiempo oficial' }}
+                        {{ post.activity.event ?? $t('Tiempo oficial') }}
                     </span>
                 </span>
                 <span
@@ -121,7 +126,7 @@ function onDeleted(uuid: string) {
             <Copy
                 v-if="post.media.length > 1"
                 class="absolute top-2 right-2 size-4 rotate-180 text-white drop-shadow-[0_1px_3px_rgb(0_0_0/0.5)] sm:size-5"
-                aria-label="Varias fotos"
+                :aria-label="$t('Varias fotos')"
             />
 
             <span
@@ -146,10 +151,18 @@ function onDeleted(uuid: string) {
             class="max-h-[92vh] overflow-y-auto rounded-card border-0 bg-transparent p-0 shadow-none sm:max-w-[560px]"
         >
             <DialogTitle class="sr-only">
-                Publicación de {{ current?.author.name }}
+                {{
+                    $t('Publicación de {name}', {
+                        name: current?.author.name ?? '',
+                    })
+                }}
             </DialogTitle>
             <DialogDescription class="sr-only">
-                Detalle de la publicación con sus celebraciones y comentarios.
+                {{
+                    $t(
+                        'Detalle de la publicación con sus celebraciones y comentarios.',
+                    )
+                }}
             </DialogDescription>
             <CommunityPost
                 v-if="current"

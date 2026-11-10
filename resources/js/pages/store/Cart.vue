@@ -24,6 +24,7 @@ import { computed, ref } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useI18n } from '@/i18n';
 import { index as collectionsIndex } from '@/routes/collections';
 
 type CartItem = {
@@ -55,6 +56,8 @@ const props = defineProps<{
     total_minor: number;
     coupon: { code: string; name: string } | null;
 }>();
+
+const { t } = useI18n();
 
 const blocked = computed(() =>
     props.items.some((item) => !item.price_available || !item.in_stock),
@@ -105,7 +108,7 @@ function removeCoupon() {
 
 const details = (item: CartItem) =>
     [
-        item.size ? `Talla ${item.size}` : null,
+        item.size ? t('Talla {size}', { size: item.size }) : null,
         item.color,
         !item.size && !item.color && item.variant_name !== item.product_name
             ? item.variant_name
@@ -114,20 +117,19 @@ const details = (item: CartItem) =>
 </script>
 
 <template>
-    <Head title="Tu carrito" />
+    <Head :title="$t('Tu carrito')" />
 
     <div class="min-h-screen bg-background pb-32 lg:pb-0">
         <div class="fl-container py-10 md:py-14">
             <header class="mb-8 flex items-end justify-between gap-4">
                 <div>
-                    <p class="fl-eyebrow">Tienda</p>
+                    <p class="fl-eyebrow">{{ $t('Tienda') }}</p>
                     <h1 class="fl-display mt-2 text-3xl md:text-4xl">
-                        Tu carrito
+                        {{ $t('Tu carrito') }}
                     </h1>
                 </div>
                 <p v-if="items.length" class="text-sm text-muted-foreground">
-                    {{ unitCount }}
-                    {{ unitCount === 1 ? 'pieza' : 'piezas' }}
+                    {{ $tc('{count} pieza|{count} piezas', unitCount) }}
                 </p>
             </header>
 
@@ -205,18 +207,22 @@ const details = (item: CartItem) =>
                                 <span
                                     v-if="item.event_edition_name"
                                     class="rounded-full bg-fl-cream px-2.5 py-0.5 text-xs font-medium text-fl-gold-ink"
-                                    >Para {{ item.event_edition_name }}</span
+                                    >{{
+                                        $t('Para {event}', {
+                                            event: item.event_edition_name,
+                                        })
+                                    }}</span
                                 >
                                 <span
                                     v-if="item.connected"
                                     class="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-medium"
-                                    ><Nfc class="size-3" /> Se guarda en Mi
-                                    equipo</span
+                                    ><Nfc class="size-3" />
+                                    {{ $t('Se guarda en Mi equipo') }}</span
                                 >
                                 <span
                                     v-if="item.low_stock && item.in_stock"
                                     class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800"
-                                    >Últimas piezas</span
+                                    >{{ $t('Últimas piezas') }}</span
                                 >
                             </div>
 
@@ -225,15 +231,18 @@ const details = (item: CartItem) =>
                                 class="mt-2 flex items-center gap-1 text-xs text-amber-800"
                             >
                                 <TriangleAlert class="size-3.5" />
-                                Este precio ya no está disponible — quítalo para
-                                continuar.
+                                {{
+                                    $t(
+                                        'Este precio ya no está disponible — quítalo para continuar.',
+                                    )
+                                }}
                             </p>
                             <p
                                 v-else-if="!item.in_stock"
                                 class="mt-2 flex items-center gap-1 text-xs text-red-700"
                             >
                                 <TriangleAlert class="size-3.5" />
-                                Se agotó — quítalo para continuar.
+                                {{ $t('Se agotó — quítalo para continuar.') }}
                             </p>
 
                             <div
@@ -242,7 +251,11 @@ const details = (item: CartItem) =>
                                 <div
                                     class="inline-flex items-center rounded-full border border-border bg-card"
                                     role="group"
-                                    :aria-label="`Cantidad de ${item.product_name}`"
+                                    :aria-label="
+                                        $t('Cantidad de {product}', {
+                                            product: item.product_name,
+                                        })
+                                    "
                                 >
                                     <button
                                         type="button"
@@ -251,7 +264,7 @@ const details = (item: CartItem) =>
                                             item.quantity <= 1 ||
                                             busy === item.id
                                         "
-                                        aria-label="Quitar uno"
+                                        :aria-label="$t('Quitar uno')"
                                         @click="
                                             updateQuantity(
                                                 item,
@@ -275,8 +288,10 @@ const details = (item: CartItem) =>
                                         "
                                         :aria-label="
                                             item.quantity >= maxFor(item)
-                                                ? 'No hay más piezas disponibles'
-                                                : 'Agregar uno'
+                                                ? $t(
+                                                      'No hay más piezas disponibles',
+                                                  )
+                                                : $t('Agregar uno')
                                         "
                                         @click="
                                             updateQuantity(
@@ -301,12 +316,16 @@ const details = (item: CartItem) =>
                                             "
                                             :currency="item.currency"
                                         />
-                                        c/u</span
+                                        {{ $t('c/u') }}</span
                                     >
                                     <button
                                         type="button"
                                         class="flex size-11 items-center justify-center rounded-full text-muted-foreground transition hover:bg-red-50 hover:text-red-700"
-                                        :aria-label="`Quitar ${item.product_name}`"
+                                        :aria-label="
+                                            $t('Quitar {product}', {
+                                                product: item.product_name,
+                                            })
+                                        "
                                         :disabled="busy === item.id"
                                         @click="removeItem(item)"
                                     >
@@ -322,7 +341,7 @@ const details = (item: CartItem) =>
                 <aside class="lg:sticky lg:top-24 lg:self-start">
                     <div class="fl-card space-y-5 p-6">
                         <h2 class="font-serif text-xl font-semibold">
-                            Resumen
+                            {{ $t('Resumen') }}
                         </h2>
 
                         <div
@@ -338,7 +357,7 @@ const details = (item: CartItem) =>
                             <button
                                 type="button"
                                 class="flex size-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                                aria-label="Quitar cupón"
+                                :aria-label="$t('Quitar cupón')"
                                 @click="removeCoupon"
                             >
                                 <X class="size-4" />
@@ -351,8 +370,8 @@ const details = (item: CartItem) =>
                         >
                             <Input
                                 v-model="couponForm.code"
-                                placeholder="Código de descuento"
-                                aria-label="Código de descuento"
+                                :placeholder="$t('Código de descuento')"
+                                :aria-label="$t('Código de descuento')"
                                 autocomplete="off"
                                 class="h-11 uppercase placeholder:normal-case"
                             />
@@ -364,7 +383,7 @@ const details = (item: CartItem) =>
                                     couponForm.processing || !couponForm.code
                                 "
                             >
-                                Aplicar
+                                {{ $t('Aplicar') }}
                             </Button>
                         </form>
                         <p
@@ -378,7 +397,7 @@ const details = (item: CartItem) =>
                             <div
                                 class="flex justify-between text-muted-foreground"
                             >
-                                <dt>Subtotal</dt>
+                                <dt>{{ $t('Subtotal') }}</dt>
                                 <dd class="legacy-numeric">
                                     <Money
                                         :minor="subtotal_minor"
@@ -390,7 +409,7 @@ const details = (item: CartItem) =>
                                 v-if="discount_minor > 0"
                                 class="flex justify-between text-emerald-700"
                             >
-                                <dt>Descuento</dt>
+                                <dt>{{ $t('Descuento') }}</dt>
                                 <dd class="legacy-numeric">
                                     −<Money
                                         :minor="discount_minor"
@@ -401,13 +420,13 @@ const details = (item: CartItem) =>
                             <div
                                 class="flex justify-between text-muted-foreground"
                             >
-                                <dt>Envío</dt>
-                                <dd>Se define al confirmar</dd>
+                                <dt>{{ $t('Envío') }}</dt>
+                                <dd>{{ $t('Se define al confirmar') }}</dd>
                             </div>
                             <div
                                 class="flex items-baseline justify-between border-t border-border pt-3 text-base font-semibold"
                             >
-                                <dt>Total</dt>
+                                <dt>{{ $t('Total') }}</dt>
                                 <dd class="legacy-numeric text-xl">
                                     <Money
                                         :minor="total_minor"
@@ -422,7 +441,7 @@ const details = (item: CartItem) =>
                             disabled
                             class="h-12 w-full rounded-full"
                         >
-                            Quita los productos no disponibles
+                            {{ $t('Quita los productos no disponibles') }}
                         </Button>
                         <Button
                             v-else
@@ -430,21 +449,25 @@ const details = (item: CartItem) =>
                             class="h-12 w-full rounded-full text-base"
                         >
                             <Link href="/checkout">
-                                Continuar al pago
+                                {{ $t('Continuar al pago') }}
                                 <ArrowRight class="size-4" />
                             </Link>
                         </Button>
                         <p
                             class="flex items-center justify-center gap-1.5 text-xs text-muted-foreground"
                         >
-                            <Lock class="size-3" /> Pago seguro con tarjeta. Tus
-                            datos no pasan por nuestros servidores.
+                            <Lock class="size-3" />
+                            {{
+                                $t(
+                                    'Pago seguro con tarjeta. Tus datos no pasan por nuestros servidores.',
+                                )
+                            }}
                         </p>
                     </div>
                     <Link
                         href="/tienda"
                         class="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-muted-foreground hover:text-foreground"
-                        >← Seguir comprando</Link
+                        >← {{ $t('Seguir comprando') }}</Link
                     >
                 </aside>
             </div>
@@ -463,28 +486,31 @@ const details = (item: CartItem) =>
                     <ShoppingBag class="size-7" />
                 </span>
                 <p class="relative mt-6 font-serif text-3xl">
-                    Tu carrito está vacío.
+                    {{ $t('Tu carrito está vacío.') }}
                 </p>
                 <p
                     class="relative mt-3 max-w-sm text-[15px] leading-relaxed text-muted-foreground"
                 >
-                    Empieza por el Finisher Legacy Tag de tu carrera, o por el
-                    equipo que te acompaña en cada kilómetro.
+                    {{
+                        $t(
+                            'Empieza por el Finisher Legacy Tag de tu carrera, o por el equipo que te acompaña en cada kilómetro.',
+                        )
+                    }}
                 </p>
                 <div
                     class="relative mt-8 flex flex-col items-center gap-3 sm:flex-row"
                 >
                     <Button as-child class="h-12 rounded-full px-6">
-                        <Link :href="collectionsIndex()"
-                            >Explorar colecciones</Link
-                        >
+                        <Link :href="collectionsIndex()">{{
+                            $t('Explorar colecciones')
+                        }}</Link>
                     </Button>
                     <Button
                         as-child
                         variant="outline"
                         class="h-12 rounded-full bg-transparent px-6"
                     >
-                        <Link href="/tienda">Ver la tienda</Link>
+                        <Link href="/tienda">{{ $t('Ver la tienda') }}</Link>
                     </Button>
                 </div>
             </div>
@@ -497,16 +523,18 @@ const details = (item: CartItem) =>
         >
             <div class="flex items-center gap-3">
                 <div class="min-w-0 flex-1">
-                    <p class="text-xs text-muted-foreground">Total</p>
+                    <p class="text-xs text-muted-foreground">
+                        {{ $t('Total') }}
+                    </p>
                     <p class="legacy-numeric text-lg font-semibold">
                         <Money :minor="total_minor" :currency="currency" />
                     </p>
                 </div>
                 <Button v-if="!blocked" as-child class="h-12 rounded-full px-6">
-                    <Link href="/checkout">Continuar al pago</Link>
+                    <Link href="/checkout">{{ $t('Continuar al pago') }}</Link>
                 </Button>
                 <Button v-else disabled class="h-12 rounded-full px-4 text-xs">
-                    Revisa tu carrito
+                    {{ $t('Revisa tu carrito') }}
                 </Button>
             </div>
         </div>

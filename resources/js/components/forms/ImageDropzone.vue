@@ -8,6 +8,7 @@
 import { ImagePlus, Upload, X } from '@lucide/vue';
 import { useDropZone } from '@vueuse/core';
 import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from '@/i18n';
 
 const props = withDefaults(
     defineProps<{
@@ -75,15 +76,19 @@ const acceptedTypes = computed(() =>
     props.accept.split(',').map((type) => type.trim()),
 );
 
+const { t } = useI18n();
+
 function validate(file: File): string | null {
     if (!acceptedTypes.value.includes(file.type)) {
-        return 'Formato no permitido. Usa JPG, PNG o WEBP.';
+        return t('Formato no permitido. Usa JPG, PNG o WEBP.');
     }
 
     const maxBytes = props.maxSizeMb * 1024 * 1024;
 
     if (file.size > maxBytes) {
-        return `La imagen pesa demasiado. Máximo ${props.maxSizeMb} MB.`;
+        return t('La imagen pesa demasiado. Máximo {size} MB.', {
+            size: props.maxSizeMb,
+        });
     }
 
     return null;
@@ -183,13 +188,13 @@ const displayError = computed(() => props.error ?? localError.value);
                         class="flex items-center gap-2 text-xs font-medium text-foreground"
                     >
                         <Upload class="size-3.5" />
-                        <span>Cambiar imagen</span>
+                        <span>{{ $t('Cambiar imagen') }}</span>
                     </div>
                 </div>
                 <button
                     type="button"
                     class="fl-focus-glow absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-                    aria-label="Quitar imagen"
+                    :aria-label="$t('Quitar imagen')"
                     @click.stop="remove"
                 >
                     <X class="size-4" />
@@ -207,8 +212,10 @@ const displayError = computed(() => props.error ?? localError.value);
                     class="size-8 text-muted-foreground/80 transition-colors group-hover:text-fl-gold-ink"
                 />
                 <p class="mt-2 px-4 text-center text-xs text-muted-foreground">
-                    Arrastra una imagen aquí o
-                    <span class="text-fl-gold-ink">toca para elegir</span>
+                    {{ $t('Arrastra una imagen aquí o') }}
+                    <span class="text-fl-gold-ink">{{
+                        $t('toca para elegir')
+                    }}</span>
                 </p>
             </template>
         </div>

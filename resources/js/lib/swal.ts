@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import { t } from '@/i18n';
 
 export function confirmDestructive(options: {
     title: string;
@@ -11,8 +12,8 @@ export function confirmDestructive(options: {
         icon: 'warning',
         iconColor: '#c9a45c',
         showCancelButton: true,
-        confirmButtonText: options.confirmButtonText ?? 'Sí, continuar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: options.confirmButtonText ?? t('Sí, continuar'),
+        cancelButtonText: t('Cancelar'),
         background: '#ffffff',
         color: '#171714',
         confirmButtonColor: '#171714',
