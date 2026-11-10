@@ -546,6 +546,7 @@ export const adminSections: AdminSection[] = [
         match: [
             '/admin/settings',
             '/admin/configuracion',
+            '/admin/idiomas',
             '/admin/organizers',
             '/admin/data-sources',
             '/admin/integrations',
@@ -577,6 +578,12 @@ export const adminSections: AdminSection[] = [
                 label: 'Conexiones',
                 href: '/admin/integrations',
                 permission: 'integrations.view',
+            },
+            {
+                // Idiomas y traducciones (docs/renovacion/idiomas.md).
+                label: 'Idiomas',
+                href: '/admin/idiomas',
+                permission: 'i18n.manage',
             },
         ],
     },

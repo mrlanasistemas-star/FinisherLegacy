@@ -3,6 +3,7 @@
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\HorizonServiceProvider;
+use App\Providers\I18nServiceProvider;
 use App\Providers\LegacyTagServiceProvider;
 use App\Providers\NfcServiceProvider;
 use App\Providers\NotificationServiceProvider;
@@ -20,4 +21,5 @@ return [
     PaymentSettingsServiceProvider::class,
     TrainingServiceProvider::class,
     NotificationServiceProvider::class,
+    I18nServiceProvider::class,
 ];

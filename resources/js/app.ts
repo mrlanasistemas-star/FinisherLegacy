@@ -1,5 +1,6 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
+import { initializeI18n, installI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import PublicLayout from '@/layouts/PublicLayout.vue';
@@ -23,7 +24,13 @@ const BACK_OFFICE_PREFIXES = [
     'photographer/',
 ];
 
+// Language of this page: downloads its catalog before the app mounts (no
+// flash of Spanish). Instant in Spanish — docs/renovacion/idiomas.md.
+await initializeI18n();
+
 createInertiaApp({
+    // `$t` / `$tc` in every template + the instance behind useI18n().
+    withApp: installI18n,
     // "Nosotros | Finisher Legacy"; a title that already carries the brand
     // (Home: "Finisher Legacy — Tu esfuerzo merece una historia") is kept as is.
     title: (title) =>

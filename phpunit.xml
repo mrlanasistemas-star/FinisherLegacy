@@ -24,6 +24,8 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="PUSH_PROVIDER" value="null"/>
+        <env name="I18N_TRANSLATOR" value="null"/>
+        <env name="I18N_DETECT_BROWSER" value="false"/>
         <env name="FINISHER_IMAGE_DRIVER" value="gd"/>
         <env name="FFMPEG_PATH_LOOKUP" value="false"/>
         <env name="CACHE_STORE" value="array"/>

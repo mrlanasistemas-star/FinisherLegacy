@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\CartItem;
 use App\Models\CompanySetting;
 use App\Support\Notifications\UnreadCounter;
+use App\Support\I18n\I18nProps;
 use App\Support\PermissionCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -106,6 +107,9 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => fn () => $user === null ? 0 : (int) CartItem::query()
                 ->whereHas('cart', fn ($q) => $q->where('user_id', $user->id))
                 ->sum('quantity'),
+            // Language of this page + the languages offered + the version
+            // of the active catalog (docs/renovacion/idiomas.md).
+            ...I18nProps::shared(),
         ];
     }
 }

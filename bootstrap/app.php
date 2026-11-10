@@ -6,6 +6,8 @@ use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserToken;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\StripLocalePrefix;
 use App\Support\Api\ApiExceptionRenderer;
 use App\Support\Observability\OperationalLog;
 use Illuminate\Foundation\Application;
@@ -25,20 +27,26 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'fl_locale']);
 
         $middleware->web(append: [
             HandleAppearance::class,
+            // Language of the request — before Inertia shares it (docs/renovacion/idiomas.md).
+            SetLocale::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             EnsureUserIsActive::class,
         ]);
 
         // Suspended/blocked accounts lose API access immediately (403).
-        $middleware->api(append: [EnsureUserIsActive::class]);
+        $middleware->api(append: [EnsureUserIsActive::class, SetLocale::class.':api']);
 
         // Correlation id on every request (web + api) — docs/ARCHITECTURE.md §Observability.
         $middleware->prepend(AssignRequestId::class);
+
+        // `/en/...` serves the same routes as `/...`: the language prefix is
+        // removed before routing. Must stay the outermost middleware.
+        $middleware->prepend(StripLocalePrefix::class);
 
         // Baseline throttle for every /api route (limiter `api`,
         // AppServiceProvider) — security audit A1: before this the `api`

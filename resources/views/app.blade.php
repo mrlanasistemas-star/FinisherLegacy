@@ -92,6 +92,9 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <link rel="manifest" href="/site.webmanifest">
 
+        {{-- hreflang alternates of public pages (docs/renovacion/idiomas.md). --}}
+        @include('i18n.head')
+
         @fonts
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])

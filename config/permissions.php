@@ -218,6 +218,13 @@ return [
             'quotas.manage' => 'Configurar límites de fotos, ampliaciones y sus precios',
         ],
     ],
+    'i18n' => [
+        'label' => 'Idiomas y traducciones',
+        'icon' => 'Settings2',
+        'permissions' => [
+            'i18n.manage' => 'Gestionar idiomas, revisar traducciones y sincronizar',
+        ],
+    ],
     'access' => [
         'label' => 'Accesos especiales',
         'icon' => 'KeyRound',
