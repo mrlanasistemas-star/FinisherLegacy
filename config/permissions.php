@@ -265,6 +265,13 @@ return [
             'photographer.portal' => 'Portal del fotógrafo (subir y vender fotos)',
         ],
     ],
+    'quotas' => [
+        'label' => 'Límites y tarifas',
+        'icon' => 'Image',
+        'permissions' => [
+            'quotas.manage' => 'Configurar límites de fotos, ampliaciones y sus precios',
+        ],
+    ],
     'access' => [
         'label' => 'Accesos especiales',
         'icon' => 'KeyRound',

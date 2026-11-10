@@ -4,15 +4,20 @@ namespace App\Actions\LegacyTags;
 
 use App\Enums\MediaKind;
 use App\Enums\StoryMediaRole;
+use App\Exceptions\Media\PhotoQuotaExceededException;
 use App\Exceptions\MediaTooLargeException;
 use App\Models\LegacyStory;
 use App\Models\MediaFile;
 use App\Models\User;
 use App\Services\Media\MediaStorage;
 use App\Services\Media\MediaUploadRules;
+use App\Services\Media\StoryPhotoQuota;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use League\Flysystem\FilesystemException;
+use Throwable;
 
 /**
  * Photos, the voice message and the certificate of a Legacy story — all
@@ -34,7 +39,10 @@ class ManageStoryMedia
 
     public const CERTIFICATE_FILE_MIMES = ['application/pdf'];
 
-    public function __construct(private readonly MediaStorage $storage) {}
+    public function __construct(
+        private readonly MediaStorage $storage,
+        private readonly StoryPhotoQuota $quota,
+    ) {}
 
     public static function rulesFor(StoryMediaRole $role): MediaUploadRules
     {
@@ -55,18 +63,72 @@ class ManageStoryMedia
     }
 
     /**
+     * Atomic: the media_files row and the pivot are written in ONE
+     * transaction, under a lock on the story row. Photos are gated by
+     * StoryPhotoQuota twice — a cheap check before any bytes are stored and
+     * the authoritative one under the lock, so two concurrent uploads at
+     * the last free slot serialize and only one is attached. On any
+     * rollback the temp upload is removed too: no orphan row, no orphan
+     * file. A temp-disk write failure (media_tmp throws) becomes a
+     * friendly `file` error instead of a 500.
+     *
      * @throws ValidationException
+     * @throws PhotoQuotaExceededException
      */
     public function add(LegacyStory $story, User $user, UploadedFile $upload, StoryMediaRole $role, ?string $caption = null): MediaFile
     {
-        if ($role === StoryMediaRole::Photo && $this->count($story, $role) >= (int) config('legacy.stories.max_photos', 12)) {
-            throw ValidationException::withMessages(['file' => 'Ya tienes el máximo de fotos en este recuerdo. Quita una para subir otra.']);
+        if ($role === StoryMediaRole::Photo) {
+            $this->quota->assertCanAdd($story);
         }
 
+        /** @var MediaFile|null $file */
+        $file = null;
+
         try {
-            $file = $this->storage->accept($upload, $this->storage->paths()->forUser($user, 'legacy'), self::rulesFor($role), $user);
+            DB::transaction(function () use ($story, $user, $upload, $role, $caption, &$file) {
+                $locked = LegacyStory::query()->whereKey($story->id)->lockForUpdate()->firstOrFail();
+
+                if ($role === StoryMediaRole::Photo) {
+                    $this->quota->assertCanAdd($locked);
+                }
+
+                $file = $this->accept($user, $upload, $role);
+
+                if ($role->isSingle()) {
+                    $this->detachRole($story, $role);
+                }
+
+                $story->media()->attach($file->id, [
+                    'role' => $role->value,
+                    'caption' => $caption !== null && trim($caption) !== '' ? trim($caption) : null,
+                    'sort_order' => $role === StoryMediaRole::Photo ? $this->nextOrder($story) : 0,
+                ]);
+            });
+        } catch (Throwable $e) {
+            if ($file !== null) {
+                // The row rolled back with the transaction; drop the bytes too.
+                $this->discardUpload($file);
+            }
+
+            throw $e;
+        }
+
+        $this->storage->process($file, $story);
+
+        return $file;
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function accept(User $user, UploadedFile $upload, StoryMediaRole $role): MediaFile
+    {
+        try {
+            return $this->storage->accept($upload, $this->storage->paths()->forUser($user, 'legacy'), self::rulesFor($role), $user);
         } catch (MediaTooLargeException) {
             throw ValidationException::withMessages(['file' => 'El archivo es demasiado pesado. Prueba con uno más ligero.']);
+        } catch (FilesystemException) {
+            throw ValidationException::withMessages(['file' => 'No pudimos guardar el archivo en este momento. Intenta de nuevo en unos minutos.']);
         } catch (ValidationException $e) {
             throw ValidationException::withMessages(['file' => match ($role) {
                 StoryMediaRole::Photo => 'Sube una foto JPG, PNG o WebP.',
@@ -74,22 +136,18 @@ class ManageStoryMedia
                 StoryMediaRole::Certificate => 'Sube tu certificado en PDF, JPG, PNG o WebP.',
             }.' '.collect($e->errors())->flatten()->first()]);
         }
+    }
 
-        DB::transaction(function () use ($story, $file, $role, $caption) {
-            if ($role->isSingle()) {
-                $this->detachRole($story, $role);
+    private function discardUpload(MediaFile $file): void
+    {
+        try {
+            if (is_string($file->source_path) && $file->source_path !== '') {
+                Storage::disk((string) ($file->source_disk ?: $this->storage->tmpDisk()))->delete($file->source_path);
             }
-
-            $story->media()->attach($file->id, [
-                'role' => $role->value,
-                'caption' => $caption !== null && trim($caption) !== '' ? trim($caption) : null,
-                'sort_order' => $role === StoryMediaRole::Photo ? $this->nextOrder($story) : 0,
-            ]);
-        });
-
-        $this->storage->process($file, $story);
-
-        return $file;
+            Storage::disk($this->storage->tmpDisk())->deleteDirectory($this->storage->workDirectory($file));
+        } catch (Throwable) {
+            // Best effort: the original error is what the user must see.
+        }
     }
 
     public function caption(LegacyStory $story, int $pivotId, ?string $caption): void
@@ -156,11 +214,6 @@ class ManageStoryMedia
         if ($file !== null && $file->mediable_type === $story->getMorphClass() && (int) $file->mediable_id === $story->id) {
             DB::afterCommit(fn () => $this->storage->delete($file));
         }
-    }
-
-    private function count(LegacyStory $story, StoryMediaRole $role): int
-    {
-        return DB::table('legacy_story_media')->where('legacy_story_id', $story->id)->where('role', $role->value)->count();
     }
 
     private function nextOrder(LegacyStory $story): int

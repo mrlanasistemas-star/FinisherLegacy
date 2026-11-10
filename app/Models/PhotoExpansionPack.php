@@ -1,0 +1,97 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\ProductPriceType;
+use App\Enums\ProductType;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+
+/**
+ * A sellable block of extra photos for a Legacy story. Its prices are
+ * ProductPriceSchedule rows (photo_expansion_pack_id) — one immutable row
+ * per priced window, so a past purchase always keeps the price it paid.
+ *
+ * @property int $photos
+ * @property bool $active
+ * @property ProductType|null $product_type
+ * @property Carbon|null $archived_at
+ */
+#[Fillable(['uuid', 'name', 'description', 'photos', 'product_id', 'product_type', 'active', 'archived_at', 'sort_order', 'created_by'])]
+class PhotoExpansionPack extends Model
+{
+    /** Internal, never-listed product every expansion OrderItem points at. */
+    public const string PRODUCT_SLUG = 'ampliacion-fotos-recuerdo';
+
+    public const string ENTITLEMENT_SOURCE = 'photo_expansion';
+
+    protected static function booted(): void
+    {
+        static::creating(function (PhotoExpansionPack $pack) {
+            $pack->uuid ??= (string) Str::uuid();
+        });
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'photos' => 'integer',
+            'active' => 'boolean',
+            'archived_at' => 'datetime',
+            'product_type' => ProductType::class,
+        ];
+    }
+
+    /**
+     * @param  Builder<PhotoExpansionPack>  $query
+     * @return Builder<PhotoExpansionPack>
+     */
+    public function scopeSellable(Builder $query): Builder
+    {
+        return $query->where('active', true)->whereNull('archived_at');
+    }
+
+    /** @return BelongsTo<Product, $this> */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    /** @return HasMany<ProductPriceSchedule, $this> */
+    public function prices(): HasMany
+    {
+        return $this->hasMany(ProductPriceSchedule::class);
+    }
+
+    /** @return HasMany<MediaEntitlement, $this> */
+    public function entitlements(): HasMany
+    {
+        return $this->hasMany(MediaEntitlement::class);
+    }
+
+    /** The schedule row in force at $at (latest start wins), if any. */
+    public function priceAt(?\DateTimeInterface $at = null): ?ProductPriceSchedule
+    {
+        $at ??= now();
+
+        return $this->prices()
+            ->where('price_type', ProductPriceType::Standard->value)
+            ->where('active', true)
+            ->where(fn (Builder $q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', $at))
+            ->where(fn (Builder $q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $at))
+            ->orderByRaw('starts_at is null')
+            ->orderByDesc('starts_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
+    }
+}

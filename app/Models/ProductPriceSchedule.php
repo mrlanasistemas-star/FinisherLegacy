@@ -10,10 +10,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One priced window for a product/variant, optionally scoped to an event —
  * resolved by App\Actions\Commerce\ResolveProductPrice (brief §40-§44).
+ * Rows with photo_expansion_pack_id price a Legacy story photo expansion
+ * (PhotoExpansionPack::priceAt) and are never edited once they started —
+ * a new price is always a new row.
  */
 #[Fillable([
     'product_id', 'product_variant_id', 'event_edition_id', 'price_type',
     'amount_minor', 'currency', 'starts_at', 'ends_at', 'active', 'sales_channel', 'ally_id',
+    'photo_expansion_pack_id', 'tax_rate', 'tax_included', 'created_by',
 ])]
 class ProductPriceSchedule extends Model
 {
@@ -25,6 +29,8 @@ class ProductPriceSchedule extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'active' => 'boolean',
+            'tax_rate' => 'decimal:4',
+            'tax_included' => 'boolean',
         ];
     }
 
@@ -38,6 +44,12 @@ class ProductPriceSchedule extends Model
     public function productVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    /** @return BelongsTo<PhotoExpansionPack, $this> */
+    public function photoExpansionPack(): BelongsTo
+    {
+        return $this->belongsTo(PhotoExpansionPack::class);
     }
 
     /** @return BelongsTo<EventEdition, $this> */

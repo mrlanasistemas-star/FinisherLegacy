@@ -2,6 +2,7 @@
 
 namespace App\Actions\Commerce;
 
+use App\Actions\Quotas\RevokePhotoExpansionEntitlements;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -57,6 +58,7 @@ class ProcessPaymentWebhook
         private readonly MarkOrderPaid $markOrderPaid,
         private readonly CancelOrder $cancelOrder,
         private readonly InventoryService $inventory,
+        private readonly RevokePhotoExpansionEntitlements $revokePhotoExpansions,
     ) {}
 
     public function handle(PaymentWebhookOutcome $outcome): void
@@ -182,6 +184,11 @@ class ProcessPaymentWebhook
                 ? OrderPaymentStatus::Refunded
                 : OrderPaymentStatus::PartiallyRefunded,
         ]);
+
+        // Full refund: purchased photo capacity goes away (photos stay).
+        if ($status === PaymentStatus::Refunded) {
+            $this->revokePhotoExpansions->handle($order);
+        }
 
         $hasUndelivered = $order->items()->whereNull('fulfilled_at')->exists();
 

@@ -3,6 +3,7 @@
 namespace App\Actions\Commerce;
 
 use App\Actions\Photos\RecordPhotoSales;
+use App\Actions\Quotas\GrantPhotoExpansionEntitlements;
 use App\Enums\CouponRedemptionStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
@@ -27,6 +28,7 @@ class MarkOrderPaid
     public function __construct(
         private readonly ConfirmOrder $confirmOrder,
         private readonly RecordPhotoSales $recordPhotoSales,
+        private readonly GrantPhotoExpansionEntitlements $grantPhotoExpansions,
     ) {}
 
     public function handle(Order $order): Order
@@ -73,6 +75,10 @@ class MarkOrderPaid
         // Event photos bought from photographers: freeze the money split
         // and unlock the download (digital, fulfilled on payment).
         $this->recordPhotoSales->handle($order);
+
+        // Legacy story photo expansions: the extra capacity exists only
+        // from here on (docs/renovacion/cuotas-y-precios.md).
+        $this->grantPhotoExpansions->handle($order);
 
         return $order->fresh();
     }
