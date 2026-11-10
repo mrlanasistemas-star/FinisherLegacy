@@ -2,14 +2,11 @@
 
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureApiIdempotencyKey;
-use App\Http\Middleware\EnsureIdempotencyKey;
-use App\Http\Middleware\EnsureProductionDeviceToken;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\EnsureUserToken;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Support\Api\ApiExceptionRenderer;
-use App\Support\Devices\DeviceExceptionRenderer;
 use App\Support\Observability\OperationalLog;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,8 +14,6 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Laravel\Sanctum\Http\Middleware\CheckAbilities;
-use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
 use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -50,16 +45,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // limiter existed but was never applied.
         $middleware->throttleApi();
 
-        // Device API (docs/adr/0002) — kept as aliases rather than global
-        // middleware since only the device/production routes in
-        // routes/api.php opt into them.
+        // Route-level aliases: only the routes in routes/api.php that need
+        // them opt in.
         $middleware->alias([
-            'device.token' => EnsureProductionDeviceToken::class,
             'user.token' => EnsureUserToken::class,
-            'device.idempotent' => EnsureIdempotencyKey::class,
             'api.idempotent' => EnsureApiIdempotencyKey::class,
-            'ability' => CheckForAnyAbility::class,
-            'abilities' => CheckAbilities::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -72,23 +62,8 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        // Device API surface renders {"error": {"code", "message", "details"}}
-        // (docs/device-api/v1.md) instead of Laravel's default JSON error
-        // shape — every other path (web Inertia, non-device /api/v1) is
-        // untouched.
-        $exceptions->render(function (Throwable $e, Request $request) {
-            if (! $request->is('api/v1/devices*', 'api/v1/device', 'api/v1/device/*', 'api/v1/production/*')) {
-                return null;
-            }
-
-            return app(DeviceExceptionRenderer::class)->render($e);
-        });
-
-        // The rest of `/api/v1/*` (auth, medals, events, event-ops,
-        // integrations, …) — same unified `{"error": {...}}` envelope,
-        // via a separate renderer since the Device API's contract above is
-        // already documented/shipped and must not shift (docs/api/v1.md
-        // §Errores).
+        // Every `/api/*` path (auth, medals, events, integrations, …) uses
+        // the unified `{"error": {...}}` envelope (docs/api/v1.md §Errores).
         $exceptions->render(function (Throwable $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;

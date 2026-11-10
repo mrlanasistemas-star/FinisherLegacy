@@ -17,8 +17,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             SportSeeder::class,
-            PlateTemplateSeeder::class,
-            MachineProfileSeeder::class,
             LegacyPlateModelSeeder::class,
             ProductCatalogSeeder::class,
             ConceptProductsSeeder::class,

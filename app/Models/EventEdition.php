@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'event_id', 'name', 'year', 'event_date', 'city', 'state', 'country', 'timezone',
@@ -98,34 +97,10 @@ class EventEdition extends Model
         return $this->hasMany(Plate::class);
     }
 
-    /** @return HasMany<ProductionJob, $this> */
-    public function productionJobs(): HasMany
-    {
-        return $this->hasMany(ProductionJob::class);
-    }
-
-    /** @return HasMany<EventIncident, $this> */
-    public function incidents(): HasMany
-    {
-        return $this->hasMany(EventIncident::class);
-    }
-
     /** @return HasMany<Medal, $this> */
     public function medals(): HasMany
     {
         return $this->hasMany(Medal::class);
-    }
-
-    /** @return HasMany<EventPlateTemplate, $this> */
-    public function plateTemplateAssignments(): HasMany
-    {
-        return $this->hasMany(EventPlateTemplate::class);
-    }
-
-    /** @return HasOne<EventProductionCheck, $this> */
-    public function productionCheck(): HasOne
-    {
-        return $this->hasOne(EventProductionCheck::class);
     }
 
     /**
@@ -173,31 +148,5 @@ class EventEdition extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
-    }
-
-    /**
-     * The version to use when generating a plate for this edition/race. Race-specific
-     * assignment wins over the edition-wide default (21K vs 42K having different molds).
-     */
-    public function defaultPlateTemplateVersion(?int $eventRaceId = null): ?PlateTemplateVersion
-    {
-        if ($eventRaceId !== null) {
-            $raceSpecific = $this->plateTemplateAssignments()
-                ->where('event_race_id', $eventRaceId)
-                ->where('active', true)
-                ->where('is_default', true)
-                ->first();
-
-            if ($raceSpecific) {
-                return $raceSpecific->plateTemplateVersion;
-            }
-        }
-
-        return $this->plateTemplateAssignments()
-            ->whereNull('event_race_id')
-            ->where('active', true)
-            ->where('is_default', true)
-            ->first()
-            ?->plateTemplateVersion;
     }
 }

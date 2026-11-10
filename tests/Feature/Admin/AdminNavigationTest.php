@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Support\PermissionCatalog;
 use Database\Seeders\RolePermissionSeeder;
+use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
     $this->seed(RolePermissionSeeder::class);
@@ -19,9 +20,9 @@ test('super_admin receives the full permission catalog plus roles.manage, drivin
         ->where('auth.isSuperAdmin', true)
         ->where('auth.permissions', fn ($permissions) => $permissions->contains('users.view')
             && $permissions->contains('roles.manage')
-            && $permissions->contains('platetemplates.view')
-            && $permissions->contains('operator.access')
-            && $permissions->contains('production.access')
+            && ! $permissions->contains('platetemplates.view')
+            && ! $permissions->contains('operator.access')
+            && ! $permissions->contains('production.access')
             && $permissions->count() === count(PermissionCatalog::allKeys()) + 1
         )
     );
@@ -36,7 +37,8 @@ test('event_operator only receives its own permissions — no users/roles access
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->where('auth.isSuperAdmin', false)
-        ->where('auth.permissions', fn ($permissions) => $permissions->contains('operator.access')
+        ->where('auth.permissions', fn ($permissions) => $permissions->contains('participants.view')
+            && ! $permissions->contains('operator.access')
             && ! $permissions->contains('users.view')
             && ! $permissions->contains('roles.manage')
         )
@@ -46,22 +48,8 @@ test('event_operator only receives its own permissions — no users/roles access
     $this->actingAs($operator)->get('/admin/roles')->assertForbidden();
 });
 
-test('production_operator (legacy role) keeps its permissions but not users/roles', function () {
-    $productionOperator = User::factory()->create();
-    $productionOperator->assignRole('production_operator');
-
-    $response = $this->actingAs($productionOperator)->get('/settings/profile');
-
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->where('auth.permissions', fn ($permissions) => $permissions->contains('production.access')
-            && ! $permissions->contains('users.view')
-            && ! $permissions->contains('roles.manage')
-        )
-    );
-
-    $this->actingAs($productionOperator)->get('/admin/users')->assertForbidden();
-    $this->actingAs($productionOperator)->get('/admin/roles')->assertForbidden();
+test('the retired production_operator role is no longer seeded', function () {
+    expect(Role::query()->where('name', 'production_operator')->exists())->toBeFalse();
 });
 
 test('a plain admin sees permissions for every module except roles.manage', function () {

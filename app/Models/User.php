@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Contracts\ProductionActor;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -43,7 +42,7 @@ use Spatie\Permission\Traits\HasRoles;
  */
 #[Fillable(['first_name', 'last_name', 'email', 'password', 'phone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable implements ProductionActor
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
@@ -221,10 +220,5 @@ class User extends Authenticatable implements ProductionActor
     public function pushDevices(): HasMany
     {
         return $this->hasMany(PushDevice::class);
-    }
-
-    public function productionActorLabel(): string
-    {
-        return $this->name;
     }
 }

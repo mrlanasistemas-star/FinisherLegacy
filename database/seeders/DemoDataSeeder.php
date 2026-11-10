@@ -6,30 +6,27 @@ use App\Actions\Athletes\CreateAthlete;
 use App\Actions\Athletes\EnsureAthleteForUser;
 use App\Actions\Athletes\LinkParticipantToAthlete;
 use App\Enums\LegacyCodeStatus;
+use App\Enums\PlateGenerationMode;
 use App\Enums\PlateStatus;
-use App\Enums\PlateTemplateVersionStatus;
-use App\Enums\ProductionJobStatus;
 use App\Enums\StaffRole;
 use App\Enums\UserStatus;
 use App\Models\Athlete;
 use App\Models\AthleteProfile;
 use App\Models\Event;
 use App\Models\EventEdition;
-use App\Models\EventIncident;
 use App\Models\EventParticipant;
-use App\Models\EventPlateTemplate;
 use App\Models\EventRace;
 use App\Models\EventResult;
 use App\Models\EventStaffAssignment;
+use App\Models\LegacyCode;
 use App\Models\Medal;
 use App\Models\Organizer;
 use App\Models\Plate;
-use App\Models\PlateTemplateVersion;
 use App\Models\Sport;
 use App\Models\User;
 use App\Services\LegacyIdService;
-use App\Services\PlateGenerationService;
 use App\Support\Athletes\AthleteIdentityCandidateData;
+use App\Support\CodeGenerator;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -37,13 +34,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Every demo Plate — integrated, quick, triathlon — is created through
- * PlateGenerationService, the same single entry point the real app uses
- * (see App\Services\PlateGenerationService docblock). This seeder never
- * builds a Plate row by hand; it only mutates status/timestamps
- * afterward to make old demo data look historical (delivered days ago,
- * claimed, etc.) — that's just simulating time passing, not a second way
- * to create a plate.
+ * Demo data for local/staging: staff, athletes, events, results, medals and
+ * a few HISTORICAL plates. Engraved plates are no longer produced (see
+ * docs/renovacion/retiro-modulos.md), so the demo plates are written
+ * directly as already-delivered pieces with their Legacy Code, only to show
+ * what an athlete who bought one still sees at /l/{code} and in their
+ * history.
  */
 class DemoDataSeeder extends Seeder
 {
@@ -51,12 +47,9 @@ class DemoDataSeeder extends Seeder
 
     private LegacyIdService $legacyIdService;
 
-    private PlateGenerationService $plates;
-
     public function run(): void
     {
         $this->legacyIdService = app(LegacyIdService::class);
-        $this->plates = app(PlateGenerationService::class);
 
         $staff = $this->createStaffUsers();
         $athlete = $this->createDemoAthlete();
@@ -69,15 +62,8 @@ class DemoDataSeeder extends Seeder
         // 1 Athlete" rule visually in /admin/athletes/{id}.
         $canonicalAthlete = app(EnsureAthleteForUser::class)->handle($athlete, 'seed');
 
-        // PlateTemplateSeeder (runs before this one in DatabaseSeeder) is the
-        // only place a template + published version actually gets created.
-        // Every demo plate must carry a real plate_template_version_id or
-        // export/production tooling breaks on a NULL template downstream.
-        $runningVersion = $this->publishedVersion('running-classic-60x40');
-
         [$edition, $races] = $this->createDemoEvent($staff);
 
-        $this->assignDefaultTemplate($edition, $runningVersion);
         $this->assignStaff($edition, $staff);
 
         $participants = $this->createParticipants($edition, $races, 500);
@@ -89,24 +75,14 @@ class DemoDataSeeder extends Seeder
         $integratedParticipant = $participants->first()->fresh(['eventRace', 'result']);
         $this->finalizeMarathonResult($integratedParticipant);
         $integratedParticipant->refresh();
-        $this->createIntegratedPlate($integratedParticipant, $athlete, $edition, $runningVersion);
-        $this->createQuickPlates($edition, $runningVersion, 6);
+        $this->createHistoricalPlate($edition, $integratedParticipant, now()->subDay());
+        $this->createQuickPlates($edition, 6);
         $this->createPreregistrations($edition, $races, 30);
-        $this->createSampleIncident($edition, $participants->skip(1)->first(), $staff['event_operator']);
         $this->createDemoMedals($athlete, $canonicalAthlete);
         $this->seedSingleParticipationAthletes($participants);
 
         $this->createTriathlonDemoEvent($staff);
         $this->createThirdEventParticipationForCanonicalAthlete($canonicalAthlete, $athlete);
-    }
-
-    private function publishedVersion(string $slug): PlateTemplateVersion
-    {
-        return PlateTemplateVersion::query()
-            ->whereHas('plateTemplate', fn ($q) => $q->where('slug', $slug))
-            ->where('status', PlateTemplateVersionStatus::Published)
-            ->latest('version')
-            ->firstOrFail();
     }
 
     private function createDemoMedals(User $athlete, Athlete $canonicalAthlete): void
@@ -143,7 +119,6 @@ class DemoDataSeeder extends Seeder
             'admin' => ['Ana', 'Administradora', 'admin@finisherlegacy.com'],
             'event_manager' => ['Marco', 'Gestor', 'manager@finisherlegacy.com'],
             'event_operator' => ['Laura', 'Operadora', 'operator@finisherlegacy.com'],
-            'production_operator' => ['Diego', 'Producción', 'production@finisherlegacy.com'],
         ];
 
         $users = [];
@@ -260,18 +235,6 @@ class DemoDataSeeder extends Seeder
         return [$edition, $races];
     }
 
-    private function assignDefaultTemplate(EventEdition $edition, PlateTemplateVersion $version): void
-    {
-        EventPlateTemplate::query()->updateOrCreate(
-            ['event_edition_id' => $edition->id, 'event_race_id' => null],
-            [
-                'plate_template_version_id' => $version->id,
-                'is_default' => true,
-                'active' => true,
-            ],
-        );
-    }
-
     /**
      * @param  array<string, User>  $staff
      */
@@ -280,7 +243,6 @@ class DemoDataSeeder extends Seeder
         foreach ([
             'event_manager' => StaffRole::EventManager,
             'event_operator' => StaffRole::EventOperator,
-            'production_operator' => StaffRole::ProductionOperator,
         ] as $key => $role) {
             EventStaffAssignment::query()->firstOrCreate([
                 'event_edition_id' => $edition->id,
@@ -424,8 +386,6 @@ class DemoDataSeeder extends Seeder
      */
     private function createTriathlonDemoEvent(array $staff): void
     {
-        $version = $this->publishedVersion('triathlon-premium-60x40');
-
         $organizer = Organizer::query()->firstOrCreate(
             ['slug' => 'finisher-sports-group'],
             ['name' => 'Finisher Sports Group'],
@@ -472,7 +432,6 @@ class DemoDataSeeder extends Seeder
             ],
         );
 
-        $this->assignDefaultTemplate($edition, $version);
         $this->assignStaff($edition, $staff);
 
         $athlete = User::query()->where('email', 'athlete@finisherlegacy.com')->first();
@@ -519,19 +478,7 @@ class DemoDataSeeder extends Seeder
         }
 
         if ($athlete && ! Plate::where('event_participant_id', $participant->id)->exists()) {
-            $plate = $this->plates->generateIntegrated($participant->fresh(['eventRace', 'result.splits']), $version);
-            $plate->update([
-                'status' => PlateStatus::Delivered,
-                'produced_at' => now()->subDays(2),
-                'delivered_at' => now()->subDay(),
-            ]);
-            $plate->latestProductionJob?->update([
-                'status' => ProductionJobStatus::Delivered,
-                'queued_at' => now()->subDays(2),
-                'started_at' => now()->subDays(2),
-                'completed_at' => now()->subDays(2),
-                'attempts' => 1,
-            ]);
+            $this->createHistoricalPlate($edition, $participant->fresh(['eventRace', 'result']), now()->subDay());
         }
     }
 
@@ -666,50 +613,59 @@ class DemoDataSeeder extends Seeder
         app(LinkParticipantToAthlete::class)->handle($orphanParticipant, $orphanAthlete);
     }
 
-    private function createIntegratedPlate(EventParticipant $participant, User $athlete, EventEdition $edition, PlateTemplateVersion $version): void
+    /**
+     * A plate that was engraved and delivered back when plates were still
+     * produced — Plate + its Legacy Code, nothing else. With a participant
+     * it copies their result; without one it is an anonymous "quick" plate.
+     *
+     * @param  array{athlete_name?: string, race_name?: string}  $data
+     */
+    private function createHistoricalPlate(EventEdition $edition, ?EventParticipant $participant, \DateTimeInterface $deliveredAt, array $data = []): Plate
     {
-        $plate = $this->plates->generateIntegrated($participant, $version);
+        $edition->loadMissing('event');
 
-        // Simulating time passing on an already-real plate — not a second
-        // way to create one. The service already froze the correct
-        // dynamic_fields snapshot (distance, splits, position, category).
-        $plate->update([
+        $plate = Plate::query()->create([
+            'user_id' => $participant?->user_id,
+            'athlete_id' => $participant?->athlete_id,
+            'event_edition_id' => $edition->id,
+            'event_participant_id' => $participant?->id,
+            'serial_number' => CodeGenerator::generate('PLT', 8),
+            'generation_mode' => $participant ? PlateGenerationMode::Integrated : PlateGenerationMode::Quick,
+            'athlete_name' => $participant ? ($participant->full_name ?: trim("{$participant->first_name} {$participant->last_name}")) : ($data['athlete_name'] ?? fake()->name()),
+            'bib_number' => $participant?->bib_number,
+            'event_name' => $edition->event->name,
+            'race_name' => $participant ? $participant->eventRace?->name : ($data['race_name'] ?? null),
+            'official_time' => $participant?->result?->official_time,
+            'pace' => $participant?->result?->pace,
+            'event_date' => $edition->event_date,
             'status' => PlateStatus::Delivered,
-            'produced_at' => now()->subHour(),
-            'delivered_at' => now(),
+            'linked_at' => $participant?->user_id ? now() : null,
+            'produced_at' => $deliveredAt,
+            'delivered_at' => $deliveredAt,
         ]);
 
-        $plate->latestProductionJob?->update([
-            'status' => ProductionJobStatus::Delivered,
-            'queued_at' => now()->subHours(2),
-            'started_at' => now()->subHour(),
-            'completed_at' => now(),
-            'attempts' => 1,
+        $legacyCode = LegacyCode::query()->create([
+            'code' => CodeGenerator::unique('FL', fn (string $code) => LegacyCode::query()->where('code', $code)->exists()),
+            'uuid' => (string) Str::uuid(),
+            'plate_id' => $plate->id,
+            'user_id' => $participant?->user_id,
+            'status' => LegacyCodeStatus::Assigned,
+            'assigned_at' => $deliveredAt,
         ]);
+
+        $plate->update(['legacy_code_id' => $legacyCode->id]);
+
+        return $plate->setRelation('legacyCode', $legacyCode);
     }
 
-    private function createQuickPlates(EventEdition $edition, PlateTemplateVersion $version, int $count): void
+    private function createQuickPlates(EventEdition $edition, int $count): void
     {
         for ($i = 1; $i <= $count; $i++) {
             $claimed = $i <= 2;
 
-            $plate = $this->plates->generateQuick($edition, [
+            $plate = $this->createHistoricalPlate($edition, null, now()->subHours(2), [
                 'athlete_name' => fake()->name(),
                 'race_name' => fake()->randomElement(['5K', '10K', '21K', '42K']),
-            ], $version);
-
-            $plate->update([
-                'status' => PlateStatus::Delivered,
-                'produced_at' => now()->subHours(3),
-                'delivered_at' => now()->subHours(2),
-            ]);
-
-            $plate->latestProductionJob?->update([
-                'status' => ProductionJobStatus::Delivered,
-                'queued_at' => now()->subHours(4),
-                'started_at' => now()->subHours(3.5),
-                'completed_at' => now()->subHours(3),
-                'attempts' => 1,
             ]);
 
             $legacyCode = $plate->legacyCode;
@@ -759,17 +715,5 @@ class DemoDataSeeder extends Seeder
         }
 
         DB::table('event_preregistrations')->insert($rows);
-    }
-
-    private function createSampleIncident(EventEdition $edition, EventParticipant $participant, User $reporter): void
-    {
-        EventIncident::create([
-            'event_edition_id' => $edition->id,
-            'event_participant_id' => $participant->id,
-            'reported_by' => $reporter->id,
-            'type' => 'incorrect_name',
-            'description' => 'El nombre en el bib no coincide con la identificación presentada.',
-            'status' => 'open',
-        ]);
     }
 }

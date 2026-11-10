@@ -8,9 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * A stored replay for one `Idempotency-Key` on one general `/api/v1/*`
- * write route — see App\Http\Middleware\EnsureApiIdempotencyKey and
- * App\Models\DeviceIdempotencyKey (the Device API's device-only
- * equivalent).
+ * write route — see App\Http\Middleware\EnsureApiIdempotencyKey.
  */
 #[Fillable(['actor_type', 'actor_id', 'route', 'key', 'response_status', 'response_body'])]
 class ApiIdempotencyKey extends Model

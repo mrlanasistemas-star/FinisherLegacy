@@ -86,8 +86,8 @@ test('the workspace is closed to people without NFC/production permissions', fun
     $this->actingAs($athlete)->get(route('admin.legacy-nfc.products.index'))->assertForbidden();
 
     $operator = User::factory()->create();
-    $operator->assignRole('production_operator');
-    // Production operators can see tags (to assign them) but not generate.
+    $operator->givePermissionTo('nfc.view');
+    // nfc.view can see tags but not generate them.
     $this->actingAs($operator)->get(route('admin.legacy-nfc.tags.index'))->assertOk();
     $this->actingAs($operator)->post(route('admin.legacy-nfc.tags.generate'), ['count' => 1])->assertForbidden();
 });

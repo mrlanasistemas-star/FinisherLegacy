@@ -33,18 +33,12 @@ class RolePermissionSeeder extends Seeder
         Role::findOrCreate('event_manager')->syncPermissions([
             'events.view', 'editions.view', 'editions.manage', 'races.manage',
             'participants.manage', 'results.manage', 'preregistrations.manage',
-            'imports.manage', 'incidents.manage', 'plates.view', 'legacycodes.view',
-            'operators.manage', 'platetemplates.view',
+            'imports.manage', 'legacycodes.view',
             'integrations.view', 'integrations.manage', 'integrations.sync',
         ]);
 
         Role::findOrCreate('event_operator')->syncPermissions([
-            'participants.view', 'results.view', 'plates.view', 'plates.manage', 'legacycodes.manage',
-            'incidents.manage', 'operator.access',
-        ]);
-
-        Role::findOrCreate('production_operator')->syncPermissions([
-            'plates.view', 'production.manage', 'production.access', 'incidents.manage', 'nfc.view',
+            'participants.view', 'results.view', 'legacycodes.manage',
         ]);
 
         // In-person sellers (POS) and partner sellers (docs/architecture/commerce-os.md §Roles).

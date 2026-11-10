@@ -8,7 +8,7 @@ use App\Models\EventRace;
  * The single place an EventRace's distance_value/distance_unit turns into
  * the display string a plate's `distance` field freezes — so "42.195 km"
  * vs "10 km" vs "70.3 mi" formatting never gets reinvented (and drifts)
- * across PlateSnapshotBuilder, previews, and any future caller.
+ * across the athlete history, previews, and any future caller.
  */
 class RaceDistanceFormatter
 {

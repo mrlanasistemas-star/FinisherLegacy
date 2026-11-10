@@ -3,7 +3,6 @@
 use App\Models\Athlete;
 use App\Models\AthleteOwnedProduct;
 use App\Models\InventoryLocation;
-use App\Models\LegacyPlateModel;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -70,14 +69,8 @@ test('a full cart-to-order flow works entirely over HTTP', function () {
     expect($index->json('data'))->toHaveCount(1);
 });
 
-test('GET /api/v1/legacy-plate-models only returns active models', function () {
-    LegacyPlateModel::factory()->create(['active' => true, 'name' => 'Núcleo Reveal']);
-    LegacyPlateModel::factory()->create(['active' => false]);
-
-    $response = $this->getJson('/api/v1/legacy-plate-models');
-
-    $response->assertOk();
-    expect($response->json('data'))->toHaveCount(1);
+test('the retired GET /api/v1/legacy-plate-models catalog is gone', function () {
+    $this->getJson('/api/v1/legacy-plate-models')->assertNotFound();
 });
 
 test('GET /api/v1/gear/{code} is public and leaks no owner PII', function () {

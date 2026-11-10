@@ -7,7 +7,6 @@ use App\Enums\PlateStatus;
 use App\Models\LegacyCode;
 use App\Models\NfcTag;
 use App\Models\Plate;
-use App\Models\ProductionJob;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 
@@ -27,7 +26,7 @@ function nfcAdmin(): User
 
 /**
  * A Legacy Plate V3-style plate (no historical template) with its Legacy
- * Code and a queued ProductionJob.
+ * Code (a plate sold before production was retired).
  */
 function nfcPlate(array $attributes = []): Plate
 {
@@ -38,7 +37,6 @@ function nfcPlate(array $attributes = []): Plate
     ]);
     $code = LegacyCode::factory()->create(['plate_id' => $plate->id, 'status' => LegacyCodeStatus::Assigned]);
     $plate->update(['legacy_code_id' => $code->id]);
-    ProductionJob::factory()->create(['plate_id' => $plate->id, 'status' => 'queued']);
 
     return $plate->fresh(['legacyCode']);
 }

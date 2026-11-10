@@ -4,7 +4,7 @@ namespace App\Enums;
 
 /**
  * Commercial status of the right to a Legacy Plate — never duplicates
- * ProductionJobStatus, which tracks the physical job instead (brief §80).
+ * the historical production state of a plate (brief §80).
  */
 enum LegacyPlateEntitlementStatus: string
 {

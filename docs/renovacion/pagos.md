@@ -90,8 +90,11 @@ compra integrada (StoreKit / Play Billing) para bienes digitales. Por eso:
   también.
 - `OrderResource.app_payable` es `false` para esos pedidos; la app oculta el
   botón "Pagar" sin enlazar a la web (sin "anti-steering").
-- La app nunca ofreció comprar ampliaciones: `QuotaController` es solo
-  lectura. La web sigue vendiendo bienes digitales con OpenPay.
+- Las ampliaciones de fotos se compran en la app **solo** con StoreKit 2 /
+  Google Play Billing (`POST /api/v1/iap/purchases`, verificado con Apple /
+  Google; nunca pasa por OpenPay) — ver
+  [compras-dentro-de-app.md](./compras-dentro-de-app.md). La web sigue
+  vendiendo bienes digitales con OpenPay.
 - Regla única: `App\Support\Commerce\AppPurchasePolicy`.
 
 ---

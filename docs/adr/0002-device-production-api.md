@@ -1,5 +1,7 @@
 # ADR 0002 — Device API para producción láser automatizada
 
+> **OBSOLETO (2026-11-11).** Ya no se producen placas grabadas: este flujo y su código se retiraron. Se conserva solo como referencia histórica. Ver `docs/renovacion/retiro-modulos.md`.
+
 Estado: Propuesto — pendiente de aprobación del Slice 1
 Fecha: 2026-08-20
 Contexto previo: ADR 0001 (baseline)

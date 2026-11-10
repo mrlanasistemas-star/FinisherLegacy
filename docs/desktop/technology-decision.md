@@ -1,5 +1,7 @@
 # Desktop Event Station — decisión de tecnología
 
+> **OBSOLETO (2026-11-11).** Ya no se producen placas grabadas: este flujo y su código se retiraron. Se conserva solo como referencia histórica. Ver `docs/renovacion/retiro-modulos.md`.
+
 Estado: **PENDING HARDWARE/SDK VALIDATION** — ver
 `docs/adr/0007-desktop-event-station.md` para el contrato completo
 (driver, estado local, offline/outbox). Este documento es solo la

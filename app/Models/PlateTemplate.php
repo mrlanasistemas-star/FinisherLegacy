@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\PlateBackTransform;
-use App\Enums\PlateTemplateVersionStatus;
 use Database\Factories\PlateTemplateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,23 +48,5 @@ class PlateTemplate extends Model
     public function versions(): HasMany
     {
         return $this->hasMany(PlateTemplateVersion::class);
-    }
-
-    public function latestPublishedVersion(): ?PlateTemplateVersion
-    {
-        return $this->versions()
-            ->where('status', PlateTemplateVersionStatus::Published)
-            ->latest('version')
-            ->first();
-    }
-
-    public function nextVersionNumber(): int
-    {
-        return ($this->versions()->max('version') ?? 0) + 1;
-    }
-
-    public function isUsedByAnyPlate(): bool
-    {
-        return $this->plates()->exists();
     }
 }

@@ -1,13 +1,9 @@
 <?php
 
 use App\Enums\LegacyPlateFieldKey;
-use App\Models\EventParticipant;
-use App\Models\EventResult;
 use App\Models\LegacyPlateModel;
 use App\Models\Plate;
 use App\Models\User;
-use App\Services\PlateGenerationService;
-use App\Support\LegacyPlateLayouts;
 use Database\Seeders\LegacyPlateModelSeeder;
 use Database\Seeders\RolePermissionSeeder;
 
@@ -64,27 +60,6 @@ test('the viewer payload never carries back-face fields', function () {
     expect(collect($viewer['fields'])->pluck('field_key')->all())->toBe(['athlete_name'])
         ->and($viewer)->not->toHaveKey('back_background')
         ->and($viewer['spec']['clip_material'])->toBe('Acero inoxidable estampado');
-});
-
-test('a generated plate freezes its layout so later edits never change an order', function () {
-    $this->seed(LegacyPlateModelSeeder::class);
-    $model = LegacyPlateModel::with('fields')->where('layout_style', 'nucleo')->firstOrFail();
-    $participant = EventParticipant::factory()->create();
-    EventResult::factory()->create(['event_participant_id' => $participant->id]);
-
-    $plate = app(PlateGenerationService::class)->generateForLegacyPlateModel($participant, $model);
-
-    expect($plate->layout_version)->toBe(LegacyPlateLayouts::SPEC_VERSION)
-        ->and($plate->layout_snapshot['spec_version'])->toBe('v3')
-        ->and((float) $plate->layout_snapshot['width_mm'])->toBe(70.0);
-
-    // The admin later moves a field and changes the plate size…
-    $model->fields()->where('field_key', 'athlete_name')->update(['x' => 20]);
-    $model->update(['width_mm' => 80]);
-
-    $viewer = $plate->fresh()->layoutViewer();
-    expect((float) $viewer['width_mm'])->toBe(70.0)
-        ->and((float) collect($viewer['fields'])->firstWhere('field_key', 'athlete_name')['x'])->toBe(4.0);
 });
 
 test('a historical plate snapshot keeps its printed back for the viewer', function () {

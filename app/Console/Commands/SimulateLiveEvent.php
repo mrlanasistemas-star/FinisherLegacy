@@ -14,7 +14,6 @@ use App\Models\ProviderConnection;
 use App\Models\Sport;
 use App\Services\Integrations\EventProviderRegistry;
 use App\Services\Integrations\Providers\MockEventProviderAdapter;
-use App\Services\PlateEligibilityService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -37,7 +36,6 @@ class SimulateLiveEvent extends Command
         LinkExternalEvent $linkEvent,
         SyncExternalEvent $syncEvent,
         EventProviderRegistry $registry,
-        PlateEligibilityService $eligibility,
     ): int {
         $connection = ProviderConnection::query()->firstOrCreate(
             ['provider_key' => 'mock', 'name' => 'Mock Event Provider (simulate-live-event)'],
@@ -95,9 +93,7 @@ class SimulateLiveEvent extends Command
             ->first();
 
         if ($sample !== null) {
-            $check = $eligibility->check($sample);
-            $this->log("Dorsal {$sample->bib_number} — {$sample->full_name} — tiempo oficial: ".($sample->result->official_time ?? '—')
-                .' — elegible para placa: '.($check->eligible ? 'SÍ' : 'NO ('.implode(', ', $check->reasons).')'));
+            $this->log("Dorsal {$sample->bib_number} — {$sample->full_name} — tiempo oficial: ".($sample->result->official_time ?? '—'));
         }
 
         $this->info('Simulación completa.');

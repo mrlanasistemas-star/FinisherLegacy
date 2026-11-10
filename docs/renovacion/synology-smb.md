@@ -49,6 +49,14 @@ En producción usar `FINISHER_MEDIA_SENTINEL=.fl-media-mounted` y
 montaje es una carpeta vacía del VPS y sin estas dos protecciones los archivos
 caerían en el disco del VPS sin que nadie se entere.
 
+Además imprime una segunda tabla (y la clave `media_binaries` en `--json`)
+con `ffmpeg`/`ffprobe`: ruta encontrada y origen (`config` = `FFMPEG_BINARY`
+/ `FFPROBE_BINARY`, `env`, `path` = encontrado en el PATH). Es informativa:
+un binario faltante **no** hace fallar el comando, pero en producción
+registra `storage.health_ffprobe_missing` (sin ffprobe la duración de los
+audios depende del valor del navegador). Instalación: ver
+`docs/renovacion/despliegue-vps.md` §3.1.
+
 No se añadió endpoint HTTP: el único controlador de salud existente
 (`Api\V1\HealthController`) es público y deliberadamente mínimo; exponer
 estado del almacenamiento ahí no corresponde. Monitoreo vía comando/log.

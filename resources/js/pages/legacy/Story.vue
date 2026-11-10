@@ -5,7 +5,7 @@
  * phone held in one hand. No app shell on purpose: only the memory.
  * Motion is decorative and off under prefers-reduced-motion.
  */
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import {
     ChevronLeft,
     ChevronRight,
@@ -173,7 +173,6 @@ function clock(seconds: number): string {
 }
 
 // ── Owner: share ────────────────────────────────────────────────────────
-const page = usePage<{ flash?: { share_url?: string } }>();
 const shareForm = useForm({ label: '' });
 const copied = ref<string | null>(null);
 const canNativeShare = ref(false);
@@ -186,9 +185,10 @@ onMounted(() => {
 function createShare() {
     shareForm.post(storeShare(props.story.public_id).url, {
         preserveScroll: true,
-        onSuccess: () => {
+        onSuccess: (response) => {
             shareForm.reset();
-            const url = page.props.flash?.share_url;
+            // Inertia v3 flash lives on the page object, not in its props.
+            const url = response.flash?.share_url;
 
             if (url) {
                 void copy(url);

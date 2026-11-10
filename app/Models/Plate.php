@@ -141,18 +141,6 @@ class Plate extends Model
         return $this->belongsTo(LegacyCode::class);
     }
 
-    /** @return HasMany<ProductionJob, $this> */
-    public function productionJobs(): HasMany
-    {
-        return $this->hasMany(ProductionJob::class);
-    }
-
-    /** @return HasOne<ProductionJob, $this> */
-    public function latestProductionJob(): HasOne
-    {
-        return $this->hasOne(ProductionJob::class)->latestOfMany();
-    }
-
     /**
      * The NFC tag attached during "Preparación y entrega" (docs/NFC.md).
      *
@@ -167,12 +155,6 @@ class Plate extends Model
     public function reprints(): HasMany
     {
         return $this->hasMany(PlateReprint::class);
-    }
-
-    /** @return HasMany<EventIncident, $this> */
-    public function incidents(): HasMany
-    {
-        return $this->hasMany(EventIncident::class);
     }
 
     public function getActivitylogOptions(): LogOptions

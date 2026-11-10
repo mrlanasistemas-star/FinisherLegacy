@@ -48,17 +48,6 @@ class PlateTemplateVersion extends Model
         return $this->hasMany(Plate::class);
     }
 
-    /** @return HasMany<EventPlateTemplate, $this> */
-    public function eventAssignments(): HasMany
-    {
-        return $this->hasMany(EventPlateTemplate::class);
-    }
-
-    public function isEditable(): bool
-    {
-        return $this->status === PlateTemplateVersionStatus::Draft;
-    }
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logFillable()->logOnlyDirty()->dontLogEmptyChanges();

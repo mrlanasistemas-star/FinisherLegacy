@@ -1,5 +1,7 @@
 # ADR 0007 — Desktop Event Station
 
+> **OBSOLETO (2026-11-11).** Ya no se producen placas grabadas: este flujo y su código se retiraron. Se conserva solo como referencia histórica. Ver `docs/renovacion/retiro-modulos.md`.
+
 Estado: Aceptado (decisión de tecnología PENDIENTE de validación de hardware)
 Fecha: 2026-08-23
 Contexto previo: ADR 0002 (Device API, Slice 1), ADR 0003 (producción,

@@ -2,6 +2,7 @@
 
 use App\Enums\InventoryLocationType;
 use App\Enums\LegacyTagStatus;
+use App\Enums\SalesChannel;
 use App\Enums\SupportCaseType;
 use App\Enums\TagAccessSource;
 use App\Enums\TagScanEvent;
@@ -42,7 +43,7 @@ test('the admin dashboard renders the commerce block for the chosen range', func
             ->where('range', 'hoy')
             ->where('commerce.range', 'hoy')
             ->where('commerce.sales.total_minor', null)
-            ->has('commerce.channels', 4)
+            ->has('commerce.channels', count(SalesChannel::cases()))
             ->has('today.events'));
 });
 

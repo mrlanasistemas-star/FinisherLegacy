@@ -1,18 +1,15 @@
 <?php
 
 use App\Actions\Integrations\IngestEventResult;
-use App\Enums\PlateTemplateVersionStatus;
 use App\Exceptions\Integrations\ParticipantNotFoundException;
 use App\Models\Athlete;
 use App\Models\EventEdition;
 use App\Models\EventParticipant;
-use App\Models\EventPlateTemplate;
 use App\Models\EventRace;
 use App\Models\ExternalParticipantMapping;
-use App\Models\PlateTemplateVersion;
+use App\Models\Plate;
 use App\Models\ProviderConnection;
 use App\Services\Integrations\EventIngestionService;
-use App\Services\PlateGenerationService;
 use App\Support\Integrations\ExternalParticipantData;
 use App\Support\Integrations\ExternalResultData;
 use Illuminate\Support\Str;
@@ -154,10 +151,12 @@ test('a Plate keeps its snapshot time after the provider corrects the result', f
         'mock',
     );
 
-    $version = PlateTemplateVersion::factory()->create(['status' => PlateTemplateVersionStatus::Published]);
-    EventPlateTemplate::create(['event_edition_id' => $edition->id, 'plate_template_version_id' => $version->id, 'is_default' => true, 'active' => true]);
-
-    $plate = app(PlateGenerationService::class)->generateIntegrated($participant->fresh());
+    // A historical plate already engraved with the result at that time.
+    $plate = Plate::factory()->create([
+        'event_edition_id' => $edition->id,
+        'event_participant_id' => $participant->id,
+        'official_time' => $participant->result()->first()->official_time,
+    ]);
     expect($plate->official_time)->toBe('03:00:00');
 
     app(IngestEventResult::class)->handle(

@@ -50,9 +50,7 @@ return [
     |
     */
 
-    // Kept null on purpose: this global value would also expire the
-    // ProductionDevice tokens of the production line. Person (mobile app)
-    // tokens get their own `expires_at` from `user_token_expiration` below
+    // Kept null on purpose: person (mobile app) tokens get their own `expires_at` from `user_token_expiration` below
     // (App\Models\User::issueApiToken()); expired rows are deleted daily by
     // `sanctum:prune-expired` (routes/console.php).
     'expiration' => null,

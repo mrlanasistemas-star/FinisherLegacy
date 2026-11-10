@@ -13,7 +13,7 @@ use RuntimeException;
  * catches this type first, registered from bootstrap/app.php.
  *
  * Deliberately reusable from Web code too — a class throwing this (e.g.
- * App\Exceptions\PlateAlreadyExistsException) works correctly from both an
+ * App\Exceptions\LegacyPlatePresaleDuplicateException) works correctly from both an
  * Inertia controller (which typically catches it explicitly for a
  * redirect+flash) and an API controller (which lets it fall through to
  * the renderer) without two exception types for one condition.

@@ -1,5 +1,7 @@
 # Event Ops
 
+> **OBSOLETO (2026-11-11).** Ya no se producen placas grabadas: este flujo y su código se retiraron. Se conserva solo como referencia histórica. Ver `docs/renovacion/retiro-modulos.md`.
+
 `/operator` — centro de operaciones del evento, no un panel CRUD. Ver
 `docs/adr/0006-event-operations.md` para la decisión completa.
 

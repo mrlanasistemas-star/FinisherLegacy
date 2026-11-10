@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\EventEdition;
+use App\Models\Organizer;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 
@@ -17,9 +17,9 @@ test('an unauthenticated request to a protected route gets the unified error env
 test('a forbidden request gets the unified error envelope with FORBIDDEN', function () {
     $user = User::factory()->create();
     $headers = ['Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken];
-    $edition = EventEdition::factory()->create();
+    $organizer = Organizer::factory()->create();
 
-    $response = $this->withHeaders($headers)->getJson("/api/v1/event-ops/{$edition->id}");
+    $response = $this->withHeaders($headers)->getJson("/api/v1/admin/organizers/{$organizer->id}/data-source");
 
     $response->assertForbidden();
     expect($response->json('error.code'))->toBe('FORBIDDEN');
@@ -27,10 +27,10 @@ test('a forbidden request gets the unified error envelope with FORBIDDEN', funct
 
 test('a not-found model gets the unified error envelope with NOT_FOUND', function () {
     $user = User::factory()->create();
-    $user->assignRole('event_operator');
+    $user->assignRole('super_admin');
     $headers = ['Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken];
 
-    $response = $this->withHeaders($headers)->getJson('/api/v1/event-ops/999999');
+    $response = $this->withHeaders($headers)->getJson('/api/v1/admin/organizers/999999/data-source');
 
     $response->assertStatus(404);
     expect($response->json('error.code'))->toBe('NOT_FOUND');

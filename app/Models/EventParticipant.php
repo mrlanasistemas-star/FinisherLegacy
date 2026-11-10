@@ -14,9 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * @property-read bool|null $plates_exists Only present when a query eager-loads it via
- *                                          `withExists('plates')` — see
- *                                          App\Queries\Operations\SearchEventParticipants.
  * @property-read int|null $photo_count Only present when eager-loaded via
  *                                       `withCount(['media as photo_count' => ...])` — see
  *                                       App\Queries\Athletes\GetAthleteLegado.
@@ -98,12 +95,6 @@ class EventParticipant extends Model
     public function plates(): HasMany
     {
         return $this->hasMany(Plate::class);
-    }
-
-    /** @return HasMany<EventIncident, $this> */
-    public function incidents(): HasMany
-    {
-        return $this->hasMany(EventIncident::class);
     }
 
     /** @return HasMany<AthleteIdentityConflict, $this> */

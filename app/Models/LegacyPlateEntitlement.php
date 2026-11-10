@@ -10,8 +10,8 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 /**
- * The commercial right to a Legacy Plate — separate from ProductionJob,
- * which tracks the physical job (brief §79-§81). Can exist before
+ * The commercial right to a Legacy Plate — separate from the plate itself
+ * and its historical production (brief §79-§81). Can exist before
  * EventParticipant does (presale); App\Actions\LegacyPlates\
  * LinkLegacyPlateEntitlementToParticipant fills event_participant_id in
  * once a bib appears.

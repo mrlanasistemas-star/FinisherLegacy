@@ -13,8 +13,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 /**
- * The Domain Exception Mapper for `/api/v1/*` (excluding the Device API,
- * which keeps its own already-documented App\Support\Devices\DeviceExceptionRenderer)
+ * The Domain Exception Mapper for `/api/v1/*`
  * — one place every error becomes `{"error": {"code", "message", "details"}}`
  * (docs/api/v1.md §Errores) instead of 20 controllers each doing their own
  * try/catch-to-JSON. Registered from bootstrap/app.php.

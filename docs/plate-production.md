@@ -1,5 +1,7 @@
 # Producción de placas: de molde a placa entregada
 
+> **OBSOLETO (2026-11-11).** Ya no se producen placas grabadas: este flujo y su código se retiraron. Se conserva solo como referencia histórica. Ver `docs/renovacion/retiro-modulos.md`.
+
 Este documento describe el flujo completo de Plate Studio: cómo se diseña un
 molde de **dos caras**, cómo se asigna a un evento, cómo se genera una placa
 real, y cómo se exportan los archivos que van a la máquina de grabado láser.

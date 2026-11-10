@@ -1,5 +1,7 @@
 # ADR 0003 — Production state machine, immutable artifacts, front/flip/back/QR
 
+> **OBSOLETO (2026-11-11).** Ya no se producen placas grabadas: este flujo y su código se retiraron. Se conserva solo como referencia histórica. Ver `docs/renovacion/retiro-modulos.md`.
+
 Estado: Aceptado
 Fecha: 2026-08-21
 Contexto previo: ADR 0001 (baseline), ADR 0002 (Device API, Slice 1)

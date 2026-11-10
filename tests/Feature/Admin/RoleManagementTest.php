@@ -33,13 +33,13 @@ test('super_admin can create a custom role with a slugified technical name', fun
     $response = $this->actingAs($this->superAdmin)->post(route('admin.roles.store'), [
         'label' => 'Coordinador de Logística',
         'description' => 'Apoya al operador de producción.',
-        'permissions' => ['plates.view', 'production.access'],
+        'permissions' => ['legacycodes.view', 'nfc.view'],
     ]);
 
     $role = Role::where('label', 'Coordinador de Logística')->firstOrFail();
     $response->assertRedirect(route('admin.roles.edit', $role));
     expect($role->name)->toBe('coordinador_de_logistica')
-        ->and($role->permissions->pluck('name')->all())->toEqualCanonicalizing(['plates.view', 'production.access']);
+        ->and($role->permissions->pluck('name')->all())->toEqualCanonicalizing(['legacycodes.view', 'nfc.view']);
 });
 
 test('super_admin permissions cannot be edited, and the role stays read-only', function () {

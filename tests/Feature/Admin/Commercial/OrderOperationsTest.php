@@ -27,7 +27,7 @@ test('the orders board filters by channel and each card carries channel, ally an
                 ->and($orders->first()['channel'])->toBe('ally')
                 ->and($orders->first()['ally'])->toBe('Box Norte');
 
-            return $page->where('filters.canal', 'ally')->has('channels', 4);
+            return $page->where('filters.canal', 'ally')->has('channels', count(SalesChannel::cases()));
         });
 });
 

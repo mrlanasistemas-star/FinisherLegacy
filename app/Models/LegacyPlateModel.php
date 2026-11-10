@@ -128,21 +128,4 @@ class LegacyPlateModel extends Model
                 ])->values(),
         ];
     }
-
-    /**
-     * Frozen copy stored on a Plate when it is generated, so later layout
-     * edits never change an order already in production.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSnapshotArray(): array
-    {
-        $viewer = $this->toViewerArray();
-        $viewer['fields'] = $viewer['fields']->all();
-        unset($viewer['preview_image_url']);
-        $viewer['front_artwork_path'] = $this->front_artwork_path;
-        unset($viewer['front_artwork_url']);
-
-        return $viewer;
-    }
 }

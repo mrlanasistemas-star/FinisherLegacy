@@ -40,6 +40,45 @@ npm ci
 npm run build
 ```
 
+### 3.1 ffmpeg / ffprobe (una sola vez por servidor)
+
+El pipeline de medios usa ffmpeg para video (MP4 H.264 + póster) y para
+audio (notas de voz de historias Legacy y mensajes de Entrenamientos):
+ffprobe mide la **duración real** en el job `ProcessMediaFile` (nunca se
+confía en el valor del cliente; si excede el límite el archivo queda
+`failed` sin reintento) y ffmpeg recodifica el audio a AAC/m4a mono
+(64–96 kbps) para que se reproduzca en iOS y Android.
+
+```bash
+sudo apt update && sudo apt install -y ffmpeg
+ffmpeg -version | head -1 && ffprobe -version | head -1
+php artisan storage:health      # tabla "Binario": ffmpeg/ffprobe = OK
+```
+
+Los binarios se detectan solos: `FFMPEG_BINARY`/`FFPROBE_BINARY` → variable
+de entorno del proceso → PATH (`/usr/bin/ffmpeg`). Si el worker de colas
+corre con un PATH reducido (Supervisor/systemd), fijarlos en `.env`:
+
+```dotenv
+FFMPEG_BINARY=/usr/bin/ffmpeg
+FFPROBE_BINARY=/usr/bin/ffprobe
+# Opcionales (valores por defecto):
+# FINISHER_MEDIA_AUDIO_TRANSCODE=true      # recodificar audio a AAC/m4a
+# FINISHER_MEDIA_AUDIO_BITRATE_KBPS=80     # se limita a 64–96
+# FINISHER_MEDIA_KEEP_AUDIO_ORIGINAL=false # conservar además el original
+# FINISHER_MEDIA_MAX_AUDIO_SECONDS=600     # audio sin dueño (historias y
+#                                          # Entrenamientos usan su propio límite)
+# FFMPEG_PATH_LOOKUP=true                  # buscar en el PATH
+```
+
+Después de instalar: `php artisan config:cache && php artisan queue:restart`,
+y procesar lo que quedó sin transcodificar:
+`php artisan media:retry-failed --pending-transcode`.
+
+Sin ffmpeg el sitio sigue funcionando: el video se sirve original
+(`pending_transcode`), el audio se guarda tal cual con la duración medida
+por el navegador (limitada al máximo) y se registra `media.ffprobe_missing`.
+
 ## 4. Base de datos
 
 ```bash

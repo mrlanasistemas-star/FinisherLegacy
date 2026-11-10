@@ -17,7 +17,6 @@ class SystemRoles
         'admin' => 'Administrador',
         'event_manager' => 'Manager de evento',
         'event_operator' => 'Operador de evento',
-        'production_operator' => 'Operador de producción',
         'athlete' => 'Atleta',
         'photographer' => 'Fotógrafo',
         'sales_staff' => 'Vendedor',
