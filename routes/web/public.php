@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountDeletionController;
+use App\Http\Controllers\Landing\PortraitLandingController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,7 +18,7 @@ Route::permanentRedirect('how-it-works', '/como-funciona');
 // Ecosystem landing pages: one public explainer per pillar (the private
 // counterparts live behind auth: /mi-legacy, /mi-entrenamiento…).
 Route::inertia('recuerdos', 'landing/Memories')->name('landing.memories');
-Route::inertia('portarretrato', 'landing/Portrait')->name('landing.portrait');
+Route::get('portarretrato', PortraitLandingController::class)->name('landing.portrait');
 Route::inertia('entrenamientos', 'landing/Training')->name('landing.training');
 Route::inertia('app', 'landing/App')->name('landing.app');
 
