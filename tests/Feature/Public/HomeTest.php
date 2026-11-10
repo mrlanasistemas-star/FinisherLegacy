@@ -40,3 +40,18 @@ test('home features no products when the catalog is empty', function () {
         ->where('collections', [])
     );
 });
+
+test('home lists the priced products of the rest of the store apart from the tags', function () {
+    $tag = Product::factory()->create(['type' => ProductType::LegacyTag, 'name' => 'Visible Tag']);
+    ProductVariant::factory()->create(['product_id' => $tag->id]);
+    $gear = Product::factory()->create(['name' => 'Racepack']);
+    ProductVariant::factory()->create(['product_id' => $gear->id]);
+    $hidden = Product::factory()->create(['name' => 'Hidden gear', 'active' => false]);
+    ProductVariant::factory()->create(['product_id' => $hidden->id]);
+
+    $this->get(route('home'))->assertInertia(fn ($page) => $page
+        ->component('Home')
+        ->has('gearProducts', 1)
+        ->where('gearProducts.0.name', 'Racepack')
+    );
+});
