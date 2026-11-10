@@ -149,6 +149,26 @@ final class StoryPhotoQuota
     }
 
     /**
+     * Whether the pack's scope (global / product / product type) covers
+     * this story, regardless of whether it is still on sale — used to
+     * honour a store purchase that was paid before the pack was paused.
+     */
+    public function packCovers(LegacyStory $story, PhotoExpansionPack $pack): bool
+    {
+        if ($pack->product_id === null && $pack->product_type === null) {
+            return true;
+        }
+
+        $product = $this->productFor($story);
+
+        if ($pack->product_id !== null) {
+            return $product !== null && $product->id === $pack->product_id;
+        }
+
+        return $product?->type instanceof ProductType && $product->type === $pack->product_type;
+    }
+
+    /**
      * @return null|array{id:int,name:string,photos:int,price:string,currency:string}
      */
     public function expansionOffer(LegacyStory $story): ?array

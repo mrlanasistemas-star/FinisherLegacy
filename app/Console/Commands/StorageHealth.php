@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Media\MediaBinaries;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +14,7 @@ use Throwable;
  * docs/renovacion/synology-smb.md): the root exists and is writable, a
  * probe file can be written, read back and deleted, and there is enough
  * free space. Exits non-zero on any failure so cron/monitoring notices.
+ * Also reports whether ffmpeg/ffprobe were found (informative only).
  *
  * The local root is checked BEFORE the disk is instantiated: Flysystem's
  * local adapter creates a missing root, which would hide a missing mount.
@@ -29,9 +31,10 @@ class StorageHealth extends Command
     {
         $results = array_map(fn (string $disk) => $this->probe($disk), $this->disks());
         $healthy = collect($results)->every(fn (array $r) => $r['ok']);
+        $binaries = app(MediaBinaries::class)->status();
 
         if ($this->option('json')) {
-            $this->line((string) json_encode(['ok' => $healthy, 'disks' => $results], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            $this->line((string) json_encode(['ok' => $healthy, 'disks' => $results, 'media_binaries' => $binaries], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         } else {
             $this->table(
                 ['Disco', 'Driver', 'Estado', 'Libre (MB)', 'Detalle'],
@@ -40,6 +43,19 @@ class StorageHealth extends Command
                     $r['free_mb'] ?? '—', $r['error'] ?? '',
                 ], $results),
             );
+
+            // ffmpeg/ffprobe: informative only — a missing binary never fails the check.
+            $this->table(
+                ['Binario', 'Estado', 'Origen', 'Ruta'],
+                array_map(fn (string $name, array $b) => [
+                    $name, $b['path'] !== null ? 'OK' : 'FALTA', $b['source'] ?? '—',
+                    $b['path'] ?? 'sudo apt install ffmpeg (o FFMPEG_BINARY / FFPROBE_BINARY)',
+                ], array_keys($binaries), $binaries),
+            );
+        }
+
+        if ($binaries['ffprobe']['path'] === null && app()->isProduction()) {
+            Log::warning('storage.health_ffprobe_missing', ['hint' => 'Audio duration falls back to the client-measured cap. Install ffmpeg.']);
         }
 
         if (! $healthy) {

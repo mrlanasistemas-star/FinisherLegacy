@@ -8,13 +8,15 @@ use RuntimeException;
 /**
  * ffmpeg/ffprobe wrapper (spec §67): H.264 + yuv420p MP4 with faststart
  * (plays everywhere, starts before fully downloaded), a poster frame, and
- * duration/dimensions via ffprobe. Binaries come ONLY from env
- * (FFMPEG_BINARY / FFPROBE_BINARY); when ffmpeg is absent the pipeline
- * keeps the original and marks it `pending_transcode`.
+ * duration/dimensions via ffprobe. Binaries are located by MediaBinaries
+ * (FFMPEG_BINARY / FFPROBE_BINARY, then PATH); when ffmpeg is absent the
+ * pipeline keeps the original and marks it `pending_transcode`.
  */
 class VideoTranscoder
 {
     private ?bool $available = null;
+
+    public function __construct(private readonly MediaBinaries $binaries) {}
 
     public function available(): bool
     {
@@ -124,22 +126,11 @@ class VideoTranscoder
 
     private function ffmpeg(): ?string
     {
-        $binary = config('finisher.media.video.ffmpeg');
-
-        return is_string($binary) && $binary !== '' ? $binary : null;
+        return $this->binaries->ffmpeg();
     }
 
     private function ffprobe(): ?string
     {
-        $binary = config('finisher.media.video.ffprobe');
-
-        if (is_string($binary) && $binary !== '') {
-            return $binary;
-        }
-
-        // Usually installed next to ffmpeg.
-        $ffmpeg = $this->ffmpeg();
-
-        return $ffmpeg !== null ? preg_replace('/ffmpeg(\.exe)?$/i', 'ffprobe$1', $ffmpeg) : null;
+        return $this->binaries->ffprobe();
     }
 }
