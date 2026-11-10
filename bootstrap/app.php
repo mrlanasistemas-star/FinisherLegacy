@@ -9,6 +9,9 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\StripLocalePrefix;
 use App\Support\Api\ApiExceptionRenderer;
+use App\Support\I18n\I18nProps;
+use App\Support\I18n\Locales;
+use App\Support\I18n\LocalizedUrls;
 use App\Support\Observability\OperationalLog;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -96,7 +99,21 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if (! app()->environment(['local', 'testing']) && in_array($response->getStatusCode(), [404, 403, 500, 503, 429], true)) {
-                return Inertia::render('errors/Error', ['status' => $response->getStatusCode()])
+                // An unknown URL never reaches SetLocale (no route, no `web`
+                // group): keep the language of the address (/en/…) or the
+                // visitor's saved choice, so the error page is not in Spanish.
+                if (app()->getLocale() === Locales::source()) {
+                    $cookie = $request->cookies->get((string) config('i18n.cookie', 'fl_locale'));
+                    $locale = Locales::match(app(LocalizedUrls::class)->prefix() ?? (is_string($cookie) ? $cookie : null));
+
+                    if ($locale !== null) {
+                        app()->setLocale($locale);
+                    }
+                }
+
+                // …and no HandleInertiaRequests either: the page still needs
+                // its language props (catalog, switcher).
+                return Inertia::render('errors/Error', ['status' => $response->getStatusCode(), ...I18nProps::shared()])
                     ->toResponse($request)
                     ->setStatusCode($response->getStatusCode());
             }

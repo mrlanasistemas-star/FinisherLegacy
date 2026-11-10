@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.">
+        <meta name="description" content="{{ __('Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.') }}">
 
         <meta name="application-name" content="Finisher Legacy">
         <meta name="apple-mobile-web-app-title" content="Finisher Legacy">
@@ -18,17 +18,18 @@
              a page-level tag replaces this one instead of duplicating it. --}}
         <meta property="og:site_name" content="Finisher Legacy">
         <meta property="og:type" content="website">
-        <meta property="og:locale" content="es_MX">
-        <meta property="og:title" content="Finisher Legacy — Tu esfuerzo merece una historia">
-        <meta property="og:description" content="Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.">
+        {{-- Follows the language of the page (es_MX, en_US…). --}}
+        <meta property="og:locale" content="{{ str_replace('-', '_', \App\Support\I18n\Locales::regional(app()->getLocale())) }}">
+        <meta property="og:title" content="{{ __('Finisher Legacy — Tu esfuerzo merece una historia') }}">
+        <meta property="og:description" content="{{ __('Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.') }}">
         <meta property="og:image" content="{{ asset('images/brand/og-finisher-legacy.png') }}">
         <meta property="og:image:width" content="1200">
         <meta property="og:image:height" content="630">
         <meta property="og:image:type" content="image/png">
         <meta property="og:image:alt" content="Finisher Legacy — Make it last.">
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="Finisher Legacy — Tu esfuerzo merece una historia">
-        <meta name="twitter:description" content="Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.">
+        <meta name="twitter:title" content="{{ __('Finisher Legacy — Tu esfuerzo merece una historia') }}">
+        <meta name="twitter:description" content="{{ __('Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.') }}">
         <meta name="twitter:image" content="{{ asset('images/brand/og-finisher-legacy.png') }}">
         <meta name="twitter:image:alt" content="Finisher Legacy — Make it last.">
 
@@ -55,14 +56,14 @@
                         'name' => 'Finisher Legacy',
                         'url' => config('app.url'),
                         'logo' => asset('images/brand/logo/fl-monograma.png'),
-                        'description' => 'Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.',
+                        'description' => __('Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.'),
                     ],
                     [
                         '@type' => 'WebSite',
                         '@id' => rtrim(config('app.url'), '/').'/#website',
                         'name' => 'Finisher Legacy',
                         'url' => config('app.url'),
-                        'inLanguage' => 'es-MX',
+                        'inLanguage' => \App\Support\I18n\Locales::regional(app()->getLocale()),
                         'publisher' => ['@id' => rtrim(config('app.url'), '/').'/#organization'],
                         'potentialAction' => [
                             '@type' => 'SearchAction',
