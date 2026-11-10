@@ -75,7 +75,7 @@ function toggle(event: Event) {
             @click="toggle"
         >
             <RefreshCw class="size-3.5" aria-hidden="true" />
-            {{ flipped ? 'Ver frente' : 'Ver reverso' }}
+            {{ flipped ? $t('Ver frente') : $t('Ver reverso') }}
         </button>
     </div>
 </template>

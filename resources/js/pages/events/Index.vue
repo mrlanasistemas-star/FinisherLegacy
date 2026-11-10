@@ -16,6 +16,7 @@ import {
 } from '@lucide/vue';
 import { useDebounceFn } from '@vueuse/core';
 import { computed, reactive } from 'vue';
+import T from '@/components/i18n/T.vue';
 import SectionIntro from '@/components/marketing/SectionIntro.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import StaggerGroup from '@/components/motion/StaggerGroup.vue';
@@ -38,6 +39,7 @@ import {
     MEMORIES_URL,
     PHOTOS_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { index as eventsIndex } from '@/routes/events';
 import type { EventEditionCard } from '@/types';
 
@@ -51,6 +53,8 @@ const { editions, sports, filters } = defineProps<{
     sports: Array<{ id: number; name: string; slug: string }>;
     filters: { q: string; sport: string | null; status: string | null };
 }>();
+
+const { t } = useI18n();
 
 const form = reactive({
     q: filters.q ?? '',
@@ -72,23 +76,23 @@ function applyFilters() {
 
 const debouncedApply = useDebounceFn(applyFilters, 350);
 
-const mascotTips = [
+const mascotTips = computed(() => [
     {
         id: 'filters',
-        text: 'Usa los filtros para encontrar tu evento por nombre, deporte o estado.',
+        text: t('Usa los filtros para encontrar tu evento por nombre, deporte o estado.'),
     },
     {
         id: 'results',
-        text: 'Toca cualquier evento para ver los detalles y cómo participar.',
+        text: t('Toca cualquier evento para ver los detalles y cómo participar.'),
     },
-];
+]);
 
-const statusOptions = [
-    { value: 'available', label: 'Disponibles' },
-    { value: 'upcoming', label: 'Próximos' },
-    { value: 'ongoing', label: 'En curso' },
-    { value: 'finished', label: 'Finalizados' },
-];
+const statusOptions = computed(() => [
+    { value: 'available', label: t('Disponibles') },
+    { value: 'upcoming', label: t('Próximos') },
+    { value: 'ongoing', label: t('En curso') },
+    { value: 'finished', label: t('Finalizados') },
+]);
 
 function selectStatus(value: string) {
     form.status = value;
@@ -108,50 +112,50 @@ function resetFilters() {
 
 const listTitle = computed(() => {
     if (form.status === 'finished') {
-        return 'Eventos finalizados';
+        return t('Eventos finalizados');
     }
 
     if (form.status === 'ongoing') {
-        return 'Eventos en curso';
+        return t('Eventos en curso');
     }
 
     return form.status === 'upcoming'
-        ? 'Próximos eventos'
-        : 'Eventos disponibles';
+        ? t('Próximos eventos')
+        : t('Eventos disponibles');
 });
 
 // What Finisher Legacy does once the race is over.
-const afterRace = [
+const afterRace = computed(() => [
     {
         icon: Images,
-        title: 'Encuentra tus fotos',
-        text: 'Busca tus fotos de carrera por evento y número de competidor.',
+        title: t('Encuentra tus fotos'),
+        text: t('Busca tus fotos de carrera por evento y número de competidor.'),
         href: PHOTOS_URL,
-        cta: 'Buscar mis fotos',
+        cta: t('Buscar mis fotos'),
     },
     {
         icon: BookHeart,
-        title: 'Guarda tu recuerdo',
-        text: 'Tu resultado, tus fotos, tu historia y la voz de los tuyos en un solo lugar.',
+        title: t('Guarda tu recuerdo'),
+        text: t('Tu resultado, tus fotos, tu historia y la voz de los tuyos en un solo lugar.'),
         href: MEMORIES_URL,
-        cta: 'Conocer Recuerdos',
+        cta: t('Conocer Recuerdos'),
     },
     {
         icon: Nfc,
-        title: 'Llévate el tag de tu carrera',
-        text: 'Un tag coleccionable por destino. Lo tocas con tu teléfono y vuelves a ese día.',
+        title: t('Llévate el tag de tu carrera'),
+        text: t('Un tag coleccionable por destino. Lo tocas con tu teléfono y vuelves a ese día.'),
         href: COLLECTIONS_URL,
-        cta: 'Ver colecciones',
+        cta: t('Ver colecciones'),
     },
-];
+]);
 
 const heroImage = MEDIA.photo.start;
 </script>
 
 <template>
     <SeoHead
-        title="Eventos"
-        description="Calendario de eventos deportivos: running, triatlón, ciclismo, HYROX y más. Filtra por deporte o ciudad y prerregístrate para tu próxima carrera en Finisher Legacy."
+        :title="$t('Eventos')"
+        :description="$t('Calendario de eventos deportivos: running, triatlón, ciclismo, HYROX y más. Filtra por deporte o ciudad y prerregístrate para tu próxima carrera en Finisher Legacy.')"
     />
 
     <!-- Editorial hero -->
@@ -168,24 +172,24 @@ const heroImage = MEDIA.photo.start;
                         class="fl-eyebrow inline-flex items-center gap-3"
                     >
                         <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
-                        Eventos
+                        {{ $t('Eventos') }}
                     </p>
                     <h1
                         v-reveal="{ delay: 60 }"
                         class="fl-display mt-5 max-w-2xl text-[2.4rem] leading-[1.04] sm:text-6xl"
                     >
-                        Encuentra tu
-                        <span class="block font-medium text-fl-gold-ink italic"
-                            >próxima meta.</span
-                        >
+                        {{ $t('Encuentra tu') }}
+                        <span class="block font-medium text-fl-gold-ink italic">{{ $t('próxima meta.') }}</span>
                     </h1>
                     <p
                         v-reveal="{ delay: 140 }"
                         class="mt-6 max-w-[52ch] text-base leading-relaxed text-muted-foreground sm:text-lg"
                     >
-                        Running, triatlón, ciclismo, HYROX y más: fechas, sedes
-                        y distancias de las carreras que vienen, y el detalle de
-                        las que ya pasaron.
+                        <T>
+                            Running, triatlón, ciclismo, HYROX y más: fechas,
+                            sedes y distancias de las carreras que vienen, y el
+                            detalle de las que ya pasaron.
+                        </T>
                     </p>
                 </div>
 
@@ -197,7 +201,7 @@ const heroImage = MEDIA.photo.start;
                             :src="heroImage.src"
                             :srcset="heroImage.srcset"
                             sizes="(min-width: 1024px) 40vw, 100vw"
-                            :alt="heroImage.alt"
+                            :alt="$t(heroImage.alt)"
                             :width="heroImage.width"
                             :height="heroImage.height"
                             fetchpriority="high"
@@ -220,8 +224,8 @@ const heroImage = MEDIA.photo.start;
                     />
                     <Input
                         v-model="form.q"
-                        placeholder="Buscar por evento o ciudad…"
-                        aria-label="Buscar por evento o ciudad"
+                        :placeholder="$t('Buscar por evento o ciudad…')"
+                        :aria-label="$t('Buscar por evento o ciudad')"
                         class="h-11 rounded-full border-transparent bg-fl-paper pl-10 text-foreground shadow-none placeholder:text-muted-foreground sm:bg-transparent"
                         @input="debouncedApply"
                     />
@@ -237,13 +241,13 @@ const heroImage = MEDIA.photo.start;
                     "
                 >
                     <SelectTrigger
-                        aria-label="Filtrar por deporte"
+                        :aria-label="$t('Filtrar por deporte')"
                         class="h-11 w-full rounded-full border-border bg-card text-foreground sm:w-56"
                     >
-                        <SelectValue placeholder="Deporte" />
+                        <SelectValue :placeholder="$t('Deporte')" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todos los deportes</SelectItem>
+                        <SelectItem value="all">{{ $t('Todos los deportes') }}</SelectItem>
                         <SelectItem
                             v-for="sport in sports"
                             :key="sport.id"
@@ -259,7 +263,7 @@ const heroImage = MEDIA.photo.start;
             <div
                 class="-mx-4 mt-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [&::-webkit-scrollbar]:hidden"
                 role="radiogroup"
-                aria-label="Filtrar por estado"
+                :aria-label="$t('Filtrar por estado')"
             >
                 <button
                     v-for="option in statusOptions"
@@ -296,15 +300,15 @@ const heroImage = MEDIA.photo.start;
                 <h2 class="mt-5 font-serif text-xl font-semibold">
                     {{
                         hasFilters
-                            ? 'No encontramos eventos con esos filtros.'
-                            : 'Todavía no hay eventos publicados.'
+                            ? $t('No encontramos eventos con esos filtros.')
+                            : $t('Todavía no hay eventos publicados.')
                     }}
                 </h2>
                 <p class="mt-2 max-w-sm text-sm text-muted-foreground">
                     {{
                         hasFilters
-                            ? 'Prueba con otro nombre, deporte o estado.'
-                            : 'Vuelve pronto: aquí aparecerán las próximas carreras.'
+                            ? $t('Prueba con otro nombre, deporte o estado.')
+                            : $t('Vuelve pronto: aquí aparecerán las próximas carreras.')
                     }}
                 </p>
                 <button
@@ -313,7 +317,7 @@ const heroImage = MEDIA.photo.start;
                     class="fl-btn-secondary mt-6 !min-h-11 !px-5 !text-sm"
                     @click="resetFilters"
                 >
-                    Quitar filtros
+                    {{ $t('Quitar filtros') }}
                 </button>
             </div>
 
@@ -351,10 +355,10 @@ const heroImage = MEDIA.photo.start;
     <section class="fl-section border-t border-border bg-card">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Después de la meta"
-                title="La carrera termina."
-                accent="Lo que viviste se queda."
-                text="Finisher Legacy acompaña tu evento antes y después: tus fotos, tu resultado y un recuerdo que puedes tocar."
+                :eyebrow="$t('Después de la meta')"
+                :title="$t('La carrera termina.')"
+                :accent="$t('Lo que viviste se queda.')"
+                :text="$t('Finisher Legacy acompaña tu evento antes y después: tus fotos, tu resultado y un recuerdo que puedes tocar.')"
             />
             <ul class="mt-10 grid gap-4 sm:gap-5 md:grid-cols-3">
                 <li
@@ -400,7 +404,7 @@ const heroImage = MEDIA.photo.start;
     </section>
 
     <MascotGuide
-        welcome="¡Hola! Te ayudo a encontrar tu próximo evento."
+        :welcome="$t('¡Hola! Te ayudo a encontrar tu próximo evento.')"
         :tips="mascotTips"
     />
 </template>

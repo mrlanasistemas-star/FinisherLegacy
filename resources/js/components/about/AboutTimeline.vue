@@ -6,7 +6,9 @@
  */
 import { Link } from '@inertiajs/vue3';
 import { MapPin } from '@lucide/vue';
+import { computed } from 'vue';
 import { MEDIA } from '@/config/media';
+import { useI18n } from '@/i18n';
 import type { CompanyMilestone } from '@/types';
 
 defineProps<{
@@ -14,12 +16,18 @@ defineProps<{
     canEdit: boolean;
 }>();
 
-const disciplines = [
-    { label: 'Pista', image: MEDIA.photo.start, position: '50% 70%' },
-    { label: 'Running', image: MEDIA.photo.runner, position: '35% center' },
-    { label: 'Triatlón', image: MEDIA.photo.cyclist, position: '60% center' },
-    { label: 'La meta', image: MEDIA.photo.triumph, position: 'center' },
-];
+const { t } = useI18n();
+
+const disciplines = computed(() => [
+    { label: t('Pista'), image: MEDIA.photo.start, position: '50% 70%' },
+    { label: t('Running'), image: MEDIA.photo.runner, position: '35% center' },
+    {
+        label: t('Triatlón'),
+        image: MEDIA.photo.cyclist,
+        position: '60% center',
+    },
+    { label: t('La meta'), image: MEDIA.photo.triumph, position: 'center' },
+]);
 </script>
 
 <template>
@@ -111,11 +119,13 @@ const disciplines = [
             </li>
         </ul>
         <p v-if="canEdit" class="mt-5 text-sm text-muted-foreground">
-            Aún no hay hitos publicados — se muestran estas imágenes.
+            {{
+                $t('Aún no hay hitos publicados — se muestran estas imágenes.')
+            }}
             <Link
                 href="/admin/content"
                 class="font-medium text-foreground underline underline-offset-4"
-                >Agregar hitos reales desde Administración</Link
+                >{{ $t('Agregar hitos reales desde Administración') }}</Link
             >
         </p>
     </div>

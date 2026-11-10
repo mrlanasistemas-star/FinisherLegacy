@@ -11,14 +11,12 @@ import { computed } from 'vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
-import {
-    COMMUNITY_URL,
-    COMPOSE_URL,
-    STORE_URL,
-} from '@/config/public-links';
+import { COMMUNITY_URL, COMPOSE_URL, STORE_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { home } from '@/routes';
 import { edit as editAthleteProfile } from '@/routes/dashboard/profile';
 
+const { t } = useI18n();
 const page = usePage();
 const user = computed(() => page.props.auth?.user ?? null);
 const profile = computed(() => page.props.auth?.profile ?? null);
@@ -32,13 +30,13 @@ const profileHref = computed(() =>
 
 const tabs = computed(() => [
     {
-        label: 'Inicio',
+        label: t('Inicio'),
         href: home.url(),
         icon: House,
         active: isCurrentUrl(home.url()),
     },
     {
-        label: 'Comunidad',
+        label: t('Comunidad'),
         href: COMMUNITY_URL,
         icon: Compass,
         active:
@@ -46,7 +44,7 @@ const tabs = computed(() => [
             currentUrl.value.startsWith('/buscar'),
     },
     {
-        label: 'Tienda',
+        label: t('Tienda'),
         href: STORE_URL,
         icon: ShoppingBag,
         active:
@@ -67,7 +65,7 @@ const profileActive = computed(
     <nav
         v-if="user"
         class="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-150 md:hidden"
-        aria-label="Navegación rápida"
+        :aria-label="$t('Navegación rápida')"
     >
         <ul class="mx-auto grid h-16 max-w-md grid-cols-5 items-center px-2">
             <li v-for="tab in tabs.slice(0, 2)" :key="tab.label">
@@ -90,7 +88,7 @@ const profileActive = computed(
                 <Link
                     :href="COMPOSE_URL"
                     class="flex size-11 items-center justify-center rounded-2xl bg-foreground text-background shadow-[0_8px_18px_-10px_rgb(23_23_20/0.7)] transition-transform duration-200 active:scale-95"
-                    aria-label="Publicar"
+                    :aria-label="$t('Publicar')"
                 >
                     <Plus class="size-5" :stroke-width="2.4" />
                 </Link>
@@ -107,7 +105,7 @@ const profileActive = computed(
                         :stroke-width="tabs[2].active ? 2.4 : 1.8"
                         aria-hidden="true"
                     />
-                    <span>Tienda</span>
+                    <span>{{ tabs[2].label }}</span>
                 </Link>
             </li>
             <li>
@@ -132,7 +130,7 @@ const profileActive = computed(
                             {{ getInitials(user.name) }}
                         </AvatarFallback>
                     </Avatar>
-                    <span>Perfil</span>
+                    <span>{{ $t('Perfil') }}</span>
                 </Link>
             </li>
         </ul>

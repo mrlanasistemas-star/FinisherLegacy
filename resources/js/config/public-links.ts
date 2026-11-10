@@ -59,6 +59,9 @@ import { index as ordersIndex } from '@/routes/store/orders';
 import { index as storeIndex } from '@/routes/store/products';
 import { index as trainingIndex } from '@/routes/training';
 
+/** Marks a Spanish literal for the i18n extractor; consumers translate at render with $t(). */
+const t = (text: string): string => text;
+
 export const HOME_URL = home.url();
 export const ACTIVATE_URL = activateIndex.url();
 export const MI_LEGACY_URL = myLegacyIndex.url();
@@ -118,90 +121,98 @@ export type NavEntry =
 export const navEntries: NavEntry[] = [
     {
         kind: 'menu',
-        label: 'Producto',
+        label: t('Producto'),
         links: [
             {
                 label: 'Finisher Legacy Tag',
                 href: COLLECTIONS_URL,
                 icon: Nfc,
-                description:
+                description: t(
                     'El tag coleccionable de tu carrera. Lo tocas con tu teléfono y se abre tu recuerdo.',
+                ),
             },
             {
-                label: 'Portarretrato inteligente',
+                label: t('Portarretrato inteligente'),
                 href: PORTRAIT_URL,
                 icon: Frame,
-                description:
+                description: t(
                     'Tu foto de meta en acrílico, con el álbum y la voz de los tuyos a un toque.',
+                ),
             },
             {
-                label: 'Tienda',
+                label: t('Tienda'),
                 href: STORE_URL,
                 icon: ShoppingBag,
-                description:
+                description: t(
                     'Colecciones de tags, Racepack, Trisuit y Chill Band.',
+                ),
             },
             {
-                label: 'App',
+                label: t('App'),
                 href: APP_URL,
                 icon: Smartphone,
-                description:
+                description: t(
                     'Activa tocando, guarda recuerdos y entrena con tu equipo desde el teléfono.',
+                ),
             },
         ],
         feature: {
-            eyebrow: 'Ya tengo mi tag',
-            title: 'Actívalo en un toque',
-            text: 'Acerca tu teléfono al tag o escribe su código.',
-            cta: 'Activar mi tag',
+            eyebrow: t('Ya tengo mi tag'),
+            title: t('Actívalo en un toque'),
+            text: t('Acerca tu teléfono al tag o escribe su código.'),
+            cta: t('Activar mi tag'),
             href: ACTIVATE_URL,
             image: '/media/home/story/medal-closeup-640.webp',
         },
     },
-    { kind: 'link', label: 'Cómo funciona', href: HOW_IT_WORKS_URL },
-    { kind: 'link', label: 'Recuerdos', href: MEMORIES_URL },
+    { kind: 'link', label: t('Cómo funciona'), href: HOW_IT_WORKS_URL },
+    { kind: 'link', label: t('Recuerdos'), href: MEMORIES_URL },
     {
         kind: 'link',
-        label: 'Entrenamientos',
+        label: t('Entrenamientos'),
         href: TRAINING_URL,
         from: 'xl',
     },
     {
         kind: 'menu',
-        label: 'Comunidad',
+        label: t('Comunidad'),
         links: [
             {
-                label: 'Comunidad',
+                label: t('Comunidad'),
                 href: COMMUNITY_URL,
                 icon: Users,
-                description:
+                description: t(
                     'Carreras, entrenamientos y medallas de atletas como tú.',
+                ),
             },
             {
-                label: 'Eventos',
+                label: t('Eventos'),
                 href: EVENTS_URL,
                 icon: CalendarDays,
-                description: 'Encuentra tu siguiente meta y sus resultados.',
+                description: t('Encuentra tu siguiente meta y sus resultados.'),
             },
             {
-                label: 'Fotos de evento',
+                label: t('Fotos de evento'),
                 href: PHOTOS_URL,
                 icon: Images,
-                description:
+                description: t(
                     'Busca tus fotos de carrera por evento y número de competidor.',
+                ),
             },
             {
-                label: 'Fotógrafos',
+                label: t('Fotógrafos'),
                 href: PHOTOGRAPHERS_URL,
                 icon: Camera,
-                description: 'Vende las fotos que tomas en las carreras.',
+                description: t('Vende las fotos que tomas en las carreras.'),
             },
         ],
         feature: {
-            eyebrow: 'Envíame ánimo',
-            title: 'Entrena con la voz de los tuyos',
-            text: 'Tu familia te graba mensajes desde un enlace. Tú los escuchas mientras entrenas.',
-            cta: 'Conocer Entrenamientos',
+            eyebrow: t('Envíame ánimo'),
+            title: t('Entrena con la voz de los tuyos'),
+            text: t(
+                'Tu familia te graba mensajes desde un enlace. Tú los escuchas mientras entrenas.',
+            ),
+            cta: t('Conocer Entrenamientos'),
             href: TRAINING_URL,
             image: '/media/home/story/training-dawn-640.webp',
         },
@@ -210,10 +221,10 @@ export const navEntries: NavEntry[] = [
 
 /** Extra destinations of the mobile sheet (not in the desktop bar). */
 export const secondaryLinks: (SiteLink & { icon: LucideIcon })[] = [
-    { label: 'Buscar', href: search.url(), icon: Search },
-    { label: 'App', href: APP_URL, icon: Smartphone },
-    { label: 'Nosotros', href: ABOUT_URL, icon: BookHeart },
-    { label: 'Ayuda y contacto', href: CONTACT_URL, icon: Headphones },
+    { label: t('Buscar'), href: search.url(), icon: Search },
+    { label: t('App'), href: APP_URL, icon: Smartphone },
+    { label: t('Nosotros'), href: ABOUT_URL, icon: BookHeart },
+    { label: t('Ayuda y contacto'), href: CONTACT_URL, icon: Headphones },
 ];
 
 export type AccountLink = SiteLink & { icon: LucideIcon; group: 'me' | 'app' };
@@ -231,53 +242,53 @@ export function accountLinks(options: {
     const links: (AccountLink & { count?: number })[] = [
         options.username
             ? {
-                  label: 'Mi perfil público',
+                  label: t('Mi perfil público'),
                   href: `/@${options.username}`,
                   icon: UserCircle,
                   group: 'me',
               }
             : {
-                  label: 'Crear mi perfil',
+                  label: t('Crear mi perfil'),
                   href: editAthleteProfile.url(),
                   icon: UserCircle,
                   group: 'me',
               },
-        { label: 'Mi Legacy', href: MI_LEGACY_URL, icon: Nfc, group: 'me' },
+        { label: t('Mi Legacy'), href: MI_LEGACY_URL, icon: Nfc, group: 'me' },
         {
-            label: 'Mi entrenamiento',
+            label: t('Mi entrenamiento'),
             href: trainingIndex.url(),
             icon: Headphones,
             group: 'me',
         },
         {
-            label: 'Mi legado',
+            label: t('Mi legado'),
             href: dashboard.url(),
             icon: LayoutGrid,
             group: 'me',
             exact: true,
         },
         {
-            label: 'Mis pedidos',
+            label: t('Mis pedidos'),
             href: ordersIndex.url(),
             icon: Receipt,
             group: 'me',
         },
         {
-            label: 'Mis fotos',
+            label: t('Mis fotos'),
             href: photosIndex.url(),
             icon: Camera,
             group: 'me',
         },
-        { label: 'Personas', href: PEOPLE_URL, icon: Users, group: 'app' },
+        { label: t('Personas'), href: PEOPLE_URL, icon: Users, group: 'app' },
         {
-            label: 'Notificaciones',
+            label: t('Notificaciones'),
             href: notificationsIndex.url(),
             icon: Bell,
             group: 'app',
             count: options.unread ?? 0,
         },
         {
-            label: 'Ajustes',
+            label: t('Ajustes'),
             href: editSettingsProfile.url(),
             icon: Settings,
             group: 'app',
@@ -286,7 +297,7 @@ export function accountLinks(options: {
 
     if (options.canAdmin) {
         links.push({
-            label: 'Administración',
+            label: t('Administración'),
             href: '/admin',
             icon: ShieldCheck,
             group: 'app',
@@ -298,45 +309,45 @@ export function accountLinks(options: {
 
 export const footerColumns: { title: string; links: SiteLink[] }[] = [
     {
-        title: 'Producto',
+        title: t('Producto'),
         links: [
             { label: 'Finisher Legacy Tag', href: COLLECTIONS_URL },
-            { label: 'Portarretrato inteligente', href: PORTRAIT_URL },
-            { label: 'Tienda', href: STORE_URL },
-            { label: 'Activar mi tag', href: ACTIVATE_URL },
+            { label: t('Portarretrato inteligente'), href: PORTRAIT_URL },
+            { label: t('Tienda'), href: STORE_URL },
+            { label: t('Activar mi tag'), href: ACTIVATE_URL },
         ],
     },
     {
-        title: 'Experiencia',
+        title: t('Experiencia'),
         links: [
-            { label: 'Cómo funciona', href: HOW_IT_WORKS_URL },
-            { label: 'Recuerdos', href: MEMORIES_URL },
-            { label: 'Entrenamientos', href: TRAINING_URL },
-            { label: 'App', href: APP_URL },
+            { label: t('Cómo funciona'), href: HOW_IT_WORKS_URL },
+            { label: t('Recuerdos'), href: MEMORIES_URL },
+            { label: t('Entrenamientos'), href: TRAINING_URL },
+            { label: t('App'), href: APP_URL },
         ],
     },
     {
-        title: 'Comunidad',
+        title: t('Comunidad'),
         links: [
-            { label: 'Comunidad', href: COMMUNITY_URL },
-            { label: 'Eventos', href: EVENTS_URL },
-            { label: 'Fotos de evento', href: PHOTOS_URL },
-            { label: 'Fotógrafos', href: PHOTOGRAPHERS_URL },
+            { label: t('Comunidad'), href: COMMUNITY_URL },
+            { label: t('Eventos'), href: EVENTS_URL },
+            { label: t('Fotos de evento'), href: PHOTOS_URL },
+            { label: t('Fotógrafos'), href: PHOTOGRAPHERS_URL },
         ],
     },
     {
         title: 'Finisher Legacy',
         links: [
-            { label: 'Nosotros', href: ABOUT_URL },
-            { label: 'Ayuda y contacto', href: CONTACT_URL },
-            { label: 'Mi Legacy', href: MI_LEGACY_URL },
+            { label: t('Nosotros'), href: ABOUT_URL },
+            { label: t('Ayuda y contacto'), href: CONTACT_URL },
+            { label: t('Mi Legacy'), href: MI_LEGACY_URL },
         ],
     },
 ];
 
 /** Bottom legal row of the footer. */
 export const legalLinks: SiteLink[] = [
-    { label: 'Privacidad', href: privacy.url() },
-    { label: 'Términos', href: terms.url() },
-    { label: 'Eliminar mi cuenta', href: accountDeletion.url() },
+    { label: t('Privacidad'), href: privacy.url() },
+    { label: t('Términos'), href: terms.url() },
+    { label: t('Eliminar mi cuenta'), href: accountDeletion.url() },
 ];

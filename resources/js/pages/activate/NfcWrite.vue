@@ -40,7 +40,10 @@ import {
     NfcSession,
 } from '@/components/activation/webNfc';
 import type { NfcRead, NfcSupport } from '@/components/activation/webNfc';
+import I18nT from '@/components/i18n/I18nT.vue';
+import T from '@/components/i18n/T.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { index as activateIndex } from '@/routes/activate';
 import {
     confirm as confirmRoute,
@@ -66,7 +69,13 @@ type Phase =
     | 'confirm_retry'
     | 'done';
 
-const STEPS = ['Tu código', 'Graba tu pieza', 'Comprobamos'];
+const { t } = useI18n();
+
+const STEPS = computed(() => [
+    t('Tu código'),
+    t('Graba tu pieza'),
+    t('Comprobamos'),
+]);
 
 const support = ref<NfcSupport | 'checking'>('checking');
 const phase = ref<Phase>('code');
@@ -155,22 +164,30 @@ async function submitCode() {
         notice.value =
             error instanceof ActivationError
                 ? error.message
-                : 'Algo salió mal. Inténtalo de nuevo.';
+                : t('Algo salió mal. Inténtalo de nuevo.');
         phase.value = 'code';
     }
 }
 
-const NFC_COPY: Record<NfcError['kind'], string> = {
-    permission:
+// Rebuilt with the active language (the copy is read when an error happens).
+const NFC_COPY = computed<Record<NfcError['kind'], string>>(() => ({
+    permission: t(
         'Tu teléfono no permitió grabar la pieza. Revisa que el NFC esté encendido, acepta el permiso cuando Chrome lo pida e inténtalo de nuevo. Si sigue igual, la pieza podría estar protegida: escríbenos.',
-    locked: 'Esta pieza está protegida contra cambios y no se puede grabar. Escríbenos y te ayudamos.',
-    incompatible:
+    ),
+    locked: t(
+        'Esta pieza está protegida contra cambios y no se puede grabar. Escríbenos y te ayudamos.',
+    ),
+    incompatible: t(
         'Esta pieza no se pudo grabar desde el navegador. Prueba con la app Finisher Legacy o escríbenos.',
-    moved: 'La pieza se movió antes de terminar. Déjala quieta, pegada a la parte de atrás del teléfono, e inténtalo de nuevo.',
-    timeout:
+    ),
+    moved: t(
+        'La pieza se movió antes de terminar. Déjala quieta, pegada a la parte de atrás del teléfono, e inténtalo de nuevo.',
+    ),
+    timeout: t(
         'No detectamos la pieza a tiempo. Acércala a la parte de atrás del teléfono e inténtalo de nuevo.',
-    unknown: 'No pudimos grabar la pieza. Inténtalo de nuevo.',
-};
+    ),
+    unknown: t('No pudimos grabar la pieza. Inténtalo de nuevo.'),
+}));
 
 function onNfcError(error: unknown) {
     const nfc =
@@ -178,7 +195,7 @@ function onNfcError(error: unknown) {
 
     session?.stop();
     session = null;
-    notice.value = NFC_COPY[nfc.kind];
+    notice.value = NFC_COPY.value[nfc.kind];
     report(`web_nfc_${nfc.kind}: ${nfc.detail}`);
     phase.value = 'ready';
 }
@@ -222,8 +239,9 @@ function onRead(read: NfcRead) {
         ) {
             session?.stop();
             session = null;
-            notice.value =
-                'Esta pieza ya tiene grabado otro código de Finisher Legacy. Revisa que sea la pieza correcta o escríbenos.';
+            notice.value = t(
+                'Esta pieza ya tiene grabado otro código de Finisher Legacy. Revisa que sea la pieza correcta o escríbenos.',
+            );
             report('other_finisher_legacy_url');
             phase.value = 'ready';
         } else {
@@ -238,8 +256,9 @@ function onRead(read: NfcRead) {
         if (read.urls.includes(target)) {
             void confirm(target);
         } else {
-            notice.value =
-                'Lo que leímos no coincide con lo que grabamos. Inténtalo de nuevo sin mover la pieza.';
+            notice.value = t(
+                'Lo que leímos no coincide con lo que grabamos. Inténtalo de nuevo sin mover la pieza.',
+            );
             report('readback_mismatch');
             phase.value = 'ready';
         }
@@ -274,8 +293,9 @@ function declineConsent() {
     session?.stop();
     session = null;
     report('user_declined_overwrite');
-    notice.value =
-        'No cambiamos nada en la pieza. Si tienes dudas, escríbenos y lo revisamos contigo.';
+    notice.value = t(
+        'No cambiamos nada en la pieza. Si tienes dudas, escríbenos y lo revisamos contigo.',
+    );
     phase.value = 'ready';
 }
 
@@ -303,7 +323,7 @@ async function confirm(written: string) {
         const err =
             error instanceof ActivationError
                 ? error
-                : new ActivationError('UNKNOWN', 'Algo salió mal.');
+                : new ActivationError('UNKNOWN', t('Algo salió mal.'));
 
         notice.value = err.message;
 
@@ -326,7 +346,7 @@ function retryConfirm() {
 </script>
 
 <template>
-    <Head title="Graba y activa tu pieza">
+    <Head :title="$t('Graba y activa tu pieza')">
         <meta name="robots" content="noindex" />
     </Head>
 
@@ -342,11 +362,14 @@ function retryConfirm() {
                 <h1
                     class="fl-display mt-3 text-[2.4rem] leading-[1.05] sm:text-5xl"
                 >
-                    Activa tu pieza
+                    <T>Activa tu pieza</T>
                 </h1>
                 <p class="mt-4 text-base leading-relaxed text-muted-foreground">
-                    Tu pieza llega en blanco. En un minuto la grabamos con tu
-                    enlace personal y queda lista para guardar tu recuerdo.
+                    {{
+                        $t(
+                            'Tu pieza llega en blanco. En un minuto la grabamos con tu enlace personal y queda lista para guardar tu recuerdo.',
+                        )
+                    }}
                 </p>
 
                 <!-- Checking the phone -->
@@ -354,7 +377,7 @@ function retryConfirm() {
                     v-if="support === 'checking'"
                     class="mt-8 flex items-center gap-3 text-sm text-muted-foreground"
                 >
-                    <Spinner class="size-4" /> Revisando tu teléfono…
+                    <Spinner class="size-4" /> <T>Revisando tu teléfono…</T>
                 </div>
 
                 <!-- This browser cannot write NFC: no dead buttons -->
@@ -368,30 +391,39 @@ function retryConfirm() {
                         <Smartphone class="size-5" aria-hidden="true" />
                     </span>
                     <h2 class="mt-4 font-serif text-xl text-foreground">
-                        <template v-if="support === 'ios'"
-                            >En iPhone, usa la app Finisher Legacy</template
-                        >
-                        <template v-else-if="support === 'insecure'"
-                            >Abre esta página desde finisherlegacy.com</template
-                        >
-                        <template v-else
-                            >Este navegador no puede grabar tu pieza</template
-                        >
+                        <template v-if="support === 'ios'">{{
+                            $t('En iPhone, usa la app Finisher Legacy')
+                        }}</template>
+                        <template v-else-if="support === 'insecure'">{{
+                            $t('Abre esta página desde finisherlegacy.com')
+                        }}</template>
+                        <template v-else>{{
+                            $t('Este navegador no puede grabar tu pieza')
+                        }}</template>
                     </h2>
                     <p
                         class="mt-2 text-sm leading-relaxed text-muted-foreground"
                     >
                         <template v-if="support === 'ios'">
-                            Safari no permite grabar piezas con NFC. Desde la
-                            app lo haces en segundos con tu iPhone.
+                            {{
+                                $t(
+                                    'Safari no permite grabar piezas con NFC. Desde la app lo haces en segundos con tu iPhone.',
+                                )
+                            }}
                         </template>
                         <template v-else-if="support === 'insecure'">
-                            Por seguridad, la grabación solo funciona en nuestra
-                            página oficial.
+                            {{
+                                $t(
+                                    'Por seguridad, la grabación solo funciona en nuestra página oficial.',
+                                )
+                            }}
                         </template>
                         <template v-else>
-                            Para grabarla necesitas un teléfono Android con
-                            Chrome y NFC encendido, o la app Finisher Legacy.
+                            {{
+                                $t(
+                                    'Para grabarla necesitas un teléfono Android con Chrome y NFC encendido, o la app Finisher Legacy.',
+                                )
+                            }}
                         </template>
                     </p>
 
@@ -400,25 +432,25 @@ function retryConfirm() {
                             v-if="support === 'ios' && appLinks.ios"
                             :href="appLinks.ios"
                             class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:bg-fl-graphite"
-                            >Descargar la app para iPhone</a
+                            ><T>Descargar la app para iPhone</T></a
                         >
                         <a
                             v-else-if="support !== 'ios' && appLinks.android"
                             :href="appLinks.android"
                             class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:bg-fl-graphite"
-                            >Descargar la app para Android</a
+                            ><T>Descargar la app para Android</T></a
                         >
                         <p
                             v-else
                             class="rounded-control bg-fl-cream/70 px-4 py-3 text-sm text-foreground"
                         >
-                            Busca «Finisher Legacy» en tu tienda de apps.
+                            <T>Busca «Finisher Legacy» en tu tienda de apps.</T>
                         </p>
                         <Link
                             :href="activateIndex().url"
                             class="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-fl-line bg-white px-6 text-sm font-semibold text-foreground transition hover:border-fl-gold"
                         >
-                            Activar con el código de mi pieza
+                            <T>Activar con el código de mi pieza</T>
                             <ArrowRight class="size-4" aria-hidden="true" />
                         </Link>
                     </div>
@@ -442,7 +474,7 @@ function retryConfirm() {
                                 <label
                                     for="activation-code"
                                     class="text-sm font-semibold text-foreground"
-                                    >Código de activación</label
+                                    ><T>Código de activación</T></label
                                 >
                                 <div class="relative mt-2">
                                     <KeyRound
@@ -468,16 +500,22 @@ function retryConfirm() {
                                 <p
                                     class="mt-2 text-xs leading-relaxed text-muted-foreground"
                                 >
-                                    Está en la tarjeta que venía dentro del
-                                    empaque. Es solo tuya: no la compartas.
+                                    {{
+                                        $t(
+                                            'Está en la tarjeta que venía dentro del empaque. Es solo tuya: no la compartas.',
+                                        )
+                                    }}
                                 </p>
                             </template>
                             <p
                                 v-else
                                 class="text-sm leading-relaxed text-foreground"
                             >
-                                Compraste esta pieza con tu cuenta, así que no
-                                necesitas la tarjeta del empaque.
+                                {{
+                                    $t(
+                                        'Compraste esta pieza con tu cuenta, así que no necesitas la tarjeta del empaque.',
+                                    )
+                                }}
                             </p>
 
                             <p
@@ -504,7 +542,7 @@ function retryConfirm() {
                                     class="size-4"
                                 />
                                 <template v-else>
-                                    Continuar
+                                    <T>Continuar</T>
                                     <ArrowRight
                                         class="size-5"
                                         aria-hidden="true"
@@ -523,8 +561,10 @@ function retryConfirm() {
                             >
                                 {{
                                     useOrder
-                                        ? 'Tengo la tarjeta con el código'
-                                        : 'La compré en línea con esta cuenta'
+                                        ? $t('Tengo la tarjeta con el código')
+                                        : $t(
+                                              'La compré en línea con esta cuenta',
+                                          )
                                 }}
                             </button>
                         </form>
@@ -553,13 +593,16 @@ function retryConfirm() {
                                 "
                                 class="mt-3 rounded-control bg-fl-cream/70 p-4 text-sm leading-relaxed text-foreground"
                             >
-                                Esta pieza ya es tuya. Puedes volver a grabarla
-                                si tu teléfono no la abre.
+                                {{
+                                    $t(
+                                        'Esta pieza ya es tuya. Puedes volver a grabarla si tu teléfono no la abre.',
+                                    )
+                                }}
                                 <Link
                                     v-if="intent.story"
                                     :href="intent.story.url"
                                     class="mt-2 block font-semibold text-fl-gold-ink"
-                                    >Ver mi recuerdo</Link
+                                    ><T>Ver mi recuerdo</T></Link
                                 >
                             </div>
 
@@ -591,27 +634,31 @@ function retryConfirm() {
 
                             <template v-if="phase === 'consent'">
                                 <h2 class="font-serif text-xl text-foreground">
-                                    <template v-if="consentKind === 'data'"
-                                        >Esta pieza ya tiene otra
-                                        información</template
-                                    >
-                                    <template v-else
-                                        >Esta pieza necesita
-                                        prepararse</template
-                                    >
+                                    <template v-if="consentKind === 'data'">{{
+                                        $t(
+                                            'Esta pieza ya tiene otra información',
+                                        )
+                                    }}</template>
+                                    <template v-else>{{
+                                        $t('Esta pieza necesita prepararse')
+                                    }}</template>
                                 </h2>
                                 <p
                                     class="mt-2 text-sm leading-relaxed text-muted-foreground"
                                 >
                                     <template v-if="consentKind === 'data'">
-                                        Si continúas, la reemplazamos por tu
-                                        enlace de Finisher Legacy. Lo anterior
-                                        se borra y no se puede recuperar.
+                                        {{
+                                            $t(
+                                                'Si continúas, la reemplazamos por tu enlace de Finisher Legacy. Lo anterior se borra y no se puede recuperar.',
+                                            )
+                                        }}
                                     </template>
                                     <template v-else>
-                                        Tu teléfono no pudo leerla. Podemos
-                                        prepararla y grabarla ahora; no tenía
-                                        nada que tu teléfono pudiera abrir.
+                                        {{
+                                            $t(
+                                                'Tu teléfono no pudo leerla. Podemos prepararla y grabarla ahora; no tenía nada que tu teléfono pudiera abrir.',
+                                            )
+                                        }}
                                     </template>
                                 </p>
                                 <div class="mt-5 flex flex-col gap-3">
@@ -622,8 +669,8 @@ function retryConfirm() {
                                     >
                                         {{
                                             consentKind === 'data'
-                                                ? 'Sí, reemplazar y grabar'
-                                                : 'Preparar y grabar'
+                                                ? $t('Sí, reemplazar y grabar')
+                                                : $t('Preparar y grabar')
                                         }}
                                     </button>
                                     <button
@@ -631,7 +678,7 @@ function retryConfirm() {
                                         class="inline-flex h-12 items-center justify-center rounded-full border border-fl-line bg-white px-6 text-sm font-semibold text-foreground"
                                         @click="declineConsent"
                                     >
-                                        No, dejarla como está
+                                        <T>No, dejarla como está</T>
                                     </button>
                                 </div>
                             </template>
@@ -640,21 +687,24 @@ function retryConfirm() {
                                 <h2
                                     class="text-center font-serif text-xl text-foreground"
                                 >
-                                    <template v-if="phase === 'ready'"
-                                        >Acerca tu pieza al teléfono</template
-                                    >
+                                    <template v-if="phase === 'ready'">{{
+                                        $t('Acerca tu pieza al teléfono')
+                                    }}</template>
                                     <template v-else-if="phase === 'scanning'"
-                                        >Buscando tu pieza…</template
+                                        ><T>Buscando tu pieza…</T></template
                                     >
                                     <template v-else
-                                        >Grabando… no la muevas</template
+                                        ><T>Grabando… no la muevas</T></template
                                     >
                                 </h2>
                                 <p
                                     class="mt-2 text-center text-sm leading-relaxed text-muted-foreground"
                                 >
-                                    Pégala a la parte de atrás del teléfono, a
-                                    la altura de la cámara, y déjala quieta.
+                                    {{
+                                        $t(
+                                            'Pégala a la parte de atrás del teléfono, a la altura de la cámara, y déjala quieta.',
+                                        )
+                                    }}
                                 </p>
 
                                 <p
@@ -678,8 +728,8 @@ function retryConfirm() {
                                     <Nfc class="size-5" aria-hidden="true" />
                                     {{
                                         notice
-                                            ? 'Intentar de nuevo'
-                                            : 'Grabar mi pieza'
+                                            ? $t('Intentar de nuevo')
+                                            : $t('Grabar mi pieza')
                                     }}
                                 </button>
                             </template>
@@ -705,25 +755,28 @@ function retryConfirm() {
                                 />
                             </div>
                             <h2 class="font-serif text-xl text-foreground">
-                                <template v-if="phase === 'verify'"
-                                    >Grabada. Ahora la comprobamos</template
-                                >
+                                <template v-if="phase === 'verify'">{{
+                                    $t('Grabada. Ahora la comprobamos')
+                                }}</template>
                                 <template v-else-if="phase === 'confirming'"
-                                    >Activando tu pieza…</template
+                                    ><T>Activando tu pieza…</T></template
                                 >
                                 <template v-else
-                                    >Tu pieza ya está grabada</template
+                                    ><T>Tu pieza ya está grabada</T></template
                                 >
                             </h2>
                             <p
                                 class="mt-2 text-sm leading-relaxed text-muted-foreground"
                             >
                                 <template v-if="phase === 'verify'">
-                                    Aleja la pieza un momento y vuelve a
-                                    acercarla al teléfono.
+                                    {{
+                                        $t(
+                                            'Aleja la pieza un momento y vuelve a acercarla al teléfono.',
+                                        )
+                                    }}
                                 </template>
                                 <template v-else-if="phase === 'confirming'"
-                                    >Un segundo.</template
+                                    ><T>Un segundo.</T></template
                                 >
                                 <template v-else>{{ notice }}</template>
                             </p>
@@ -734,7 +787,7 @@ function retryConfirm() {
                                 @click="retryConfirm"
                             >
                                 <RefreshCw class="size-4" aria-hidden="true" />
-                                Terminar la activación
+                                <T>Terminar la activación</T>
                             </button>
                         </div>
 
@@ -752,21 +805,23 @@ function retryConfirm() {
                                 />
                             </div>
                             <h2 class="font-serif text-2xl text-foreground">
-                                Tu Finisher Legacy está activo
+                                <T>Tu Finisher Legacy está activo</T>
                             </h2>
                             <p
                                 class="mt-2 text-sm leading-relaxed text-muted-foreground"
                             >
-                                Cada vez que alguien acerque su teléfono a tu
-                                pieza verá tu historia. Ahora ponle tus fotos y
-                                tus palabras.
+                                {{
+                                    $t(
+                                        'Cada vez que alguien acerque su teléfono a tu pieza verá tu historia. Ahora ponle tus fotos y tus palabras.',
+                                    )
+                                }}
                             </p>
                             <div class="mt-6 flex flex-col gap-3">
                                 <Link
                                     :href="result.story.edit_url"
                                     class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition hover:bg-fl-graphite"
                                 >
-                                    Completar mi recuerdo
+                                    <T>Completar mi recuerdo</T>
                                     <ArrowRight
                                         class="size-5"
                                         aria-hidden="true"
@@ -775,7 +830,7 @@ function retryConfirm() {
                                 <Link
                                     :href="result.story.url"
                                     class="text-sm font-semibold text-fl-gold-ink underline-offset-4 hover:underline"
-                                    >Ver cómo se ve</Link
+                                    ><T>Ver cómo se ve</T></Link
                                 >
                             </div>
                         </div>
@@ -785,14 +840,23 @@ function retryConfirm() {
                         v-if="phase !== 'done'"
                         class="mt-5 text-center text-xs leading-relaxed text-muted-foreground"
                     >
-                        ¿No funciona en tu teléfono?
-                        <Link
-                            :href="activateIndex().url"
-                            class="font-semibold text-fl-gold-ink"
+                        <I18nT
+                            :text="
+                                $t(
+                                    '¿No funciona en tu teléfono? {link} o usa la app Finisher Legacy.',
+                                )
+                            "
                         >
-                            Actívala con el código de tu pieza
-                        </Link>
-                        o usa la app Finisher Legacy.
+                            <template #link
+                                ><Link
+                                    :href="activateIndex().url"
+                                    class="font-semibold text-fl-gold-ink"
+                                    >{{
+                                        $t('Actívala con el código de tu pieza')
+                                    }}</Link
+                                ></template
+                            >
+                        </I18nT>
                     </p>
                 </div>
             </div>

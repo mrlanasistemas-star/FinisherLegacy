@@ -20,74 +20,84 @@ import {
     HOW_IT_WORKS_URL,
     STORE_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { home } from '@/routes';
 
 const props = defineProps<{
     status: number;
 }>();
 
-const copy: Record<number, { title: string; description: string }> = {
-    404: {
-        title: 'Esta meta no existe.',
-        description:
-            'La página que buscas no está aquí. Puede que el enlace haya cambiado o que ya no exista.',
-    },
-    403: {
-        title: 'Acceso restringido.',
-        description: 'No tienes permiso para ver esta página.',
-    },
-    419: {
-        title: 'Tu sesión expiró.',
-        description: 'Por seguridad, vuelve a intentarlo desde el inicio.',
-    },
-    429: {
-        title: 'Vas muy rápido.',
-        description: 'Espera un momento antes de intentarlo de nuevo.',
-    },
-    500: {
-        title: 'Tropezamos en la ruta.',
-        description:
-            'Tuvimos un problema de nuestro lado. Ya estamos trabajando en ello; inténtalo de nuevo en unos minutos.',
-    },
-    503: {
-        title: 'Estamos en mantenimiento.',
-        description:
-            'Finisher Legacy vuelve en un momento. Gracias por tu paciencia.',
-    },
-};
+const { t } = useI18n();
+
+const copy = computed<Record<number, { title: string; description: string }>>(
+    () => ({
+        404: {
+            title: t('Esta meta no existe.'),
+            description: t(
+                'La página que buscas no está aquí. Puede que el enlace haya cambiado o que ya no exista.',
+            ),
+        },
+        403: {
+            title: t('Acceso restringido.'),
+            description: t('No tienes permiso para ver esta página.'),
+        },
+        419: {
+            title: t('Tu sesión expiró.'),
+            description: t(
+                'Por seguridad, vuelve a intentarlo desde el inicio.',
+            ),
+        },
+        429: {
+            title: t('Vas muy rápido.'),
+            description: t('Espera un momento antes de intentarlo de nuevo.'),
+        },
+        500: {
+            title: t('Tropezamos en la ruta.'),
+            description: t(
+                'Tuvimos un problema de nuestro lado. Ya estamos trabajando en ello; inténtalo de nuevo en unos minutos.',
+            ),
+        },
+        503: {
+            title: t('Estamos en mantenimiento.'),
+            description: t(
+                'Finisher Legacy vuelve en un momento. Gracias por tu paciencia.',
+            ),
+        },
+    }),
+);
 
 const content = computed(
     () =>
-        copy[props.status] ?? {
-            title: 'Algo no salió como esperábamos.',
-            description: 'Intenta de nuevo o vuelve al inicio.',
+        copy.value[props.status] ?? {
+            title: t('Algo no salió como esperábamos.'),
+            description: t('Intenta de nuevo o vuelve al inicio.'),
         },
 );
 
-const links = [
+const links = computed(() => [
     {
         icon: ShoppingBag,
-        label: 'Tienda',
-        text: 'Tags, Racepack, Trisuit y Chill Band',
+        label: t('Tienda'),
+        text: t('Tags, Racepack, Trisuit y Chill Band'),
         href: STORE_URL,
     },
     {
         icon: Route,
-        label: 'Cómo funciona',
-        text: 'El recorrido del tag, paso a paso',
+        label: t('Cómo funciona'),
+        text: t('El recorrido del tag, paso a paso'),
         href: HOW_IT_WORKS_URL,
     },
     {
         icon: LifeBuoy,
-        label: 'Ayuda y contacto',
-        text: 'Preguntas frecuentes y soporte',
+        label: t('Ayuda y contacto'),
+        text: t('Preguntas frecuentes y soporte'),
         href: CONTACT_URL,
     },
-];
+]);
 </script>
 
 <template>
-    <Head :title="`Error ${status}`">
+    <Head :title="$t('Error {status}', { status })">
         <meta name="robots" content="noindex" />
     </Head>
 
@@ -111,7 +121,7 @@ const links = [
             class="err__mark h-16 w-auto sm:h-20"
         />
         <p v-reveal="{ delay: 60 }" class="fl-eyebrow mt-8">
-            Error {{ status }}
+            {{ $t('Error {status}', { status }) }}
         </p>
         <h1
             v-reveal="{ delay: 120 }"
@@ -129,13 +139,13 @@ const links = [
         <div v-reveal="{ delay: 240 }" class="mt-8">
             <Link :href="home()" class="fl-btn-primary">
                 <ArrowLeft class="size-4" aria-hidden="true" />
-                Volver al inicio
+                {{ $t('Volver al inicio') }}
             </Link>
         </div>
 
         <ul
             class="mt-12 grid w-full max-w-3xl gap-3 text-left sm:grid-cols-3"
-            aria-label="Otros lugares útiles"
+            :aria-label="$t('Otros lugares útiles')"
         >
             <li
                 v-for="(item, index) in links"

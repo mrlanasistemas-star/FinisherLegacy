@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{ status: string }>();
 
-const labels: Record<string, string> = {
-    pending: 'Pendiente',
-    confirmed: 'Confirmado',
-    cancelled: 'Cancelado',
-    completed: 'Completado',
-};
+const { t } = useI18n();
+
+const labels = computed<Record<string, string>>(() => ({
+    pending: t('Pendiente'),
+    confirmed: t('Confirmado'),
+    cancelled: t('Cancelado'),
+    completed: t('Completado'),
+}));
 
 const classes: Record<string, string> = {
     pending: 'border-amber-500/30 text-amber-700',
@@ -18,7 +21,7 @@ const classes: Record<string, string> = {
     completed: 'border-emerald-500/30 text-emerald-700',
 };
 
-const label = computed(() => labels[props.status] ?? props.status);
+const label = computed(() => labels.value[props.status] ?? props.status);
 const className = computed(
     () => classes[props.status] ?? 'border-foreground/15 text-muted-foreground',
 );

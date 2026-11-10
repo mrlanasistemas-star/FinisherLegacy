@@ -189,7 +189,7 @@ function onKeydown(event: KeyboardEvent) {
         class="fl-3d relative size-full overflow-hidden bg-[radial-gradient(circle_at_50%_40%,#ffffff,#efece5_70%)]"
         :class="overlay ? 'fixed inset-0 z-[70]' : ''"
         role="region"
-        :aria-label="`Vista 3D: ${alt}`"
+        :aria-label="$t('Vista 3D: {alt}', { alt })"
         @keydown="onKeydown"
     >
         <img
@@ -214,7 +214,7 @@ function onKeydown(event: KeyboardEvent) {
                     class="size-3.5 animate-spin"
                     aria-hidden="true"
                 />
-                Cargando modelo 3D…
+                {{ $t('Cargando modelo 3D…') }}
             </span>
         </div>
 
@@ -226,8 +226,11 @@ function onKeydown(event: KeyboardEvent) {
             <span
                 class="rounded-full bg-white/95 px-3 py-1.5 text-xs text-muted-foreground shadow-sm"
             >
-                No pudimos cargar la vista 3D. Te mostramos la imagen del
-                producto.
+                {{
+                    $t(
+                        'No pudimos cargar la vista 3D. Te mostramos la imagen del producto.',
+                    )
+                }}
             </span>
         </div>
 
@@ -238,12 +241,12 @@ function onKeydown(event: KeyboardEvent) {
             <div
                 class="flex items-center gap-1 rounded-full border border-border bg-white/95 p-1 shadow-[0_8px_24px_-16px_rgb(23_23_20/0.4)] backdrop-blur"
                 role="toolbar"
-                aria-label="Controles de la vista 3D"
+                :aria-label="$t('Controles de la vista 3D')"
             >
                 <button
                     type="button"
                     class="fl-3d-btn"
-                    aria-label="Acercar"
+                    :aria-label="$t('Acercar')"
                     :disabled="status !== 'ready'"
                     @click="zoom(1)"
                 >
@@ -252,7 +255,7 @@ function onKeydown(event: KeyboardEvent) {
                 <button
                     type="button"
                     class="fl-3d-btn"
-                    aria-label="Alejar"
+                    :aria-label="$t('Alejar')"
                     :disabled="status !== 'ready'"
                     @click="zoom(-1)"
                 >
@@ -261,7 +264,7 @@ function onKeydown(event: KeyboardEvent) {
                 <button
                     type="button"
                     class="fl-3d-btn"
-                    aria-label="Restablecer vista"
+                    :aria-label="$t('Restablecer vista')"
                     :disabled="status !== 'ready'"
                     @click="reset"
                 >
@@ -271,7 +274,9 @@ function onKeydown(event: KeyboardEvent) {
                     type="button"
                     class="fl-3d-btn"
                     :aria-label="
-                        rotating ? 'Detener giro' : 'Girar automáticamente'
+                        rotating
+                            ? $t('Detener giro')
+                            : $t('Girar automáticamente')
                     "
                     :aria-pressed="rotating"
                     :disabled="status !== 'ready'"
@@ -286,8 +291,8 @@ function onKeydown(event: KeyboardEvent) {
                     class="fl-3d-btn"
                     :aria-label="
                         nativeFullscreen || overlay
-                            ? 'Salir de pantalla completa'
-                            : 'Pantalla completa'
+                            ? $t('Salir de pantalla completa')
+                            : $t('Pantalla completa')
                     "
                     @click="toggleFullscreen"
                 >
@@ -301,7 +306,9 @@ function onKeydown(event: KeyboardEvent) {
             v-if="status === 'ready'"
             class="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-white/80 px-3 py-1 text-[11px] text-muted-foreground backdrop-blur"
         >
-            Arrastra para girar · pellizca o usa la rueda para acercar
+            {{
+                $t('Arrastra para girar · pellizca o usa la rueda para acercar')
+            }}
         </p>
     </div>
 </template>

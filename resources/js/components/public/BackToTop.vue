@@ -46,7 +46,7 @@ onBeforeUnmount(() => {
         <button
             v-if="visible && !guideState.open"
             type="button"
-            aria-label="Volver arriba"
+            :aria-label="$t('Volver arriba')"
             :style="{ '--fl-guide-stack': guideStack }"
             class="fl-focus-glow fixed right-[26px] bottom-[calc(1rem+var(--fl-guide-stack)+var(--fl-bottom-bar,0px)+var(--fl-site-tabbar,0px))] z-40 flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-[0_8px_24px_-12px_rgb(23_23_20/0.25)] transition-all duration-200 hover:scale-105 hover:border-fl-gold hover:text-fl-gold-ink active:scale-95 sm:right-[34px] sm:bottom-[calc(1.5rem+var(--fl-guide-stack)+var(--fl-bottom-bar,0px)+var(--fl-site-tabbar,0px))]"
             @click="scrollToTop"

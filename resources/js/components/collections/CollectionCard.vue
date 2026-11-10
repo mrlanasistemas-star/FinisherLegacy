@@ -7,6 +7,7 @@
 import { Link } from '@inertiajs/vue3';
 import { ArrowUpRight } from '@lucide/vue';
 import { computed } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import Money from '@/components/shared/Money.vue';
 import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import { show as collectionShow } from '@/routes/collections';
@@ -45,7 +46,7 @@ const art = computed(() => collectionTagArts(props.collection)[0]);
             <template v-if="collection.cover_url">
                 <img
                     :src="collection.cover_url"
-                    :alt="`Colección ${collection.name}`"
+                    :alt="$t('Colección {name}', { name: collection.name })"
                     :loading="priority ? 'eager' : 'lazy'"
                     decoding="async"
                     class="absolute inset-0 size-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06] motion-reduce:transition-none"
@@ -108,19 +109,21 @@ const art = computed(() => collectionTagArts(props.collection)[0]);
                 :class="dark ? 'text-white/55' : 'text-muted-foreground'"
             >
                 <span v-if="collection.products_count">
-                    {{ collection.products_count }}
-                    {{ collection.products_count === 1 ? 'diseño' : 'diseños' }}
+                    {{ $tc('{count} diseño|{count} diseños', collection.products_count) }}
                 </span>
                 <span v-if="collection.from_price_minor !== null">
-                    Desde
-                    <Money
-                        :minor="collection.from_price_minor"
-                        :currency="collection.currency"
-                        class="font-semibold"
-                        :class="dark ? 'text-white' : 'text-foreground'"
-                    />
+                    <I18nT :text="$t('Desde {price}')">
+                        <template #price>
+                            <Money
+                                :minor="collection.from_price_minor"
+                                :currency="collection.currency"
+                                class="font-semibold"
+                                :class="dark ? 'text-white' : 'text-foreground'"
+                            />
+                        </template>
+                    </I18nT>
                 </span>
-                <span v-if="!collection.products_count">Muy pronto</span>
+                <span v-if="!collection.products_count">{{ $t('Muy pronto') }}</span>
             </p>
         </div>
     </Link>

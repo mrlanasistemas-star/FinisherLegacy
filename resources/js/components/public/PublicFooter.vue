@@ -87,9 +87,11 @@ const location = computed(() =>
                     <p
                         class="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground"
                     >
-                        Tags coleccionables que abren tu recuerdo con un toque,
-                        portarretratos, entrenamientos con la voz de los tuyos,
-                        comunidad y fotos de tus carreras.
+                        {{
+                            $t(
+                                'Tags coleccionables que abren tu recuerdo con un toque, portarretratos, entrenamientos con la voz de los tuyos, comunidad y fotos de tus carreras.',
+                            )
+                        }}
                     </p>
 
                     <ul
@@ -99,7 +101,7 @@ const location = computed(() =>
                             company.channels.phone
                         "
                         class="mt-6 space-y-2.5 text-sm text-muted-foreground"
-                        aria-label="Datos de contacto"
+                        :aria-label="$t('Datos de contacto')"
                     >
                         <li v-if="location" class="flex items-center gap-2.5">
                             <MapPin
@@ -151,7 +153,7 @@ const location = computed(() =>
                         <span class="text-left">
                             <span
                                 class="block text-[13px] font-semibold text-foreground"
-                                >App Finisher Legacy</span
+                                >{{ $t('App Finisher Legacy') }}</span
                             >
                             <span class="block text-xs text-muted-foreground">{{
                                 $t('Muy pronto en App Store y Google Play')
@@ -166,10 +168,10 @@ const location = computed(() =>
 
                 <nav
                     class="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4 lg:col-span-8 lg:pl-6"
-                    aria-label="Mapa del sitio"
+                    :aria-label="$t('Mapa del sitio')"
                 >
                     <div v-for="column in columns" :key="column.title">
-                        <h3 class="fl-eyebrow">{{ column.title }}</h3>
+                        <h3 class="fl-eyebrow">{{ $t(column.title) }}</h3>
                         <ul class="mt-4 space-y-1">
                             <li v-for="item in column.links" :key="item.label">
                                 <Link
@@ -177,7 +179,7 @@ const location = computed(() =>
                                     class="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                                 >
                                     <span class="fl-link">{{
-                                        item.label
+                                        $t(item.label)
                                     }}</span>
                                 </Link>
                             </li>
@@ -192,10 +194,14 @@ const location = computed(() =>
             >
                 <div>
                     <p class="font-serif text-lg font-semibold text-foreground">
-                        ¿Quieres colaborar con Finisher Legacy?
+                        {{ $t('¿Quieres colaborar con Finisher Legacy?') }}
                     </p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Organizadores de carreras, fotógrafos, marcas y aliados.
+                        {{
+                            $t(
+                                'Organizadores de carreras, fotógrafos, marcas y aliados.',
+                            )
+                        }}
                     </p>
                 </div>
                 <Link
@@ -221,7 +227,13 @@ const location = computed(() =>
                         loading="lazy"
                         class="h-auto w-44 sm:w-52"
                     />
+                    <!-- The Spanish reading of the slogan: redundant where
+                         it translates back to "Make it last". -->
                     <p
+                        v-if="
+                            $t('Haz que perdure').toUpperCase() !==
+                            'MAKE IT LAST'
+                        "
                         class="text-xs tracking-[0.18em] text-white/55 uppercase"
                     >
                         {{ $t('Haz que perdure') }}
@@ -232,7 +244,7 @@ const location = computed(() =>
                     <ul
                         v-if="socials.length"
                         class="flex flex-wrap gap-x-5 gap-y-2"
-                        aria-label="Redes sociales"
+                        :aria-label="$t('Redes sociales')"
                     >
                         <li v-for="social in socials" :key="social.label">
                             <a
@@ -246,19 +258,23 @@ const location = computed(() =>
                     </ul>
                     <ul
                         class="flex flex-wrap gap-x-5 gap-y-2"
-                        aria-label="Legal"
+                        :aria-label="$t('Legal')"
                     >
                         <li v-for="item in legalLinks" :key="item.label">
                             <Link
                                 :href="item.href"
                                 class="fl-footer-link text-[13px] text-white/65 transition-colors hover:text-white"
-                                >{{ item.label }}</Link
+                                >{{ $t(item.label) }}</Link
                             >
                         </li>
                     </ul>
                     <p class="text-xs text-white/45">
-                        © {{ year }} Finisher Legacy. Todos los derechos
-                        reservados.
+                        {{
+                            $t(
+                                '© {year} Finisher Legacy. Todos los derechos reservados.',
+                                { year },
+                            )
+                        }}
                     </p>
                 </div>
             </div>

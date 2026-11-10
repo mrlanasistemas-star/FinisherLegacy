@@ -173,7 +173,7 @@ const id = (name: string) => `${uid}-${name}`;
                     font-weight="600"
                     fill="#85662B"
                 >
-                    TU HISTORIA
+                    {{ $t('TU HISTORIA') }}
                 </text>
                 <text
                     x="250"
@@ -182,7 +182,7 @@ const id = (name: string) => `${uid}-${name}`;
                     font-size="16"
                     fill="#171714"
                 >
-                    Lo que pasó
+                    {{ $t('Lo que pasó') }}
                 </text>
                 <text
                     x="250"
@@ -192,7 +192,7 @@ const id = (name: string) => `${uid}-${name}`;
                     font-style="italic"
                     fill="#171714"
                 >
-                    ese día
+                    {{ $t('ese día') }}
                 </text>
                 <rect
                     x="250"
@@ -237,7 +237,7 @@ const id = (name: string) => `${uid}-${name}`;
                     font-weight="600"
                     fill="#171714"
                 >
-                    Tiempo
+                    {{ $t('Tiempo') }}
                 </text>
                 <text
                     x="322"
@@ -248,7 +248,7 @@ const id = (name: string) => `${uid}-${name}`;
                     font-weight="600"
                     fill="#171714"
                 >
-                    Fotos
+                    {{ $t('Fotos') }}
                 </text>
                 <rect
                     x="282"

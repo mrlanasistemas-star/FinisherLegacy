@@ -34,144 +34,194 @@ import {
     CONTACT_URL,
     HOW_IT_WORKS_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
+
+const { t } = useI18n();
 
 const page = usePage();
 const { loginUrl } = useAuthGate();
 const signedIn = computed(() => page.props.auth?.user != null);
 const signUpHref = computed(() => loginUrl('/', 'registro'));
 
-const screens = [
-    {
-        key: 'activar',
-        icon: Nfc,
-        label: 'Activar',
-        title: 'Activa tocando',
-        text: 'Acerca tu tag a la parte de atrás del teléfono y la app lo reconoce. Si tu teléfono no lee NFC, escribes el código.',
-        src: '/images/app/activar.webp',
-        alt: 'Pantalla de la app que pide acercar el Finisher Legacy al teléfono para activarlo',
-    },
-    {
-        key: 'inicio',
-        icon: BookHeart,
-        label: 'Recuerdos',
-        title: 'Tus recuerdos a la mano',
-        text: 'Desde el inicio llegas a tus recuerdos, tu tag y tus mensajes de ánimo. Lo que guardas en la app es lo mismo que ves en la web.',
-        src: '/images/app/inicio.webp',
-        alt: 'Pantalla de inicio de la app con el acceso para activar un Finisher Legacy y Entrenamientos',
-    },
-    {
-        key: 'entrenamientos',
-        icon: Headphones,
-        label: 'Entrenar',
-        title: 'Entrena con tu equipo',
-        text: 'El modo entrenamiento reproduce los mensajes de voz que te dejaron tu familia y tus amigos.',
-        src: '/images/app/entrenamientos.webp',
-        alt: 'Pantalla de Entrenamientos de la app con el modo entrenamiento y los filtros de mensajes',
-    },
-    {
-        key: 'eventos',
-        icon: CalendarDays,
-        label: 'Eventos',
-        title: 'Tu siguiente meta',
-        text: 'Consulta los próximos eventos con sus distancias y sigue lo que comparte la comunidad.',
-        src: '/images/app/eventos.webp',
-        alt: 'Pantalla de Eventos de la app con las próximas carreras y sus distancias',
-    },
-    {
-        key: 'coleccion',
-        icon: ShoppingBag,
-        label: 'Tienda',
-        title: 'Colecciones y tienda',
-        text: 'Gira cada tag para ver su frente y su reverso, elige tu diseño y cómpralo desde el teléfono.',
-        src: '/images/app/coleccion.webp',
-        alt: 'Pantalla de una colección en la app con el tag en primer plano y sus diseños',
-    },
-] as const;
-
-const active = ref<(typeof screens)[number]['key']>('activar');
-const current = computed(
-    () => screens.find((screen) => screen.key === active.value) ?? screens[0],
+const screens = computed(
+    () =>
+        [
+            {
+                key: 'activar',
+                icon: Nfc,
+                label: t('Activar'),
+                title: t('Activa tocando'),
+                text: t(
+                    'Acerca tu tag a la parte de atrás del teléfono y la app lo reconoce. Si tu teléfono no lee NFC, escribes el código.',
+                ),
+                src: '/images/app/activar.webp',
+                alt: t(
+                    'Pantalla de la app que pide acercar el Finisher Legacy al teléfono para activarlo',
+                ),
+            },
+            {
+                key: 'inicio',
+                icon: BookHeart,
+                label: t('Recuerdos'),
+                title: t('Tus recuerdos a la mano'),
+                text: t(
+                    'Desde el inicio llegas a tus recuerdos, tu tag y tus mensajes de ánimo. Lo que guardas en la app es lo mismo que ves en la web.',
+                ),
+                src: '/images/app/inicio.webp',
+                alt: t(
+                    'Pantalla de inicio de la app con el acceso para activar un Finisher Legacy y Entrenamientos',
+                ),
+            },
+            {
+                key: 'entrenamientos',
+                icon: Headphones,
+                label: t('Entrenar'),
+                title: t('Entrena con tu equipo'),
+                text: t(
+                    'El modo entrenamiento reproduce los mensajes de voz que te dejaron tu familia y tus amigos.',
+                ),
+                src: '/images/app/entrenamientos.webp',
+                alt: t(
+                    'Pantalla de Entrenamientos de la app con el modo entrenamiento y los filtros de mensajes',
+                ),
+            },
+            {
+                key: 'eventos',
+                icon: CalendarDays,
+                label: t('Eventos'),
+                title: t('Tu siguiente meta'),
+                text: t(
+                    'Consulta los próximos eventos con sus distancias y sigue lo que comparte la comunidad.',
+                ),
+                src: '/images/app/eventos.webp',
+                alt: t(
+                    'Pantalla de Eventos de la app con las próximas carreras y sus distancias',
+                ),
+            },
+            {
+                key: 'coleccion',
+                icon: ShoppingBag,
+                label: t('Tienda'),
+                title: t('Colecciones y tienda'),
+                text: t(
+                    'Gira cada tag para ver su frente y su reverso, elige tu diseño y cómpralo desde el teléfono.',
+                ),
+                src: '/images/app/coleccion.webp',
+                alt: t(
+                    'Pantalla de una colección en la app con el tag en primer plano y sus diseños',
+                ),
+            },
+        ] as const,
 );
 
-const more = [
+const active = ref<(typeof screens.value)[number]['key']>('activar');
+const current = computed(
+    () =>
+        screens.value.find((screen) => screen.key === active.value) ??
+        screens.value[0],
+);
+
+const more = computed(() => [
     {
         icon: Users,
-        title: 'Comunidad',
-        text: 'Sigue a otros atletas, comparte momentos y celebra sus carreras.',
+        title: t('Comunidad'),
+        text: t(
+            'Sigue a otros atletas, comparte momentos y celebra sus carreras.',
+        ),
     },
     {
         icon: BellRing,
-        title: 'Notificaciones',
-        text: 'Te avisamos de mensajes de ánimo, pedidos y actividad de tu comunidad. Eliges qué categorías recibir.',
+        title: t('Notificaciones'),
+        text: t(
+            'Te avisamos de mensajes de ánimo, pedidos y actividad de tu comunidad. Eliges qué categorías recibir.',
+        ),
     },
     {
         icon: Globe,
-        title: 'Lo mismo en la web',
-        text: 'Tu cuenta es una sola. Lo que haces en la app aparece en finisherlegacy.com y al revés.',
+        title: t('Lo mismo en la web'),
+        text: t(
+            'Tu cuenta es una sola. Lo que haces en la app aparece en finisherlegacy.com y al revés.',
+        ),
     },
-];
+]);
 
-const faqs = [
+const faqs = computed(() => [
     {
-        q: '¿Ya puedo descargar la app?',
-        a: 'Muy pronto estará en App Store y Google Play. Mientras tanto, todo funciona desde este sitio con tu cuenta.',
+        q: t('¿Ya puedo descargar la app?'),
+        a: t(
+            'Muy pronto estará en App Store y Google Play. Mientras tanto, todo funciona desde este sitio con tu cuenta.',
+        ),
     },
     {
-        q: '¿Necesito la app para usar mi tag?',
-        a: 'No. Al tocar el tag, tu recuerdo se abre en el navegador del teléfono. La app hace más cómodo activar, guardar y entrenar.',
+        q: t('¿Necesito la app para usar mi tag?'),
+        a: t(
+            'No. Al tocar el tag, tu recuerdo se abre en el navegador del teléfono. La app hace más cómodo activar, guardar y entrenar.',
+        ),
     },
     {
-        q: '¿Mi familia tiene que instalarla?',
-        a: 'No. Quien toca tu tag o abre tu enlace ve el recuerdo en su navegador, sin app y sin cuenta.',
+        q: t('¿Mi familia tiene que instalarla?'),
+        a: t(
+            'No. Quien toca tu tag o abre tu enlace ve el recuerdo en su navegador, sin app y sin cuenta.',
+        ),
     },
     {
-        q: '¿Tiene costo?',
-        a: 'Crear tu cuenta y usar la app no tiene costo.',
+        q: t('¿Tiene costo?'),
+        a: t('Crear tu cuenta y usar la app no tiene costo.'),
     },
     {
-        q: '¿Y si mi teléfono no tiene NFC?',
-        a: 'Puedes activar y abrir tu tag escribiendo su código, en la app o en la web.',
+        q: t('¿Y si mi teléfono no tiene NFC?'),
+        a: t(
+            'Puedes activar y abrir tu tag escribiendo su código, en la app o en la web.',
+        ),
     },
-];
+]);
 </script>
 
 <template>
     <SeoHead
-        title="App Finisher Legacy"
-        description="La app de Finisher Legacy para iOS y Android: activa tu tag tocándolo, guarda tus recuerdos, entrena con mensajes de voz de tu familia y sigue a tu comunidad. Muy pronto en App Store y Google Play."
+        :title="$t('App Finisher Legacy')"
+        :description="
+            $t(
+                'La app de Finisher Legacy para iOS y Android: activa tu tag tocándolo, guarda tus recuerdos, entrena con mensajes de voz de tu familia y sigue a tu comunidad. Muy pronto en App Store y Google Play.',
+            )
+        "
         image="/images/brand/og-finisher-legacy.jpg"
     />
 
     <PageHero
-        eyebrow="App para iOS y Android"
-        title="Tu legado,"
-        accent="en tu teléfono."
-        lede="Activa tu tag con un toque, guarda tus recuerdos, entrena con la voz de los tuyos y sigue a tu comunidad. Todo con la misma cuenta que usas en la web."
+        :eyebrow="$t('App para iOS y Android')"
+        :title="$t('Tu legado,')"
+        :accent="$t('en tu teléfono.')"
+        :lede="
+            $t(
+                'Activa tu tag con un toque, guarda tus recuerdos, entrena con la voz de los tuyos y sigue a tu comunidad. Todo con la misma cuenta que usas en la web.',
+            )
+        "
         tone="cream"
     >
         <template #actions>
             <Link v-if="!signedIn" :href="signUpHref" class="fl-btn-primary">
-                Crear mi cuenta
+                {{ $t('Crear mi cuenta') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
             <Link
                 :href="ACTIVATE_URL"
                 :class="signedIn ? 'fl-btn-primary' : 'fl-btn-secondary'"
-                >Activar mi tag</Link
+                >{{ $t('Activar mi tag') }}</Link
             >
         </template>
         <p
             class="inline-flex items-center gap-2.5 rounded-full border border-fl-gold/60 bg-white/80 px-4 py-2 text-[13px] font-medium text-fl-gold-ink"
         >
             <span class="ap-dot" aria-hidden="true" />
-            Muy pronto en App Store y Google Play
+            {{ $t('Muy pronto en App Store y Google Play') }}
         </p>
         <template #visual>
             <div class="ap-fan">
                 <div class="ap-fan__side ap-fan__side--l">
                     <PhoneFrame
                         src="/images/app/entrenamientos.webp"
-                        alt="Pantalla de Entrenamientos de la app"
+                        :alt="$t('Pantalla de Entrenamientos de la app')"
                         tilt="left"
                         eager
                     />
@@ -179,7 +229,9 @@ const faqs = [
                 <div class="ap-fan__main">
                     <PhoneFrame
                         src="/images/app/inicio.webp"
-                        alt="Pantalla de inicio de la app Finisher Legacy"
+                        :alt="
+                            $t('Pantalla de inicio de la app Finisher Legacy')
+                        "
                         float
                         eager
                     />
@@ -187,7 +239,7 @@ const faqs = [
                 <div class="ap-fan__side ap-fan__side--r">
                     <PhoneFrame
                         src="/images/app/coleccion.webp"
-                        alt="Pantalla de una colección de tags en la app"
+                        :alt="$t('Pantalla de una colección de tags en la app')"
                         tilt="right"
                         eager
                     />
@@ -199,16 +251,16 @@ const faqs = [
     <section class="fl-section border-t border-border bg-white">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Qué hace"
-                title="Cinco cosas"
-                accent="que haces con el pulgar."
-                text="Estas son pantallas reales de la app."
+                :eyebrow="$t('Qué hace')"
+                :title="$t('Cinco cosas')"
+                :accent="$t('que haces con el pulgar.')"
+                :text="$t('Estas son pantallas reales de la app.')"
             />
 
             <!-- Phones: one real screen per card, swipeable. -->
             <ul
                 class="ap-rail -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 lg:hidden"
-                aria-label="Funciones de la app"
+                :aria-label="$t('Funciones de la app')"
             >
                 <li
                     v-for="screen in screens"
@@ -237,7 +289,7 @@ const faqs = [
                 <div
                     class="flex flex-col gap-2"
                     role="tablist"
-                    aria-label="Funciones de la app"
+                    :aria-label="$t('Funciones de la app')"
                     aria-orientation="vertical"
                 >
                     <button
@@ -292,9 +344,9 @@ const faqs = [
     <section class="fl-section">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Además"
-                title="Y lo que no se ve"
-                accent="en una pantalla."
+                :eyebrow="$t('Además')"
+                :title="$t('Y lo que no se ve')"
+                :accent="$t('en una pantalla.')"
             />
             <ul class="mt-10 grid gap-4 sm:gap-5 md:grid-cols-3">
                 <li
@@ -331,27 +383,32 @@ const faqs = [
                 class="mt-10 flex flex-col gap-6 rounded-hero bg-fl-cream/70 p-7 sm:flex-row sm:items-center sm:justify-between sm:p-10"
             >
                 <div class="max-w-xl">
-                    <p class="fl-eyebrow">Mientras llega a las tiendas</p>
+                    <p class="fl-eyebrow">
+                        {{ $t('Mientras llega a las tiendas') }}
+                    </p>
                     <p
                         class="mt-3 font-serif text-xl leading-snug font-semibold text-foreground sm:text-2xl"
                     >
-                        No tienes que esperar la app para empezar.
+                        {{ $t('No tienes que esperar la app para empezar.') }}
                     </p>
                     <p
                         class="mt-2 text-[0.95rem] leading-relaxed text-muted-foreground"
                     >
-                        Compra tu tag, actívalo y arma tu recuerdo desde este
-                        sitio. Cuando instales la app, todo estará ahí.
+                        {{
+                            $t(
+                                'Compra tu tag, actívalo y arma tu recuerdo desde este sitio. Cuando instales la app, todo estará ahí.',
+                            )
+                        }}
                     </p>
                 </div>
                 <div class="flex shrink-0 flex-wrap gap-3">
                     <Link :href="COLLECTIONS_URL" class="fl-btn-primary">
-                        Ver colecciones
+                        {{ $t('Ver colecciones') }}
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>
-                    <Link :href="HOW_IT_WORKS_URL" class="fl-btn-secondary"
-                        >Cómo funciona</Link
-                    >
+                    <Link :href="HOW_IT_WORKS_URL" class="fl-btn-secondary">{{
+                        $t('Cómo funciona')
+                    }}</Link>
                 </div>
             </div>
         </div>
@@ -361,15 +418,15 @@ const faqs = [
         <div class="fl-container grid gap-10 lg:grid-cols-12">
             <div class="lg:col-span-4">
                 <SectionIntro
-                    eyebrow="Preguntas"
-                    title="Lo que nos preguntan"
-                    accent="de la app."
+                    :eyebrow="$t('Preguntas')"
+                    :title="$t('Lo que nos preguntan')"
+                    :accent="$t('de la app.')"
                 />
                 <Link
                     :href="CONTACT_URL"
                     class="fl-link mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    Ayuda y contacto
+                    {{ $t('Ayuda y contacto') }}
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -380,18 +437,22 @@ const faqs = [
     </section>
 
     <CtaBand
-        title="Empieza hoy en la web."
-        accent="Sigue mañana en la app."
-        text="Tu cuenta, tus recuerdos y tus tags son los mismos en los dos lugares."
+        :title="$t('Empieza hoy en la web.')"
+        :accent="$t('Sigue mañana en la app.')"
+        :text="
+            $t(
+                'Tu cuenta, tus recuerdos y tus tags son los mismos en los dos lugares.',
+            )
+        "
     >
         <template #actions>
             <Link v-if="!signedIn" :href="signUpHref" class="mk-cta-primary">
-                Crear mi cuenta
+                {{ $t('Crear mi cuenta') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
-            <Link :href="ACTIVATE_URL" class="mk-cta-secondary"
-                >Activar mi tag</Link
-            >
+            <Link :href="ACTIVATE_URL" class="mk-cta-secondary">{{
+                $t('Activar mi tag')
+            }}</Link>
         </template>
     </CtaBand>
 

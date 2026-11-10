@@ -58,10 +58,12 @@ import {
     secondaryLinks,
 } from '@/config/public-links';
 import type { NavEntry, SiteLink } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { home, logout, search } from '@/routes';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { show as cartShow } from '@/routes/store/cart';
 
+const { tc } = useI18n();
 const page = usePage();
 const user = computed(() => page.props.auth?.user ?? null);
 const profile = computed(() => page.props.auth?.profile ?? null);
@@ -142,7 +144,7 @@ const navItem =
             <Link
                 :href="home()"
                 class="fl-header__logo shrink-0 rounded-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                aria-label="Finisher Legacy — Inicio"
+                :aria-label="$t('Finisher Legacy — Inicio')"
             >
                 <FinisherLegacyLogo variant="wordmark" size="sm" tone="dark" />
             </Link>
@@ -152,7 +154,7 @@ const navItem =
                 :delay-duration="60"
                 :skip-delay-duration="250"
                 class="relative hidden flex-1 justify-center lg:flex"
-                aria-label="Navegación principal"
+                :aria-label="$t('Navegación principal')"
             >
                 <NavigationMenuList class="flex items-center gap-0.5">
                     <NavigationMenuItem
@@ -174,7 +176,7 @@ const navItem =
                                         : 'text-foreground/65',
                                 ]"
                             >
-                                {{ entry.label }}
+                                {{ $t(entry.label) }}
                                 <ChevronDown
                                     class="size-3.5 transition-transform duration-300 group-data-[state=open]:rotate-180 motion-reduce:transition-none"
                                     aria-hidden="true"
@@ -213,7 +215,7 @@ const navItem =
                                                         <span
                                                             class="flex items-center gap-1.5 text-sm font-semibold text-foreground"
                                                         >
-                                                            {{ link.label }}
+                                                            {{ $t(link.label) }}
                                                             <ArrowRight
                                                                 class="size-3.5 -translate-x-1 text-fl-gold-ink opacity-0 transition-[opacity,transform] duration-300 group-hover/link:translate-x-0 group-hover/link:opacity-100 motion-reduce:transition-none"
                                                                 aria-hidden="true"
@@ -222,7 +224,9 @@ const navItem =
                                                         <span
                                                             class="mt-0.5 block text-[12.5px] leading-snug text-muted-foreground"
                                                             >{{
-                                                                link.description
+                                                                $t(
+                                                                    link.description,
+                                                                )
                                                             }}</span
                                                         >
                                                     </span>
@@ -251,21 +255,25 @@ const navItem =
                                             <span
                                                 class="text-[10px] font-semibold tracking-[0.22em] text-fl-gold-soft uppercase"
                                                 >{{
-                                                    entry.feature.eyebrow
+                                                    $t(entry.feature.eyebrow)
                                                 }}</span
                                             >
                                             <span
                                                 class="mt-1.5 font-serif text-lg leading-tight font-semibold"
-                                                >{{ entry.feature.title }}</span
+                                                >{{
+                                                    $t(entry.feature.title)
+                                                }}</span
                                             >
                                             <span
                                                 class="mt-1.5 text-[12.5px] leading-snug text-white/75"
-                                                >{{ entry.feature.text }}</span
+                                                >{{
+                                                    $t(entry.feature.text)
+                                                }}</span
                                             >
                                             <span
                                                 class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-fl-gold-soft"
                                             >
-                                                {{ entry.feature.cta }}
+                                                {{ $t(entry.feature.cta) }}
                                                 <ArrowRight
                                                     class="size-3.5 transition-transform duration-300 group-hover/feature:translate-x-1 motion-reduce:transform-none"
                                                     aria-hidden="true"
@@ -294,7 +302,7 @@ const navItem =
                                     isActive(entry) ? 'page' : undefined
                                 "
                             >
-                                {{ entry.label }}
+                                {{ $t(entry.label) }}
                             </Link>
                         </NavigationMenuLink>
                     </NavigationMenuItem>
@@ -313,7 +321,7 @@ const navItem =
                 <Link
                     :href="search()"
                     :class="[iconButton, 'max-[399px]:hidden']"
-                    aria-label="Buscar atletas, eventos y productos"
+                    :aria-label="$t('Buscar atletas, eventos y productos')"
                 >
                     <Search class="size-[19px]" />
                 </Link>
@@ -323,8 +331,11 @@ const navItem =
                     :class="iconButton"
                     :aria-label="
                         cartCount > 0
-                            ? `Carrito (${cartCount} artículos)`
-                            : 'Carrito'
+                            ? tc(
+                                  'Carrito ({count} artículo)|Carrito ({count} artículos)',
+                                  cartCount,
+                              )
+                            : $t('Carrito')
                     "
                 >
                     <ShoppingBag class="size-[19px]" />
@@ -346,8 +357,10 @@ const navItem =
                         :class="iconButton"
                         :aria-label="
                             unread > 0
-                                ? `Notificaciones (${unread} sin leer)`
-                                : 'Notificaciones'
+                                ? $t('Notificaciones ({count} sin leer)', {
+                                      count: unread,
+                                  })
+                                : $t('Notificaciones')
                         "
                     >
                         <Bell class="size-[19px]" />
@@ -372,7 +385,7 @@ const navItem =
                             <button
                                 type="button"
                                 class="ml-1.5 hidden items-center gap-2 rounded-full border border-border bg-white py-1 pr-2.5 pl-1 text-sm transition-colors duration-200 hover:border-foreground/25 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[state=open]:border-foreground/25 md:flex"
-                                aria-label="Menú de tu cuenta"
+                                :aria-label="$t('Menú de tu cuenta')"
                             >
                                 <Avatar class="size-7 rounded-full">
                                     <AvatarImage
@@ -433,7 +446,7 @@ const navItem =
                         <button
                             type="button"
                             :class="[iconButton, 'lg:hidden']"
-                            aria-label="Abrir menú"
+                            :aria-label="$t('Abrir menú')"
                         >
                             <Menu class="size-5" />
                         </button>
@@ -442,10 +455,12 @@ const navItem =
                         side="right"
                         class="flex w-[90vw] max-w-sm flex-col gap-0 overflow-y-auto overscroll-contain bg-white p-0 shadow-fl-overlay"
                     >
-                        <SheetTitle class="sr-only">Menú</SheetTitle>
-                        <SheetDescription class="sr-only"
-                            >Navegación principal y tu cuenta.</SheetDescription
-                        >
+                        <SheetTitle class="sr-only">{{
+                            $t('Menú')
+                        }}</SheetTitle>
+                        <SheetDescription class="sr-only">{{
+                            $t('Navegación principal y tu cuenta.')
+                        }}</SheetDescription>
                         <div
                             class="flex h-16 shrink-0 items-center px-5 pt-[env(safe-area-inset-top)]"
                         >
@@ -514,7 +529,7 @@ const navItem =
 
                         <nav
                             class="flex flex-col px-3 pt-4"
-                            aria-label="Navegación principal"
+                            :aria-label="$t('Navegación principal')"
                         >
                             <template
                                 v-for="entry in navEntries"
@@ -522,7 +537,7 @@ const navItem =
                             >
                                 <div v-if="entry.kind === 'menu'" class="pb-2">
                                     <p class="fl-eyebrow px-3 pt-3 pb-1.5">
-                                        {{ entry.label }}
+                                        {{ $t(entry.label) }}
                                     </p>
                                     <SheetClose
                                         v-for="link in entry.links"
@@ -550,7 +565,7 @@ const navItem =
                                             </span>
                                             <span
                                                 class="text-[15px] font-medium text-foreground"
-                                                >{{ link.label }}</span
+                                                >{{ $t(link.label) }}</span
                                             >
                                         </Link>
                                     </SheetClose>
@@ -568,7 +583,7 @@ const navItem =
                                             isActive(entry) ? 'page' : undefined
                                         "
                                     >
-                                        {{ entry.label }}
+                                        {{ $t(entry.label) }}
                                         <span
                                             v-if="isActive(entry)"
                                             class="size-1.5 rounded-full bg-fl-gold"
@@ -598,7 +613,7 @@ const navItem =
                                         class="size-3.5"
                                         aria-hidden="true"
                                     />
-                                    {{ link.label }}
+                                    {{ $t(link.label) }}
                                 </Link>
                             </SheetClose>
                         </div>
@@ -626,7 +641,7 @@ const navItem =
                                                 aria-hidden="true"
                                             />
                                             <span class="flex-1">{{
-                                                item.label
+                                                $t(item.label)
                                             }}</span>
                                             <span
                                                 v-if="item.count"

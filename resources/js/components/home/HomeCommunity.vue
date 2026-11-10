@@ -19,10 +19,11 @@ import {
     UserRound,
     Users,
 } from '@lucide/vue';
-import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import { vReveal } from '@/composables/useReveal';
 import { MEDIA } from '@/config/media';
 import { COMMUNITY_URL, PEOPLE_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import {
     prefersReducedMotion,
     useOnScreen,
@@ -30,6 +31,8 @@ import {
     vStage,
 } from './homeMotion';
 import HomeSectionHead from './HomeSectionHead.vue';
+
+const { t } = useI18n();
 
 const photo = MEDIA.photo.triumph;
 
@@ -57,28 +60,28 @@ onBeforeUnmount(() => {
     }
 });
 
-const points = [
+const points = computed(() => [
     {
         icon: Camera,
-        title: 'Comparte tus momentos',
-        text: 'Carreras, entrenamientos y fotos.',
+        title: t('Comparte tus momentos'),
+        text: t('Carreras, entrenamientos y fotos.'),
     },
     {
         icon: Heart,
-        title: 'Celebra a los demás',
-        text: 'Reacciones y comentarios.',
+        title: t('Celebra a los demás'),
+        text: t('Reacciones y comentarios.'),
     },
     {
         icon: Users,
-        title: 'Sigue a otros atletas',
-        text: 'Los que corrieron contigo y los que te inspiran.',
+        title: t('Sigue a otros atletas'),
+        text: t('Los que corrieron contigo y los que te inspiran.'),
     },
     {
         icon: Medal,
-        title: 'Tu perfil público',
-        text: 'Con tus resultados y tus medallas.',
+        title: t('Tu perfil público'),
+        text: t('Con tus resultados y tus medallas.'),
     },
-];
+]);
 </script>
 
 <template>
@@ -98,7 +101,11 @@ const points = [
                     v-reveal="{ y: 28 }"
                     class="relative mx-auto w-full max-w-[30rem] pt-6 pb-16"
                     role="img"
-                    aria-label="Ilustración del feed de la comunidad: una publicación con foto, reacciones, un comentario y una sugerencia para seguir a otro atleta."
+                    :aria-label="
+                        $t(
+                            'Ilustración del feed de la comunidad: una publicación con foto, reacciones, un comentario y una sugerencia para seguir a otro atleta.',
+                        )
+                    "
                 >
                     <div
                         class="pointer-events-none absolute inset-x-[-8%] inset-y-0 rounded-[3rem] bg-[radial-gradient(60%_55%_at_50%_50%,color-mix(in_srgb,var(--fl-gold)_22%,transparent),transparent_75%)]"
@@ -123,11 +130,11 @@ const points = [
                                 <span class="text-xs leading-tight">
                                     <span
                                         class="block font-semibold text-fl-black"
-                                        >Atleta</span
+                                        >{{ $t('Atleta') }}</span
                                     >
-                                    <span class="text-fl-stone"
-                                        >compartió un resultado</span
-                                    >
+                                    <span class="text-fl-stone">{{
+                                        $t('compartió un resultado')
+                                    }}</span>
                                 </span>
                             </div>
                             <div
@@ -156,12 +163,13 @@ const points = [
                                 <UserRound class="size-5" />
                             </span>
                             <span class="text-sm leading-tight">
-                                <span class="block font-semibold text-fl-black"
-                                    >Atleta</span
+                                <span
+                                    class="block font-semibold text-fl-black"
+                                    >{{ $t('Atleta') }}</span
                                 >
-                                <span class="text-xs text-fl-stone"
-                                    >Medio maratón · hace un momento</span
-                                >
+                                <span class="text-xs text-fl-stone">{{
+                                    $t('Medio maratón · hace un momento')
+                                }}</span>
                             </span>
                         </div>
                         <div
@@ -178,7 +186,11 @@ const points = [
                             />
                         </div>
                         <p class="mt-3 text-sm text-fl-black">
-                            Lo logré. Meses de madrugar valieron cada kilómetro.
+                            {{
+                                $t(
+                                    'Lo logré. Meses de madrugar valieron cada kilómetro.',
+                                )
+                            }}
                         </p>
                         <div
                             class="mt-3 flex items-center gap-2 border-t border-fl-line pt-3"
@@ -187,7 +199,7 @@ const points = [
                                 class="relative inline-flex h-9 items-center gap-1.5 rounded-full bg-fl-black px-3 text-xs font-semibold text-fl-gold"
                             >
                                 <Heart class="feed-beat size-4 fill-current" />
-                                Celebrar
+                                {{ $t('Celebrar') }}
                                 <Heart
                                     v-for="n in 4"
                                     :key="n"
@@ -202,7 +214,7 @@ const points = [
                                 class="inline-flex h-9 items-center gap-1.5 rounded-full bg-fl-paper px-3 text-xs font-semibold text-fl-black"
                             >
                                 <MessageCircle class="size-4" />
-                                Comentar
+                                {{ $t('Comentar') }}
                             </span>
                         </div>
                         <!-- Comment -->
@@ -215,7 +227,11 @@ const points = [
                             <span
                                 class="rounded-2xl rounded-tl-sm bg-fl-paper px-3 py-2 text-xs text-fl-black"
                             >
-                                ¡Qué carrera! Felicidades, te la ganaste.
+                                {{
+                                    $t(
+                                        '¡Qué carrera! Felicidades, te la ganaste.',
+                                    )
+                                }}
                             </span>
                         </div>
                     </div>
@@ -237,8 +253,12 @@ const points = [
                             <span
                                 class="min-w-0 flex-1 text-xs leading-tight text-white"
                             >
-                                <span class="block font-semibold">Atleta</span>
-                                <span class="text-white/55">Triatlón</span>
+                                <span class="block font-semibold">{{
+                                    $t('Atleta')
+                                }}</span>
+                                <span class="text-white/55">{{
+                                    $t('Triatlón')
+                                }}</span>
                             </span>
                             <span
                                 class="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[11px] font-semibold transition-colors duration-500 motion-reduce:transition-none"
@@ -252,13 +272,13 @@ const points = [
                                     :is="following ? Check : Plus"
                                     class="size-3.5"
                                 />
-                                {{ following ? 'Siguiendo' : 'Seguir' }}
+                                {{ following ? $t('Siguiendo') : $t('Seguir') }}
                             </span>
                         </div>
                     </div>
                 </div>
                 <p class="mt-5 text-center text-[11px] text-fl-stone/80">
-                    Ilustración de ejemplo del feed.
+                    {{ $t('Ilustración de ejemplo del feed.') }}
                 </p>
             </div>
 
@@ -266,9 +286,13 @@ const points = [
             <div class="lg:col-span-6 lg:pl-6">
                 <HomeSectionHead
                     id="community-title"
-                    eyebrow="Comunidad"
-                    title="Tu historia no se corre sola."
-                    lead="Una red social hecha para quienes entrenan y compiten: comparte lo que vives y celebra lo que logran los demás."
+                    :eyebrow="$t('Comunidad')"
+                    :title="$t('Tu historia no se corre sola.')"
+                    :lead="
+                        $t(
+                            'Una red social hecha para quienes entrenan y compiten: comparte lo que vives y celebra lo que logran los demás.',
+                        )
+                    "
                 />
 
                 <ul
@@ -301,7 +325,7 @@ const points = [
                     class="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center"
                 >
                     <Link :href="COMMUNITY_URL" class="fl-btn-primary group">
-                        Entrar a la comunidad
+                        {{ $t('Entrar a la comunidad') }}
                         <ArrowRight
                             class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                             aria-hidden="true"
@@ -311,9 +335,9 @@ const points = [
                         :href="PEOPLE_URL"
                         class="inline-flex min-h-11 items-center text-sm font-semibold text-foreground"
                     >
-                        <span class="fl-link fl-link--gold"
-                            >Buscar atletas</span
-                        >
+                        <span class="fl-link fl-link--gold">{{
+                            $t('Buscar atletas')
+                        }}</span>
                     </Link>
                 </div>
             </div>

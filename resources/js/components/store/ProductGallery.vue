@@ -28,6 +28,7 @@ import {
 } from 'reka-ui';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import ProductImagePlaceholder from '@/components/shared/ProductImagePlaceholder.vue';
+import { useI18n } from '@/i18n';
 
 export type GalleryEntry = {
     key: string;
@@ -52,6 +53,8 @@ const props = withDefaults(
     }>(),
     { note: null, badge: null },
 );
+
+const { t } = useI18n();
 
 const active = ref(0);
 const zoomed = ref(false);
@@ -126,14 +129,14 @@ function onKey(event: KeyboardEvent) {
 
 function thumbLabel(item: GalleryEntry, index: number): string {
     if (item.type === 'video') {
-        return `Ver video ${index + 1}`;
+        return t('Ver video {number}', { number: index + 1 });
     }
 
     if (item.type === 'model_3d') {
-        return 'Ver en 3D';
+        return t('Ver en 3D');
     }
 
-    return `Ver imagen ${index + 1}`;
+    return t('Ver imagen {number}', { number: index + 1 });
 }
 </script>
 
@@ -145,8 +148,14 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                 class="fl-stage relative aspect-[4/5] overflow-hidden rounded-media border border-border bg-[#f1efe9] sm:aspect-square lg:aspect-[5/6]"
                 tabindex="0"
                 role="group"
-                :aria-roledescription="'galería'"
-                :aria-label="`${productName}: elemento ${active + 1} de ${Math.max(count, 1)}`"
+                :aria-roledescription="$t('galería')"
+                :aria-label="
+                    $t('{name}: elemento {current} de {total}', {
+                        name: productName,
+                        current: active + 1,
+                        total: Math.max(count, 1),
+                    })
+                "
                 @keydown="onKey"
                 @touchstart.passive="onTouchStart"
                 @touchend.passive="onTouchEnd"
@@ -161,7 +170,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                         :key="current.key"
                         :src="current.url"
                         :poster="posterFor3d"
-                        :alt="current.alt || `${productName} en 3D`"
+                        :alt="current.alt || $t('{name} en 3D', { name: productName })"
                     />
                     <video
                         v-else-if="current.type === 'video'"
@@ -181,7 +190,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                         class="block size-full overflow-hidden"
                         :class="zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'"
                         :aria-label="
-                            zoomed ? 'Reducir imagen' : 'Ampliar imagen'
+                            zoomed ? $t('Reducir imagen') : $t('Ampliar imagen')
                         "
                         :aria-pressed="zoomed"
                         @click="toggleZoom"
@@ -238,7 +247,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                     <button
                         type="button"
                         class="flex size-11 items-center justify-center rounded-full bg-white/90 text-foreground shadow-sm backdrop-blur transition hover:bg-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        aria-label="Ver en pantalla completa"
+                        :aria-label="$t('Ver en pantalla completa')"
                         @click="lightbox = true"
                     >
                         <Expand class="size-4" />
@@ -249,7 +258,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                     <button
                         type="button"
                         class="fl-stage__nav left-3"
-                        aria-label="Anterior"
+                        :aria-label="$t('Anterior')"
                         @click="go(-1)"
                     >
                         <ChevronLeft class="size-5" />
@@ -257,7 +266,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                     <button
                         type="button"
                         class="fl-stage__nav right-3"
-                        aria-label="Siguiente"
+                        :aria-label="$t('Siguiente')"
                         @click="go(1)"
                     >
                         <ChevronRight class="size-5" />
@@ -287,7 +296,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
             v-if="count > 1"
             class="flex gap-2 overflow-x-auto pb-1 lg:max-h-[42rem] lg:w-[4.75rem] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0"
             role="tablist"
-            aria-label="Galería del producto"
+            :aria-label="$t('Galería del producto')"
             aria-orientation="vertical"
         >
             <button
@@ -344,8 +353,11 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                 >
                     <DialogTitle class="sr-only">{{ productName }}</DialogTitle>
                     <DialogDescription class="sr-only">
-                        Galería en pantalla completa. Usa las flechas para
-                        navegar.
+                        {{
+                            $t(
+                                'Galería en pantalla completa. Usa las flechas para navegar.',
+                            )
+                        }}
                     </DialogDescription>
                     <div
                         class="flex items-center justify-between px-4 py-3 sm:px-6"
@@ -360,7 +372,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                         </p>
                         <DialogClose
                             class="flex size-11 items-center justify-center rounded-full bg-white text-foreground shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            aria-label="Cerrar"
+                            :aria-label="$t('Cerrar')"
                         >
                             <X class="size-5" />
                         </DialogClose>
@@ -386,7 +398,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                                 <Product3DViewer
                                     :src="current.url"
                                     :poster="posterFor3d"
-                                    :alt="current.alt || `${productName} en 3D`"
+                                    :alt="current.alt || $t('{name} en 3D', { name: productName })"
                                 />
                             </div>
                             <img
@@ -402,7 +414,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                             <button
                                 type="button"
                                 class="fl-stage__nav left-2 sm:left-4"
-                                aria-label="Anterior"
+                                :aria-label="$t('Anterior')"
                                 @click="go(-1)"
                             >
                                 <ChevronLeft class="size-5" />
@@ -410,7 +422,7 @@ function thumbLabel(item: GalleryEntry, index: number): string {
                             <button
                                 type="button"
                                 class="fl-stage__nav right-2 sm:right-4"
-                                aria-label="Siguiente"
+                                :aria-label="$t('Siguiente')"
                                 @click="go(1)"
                             >
                                 <ChevronRight class="size-5" />

@@ -17,6 +17,7 @@ import {
     useTemplateRef,
 } from 'vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
+import { useI18n } from '@/i18n';
 import type { TagPose } from './tagStageContext';
 import { TAG_STAGE } from './tagStageContext';
 
@@ -37,6 +38,7 @@ const props = withDefaults(
     },
 );
 
+const { t } = useI18n();
 const id = Math.floor(Math.random() * 1e9);
 const stage = inject(TAG_STAGE, null);
 const el = useTemplateRef<HTMLElement>('el');
@@ -58,11 +60,17 @@ const art = computed(
         },
 );
 
-const ariaLabel = computed(
-    () =>
-        props.label ??
-        `Finisher Legacy Tag ilustrativo, colección ${art.value.name}${art.value.year ? ` ${art.value.year}` : ''}${props.pose.face === 'back' ? ', reverso con el sello NFC' : ''}.`,
-);
+const ariaLabel = computed(() => {
+    if (props.label !== null && props.label !== undefined) {
+        return props.label;
+    }
+
+    const name = `${art.value.name}${art.value.year ? ` ${art.value.year}` : ''}`;
+
+    return props.pose.face === 'back'
+        ? t('Finisher Legacy Tag ilustrativo, colección {name}, reverso con el sello NFC.', { name })
+        : t('Finisher Legacy Tag ilustrativo, colección {name}.', { name });
+});
 
 onMounted(() => {
     if (stage && el.value) {

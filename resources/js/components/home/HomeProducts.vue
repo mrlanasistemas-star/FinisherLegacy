@@ -17,6 +17,7 @@
 import { Link } from '@inertiajs/vue3';
 import { ArrowLeft, ArrowRight, ArrowUpRight } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import Money from '@/components/shared/Money.vue';
 import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import { vReveal } from '@/composables/useReveal';
@@ -108,9 +109,13 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
             >
                 <HomeSectionHead
                     id="products-title"
-                    eyebrow="Tienda"
-                    title="Colecciones y equipo para tu día de carrera."
-                    lead="Cada destino tiene su propio tag de colección. Y para llegar a la meta, equipo pensado para atletas."
+                    :eyebrow="$t('Tienda')"
+                    :title="$t('Colecciones y equipo para tu día de carrera.')"
+                    :lead="
+                        $t(
+                            'Cada destino tiene su propio tag de colección. Y para llegar a la meta, equipo pensado para atletas.',
+                        )
+                    "
                 />
                 <div
                     v-if="hasAnything"
@@ -118,7 +123,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                     class="flex shrink-0 items-center gap-3"
                 >
                     <Link :href="storeIndex()" class="fl-btn-secondary">
-                        Ver toda la tienda
+                        {{ $t('Ver toda la tienda') }}
                     </Link>
                     <div
                         v-if="canPrev || canNext"
@@ -128,7 +133,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                             type="button"
                             class="rail-btn"
                             :disabled="!canPrev"
-                            aria-label="Productos anteriores"
+                            :aria-label="$t('Productos anteriores')"
                             @click="move(-1)"
                         >
                             <ArrowLeft class="size-4" aria-hidden="true" />
@@ -137,7 +142,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                             type="button"
                             class="rail-btn"
                             :disabled="!canNext"
-                            aria-label="Más productos"
+                            :aria-label="$t('Más productos')"
                             @click="move(1)"
                         >
                             <ArrowRight class="size-4" aria-hidden="true" />
@@ -154,7 +159,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
             v-reveal="{ y: 24 }"
             class="rail mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto pt-2 pb-8 lg:mt-14"
             tabindex="0"
-            aria-label="Colecciones y productos de la tienda"
+            :aria-label="$t('Colecciones y productos de la tienda')"
             @scroll.passive="measure"
         >
             <li
@@ -173,7 +178,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                     >
                         <span
                             class="absolute top-4 left-4 z-10 inline-flex h-7 items-center rounded-full bg-fl-black px-3 text-[10px] font-bold tracking-[0.16em] text-fl-gold uppercase"
-                            >Tag de colección</span
+                            >{{ $t('Tag de colección') }}</span
                         >
                         <span
                             class="absolute inset-x-0 top-[13%] mx-auto block w-[44%] transition-transform duration-700 ease-legacy group-hover:-translate-y-1.5 group-hover:-rotate-3 motion-reduce:transition-none"
@@ -203,14 +208,17 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                             class="mt-auto flex items-center justify-between pt-4 text-sm text-muted-foreground"
                         >
                             <span v-if="collection.from_price_minor !== null">
-                                Desde
-                                <Money
-                                    :minor="collection.from_price_minor"
-                                    :currency="collection.currency"
-                                    class="font-semibold text-foreground"
-                                />
+                                <I18nT :text="$t('Desde {price}')">
+                                    <template #price>
+                                        <Money
+                                            :minor="collection.from_price_minor"
+                                            :currency="collection.currency"
+                                            class="font-semibold text-foreground"
+                                        />
+                                    </template>
+                                </I18nT>
                             </span>
-                            <span v-else>Muy pronto</span>
+                            <span v-else>{{ $t('Muy pronto') }}</span>
                             <span
                                 class="grid size-9 place-items-center rounded-full border border-foreground/10 text-foreground transition-all duration-300 group-hover:rotate-45 group-hover:border-fl-black group-hover:bg-fl-black group-hover:text-white motion-reduce:transition-none"
                                 aria-hidden="true"
@@ -287,17 +295,27 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                             class="mt-auto flex items-center justify-between pt-4 text-sm text-muted-foreground"
                         >
                             <span v-if="product.from_price_minor !== null">
-                                <template v-if="product.variant_count > 1"
-                                    >Desde
-                                </template>
+                                <I18nT
+                                    v-if="product.variant_count > 1"
+                                    :text="$t('Desde {price}')"
+                                >
+                                    <template #price>
+                                        <Money
+                                            :minor="product.from_price_minor"
+                                            :currency="product.currency"
+                                            class="font-semibold text-foreground"
+                                        />
+                                    </template>
+                                </I18nT>
                                 <Money
+                                    v-else
                                     :minor="product.from_price_minor"
                                     :currency="product.currency"
                                     class="font-semibold text-foreground"
                                 />
                             </span>
                             <span v-else>{{
-                                product.availability_label ?? 'Muy pronto'
+                                product.availability_label ?? $t('Muy pronto')
                             }}</span>
                             <span
                                 class="grid size-9 place-items-center rounded-full border border-foreground/10 text-foreground transition-all duration-300 group-hover:rotate-45 group-hover:border-fl-black group-hover:bg-fl-black group-hover:text-white motion-reduce:transition-none"
@@ -328,16 +346,17 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                     <span>
                         <span
                             class="block font-serif text-2xl leading-tight font-semibold tracking-[-0.02em]"
-                            >¿Tu carrera no está aquí todavía?</span
+                            >{{ $t('¿Tu carrera no está aquí todavía?') }}</span
                         >
-                        <span class="mt-2 block text-sm text-white/65"
-                            >Mira todas las colecciones y las que vienen en
-                            camino.</span
-                        >
+                        <span class="mt-2 block text-sm text-white/65">{{
+                            $t(
+                                'Mira todas las colecciones y las que vienen en camino.',
+                            )
+                        }}</span>
                         <span
                             class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-fl-gold"
                         >
-                            Ver colecciones
+                            {{ $t('Ver colecciones') }}
                             <ArrowRight
                                 class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                                 aria-hidden="true"
@@ -356,17 +375,22 @@ onBeforeUnmount(() => window.removeEventListener('resize', measure));
                 <p
                     class="font-serif text-3xl leading-tight font-semibold text-foreground sm:text-4xl"
                 >
-                    Las primeras colecciones están por llegar.
+                    {{ $t('Las primeras colecciones están por llegar.') }}
                 </p>
                 <p class="mt-4 max-w-lg text-muted-foreground">
-                    Estamos terminando los diseños. Mientras tanto, conoce cómo
-                    funciona tu tag de principio a fin.
+                    {{
+                        $t(
+                            'Estamos terminando los diseños. Mientras tanto, conoce cómo funciona tu tag de principio a fin.',
+                        )
+                    }}
                 </p>
                 <Link
                     :href="howItWorks()"
                     class="group mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    <span class="fl-link fl-link--gold">Cómo funciona</span>
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Cómo funciona')
+                    }}</span>
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>

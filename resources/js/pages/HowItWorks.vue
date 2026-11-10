@@ -22,7 +22,7 @@ import {
     Nfc,
     Timer,
 } from '@lucide/vue';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import CtaBand from '@/components/marketing/CtaBand.vue';
 import EcosystemGrid from '@/components/marketing/EcosystemGrid.vue';
 import FaqList from '@/components/marketing/FaqList.vue';
@@ -40,71 +40,96 @@ import {
     CONTACT_URL,
     MEMORIES_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
+
+const { t } = useI18n();
 
 type StepKey = 'buy' | 'receive' | 'tap' | 'memory' | 'share' | 'family';
 
-const steps: {
-    key: StepKey;
-    verb: string;
-    title: string;
-    body: string;
-    points: string[];
-}[] = [
+const steps = computed<
+    {
+        key: StepKey;
+        verb: string;
+        title: string;
+        body: string;
+        points: string[];
+    }[]
+>(() => [
     {
         key: 'buy',
-        verb: 'Compra',
-        title: 'Eliges el tag de tu carrera.',
-        body: 'Cada colección tiene el diseño de su destino y su disciplina. Lo compras en la tienda en línea, en un evento o con un aliado.',
+        verb: t('Compra'),
+        title: t('Eliges el tag de tu carrera.'),
+        body: t(
+            'Cada colección tiene el diseño de su destino y su disciplina. Lo compras en la tienda en línea, en un evento o con un aliado.',
+        ),
         points: [
-            'Un diseño por carrera y por destino',
-            'Running, triatlón, ciclismo, HYROX y más',
+            t('Un diseño por carrera y por destino'),
+            t('Running, triatlón, ciclismo, HYROX y más'),
         ],
     },
     {
         key: 'receive',
-        verb: 'Recibe',
-        title: 'Llega listo para usarse.',
-        body: 'El tag viene terminado de fábrica, con su correa y su chip NFC dentro. No hay que esperar a que lo personalicen ni configurar nada.',
+        verb: t('Recibe'),
+        title: t('Llega listo para usarse.'),
+        body: t(
+            'El tag viene terminado de fábrica, con su correa y su chip NFC dentro. No hay que esperar a que lo personalicen ni configurar nada.',
+        ),
         points: [
-            'Frente con el arte de tu colección',
-            'Reverso con el monograma y la marca NFC',
+            t('Frente con el arte de tu colección'),
+            t('Reverso con el monograma y la marca NFC'),
         ],
     },
     {
         key: 'tap',
-        verb: 'Activa tocando',
-        title: 'Acerca tu teléfono. Eso es todo.',
-        body: 'El chip NFC abre tu tag en el teléfono. Inicias sesión o creas tu cuenta, confirmas, y desde ese momento el tag es tuyo.',
+        verb: t('Activa tocando'),
+        title: t('Acerca tu teléfono. Eso es todo.'),
+        body: t(
+            'El chip NFC abre tu tag en el teléfono. Inicias sesión o creas tu cuenta, confirmas, y desde ese momento el tag es tuyo.',
+        ),
         points: [
-            'Desde la app o desde el navegador',
-            '¿Tu teléfono no lee NFC? Escribe el código del tag',
+            t('Desde la app o desde el navegador'),
+            t('¿Tu teléfono no lee NFC? Escribe el código del tag'),
         ],
     },
     {
         key: 'memory',
-        verb: 'Completa tu recuerdo',
-        title: 'Guardas lo que pasó detrás del resultado.',
-        body: 'Tus fotos, tu historia, tu resultado y un mensaje de voz. Lo completas el mismo día o poco a poco: tu recuerdo siempre se puede seguir escribiendo.',
-        points: ['Fotos', 'Historia', 'Resultado', 'Mensaje de voz'],
+        verb: t('Completa tu recuerdo'),
+        title: t('Guardas lo que pasó detrás del resultado.'),
+        body: t(
+            'Tus fotos, tu historia, tu resultado y un mensaje de voz. Lo completas el mismo día o poco a poco: tu recuerdo siempre se puede seguir escribiendo.',
+        ),
+        points: [
+            t('Fotos'),
+            t('Historia'),
+            t('Resultado'),
+            t('Mensaje de voz'),
+        ],
     },
     {
         key: 'share',
-        verb: 'Comparte',
-        title: 'Con quienes estuvieron contigo.',
-        body: 'Creas un enlace para cada persona y decides quién puede ver tu recuerdo. Si cambias de opinión, revocas el enlace cuando quieras.',
+        verb: t('Comparte'),
+        title: t('Con quienes estuvieron contigo.'),
+        body: t(
+            'Creas un enlace para cada persona y decides quién puede ver tu recuerdo. Si cambias de opinión, revocas el enlace cuando quieras.',
+        ),
         points: [
-            'Público, solo con enlace o privado',
-            'Enlaces que puedes revocar',
+            t('Público, solo con enlace o privado'),
+            t('Enlaces que puedes revocar'),
         ],
     },
     {
         key: 'family',
-        verb: 'Tu familia lo abre',
-        title: 'Sin instalar nada.',
-        body: 'Quien recibe tu enlace, o acerca su teléfono a tu tag, ve tu recuerdo en el navegador. No necesita la app ni una cuenta.',
-        points: ['Se abre en cualquier teléfono', 'Sin app y sin registro'],
+        verb: t('Tu familia lo abre'),
+        title: t('Sin instalar nada.'),
+        body: t(
+            'Quien recibe tu enlace, o acerca su teléfono a tu tag, ve tu recuerdo en el navegador. No necesita la app ni una cuenta.',
+        ),
+        points: [
+            t('Se abre en cualquier teléfono'),
+            t('Sin app y sin registro'),
+        ],
     },
-];
+]);
 
 const collectionArt = [
     {
@@ -118,93 +143,107 @@ const collectionArt = [
     { name: 'Veracruz', art: '/images/collections/tag-art/veracruz.webp' },
 ];
 
-const memoryChips = [
-    { icon: ImageIcon, label: 'Fotos' },
-    { icon: BookHeart, label: 'Historia' },
-    { icon: Timer, label: 'Resultado' },
-    { icon: Mic, label: 'Mensaje de voz' },
-];
+const memoryChips = computed(() => [
+    { icon: ImageIcon, label: t('Fotos') },
+    { icon: BookHeart, label: t('Historia') },
+    { icon: Timer, label: t('Resultado') },
+    { icon: Mic, label: t('Mensaje de voz') },
+]);
 
-const privacyLevels = [
-    { icon: Globe, label: 'Público' },
-    { icon: Link2, label: 'Solo con enlace' },
-    { icon: Lock, label: 'Privado' },
-];
+const privacyLevels = computed(() => [
+    { icon: Globe, label: t('Público') },
+    { icon: Link2, label: t('Solo con enlace') },
+    { icon: Lock, label: t('Privado') },
+]);
 
-const ways = [
+const ways = computed(() => [
     {
         icon: Nfc,
-        eyebrow: 'Así se abre',
-        title: 'Con un toque',
-        body: 'Acerca la parte de atrás de tu teléfono al tag. El chip NFC hace el resto.',
+        eyebrow: t('Así se abre'),
+        title: t('Con un toque'),
+        body: t(
+            'Acerca la parte de atrás de tu teléfono al tag. El chip NFC hace el resto.',
+        ),
     },
     {
         icon: KeyRound,
-        eyebrow: 'Si tu teléfono no lee NFC',
-        title: 'Con su código',
-        body: 'Entra a Activar y escribe el código que viene con tu tag. Llegas al mismo lugar.',
+        eyebrow: t('Si tu teléfono no lee NFC'),
+        title: t('Con su código'),
+        body: t(
+            'Entra a Activar y escribe el código que viene con tu tag. Llegas al mismo lugar.',
+        ),
     },
-];
+]);
 
-const inside = [
+const inside = computed(() => [
     {
         icon: ImageIcon,
-        title: 'Fotos',
-        text: 'Las de la salida, la ruta y la meta, en un solo álbum.',
+        title: t('Fotos'),
+        text: t('Las de la salida, la ruta y la meta, en un solo álbum.'),
     },
     {
         icon: BookHeart,
-        title: 'Tu historia',
-        text: 'Lo que sentiste, a quién se lo dedicas y por qué importó.',
+        title: t('Tu historia'),
+        text: t('Lo que sentiste, a quién se lo dedicas y por qué importó.'),
     },
     {
         icon: Timer,
-        title: 'Tu resultado',
-        text: 'Carrera, distancia, tiempo, fecha y lugar.',
+        title: t('Tu resultado'),
+        text: t('Carrera, distancia, tiempo, fecha y lugar.'),
     },
     {
         icon: Mic,
-        title: 'Mensaje de voz',
-        text: 'Una voz que quieres volver a escuchar cada vez que lo toques.',
+        title: t('Mensaje de voz'),
+        text: t(
+            'Una voz que quieres volver a escuchar cada vez que lo toques.',
+        ),
     },
     {
         icon: Lock,
-        title: 'Privacidad',
-        text: 'Tú decides si es público, solo con enlace o privado.',
+        title: t('Privacidad'),
+        text: t('Tú decides si es público, solo con enlace o privado.'),
     },
     {
         icon: Link2,
-        title: 'Enlaces revocables',
-        text: 'Un enlace por persona, que puedes desactivar cuando quieras.',
+        title: t('Enlaces revocables'),
+        text: t('Un enlace por persona, que puedes desactivar cuando quieras.'),
     },
-];
+]);
 
-const faqs = [
+const faqs = computed(() => [
     {
-        q: '¿Necesito instalar una app?',
-        a: 'No es obligatorio. Puedes activar tu tag y completar tu recuerdo desde el navegador o desde la app. Tu familia nunca necesita la app: abre tu recuerdo en el navegador.',
+        q: t('¿Necesito instalar una app?'),
+        a: t(
+            'No es obligatorio. Puedes activar tu tag y completar tu recuerdo desde el navegador o desde la app. Tu familia nunca necesita la app: abre tu recuerdo en el navegador.',
+        ),
     },
     {
-        q: '¿Mi teléfono lo va a leer?',
-        a: 'La mayoría de los teléfonos recientes leen NFC, pero no todos. Si el tuyo no lo hace, entra a Activar y escribe el código de tu tag: llegas al mismo lugar.',
+        q: t('¿Mi teléfono lo va a leer?'),
+        a: t(
+            'La mayoría de los teléfonos recientes leen NFC, pero no todos. Si el tuyo no lo hace, entra a Activar y escribe el código de tu tag: llegas al mismo lugar.',
+        ),
     },
     {
-        q: '¿El tag trae un código QR?',
-        a: 'No. El tag funciona con NFC: basta con acercar el teléfono. Como respaldo, cada tag trae un código escrito para activarlo a mano.',
+        q: t('¿El tag trae un código QR?'),
+        a: t(
+            'No. El tag funciona con NFC: basta con acercar el teléfono. Como respaldo, cada tag trae un código escrito para activarlo a mano.',
+        ),
     },
     {
-        q: '¿Puedo regalarlo?',
-        a: 'Sí. Quien lo activa es quien construye el recuerdo.',
+        q: t('¿Puedo regalarlo?'),
+        a: t('Sí. Quien lo activa es quien construye el recuerdo.'),
     },
     {
-        q: '¿Quién puede ver mi recuerdo?',
-        a: 'Tú decides: público, solo para quien tenga el enlace o privado. Los enlaces que compartes se pueden revocar.',
+        q: t('¿Quién puede ver mi recuerdo?'),
+        a: t(
+            'Tú decides: público, solo para quien tenga el enlace o privado. Los enlaces que compartes se pueden revocar.',
+        ),
     },
     {
-        q: '¿Y si tengo un problema con mi tag?',
-        a: 'Escríbenos desde Ayuda y contacto y revisamos tu caso.',
+        q: t('¿Y si tengo un problema con mi tag?'),
+        a: t('Escríbenos desde Ayuda y contacto y revisamos tu caso.'),
     },
-];
+]);
 
 // Gold rail: fills with the scroll progress of the journey (scaleY only).
 const journey = ref<HTMLElement | null>(null);
@@ -248,29 +287,37 @@ onBeforeUnmount(() => {
 
 <template>
     <SeoHead
-        title="Cómo funciona"
-        description="Compras tu Finisher Legacy Tag, lo recibes listo, lo activas acercando tu teléfono, completas tu recuerdo y lo compartes. Tu familia lo abre sin instalar nada."
+        :title="$t('Cómo funciona')"
+        :description="
+            $t(
+                'Compras tu Finisher Legacy Tag, lo recibes listo, lo activas acercando tu teléfono, completas tu recuerdo y lo compartes. Tu familia lo abre sin instalar nada.',
+            )
+        "
     />
 
     <PageHero
-        eyebrow="Cómo funciona"
-        title="Del logro físico"
-        accent="a tu historia."
-        lede="El Finisher Legacy Tag es el recuerdo de tu carrera que puedes tocar. Acercas tu teléfono y se abre todo lo que viviste ese día."
+        :eyebrow="$t('Cómo funciona')"
+        :title="$t('Del logro físico')"
+        :accent="$t('a tu historia.')"
+        :lede="
+            $t(
+                'El Finisher Legacy Tag es el recuerdo de tu carrera que puedes tocar. Acercas tu teléfono y se abre todo lo que viviste ese día.',
+            )
+        "
     >
         <template #actions>
             <Link :href="COLLECTIONS_URL" class="fl-btn-primary">
-                Ver colecciones
+                {{ $t('Ver colecciones') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
             <Link :href="ACTIVATE_URL" class="fl-btn-secondary">
-                Ya tengo mi tag
+                {{ $t('Ya tengo mi tag') }}
             </Link>
         </template>
 
         <ol
             class="flex flex-wrap items-center gap-x-2 gap-y-2"
-            aria-label="Los pasos"
+            :aria-label="$t('Los pasos')"
         >
             <li
                 v-for="(step, index) in steps"
@@ -301,13 +348,21 @@ onBeforeUnmount(() => {
                         <TagVisualizer
                             name="Cozumel"
                             front-art="/images/collections/tag-art/cozumel-arrecife.webp"
-                            label="Finisher Legacy Tag de la colección Cozumel"
+                            :label="
+                                $t(
+                                    'Finisher Legacy Tag de la colección Cozumel',
+                                )
+                            "
                         />
                     </div>
                     <div class="w-[52%] shrink-0">
                         <PhoneFrame
                             src="/images/app/coleccion.webp"
-                            alt="Pantalla de la app Finisher Legacy con la colección Cozumel"
+                            :alt="
+                                $t(
+                                    'Pantalla de la app Finisher Legacy con la colección Cozumel',
+                                )
+                            "
                             float
                             eager
                         />
@@ -321,10 +376,14 @@ onBeforeUnmount(() => {
     <section class="bg-white py-16 sm:py-24">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="El recorrido"
-                title="Seis pasos,"
-                accent="un solo gesto."
-                text="De la tienda a las manos de tu familia. Así se vive un Finisher Legacy Tag."
+                :eyebrow="$t('El recorrido')"
+                :title="$t('Seis pasos,')"
+                :accent="$t('un solo gesto.')"
+                :text="
+                    $t(
+                        'De la tienda a las manos de tu familia. Así se vive un Finisher Legacy Tag.',
+                    )
+                "
                 align="center"
             />
 
@@ -361,7 +420,12 @@ onBeforeUnmount(() => {
                             "
                         >
                             <p class="fl-eyebrow">
-                                Paso {{ index + 1 }} · {{ step.verb }}
+                                {{
+                                    $t('Paso {number} · {verb}', {
+                                        number: index + 1,
+                                        verb: step.verb,
+                                    })
+                                }}
                             </p>
                             <h3
                                 class="fl-display mt-3 text-[1.7rem] leading-[1.12] sm:text-[2.2rem]"
@@ -421,7 +485,12 @@ onBeforeUnmount(() => {
                                             :name="item.name"
                                             :front-art="item.art"
                                             :tilt="false"
-                                            :label="`Tag de la colección ${item.name}`"
+                                            :label="
+                                                $t(
+                                                    'Tag de la colección {name}',
+                                                    { name: item.name },
+                                                )
+                                            "
                                         />
                                     </div>
                                 </template>
@@ -436,12 +505,16 @@ onBeforeUnmount(() => {
                                                 name="Veracruz"
                                                 front-art="/images/collections/tag-art/veracruz.webp"
                                                 :tilt="false"
-                                                label="Frente del tag: arte de la colección Veracruz"
+                                                :label="
+                                                    $t(
+                                                        'Frente del tag: arte de la colección Veracruz',
+                                                    )
+                                                "
                                             />
                                             <figcaption
                                                 class="mt-1 text-center text-[10px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                                             >
-                                                Frente
+                                                {{ $t('Frente') }}
                                             </figcaption>
                                         </figure>
                                         <figure class="w-[30%] pb-[4%]">
@@ -449,12 +522,16 @@ onBeforeUnmount(() => {
                                                 name="Veracruz"
                                                 face="back"
                                                 :tilt="false"
-                                                label="Reverso del tag: monograma y marca NFC"
+                                                :label="
+                                                    $t(
+                                                        'Reverso del tag: monograma y marca NFC',
+                                                    )
+                                                "
                                             />
                                             <figcaption
                                                 class="mt-1 text-center text-[10px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                                             >
-                                                Reverso
+                                                {{ $t('Reverso') }}
                                             </figcaption>
                                         </figure>
                                     </div>
@@ -472,7 +549,11 @@ onBeforeUnmount(() => {
                                     >
                                         <PhoneFrame
                                             src="/images/app/activar.webp"
-                                            alt="Pantalla de activación en la app: acerca el tag a tu teléfono"
+                                            :alt="
+                                                $t(
+                                                    'Pantalla de activación en la app: acerca el tag a tu teléfono',
+                                                )
+                                            "
                                         />
                                     </div>
                                 </template>
@@ -486,7 +567,11 @@ onBeforeUnmount(() => {
                                             /media/home/story/medal-closeup-667.webp 667w
                                         "
                                         sizes="(min-width: 1024px) 34rem, 90vw"
-                                        alt="Atleta celebrando con su medalla después de cruzar la meta"
+                                        :alt="
+                                            $t(
+                                                'Atleta celebrando con su medalla después de cruzar la meta',
+                                            )
+                                        "
                                         width="667"
                                         height="1000"
                                         loading="lazy"
@@ -538,12 +623,16 @@ onBeforeUnmount(() => {
                                     <div
                                         class="absolute inset-0 flex flex-col justify-center gap-3 px-[9%] py-[7%]"
                                         role="img"
-                                        aria-label="Ejemplo ilustrativo: un enlace para cada persona y tres niveles de privacidad"
+                                        :aria-label="
+                                            $t(
+                                                'Ejemplo ilustrativo: un enlace para cada persona y tres niveles de privacidad',
+                                            )
+                                        "
                                     >
                                         <div
                                             v-for="(person, i) in [
-                                                'Para mamá',
-                                                'Para mi coach',
+                                                $t('Para mamá'),
+                                                $t('Para mi coach'),
                                             ]"
                                             :key="person"
                                             class="hiw-linkcard flex items-center gap-3 rounded-2xl border border-border bg-white px-4 py-3 shadow-fl-soft"
@@ -564,8 +653,11 @@ onBeforeUnmount(() => {
                                                 >
                                                 <span
                                                     class="block truncate text-xs text-muted-foreground"
-                                                    >Enlace personal ·
-                                                    activo</span
+                                                    >{{
+                                                        $t(
+                                                            'Enlace personal · activo',
+                                                        )
+                                                    }}</span
                                                 >
                                             </span>
                                             <span
@@ -609,7 +701,7 @@ onBeforeUnmount(() => {
                                             class="text-center text-[10px] tracking-[0.18em] text-muted-foreground uppercase"
                                             aria-hidden="true"
                                         >
-                                            Ejemplo ilustrativo
+                                            {{ $t('Ejemplo ilustrativo') }}
                                         </p>
                                     </div>
                                 </template>
@@ -623,7 +715,9 @@ onBeforeUnmount(() => {
                                             /media/home/story/finish-emotion-1000.webp 1000w
                                         "
                                         sizes="(min-width: 1024px) 34rem, 90vw"
-                                        alt="Ciclista en plena competencia"
+                                        :alt="
+                                            $t('Ciclista en plena competencia')
+                                        "
                                         width="1000"
                                         height="1250"
                                         loading="lazy"
@@ -640,7 +734,11 @@ onBeforeUnmount(() => {
                                             <div
                                                 class="flex h-full flex-col bg-white"
                                                 role="img"
-                                                aria-label="Ejemplo ilustrativo de un recuerdo abierto en el navegador del teléfono"
+                                                :aria-label="
+                                                    $t(
+                                                        'Ejemplo ilustrativo de un recuerdo abierto en el navegador del teléfono',
+                                                    )
+                                                "
                                             >
                                                 <div
                                                     class="mx-2 flex items-center gap-1 rounded-full bg-fl-paper px-2 py-1 text-[7px] text-muted-foreground"
@@ -692,7 +790,7 @@ onBeforeUnmount(() => {
                                             class="size-3.5 text-fl-gold-ink"
                                             aria-hidden="true"
                                         />
-                                        Se abre en el navegador
+                                        {{ $t('Se abre en el navegador') }}
                                     </p>
                                 </template>
                             </div>
@@ -710,17 +808,21 @@ onBeforeUnmount(() => {
         >
             <div>
                 <SectionIntro
-                    eyebrow="Dos formas de abrirlo"
-                    title="Acerca tu teléfono."
-                    accent="Vuelve al momento."
-                    text="El tag no lleva código QR ni batería. Funciona con el chip NFC que trae dentro, y siempre tienes un código escrito de respaldo."
+                    :eyebrow="$t('Dos formas de abrirlo')"
+                    :title="$t('Acerca tu teléfono.')"
+                    :accent="$t('Vuelve al momento.')"
+                    :text="
+                        $t(
+                            'El tag no lleva código QR ni batería. Funciona con el chip NFC que trae dentro, y siempre tienes un código escrito de respaldo.',
+                        )
+                    "
                 />
                 <Link
                     v-reveal="{ delay: 120 }"
                     :href="ACTIVATE_URL"
                     class="fl-btn-primary mt-8"
                 >
-                    Activar mi tag
+                    {{ $t('Activar mi tag') }}
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -761,15 +863,17 @@ onBeforeUnmount(() => {
                 class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
             >
                 <SectionIntro
-                    eyebrow="Qué guarda tu recuerdo"
-                    title="Todo lo que no cabe"
-                    accent="en una medalla."
+                    :eyebrow="$t('Qué guarda tu recuerdo')"
+                    :title="$t('Todo lo que no cabe')"
+                    :accent="$t('en una medalla.')"
                 />
                 <Link
                     :href="MEMORIES_URL"
                     class="group inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    <span class="fl-link fl-link--gold">Conocer Recuerdos</span>
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Conocer Recuerdos')
+                    }}</span>
                     <ArrowRight
                         class="size-4 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none"
                         aria-hidden="true"
@@ -787,15 +891,17 @@ onBeforeUnmount(() => {
         >
             <div>
                 <SectionIntro
-                    eyebrow="Preguntas frecuentes"
-                    title="Lo que más"
-                    accent="nos preguntan."
+                    :eyebrow="$t('Preguntas frecuentes')"
+                    :title="$t('Lo que más')"
+                    :accent="$t('nos preguntan.')"
                 />
                 <Link
                     :href="CONTACT_URL"
                     class="group mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    <span class="fl-link fl-link--gold">Ayuda y contacto</span>
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Ayuda y contacto')
+                    }}</span>
                     <ArrowRight
                         class="size-4 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none"
                         aria-hidden="true"
@@ -807,17 +913,17 @@ onBeforeUnmount(() => {
     </section>
 
     <CtaBand
-        title="Tu carrera termina."
-        accent="Tu historia no."
-        text="Elige el tag de tu carrera o activa el que ya tienes."
+        :title="$t('Tu carrera termina.')"
+        :accent="$t('Tu historia no.')"
+        :text="$t('Elige el tag de tu carrera o activa el que ya tienes.')"
     >
         <template #actions>
             <Link :href="COLLECTIONS_URL" class="mk-cta-primary">
-                Ver colecciones
+                {{ $t('Ver colecciones') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
             <Link :href="ACTIVATE_URL" class="mk-cta-secondary">
-                Activar mi tag
+                {{ $t('Activar mi tag') }}
             </Link>
         </template>
     </CtaBand>

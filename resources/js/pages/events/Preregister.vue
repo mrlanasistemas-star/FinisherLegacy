@@ -7,6 +7,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import { ChevronLeft, Clock } from '@lucide/vue';
 import { storePreregistration } from '@/actions/App/Http/Controllers/EventController';
+import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import Reveal from '@/components/motion/Reveal.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
@@ -54,8 +55,8 @@ function submit() {
     <!-- Transactional form, not content — keep it out of search results
          (brand system §SEO: index content pages, not forms). -->
     <SeoHead
-        :title="`Prerregistro — ${event.name}`"
-        :description="`Prerregístrate para ${event.name} en Finisher Legacy.`"
+        :title="$t('Prerregistro — {event}', { event: event.name })"
+        :description="$t('Prerregístrate para {event} en Finisher Legacy.', { event: event.name })"
         noindex
     />
 
@@ -73,7 +74,7 @@ function submit() {
                     class="size-4 transition-transform duration-300 group-hover:-translate-x-0.5 motion-reduce:transform-none"
                     aria-hidden="true"
                 />
-                Volver al evento
+                {{ $t('Volver al evento') }}
             </Link>
             <template v-if="!edition || !isOpen">
                 <div
@@ -85,30 +86,32 @@ function submit() {
                 <h1
                     class="fl-display mt-6 text-center text-3xl text-foreground sm:text-4xl"
                 >
-                    Prerregistro no disponible
+                    {{ $t('Prerregistro no disponible') }}
                 </h1>
                 <p
                     class="mx-auto mt-4 max-w-md text-center text-muted-foreground"
                 >
-                    El prerregistro para
-                    <span class="font-medium text-foreground">{{
-                        event.name
-                    }}</span>
-                    no está abierto en este momento.
+                    <I18nT :text="$t('El prerregistro para {event} no está abierto en este momento.')">
+                        <template #event>
+                            <span class="font-medium text-foreground">{{
+                                event.name
+                            }}</span>
+                        </template>
+                    </I18nT>
                 </p>
                 <div class="mt-8 flex justify-center">
                     <Link
                         :href="eventShow(event.slug)"
                         class="fl-btn-secondary"
                     >
-                        Ver el evento
+                        {{ $t('Ver el evento') }}
                     </Link>
                 </div>
             </template>
 
             <Reveal v-else>
                 <div class="mb-8 text-center">
-                    <p class="fl-eyebrow">Prerregistro</p>
+                    <p class="fl-eyebrow">{{ $t('Prerregistro') }}</p>
                     <h1
                         class="fl-display mt-3 text-3xl text-foreground sm:text-4xl"
                     >
@@ -124,10 +127,10 @@ function submit() {
                     @submit.prevent="submit"
                 >
                     <div class="grid gap-2">
-                        <Label>Distancia</Label>
+                        <Label>{{ $t('Distancia') }}</Label>
                         <Select v-model="form.event_race_id">
                             <SelectTrigger class="w-full">
-                                <SelectValue placeholder="Elige tu distancia" />
+                                <SelectValue :placeholder="$t('Elige tu distancia')" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem
@@ -144,7 +147,7 @@ function submit() {
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="grid gap-2">
-                            <Label for="first_name">Nombre</Label>
+                            <Label for="first_name">{{ $t('Nombre') }}</Label>
                             <Input
                                 id="first_name"
                                 v-model="form.first_name"
@@ -153,7 +156,7 @@ function submit() {
                             <InputError :message="form.errors.first_name" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="last_name">Apellidos</Label>
+                            <Label for="last_name">{{ $t('Apellidos') }}</Label>
                             <Input
                                 id="last_name"
                                 v-model="form.last_name"
@@ -164,7 +167,7 @@ function submit() {
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="email">Correo electrónico</Label>
+                        <Label for="email">{{ $t('Correo electrónico') }}</Label>
                         <Input
                             id="email"
                             v-model="form.email"
@@ -176,13 +179,11 @@ function submit() {
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
-                            <Label for="phone">Teléfono (opcional)</Label>
+                            <Label for="phone">{{ $t('Teléfono (opcional)') }}</Label>
                             <Input id="phone" v-model="form.phone" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="bib_number"
-                                >Número de corredor (si lo tienes)</Label
-                            >
+                            <Label for="bib_number">{{ $t('Número de corredor (si lo tienes)') }}</Label>
                             <Input id="bib_number" v-model="form.bib_number" />
                         </div>
                     </div>
@@ -194,7 +195,7 @@ function submit() {
                         :disabled="form.processing"
                     >
                         <Spinner v-if="form.processing" />
-                        Confirmar prerregistro
+                        {{ $t('Confirmar prerregistro') }}
                     </Button>
                 </form>
             </Reveal>

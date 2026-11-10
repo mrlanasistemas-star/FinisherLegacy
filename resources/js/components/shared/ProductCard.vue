@@ -16,7 +16,8 @@ import { computed } from 'vue';
 import Money from '@/components/shared/Money.vue';
 import ProductImagePlaceholder from '@/components/shared/ProductImagePlaceholder.vue';
 import TagFlipCard from '@/components/tag/TagFlipCard.vue';
-import { PRODUCT_TYPE_LABELS, STOCK_LABELS, swatchColor } from '@/lib/store';
+import { useI18n } from '@/i18n';
+import { productTypeLabel, stockLabel, swatchColor } from '@/lib/store';
 import type { ProductAvailability, ProductColor } from '@/types';
 import type { TagDesign } from '@/types/collections';
 import { tagArt } from '@/types/collections';
@@ -59,10 +60,10 @@ const props = withDefaults(
     },
 );
 
+const { t } = useI18n();
+
 const typeLabel = computed(
-    () =>
-        props.category ||
-        (props.type ? (PRODUCT_TYPE_LABELS[props.type] ?? null) : null),
+    () => props.category || productTypeLabel(props.type, t),
 );
 
 const forSale = computed(() => props.availability === 'available');
@@ -84,18 +85,18 @@ const badges = computed(() => {
             label:
                 props.availabilityLabel ||
                 (props.availability === 'concept'
-                    ? 'Concepto'
-                    : 'Próximamente'),
+                    ? t('Concepto')
+                    : t('Próximamente')),
             tone: 'paper',
         });
     }
 
     if (props.isPresale && forSale.value) {
-        list.push({ label: 'Preventa', tone: 'gold' });
+        list.push({ label: t('Preventa'), tone: 'gold' });
     }
 
     if (props.isNew) {
-        list.push({ label: 'Nuevo', tone: 'ink' });
+        list.push({ label: t('Nuevo'), tone: 'ink' });
     }
 
     if (props.promotionLabel && forSale.value) {
@@ -103,7 +104,7 @@ const badges = computed(() => {
     }
 
     if (stock.value === 'low') {
-        list.push({ label: 'Últimas piezas', tone: 'paper' });
+        list.push({ label: t('Últimas piezas'), tone: 'paper' });
     }
 
     return list.slice(0, 3);
@@ -181,7 +182,7 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
             <span
                 v-if="isNfc"
                 class="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-foreground/10 bg-white/90 py-1 pr-2.5 pl-2 text-[10px] leading-none font-semibold tracking-[0.12em] text-foreground uppercase backdrop-blur"
-                title="Se conecta a tu perfil con NFC"
+                :title="$t('Se conecta a tu perfil con NFC')"
             >
                 <Nfc class="size-3 text-fl-gold-ink" aria-hidden="true" />
                 NFC
@@ -190,7 +191,7 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
             <span
                 v-if="stock === 'out'"
                 class="absolute inset-x-3 bottom-3 rounded-full bg-white/90 py-1.5 text-center text-[11px] font-medium text-muted-foreground backdrop-blur"
-                >Agotado por ahora</span
+                >{{ $t('Agotado por ahora') }}</span
             >
         </div>
 
@@ -215,15 +216,15 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
                     <template v-if="!forSale">
                         <span class="text-muted-foreground">{{
                             availability === 'concept'
-                                ? 'En desarrollo'
-                                : 'Muy pronto'
+                                ? $t('En desarrollo')
+                                : $t('Muy pronto')
                         }}</span>
                     </template>
                     <template v-else-if="fromPriceMinor !== null">
                         <span
                             v-if="variantCount && variantCount > 1"
                             class="block text-[10px] tracking-wide text-muted-foreground uppercase"
-                            >Desde</span
+                            >{{ $t('Desde') }}</span
                         >
                         <Money
                             :minor="fromPriceMinor"
@@ -259,7 +260,11 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
                 <ul
                     v-if="visibleColors.length"
                     class="flex items-center gap-1.5"
-                    :aria-label="`Colores: ${colors.map((c) => c.name).join(', ')}`"
+                    :aria-label="
+                        $t('Colores: {list}', {
+                            list: colors.map((c) => c.name).join(', '),
+                        })
+                    "
                 >
                     <li
                         v-for="color in visibleColors"
@@ -278,7 +283,7 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
                 <ul
                     v-if="visibleSizes.length"
                     class="flex items-center gap-1.5 text-[11px] font-medium"
-                    aria-label="Tallas"
+                    :aria-label="$t('Tallas')"
                 >
                     <li
                         v-for="size in visibleSizes"
@@ -291,7 +296,7 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
                     >
                         {{ size.label }}
                         <span v-if="!size.in_stock" class="sr-only"
-                            >(agotada)</span
+                            >{{ $t('(agotada)') }}</span
                         >
                     </li>
                 </ul>
@@ -308,7 +313,7 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
                         }"
                         aria-hidden="true"
                     />
-                    {{ STOCK_LABELS[stock] }}
+                    {{ stockLabel(stock, $t) }}
                 </p>
             </div>
         </div>

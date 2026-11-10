@@ -49,6 +49,7 @@ import { Button } from '@/components/ui/button';
 import { useAuthGate } from '@/composables/useAuthGate';
 import { vReveal } from '@/composables/useReveal';
 import { ACTIVATE_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { productCardProps } from '@/lib/store';
 import { howItWorks } from '@/routes';
 import {
@@ -100,6 +101,7 @@ const props = defineProps<{
     relatedProducts: PublicProductCard[];
 }>();
 
+const { t } = useI18n();
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 const { requireAuth, loginUrl } = useAuthGate();
@@ -165,91 +167,117 @@ function addToCart() {
 
 const ctaLabel = computed(() => {
     if (!selectedVariant.value) {
-        return 'Sin opciones disponibles';
+        return t('Sin opciones disponibles');
     }
 
     if (!selectedVariant.value.in_stock) {
-        return 'Agotado';
+        return t('Agotado');
     }
 
-    return form.processing ? 'Agregando…' : 'Agregar al carrito';
+    return form.processing ? t('Agregando…') : t('Agregar al carrito');
 });
 
 /** Only what the admin filled, plus the facts every tag shares. */
 const sheetRows = computed(() =>
     [
-        { label: 'Colección', value: props.product.collection?.name ?? null },
         {
-            label: 'Destino',
+            label: t('Colección'),
+            value: props.product.collection?.name ?? null,
+        },
+        {
+            label: t('Destino'),
             value: props.product.collection?.destination ?? null,
         },
-        { label: 'Material', value: props.product.specs.material },
-        { label: 'Correa', value: props.product.specs.strap_type },
-        { label: 'Medidas', value: props.product.specs.dimensions },
-        { label: 'Conexión', value: 'Chip NFC, sin batería' },
-        { label: 'Para abrirlo', value: 'Un teléfono con NFC o su código' },
+        { label: t('Material'), value: props.product.specs.material },
+        { label: t('Correa'), value: props.product.specs.strap_type },
+        { label: t('Medidas'), value: props.product.specs.dimensions },
+        { label: t('Conexión'), value: t('Chip NFC, sin batería') },
+        {
+            label: t('Para abrirlo'),
+            value: t('Un teléfono con NFC o su código'),
+        },
     ].filter((row): row is { label: string; value: string } => !!row.value),
 );
 
 const includes = computed(() => [
-    `El tag${props.product.collection ? ` de la colección ${props.product.collection.name}` : ''}, terminado de fábrica`,
+    props.product.collection
+        ? t('El tag de la colección {collection}, terminado de fábrica', {
+              collection: props.product.collection.name,
+          })
+        : t('El tag, terminado de fábrica'),
     props.product.specs.strap_type
-        ? `Correa: ${props.product.specs.strap_type}`
-        : 'Su correa',
-    'Chip NFC: acercas tu teléfono y se abre tu historia',
-    'Tu Legacy digital, listo para activarlo cuando quieras',
+        ? t('Correa: {strap}', { strap: props.product.specs.strap_type })
+        : t('Su correa'),
+    t('Chip NFC: acercas tu teléfono y se abre tu historia'),
+    t('Tu Legacy digital, listo para activarlo cuando quieras'),
 ]);
 
-const keeps = [
+const keeps = computed(() => [
     {
         icon: Images,
-        title: 'Tus fotos',
-        text: 'Las de la carrera, la meta y todo lo que quieras conservar de ese día.',
+        title: t('Tus fotos'),
+        text: t(
+            'Las de la carrera, la meta y todo lo que quieras conservar de ese día.',
+        ),
     },
     {
         icon: BookOpen,
-        title: 'Tu historia',
-        text: 'Lo que viviste, contado con tus palabras, y una dedicatoria si quieres.',
+        title: t('Tu historia'),
+        text: t(
+            'Lo que viviste, contado con tus palabras, y una dedicatoria si quieres.',
+        ),
     },
     {
         icon: Timer,
-        title: 'Tu resultado',
-        text: 'La carrera, la fecha, el lugar y tu tiempo.',
+        title: t('Tu resultado'),
+        text: t('La carrera, la fecha, el lugar y tu tiempo.'),
     },
     {
         icon: Mic,
-        title: 'Un mensaje de voz',
-        text: 'Tu voz o la de alguien que estuvo contigo, para volver a escucharla.',
+        title: t('Un mensaje de voz'),
+        text: t(
+            'Tu voz o la de alguien que estuvo contigo, para volver a escucharla.',
+        ),
     },
     {
         icon: Lock,
-        title: 'Tú decides quién lo ve',
-        text: 'Público, solo con enlace o privado. Los enlaces que compartes se pueden revocar.',
+        title: t('Tú decides quién lo ve'),
+        text: t(
+            'Público, solo con enlace o privado. Los enlaces que compartes se pueden revocar.',
+        ),
     },
     {
         icon: Users,
-        title: 'Tu familia no necesita app',
-        text: 'Quien toca el tag o recibe tu enlace lo abre en el navegador de su teléfono.',
+        title: t('Tu familia no necesita app'),
+        text: t(
+            'Quien toca el tag o recibe tu enlace lo abre en el navegador de su teléfono.',
+        ),
     },
-];
+]);
 
 const after = computed(() => [
     {
         title: props.product.requires_shipping
-            ? 'Te lo entregamos'
-            : 'Lo recibes',
+            ? t('Te lo entregamos')
+            : t('Lo recibes'),
         body: props.product.requires_shipping
-            ? 'Sigue tu pedido desde Mis pedidos hasta que llegue a tus manos.'
-            : 'Te lo llevas listo para activarlo.',
+            ? t(
+                  'Sigue tu pedido desde Mis pedidos hasta que llegue a tus manos.',
+              )
+            : t('Te lo llevas listo para activarlo.'),
     },
     {
-        title: 'Lo activas',
-        body: 'Acercas tu teléfono al tag. Si no lee NFC, escribe su código en Activar.',
+        title: t('Lo activas'),
+        body: t(
+            'Acercas tu teléfono al tag. Si no lee NFC, escribe su código en Activar.',
+        ),
         link: true,
     },
     {
-        title: 'Tu historia vive dentro',
-        body: 'Agrégale lo que quieras recordar y compártela con quien estuvo ahí.',
+        title: t('Tu historia vive dentro'),
+        body: t(
+            'Agrégale lo que quieras recordar y compártela con quien estuvo ahí.',
+        ),
     },
 ]);
 </script>
@@ -268,14 +296,14 @@ const after = computed(() => [
         />
         <div class="fl-container relative">
             <nav
-                aria-label="Ruta de navegación"
+                :aria-label="$t('Ruta de navegación')"
                 class="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
             >
                 <template v-if="product.collection">
                     <Link
                         :href="collectionsIndex()"
                         class="hover:text-foreground"
-                        >Colecciones</Link
+                        >{{ $t('Colecciones') }}</Link
                     >
                     <ChevronRight class="size-3.5" aria-hidden="true" />
                     <Link
@@ -285,7 +313,7 @@ const after = computed(() => [
                     >
                 </template>
                 <Link v-else :href="storeIndex()" class="hover:text-foreground"
-                    >Tienda</Link
+                    >{{ $t('Tienda') }}</Link
                 >
                 <ChevronRight class="size-3.5" aria-hidden="true" />
                 <span class="truncate text-foreground" aria-current="page">{{
@@ -319,7 +347,7 @@ const after = computed(() => [
                                 @click="view3d = true"
                             >
                                 <Rotate3d class="size-4" aria-hidden="true" />
-                                Ver en 3D — frente y reverso
+                                {{ $t('Ver en 3D — frente y reverso') }}
                             </button>
                         </div>
                     </div>
@@ -330,14 +358,14 @@ const after = computed(() => [
                             <LegacyTag3D
                                 ref="tag3d"
                                 v-bind="art"
-                                :label="`${product.name} en 3D`"
+                                :label="$t('{name} en 3D', { name: product.name })"
                                 @face-change="(f) => (face = f)"
                             />
                         </div>
                         <div
                             class="mt-2 flex flex-wrap items-center justify-center gap-2"
                             role="group"
-                            aria-label="Cara del tag"
+                            :aria-label="$t('Cara del tag')"
                         >
                             <button
                                 v-for="option in faces"
@@ -352,7 +380,11 @@ const after = computed(() => [
                                 :aria-pressed="face === option"
                                 @click="showFace(option)"
                             >
-                                {{ option === 'front' ? 'Frente' : 'Reverso' }}
+                                {{
+                                    option === 'front'
+                                        ? $t('Frente')
+                                        : $t('Reverso')
+                                }}
                             </button>
                             <button
                                 v-if="hasMedia"
@@ -360,13 +392,15 @@ const after = computed(() => [
                                 class="min-h-11 rounded-full px-5 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                                 @click="view3d = false"
                             >
-                                Ver fotos
+                                {{ $t('Ver fotos') }}
                             </button>
                         </div>
                         <p
                             class="mt-3 text-center text-[11px] tracking-[0.18em] text-muted-foreground uppercase"
                         >
-                            Vista 3D ilustrativa · arrastra para girar
+                            {{
+                                $t('Vista 3D ilustrativa · arrastra para girar')
+                            }}
                         </p>
                     </div>
                 </div>
@@ -417,7 +451,7 @@ const after = computed(() => [
                                     class="rounded-full bg-foreground px-2.5 py-0.5 text-[11px] font-semibold text-background uppercase"
                                     >{{
                                         selectedVariant.promotion_label ??
-                                        'Oferta'
+                                        $t('Oferta')
                                     }}</span
                                 >
                             </template>
@@ -452,10 +486,10 @@ const after = computed(() => [
                             />
                             {{
                                 !selectedVariant.in_stock
-                                    ? 'Agotado por ahora'
+                                    ? $t('Agotado por ahora')
                                     : selectedVariant.low_stock
-                                      ? 'Últimas piezas disponibles'
-                                      : 'Disponible'
+                                      ? $t('Últimas piezas disponibles')
+                                      : $t('Disponible')
                             }}
                         </p>
 
@@ -468,8 +502,11 @@ const after = computed(() => [
                                     {{ product.availability_label }}
                                 </p>
                                 <p class="mt-1 text-sm text-muted-foreground">
-                                    Este tag todavía no está a la venta. Vuelve
-                                    pronto.
+                                    {{
+                                        $t(
+                                            'Este tag todavía no está a la venta. Vuelve pronto.',
+                                        )
+                                    }}
                                 </p>
                             </div>
                             <p
@@ -478,8 +515,11 @@ const after = computed(() => [
                                 "
                                 class="rounded-card border border-border bg-card px-5 py-4 text-sm text-muted-foreground"
                             >
-                                Estamos reponiendo este diseño. Vuelve pronto o
-                                búscalo con nuestros aliados.
+                                {{
+                                    $t(
+                                        'Estamos reponiendo este diseño. Vuelve pronto o búscalo con nuestros aliados.',
+                                    )
+                                }}
                             </p>
                             <Button
                                 v-else-if="isGuest"
@@ -487,20 +527,20 @@ const after = computed(() => [
                                 size="lg"
                                 class="h-12 w-full rounded-full"
                             >
-                                <Link :href="loginUrl()"
-                                    >Inicia sesión para comprar</Link
-                                >
+                                <Link :href="loginUrl()">{{
+                                    $t('Inicia sesión para comprar')
+                                }}</Link>
                             </Button>
                             <div v-else class="flex gap-3">
                                 <div
                                     class="flex h-11 items-center rounded-full border border-border bg-card"
                                     role="group"
-                                    aria-label="Cantidad"
+                                    :aria-label="$t('Cantidad')"
                                 >
                                     <button
                                         type="button"
                                         class="flex size-10 items-center justify-center rounded-full disabled:opacity-30"
-                                        aria-label="Quitar uno"
+                                        :aria-label="$t('Quitar uno')"
                                         :disabled="quantity <= 1"
                                         @click="quantity--"
                                     >
@@ -514,7 +554,7 @@ const after = computed(() => [
                                     <button
                                         type="button"
                                         class="flex size-10 items-center justify-center rounded-full disabled:opacity-30"
-                                        aria-label="Agregar uno"
+                                        :aria-label="$t('Agregar uno')"
                                         :disabled="quantity >= MAX_QTY"
                                         @click="quantity++"
                                     >
@@ -558,21 +598,21 @@ const after = computed(() => [
                                 class="flex items-center gap-2.5"
                             >
                                 <Truck class="size-4" aria-hidden="true" />
-                                Envío a domicilio
+                                {{ $t('Envío a domicilio') }}
                             </li>
                             <li class="flex items-center gap-2.5">
                                 <ShieldCheck
                                     class="size-4"
                                     aria-hidden="true"
                                 />
-                                Pago seguro
+                                {{ $t('Pago seguro') }}
                             </li>
                             <li>
                                 <a
                                     :href="ACTIVATE_URL"
                                     class="inline-flex min-h-9 items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
                                 >
-                                    ¿Ya tienes tu tag? Actívalo
+                                    {{ $t('¿Ya tienes tu tag? Actívalo') }}
                                     <ArrowRight
                                         class="size-3.5"
                                         aria-hidden="true"
@@ -589,14 +629,18 @@ const after = computed(() => [
     <!-- What the tag keeps -->
     <section
         class="fl-section border-t border-border bg-white"
-        aria-label="Qué guarda tu tag"
+        :aria-label="$t('Qué guarda tu tag')"
     >
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Qué guarda tu tag"
-                title="Todo lo que pasó"
-                accent="detrás del resultado."
-                text="El tag es la llave. Dentro vive tu recuerdo, y lo completas hoy o poco a poco."
+                :eyebrow="$t('Qué guarda tu tag')"
+                :title="$t('Todo lo que pasó')"
+                :accent="$t('detrás del resultado.')"
+                :text="
+                    $t(
+                        'El tag es la llave. Dentro vive tu recuerdo, y lo completas hoy o poco a poco.',
+                    )
+                "
             />
             <div class="mt-10">
                 <FeatureGrid :items="keeps" :columns="3" />
@@ -613,17 +657,17 @@ const after = computed(() => [
             <div>
                 <p class="fl-eyebrow inline-flex items-center gap-3">
                     <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
-                    Qué incluye
+                    {{ $t('Qué incluye') }}
                 </p>
                 <h2
                     id="tag-includes-title"
                     v-reveal
                     class="fl-display mt-4 text-[1.9rem] leading-[1.1] sm:text-[2.6rem]"
                 >
-                    Un recuerdo que
-                    <span class="block font-medium text-fl-gold-ink italic"
-                        >puedes tocar.</span
-                    >
+                    {{ $t('Un recuerdo que') }}
+                    <span class="block font-medium text-fl-gold-ink italic">{{
+                        $t('puedes tocar.')
+                    }}</span>
                 </h2>
                 <ul class="mt-8 grid gap-3">
                     <li
@@ -647,7 +691,7 @@ const after = computed(() => [
                 v-reveal="{ delay: 100 }"
                 class="fl-card self-start p-6 sm:p-8"
             >
-                <p class="fl-eyebrow">Ficha del tag</p>
+                <p class="fl-eyebrow">{{ $t('Ficha del tag') }}</p>
                 <dl class="mt-4 divide-y divide-border">
                     <div
                         v-for="row in sheetRows"
@@ -668,7 +712,9 @@ const after = computed(() => [
                     v-if="product.specs.instructions"
                     class="mt-5 border-t border-border pt-5"
                 >
-                    <p class="fl-eyebrow">Cuidados e instrucciones</p>
+                    <p class="fl-eyebrow">
+                        {{ $t('Cuidados e instrucciones') }}
+                    </p>
                     <p
                         class="mt-3 text-sm leading-relaxed whitespace-pre-line text-muted-foreground"
                     >
@@ -691,16 +737,17 @@ const after = computed(() => [
                 <div>
                     <p class="fl-eyebrow inline-flex items-center gap-3">
                         <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
-                        Cómo funciona
+                        {{ $t('Cómo funciona') }}
                     </p>
                     <h2
                         id="tag-after-title"
                         v-reveal
                         class="fl-display mt-4 text-[1.9rem] leading-[1.1] sm:text-[2.6rem]"
                     >
-                        Tu carrera termina.
-                        <span class="block font-medium text-fl-gold-ink italic"
-                            >Tu historia no.</span
+                        {{ $t('Tu carrera termina.') }}
+                        <span
+                            class="block font-medium text-fl-gold-ink italic"
+                            >{{ $t('Tu historia no.') }}</span
                         >
                     </h2>
                 </div>
@@ -708,9 +755,9 @@ const after = computed(() => [
                     :href="howItWorks()"
                     class="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    <span class="fl-link fl-link--gold"
-                        >Ver el paso a paso completo</span
-                    >
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Ver el paso a paso completo')
+                    }}</span>
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -741,7 +788,7 @@ const after = computed(() => [
                         :href="ACTIVATE_URL"
                         class="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fl-gold-ink"
                     >
-                        <span class="fl-link">Ir a Activar</span>
+                        <span class="fl-link">{{ $t('Ir a Activar') }}</span>
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </a>
                 </li>
@@ -750,7 +797,7 @@ const after = computed(() => [
     </section>
 
     <!-- Trust -->
-    <section class="bg-fl-paper" aria-label="Comprar con confianza">
+    <section class="bg-fl-paper" :aria-label="$t('Comprar con confianza')">
         <div class="fl-container py-12 sm:py-14">
             <StoreTrustNotes :shipping="product.requires_shipping" />
         </div>
@@ -759,7 +806,7 @@ const after = computed(() => [
     <section
         v-if="product.contentSections.length"
         class="fl-section border-t border-border bg-fl-paper"
-        aria-label="Sobre este tag"
+        :aria-label="$t('Sobre este tag')"
     >
         <div class="fl-container">
             <ProductStorySections
@@ -776,13 +823,15 @@ const after = computed(() => [
         <div class="fl-container">
             <div class="flex items-end justify-between gap-4">
                 <h2 class="fl-display text-[1.9rem] sm:text-4xl">
-                    También te puede gustar
+                    {{ $t('También te puede gustar') }}
                 </h2>
                 <Link
                     :href="collectionsIndex()"
                     class="hidden shrink-0 items-center gap-2 text-sm font-semibold sm:inline-flex"
                 >
-                    <span class="fl-link fl-link--gold">Ver colecciones</span>
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Ver colecciones')
+                    }}</span>
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -816,10 +865,10 @@ const after = computed(() => [
             <span
                 v-if="isGuest && !selectedVariant.in_stock"
                 class="text-sm text-muted-foreground"
-                >Agotado por ahora</span
+                >{{ $t('Agotado por ahora') }}</span
             >
             <Button v-else-if="isGuest" as-child class="h-11 rounded-full px-5">
-                <Link :href="loginUrl()">Inicia sesión</Link>
+                <Link :href="loginUrl()">{{ $t('Inicia sesión') }}</Link>
             </Button>
             <Button
                 v-else

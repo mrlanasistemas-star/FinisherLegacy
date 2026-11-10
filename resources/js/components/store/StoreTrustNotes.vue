@@ -9,37 +9,40 @@ import { LifeBuoy, PackageSearch, ShieldCheck, Truck } from '@lucide/vue';
 import { computed } from 'vue';
 import { vReveal } from '@/composables/useReveal';
 import { CONTACT_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 
 const props = withDefaults(defineProps<{ shipping?: boolean }>(), {
     shipping: true,
 });
+
+const { t } = useI18n();
 
 const notes = computed(() => [
     ...(props.shipping
         ? [
               {
                   icon: Truck,
-                  title: 'Envío a domicilio',
-                  text: 'Lo recibes en la dirección que indiques al comprar.',
+                  title: t('Envío a domicilio'),
+                  text: t('Lo recibes en la dirección que indiques al comprar.'),
               },
           ]
         : []),
     {
         icon: ShieldCheck,
-        title: 'Pago seguro',
-        text: 'Pagas en línea, en una conexión cifrada.',
+        title: t('Pago seguro'),
+        text: t('Pagas en línea, en una conexión cifrada.'),
     },
     {
         icon: PackageSearch,
-        title: 'Sigue tu pedido',
-        text: 'Consulta su estado cuando quieras desde Mis pedidos.',
+        title: t('Sigue tu pedido'),
+        text: t('Consulta su estado cuando quieras desde Mis pedidos.'),
     },
     {
         icon: LifeBuoy,
-        title: '¿Dudas?',
-        text: 'Escríbenos y revisamos tu caso.',
+        title: t('¿Dudas?'),
+        text: t('Escríbenos y revisamos tu caso.'),
         href: CONTACT_URL,
-        cta: 'Ayuda y contacto',
+        cta: t('Ayuda y contacto'),
     },
 ]);
 </script>

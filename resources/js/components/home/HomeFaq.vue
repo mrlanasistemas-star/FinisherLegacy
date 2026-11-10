@@ -6,36 +6,50 @@
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, Plus } from '@lucide/vue';
+import { computed } from 'vue';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { contact, howItWorks } from '@/routes';
 import HomeSectionHead from './HomeSectionHead.vue';
 
-const faqs = [
+const { t } = useI18n();
+
+const faqs = computed(() => [
     {
-        q: '¿Qué es exactamente Finisher Legacy?',
-        a: 'Un ecosistema para atletas. Empieza con un tag de colección con chip NFC que abre el recuerdo de tu carrera, y suma comunidad, mensajes de ánimo para entrenar, fotos de evento, tienda y app.',
+        q: t('¿Qué es exactamente Finisher Legacy?'),
+        a: t(
+            'Un ecosistema para atletas. Empieza con un tag de colección con chip NFC que abre el recuerdo de tu carrera, y suma comunidad, mensajes de ánimo para entrenar, fotos de evento, tienda y app.',
+        ),
     },
     {
-        q: '¿Necesito instalar una app?',
-        a: 'No. Acercas tu celular al tag y tu historia se abre en el navegador. También puedes compartirla con un enlace.',
+        q: t('¿Necesito instalar una app?'),
+        a: t(
+            'No. Acercas tu celular al tag y tu historia se abre en el navegador. También puedes compartirla con un enlace.',
+        ),
     },
     {
-        q: '¿Mi teléfono lo va a leer?',
-        a: 'La mayoría de los teléfonos recientes leen NFC, pero no todos. Si el tuyo no lo hace, entra a Activar y escribe el código de tu tag: llegas al mismo lugar.',
+        q: t('¿Mi teléfono lo va a leer?'),
+        a: t(
+            'La mayoría de los teléfonos recientes leen NFC, pero no todos. Si el tuyo no lo hace, entra a Activar y escribe el código de tu tag: llegas al mismo lugar.',
+        ),
     },
     {
-        q: '¿Mi familia necesita una cuenta?',
-        a: 'No. Ven tu recuerdo con el enlace que les compartes y te graban mensajes de ánimo desde su navegador, sin cuenta y sin instalar nada.',
+        q: t('¿Mi familia necesita una cuenta?'),
+        a: t(
+            'No. Ven tu recuerdo con el enlace que les compartes y te graban mensajes de ánimo desde su navegador, sin cuenta y sin instalar nada.',
+        ),
     },
     {
-        q: '¿Quién puede ver mi historia?',
-        a: 'Tú decides: pública, solo para quien tenga el enlace o privada. Los enlaces para tus personas se pueden revocar.',
+        q: t('¿Quién puede ver mi historia?'),
+        a: t(
+            'Tú decides: pública, solo para quien tenga el enlace o privada. Los enlaces para tus personas se pueden revocar.',
+        ),
     },
     {
-        q: '¿Puedo regalarlo?',
-        a: 'Sí. Quien lo activa es quien construye la historia.',
+        q: t('¿Puedo regalarlo?'),
+        a: t('Sí. Quien lo activa es quien construye la historia.'),
     },
-];
+]);
 </script>
 
 <template>
@@ -49,8 +63,8 @@ const faqs = [
                 <div class="lg:sticky lg:top-28">
                     <HomeSectionHead
                         id="home-faq-title"
-                        eyebrow="Preguntas frecuentes"
-                        title="Lo que más nos preguntan."
+                        :eyebrow="$t('Preguntas frecuentes')"
+                        :title="$t('Lo que más nos preguntan.')"
                         size="md"
                     />
                     <div v-reveal class="mt-7 flex flex-col items-start gap-1">
@@ -58,9 +72,9 @@ const faqs = [
                             :href="howItWorks()"
                             class="group inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground"
                         >
-                            <span class="fl-link fl-link--gold"
-                                >Más respuestas en Cómo funciona</span
-                            >
+                            <span class="fl-link fl-link--gold">{{
+                                $t('Más respuestas en Cómo funciona')
+                            }}</span>
                             <ArrowRight
                                 class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                                 aria-hidden="true"
@@ -70,7 +84,7 @@ const faqs = [
                             :href="contact()"
                             class="group inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-muted-foreground"
                         >
-                            <span class="fl-link">Escríbenos</span>
+                            <span class="fl-link">{{ $t('Escríbenos') }}</span>
                         </Link>
                     </div>
                 </div>

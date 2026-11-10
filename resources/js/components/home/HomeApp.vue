@@ -14,65 +14,79 @@ import {
     ShoppingBag,
     Users,
 } from '@lucide/vue';
+import { computed } from 'vue';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { vStage } from './homeMotion';
 import HomeSectionHead from './HomeSectionHead.vue';
 
-const screens = [
+const { t } = useI18n();
+
+const screens = computed(() => [
     {
         src: '/images/home/app/app-inicio.webp',
-        alt: 'Pantalla de inicio de la app: tarjeta «Activar mi Finisher Legacy», acceso a Entrenamientos y primeros pasos',
-        label: 'Inicio',
+        alt: t(
+            'Pantalla de inicio de la app: tarjeta «Activar mi Finisher Legacy», acceso a Entrenamientos y primeros pasos',
+        ),
+        label: t('Inicio'),
     },
     {
         src: '/images/home/app/app-tag.webp',
-        alt: 'Pantalla de una colección en la app: el tag de Cozumel con sus diseños y cómo funciona',
-        label: 'Tu colección',
+        alt: t(
+            'Pantalla de una colección en la app: el tag de Cozumel con sus diseños y cómo funciona',
+        ),
+        label: t('Tu colección'),
     },
     {
         src: '/images/home/app/app-entrenamientos.webp',
-        alt: 'Pantalla de Entrenamientos en la app: modo entrenamiento con los mensajes de tu equipo',
-        label: 'Entrenamientos',
+        alt: t(
+            'Pantalla de Entrenamientos en la app: modo entrenamiento con los mensajes de tu equipo',
+        ),
+        label: t('Entrenamientos'),
     },
     {
         src: '/images/home/app/app-activar.webp',
-        alt: 'Pantalla de activación en la app: paso 3 de 5, acerca el tag al centro de la parte trasera del teléfono',
-        label: 'Activación NFC',
+        alt: t(
+            'Pantalla de activación en la app: paso 3 de 5, acerca el tag al centro de la parte trasera del teléfono',
+        ),
+        label: t('Activación NFC'),
     },
-];
+]);
 
-const features = [
+const features = computed(() => [
     {
         icon: Nfc,
-        title: 'Activa tu tag con un toque',
-        text: 'Lo acercas al teléfono y la app lo deja ligado a ti.',
+        title: t('Activa tu tag con un toque'),
+        text: t('Lo acercas al teléfono y la app lo deja ligado a ti.'),
     },
     {
         icon: Images,
-        title: 'Tus recuerdos',
-        text: 'Crea, edita y revive cada carrera.',
+        title: t('Tus recuerdos'),
+        text: t('Crea, edita y revive cada carrera.'),
     },
     {
         icon: Headphones,
-        title: 'Reproductor de entrenamiento',
-        text: 'Tus mensajes de ánimo sobre tu música, con la pantalla bloqueada.',
+        title: t('Reproductor de entrenamiento'),
+        text: t(
+            'Tus mensajes de ánimo sobre tu música, con la pantalla bloqueada.',
+        ),
     },
     {
         icon: Users,
-        title: 'Comunidad',
-        text: 'Tu feed y las personas que sigues.',
+        title: t('Comunidad'),
+        text: t('Tu feed y las personas que sigues.'),
     },
     {
         icon: ShoppingBag,
-        title: 'Tienda',
-        text: 'Colecciones y equipo, a un toque.',
+        title: t('Tienda'),
+        text: t('Colecciones y equipo, a un toque.'),
     },
     {
         icon: BellRing,
-        title: 'Notificaciones',
-        text: 'Entérate al instante cuando te mandan ánimo.',
+        title: t('Notificaciones'),
+        text: t('Entérate al instante cuando te mandan ánimo.'),
     },
-];
+]);
 </script>
 
 <template>
@@ -93,9 +107,13 @@ const features = [
         <div class="fl-container relative">
             <HomeSectionHead
                 id="app-title"
-                eyebrow="App para iOS y Android"
-                title="Todo Finisher Legacy, en tu bolsillo."
-                lead="La misma cuenta, tus mismos recuerdos. La app suma lo que solo un teléfono puede hacer: activar tu tag con un toque y acompañarte mientras entrenas."
+                :eyebrow="$t('App para iOS y Android')"
+                :title="$t('Todo Finisher Legacy, en tu bolsillo.')"
+                :lead="
+                    $t(
+                        'La misma cuenta, tus mismos recuerdos. La app suma lo que solo un teléfono puede hacer: activar tu tag con un toque y acompañarte mientras entrenas.',
+                    )
+                "
                 align="center"
                 tone="dark"
             />
@@ -112,7 +130,7 @@ const features = [
                         />
                         <span class="relative size-2 rounded-full bg-fl-gold" />
                     </span>
-                    Muy pronto en App Store y Google Play
+                    {{ $t('Muy pronto en App Store y Google Play') }}
                 </span>
             </p>
         </div>
@@ -188,8 +206,11 @@ const features = [
                 </li>
             </ul>
             <p v-reveal class="mt-12 text-center text-sm text-white/50">
-                Mientras llega a las tiendas, todo funciona desde el navegador
-                de tu teléfono.
+                {{
+                    $t(
+                        'Mientras llega a las tiendas, todo funciona desde el navegador de tu teléfono.',
+                    )
+                }}
             </p>
         </div>
     </section>

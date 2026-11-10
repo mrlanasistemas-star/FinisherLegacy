@@ -7,8 +7,10 @@
  * related products.
  *
  * Add to cart keeps using the existing cart endpoint (store.cart.items).
- * The Legacy Plate is personalized with an event result, so it is never
- * added from here: its column walks the athlete to their event instead.
+ * A Finisher Legacy Tag gets its own layout (TagProductDetail). The plate
+ * line is retired: if someone reaches a `legacy_plate` URL the purchase
+ * column only says the piece is no longer offered and links to the tag
+ * collections — it can never be added to the cart from here.
  */
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import {
@@ -20,12 +22,10 @@ import {
     PackageCheck,
     Plus,
     ShieldCheck,
-    Smartphone,
     Truck,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import NfcTapVisual from '@/components/public/NfcTapVisual.vue';
-import PlateClipSteps from '@/components/public/PlateClipSteps.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import Money from '@/components/shared/Money.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
@@ -43,9 +43,10 @@ import type { Variant } from '@/components/store/VariantPicker.vue';
 import { Button } from '@/components/ui/button';
 import { useAuthGate } from '@/composables/useAuthGate';
 import { vReveal } from '@/composables/useReveal';
-import { productCardProps, PRODUCT_TYPE_LABELS } from '@/lib/store';
+import { COLLECTIONS_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
+import { productCardProps, productTypeLabel } from '@/lib/store';
 import { howItWorks } from '@/routes';
-import { index as eventsIndex } from '@/routes/events';
 import { store as addToCartRoute } from '@/routes/store/cart/items';
 import { show as categoryShow } from '@/routes/store/categories';
 import { index as storeIndex } from '@/routes/store/products';
@@ -92,9 +93,11 @@ const props = defineProps<{
     relatedProducts: PublicProductCard[];
 }>();
 
+const { t } = useI18n();
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
 const { requireAuth, loginUrl } = useAuthGate();
+/** Retired plate line: shown, never purchasable (see the notice below). */
 const isLegacyPlate = computed(() => props.product.type === 'legacy_plate');
 /** Finisher Legacy Tag → its own layout (TagProductDetail). */
 const isLegacyTag = computed(() => props.product.type === 'legacy_tag');
@@ -109,13 +112,15 @@ const tagProduct = computed<TagProduct>(() => ({
     collection: props.product.collection ?? null,
 }));
 const typeLabel = computed(
-    () => props.product.category ?? PRODUCT_TYPE_LABELS[props.product.type],
+    () => props.product.category ?? productTypeLabel(props.product.type, t),
 );
 
 const metaDescription = computed(
     () =>
         props.product.description?.slice(0, 200) ??
-        `${props.product.name} — parte del ecosistema Finisher Legacy.`,
+        t('{name} — parte del ecosistema Finisher Legacy.', {
+            name: props.product.name,
+        }),
 );
 
 // Uploaded media → legacy single image → product renders.
@@ -203,14 +208,6 @@ const selectedVariant = computed(
         props.product.variants.find((v) => v.id === selectedVariantId.value) ??
         null,
 );
-const fromPrice = computed(() => {
-    const prices = props.product.variants.map(
-        (v) => v.sale_price_minor ?? v.base_price_minor,
-    );
-
-    return prices.length ? Math.min(...prices) : null;
-});
-
 const quantity = ref(1);
 const MAX_QTY = 10;
 
@@ -221,6 +218,7 @@ const form = useForm({
 
 function addToCart() {
     if (
+        isLegacyPlate.value ||
         !selectedVariant.value ||
         !selectedVariant.value.in_stock ||
         !requireAuth()
@@ -235,14 +233,14 @@ function addToCart() {
 
 const ctaLabel = computed(() => {
     if (!selectedVariant.value) {
-        return 'Sin opciones disponibles';
+        return t('Sin opciones disponibles');
     }
 
     if (!selectedVariant.value.in_stock) {
-        return 'Agotado';
+        return t('Agotado');
     }
 
-    return form.processing ? 'Agregando…' : 'Agregar al carrito';
+    return form.processing ? t('Agregando…') : t('Agregar al carrito');
 });
 
 const stockHint = computed(() => {
@@ -253,15 +251,13 @@ const stockHint = computed(() => {
     }
 
     if (!v.in_stock) {
-        return { tone: 'out', text: 'Agotado por ahora' };
+        return { tone: 'out', text: t('Agotado por ahora') };
     }
 
     return v.low_stock
-        ? { tone: 'low', text: 'Últimas piezas disponibles' }
-        : { tone: 'ok', text: 'Disponible para envío' };
+        ? { tone: 'low', text: t('Últimas piezas disponibles') }
+        : { tone: 'ok', text: t('Disponible para envío') };
 });
-
-const showPlateHelp = ref(false);
 
 // Mobile sticky buy bar (visual): shows once the buy button scrolls away.
 const showBar = computed(
@@ -284,55 +280,34 @@ const uniqueAttr = (...keys: string[]) => [
 ];
 const detailRows = computed(() =>
     [
-        { label: 'Categoría', value: typeLabel.value ?? null },
-        { label: 'Marca', value: props.product.brand },
-        { label: 'Colores', value: uniqueAttr('color', 'colour').join(', ') },
-        { label: 'Tallas', value: uniqueAttr('size', 'talla').join(' · ') },
+        { label: t('Categoría'), value: typeLabel.value ?? null },
+        { label: t('Marca'), value: props.product.brand },
         {
-            label: 'Entrega',
-            value: props.product.requires_shipping ? 'Envío a domicilio' : null,
+            label: t('Colores'),
+            value: uniqueAttr('color', 'colour').join(', '),
+        },
+        { label: t('Tallas'), value: uniqueAttr('size', 'talla').join(' · ') },
+        {
+            label: t('Entrega'),
+            value: props.product.requires_shipping
+                ? t('Envío a domicilio')
+                : null,
         },
         {
-            label: 'Conexión',
-            value: props.product.is_nfc ? 'NFC: se abre con tu teléfono' : null,
+            label: t('Conexión'),
+            value: props.product.is_nfc
+                ? t('NFC: se abre con tu teléfono')
+                : null,
         },
     ].filter((row): row is { label: string; value: string } => !!row.value),
 );
 
-const plateSteps = [
-    {
-        title: 'Elige tu evento',
-        body: 'La placa se personaliza con tu participación.',
-    },
-    {
-        title: 'Elige tu diseño frontal',
-        body: 'Núcleo, Distancia o Trayecto.',
-    },
-    {
-        title: 'Personalizamos tu placa',
-        body: 'Tu nombre, fecha, tiempo, distancia y ritmo al frente, protegidos con resina.',
-    },
-    {
-        title: 'Colócala y conéctala',
-        body: 'El clip la sujeta al listón; acerca el teléfono al frente y se abre tu Legacy.',
-    },
-];
-
-const plateSpec = [
-    { label: 'Material', value: 'Zamak niquelado' },
-    { label: 'Acabado', value: 'Resina protectora' },
-    { label: 'Conexión', value: 'NFC' },
-    { label: 'Sujeción', value: 'Clip posterior tipo money clip' },
-    { label: 'Personalización', value: 'Diseño frontal' },
-    { label: 'Medidas', value: '70 × 45 mm' },
-];
-
-const savedInMiEquipo = [
-    'El producto, con su color y talla',
-    'La fecha en que lo conectaste',
-    'Los eventos en los que lo usaste',
-    'Su enlace a tu perfil y tu legado',
-];
+const savedInMiEquipo = computed(() => [
+    t('El producto, con su color y talla'),
+    t('La fecha en que lo conectaste'),
+    t('Los eventos en los que lo usaste'),
+    t('Su enlace a tu perfil y tu legado'),
+]);
 </script>
 
 <template>
@@ -353,13 +328,13 @@ const savedInMiEquipo = [
 
     <div v-else class="fl-container pt-6 pb-16 sm:pt-8 lg:pb-20">
         <nav
-            aria-label="Ruta de navegación"
+            :aria-label="$t('Ruta de navegación')"
             class="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
         >
             <Link
                 :href="storeIndex()"
                 class="text-muted-foreground hover:text-foreground"
-                >Tienda</Link
+                >{{ $t('Tienda') }}</Link
             >
             <template v-if="product.category && product.category_slug">
                 <ChevronRight class="size-3.5" aria-hidden="true" />
@@ -381,7 +356,7 @@ const savedInMiEquipo = [
                 <ProductGallery
                     :items="galleryItems"
                     :product-name="product.name"
-                    :note="isConcept ? 'Render de producto' : null"
+                    :note="isConcept ? $t('Render de producto') : null"
                     :badge="
                         product.availability !== 'available'
                             ? product.availability_label
@@ -400,7 +375,7 @@ const savedInMiEquipo = [
                         <span
                             v-if="product.is_new"
                             class="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-semibold tracking-[0.14em] text-background uppercase"
-                            >Nuevo</span
+                            >{{ $t('Nuevo') }}</span
                         >
                         <span
                             v-if="product.is_nfc"
@@ -414,21 +389,15 @@ const savedInMiEquipo = [
                         </span>
                     </div>
 
-                    <h1
-                        class="fl-display mt-3 text-[2.4rem] sm:text-5xl"
-                        :class="isLegacyPlate ? 'uppercase' : ''"
-                    >
+                    <h1 class="fl-display mt-3 text-[2.4rem] sm:text-5xl">
                         {{ product.name }}
                     </h1>
 
                     <p
-                        v-if="product.tagline || isLegacyPlate"
+                        v-if="product.tagline"
                         class="mt-3 font-serif text-xl text-foreground/80 italic"
                     >
-                        {{
-                            product.tagline ||
-                            'Una pieza física que conecta tu medalla con tu historia digital.'
-                        }}
+                        {{ product.tagline }}
                     </p>
 
                     <p
@@ -438,110 +407,29 @@ const savedInMiEquipo = [
                         {{ product.description }}
                     </p>
 
-                    <!-- Legacy Plate: personalized through an event -->
-                    <template v-if="isLegacyPlate">
-                        <p v-if="fromPrice !== null" class="mt-6 text-sm">
-                            <span class="text-muted-foreground">Desde </span>
-                            <Money
-                                :minor="fromPrice"
-                                :currency="
-                                    product.variants[0]?.currency ?? 'MXN'
-                                "
-                                class="font-serif text-3xl text-foreground"
-                            />
+                    <!-- Retired plate line: a notice, never a purchase -->
+                    <div
+                        v-if="isLegacyPlate"
+                        class="mt-6 rounded-card border border-border bg-card p-5"
+                    >
+                        <p class="text-sm text-muted-foreground">
+                            {{
+                                $t(
+                                    'Esta pieza ya no está a la venta. Hoy tu recuerdo vive en el Finisher Legacy Tag.',
+                                )
+                            }}
                         </p>
-
-                        <dl
-                            class="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border text-sm"
+                        <Button
+                            as-child
+                            size="lg"
+                            class="mt-4 h-12 w-full rounded-full"
                         >
-                            <div
-                                v-for="row in plateSpec"
-                                :key="row.label"
-                                class="bg-card px-4 py-3"
-                            >
-                                <dt
-                                    class="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-                                >
-                                    {{ row.label }}
-                                </dt>
-                                <dd class="mt-0.5 font-medium">
-                                    {{ row.value }}
-                                </dd>
-                            </div>
-                        </dl>
-
-                        <ol class="mt-6 space-y-4">
-                            <li
-                                v-for="(step, index) in plateSteps"
-                                :key="step.title"
-                                class="flex gap-3"
-                            >
-                                <span
-                                    class="legacy-numeric flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-card text-[11px] font-semibold"
-                                    >{{ index + 1 }}</span
-                                >
-                                <span>
-                                    <span class="block text-sm font-semibold">{{
-                                        step.title
-                                    }}</span>
-                                    <span
-                                        class="block text-sm text-muted-foreground"
-                                        >{{ step.body }}</span
-                                    >
-                                </span>
-                            </li>
-                        </ol>
-
-                        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
-                            <Button
-                                as-child
-                                size="lg"
-                                class="h-12 rounded-full sm:flex-1"
-                            >
-                                <Link :href="eventsIndex()">
-                                    Personalizar mi placa
-                                    <ArrowRight class="size-4" />
-                                </Link>
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                class="h-12 rounded-full"
-                                :aria-expanded="showPlateHelp"
-                                aria-controls="ya-tengo-placa"
-                                @click="showPlateHelp = !showPlateHelp"
-                            >
-                                <Nfc class="size-4" />
-                                Ya tengo mi placa
-                            </Button>
-                        </div>
-                        <div
-                            v-if="showPlateHelp"
-                            id="ya-tengo-placa"
-                            class="mt-3 flex gap-3 rounded-card border border-border bg-card p-4 text-sm"
-                        >
-                            <Smartphone
-                                class="mt-0.5 size-5 shrink-0 text-fl-gold-ink"
-                                aria-hidden="true"
-                            />
-                            <p class="text-muted-foreground">
-                                Acerca tu teléfono al frente de la placa. Se
-                                abrirá su página y, con tu sesión iniciada,
-                                podrás conectarla a tu perfil en un paso.
-                                <Link
-                                    v-if="isGuest"
-                                    :href="loginUrl()"
-                                    class="font-medium text-foreground underline underline-offset-4"
-                                    >Iniciar sesión</Link
-                                >
-                            </p>
-                        </div>
-                        <p class="mt-3 text-xs text-muted-foreground">
-                            Elige tu evento en Eventos: si tiene preventa de
-                            Legacy Plate podrás seleccionar tu modelo y
-                            comprarla ahí mismo.
-                        </p>
-                    </template>
+                            <Link :href="COLLECTIONS_URL">
+                                {{ $t('Ver colecciones') }}
+                                <ArrowRight class="size-4" aria-hidden="true" />
+                            </Link>
+                        </Button>
+                    </div>
 
                     <!-- Everything else: variants, quantity, cart -->
                     <template v-else>
@@ -572,7 +460,7 @@ const savedInMiEquipo = [
                                     class="rounded-full bg-[#9f2a1d] px-2.5 py-0.5 text-[11px] font-bold text-white uppercase"
                                     >{{
                                         selectedVariant.promotion_label ??
-                                        'Oferta'
+                                        $t('Oferta')
                                     }}</span
                                 >
                             </template>
@@ -617,15 +505,19 @@ const savedInMiEquipo = [
                                 <p class="font-semibold">
                                     {{
                                         product.availability === 'concept'
-                                            ? 'Producto en desarrollo'
-                                            : 'Muy pronto disponible'
+                                            ? $t('Producto en desarrollo')
+                                            : $t('Muy pronto disponible')
                                     }}
                                 </p>
                                 <p class="mt-1 text-sm text-muted-foreground">
                                     {{
                                         product.availability === 'concept'
-                                            ? 'Estamos diseñando este producto. Aún no está a la venta.'
-                                            : 'Este producto todavía no está a la venta. Vuelve pronto.'
+                                            ? $t(
+                                                  'Estamos diseñando este producto. Aún no está a la venta.',
+                                              )
+                                            : $t(
+                                                  'Este producto todavía no está a la venta. Vuelve pronto.',
+                                              )
                                     }}
                                 </p>
                             </div>
@@ -636,21 +528,21 @@ const savedInMiEquipo = [
                                 size="lg"
                                 class="h-12 w-full rounded-full"
                             >
-                                <Link :href="loginUrl()"
-                                    >Inicia sesión para comprar</Link
-                                >
+                                <Link :href="loginUrl()">{{
+                                    $t('Inicia sesión para comprar')
+                                }}</Link>
                             </Button>
 
                             <div v-else class="flex gap-3">
                                 <div
                                     class="flex h-12 items-center rounded-full border border-border bg-card"
                                     role="group"
-                                    aria-label="Cantidad"
+                                    :aria-label="$t('Cantidad')"
                                 >
                                     <button
                                         type="button"
                                         class="flex size-11 items-center justify-center rounded-full text-foreground disabled:opacity-30"
-                                        aria-label="Quitar uno"
+                                        :aria-label="$t('Quitar uno')"
                                         :disabled="quantity <= 1"
                                         @click="quantity--"
                                     >
@@ -664,7 +556,7 @@ const savedInMiEquipo = [
                                     <button
                                         type="button"
                                         class="flex size-11 items-center justify-center rounded-full text-foreground disabled:opacity-30"
-                                        aria-label="Agregar uno"
+                                        :aria-label="$t('Agregar uno')"
                                         :disabled="quantity >= MAX_QTY"
                                         @click="quantity++"
                                     >
@@ -708,14 +600,16 @@ const savedInMiEquipo = [
                             </span>
                             <div>
                                 <p class="font-semibold text-foreground">
-                                    Producto conectado
+                                    {{ $t('Producto conectado') }}
                                 </p>
                                 <p
                                     class="mt-1 text-sm leading-relaxed text-muted-foreground"
                                 >
-                                    Acerca tu teléfono y se abre su página.
-                                    Conéctalo una vez y queda guardado en tu
-                                    perfil.
+                                    {{
+                                        $t(
+                                            'Acerca tu teléfono y se abre su página. Conéctalo una vez y queda guardado en tu perfil.',
+                                        )
+                                    }}
                                 </p>
                             </div>
                         </div>
@@ -725,7 +619,7 @@ const savedInMiEquipo = [
                             <p
                                 class="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
                             >
-                                Qué se guarda en Mi equipo
+                                {{ $t('Qué se guarda en Mi equipo') }}
                             </p>
                             <ul class="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                                 <li
@@ -750,43 +644,30 @@ const savedInMiEquipo = [
                             v-if="product.requires_shipping"
                             class="flex items-center gap-2.5"
                         >
-                            <Truck class="size-4" aria-hidden="true" /> Envío a
-                            domicilio
+                            <Truck class="size-4" aria-hidden="true" />
+                            {{ $t('Envío a domicilio') }}
                         </li>
                         <li class="flex items-center gap-2.5">
                             <ShieldCheck class="size-4" aria-hidden="true" />
-                            Pago seguro
+                            {{ $t('Pago seguro') }}
                         </li>
                         <li
                             v-if="product.brand"
                             class="flex items-center gap-2.5"
                         >
                             <BadgeCheck class="size-4" aria-hidden="true" />
-                            Marca: {{ product.brand }}
+                            {{ $t('Marca: {brand}', { brand: product.brand }) }}
                         </li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <!-- Legacy Plate: how the clip holds it -->
-        <section
-            v-if="isLegacyPlate"
-            id="como-se-sujeta"
-            class="mt-20 border-t border-border pt-14"
-        >
-            <p class="fl-eyebrow">Cómo se sujeta</p>
-            <h2 class="mt-3 mb-8 font-serif text-3xl text-foreground">
-                El reverso es funcional: un clip que la mantiene firme.
-            </h2>
-            <PlateClipSteps />
-        </section>
-
         <!-- The product's story -->
         <section
             v-if="product.contentSections.length"
             class="mt-20 border-t border-border pt-14"
-            aria-label="Sobre este producto"
+            :aria-label="$t('Sobre este producto')"
         >
             <ProductStorySections
                 :sections="product.contentSections"
@@ -801,37 +682,50 @@ const savedInMiEquipo = [
         >
             <div class="grid lg:grid-cols-2">
                 <div class="p-8 sm:p-12">
-                    <p class="fl-eyebrow">Cómo funciona con Finisher Legacy</p>
+                    <p class="fl-eyebrow">
+                        {{ $t('Cómo funciona con Finisher Legacy') }}
+                    </p>
                     <h2 class="fl-display mt-4 text-3xl sm:text-4xl">
-                        Tu equipo también forma parte de tu historia.
+                        {{ $t('Tu equipo también forma parte de tu historia.') }}
                     </h2>
                     <ol class="mt-8 space-y-5">
                         <li class="flex gap-4">
                             <span class="fl-step">1</span>
                             <p class="text-muted-foreground">
-                                <strong class="text-foreground"
-                                    >Acerca tu teléfono.</strong
-                                >
-                                El producto abre su página al instante.
+                                <strong class="text-foreground">{{
+                                    $t('Acerca tu teléfono.')
+                                }}</strong>
+                                {{
+                                    $t(
+                                        'El producto abre su página al instante.',
+                                    )
+                                }}
                             </p>
                         </li>
                         <li class="flex gap-4">
                             <span class="fl-step">2</span>
                             <p class="text-muted-foreground">
-                                <strong class="text-foreground"
-                                    >Conéctalo a tu perfil.</strong
-                                >
-                                Inicia sesión y confírmalo: queda en Mi equipo.
+                                <strong class="text-foreground">{{
+                                    $t('Conéctalo a tu perfil.')
+                                }}</strong>
+                                {{
+                                    $t(
+                                        'Inicia sesión y confírmalo: queda en Mi equipo.',
+                                    )
+                                }}
                             </p>
                         </li>
                         <li class="flex gap-4">
                             <span class="fl-step">3</span>
                             <p class="text-muted-foreground">
-                                <strong class="text-foreground"
-                                    >Llévalo a tus carreras.</strong
-                                >
-                                Se suma a tu legado junto a tus resultados y
-                                fotos.
+                                <strong class="text-foreground">{{
+                                    $t('Llévalo a tus carreras.')
+                                }}</strong>
+                                {{
+                                    $t(
+                                        'Se suma a tu legado junto a tus resultados y fotos.',
+                                    )
+                                }}
                             </p>
                         </li>
                     </ol>
@@ -839,7 +733,7 @@ const savedInMiEquipo = [
                         :href="howItWorks()"
                         class="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline-offset-4 hover:underline"
                     >
-                        Descubre cómo funciona
+                        {{ $t('Descubre cómo funciona') }}
                         <ArrowRight class="size-4" />
                     </Link>
                 </div>
@@ -848,7 +742,11 @@ const savedInMiEquipo = [
                 >
                     <div class="w-full max-w-xs">
                         <NfcTapVisual
-                            label="Un teléfono acercándose a un producto Finisher Legacy para abrir su página"
+                            :label="
+                                $t(
+                                    'Un teléfono acercándose a un producto Finisher Legacy para abrir su página',
+                                )
+                            "
                         />
                     </div>
                 </div>
@@ -859,12 +757,12 @@ const savedInMiEquipo = [
         <section
             v-if="!isLegacyPlate"
             class="mt-16 grid gap-10 border-t border-border pt-12 sm:mt-20 sm:pt-14 lg:grid-cols-12 lg:gap-12"
-            aria-label="Detalles y compra segura"
+            :aria-label="$t('Detalles y compra segura')"
         >
             <div v-if="detailRows.length" v-reveal class="lg:col-span-5">
                 <p class="fl-eyebrow inline-flex items-center gap-3">
                     <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
-                    Detalles
+                    {{ $t('Detalles') }}
                 </p>
                 <dl class="mt-4 divide-y divide-border">
                     <div
@@ -892,7 +790,7 @@ const savedInMiEquipo = [
             >
                 <p class="fl-eyebrow inline-flex items-center gap-3">
                     <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
-                    Comprar con confianza
+                    {{ $t('Comprar con confianza') }}
                 </p>
                 <div class="fl-trust-two mt-7">
                     <StoreTrustNotes :shipping="product.requires_shipping" />
@@ -904,13 +802,13 @@ const savedInMiEquipo = [
         <section v-if="relatedProducts.length" class="mt-16 sm:mt-20">
             <div class="flex items-end justify-between gap-4">
                 <h2 class="fl-display text-3xl sm:text-4xl">
-                    Completa tu equipo
+                    {{ $t('Completa tu equipo') }}
                 </h2>
                 <Link
                     :href="storeIndex()"
                     class="hidden items-center gap-2 text-sm font-semibold underline-offset-4 hover:underline sm:inline-flex"
                 >
-                    Ver la tienda <ArrowRight class="size-4" />
+                    {{ $t('Ver la tienda') }} <ArrowRight class="size-4" />
                 </Link>
             </div>
             <div
@@ -941,7 +839,7 @@ const savedInMiEquipo = [
         />
         <template #action>
             <Button v-if="isGuest" as-child class="h-11 rounded-full px-5">
-                <Link :href="loginUrl()">Inicia sesión</Link>
+                <Link :href="loginUrl()">{{ $t('Inicia sesión') }}</Link>
             </Button>
             <Button
                 v-else

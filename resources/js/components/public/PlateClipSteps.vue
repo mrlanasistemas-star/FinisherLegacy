@@ -8,6 +8,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, useId } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 import { plateOnRibbonSvg, plateProfileSvg } from '@/lib/plate-art';
 import type { PlateSpec } from '@/lib/plate-art';
 
@@ -21,31 +22,40 @@ const props = withDefaults(
     { spec: () => ({}), compact: false, autoplay: true },
 );
 
+const { t } = useI18n();
 const uid = useId().replace(/[^a-zA-Z0-9-]/g, '');
 
 const steps = computed(() => [
     {
         n: 1,
-        title: 'Clip listo',
-        text: 'La placa llega con el clip de acero inoxidable instalado en el reverso.',
+        title: t('Clip listo'),
+        text: t(
+            'La placa llega con el clip de acero inoxidable instalado en el reverso.',
+        ),
         svg: plateProfileSvg(`${uid}a`, 'none', props.spec),
     },
     {
         n: 2,
-        title: 'Inserta el listón',
-        text: 'Desliza el listón de tu medalla entre la placa y el clip, por el extremo abierto.',
+        title: t('Inserta el listón'),
+        text: t(
+            'Desliza el listón de tu medalla entre la placa y el clip, por el extremo abierto.',
+        ),
         svg: plateProfileSvg(`${uid}b`, 'inserting', props.spec),
     },
     {
         n: 3,
-        title: 'El clip aplica presión',
-        text: 'Sus ondulaciones presionan el listón en tres puntos. Sin mecanismos ni piezas sueltas.',
+        title: t('El clip aplica presión'),
+        text: t(
+            'Sus ondulaciones presionan el listón en tres puntos. Sin mecanismos ni piezas sueltas.',
+        ),
         svg: plateProfileSvg(`${uid}c`, 'held', props.spec),
     },
     {
         n: 4,
-        title: 'Sujeción firme y segura',
-        text: 'La Legacy Plate queda fija y visible sobre el listón, lista para acercar el teléfono.',
+        title: t('Sujeción firme y segura'),
+        text: t(
+            'La Legacy Plate queda fija y visible sobre el listón, lista para acercar el teléfono.',
+        ),
         svg: plateOnRibbonSvg(`${uid}d`, {}, props.spec),
     },
 ]);
@@ -100,7 +110,12 @@ onBeforeUnmount(stop);
                 class="absolute top-4 left-4 rounded-full bg-foreground px-3 py-1 text-[11px] font-semibold tracking-wider text-background uppercase"
                 aria-live="polite"
             >
-                Paso {{ active + 1 }} de 4
+                {{
+                    $t('Paso {current} de {total}', {
+                        current: active + 1,
+                        total: 4,
+                    })
+                }}
             </span>
         </div>
 

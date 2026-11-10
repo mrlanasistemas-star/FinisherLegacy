@@ -15,9 +15,11 @@ import {
     Sparkles,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import T from '@/components/i18n/T.vue';
 import InputError from '@/components/InputError.vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { contact } from '@/routes';
 import {
     complete,
@@ -42,6 +44,7 @@ const props = defineProps<{
     participations: ParticipationOption[];
 }>();
 
+const { t } = useI18n();
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
 const collectionName = computed(
@@ -84,14 +87,14 @@ function submitRace() {
 }
 
 const steps = computed(() => [
-    { key: 'tag', label: 'Tu tag', done: true },
+    { key: 'tag', label: t('Tu tag'), done: true },
     {
         key: 'account',
-        label: 'Tu cuenta',
+        label: t('Tu cuenta'),
         done: isAuthenticated.value,
     },
-    { key: 'activate', label: 'Activar', done: props.state === 'mine' },
-    { key: 'race', label: 'Tu carrera', done: false },
+    { key: 'activate', label: t('Activar'), done: props.state === 'mine' },
+    { key: 'race', label: t('Tu carrera'), done: false },
 ]);
 
 const currentStep = computed(() => steps.value.findIndex((s) => !s.done));
@@ -104,8 +107,8 @@ const inputClass =
     <Head
         :title="
             collectionName
-                ? `Activa tu ${collectionName}`
-                : 'Activa tu Finisher Legacy'
+                ? $t('Activa tu {name}', { name: collectionName })
+                : $t('Activa tu Finisher Legacy')
         "
     >
         <meta name="robots" content="noindex, nofollow" />
@@ -117,7 +120,7 @@ const inputClass =
             <ol
                 v-if="state === 'activatable' || state === 'mine'"
                 class="mb-6 flex items-center gap-2"
-                aria-label="Pasos para activar"
+                :aria-label="$t('Pasos para activar')"
             >
                 <li
                     v-for="(step, i) in steps"
@@ -174,7 +177,7 @@ const inputClass =
                     <h1
                         class="fl-display mt-2 text-3xl leading-tight text-white"
                     >
-                        {{ collectionName ?? 'Tu tag' }}
+                        {{ collectionName ?? $t('Tu tag') }}
                     </h1>
                     <p
                         v-if="tag?.collection?.tagline"
@@ -196,8 +199,13 @@ const inputClass =
                     <h2 class="fl-display text-2xl">
                         {{
                             isAuthenticated
-                                ? `${firstName ? `${firstName}, ` : ''}este tag está listo para ser tuyo`
-                                : 'Hazlo tuyo en un minuto'
+                                ? firstName
+                                    ? $t(
+                                          '{name}, este tag está listo para ser tuyo',
+                                          { name: firstName },
+                                      )
+                                    : $t('Este tag está listo para ser tuyo')
+                                : $t('Hazlo tuyo en un minuto')
                         }}
                     </h2>
                     <p
@@ -205,8 +213,12 @@ const inputClass =
                     >
                         {{
                             isAuthenticated
-                                ? 'Al activarlo, queda ligado a tu cuenta y abre tu recuerdo cada vez que alguien lo acerque a su teléfono.'
-                                : 'Crea tu cuenta o inicia sesión. Te traemos de vuelta aquí para terminar.'
+                                ? $t(
+                                      'Al activarlo, queda ligado a tu cuenta y abre tu recuerdo cada vez que alguien lo acerque a su teléfono.',
+                                  )
+                                : $t(
+                                      'Crea tu cuenta o inicia sesión. Te traemos de vuelta aquí para terminar.',
+                                  )
                         }}
                     </p>
                 </div>
@@ -221,14 +233,14 @@ const inputClass =
                         "
                         class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-fl-black px-6 text-sm font-semibold text-white transition hover:bg-fl-graphite focus-visible:ring-4 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
                     >
-                        Crear cuenta
+                        <T>Crear cuenta</T>
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>
                     <Link
                         :href="continueMethod({ code, provider: 'login' }).url"
                         class="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                     >
-                        Ya tengo cuenta · Iniciar sesión
+                        <T>Ya tengo cuenta · Iniciar sesión</T>
                     </Link>
                 </div>
 
@@ -242,11 +254,11 @@ const inputClass =
                         <Spinner v-if="activating" class="size-4" />
                         <template v-else>
                             <Sparkles class="size-4" aria-hidden="true" />
-                            Activar mi tag
+                            <T>Activar mi tag</T>
                         </template>
                     </button>
                     <p class="mt-3 text-center text-xs text-muted-foreground">
-                        Solo una persona puede activarlo.
+                        <T>Solo una persona puede activarlo.</T>
                     </p>
                 </div>
             </template>
@@ -258,20 +270,23 @@ const inputClass =
                         class="inline-flex items-center gap-1.5 rounded-full bg-fl-cream px-3 py-1 text-xs font-semibold text-fl-gold-ink"
                     >
                         <Check class="size-3.5" aria-hidden="true" />
-                        Activado
+                        <T>Activado</T>
                     </p>
                     <h2 class="fl-display mt-3 text-2xl">
-                        ¿De qué carrera es este recuerdo?
+                        <T>¿De qué carrera es este recuerdo?</T>
                     </h2>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Lo usamos para tu historia. Puedes cambiarlo cuando
-                        quieras.
+                        {{
+                            $t(
+                                'Lo usamos para tu historia. Puedes cambiarlo cuando quieras.',
+                            )
+                        }}
                     </p>
                 </div>
 
                 <form class="mt-6 grid gap-3" @submit.prevent="submitRace">
                     <fieldset class="grid gap-3">
-                        <legend class="sr-only">Elige tu carrera</legend>
+                        <legend class="sr-only"><T>Elige tu carrera</T></legend>
                         <label
                             v-for="p in participations"
                             :key="p.id"
@@ -299,7 +314,7 @@ const inputClass =
                             <span class="min-w-0">
                                 <span
                                     class="block font-semibold text-foreground"
-                                    >{{ p.event_name ?? 'Carrera' }}</span
+                                    >{{ p.event_name ?? $t('Carrera') }}</span
                                 >
                                 <span
                                     class="legacy-numeric mt-0.5 block text-sm text-muted-foreground"
@@ -335,7 +350,9 @@ const inputClass =
                                 class="size-5 text-fl-gold-ink"
                                 aria-hidden="true"
                             />
-                            <span class="font-semibold">Otra carrera</span>
+                            <span class="font-semibold"
+                                ><T>Otra carrera</T></span
+                            >
                         </label>
                     </fieldset>
                     <InputError :message="race.errors.event_participant_id" />
@@ -346,7 +363,7 @@ const inputClass =
                     >
                         <div>
                             <label for="r-name" class="text-sm font-medium"
-                                >Nombre de la carrera</label
+                                ><T>Nombre de la carrera</T></label
                             >
                             <input
                                 id="r-name"
@@ -361,7 +378,7 @@ const inputClass =
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label for="r-dist" class="text-sm font-medium"
-                                    >Distancia</label
+                                    ><T>Distancia</T></label
                                 >
                                 <input
                                     id="r-dist"
@@ -374,7 +391,7 @@ const inputClass =
                             </div>
                             <div>
                                 <label for="r-time" class="text-sm font-medium"
-                                    >Tu tiempo</label
+                                    ><T>Tu tiempo</T></label
                                 >
                                 <input
                                     id="r-time"
@@ -393,7 +410,7 @@ const inputClass =
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label for="r-date" class="text-sm font-medium"
-                                    >Fecha</label
+                                    ><T>Fecha</T></label
                                 >
                                 <input
                                     id="r-date"
@@ -405,7 +422,7 @@ const inputClass =
                             </div>
                             <div>
                                 <label for="r-loc" class="text-sm font-medium"
-                                    >Lugar</label
+                                    ><T>Lugar</T></label
                                 >
                                 <input
                                     id="r-loc"
@@ -427,7 +444,7 @@ const inputClass =
                         <Spinner v-if="race.processing" class="size-4" />
                         <template v-else>
                             <Flag class="size-4" aria-hidden="true" />
-                            Crear mi recuerdo
+                            <T>Crear mi recuerdo</T>
                         </template>
                     </button>
                     <button
@@ -437,7 +454,7 @@ const inputClass =
                         @click="chooseLater"
                     >
                         <Clock class="size-4" aria-hidden="true" />
-                        Lo completo después
+                        <T>Lo completo después</T>
                     </button>
                 </form>
             </template>
@@ -448,8 +465,8 @@ const inputClass =
                     <h2 class="fl-display text-2xl">
                         {{
                             state === 'taken'
-                                ? 'Este tag ya tiene dueño'
-                                : 'Este tag no se puede activar'
+                                ? $t('Este tag ya tiene dueño')
+                                : $t('Este tag no se puede activar')
                         }}
                     </h2>
                     <p
@@ -464,20 +481,20 @@ const inputClass =
                         class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-fl-black px-6 text-sm font-semibold text-white transition hover:bg-fl-graphite"
                     >
                         <LifeBuoy class="size-4" aria-hidden="true" />
-                        Escríbenos
+                        <T>Escríbenos</T>
                     </Link>
                     <Link
                         v-if="state === 'taken' && !isAuthenticated"
                         :href="continueMethod({ code, provider: 'login' }).url"
                         class="text-sm font-semibold text-fl-gold-ink underline-offset-4 hover:underline"
                     >
-                        ¿Es tuyo? Inicia sesión
+                        <T>¿Es tuyo? Inicia sesión</T>
                     </Link>
                     <Link
                         :href="activateIndex().url"
                         class="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                     >
-                        Probar con otro código
+                        <T>Probar con otro código</T>
                     </Link>
                 </div>
             </template>
@@ -489,7 +506,7 @@ const inputClass =
                 <Link
                     :href="storyShow(story.public_id).url"
                     class="underline underline-offset-4"
-                    >Ver mi recuerdo</Link
+                    ><T>Ver mi recuerdo</T></Link
                 >
             </p>
         </div>

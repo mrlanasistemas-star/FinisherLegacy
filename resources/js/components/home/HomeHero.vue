@@ -43,6 +43,7 @@ import type { TagArt, TagPose } from '@/components/three/tagStageContext';
 import { useReducedMotion } from '@/composables/useReducedMotion';
 import { MEDIA } from '@/config/media';
 import { ACTIVATE_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import {
     index as collectionsIndex,
     show as collectionShow,
@@ -50,6 +51,8 @@ import {
 import { index as storeIndex } from '@/routes/store/products';
 import type { CollectionCardData } from '@/types/collections';
 import { collectionTagArts } from '@/types/collections';
+
+const { t } = useI18n();
 
 const props = defineProps<{ collections: CollectionCardData[] }>();
 
@@ -66,53 +69,63 @@ type Scene = {
     pose: TagPose;
 };
 
-const scenes: Scene[] = [
+const scenes = computed<Scene[]>(() => [
     {
         id: 'intro',
         step: 'Finisher Legacy',
-        eyebrow: 'Finisher Legacy · Haz que perdure.',
-        title: 'El tag que guarda la historia de tu carrera.',
-        body: 'Una pieza de colección para tu medalla o tu mochila, con un chip NFC que abre tu historia digital.',
+        eyebrow: t('Finisher Legacy · Haz que perdure.'),
+        title: t('El tag que guarda la historia de tu carrera.'),
+        body: t(
+            'Una pieza de colección para tu medalla o tu mochila, con un chip NFC que abre tu historia digital.',
+        ),
         ms: 4600,
         pose: { face: 'front', turn: -0.22, tilt: 0.04 },
     },
     {
         id: 'product',
-        step: 'El tag',
-        eyebrow: '01 · El objeto',
-        title: 'Un tag de colección, con su correa.',
-        body: 'Diseño por sede, disciplina y año. Llega listo de fábrica: correa de silicón, chip NFC dentro y nada que instalar.',
+        step: t('El tag'),
+        eyebrow: t('01 · El objeto'),
+        title: t('Un tag de colección, con su correa.'),
+        body: t(
+            'Diseño por sede, disciplina y año. Llega listo de fábrica: correa de silicón, chip NFC dentro y nada que instalar.',
+        ),
         ms: 5600,
         pose: { face: 'front', turn: 0.55, tilt: 0.1, roll: -0.03 },
     },
     {
         id: 'tap',
-        step: 'Acércalo',
-        eyebrow: '02 · Acércalo',
-        title: 'Acércalo a tu celular.',
-        body: 'Sin apps y sin códigos: el chip NFC del reverso le dice a tu teléfono qué historia abrir.',
+        step: t('Acércalo'),
+        eyebrow: t('02 · Acércalo'),
+        title: t('Acércalo a tu celular.'),
+        body: t(
+            'Sin apps y sin códigos: el chip NFC del reverso le dice a tu teléfono qué historia abrir.',
+        ),
         ms: 4600,
         pose: { face: 'back', turn: -0.3, tilt: 0.05 },
     },
     {
         id: 'memory',
-        step: 'Tu historia',
-        eyebrow: '03 · Tu historia',
-        title: 'Y se abre tu historia.',
-        body: 'Tu tiempo, tus fotos y las dedicatorias de quienes te acompañaron, guardadas en tu tag.',
+        step: t('Tu historia'),
+        eyebrow: t('03 · Tu historia'),
+        title: t('Y se abre tu historia.'),
+        body: t(
+            'Tu tiempo, tus fotos y las dedicatorias de quienes te acompañaron, guardadas en tu tag.',
+        ),
         ms: 5600,
         pose: { face: 'back', turn: -0.55, tilt: 0.06 },
     },
     {
         id: 'cta',
-        step: 'Tuyo',
-        eyebrow: '04 · Tuyo',
-        title: 'Elige la colección de tu carrera.',
-        body: 'Cada sede tiene su propio diseño. Si ya tienes tu tag, actívalo en un minuto.',
+        step: t('Tuyo'),
+        eyebrow: t('04 · Tuyo'),
+        title: t('Elige la colección de tu carrera.'),
+        body: t(
+            'Cada sede tiene su propio diseño. Si ya tienes tu tag, actívalo en un minuto.',
+        ),
         ms: 6400,
         pose: { face: 'front', turn: 0.18, tilt: 0.03 },
     },
-];
+]);
 
 /**
  * Real collection designs → tag artwork (every design of every published
@@ -123,8 +136,8 @@ const arts = computed<TagArt[]>(() =>
         ? props.collections.flatMap((c) => collectionTagArts(c))
         : [
               {
-                  name: 'Tu colección',
-                  subtitle: 'Destino · Disciplina',
+                  name: t('Tu colección'),
+                  subtitle: t('Destino · Disciplina'),
                   year: null,
                   accent: null,
               },
@@ -143,7 +156,7 @@ const pageHidden = ref(false);
 const finished = ref(false);
 const userDriven = ref(false);
 
-const scene = computed(() => scenes[index.value]);
+const scene = computed(() => scenes.value[index.value]);
 const art = computed(() => arts.value[artIndex.value % arts.value.length]);
 const pose = computed(() => scene.value.pose);
 const autoplay = computed(() => !reduced.value && !finished.value);
@@ -158,7 +171,7 @@ const running = computed(
 );
 
 function go(next: number, byUser = false) {
-    index.value = (next + scenes.length) % scenes.length;
+    index.value = (next + scenes.value.length) % scenes.value.length;
 
     if (byUser) {
         userDriven.value = true;
@@ -167,7 +180,7 @@ function go(next: number, byUser = false) {
 
 /** End of a scene's progress bar (CSS animationend). */
 function advance() {
-    if (index.value < scenes.length - 1) {
+    if (index.value < scenes.value.length - 1) {
         go(index.value + 1);
 
         return;
@@ -247,7 +260,7 @@ const featured = computed(() => props.collections.slice(0, 3));
         ref="section"
         class="hero relative overflow-hidden bg-white"
         :data-scene="scene.id"
-        aria-roledescription="presentación"
+        :aria-roledescription="$t('presentación')"
         aria-labelledby="home-hero-title"
         @pointerenter="hovering = true"
         @pointerleave="hovering = false"
@@ -317,7 +330,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                         <ul
                             v-if="s.id === 'cta' && featured.length"
                             class="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start"
-                            aria-label="Colecciones disponibles"
+                            :aria-label="$t('Colecciones disponibles')"
                         >
                             <li v-for="c in featured" :key="c.slug">
                                 <Link
@@ -353,7 +366,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                         :href="storeIndex()"
                         class="fl-btn-primary group w-full sm:w-auto"
                     >
-                        Ver colecciones
+                        {{ $t('Ver colecciones') }}
                         <ArrowRight
                             class="size-4 transition-transform duration-300 group-hover:translate-x-1"
                             aria-hidden="true"
@@ -367,7 +380,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                             class="size-4 text-fl-gold-dim"
                             aria-hidden="true"
                         />
-                        Activar mi tag
+                        {{ $t('Activar mi tag') }}
                     </a>
                 </div>
             </div>
@@ -427,7 +440,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                                 <span
                                     class="text-[10px] font-semibold tracking-[0.18em] text-white/70 uppercase"
                                 >
-                                    Acerca tu tag
+                                    {{ $t('Acerca tu tag') }}
                                 </span>
                             </div>
                             <!-- Story screen (example) -->
@@ -444,7 +457,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                                     />
                                     <span
                                         class="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-[8px] font-bold tracking-[0.16em] text-fl-gold-ink uppercase"
-                                        >Ejemplo</span
+                                        >{{ $t('Ejemplo') }}</span
                                     >
                                 </div>
                                 <div class="space-y-2 p-3">
@@ -457,14 +470,14 @@ const featured = computed(() => props.collections.slice(0, 3));
                                     <p
                                         class="text-[13px] leading-tight font-bold text-foreground"
                                     >
-                                        Tu nombre
+                                        {{ $t('Tu nombre') }}
                                     </p>
                                     <ul class="space-y-1.5 pt-1">
                                         <li class="story-row" style="--d: 0">
                                             <Clock3
                                                 class="size-3 text-fl-gold-dim"
                                             />
-                                            <span>Tu tiempo</span>
+                                            <span>{{ $t('Tu tiempo') }}</span>
                                             <span
                                                 class="fl-skeleton ml-auto h-2 w-10"
                                             />
@@ -473,7 +486,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                                             <Camera
                                                 class="size-3 text-fl-gold-dim"
                                             />
-                                            <span>Tus fotos</span>
+                                            <span>{{ $t('Tus fotos') }}</span>
                                             <span
                                                 class="fl-skeleton ml-auto h-2 w-8"
                                             />
@@ -482,7 +495,9 @@ const featured = computed(() => props.collections.slice(0, 3));
                                             <Heart
                                                 class="size-3 text-fl-gold-dim"
                                             />
-                                            <span>Dedicatorias</span>
+                                            <span>{{
+                                                $t('Dedicatorias')
+                                            }}</span>
                                             <span
                                                 class="fl-skeleton ml-auto h-2 w-6"
                                             />
@@ -498,13 +513,13 @@ const featured = computed(() => props.collections.slice(0, 3));
                 <div
                     class="hero-controls mt-2 flex items-center justify-center gap-2"
                     role="group"
-                    aria-label="Girar el tag"
+                    :aria-label="$t('Girar el tag')"
                 >
                     <button
                         type="button"
                         class="hero-ctl"
                         :disabled="!tagReady"
-                        aria-label="Girar a la izquierda"
+                        :aria-label="$t('Girar a la izquierda')"
                         @click="rotate(-1)"
                     >
                         <RotateCcw class="size-4" aria-hidden="true" />
@@ -517,14 +532,16 @@ const featured = computed(() => props.collections.slice(0, 3));
                     >
                         <Repeat2 class="size-4" aria-hidden="true" />
                         {{
-                            shownFace === 'back' ? 'Ver frente' : 'Ver reverso'
+                            shownFace === 'back'
+                                ? $t('Ver frente')
+                                : $t('Ver reverso')
                         }}
                     </button>
                     <button
                         type="button"
                         class="hero-ctl"
                         :disabled="!tagReady"
-                        aria-label="Girar a la derecha"
+                        :aria-label="$t('Girar a la derecha')"
                         @click="rotate(1)"
                     >
                         <RotateCw class="size-4" aria-hidden="true" />
@@ -534,7 +551,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                     class="mt-1.5 flex items-center justify-center gap-1.5 text-xs text-muted-foreground"
                 >
                     <Hand class="size-3.5" aria-hidden="true" />
-                    Arrástralo para girarlo · Render ilustrativo
+                    {{ $t('Arrástralo para girarlo · Render ilustrativo') }}
                 </p>
             </div>
         </div>
@@ -548,10 +565,10 @@ const featured = computed(() => props.collections.slice(0, 3));
                     class="hero-ctl shrink-0"
                     :aria-label="
                         finished
-                            ? 'Ver de nuevo'
+                            ? $t('Ver de nuevo')
                             : userPaused
-                              ? 'Reanudar la presentación'
-                              : 'Pausar la presentación'
+                              ? $t('Reanudar la presentación')
+                              : $t('Pausar la presentación')
                     "
                     @click="togglePause"
                 >
@@ -562,7 +579,10 @@ const featured = computed(() => props.collections.slice(0, 3));
                     />
                     <Pause v-else class="size-4" aria-hidden="true" />
                 </button>
-                <ol class="grid flex-1 grid-cols-5 gap-2" aria-label="Escenas">
+                <ol
+                    class="grid flex-1 grid-cols-5 gap-2"
+                    :aria-label="$t('Escenas')"
+                >
                     <li v-for="(s, i) in scenes" :key="s.id">
                         <button
                             type="button"
@@ -605,7 +625,7 @@ const featured = computed(() => props.collections.slice(0, 3));
                     :href="collectionsIndex()"
                     class="fl-link hidden shrink-0 text-sm font-medium text-foreground/80 hover:text-foreground lg:inline"
                 >
-                    Todas las colecciones
+                    {{ $t('Todas las colecciones') }}
                 </Link>
             </div>
         </div>

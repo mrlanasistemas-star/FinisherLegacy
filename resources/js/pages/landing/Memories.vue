@@ -22,6 +22,7 @@ import {
     Undo2,
     UsersRound,
 } from '@lucide/vue';
+import { computed } from 'vue';
 import CtaBand from '@/components/marketing/CtaBand.vue';
 import EcosystemGrid from '@/components/marketing/EcosystemGrid.vue';
 import FaqList from '@/components/marketing/FaqList.vue';
@@ -39,122 +40,163 @@ import {
     CONTACT_URL,
     HOW_IT_WORKS_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 
-const contents = [
+const { t } = useI18n();
+
+const contents = computed(() => [
     {
         icon: Images,
-        title: 'Tus fotos',
-        text: 'Las de la carrera y las de antes y después. Las ordenas y les pones pie de foto.',
+        title: t('Tus fotos'),
+        text: t(
+            'Las de la carrera y las de antes y después. Las ordenas y les pones pie de foto.',
+        ),
     },
     {
         icon: BookOpenText,
-        title: 'Tu historia',
-        text: 'Lo que no sale en la clasificación: por qué corriste, qué costó y a quién se lo dedicas.',
+        title: t('Tu historia'),
+        text: t(
+            'Lo que no sale en la clasificación: por qué corriste, qué costó y a quién se lo dedicas.',
+        ),
     },
     {
         icon: Timer,
-        title: 'Tu resultado',
-        text: 'Carrera, distancia, tiempo, lugar y fecha, junto a todo lo demás.',
+        title: t('Tu resultado'),
+        text: t(
+            'Carrera, distancia, tiempo, lugar y fecha, junto a todo lo demás.',
+        ),
     },
     {
         icon: Mic,
-        title: 'Tu mensaje de voz',
-        text: 'Grábalo tú o guarda el audio de alguien que estuvo contigo. Se escucha al abrir el recuerdo.',
+        title: t('Tu mensaje de voz'),
+        text: t(
+            'Grábalo tú o guarda el audio de alguien que estuvo contigo. Se escucha al abrir el recuerdo.',
+        ),
     },
     {
         icon: Award,
-        title: 'Tu certificado',
-        text: 'Si tu carrera te dio uno, lo guardas en el mismo lugar que tus fotos.',
+        title: t('Tu certificado'),
+        text: t(
+            'Si tu carrera te dio uno, lo guardas en el mismo lugar que tus fotos.',
+        ),
     },
     {
         icon: Nfc,
-        title: 'Un toque para volver',
-        text: 'Acercas tu teléfono a tu Finisher Legacy Tag y el recuerdo se abre. Sin buscar en la galería.',
+        title: t('Un toque para volver'),
+        text: t(
+            'Acercas tu teléfono a tu Finisher Legacy Tag y el recuerdo se abre. Sin buscar en la galería.',
+        ),
     },
-];
+]);
 
-const privacy = [
+const privacy = computed(() => [
     {
         icon: Globe,
-        label: 'Público',
-        text: 'Cualquier persona puede abrirlo.',
+        label: t('Público'),
+        text: t('Cualquier persona puede abrirlo.'),
     },
     {
         icon: Link2,
-        label: 'Solo con el tag o el enlace',
-        text: 'Lo abre quien tenga tu tag en la mano o un enlace que tú le diste.',
+        label: t('Solo con el tag o el enlace'),
+        text: t(
+            'Lo abre quien tenga tu tag en la mano o un enlace que tú le diste.',
+        ),
     },
     {
         icon: EyeOff,
-        label: 'Privado',
-        text: 'Solo tú lo ves.',
+        label: t('Privado'),
+        text: t('Solo tú lo ves.'),
     },
-];
+]);
 
-const steps = [
+const steps = computed(() => [
     {
-        title: 'Activa tu tag',
-        text: 'Acerca tu teléfono al tag o escribe su código. Desde ese momento es tuyo.',
+        title: t('Activa tu tag'),
+        text: t(
+            'Acerca tu teléfono al tag o escribe su código. Desde ese momento es tuyo.',
+        ),
     },
     {
-        title: 'Completa tu recuerdo',
-        text: 'Sube fotos, escribe tu historia y agrega tu resultado y tu voz. Hoy o poco a poco.',
+        title: t('Completa tu recuerdo'),
+        text: t(
+            'Sube fotos, escribe tu historia y agrega tu resultado y tu voz. Hoy o poco a poco.',
+        ),
     },
     {
-        title: 'Compártelo',
-        text: 'Crea un enlace para cada persona y decide qué ve cada quien.',
+        title: t('Compártelo'),
+        text: t('Crea un enlace para cada persona y decide qué ve cada quien.'),
     },
-];
+]);
 
-const faqs = [
+const faqs = computed(() => [
     {
-        q: '¿Qué necesito para tener un recuerdo?',
-        a: 'Un Finisher Legacy Tag activado y una cuenta. Al activarlo se crea tu recuerdo y lo vas llenando a tu ritmo.',
+        q: t('¿Qué necesito para tener un recuerdo?'),
+        a: t(
+            'Un Finisher Legacy Tag activado y una cuenta. Al activarlo se crea tu recuerdo y lo vas llenando a tu ritmo.',
+        ),
     },
     {
-        q: '¿Quién puede ver mi recuerdo?',
-        a: 'Tú decides entre público, solo con el tag o el enlace, o privado. Puedes cambiarlo cuando quieras.',
+        q: t('¿Quién puede ver mi recuerdo?'),
+        a: t(
+            'Tú decides entre público, solo con el tag o el enlace, o privado. Puedes cambiarlo cuando quieras.',
+        ),
     },
     {
-        q: '¿Puedo dejar de compartirlo con alguien?',
-        a: 'Sí. Cada enlace que creas para una persona se puede revocar, y deja de abrir tu recuerdo.',
+        q: t('¿Puedo dejar de compartirlo con alguien?'),
+        a: t(
+            'Sí. Cada enlace que creas para una persona se puede revocar, y deja de abrir tu recuerdo.',
+        ),
     },
     {
-        q: '¿Mi familia necesita instalar la app?',
-        a: 'No. El recuerdo se abre en el navegador del teléfono, al tocar el tag o desde el enlace que les compartas.',
+        q: t('¿Mi familia necesita instalar la app?'),
+        a: t(
+            'No. El recuerdo se abre en el navegador del teléfono, al tocar el tag o desde el enlace que les compartas.',
+        ),
     },
     {
-        q: '¿Puedo editarlo después?',
-        a: 'Sí. Puedes agregar fotos, cambiar el texto o grabar otro mensaje de voz cuando quieras.',
+        q: t('¿Puedo editarlo después?'),
+        a: t(
+            'Sí. Puedes agregar fotos, cambiar el texto o grabar otro mensaje de voz cuando quieras.',
+        ),
     },
     {
-        q: '¿Y si mi teléfono no lee NFC?',
-        a: 'Entra a Activar y escribe el código de tu tag. Llegas al mismo recuerdo.',
+        q: t('¿Y si mi teléfono no lee NFC?'),
+        a: t(
+            'Entra a Activar y escribe el código de tu tag. Llegas al mismo recuerdo.',
+        ),
     },
-];
+]);
 </script>
 
 <template>
     <SeoHead
-        title="Recuerdos"
-        description="Un recuerdo guarda tus fotos, tu historia, tu resultado y un mensaje de voz de tu carrera. Se abre al tocar tu Finisher Legacy Tag y tú decides quién lo ve."
+        :title="$t('Recuerdos')"
+        :description="
+            $t(
+                'Un recuerdo guarda tus fotos, tu historia, tu resultado y un mensaje de voz de tu carrera. Se abre al tocar tu Finisher Legacy Tag y tú decides quién lo ve.',
+            )
+        "
         image="/images/brand/og-finisher-legacy.jpg"
     />
 
     <PageHero
-        eyebrow="Recuerdos"
-        title="Lo que pasó"
-        accent="detrás del resultado."
-        lede="Un recuerdo guarda tus fotos, tu historia, tu resultado y un mensaje de voz de esa carrera. Se abre al tocar tu tag con el teléfono, y tú decides quién lo ve."
+        :eyebrow="$t('Recuerdos')"
+        :title="$t('Lo que pasó')"
+        :accent="$t('detrás del resultado.')"
+        :lede="
+            $t(
+                'Un recuerdo guarda tus fotos, tu historia, tu resultado y un mensaje de voz de esa carrera. Se abre al tocar tu tag con el teléfono, y tú decides quién lo ve.',
+            )
+        "
     >
         <template #actions>
             <Link :href="COLLECTIONS_URL" class="fl-btn-primary">
-                Elegir mi tag
+                {{ $t('Elegir mi tag') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
-            <Link :href="ACTIVATE_URL" class="fl-btn-secondary"
-                >Ya tengo mi tag</Link
-            >
+            <Link :href="ACTIVATE_URL" class="fl-btn-secondary">{{
+                $t('Ya tengo mi tag')
+            }}</Link>
         </template>
         <template #visual>
             <div class="rc-stage">
@@ -162,7 +204,11 @@ const faqs = [
                     <div
                         class="rc-story"
                         role="img"
-                        aria-label="Ilustración de un recuerdo: foto de portada, resultado, mensaje de voz y galería de fotos"
+                        :aria-label="
+                            $t(
+                                'Ilustración de un recuerdo: foto de portada, resultado, mensaje de voz y galería de fotos',
+                            )
+                        "
                     >
                         <div class="rc-story__cover">
                             <img
@@ -173,14 +219,27 @@ const faqs = [
                                 loading="eager"
                             />
                             <div class="rc-story__cover-text">
-                                <span>Tu carrera · lugar y fecha</span>
-                                <strong>El título de tu historia</strong>
+                                <span>{{
+                                    $t('Tu carrera · lugar y fecha')
+                                }}</span>
+                                <strong>{{
+                                    $t('El título de tu historia')
+                                }}</strong>
                             </div>
                         </div>
                         <div class="rc-story__stats">
-                            <span><b>Tiempo</b>Tu marca</span>
-                            <span><b>Distancia</b>Tu prueba</span>
-                            <span><b>Lugar</b>Tu posición</span>
+                            <span
+                                ><b>{{ $t('Tiempo') }}</b
+                                >{{ $t('Tu marca') }}</span
+                            >
+                            <span
+                                ><b>{{ $t('Distancia') }}</b
+                                >{{ $t('Tu prueba') }}</span
+                            >
+                            <span
+                                ><b>{{ $t('Lugar') }}</b
+                                >{{ $t('Tu posición') }}</span
+                            >
                         </div>
                         <div class="rc-story__voice">
                             <span class="rc-story__play"
@@ -215,11 +274,11 @@ const faqs = [
                 </PhoneFrame>
                 <div class="rc-badge rc-badge--a" aria-hidden="true">
                     <Nfc class="size-4" />
-                    Se abre con un toque
+                    {{ $t('Se abre con un toque') }}
                 </div>
                 <div class="rc-badge rc-badge--b" aria-hidden="true">
                     <UsersRound class="size-4" />
-                    Tu familia, sin app
+                    {{ $t('Tu familia, sin app') }}
                 </div>
             </div>
         </template>
@@ -228,10 +287,12 @@ const faqs = [
     <section class="fl-section border-t border-border bg-white">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Qué guarda"
-                title="Todo lo de ese día,"
-                accent="en un solo lugar."
-                text="La medalla dice que llegaste. El recuerdo cuenta cómo."
+                :eyebrow="$t('Qué guarda')"
+                :title="$t('Todo lo de ese día,')"
+                :accent="$t('en un solo lugar.')"
+                :text="
+                    $t('La medalla dice que llegaste. El recuerdo cuenta cómo.')
+                "
             />
             <div class="mt-10">
                 <FeatureGrid :items="contents" />
@@ -245,15 +306,19 @@ const faqs = [
         >
             <div>
                 <SectionIntro
-                    eyebrow="Privacidad"
-                    title="Es tu historia."
-                    accent="Tú decides quién la ve."
-                    text="Cada recuerdo tiene su propia privacidad. Y para tus personas, creas un enlace con su nombre: «Para mamá», «Para mi coach»."
+                    :eyebrow="$t('Privacidad')"
+                    :title="$t('Es tu historia.')"
+                    :accent="$t('Tú decides quién la ve.')"
+                    :text="
+                        $t(
+                            'Cada recuerdo tiene su propia privacidad. Y para tus personas, creas un enlace con su nombre: «Para mamá», «Para mi coach».',
+                        )
+                    "
                 />
                 <ul
                     v-reveal.stagger
                     class="mt-8 space-y-3"
-                    aria-label="Niveles de privacidad"
+                    :aria-label="$t('Niveles de privacidad')"
                 >
                     <li
                         v-for="level in privacy"
@@ -285,26 +350,36 @@ const faqs = [
             </div>
 
             <div v-reveal="{ y: 28 }" class="rc-links" aria-hidden="true">
-                <p class="rc-links__eyebrow">Enlaces para tus personas</p>
+                <p class="rc-links__eyebrow">
+                    {{ $t('Enlaces para tus personas') }}
+                </p>
                 <div class="rc-links__row">
                     <span class="rc-links__dot" />
-                    <span class="rc-links__name">Para mamá</span>
-                    <span class="rc-links__state">Activo</span>
+                    <span class="rc-links__name">{{ $t('Para mamá') }}</span>
+                    <span class="rc-links__state">{{ $t('Activo') }}</span>
                 </div>
                 <div class="rc-links__row">
                     <span class="rc-links__dot" />
-                    <span class="rc-links__name">Para mi coach</span>
-                    <span class="rc-links__state">Activo</span>
+                    <span class="rc-links__name">{{
+                        $t('Para mi coach')
+                    }}</span>
+                    <span class="rc-links__state">{{ $t('Activo') }}</span>
                 </div>
                 <div class="rc-links__row rc-links__row--off">
                     <span class="rc-links__dot" />
-                    <span class="rc-links__name">Para el equipo</span>
+                    <span class="rc-links__name">{{
+                        $t('Para el equipo')
+                    }}</span>
                     <span class="rc-links__state"
-                        ><Undo2 class="size-3.5" /> Revocado</span
+                        ><Undo2 class="size-3.5" /> {{ $t('Revocado') }}</span
                     >
                 </div>
                 <p class="rc-links__note">
-                    Un enlace revocado deja de abrir tu recuerdo al instante.
+                    {{
+                        $t(
+                            'Un enlace revocado deja de abrir tu recuerdo al instante.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -328,22 +403,24 @@ const faqs = [
                 <p
                     class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold-soft uppercase"
                 >
-                    Para quien estuvo contigo
+                    {{ $t('Para quien estuvo contigo') }}
                 </p>
                 <h2
                     class="mt-4 font-serif text-[2rem] leading-[1.08] font-semibold tracking-tight sm:text-5xl"
                 >
-                    Tu familia lo abre
-                    <span class="block font-medium text-fl-gold-soft italic"
-                        >sin instalar nada.</span
-                    >
+                    {{ $t('Tu familia lo abre') }}
+                    <span class="block font-medium text-fl-gold-soft italic">{{
+                        $t('sin instalar nada.')
+                    }}</span>
                 </h2>
                 <p
                     class="mt-5 text-[0.95rem] leading-relaxed text-white/75 sm:text-base"
                 >
-                    Tocan tu tag o abren el enlace que les mandaste, y el
-                    recuerdo aparece en el navegador de su teléfono. Sin app y
-                    sin cuenta.
+                    {{
+                        $t(
+                            'Tocan tu tag o abren el enlace que les mandaste, y el recuerdo aparece en el navegador de su teléfono. Sin app y sin cuenta.',
+                        )
+                    }}
                 </p>
             </div>
         </div>
@@ -352,9 +429,9 @@ const faqs = [
     <section class="fl-section">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Cómo empezar"
-                title="Tres pasos"
-                accent="y tu recuerdo existe."
+                :eyebrow="$t('Cómo empezar')"
+                :title="$t('Tres pasos')"
+                :accent="$t('y tu recuerdo existe.')"
             />
             <div class="mt-10">
                 <StepList :items="steps" layout="columns" />
@@ -364,7 +441,7 @@ const faqs = [
                     :href="HOW_IT_WORKS_URL"
                     class="fl-link inline-flex items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    Ver cómo funciona paso a paso
+                    {{ $t('Ver cómo funciona paso a paso') }}
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -375,15 +452,15 @@ const faqs = [
         <div class="fl-container grid gap-10 lg:grid-cols-12">
             <div class="lg:col-span-4">
                 <SectionIntro
-                    eyebrow="Preguntas"
-                    title="Lo que nos preguntan"
-                    accent="de los recuerdos."
+                    :eyebrow="$t('Preguntas')"
+                    :title="$t('Lo que nos preguntan')"
+                    :accent="$t('de los recuerdos.')"
                 />
                 <Link
                     :href="CONTACT_URL"
                     class="fl-link mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    Ayuda y contacto
+                    {{ $t('Ayuda y contacto') }}
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -394,18 +471,18 @@ const faqs = [
     </section>
 
     <CtaBand
-        title="Tu carrera termina."
-        accent="Tu historia no."
-        text="Elige el tag de tu carrera y empieza tu recuerdo hoy."
+        :title="$t('Tu carrera termina.')"
+        :accent="$t('Tu historia no.')"
+        :text="$t('Elige el tag de tu carrera y empieza tu recuerdo hoy.')"
     >
         <template #actions>
             <Link :href="COLLECTIONS_URL" class="mk-cta-primary">
-                Ver colecciones
+                {{ $t('Ver colecciones') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
-            <Link :href="ACTIVATE_URL" class="mk-cta-secondary"
-                >Activar mi tag</Link
-            >
+            <Link :href="ACTIVATE_URL" class="mk-cta-secondary">{{
+                $t('Activar mi tag')
+            }}</Link>
         </template>
     </CtaBand>
 

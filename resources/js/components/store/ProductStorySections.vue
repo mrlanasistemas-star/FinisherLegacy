@@ -8,6 +8,7 @@
  */
 import { Check, Plus } from '@lucide/vue';
 import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 
 export type ContentSection = {
     type: 'text' | 'features' | 'steps' | 'video' | 'faq';
@@ -21,13 +22,17 @@ const props = defineProps<{
     videos: { id: number; url: string; poster_url: string | null }[];
 }>();
 
-const fallbackTitles: Record<ContentSection['type'], string> = {
-    text: 'Qué es',
-    features: 'Características',
-    steps: 'Cómo lo usas',
-    video: 'En video',
-    faq: 'Preguntas frecuentes',
-};
+const { t } = useI18n();
+
+const fallbackTitles = computed<Record<ContentSection['type'], string>>(
+    () => ({
+        text: t('Qué es'),
+        features: t('Características'),
+        steps: t('Cómo lo usas'),
+        video: t('En video'),
+        faq: t('Preguntas frecuentes'),
+    }),
+);
 
 const slugify = (value: string) =>
     value
@@ -40,7 +45,7 @@ const slugify = (value: string) =>
 const blocks = computed(() =>
     props.sections
         .map((section, index) => {
-            const title = section.title || fallbackTitles[section.type];
+            const title = section.title || fallbackTitles.value[section.type];
             const c = section.content ?? {};
 
             return {
@@ -79,10 +84,10 @@ const asFaq = (item: unknown) =>
         <nav
             v-if="blocks.length > 2"
             class="lg:col-span-3"
-            aria-label="Contenido del producto"
+            :aria-label="$t('Contenido del producto')"
         >
             <div class="lg:sticky lg:top-24">
-                <p class="fl-eyebrow">La historia del producto</p>
+                <p class="fl-eyebrow">{{ $t('La historia del producto') }}</p>
                 <ul
                     class="mt-4 flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0 lg:overflow-visible lg:border-l lg:border-border"
                 >

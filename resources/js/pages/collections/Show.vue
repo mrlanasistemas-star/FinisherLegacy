@@ -26,6 +26,7 @@ import SeoHead from '@/components/public/SeoHead.vue';
 import TagFlipCard from '@/components/tag/TagFlipCard.vue';
 import { vReveal } from '@/composables/useReveal';
 import { ACTIVATE_URL, STORE_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { howItWorks } from '@/routes';
 import { index as collectionsIndex } from '@/routes/collections';
 import { show as productShow } from '@/routes/store/products';
@@ -41,6 +42,8 @@ const props = defineProps<{
     otherCollections: CollectionCardData[];
 }>();
 
+const { t } = useI18n();
+
 const subtitle = computed(() => collectionSubtitle(props.collection));
 const baseName = computed(() => collectionBaseName(props.collection));
 /** Every tag design of the collection (deck pp. 7–8), primary first. */
@@ -49,14 +52,16 @@ const designs = computed(() => collectionTagArts(props.collection));
 const seoTitle = computed(
     () =>
         props.collection.seo_title ??
-        `Colección ${baseName.value}${props.collection.year ? ` ${props.collection.year}` : ''}`,
+        t('Colección {name}', {
+            name: `${baseName.value}${props.collection.year ? ` ${props.collection.year}` : ''}`,
+        }),
 );
 const seoDescription = computed(
     () =>
         props.collection.seo_description ??
         props.collection.tagline ??
         props.collection.description?.slice(0, 180) ??
-        `Finisher Legacy Tag de la colección ${props.collection.name}: el recuerdo físico de tu logro, con tu historia dentro.`,
+        t('Finisher Legacy Tag de la colección {name}: el recuerdo físico de tu logro, con tu historia dentro.', { name: props.collection.name }),
 );
 
 const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -86,46 +91,46 @@ const jsonLd = computed(() => ({
     })),
 }));
 
-const tagFeatures = [
+const tagFeatures = computed(() => [
     {
         icon: Nfc,
-        title: 'Se abre con un toque',
-        text: 'Acercas tu teléfono al tag y tu recuerdo aparece. Si tu teléfono no lee NFC, escribes su código.',
+        title: t('Se abre con un toque'),
+        text: t('Acercas tu teléfono al tag y tu recuerdo aparece. Si tu teléfono no lee NFC, escribes su código.'),
     },
     {
         icon: Images,
-        title: 'Guarda tu recuerdo',
-        text: 'Fotos, tu historia, tu resultado y un mensaje de voz de ese día.',
+        title: t('Guarda tu recuerdo'),
+        text: t('Fotos, tu historia, tu resultado y un mensaje de voz de ese día.'),
     },
     {
         icon: Lock,
-        title: 'Tú decides quién lo ve',
-        text: 'Público, solo con enlace o privado. Los enlaces que compartes se pueden revocar.',
+        title: t('Tú decides quién lo ve'),
+        text: t('Público, solo con enlace o privado. Los enlaces que compartes se pueden revocar.'),
     },
     {
         icon: Users,
-        title: 'Tu familia no necesita app',
-        text: 'Quien toca el tag o recibe tu enlace lo abre en el navegador de su teléfono.',
+        title: t('Tu familia no necesita app'),
+        text: t('Quien toca el tag o recibe tu enlace lo abre en el navegador de su teléfono.'),
     },
-];
+]);
 
-const steps = [
+const steps = computed(() => [
     {
         n: '01',
-        title: 'Lo compras',
-        body: 'Eliges tu diseño y lo recibes listo, con su correa.',
+        title: t('Lo compras'),
+        body: t('Eliges tu diseño y lo recibes listo, con su correa.'),
     },
     {
         n: '02',
-        title: 'Lo activas',
-        body: 'Acercas el teléfono y se abre. Sin NFC, escribes su código en Activar.',
+        title: t('Lo activas'),
+        body: t('Acercas el teléfono y se abre. Sin NFC, escribes su código en Activar.'),
     },
     {
         n: '03',
-        title: 'Guardas tu historia',
-        body: 'Fotos, resultado, lugar, dedicatoria y mensaje de voz.',
+        title: t('Guardas tu historia'),
+        body: t('Fotos, resultado, lugar, dedicatoria y mensaje de voz.'),
     },
-];
+]);
 </script>
 
 <template>
@@ -172,13 +177,13 @@ const steps = [
         >
             <div class="lg:col-span-7">
                 <nav
-                    aria-label="Ruta de navegación"
+                    :aria-label="$t('Ruta de navegación')"
                     class="flex items-center gap-1.5 text-sm text-muted-foreground"
                 >
                     <Link
                         :href="collectionsIndex()"
                         class="hover:text-foreground"
-                        >Colecciones</Link
+                        >{{ $t('Colecciones') }}</Link
                     >
                     <ChevronRight class="size-3.5" aria-hidden="true" />
                     <span
@@ -210,7 +215,7 @@ const steps = [
                 >
                     {{
                         collection.tagline ||
-                        `El Finisher Legacy Tag de ${baseName}: lo tocas con tu teléfono y se abre el recuerdo de tu carrera.`
+                        $t('El Finisher Legacy Tag de {name}: lo tocas con tu teléfono y se abre el recuerdo de tu carrera.', { name: baseName })
                     }}
                 </p>
                 <p
@@ -229,16 +234,15 @@ const steps = [
                         href="#piezas"
                         class="fl-btn-primary"
                     >
-                        Ver
                         {{
                             collection.products.length === 1
-                                ? 'el tag'
-                                : 'los tags'
+                                ? $t('Ver el tag')
+                                : $t('Ver los tags')
                         }}
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </a>
                     <Link :href="howItWorks()" class="fl-btn-secondary">
-                        Cómo funciona
+                        {{ $t('Cómo funciona') }}
                     </Link>
                 </div>
             </div>
@@ -249,7 +253,7 @@ const steps = [
                 <p
                     class="mt-4 text-center text-[11px] tracking-[0.18em] text-muted-foreground uppercase"
                 >
-                    Render ilustrativo
+                    {{ $t('Render ilustrativo') }}
                 </p>
             </div>
         </div>
@@ -262,12 +266,12 @@ const steps = [
         aria-labelledby="designs-title"
     >
         <div class="fl-container">
-            <p class="fl-eyebrow">Cada sede, su diseño</p>
+            <p class="fl-eyebrow">{{ $t('Cada sede, su diseño') }}</p>
             <h2
                 id="designs-title"
                 class="fl-display mt-3 text-[clamp(1.7rem,3vw,2.5rem)]"
             >
-                {{ designs.length }} diseños de {{ baseName }}
+                {{ $t('{count} diseños de {name}', { count: designs.length, name: baseName }) }}
             </h2>
             <ul
                 v-reveal.stagger
@@ -290,7 +294,7 @@ const steps = [
                 </li>
             </ul>
             <p class="mt-6 text-xs text-muted-foreground">
-                Render ilustrativo · arte conceptual sujeto al troquel real.
+                {{ $t('Render ilustrativo · arte conceptual sujeto al troquel real.') }}
             </p>
         </div>
     </section>
@@ -299,11 +303,11 @@ const steps = [
     <section
         v-if="collection.description"
         class="bg-fl-paper py-16 sm:py-24"
-        aria-label="La colección"
+        :aria-label="$t('La colección')"
     >
         <div class="fl-container">
             <Reveal class="mx-auto max-w-[68ch]">
-                <p class="fl-eyebrow">La colección</p>
+                <p class="fl-eyebrow">{{ $t('La colección') }}</p>
                 <p
                     class="mt-5 font-serif text-[clamp(1.4rem,2.4vw,2rem)] leading-snug whitespace-pre-line text-foreground"
                 >
@@ -325,8 +329,8 @@ const steps = [
                     <span class="h-px w-6 bg-fl-gold" aria-hidden="true" />
                     {{
                         collection.products.length > 1
-                            ? `${collection.products.length} diseños`
-                            : 'Disponible en la tienda'
+                            ? $tc('{count} diseño|{count} diseños', collection.products.length)
+                            : $t('Disponible en la tienda')
                     }}
                 </p>
                 <h2
@@ -335,8 +339,8 @@ const steps = [
                 >
                     {{
                         collection.products.length === 1
-                            ? 'El tag de la colección'
-                            : 'Los tags de la colección'
+                            ? $t('El tag de la colección')
+                            : $t('Los tags de la colección')
                     }}
                 </h2>
             </div>
@@ -363,7 +367,7 @@ const steps = [
                         :available="product.available"
                         :status-label="
                             product.is_purchasable
-                                ? 'Agotado'
+                                ? $t('Agotado')
                                 : product.availability_label
                         "
                         :art-name="collection.name"
@@ -377,14 +381,14 @@ const steps = [
                         class="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground"
                     >
                         <span class="fl-link fl-link--gold">{{
-                            product.available ? 'Ver y comprar' : 'Ver detalles'
+                            product.available ? $t('Ver y comprar') : $t('Ver detalles')
                         }}</span>
                         <ArrowRight class="size-4" aria-hidden="true" />
                     </Link>
                 </Reveal>
             </ul>
             <p v-else class="mt-10 max-w-lg text-muted-foreground">
-                Los tags de esta colección estarán disponibles muy pronto.
+                {{ $t('Los tags de esta colección estarán disponibles muy pronto.') }}
             </p>
         </div>
     </section>
@@ -392,14 +396,14 @@ const steps = [
     <!-- What the tag does -->
     <section
         class="fl-section border-y border-fl-line bg-white text-foreground"
-        aria-label="Qué hace tu tag"
+        :aria-label="$t('Qué hace tu tag')"
     >
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Qué hace tu tag"
-                title="Tu carrera termina."
-                accent="Tu historia no."
-                text="El tag es un objeto de colección y, a la vez, la llave de tu recuerdo."
+                :eyebrow="$t('Qué hace tu tag')"
+                :title="$t('Tu carrera termina.')"
+                :accent="$t('Tu historia no.')"
+                :text="$t('El tag es un objeto de colección y, a la vez, la llave de tu recuerdo.')"
             />
             <div class="mt-10">
                 <FeatureGrid :items="tagFeatures" :columns="4" />
@@ -408,7 +412,7 @@ const steps = [
             <ol
                 v-reveal.stagger
                 class="mt-12 grid gap-8 border-t border-border pt-10 sm:grid-cols-3"
-                aria-label="Después de comprarlo"
+                :aria-label="$t('Después de comprarlo')"
             >
                 <li v-for="step in steps" :key="step.n" class="flex gap-4">
                     <span
@@ -443,13 +447,13 @@ const steps = [
                     id="other-collections-title"
                     class="fl-display text-[clamp(1.9rem,3.6vw,3rem)]"
                 >
-                    Otras colecciones
+                    {{ $t('Otras colecciones') }}
                 </h2>
                 <Link
                     :href="collectionsIndex()"
                     class="group inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold"
                 >
-                    <span class="fl-link">Ver todas</span>
+                    <span class="fl-link">{{ $t('Ver todas') }}</span>
                     <ArrowRight
                         class="size-4 transition-transform group-hover:translate-x-1"
                         aria-hidden="true"
@@ -471,17 +475,17 @@ const steps = [
     </section>
 
     <CtaBand
-        title="¿Ya tienes tu tag?"
-        accent="Actívalo en un toque."
-        text="Acerca tu teléfono al tag o escribe su código para empezar tu recuerdo."
+        :title="$t('¿Ya tienes tu tag?')"
+        :accent="$t('Actívalo en un toque.')"
+        :text="$t('Acerca tu teléfono al tag o escribe su código para empezar tu recuerdo.')"
     >
         <template #actions>
             <a :href="ACTIVATE_URL" class="mk-cta-primary">
-                Activar mi tag
+                {{ $t('Activar mi tag') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </a>
             <Link :href="STORE_URL" class="mk-cta-secondary">
-                Ir a la tienda
+                {{ $t('Ir a la tienda') }}
             </Link>
         </template>
     </CtaBand>

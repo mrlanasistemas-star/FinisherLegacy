@@ -4,13 +4,30 @@
  */
 import type { ProductColor, PublicProductCard } from '@/types';
 
-export const PRODUCT_TYPE_LABELS: Record<string, string> = {
-    legacy_tag: 'Finisher Legacy Tag',
-    legacy_plate: 'Legacy Plate',
-    apparel: 'Ropa',
-    accessory: 'Accesorio',
-    equipment: 'Equipo',
-};
+type Translate = (source: string) => string;
+
+/**
+ * Label of a product type, translated at call time (pass the `t` of
+ * `useI18n()` or the template's `$t`). Unknown and retired types (the old
+ * plate line) have no label: callers fall back to the category or nothing.
+ */
+export function productTypeLabel(
+    type: string | null | undefined,
+    t: Translate,
+): string | null {
+    switch (type) {
+        case 'legacy_tag':
+            return 'Finisher Legacy Tag';
+        case 'apparel':
+            return t('Ropa');
+        case 'accessory':
+            return t('Accesorio');
+        case 'equipment':
+            return t('Equipo');
+        default:
+            return null;
+    }
+}
 
 /** Maps a summarize() row to <ProductCard> props. */
 export function productCardProps(p: PublicProductCard) {
@@ -78,8 +95,14 @@ export function swatchColor(color: ProductColor): string {
     return '#b9b5ab';
 }
 
-export const STOCK_LABELS: Record<'ok' | 'low' | 'out', string> = {
-    ok: 'Disponible',
-    low: 'Últimas piezas',
-    out: 'Agotado',
-};
+/** Coarse stock hint (never a count), translated at call time. */
+export function stockLabel(level: 'ok' | 'low' | 'out', t: Translate): string {
+    switch (level) {
+        case 'low':
+            return t('Últimas piezas');
+        case 'out':
+            return t('Agotado');
+        default:
+            return t('Disponible');
+    }
+}

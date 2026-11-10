@@ -21,6 +21,7 @@ import {
     Users,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import T from '@/components/i18n/T.vue';
 import CtaBand from '@/components/marketing/CtaBand.vue';
 import FeatureGrid from '@/components/marketing/FeatureGrid.vue';
 import SectionIntro from '@/components/marketing/SectionIntro.vue';
@@ -29,6 +30,7 @@ import SeoHead from '@/components/public/SeoHead.vue';
 import { vReveal } from '@/composables/useReveal';
 import { MEDIA } from '@/config/media';
 import { PHOTOS_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import type { PhotoFeeRules } from '@/lib/photoFees';
 import { dashboard as photographerDashboard } from '@/routes/photographer';
 import { register as photographerRegister } from '@/routes/photographers';
@@ -38,6 +40,7 @@ const props = defineProps<{
     stats: { photographers: number; photos: number };
 }>();
 
+const { t } = useI18n();
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 
@@ -46,57 +49,75 @@ const priceMinor = computed(() => Math.round((Number(price.value) || 0) * 100));
 
 const hero = MEDIA.photo.runner;
 
-const steps = [
+const steps = computed(() => [
     {
         icon: BadgeCheck,
-        title: 'Crea tu perfil',
-        text: 'Regístrate en minutos. Revisamos tu portafolio y te damos acceso.',
+        title: t('Crea tu perfil'),
+        text: t(
+            'Regístrate en minutos. Revisamos tu portafolio y te damos acceso.',
+        ),
     },
     {
         icon: Upload,
-        title: 'Sube tus fotos',
-        text: 'Hasta 30 por carga, en alta resolución. Los originales quedan protegidos.',
+        title: t('Sube tus fotos'),
+        text: t(
+            'Hasta 30 por carga, en alta resolución. Los originales quedan protegidos.',
+        ),
     },
     {
         icon: Hash,
-        title: 'Asigna evento y número',
-        text: 'Elige el evento y escribe los números de participante que aparecen.',
+        title: t('Asigna evento y número'),
+        text: t(
+            'Elige el evento y escribe los números de participante que aparecen.',
+        ),
     },
     {
         icon: Send,
-        title: 'Publica',
-        text: 'Tras una revisión rápida, tus fotos aparecen en Fotos de evento con marca de agua.',
+        title: t('Publica'),
+        text: t(
+            'Tras una revisión rápida, tus fotos aparecen en Fotos de evento con marca de agua.',
+        ),
     },
     {
         icon: CircleDollarSign,
-        title: 'Vende',
-        text: 'Cada atleta compra su momento; ves el desglose de cada venta en tu portal.',
+        title: t('Vende'),
+        text: t(
+            'Cada atleta compra su momento; ves el desglose de cada venta en tu portal.',
+        ),
     },
-];
+]);
 
-const benefits = [
+const benefits = computed(() => [
     {
         icon: ShieldCheck,
-        title: 'Originales protegidos',
-        text: 'El atleta solo ve una versión con marca de agua; la foto en alta resolución se entrega únicamente al pagar.',
+        title: t('Originales protegidos'),
+        text: t(
+            'El atleta solo ve una versión con marca de agua; la foto en alta resolución se entrega únicamente al pagar.',
+        ),
     },
     {
         icon: LineChart,
-        title: 'Tus números claros',
-        text: 'Un portal con tus ventas, comisiones y pagos pendientes.',
+        title: t('Tus números claros'),
+        text: t('Un portal con tus ventas, comisiones y pagos pendientes.'),
     },
     {
         icon: Users,
-        title: 'Atletas que buscan su momento',
-        text: 'Los atletas llegan a sus fotos desde el evento y su número de participante.',
+        title: t('Atletas que buscan su momento'),
+        text: t(
+            'Los atletas llegan a sus fotos desde el evento y su número de participante.',
+        ),
     },
-];
+]);
 </script>
 
 <template>
     <SeoHead
-        title="Fotógrafos"
-        description="Vende tus fotografías de carreras y eventos deportivos en Finisher Legacy. Publicar no tiene costo inicial, tú pones el precio y ves cada venta con su desglose."
+        :title="$t('Fotógrafos')"
+        :description="
+            $t(
+                'Vende tus fotografías de carreras y eventos deportivos en Finisher Legacy. Publicar no tiene costo inicial, tú pones el precio y ves cada venta con su desglose.',
+            )
+        "
     />
 
     <!-- Photographic hero -->
@@ -111,24 +132,26 @@ const benefits = [
             <div class="lg:col-span-7">
                 <p v-reveal class="fl-eyebrow inline-flex items-center gap-3">
                     <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
-                    Para fotógrafos deportivos
+                    <T>Para fotógrafos deportivos</T>
                 </p>
                 <h1
                     v-reveal="{ delay: 60 }"
                     class="fl-display mt-5 max-w-3xl text-[2.4rem] leading-[1.04] sm:text-6xl lg:text-[4.1rem]"
                 >
-                    Tu cámara captura la meta.
+                    <T>Tu cámara captura la meta.</T>
                     <span class="block font-medium text-fl-gold-ink italic"
-                        >Nosotros te ayudamos a venderla.</span
+                        ><T>Nosotros te ayudamos a venderla.</T></span
                     >
                 </h1>
                 <p
                     v-reveal="{ delay: 140 }"
                     class="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
                 >
-                    Publicar no tiene costo inicial. Tú pones el precio, cada
-                    atleta encuentra su foto por evento y número de
-                    participante, y ves cada venta con su desglose.
+                    {{
+                        $t(
+                            'Publicar no tiene costo inicial. Tú pones el precio, cada atleta encuentra su foto por evento y número de participante, y ves cada venta con su desglose.',
+                        )
+                    }}
                 </p>
                 <div
                     v-reveal="{ delay: 220 }"
@@ -136,17 +159,17 @@ const benefits = [
                 >
                     <Link :href="photographerRegister()" class="fl-btn-primary">
                         <Camera class="size-4" aria-hidden="true" />
-                        Quiero vender mis fotos
+                        <T>Quiero vender mis fotos</T>
                     </Link>
                     <Link
                         v-if="user"
                         :href="photographerDashboard()"
                         class="fl-btn-secondary"
-                        >Ir a mi portal</Link
+                        ><T>Ir a mi portal</T></Link
                     >
                     <Link v-else :href="PHOTOS_URL" class="fl-btn-secondary">
                         <Search class="size-4" aria-hidden="true" />
-                        Soy atleta: buscar mis fotos
+                        <T>Soy atleta: buscar mis fotos</T>
                     </Link>
                 </div>
                 <dl
@@ -156,7 +179,7 @@ const benefits = [
                 >
                     <div>
                         <dt class="text-xs text-muted-foreground">
-                            Fotógrafos activos
+                            <T>Fotógrafos activos</T>
                         </dt>
                         <dd
                             class="legacy-numeric mt-1 font-serif text-3xl font-semibold"
@@ -166,7 +189,7 @@ const benefits = [
                     </div>
                     <div>
                         <dt class="text-xs text-muted-foreground">
-                            Fotos publicadas
+                            <T>Fotos publicadas</T>
                         </dt>
                         <dd
                             class="legacy-numeric mt-1 font-serif text-3xl font-semibold"
@@ -187,7 +210,11 @@ const benefits = [
                             sizes="(min-width: 1024px) 40vw, 100vw"
                             :width="hero.width"
                             :height="hero.height"
-                            alt="Corredora en plena zancada fotografiada durante una carrera"
+                            :alt="
+                                $t(
+                                    'Corredora en plena zancada fotografiada durante una carrera',
+                                )
+                            "
                             class="size-full object-cover object-[70%_center]"
                             fetchpriority="high"
                             decoding="async"
@@ -222,10 +249,10 @@ const benefits = [
                         <span class="text-left leading-tight">
                             <span
                                 class="block text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase"
-                                >Se busca por</span
+                                ><T>Se busca por</T></span
                             >
                             <span class="block text-sm font-semibold"
-                                >Evento + número</span
+                                ><T>Evento + número</T></span
                             >
                         </span>
                     </div>
@@ -239,10 +266,14 @@ const benefits = [
         <div class="fl-container grid items-center gap-10 lg:grid-cols-12">
             <div class="lg:col-span-6">
                 <SectionIntro
-                    eyebrow="Tus números, claros"
-                    title="Sabes cuánto ganas"
-                    accent="antes de subir una sola foto."
-                    text="Finisher Legacy cobra una comisión por foto vendida y el procesamiento de pago se descuenta como estimado (el costo real queda registrado en cada venta). No hay cuota de alta ni mensualidad."
+                    :eyebrow="$t('Tus números, claros')"
+                    :title="$t('Sabes cuánto ganas')"
+                    :accent="$t('antes de subir una sola foto.')"
+                    :text="
+                        $t(
+                            'Finisher Legacy cobra una comisión por foto vendida y el procesamiento de pago se descuenta como estimado (el costo real queda registrado en cada venta). No hay cuota de alta ni mensualidad.',
+                        )
+                    "
                 />
             </div>
             <div
@@ -255,11 +286,11 @@ const benefits = [
                             class="size-4 text-fl-gold-ink"
                             aria-hidden="true"
                         />
-                        Calcula lo que ganas por foto
+                        <T>Calcula lo que ganas por foto</T>
                     </p>
                     <label class="mt-5 block">
                         <span class="text-xs text-muted-foreground"
-                            >Tu precio por foto (MXN)</span
+                            ><T>Tu precio por foto (MXN)</T></span
                         >
                         <span class="relative mt-1.5 block">
                             <span
@@ -272,7 +303,7 @@ const benefits = [
                                 :min="fees.min_price_minor / 100"
                                 step="1"
                                 class="legacy-numeric h-16 w-full rounded-control border border-input bg-card pr-4 pl-10 font-serif text-3xl outline-none focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
-                                aria-label="Precio por foto"
+                                :aria-label="$t('Precio por foto')"
                             />
                         </span>
                     </label>
@@ -288,9 +319,9 @@ const benefits = [
     <section class="fl-section border-y border-border bg-card">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Así funciona"
-                title="De tu tarjeta de memoria"
-                accent="a la galería del atleta."
+                :eyebrow="$t('Así funciona')"
+                :title="$t('De tu tarjeta de memoria')"
+                :accent="$t('a la galería del atleta.')"
             />
             <ol class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
                 <li
@@ -337,9 +368,9 @@ const benefits = [
     <section class="fl-section">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Por qué aquí"
-                title="Tu trabajo, cuidado."
-                accent="Tus ventas, a la vista."
+                :eyebrow="$t('Por qué aquí')"
+                :title="$t('Tu trabajo, cuidado.')"
+                :accent="$t('Tus ventas, a la vista.')"
             />
             <div class="mt-10">
                 <FeatureGrid :items="benefits" />
@@ -348,17 +379,21 @@ const benefits = [
     </section>
 
     <CtaBand
-        title="¿Cubres carreras, triatlones o ciclismo?"
-        accent="Vende en tu próximo evento."
-        text="Regístrate, comparte tu portafolio y empieza a publicar en cuanto te demos acceso."
+        :title="$t('¿Cubres carreras, triatlones o ciclismo?')"
+        :accent="$t('Vende en tu próximo evento.')"
+        :text="
+            $t(
+                'Regístrate, comparte tu portafolio y empieza a publicar en cuanto te demos acceso.',
+            )
+        "
     >
         <template #actions>
             <Link :href="photographerRegister()" class="mk-cta-primary">
-                Registrarme como fotógrafo
+                <T>Registrarme como fotógrafo</T>
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
             <Link :href="PHOTOS_URL" class="mk-cta-secondary">
-                Ver Fotos de evento
+                <T>Ver Fotos de evento</T>
             </Link>
         </template>
     </CtaBand>

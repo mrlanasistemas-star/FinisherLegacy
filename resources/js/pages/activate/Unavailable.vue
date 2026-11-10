@@ -7,6 +7,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { LifeBuoy, Lock, SearchX } from '@lucide/vue';
 import { computed } from 'vue';
 import LegacyTagArt from '@/components/legacy/LegacyTagArt.vue';
+import { useI18n } from '@/i18n';
 import { contact, home } from '@/routes';
 import { index as activateIndex } from '@/routes/activate';
 import type { TagSummary } from '@/types/legacy-tags';
@@ -17,16 +18,18 @@ const props = defineProps<{
     tag: TagSummary | null;
 }>();
 
+const { t } = useI18n();
+
 const title = computed(() => {
     switch (props.reason) {
         case 'not_found':
-            return 'No encontramos este código';
+            return t('No encontramos este código');
         case 'replaced':
-            return 'Esta pieza fue reemplazada';
+            return t('Esta pieza fue reemplazada');
         case 'not_sold':
-            return 'Este tag todavía no está listo';
+            return t('Este tag todavía no está listo');
         default:
-            return 'Este tag ya no está activo';
+            return t('Este tag ya no está activo');
     }
 });
 </script>
@@ -61,20 +64,20 @@ const title = computed(() => {
                     class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-fl-black px-6 text-sm font-semibold text-white transition hover:bg-fl-graphite"
                 >
                     <LifeBuoy class="size-4" aria-hidden="true" />
-                    Escríbenos
+                    {{ $t('Escríbenos') }}
                 </Link>
                 <Link
                     v-if="reason === 'not_found'"
                     :href="activateIndex().url"
                     class="text-sm font-semibold text-fl-gold-ink underline-offset-4 hover:underline"
                 >
-                    Escribir el código otra vez
+                    {{ $t('Escribir el código otra vez') }}
                 </Link>
                 <Link
                     :href="home().url"
                     class="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
-                    Ir al inicio
+                    {{ $t('Ir al inicio') }}
                 </Link>
             </div>
         </div>

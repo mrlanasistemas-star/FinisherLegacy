@@ -8,6 +8,7 @@
 import { Link, router } from '@inertiajs/vue3';
 import { ArrowLeft, Nfc, SlidersHorizontal, X } from '@lucide/vue';
 import { computed, reactive, watch } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
@@ -22,6 +23,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { productCardProps } from '@/lib/store';
 import { catalog } from '@/routes/store';
 import { show as categoryShow } from '@/routes/store/categories';
@@ -54,6 +56,8 @@ const props = defineProps<{
     types: { value: string; label: string }[];
     filters: Filters;
 }>();
+
+const { t } = useI18n();
 
 const state = reactive<Filters>({ ...props.filters });
 
@@ -123,24 +127,34 @@ const activeCount = computed(
 
 // `label` is the full accessible name; `short` is the compact text shown
 // inside the desktop segmented control. Values map 1:1 to the server `orden`.
-const sortOptions = [
-    { value: 'destacados', label: 'Destacados', short: 'Destacados' },
-    { value: 'novedades', label: 'Novedades', short: 'Novedades' },
-    { value: 'precio-asc', label: 'Precio: menor a mayor', short: 'Precio ↑' },
-    { value: 'precio-desc', label: 'Precio: mayor a menor', short: 'Precio ↓' },
-];
+const sortOptions = computed(() => [
+    { value: 'destacados', label: t('Destacados'), short: t('Destacados') },
+    { value: 'novedades', label: t('Novedades'), short: t('Novedades') },
+    {
+        value: 'precio-asc',
+        label: t('Precio: menor a mayor'),
+        short: t('Precio ↑'),
+    },
+    {
+        value: 'precio-desc',
+        label: t('Precio: mayor a menor'),
+        short: t('Precio ↓'),
+    },
+]);
 
 const typeOptions = computed<{ value: string | null; label: string }[]>(() => [
-    { value: null, label: 'Todos los tipos' },
+    { value: null, label: t('Todos los tipos') },
     // The retired plate line is no longer offered as a filter.
     ...props.types.filter((type) => type.value !== 'legacy_plate'),
 ]);
 
-const title = computed(() => props.category?.name ?? 'Todo el catálogo');
+const title = computed(() => props.category?.name ?? t('Todo el catálogo'));
 const lede = computed(
     () =>
         props.category?.description ??
-        'Tags de colección, Racepack, Trisuit, Chill Band y más para tu carrera.',
+        t(
+            'Tags de colección, Racepack, Trisuit, Chill Band y más para tu carrera.',
+        ),
 );
 </script>
 
@@ -153,13 +167,13 @@ const lede = computed(
             class="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft class="size-4" />
-            Tienda
+            {{ $t('Tienda') }}
         </Link>
         <div class="mt-4 grid items-end gap-x-8 gap-y-5 lg:grid-cols-12">
             <div class="lg:col-span-7">
                 <p class="fl-eyebrow flex items-center gap-3">
                     <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
-                    {{ category ? 'Colección' : 'Catálogo completo' }}
+                    {{ category ? $t('Colección') : $t('Catálogo completo') }}
                 </p>
                 <h1 class="fl-display mt-5 text-[2.6rem] sm:text-6xl">
                     {{ title }}
@@ -173,14 +187,14 @@ const lede = computed(
         <!-- Categories -->
         <nav
             class="-mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
-            aria-label="Categorías"
+            :aria-label="$t('Categorías')"
         >
             <Link
                 :href="catalog()"
                 class="fl-chip"
                 :class="!category ? 'fl-chip--on' : ''"
                 :aria-current="!category ? 'page' : undefined"
-                >Todo</Link
+                >{{ $t('Todo') }}</Link
             >
             <Link
                 v-for="item in categories.filter((c) => c.products_count > 0)"
@@ -211,10 +225,21 @@ const lede = computed(
                 class="shrink-0 text-sm text-muted-foreground lg:min-w-24 lg:self-start lg:pt-2"
                 aria-live="polite"
             >
-                <span class="legacy-numeric font-semibold text-foreground">{{
-                    products.total
-                }}</span>
-                {{ products.total === 1 ? 'producto' : 'productos' }}
+                <I18nT
+                    :text="
+                        $tc(
+                            '{number} producto|{number} productos',
+                            products.total,
+                        )
+                    "
+                >
+                    <template #number>
+                        <span
+                            class="legacy-numeric font-semibold text-foreground"
+                            >{{ products.total }}</span
+                        >
+                    </template>
+                </I18nT>
             </p>
 
             <div
@@ -225,7 +250,7 @@ const lede = computed(
                     v-if="!category"
                     class="flex flex-wrap items-center gap-1.5"
                     role="radiogroup"
-                    aria-label="Tipo de producto"
+                    :aria-label="$t('Tipo de producto')"
                 >
                     <button
                         v-for="option in typeOptions"
@@ -251,7 +276,7 @@ const lede = computed(
                     v-if="sizes.length"
                     class="flex items-center gap-1"
                     role="group"
-                    aria-label="Talla"
+                    :aria-label="$t('Talla')"
                 >
                     <button
                         v-for="size in sizes"
@@ -275,7 +300,8 @@ const lede = computed(
                     :aria-pressed="state.nfc"
                     @click="set('nfc', !state.nfc)"
                 >
-                    <Nfc class="size-3.5" aria-hidden="true" /> Con NFC
+                    <Nfc class="size-3.5" aria-hidden="true" />
+                    {{ $t('Con NFC') }}
                 </button>
                 <button
                     type="button"
@@ -284,7 +310,7 @@ const lede = computed(
                     :aria-pressed="state.disponibles"
                     @click="set('disponibles', !state.disponibles)"
                 >
-                    Disponibles
+                    {{ $t('Disponibles') }}
                 </button>
                 <button
                     v-if="activeCount"
@@ -292,13 +318,13 @@ const lede = computed(
                     class="inline-flex min-h-9 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-fl-gold/40 focus-visible:outline-none"
                     @click="clearAll"
                 >
-                    <X class="size-3.5" /> Limpiar
+                    <X class="size-3.5" /> {{ $t('Limpiar') }}
                 </button>
                 <!-- Orden (segmented control), pinned right -->
                 <div
                     class="fl-seg ml-auto"
                     role="radiogroup"
-                    aria-label="Ordenar"
+                    :aria-label="$t('Ordenar')"
                 >
                     <button
                         v-for="option in sortOptions"
@@ -328,7 +354,7 @@ const lede = computed(
                         class="ml-auto h-11 rounded-full lg:hidden"
                     >
                         <SlidersHorizontal class="size-4" />
-                        Filtrar
+                        {{ $t('Filtrar') }}
                         <span
                             v-if="activeCount"
                             class="legacy-numeric rounded-full bg-foreground px-1.5 text-[11px] text-background"
@@ -341,20 +367,21 @@ const lede = computed(
                     class="max-h-[85vh] gap-0 overflow-y-auto rounded-t-hero bg-background p-0"
                 >
                     <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-border" />
-                    <SheetTitle class="px-5 pt-4 font-serif text-2xl"
-                        >Filtrar</SheetTitle
-                    >
-                    <SheetDescription class="sr-only"
-                        >Ordena y filtra los productos del
-                        catálogo.</SheetDescription
-                    >
+                    <SheetTitle class="px-5 pt-4 font-serif text-2xl">{{
+                        $t('Filtrar')
+                    }}</SheetTitle>
+                    <SheetDescription class="sr-only">{{
+                        $t('Ordena y filtra los productos del catálogo.')
+                    }}</SheetDescription>
                     <div class="space-y-6 px-5 py-5">
                         <div>
-                            <p class="mb-2 text-sm font-medium">Ordenar</p>
+                            <p class="mb-2 text-sm font-medium">
+                                {{ $t('Ordenar') }}
+                            </p>
                             <div
                                 class="flex flex-wrap gap-2"
                                 role="radiogroup"
-                                aria-label="Ordenar"
+                                :aria-label="$t('Ordenar')"
                             >
                                 <button
                                     v-for="option in sortOptions"
@@ -375,11 +402,13 @@ const lede = computed(
                             </div>
                         </div>
                         <div v-if="!category">
-                            <p class="mb-2 text-sm font-medium">Tipo</p>
+                            <p class="mb-2 text-sm font-medium">
+                                {{ $t('Tipo') }}
+                            </p>
                             <div
                                 class="flex flex-wrap gap-2"
                                 role="radiogroup"
-                                aria-label="Tipo de producto"
+                                :aria-label="$t('Tipo de producto')"
                             >
                                 <button
                                     v-for="option in typeOptions"
@@ -400,7 +429,9 @@ const lede = computed(
                             </div>
                         </div>
                         <div v-if="sizes.length">
-                            <p class="mb-2 text-sm font-medium">Talla</p>
+                            <p class="mb-2 text-sm font-medium">
+                                {{ $t('Talla') }}
+                            </p>
                             <div class="flex flex-wrap gap-2">
                                 <button
                                     v-for="size in sizes"
@@ -432,8 +463,8 @@ const lede = computed(
                                 :aria-pressed="state.nfc"
                                 @click="set('nfc', !state.nfc)"
                             >
-                                <Nfc class="size-3.5" aria-hidden="true" /> Con
-                                NFC
+                                <Nfc class="size-3.5" aria-hidden="true" />
+                                {{ $t('Con NFC') }}
                             </button>
                             <button
                                 type="button"
@@ -442,7 +473,7 @@ const lede = computed(
                                 :aria-pressed="state.disponibles"
                                 @click="set('disponibles', !state.disponibles)"
                             >
-                                Solo disponibles
+                                {{ $t('Solo disponibles') }}
                             </button>
                         </div>
                     </div>
@@ -454,12 +485,12 @@ const lede = computed(
                             class="h-11 flex-1 rounded-full"
                             :disabled="!activeCount"
                             @click="clearAll"
-                            >Limpiar</Button
+                            >{{ $t('Limpiar') }}</Button
                         >
                         <SheetClose as-child>
-                            <Button class="h-11 flex-1 rounded-full"
-                                >Ver {{ products.total }}</Button
-                            >
+                            <Button class="h-11 flex-1 rounded-full">{{
+                                $t('Ver {count}', { count: products.total })
+                            }}</Button>
                         </SheetClose>
                     </div>
                 </SheetContent>
@@ -485,16 +516,16 @@ const lede = computed(
             class="mx-auto max-w-lg rounded-media border border-dashed border-foreground/15 bg-card px-6 py-14 text-center"
         >
             <p class="font-serif text-2xl text-foreground">
-                Nada con esos filtros… todavía.
+                {{ $t('Nada con esos filtros… todavía.') }}
             </p>
             <p class="mt-2 text-sm text-muted-foreground">
-                Prueba quitando alguno o mira todo el catálogo.
+                {{ $t('Prueba quitando alguno o mira todo el catálogo.') }}
             </p>
             <Button
                 class="mt-6 rounded-full"
                 variant="outline"
                 @click="clearAll"
-                >Quitar filtros</Button
+                >{{ $t('Quitar filtros') }}</Button
             >
         </div>
 

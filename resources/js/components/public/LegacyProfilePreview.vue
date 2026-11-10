@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Award, MapPin } from '@lucide/vue';
 import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 import type { LegacyProfilePreview } from '@/types';
+
+const { t, tc } = useI18n();
 
 const { profile } = defineProps<{
     profile: LegacyProfilePreview | null;
@@ -13,17 +16,17 @@ const display = computed<LegacyProfilePreview>(
     () =>
         profile ?? {
             username: 'tulegacy',
-            name: 'Tu nombre aquí',
+            name: t('Tu nombre aquí'),
             bio: null,
-            city: 'Tu ciudad',
-            country: 'México',
+            city: t('Tu ciudad'),
+            country: t('México'),
             sport: 'Running',
             photo_url: null,
             cover_url: null,
             medals_count: 3,
             medals: [
-                { title: 'Tu primera medalla', distance_label: '10K' },
-                { title: 'Tu segundo logro', distance_label: '21K' },
+                { title: t('Tu primera medalla'), distance_label: '10K' },
+                { title: t('Tu segundo logro'), distance_label: '21K' },
             ],
         },
 );
@@ -50,7 +53,7 @@ const initials = computed(() =>
                 v-if="isMock"
                 class="absolute top-4 right-4 z-10 rounded-full border border-border bg-background/80 px-2.5 py-1 text-[10px] font-medium tracking-wide text-muted-foreground/80 uppercase"
             >
-                Vista previa
+                {{ $t('Vista previa') }}
             </span>
 
             <div
@@ -118,7 +121,12 @@ const initials = computed(() =>
                 >
                     <Award class="size-4 text-fl-gold-ink" />
                     <span class="text-sm font-medium text-foreground">
-                        {{ display.medals_count }} medallas
+                        {{
+                            tc(
+                                '{count} medalla|{count} medallas',
+                                display.medals_count,
+                            )
+                        }}
                     </span>
                 </div>
 

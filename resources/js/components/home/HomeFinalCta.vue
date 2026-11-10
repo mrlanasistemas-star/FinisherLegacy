@@ -40,7 +40,11 @@ const fan = computed(() => props.arts.slice(0, 3));
                     <div class="text-center lg:col-span-7 lg:text-left">
                         <img
                             src="/images/brand/logo/fl-firma-horizontal-claro.png"
-                            alt="Finisher Legacy — Make it last. Haz que perdure."
+                            :alt="
+                                $t(
+                                    'Finisher Legacy — Make it last. Haz que perdure.',
+                                )
+                            "
                             width="1400"
                             height="326"
                             loading="lazy"
@@ -51,14 +55,20 @@ const fan = computed(() => props.arts.slice(0, 3));
                             id="final-cta-title"
                             class="fl-display mx-auto mt-8 max-w-3xl text-[clamp(2.1rem,5vw,4rem)] text-balance lg:mx-0"
                         >
-                            Tu carrera termina. Tu historia no tiene por qué.
+                            {{
+                                $t(
+                                    'Tu carrera termina. Tu historia no tiene por qué.',
+                                )
+                            }}
                         </h2>
                         <p
                             class="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground lg:mx-0"
                         >
-                            Llévala contigo en un objeto que puedes tocar,
-                            compártela con tu gente y ábrela cada vez que
-                            quieras volver a esa meta.
+                            {{
+                                $t(
+                                    'Llévala contigo en un objeto que puedes tocar, compártela con tu gente y ábrela cada vez que quieras volver a esa meta.',
+                                )
+                            }}
                         </p>
                         <div
                             class="mt-9 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start"
@@ -67,7 +77,7 @@ const fan = computed(() => props.arts.slice(0, 3));
                                 :href="storeIndex()"
                                 class="fl-btn-primary group w-full sm:w-auto"
                             >
-                                Elegir mi tag
+                                {{ $t('Elegir mi tag') }}
                                 <ArrowRight
                                     class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                                     aria-hidden="true"
@@ -77,7 +87,7 @@ const fan = computed(() => props.arts.slice(0, 3));
                                 :href="ACTIVATE_URL"
                                 class="fl-btn-secondary w-full sm:w-auto"
                             >
-                                Ya tengo uno: activarlo
+                                {{ $t('Ya tengo uno: activarlo') }}
                             </a>
                         </div>
                     </div>

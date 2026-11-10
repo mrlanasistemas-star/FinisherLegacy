@@ -14,7 +14,8 @@ import {
     Nfc,
     Route,
 } from '@lucide/vue';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import T from '@/components/i18n/T.vue';
 import InputError from '@/components/InputError.vue';
 import NfcTapVisual from '@/components/public/NfcTapVisual.vue';
 import { Spinner } from '@/components/ui/spinner';
@@ -24,30 +25,37 @@ import {
     CONTACT_URL,
     HOW_IT_WORKS_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { lookup } from '@/routes/activate';
 
 const props = defineProps<{ prefill: string | null }>();
 
-const helpLinks = [
+const { t } = useI18n();
+
+const helpLinks = computed(() => [
     {
         icon: Route,
-        title: 'Cómo funciona',
-        text: 'El recorrido completo: de recibir tu tag a compartir tu recuerdo.',
+        title: t('Cómo funciona'),
+        text: t(
+            'El recorrido completo: de recibir tu tag a compartir tu recuerdo.',
+        ),
         href: HOW_IT_WORKS_URL,
     },
     {
         icon: Layers,
-        title: '¿Aún no tienes tu tag?',
-        text: 'Conoce las colecciones: un diseño por carrera y por destino.',
+        title: t('¿Aún no tienes tu tag?'),
+        text: t('Conoce las colecciones: un diseño por carrera y por destino.'),
         href: COLLECTIONS_URL,
     },
     {
         icon: LifeBuoy,
-        title: 'Ayuda',
-        text: '¿No encuentras tu código o no se abre? Escríbenos y lo revisamos.',
+        title: t('Ayuda'),
+        text: t(
+            '¿No encuentras tu código o no se abre? Escríbenos y lo revisamos.',
+        ),
         href: CONTACT_URL,
     },
-];
+]);
 
 /** "abcd efgh jkmn" / a pasted …/t/ABCDEFGHJKMN link → "ABCD-EFGH-JKMN". */
 function formatCode(input: string): string {
@@ -81,7 +89,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Activa tu Finisher Legacy">
+    <Head :title="$t('Activa tu Finisher Legacy')">
         <meta name="robots" content="noindex" />
     </Head>
 
@@ -106,17 +114,19 @@ onMounted(() => {
                         v-reveal="{ delay: 60 }"
                         class="fl-display mt-4 text-[2.5rem] leading-[1.04] sm:text-6xl"
                     >
-                        Activa tu tag
+                        <T>Activa tu tag</T>
                         <span class="block font-medium text-fl-gold-ink italic"
-                            >en un toque.</span
+                            ><T>en un toque.</T></span
                         >
                     </h1>
                     <p
                         class="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg"
                     >
-                        Lo más fácil: acerca tu teléfono al tag y se abre solo.
-                        Si tu teléfono no lee NFC, escribe aquí el código de tu
-                        tag.
+                        {{
+                            $t(
+                                'Lo más fácil: acerca tu teléfono al tag y se abre solo. Si tu teléfono no lee NFC, escribe aquí el código de tu tag.',
+                            )
+                        }}
                     </p>
 
                     <form
@@ -128,12 +138,12 @@ onMounted(() => {
                         <p
                             class="mb-3 text-[10px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                         >
-                            Si tu teléfono no lee NFC
+                            <T>Si tu teléfono no lee NFC</T>
                         </p>
                         <label
                             for="tag-code"
                             class="text-sm font-semibold text-foreground"
-                            >Código de tu tag</label
+                            ><T>Código de tu tag</T></label
                         >
                         <div class="relative mt-2">
                             <KeyRound
@@ -172,8 +182,11 @@ onMounted(() => {
                             id="tag-code-help"
                             class="mt-2 text-xs leading-relaxed text-muted-foreground"
                         >
-                            Son 12 letras y números. También puedes pegar el
-                            enlace de tu tag.
+                            {{
+                                $t(
+                                    'Son 12 letras y números. También puedes pegar el enlace de tu tag.',
+                                )
+                            }}
                         </p>
                         <InputError class="mt-2" :message="form.errors.code" />
 
@@ -184,7 +197,7 @@ onMounted(() => {
                         >
                             <Spinner v-if="form.processing" class="size-4" />
                             <template v-else>
-                                Continuar
+                                <T>Continuar</T>
                                 <ArrowRight class="size-5" aria-hidden="true" />
                             </template>
                         </button>
@@ -214,20 +227,22 @@ onMounted(() => {
                                 <p
                                     class="text-[10px] font-semibold tracking-[0.2em] text-fl-gold-ink uppercase"
                                 >
-                                    Lo más fácil
+                                    <T>Lo más fácil</T>
                                 </p>
                                 <p
                                     id="nfc-tip-title"
                                     class="mt-1 font-serif text-lg font-semibold text-foreground"
                                 >
-                                    ¿Tienes tu tag a la mano?
+                                    <T>¿Tienes tu tag a la mano?</T>
                                 </p>
                                 <p
                                     class="mt-1 text-sm leading-relaxed text-muted-foreground"
                                 >
-                                    Acerca la parte de atrás de tu teléfono al
-                                    tag. Tu tag se abre solo en el navegador,
-                                    sin instalar nada y sin escribir el código.
+                                    {{
+                                        $t(
+                                            'Acerca la parte de atrás de tu teléfono al tag. Tu tag se abre solo en el navegador, sin instalar nada y sin escribir el código.',
+                                        )
+                                    }}
                                 </p>
                             </div>
                         </div>
@@ -239,7 +254,7 @@ onMounted(() => {
         <section class="border-t border-border bg-card py-12 sm:py-16">
             <div class="fl-container">
                 <h2 class="font-serif text-xl font-semibold sm:text-2xl">
-                    ¿Necesitas una mano?
+                    <T>¿Necesitas una mano?</T>
                 </h2>
                 <ul class="mt-6 grid gap-3 sm:gap-4 md:grid-cols-3">
                     <li

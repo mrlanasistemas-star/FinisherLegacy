@@ -8,10 +8,14 @@
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, Aperture, Camera, Check, Hash } from '@lucide/vue';
+import { computed } from 'vue';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { landing as photographersLanding } from '@/routes/photographers';
 import { index as photosIndex } from '@/routes/photos';
 import { vStage } from './homeMotion';
+
+const { t } = useI18n();
 
 const shots = [
     { src: '/media/home/story/race-effort-640.webp', match: false },
@@ -22,7 +26,11 @@ const shots = [
     { src: '/media/home/story/race-effort-640.webp', match: false },
 ];
 
-const steps = ['Escribe tu número', 'Elige tus fotos', 'Descárgalas'];
+const steps = computed(() => [
+    t('Escribe tu número'),
+    t('Elige tus fotos'),
+    t('Descárgalas'),
+]);
 </script>
 
 <template>
@@ -43,20 +51,22 @@ const steps = ['Escribe tu número', 'Elige tus fotos', 'Descárgalas'];
                             class="inline-block h-px w-6 bg-fl-gold-dim/70"
                             aria-hidden="true"
                         />
-                        Fotos de evento
+                        {{ $t('Fotos de evento') }}
                     </p>
                     <h2
                         id="photos-title"
                         class="fl-display mt-4 text-[clamp(1.8rem,3.4vw,2.75rem)] text-balance"
                     >
-                        Encuentra tus fotos de carrera.
+                        {{ $t('Encuentra tus fotos de carrera.') }}
                     </h2>
                     <p
                         class="mt-4 text-[1.0625rem] leading-relaxed text-pretty text-muted-foreground"
                     >
-                        Los fotógrafos del evento suben sus fotos. Tú escribes
-                        tu número de participante, eliges las tuyas y las
-                        descargas en alta resolución.
+                        {{
+                            $t(
+                                'Los fotógrafos del evento suben sus fotos. Tú escribes tu número de participante, eliges las tuyas y las descargas en alta resolución.',
+                            )
+                        }}
                     </p>
                     <ol class="mt-6 flex flex-wrap gap-2">
                         <li
@@ -76,7 +86,7 @@ const steps = ['Escribe tu número', 'Elige tus fotos', 'Descárgalas'];
                         :href="photosIndex()"
                         class="fl-btn-primary group mt-8"
                     >
-                        Buscar mis fotos
+                        {{ $t('Buscar mis fotos') }}
                         <ArrowRight
                             class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                             aria-hidden="true"
@@ -89,7 +99,11 @@ const steps = ['Escribe tu número', 'Elige tus fotos', 'Descárgalas'];
                     v-stage
                     class="relative mx-auto w-full max-w-[24rem]"
                     role="img"
-                    aria-label="Ilustración: se busca un número de participante y, entre las fotos del evento, se resaltan las del atleta."
+                    :aria-label="
+                        $t(
+                            'Ilustración: se busca un número de participante y, entre las fotos del evento, se resaltan las del atleta.',
+                        )
+                    "
                 >
                     <div
                         class="mx-auto flex h-12 w-[78%] items-center gap-2.5 rounded-full border border-fl-line bg-white px-4 shadow-fl-float"
@@ -102,7 +116,7 @@ const steps = ['Escribe tu número', 'Elige tus fotos', 'Descárgalas'];
                         >
                         <span
                             class="ml-auto text-[10px] font-semibold tracking-[0.14em] text-fl-stone uppercase"
-                            >Tu número</span
+                            >{{ $t('Tu número') }}</span
                         >
                     </div>
                     <div
@@ -160,20 +174,24 @@ const steps = ['Escribe tu número', 'Elige tus fotos', 'Descárgalas'];
                     <h3
                         class="font-serif text-[clamp(1.5rem,2.4vw,2rem)] leading-tight font-semibold tracking-[-0.02em]"
                     >
-                        ¿Eres fotógrafo?
+                        {{ $t('¿Eres fotógrafo?') }}
                     </h3>
                     <p
                         class="mt-3 text-[0.9375rem] leading-relaxed text-white/70"
                     >
-                        Sube las fotos de los eventos que cubres, véndelas a los
-                        atletas que aparecen en ellas y sigue tus ventas desde
-                        tu propio panel.
+                        {{
+                            $t(
+                                'Sube las fotos de los eventos que cubres, véndelas a los atletas que aparecen en ellas y sigue tus ventas desde tu propio panel.',
+                            )
+                        }}
                     </p>
                     <Link
                         :href="photographersLanding()"
                         class="group mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-fl-gold focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-4 focus-visible:ring-offset-fl-black focus-visible:outline-none"
                     >
-                        <span class="fl-link">Conocer el programa</span>
+                        <span class="fl-link">{{
+                            $t('Conocer el programa')
+                        }}</span>
                         <ArrowRight
                             class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                             aria-hidden="true"

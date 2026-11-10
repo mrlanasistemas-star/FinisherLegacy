@@ -4,28 +4,35 @@
  * for. Decorative motion only: the list is read once by assistive tech and
  * the duplicate track is aria-hidden. Static under reduced motion.
  */
+import { computed } from 'vue';
+import { useI18n } from '@/i18n';
 import { vStage } from './homeMotion';
 
-const sports = [
+const { t } = useI18n();
+
+const sports = computed(() => [
     'Running',
-    'Triatlón',
-    'Ciclismo',
+    t('Triatlón'),
+    t('Ciclismo'),
     'HYROX',
     'Trail',
-    'Natación',
-    'Duatlón',
-];
+    t('Natación'),
+    t('Duatlón'),
+]);
 </script>
 
 <template>
     <section
         v-stage
         class="border-y border-fl-line bg-white py-6 sm:py-8"
-        aria-label="Deportes para los que está hecho Finisher Legacy"
+        :aria-label="$t('Deportes para los que está hecho Finisher Legacy')"
     >
         <p class="sr-only">
-            Para running, triatlón, ciclismo, HYROX, trail, natación, duatlón y
-            cualquier meta que cruces.
+            {{
+                $t(
+                    'Para running, triatlón, ciclismo, HYROX, trail, natación, duatlón y cualquier meta que cruces.',
+                )
+            }}
         </p>
         <div class="home-marquee" aria-hidden="true">
             <div v-for="copy in 2" :key="copy" class="home-marquee__track">

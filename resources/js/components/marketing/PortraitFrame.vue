@@ -27,7 +27,11 @@ withDefaults(
         class="mk-frame"
         :class="[`mk-frame--${template}`, float ? 'mk-frame--float' : '']"
         role="img"
-        aria-label="Portarretrato de acrílico con una foto de meta impresa; al acercar el celular se abre el álbum."
+        :aria-label="
+            $t(
+                'Portarretrato de acrílico con una foto de meta impresa; al acercar el celular se abre el álbum.',
+            )
+        "
     >
         <div class="mk-frame__acrylic">
             <span class="mk-frame__pin mk-frame__pin--tl" />
@@ -53,10 +57,12 @@ withDefaults(
                         loading="lazy"
                         class="mk-frame__mono"
                     />
-                    <p class="mk-frame__name">Tu nombre</p>
-                    <p class="mk-frame__event">Tu carrera · lugar y fecha</p>
+                    <p class="mk-frame__name">{{ $t('Tu nombre') }}</p>
+                    <p class="mk-frame__event">
+                        {{ $t('Tu carrera · lugar y fecha') }}
+                    </p>
                     <span class="mk-frame__rule" />
-                    <p class="mk-frame__time">Tu tiempo</p>
+                    <p class="mk-frame__time">{{ $t('Tu tiempo') }}</p>
                 </div>
             </div>
             <span class="mk-frame__glare" />
@@ -65,7 +71,9 @@ withDefaults(
             <span class="mk-frame__ripple" aria-hidden="true">
                 <span /><span /><span />
             </span>
-            <span class="mk-frame__base-text">Acerca tu celular</span>
+            <span class="mk-frame__base-text">{{
+                $t('Acerca tu celular')
+            }}</span>
         </div>
         <div class="mk-frame__shadow" />
     </div>

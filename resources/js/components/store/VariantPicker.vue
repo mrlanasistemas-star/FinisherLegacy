@@ -114,7 +114,9 @@ watch(
     <div v-if="structured" class="space-y-6">
         <fieldset v-if="colors.length">
             <legend class="mb-3 flex items-baseline gap-2 text-sm">
-                <span class="font-medium text-foreground">Color</span>
+                <span class="font-medium text-foreground">{{
+                    $t('Color')
+                }}</span>
                 <span class="text-muted-foreground">{{ selectedColor }}</span>
             </legend>
             <div class="flex flex-wrap gap-2.5">
@@ -128,7 +130,11 @@ watch(
                             ? 'border-foreground'
                             : 'border-transparent hover:border-foreground/25'
                     "
-                    :aria-label="`${color.name}${colorHasStock(color.name) ? '' : ' (agotado)'}`"
+                    :aria-label="
+                        colorHasStock(color.name)
+                            ? color.name
+                            : $t('{color} (agotado)', { color: color.name })
+                    "
                     :aria-pressed="selectedColor === color.name"
                     :title="color.name"
                     @click="pickColor(color.name)"
@@ -148,7 +154,7 @@ watch(
 
         <fieldset v-if="sizesForColor.length">
             <legend class="mb-3 text-sm font-medium text-foreground">
-                Talla
+                {{ $t('Talla') }}
             </legend>
             <div class="grid grid-cols-4 gap-2 sm:grid-cols-5">
                 <button
@@ -165,7 +171,19 @@ watch(
                               : 'border-dashed border-border bg-transparent text-muted-foreground/50 line-through'
                     "
                     :aria-pressed="model === variant.id"
-                    :aria-label="`Talla ${sizeOf(variant)}${variant.in_stock ? (variant.low_stock ? ', últimas piezas' : '') : ', agotada'}`"
+                    :aria-label="
+                        !variant.in_stock
+                            ? $t('Talla {size}, agotada', {
+                                  size: sizeOf(variant) ?? '',
+                              })
+                            : variant.low_stock
+                              ? $t('Talla {size}, últimas piezas', {
+                                    size: sizeOf(variant) ?? '',
+                                })
+                              : $t('Talla {size}', {
+                                    size: sizeOf(variant) ?? '',
+                                })
+                    "
                     @click="model = variant.id"
                 >
                     {{ sizeOf(variant) }}
@@ -184,13 +202,15 @@ watch(
                     class="size-1.5 rounded-full bg-[#c98a1b]"
                     aria-hidden="true"
                 />
-                Últimas piezas
+                {{ $t('Últimas piezas') }}
             </p>
         </fieldset>
     </div>
 
     <fieldset v-else-if="variants.length > 1">
-        <legend class="mb-3 text-sm font-medium text-foreground">Opción</legend>
+        <legend class="mb-3 text-sm font-medium text-foreground">
+            {{ $t('Opción') }}
+        </legend>
         <div class="flex flex-wrap gap-2">
             <button
                 v-for="variant in variants"

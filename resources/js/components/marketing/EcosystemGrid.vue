@@ -33,6 +33,7 @@ import {
     STORE_URL,
     TRAINING_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 
 export type PillarKey =
     | 'tag'
@@ -54,91 +55,111 @@ const props = withDefaults(
     }>(),
     {
         exclude: () => [],
-        eyebrow: 'Todo Finisher Legacy',
-        title: 'Un solo lugar',
-        accent: 'para tu historia deportiva.',
+        eyebrow: undefined,
+        title: undefined,
+        accent: undefined,
     },
 );
 
-const pillars: {
-    key: PillarKey;
-    label: string;
-    text: string;
-    href: string;
-    icon: LucideIcon;
-}[] = [
+const { t } = useI18n();
+
+const pillars = computed<
+    {
+        key: PillarKey;
+        label: string;
+        text: string;
+        href: string;
+        icon: LucideIcon;
+    }[]
+>(() => [
     {
         key: 'tag',
         label: 'Finisher Legacy Tag',
-        text: 'El tag coleccionable de tu carrera. Lo tocas con tu teléfono y se abre tu recuerdo.',
+        text: t(
+            'El tag coleccionable de tu carrera. Lo tocas con tu teléfono y se abre tu recuerdo.',
+        ),
         href: COLLECTIONS_URL,
         icon: Nfc,
     },
     {
         key: 'memories',
-        label: 'Recuerdos',
-        text: 'Fotos, historia, resultado y mensaje de voz, con la privacidad que tú decides.',
+        label: t('Recuerdos'),
+        text: t(
+            'Fotos, historia, resultado y mensaje de voz, con la privacidad que tú decides.',
+        ),
         href: MEMORIES_URL,
         icon: BookHeart,
     },
     {
         key: 'portrait',
-        label: 'Portarretrato inteligente',
-        text: 'Tu foto de meta en un marco de acrílico que abre tu álbum con un toque.',
+        label: t('Portarretrato inteligente'),
+        text: t(
+            'Tu foto de meta en un marco de acrílico que abre tu álbum con un toque.',
+        ),
         href: PORTRAIT_URL,
         icon: Frame,
     },
     {
         key: 'training',
-        label: 'Entrenamientos',
-        text: 'Tu familia te graba mensajes de ánimo y tú los escuchas mientras entrenas.',
+        label: t('Entrenamientos'),
+        text: t(
+            'Tu familia te graba mensajes de ánimo y tú los escuchas mientras entrenas.',
+        ),
         href: TRAINING_URL,
         icon: Headphones,
     },
     {
         key: 'community',
-        label: 'Comunidad',
-        text: 'Perfiles, resultados, medallas y momentos de atletas como tú.',
+        label: t('Comunidad'),
+        text: t(
+            'Perfiles, resultados, medallas y momentos de atletas como tú.',
+        ),
         href: COMMUNITY_URL,
         icon: Users,
     },
     {
         key: 'photos',
-        label: 'Fotos de evento',
-        text: 'Encuentra tus fotos de carrera por evento y número de competidor.',
+        label: t('Fotos de evento'),
+        text: t(
+            'Encuentra tus fotos de carrera por evento y número de competidor.',
+        ),
         href: PHOTOS_URL,
         icon: Images,
     },
     {
         key: 'store',
-        label: 'Tienda',
-        text: 'Colecciones de tags, Racepack, Trisuit y Chill Band.',
+        label: t('Tienda'),
+        text: t('Colecciones de tags, Racepack, Trisuit y Chill Band.'),
         href: STORE_URL,
         icon: ShoppingBag,
     },
     {
         key: 'app',
-        label: 'App',
-        text: 'Activa tocando, guarda recuerdos y entrena con tu equipo desde el teléfono.',
+        label: t('App'),
+        text: t(
+            'Activa tocando, guarda recuerdos y entrena con tu equipo desde el teléfono.',
+        ),
         href: APP_URL,
         icon: Smartphone,
     },
-];
+]);
 
 // Always eight cards: when the page hides its own pillar, "Cómo funciona"
 // takes the free slot so the grid never ends on a hole.
 const visible = computed(() => {
-    const list = pillars.filter(
+    const list = pillars.value.filter(
         (pillar) => !props.exclude.includes(pillar.key),
     );
 
-    return list.length < pillars.length && !props.exclude.includes('how')
+    return list.length < pillars.value.length && !props.exclude.includes('how')
         ? [
               ...list,
               {
                   key: 'how' as const,
-                  label: 'Cómo funciona',
-                  text: 'El recorrido completo: compras, activas tocando, completas tu recuerdo y lo compartes.',
+                  label: t('Cómo funciona'),
+                  text: t(
+                      'El recorrido completo: compras, activas tocando, completas tu recuerdo y lo compartes.',
+                  ),
                   href: HOW_IT_WORKS_URL,
                   icon: Route,
               },
@@ -150,7 +171,11 @@ const visible = computed(() => {
 <template>
     <section class="fl-section bg-fl-paper">
         <div class="fl-container">
-            <SectionIntro :eyebrow="eyebrow" :title="title" :accent="accent" />
+            <SectionIntro
+                :eyebrow="eyebrow ?? $t('Todo Finisher Legacy')"
+                :title="title ?? $t('Un solo lugar')"
+                :accent="accent ?? $t('para tu historia deportiva.')"
+            />
             <ul
                 class="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-4"
             >

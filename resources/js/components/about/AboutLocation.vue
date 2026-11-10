@@ -9,8 +9,11 @@ import { ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from '@lucide/vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { MEDIA } from '@/config/media';
+import { useI18n } from '@/i18n';
 import { contact } from '@/routes';
 import type { CompanyChannels } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     country: string | null;
@@ -42,12 +45,12 @@ const whatsappHref = computed(() =>
 
 const photo = MEDIA.photo.dawn;
 
-const collaborations = [
-    { label: 'Organizadores de eventos', type: 'events' },
-    { label: 'Marcas y patrocinadores', type: 'brands' },
-    { label: 'Proveedores', type: 'suppliers' },
-    { label: 'Fotógrafos', type: 'photographers' },
-];
+const collaborations = computed(() => [
+    { label: t('Organizadores de eventos'), type: 'events' },
+    { label: t('Marcas y patrocinadores'), type: 'brands' },
+    { label: t('Proveedores'), type: 'suppliers' },
+    { label: t('Fotógrafos'), type: 'photographers' },
+]);
 </script>
 
 <template>
@@ -71,10 +74,14 @@ const collaborations = [
                     <p
                         class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold uppercase"
                     >
-                        Dónde estamos
+                        {{ $t('Dónde estamos') }}
                     </p>
                     <p class="mt-2 font-serif text-4xl">
-                        Estamos en {{ country || 'México' }}
+                        {{
+                            $t('Estamos en {country}', {
+                                country: country || $t('México'),
+                            })
+                        }}
                     </p>
                     <p v-if="city" class="mt-1 text-white/80">{{ city }}</p>
                 </div>
@@ -131,7 +138,7 @@ const collaborations = [
                 <ul
                     v-if="socials.length"
                     class="mt-8 flex flex-wrap gap-2 border-t border-border pt-6"
-                    aria-label="Redes sociales"
+                    :aria-label="$t('Redes sociales')"
                 >
                     <li v-for="social in socials" :key="social.label">
                         <a
@@ -155,17 +162,19 @@ const collaborations = [
                 <p
                     class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold-ink uppercase"
                 >
-                    Colaboraciones
+                    {{ $t('Colaboraciones') }}
                 </p>
                 <h3 class="mt-4 font-serif text-3xl leading-tight sm:text-4xl">
-                    ¿Quieres colaborar con Finisher Legacy?
+                    {{ $t('¿Quieres colaborar con Finisher Legacy?') }}
                 </h3>
                 <p
                     class="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground"
                 >
-                    Trabajamos con organizadores, fotógrafos, marcas y
-                    proveedores que quieren llevar la experiencia del atleta más
-                    allá de la meta.
+                    {{
+                        $t(
+                            'Trabajamos con organizadores, fotógrafos, marcas y proveedores que quieren llevar la experiencia del atleta más allá de la meta.',
+                        )
+                    }}
                 </p>
             </div>
 
@@ -185,7 +194,7 @@ const collaborations = [
                     class="mt-6 h-11 rounded-full bg-foreground px-6 text-background hover:bg-fl-graphite"
                 >
                     <Link :href="contact()">
-                        Contáctanos
+                        {{ $t('Contáctanos') }}
                         <ArrowUpRight class="size-4" />
                     </Link>
                 </Button>

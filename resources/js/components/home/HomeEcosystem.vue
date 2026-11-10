@@ -26,9 +26,12 @@ import { computed } from 'vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import type { TagArt } from '@/components/three/tagStageContext';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import type { PublicProductCard } from '@/types';
 import { vStage } from './homeMotion';
 import HomeSectionHead from './HomeSectionHead.vue';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     art: TagArt;
@@ -39,8 +42,10 @@ const storeLine = computed(() => {
     const names = props.gearProducts.slice(0, 3).map((p) => p.name);
 
     return names.length
-        ? `${names.join(', ')} y los tags de cada colección.`
-        : 'Los tags de cada colección y equipo para tu día de carrera.';
+        ? t('{names} y los tags de cada colección.', {
+              names: names.join(', '),
+          })
+        : t('Los tags de cada colección y equipo para tu día de carrera.');
 });
 
 const storeImage = computed(
@@ -72,9 +77,15 @@ const tile =
         <div class="fl-container">
             <HomeSectionHead
                 id="ecosystem-title"
-                eyebrow="El ecosistema Finisher Legacy"
-                title="Mucho más que un tag: todo lo que rodea a tu meta."
-                lead="Finisher Legacy une un objeto de colección, tus recuerdos, tu gente y tu equipo en un solo lugar. Esto es todo lo que recibes."
+                :eyebrow="$t('El ecosistema Finisher Legacy')"
+                :title="
+                    $t('Mucho más que un tag: todo lo que rodea a tu meta.')
+                "
+                :lead="
+                    $t(
+                        'Finisher Legacy une un objeto de colección, tus recuerdos, tu gente y tu equipo en un solo lugar. Esto es todo lo que recibes.',
+                    )
+                "
                 align="center"
             />
 
@@ -117,13 +128,15 @@ const tile =
                         >
                             <span class="eco-kicker">
                                 <Nfc class="size-3.5" aria-hidden="true" />
-                                El objeto
+                                {{ $t('El objeto') }}
                             </span>
                             <span class="eco-title">Finisher Legacy Tag</span>
                             <span class="eco-text">
-                                Un tag de colección con chip NFC. Lo cuelgas en
-                                tu medalla o mochila y, con un toque, abre el
-                                recuerdo de tu carrera.
+                                {{
+                                    $t(
+                                        'Un tag de colección con chip NFC. Lo cuelgas en tu medalla o mochila y, con un toque, abre el recuerdo de tu carrera.',
+                                    )
+                                }}
                             </span>
                         </span>
                         <span class="eco-arrow" aria-hidden="true">
@@ -170,12 +183,15 @@ const tile =
                         >
                             <span class="eco-kicker">
                                 <Images class="size-3.5" aria-hidden="true" />
-                                Lo que guardas
+                                {{ $t('Lo que guardas') }}
                             </span>
-                            <span class="eco-title">Recuerdos</span>
+                            <span class="eco-title">{{ $t('Recuerdos') }}</span>
                             <span class="eco-text">
-                                Tus fotos, tu historia, tu tiempo y la voz de
-                                los tuyos.
+                                {{
+                                    $t(
+                                        'Tus fotos, tu historia, tu tiempo y la voz de los tuyos.',
+                                    )
+                                }}
                             </span>
                         </span>
                         <span class="eco-arrow" aria-hidden="true">
@@ -213,13 +229,17 @@ const tile =
                                     class="size-3.5"
                                     aria-hidden="true"
                                 />
-                                Tu gente
+                                {{ $t('Tu gente') }}
                             </span>
-                            <span class="eco-title !text-white"
-                                >Entrenamientos</span
-                            >
+                            <span class="eco-title !text-white">{{
+                                $t('Entrenamientos')
+                            }}</span>
                             <span class="eco-text !text-white/65">
-                                Mensajes de voz de tu familia mientras entrenas.
+                                {{
+                                    $t(
+                                        'Mensajes de voz de tu familia mientras entrenas.',
+                                    )
+                                }}
                             </span>
                         </span>
                         <span
@@ -268,11 +288,15 @@ const tile =
                         >
                             <span class="eco-kicker">
                                 <Frame class="size-3.5" aria-hidden="true" />
-                                En tu casa
+                                {{ $t('En tu casa') }}
                             </span>
-                            <span class="eco-title">Portarretrato</span>
+                            <span class="eco-title">{{
+                                $t('Portarretrato')
+                            }}</span>
                             <span class="eco-text">
-                                Tu foto de meta en acrílico, con NFC.
+                                {{
+                                    $t('Tu foto de meta en acrílico, con NFC.')
+                                }}
                             </span>
                         </span>
                         <span class="eco-arrow" aria-hidden="true">
@@ -322,11 +346,15 @@ const tile =
                         >
                             <span class="eco-kicker">
                                 <Users class="size-3.5" aria-hidden="true" />
-                                Con quién lo vives
+                                {{ $t('Con quién lo vives') }}
                             </span>
-                            <span class="eco-title">Comunidad</span>
+                            <span class="eco-title">{{ $t('Comunidad') }}</span>
                             <span class="eco-text">
-                                Comparte momentos y sigue a otros atletas.
+                                {{
+                                    $t(
+                                        'Comparte momentos y sigue a otros atletas.',
+                                    )
+                                }}
                             </span>
                         </span>
                         <span class="eco-arrow" aria-hidden="true">
@@ -362,11 +390,17 @@ const tile =
                         >
                             <span class="eco-kicker">
                                 <Camera class="size-3.5" aria-hidden="true" />
-                                El día de la carrera
+                                {{ $t('El día de la carrera') }}
                             </span>
-                            <span class="eco-title">Fotos de evento</span>
+                            <span class="eco-title">{{
+                                $t('Fotos de evento')
+                            }}</span>
                             <span class="eco-text">
-                                Encuentra y compra tus fotos con tu número.
+                                {{
+                                    $t(
+                                        'Encuentra y compra tus fotos con tu número.',
+                                    )
+                                }}
                             </span>
                         </span>
                         <span class="eco-arrow" aria-hidden="true">
@@ -397,9 +431,9 @@ const tile =
                                     class="size-3.5"
                                     aria-hidden="true"
                                 />
-                                Tu equipo
+                                {{ $t('Tu equipo') }}
                             </span>
-                            <span class="eco-title">Tienda</span>
+                            <span class="eco-title">{{ $t('Tienda') }}</span>
                             <span class="eco-text">{{ storeLine }}</span>
                         </span>
                         <span class="eco-arrow" aria-hidden="true">
@@ -441,12 +475,15 @@ const tile =
                                     class="size-3.5"
                                     aria-hidden="true"
                                 />
-                                En tu bolsillo
+                                {{ $t('En tu bolsillo') }}
                             </span>
                             <span class="eco-title !text-white">App</span>
                             <span class="eco-text !text-white/65">
-                                iOS y Android: activa tu tag, recuerdos,
-                                comunidad y tienda.
+                                {{
+                                    $t(
+                                        'iOS y Android: activa tu tag, recuerdos, comunidad y tienda.',
+                                    )
+                                }}
                             </span>
                         </span>
                         <span

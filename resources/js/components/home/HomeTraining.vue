@@ -22,11 +22,14 @@ import {
     SkipBack,
     SkipForward,
 } from '@lucide/vue';
-import { ref, useTemplateRef, watch } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { index as trainingIndex } from '@/routes/training';
 import { prefersReducedMotion, useOnScreen, vStage } from './homeMotion';
 import HomeSectionHead from './HomeSectionHead.vue';
+
+const { t } = useI18n();
 
 const section = useTemplateRef<HTMLElement>('section');
 const video = useTemplateRef<HTMLVideoElement>('video');
@@ -51,32 +54,34 @@ watch(onScreen, (visible) => {
 const speeds = [0.75, 1, 1.25, 1.5, 2];
 const speed = ref(1);
 
-const steps = [
+const steps = computed(() => [
     {
-        title: 'Compartes tu enlace',
-        text: '«Envíame ánimo»: lo mandas por donde quieras a tu familia y amigos.',
+        title: t('Compartes tu enlace'),
+        text: t(
+            '«Envíame ánimo»: lo mandas por donde quieras a tu familia y amigos.',
+        ),
     },
     {
-        title: 'Ellos te graban',
-        text: 'Desde cualquier navegador, sin cuenta y sin instalar nada.',
+        title: t('Ellos te graban'),
+        text: t('Desde cualquier navegador, sin cuenta y sin instalar nada.'),
     },
     {
-        title: 'Tú los escuchas',
-        text: 'Como una lista de reproducción mientras entrenas.',
+        title: t('Tú los escuchas'),
+        text: t('Como una lista de reproducción mientras entrenas.'),
     },
-];
+]);
 
-const perks = [
-    { icon: Music, label: 'Suena sobre tu música' },
-    { icon: LockKeyhole, label: 'Con la pantalla bloqueada' },
-    { icon: Repeat, label: 'Modo intervalos' },
-];
+const perks = computed(() => [
+    { icon: Music, label: t('Suena sobre tu música') },
+    { icon: LockKeyhole, label: t('Con la pantalla bloqueada') },
+    { icon: Repeat, label: t('Modo intervalos') },
+]);
 
-const incoming = [
-    { icon: Heart, from: 'Mamá', length: '0:18' },
-    { icon: Flame, from: 'Tu coach', length: '0:32' },
-    { icon: Medal, from: 'Tu mejor amigo', length: '0:24' },
-];
+const incoming = computed(() => [
+    { icon: Heart, from: t('Mamá'), length: '0:18' },
+    { icon: Flame, from: t('Tu coach'), length: '0:32' },
+    { icon: Medal, from: t('Tu mejor amigo'), length: '0:24' },
+]);
 
 const wave = Array.from({ length: 34 }, (_, i) =>
     Number((0.3 + Math.abs(Math.sin(i * 1.7) * 0.7)).toFixed(2)),
@@ -127,9 +132,13 @@ const wave = Array.from({ length: 34 }, (_, i) =>
             <div class="lg:col-span-6">
                 <HomeSectionHead
                     id="training-title"
-                    eyebrow="Entrenamientos · Envíame ánimo"
-                    title="Entrena con las voces de quienes creen en ti."
-                    lead="Los kilómetros difíciles pesan menos cuando te acompaña tu gente. Ellos te dejan mensajes de voz; tú los escuchas justo cuando más los necesitas."
+                    :eyebrow="$t('Entrenamientos · Envíame ánimo')"
+                    :title="$t('Entrena con las voces de quienes creen en ti.')"
+                    :lead="
+                        $t(
+                            'Los kilómetros difíciles pesan menos cuando te acompaña tu gente. Ellos te dejan mensajes de voz; tú los escuchas justo cuando más los necesitas.',
+                        )
+                    "
                     tone="dark"
                 />
 
@@ -182,7 +191,7 @@ const wave = Array.from({ length: 34 }, (_, i) =>
                     :href="trainingIndex()"
                     class="home-shine group mt-9 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-fl-gold px-7 text-[15px] font-semibold text-fl-black transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-fl-gold-soft focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-fl-black focus-visible:outline-none motion-reduce:transition-none"
                 >
-                    Crear mi enlace de ánimo
+                    {{ $t('Crear mi enlace de ánimo') }}
                     <ArrowRight
                         class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                         aria-hidden="true"
@@ -199,7 +208,11 @@ const wave = Array.from({ length: 34 }, (_, i) =>
                     <!-- Incoming voice messages -->
                     <ul
                         class="relative z-10 mb-[-1.25rem] space-y-2.5 px-3 sm:px-6"
-                        aria-label="Mensajes de voz de ejemplo que llegan al reproductor"
+                        :aria-label="
+                            $t(
+                                'Mensajes de voz de ejemplo que llegan al reproductor',
+                            )
+                        "
                     >
                         <li
                             v-for="(msg, i) in incoming"
@@ -244,15 +257,19 @@ const wave = Array.from({ length: 34 }, (_, i) =>
                         <p
                             class="text-[10px] font-bold tracking-[0.22em] text-fl-gold uppercase"
                         >
-                            Modo entrenamiento
+                            {{ $t('Modo entrenamiento') }}
                         </p>
                         <p
                             class="mt-1.5 font-serif text-xl font-semibold text-white"
                         >
-                            Suena: Mamá
+                            {{ $t('Suena: Mamá') }}
                         </p>
                         <p class="mt-1 text-sm text-white/60">
-                            “Vas increíble. No aflojes, aquí te espero.”
+                            {{
+                                $t(
+                                    '“Vas increíble. No aflojes, aquí te espero.”',
+                                )
+                            }}
                         </p>
 
                         <!-- Waveform -->
@@ -300,7 +317,7 @@ const wave = Array.from({ length: 34 }, (_, i) =>
                             <span
                                 id="training-speed-label"
                                 class="text-[11px] font-semibold tracking-[0.14em] text-white/55 uppercase"
-                                >Velocidad</span
+                                >{{ $t('Velocidad') }}</span
                             >
                             <div
                                 class="flex gap-1"
@@ -318,7 +335,9 @@ const wave = Array.from({ length: 34 }, (_, i) =>
                                             : 'bg-white/[0.07] text-white/70 hover:bg-white/15'
                                     "
                                     :aria-pressed="speed === s"
-                                    :aria-label="`Velocidad ${s}×`"
+                                    :aria-label="
+                                        $t('Velocidad {speed}×', { speed: s })
+                                    "
                                     @click="speed = s"
                                 >
                                     {{ s }}×
@@ -327,7 +346,7 @@ const wave = Array.from({ length: 34 }, (_, i) =>
                         </div>
                     </div>
                     <p class="mt-3 text-center text-[11px] text-white/40">
-                        Ilustración de ejemplo del reproductor.
+                        {{ $t('Ilustración de ejemplo del reproductor.') }}
                     </p>
                 </div>
             </div>

@@ -18,14 +18,16 @@ import {
     Trophy,
 } from '@lucide/vue';
 import { computed } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
+import T from '@/components/i18n/T.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
-import LegacyPlatePresaleCard from '@/components/shared/LegacyPlatePresaleCard.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
 import { vReveal } from '@/composables/useReveal';
 import { MEDIA } from '@/config/media';
 import { MEMORIES_URL, PHOTOS_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { index as eventsIndex, preregister } from '@/routes/events';
 import type { EventDetail, EventEditionDetail } from '@/types';
 
@@ -34,6 +36,7 @@ const { event, edition } = defineProps<{
     edition: EventEditionDetail | null;
 }>();
 
+const { t, regional } = useI18n();
 const canonicalUrl = useCanonicalUrl();
 
 // Discipline photo for events without an uploaded cover (decorative).
@@ -55,20 +58,20 @@ const fallbackCover = computed(() => {
     return MEDIA.photo.start;
 });
 
-const afterRace = [
+const afterRace = computed(() => [
     {
         icon: Images,
-        title: 'Tus fotos de carrera',
-        text: 'Búscalas por evento y número de competidor.',
+        title: t('Tus fotos de carrera'),
+        text: t('Búscalas por evento y número de competidor.'),
         href: PHOTOS_URL,
     },
     {
         icon: BookHeart,
-        title: 'Tu recuerdo',
-        text: 'Resultado, fotos, historia y mensaje de voz en un solo lugar.',
+        title: t('Tu recuerdo'),
+        text: t('Resultado, fotos, historia y mensaje de voz en un solo lugar.'),
         href: MEMORIES_URL,
     },
-];
+]);
 
 const formattedDate = computed(() => {
     if (!edition) {
@@ -76,22 +79,26 @@ const formattedDate = computed(() => {
     }
 
     return new Date(`${edition.event_date}T00:00:00`).toLocaleDateString(
-        'es-MX',
+        regional.value,
         { day: 'numeric', month: 'long', year: 'numeric' },
     );
 });
 
-const phaseCopy: Record<string, string> = {
-    upcoming: 'Próximo',
-    ongoing: 'En curso',
-    finished: 'Finalizado',
-};
+const phaseCopy = computed<Record<string, string>>(() => ({
+    upcoming: t('Próximo'),
+    ongoing: t('En curso'),
+    finished: t('Finalizado'),
+}));
 
-const metaDescription = computed(
-    () =>
-        event.description?.slice(0, 200) ??
-        `${event.name}${edition ? ` — ${formattedDate.value}, ${edition.city}` : ''}. Consulta detalles y prerregístrate en Finisher Legacy.`,
-);
+const metaDescription = computed(() => {
+    if (event.description) {
+        return event.description.slice(0, 200);
+    }
+
+    return edition
+        ? t('{event} — {date}, {city}. Consulta detalles y prerregístrate en Finisher Legacy.', { event: event.name, date: formattedDate.value ?? '', city: edition.city })
+        : t('{event}. Consulta detalles y prerregístrate en Finisher Legacy.', { event: event.name });
+});
 
 // SportsEvent structured data — only rendered when `edition` exists (see
 // the template below), since schema.org's rich-result eligibility needs
@@ -167,7 +174,7 @@ const eventJsonLd = computed(() => {
                     class="size-4 transition-transform duration-300 group-hover:-translate-x-0.5 motion-reduce:transform-none"
                     aria-hidden="true"
                 />
-                Eventos
+                {{ $t('Eventos') }}
             </Link>
 
             <div v-reveal class="mt-4 flex flex-wrap items-center gap-2.5">
@@ -194,10 +201,13 @@ const eventJsonLd = computed(() => {
                 v-reveal="{ delay: 120 }"
                 class="mt-4 text-sm text-muted-foreground"
             >
-                Organizado por
-                <span class="font-medium text-foreground">{{
-                    event.organizer
-                }}</span>
+                <I18nT :text="$t('Organizado por {organizer}')">
+                    <template #organizer>
+                        <span class="font-medium text-foreground">{{
+                            event.organizer
+                        }}</span>
+                    </template>
+                </I18nT>
             </p>
 
             <div
@@ -207,7 +217,7 @@ const eventJsonLd = computed(() => {
                 <img
                     v-if="event.cover_url"
                     :src="event.cover_url"
-                    :alt="`Portada de ${event.name}`"
+                    :alt="$t('Portada de {event}', { event: event.name })"
                     class="size-full object-cover"
                     fetchpriority="high"
                 />
@@ -238,7 +248,7 @@ const eventJsonLd = computed(() => {
                         <dt
                             class="text-[10px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
                         >
-                            Fecha
+                            {{ $t('Fecha') }}
                         </dt>
                         <dd class="legacy-numeric mt-1 text-base font-semibold">
                             {{ formattedDate }}
@@ -248,7 +258,7 @@ const eventJsonLd = computed(() => {
                         <dt
                             class="text-[10px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
                         >
-                            Sede
+                            {{ $t('Sede') }}
                         </dt>
                         <dd class="mt-1 truncate text-base font-semibold">
                             {{ edition.city }}, {{ edition.country }}
@@ -258,13 +268,13 @@ const eventJsonLd = computed(() => {
                         <dt
                             class="text-[10px] font-semibold tracking-[0.2em] text-fl-gold-soft uppercase"
                         >
-                            Distancias
+                            {{ $t('Distancias') }}
                         </dt>
                         <dd class="mt-1 truncate text-base font-semibold">
                             {{
                                 edition.races
                                     .map((race) => race.name)
-                                    .join(' · ') || 'Por anunciar'
+                                    .join(' · ') || $t('Por anunciar')
                             }}
                         </dd>
                     </div>
@@ -280,7 +290,7 @@ const eventJsonLd = computed(() => {
                     <h2
                         class="font-serif text-2xl font-semibold text-foreground"
                     >
-                        Sobre el evento
+                        {{ $t('Sobre el evento') }}
                     </h2>
                     <p
                         class="mt-4 max-w-[65ch] text-base leading-relaxed whitespace-pre-line text-muted-foreground sm:text-[1.0625rem]"
@@ -293,7 +303,7 @@ const eventJsonLd = computed(() => {
                     <h2
                         class="font-serif text-2xl font-semibold text-foreground"
                     >
-                        Distancias
+                        {{ $t('Distancias') }}
                     </h2>
                     <ul
                         v-if="edition.races.length"
@@ -320,7 +330,7 @@ const eventJsonLd = computed(() => {
                             <span v-if="race.start_time" class="text-right">
                                 <span
                                     class="block text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
-                                    >Salida</span
+                                    >{{ $t('Salida') }}</span
                                 >
                                 <span
                                     class="legacy-numeric text-sm font-medium text-foreground"
@@ -330,7 +340,7 @@ const eventJsonLd = computed(() => {
                         </li>
                     </ul>
                     <p v-else class="mt-3 text-sm text-muted-foreground">
-                        Las distancias de esta edición aún no se publican.
+                        {{ $t('Las distancias de esta edición aún no se publican.') }}
                     </p>
                 </div>
 
@@ -338,8 +348,11 @@ const eventJsonLd = computed(() => {
                     v-else
                     class="rounded-card border border-dashed border-fl-gold/40 bg-card p-6 text-sm leading-relaxed text-muted-foreground"
                 >
-                    Este evento todavía no tiene una edición publicada con fecha
-                    activa. Vuelve pronto para ver fecha, sede y distancias.
+                    <T>
+                        Este evento todavía no tiene una edición publicada con
+                        fecha activa. Vuelve pronto para ver fecha, sede y
+                        distancias.
+                    </T>
                 </div>
 
                 <!-- After the race -->
@@ -347,7 +360,7 @@ const eventJsonLd = computed(() => {
                     <h2
                         class="font-serif text-2xl font-semibold text-foreground"
                     >
-                        Después de la meta
+                        {{ $t('Después de la meta') }}
                     </h2>
                     <ul class="mt-5 grid gap-3 sm:grid-cols-2">
                         <li v-for="item in afterRace" :key="item.title">
@@ -388,7 +401,7 @@ const eventJsonLd = computed(() => {
 
             <aside
                 class="space-y-6 lg:sticky lg:top-20 lg:self-start"
-                aria-label="Datos del evento"
+                :aria-label="$t('Datos del evento')"
             >
                 <div
                     v-if="edition"
@@ -401,7 +414,7 @@ const eventJsonLd = computed(() => {
                             aria-hidden="true"
                         />
                         <div>
-                            <p class="text-xs text-muted-foreground">Fecha</p>
+                            <p class="text-xs text-muted-foreground">{{ $t('Fecha') }}</p>
                             <p
                                 class="legacy-numeric text-sm font-medium text-foreground"
                             >
@@ -416,7 +429,7 @@ const eventJsonLd = computed(() => {
                         />
                         <div>
                             <p class="text-xs text-muted-foreground">
-                                Ubicación
+                                {{ $t('Ubicación') }}
                             </p>
                             <p class="text-sm font-medium text-foreground">
                                 {{ edition.city }}, {{ edition.country }}
@@ -429,7 +442,7 @@ const eventJsonLd = computed(() => {
                             aria-hidden="true"
                         />
                         <div>
-                            <p class="text-xs text-muted-foreground">Edición</p>
+                            <p class="text-xs text-muted-foreground">{{ $t('Edición') }}</p>
                             <p class="text-sm font-medium text-foreground">
                                 {{ edition.name }} · {{ edition.year }}
                             </p>
@@ -443,30 +456,25 @@ const eventJsonLd = computed(() => {
                             class="h-12 w-full rounded-full"
                         >
                             <Link :href="preregister(event.slug)">
-                                Prerregistrarme
+                                {{ $t('Prerregistrarme') }}
                                 <ArrowRight class="size-4" aria-hidden="true" />
                             </Link>
                         </Button>
                         <p
                             class="text-center text-xs leading-relaxed text-muted-foreground"
                         >
-                            No necesitas cuenta. Al terminar verás tu
-                            confirmación.
+                            {{ $t('No necesitas cuenta. Al terminar verás tu confirmación.') }}
                         </p>
                     </template>
                     <p
                         v-else
                         class="rounded-control bg-fl-paper px-4 py-3 text-xs leading-relaxed text-muted-foreground"
                     >
-                        Este evento ya terminó.
+                        {{ $t('Este evento ya terminó.') }}
                     </p>
                 </div>
 
-                <LegacyPlatePresaleCard
-                    v-if="edition && edition.legacy_plate"
-                    :event-edition-id="edition.id"
-                    :presale="edition.legacy_plate"
-                />
+                
             </aside>
         </div>
     </section>

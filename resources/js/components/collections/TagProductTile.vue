@@ -116,7 +116,7 @@ const designArt = computed(() =>
                         ? 'bg-white/10 text-white/80'
                         : 'bg-foreground text-background'
                 "
-                >{{ statusLabel ?? 'Agotado' }}</span
+                >{{ statusLabel ?? $t('Agotado') }}</span
             >
         </div>
         <div class="mt-4 flex items-start justify-between gap-4">

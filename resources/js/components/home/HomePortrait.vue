@@ -9,33 +9,44 @@
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, Images, Mic, Nfc } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { vReveal } from '@/composables/useReveal';
 import { MI_LEGACY_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { vParallax, vStage } from './homeMotion';
 import HomeSectionHead from './HomeSectionHead.vue';
 
-const templates = [
-    { key: 'carbono', label: 'Carbono' },
-    { key: 'hueso', label: 'Blanco hueso' },
-] as const;
+const { t } = useI18n();
 
-const template = ref<(typeof templates)[number]['key']>('carbono');
+type TemplateKey = 'carbono' | 'hueso';
 
-const steps = [
+const templates = computed<{ key: TemplateKey; label: string }[]>(() => [
+    { key: 'carbono', label: t('Carbono') },
+    { key: 'hueso', label: t('Blanco hueso') },
+]);
+
+const template = ref<TemplateKey>('carbono');
+
+const steps = computed(() => [
     {
-        title: 'Elige tu foto',
-        text: 'Una de tu recuerdo o una tuya. La encuadras sobre la plantilla y ves el resultado en vivo.',
+        title: t('Elige tu foto'),
+        text: t(
+            'Una de tu recuerdo o una tuya. La encuadras sobre la plantilla y ves el resultado en vivo.',
+        ),
     },
     {
-        title: 'Descarga tu archivo de impresión',
-        text: 'El sitio lo genera a 20 × 25 cm con tu nombre, tu carrera y tu tiempo.',
+        title: t('Descarga tu archivo de impresión'),
+        text: t(
+            'El sitio lo genera a 20 × 25 cm con tu nombre, tu carrera y tu tiempo.',
+        ),
     },
     {
-        title: 'Acerca tu celular al marco',
-        text: 'Sin pantalla ni batería: el NFC abre tu álbum y tu mensaje de voz.',
+        title: t('Acerca tu celular al marco'),
+        text: t(
+            'Sin pantalla ni batería: el NFC abre tu álbum y tu mensaje de voz.',
+        ),
     },
-];
+]);
 </script>
 
 <template>
@@ -50,9 +61,13 @@ const steps = [
             <div class="lg:col-span-5">
                 <HomeSectionHead
                     id="portrait-title"
-                    eyebrow="Portarretrato inteligente"
-                    title="Tu foto de meta, en un marco con memoria."
-                    lead="Un marco de acrílico con tu foto impresa y un chip NFC. Se queda en tu casa o tu oficina, y con un toque abre todo el recuerdo."
+                    :eyebrow="$t('Portarretrato inteligente')"
+                    :title="$t('Tu foto de meta, en un marco con memoria.')"
+                    :lead="
+                        $t(
+                            'Un marco de acrílico con tu foto impresa y un chip NFC. Se queda en tu casa o tu oficina, y con un toque abre todo el recuerdo.',
+                        )
+                    "
                 />
 
                 <ol v-reveal.stagger class="mt-9 space-y-5">
@@ -84,7 +99,7 @@ const steps = [
                     :href="MI_LEGACY_URL"
                     class="fl-btn-primary group mt-9"
                 >
-                    Diseñar mi portarretrato
+                    {{ $t('Diseñar mi portarretrato') }}
                     <ArrowRight
                         class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                         aria-hidden="true"
@@ -118,7 +133,17 @@ const steps = [
                             class="frame home-float"
                             :data-template="template"
                             role="img"
-                            :aria-label="`Ilustración del portarretrato de acrílico con la plantilla ${template === 'carbono' ? 'Carbono' : 'Blanco hueso'}: foto de meta, nombre, carrera, tiempo y la indicación «Acerca tu celular».`"
+                            :aria-label="
+                                $t(
+                                    'Ilustración del portarretrato de acrílico con la plantilla {template}: foto de meta, nombre, carrera, tiempo y la indicación «Acerca tu celular».',
+                                    {
+                                        template:
+                                            template === 'carbono'
+                                                ? $t('Carbono')
+                                                : $t('Blanco hueso'),
+                                    },
+                                )
+                            "
                         >
                             <span
                                 v-for="n in 4"
@@ -147,15 +172,17 @@ const steps = [
                                         decoding="async"
                                         class="frame__mark"
                                     />
-                                    <span class="frame__name">Tu nombre</span>
-                                    <span class="frame__race"
-                                        >Tu carrera · Lugar y fecha</span
-                                    >
+                                    <span class="frame__name">{{
+                                        $t('Tu nombre')
+                                    }}</span>
+                                    <span class="frame__race">{{
+                                        $t('Tu carrera · Lugar y fecha')
+                                    }}</span>
                                     <span class="frame__rule" />
                                     <span class="frame__time">1:52:07</span>
                                     <span class="frame__tap">
                                         <Nfc class="size-[1.2em]" />
-                                        Acerca tu celular
+                                        {{ $t('Acerca tu celular') }}
                                     </span>
                                 </div>
                             </div>
@@ -188,12 +215,13 @@ const steps = [
                                 <Images class="size-4" />
                             </span>
                             <span class="text-[12px] leading-tight">
-                                <span class="block font-semibold text-fl-black"
-                                    >Se abre tu álbum</span
+                                <span
+                                    class="block font-semibold text-fl-black"
+                                    >{{ $t('Se abre tu álbum') }}</span
                                 >
-                                <span class="text-fl-stone"
-                                    >Fotos y resultado</span
-                                >
+                                <span class="text-fl-stone">{{
+                                    $t('Fotos y resultado')
+                                }}</span>
                             </span>
                         </span>
                     </div>
@@ -234,7 +262,7 @@ const steps = [
                     <span
                         id="portrait-template-label"
                         class="text-[11px] font-semibold tracking-[0.18em] text-fl-gold-ink uppercase"
-                        >Plantilla</span
+                        >{{ $t('Plantilla') }}</span
                     >
                     <div
                         class="inline-flex rounded-full border border-fl-gold-dim/25 bg-white/70 p-1"

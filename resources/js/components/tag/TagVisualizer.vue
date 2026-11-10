@@ -19,6 +19,7 @@
  */
 import { computed, onMounted, ref, useId, watch } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 import {
     BACK,
     BACK_PALMS,
@@ -81,6 +82,7 @@ const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
 const id = (key: string) => `tv-${uid}-${key}`;
 const url = (key: string) => `url(#${id(key)})`;
 
+const { t } = useI18n();
 const reducedMotion = useReducedMotion();
 const rx = ref(0);
 const ry = ref(0);
@@ -177,13 +179,22 @@ const fadeTop = computed(() => Math.max(FRONT.artTop, art.value.y));
 const monogramH = (width: number) => width * MONOGRAM_RATIO;
 const accentColor = computed(() => props.accent || TAG_COLORS.gold);
 
-const ariaLabel = computed(
-    () =>
-        props.label ??
-        (props.face === 'back'
-            ? `Reverso ilustrativo del Finisher Legacy Tag: negro carbono con el monograma FL, «${text.value.back.join(' ')}» y el símbolo NFC.`
-            : `Frente ilustrativo del Finisher Legacy Tag ${text.value.name}${text.value.discipline ? ` · ${text.value.discipline}` : ''}${hasArt.value ? ', con el arte del destino' : ''}, con correa de silicón negra.`),
-);
+const ariaLabel = computed(() => {
+    if (props.label !== null && props.label !== undefined) {
+        return props.label;
+    }
+
+    if (props.face === 'back') {
+        return t('Reverso ilustrativo del Finisher Legacy Tag: negro carbono con el monograma FL, «{phrase}» y el símbolo NFC.', { phrase: text.value.back.join(' ') });
+    }
+
+    // What is printed on the tag (name · discipline) is never translated.
+    const name = `${text.value.name}${text.value.discipline ? ` · ${text.value.discipline}` : ''}`;
+
+    return hasArt.value
+        ? t('Frente ilustrativo del Finisher Legacy Tag {name}, con el arte del destino, con correa de silicón negra.', { name })
+        : t('Frente ilustrativo del Finisher Legacy Tag {name}, con correa de silicón negra.', { name });
+});
 </script>
 
 <template>

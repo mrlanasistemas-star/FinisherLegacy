@@ -25,6 +25,7 @@ import {
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import { vReveal } from '@/composables/useReveal';
 import { ACTIVATE_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import {
     prefersReducedMotion,
     useCountUp,
@@ -33,6 +34,8 @@ import {
     vStage,
 } from './homeMotion';
 import HomeSectionHead from './HomeSectionHead.vue';
+
+const { t } = useI18n();
 
 const board = useTemplateRef<HTMLElement>('board');
 const { onScreen, entered } = useOnScreen(board, { threshold: 0.3 });
@@ -47,11 +50,11 @@ const time = computed(() => {
     return `${Math.floor(s / 3600)}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
 });
 
-const privacyModes = [
-    { icon: Lock, label: 'Privado' },
-    { icon: Link2, label: 'Solo con enlace' },
-    { icon: Globe, label: 'Público' },
-];
+const privacyModes = computed(() => [
+    { icon: Lock, label: t('Privado') },
+    { icon: Link2, label: t('Solo con enlace') },
+    { icon: Globe, label: t('Público') },
+]);
 const privacy = ref(1);
 let timer: number | null = null;
 
@@ -70,7 +73,7 @@ watch(onScreen, (visible) => {
 
     if (visible && !prefersReducedMotion()) {
         timer = window.setInterval(() => {
-            privacy.value = (privacy.value + 1) % privacyModes.length;
+            privacy.value = (privacy.value + 1) % privacyModes.value.length;
         }, 2600);
     }
 });
@@ -81,30 +84,30 @@ onBeforeUnmount(() => {
     }
 });
 
-const holds = [
-    { icon: Images, title: 'Fotos', text: 'Las tuyas y las del evento.' },
+const holds = computed(() => [
+    { icon: Images, title: t('Fotos'), text: t('Las tuyas y las del evento.') },
     {
         icon: BookOpenText,
-        title: 'Tu historia',
-        text: 'Contada con tus palabras.',
+        title: t('Tu historia'),
+        text: t('Contada con tus palabras.'),
     },
     {
         icon: Timer,
-        title: 'Tu resultado',
-        text: 'Tiempo, posición y distancia.',
+        title: t('Tu resultado'),
+        text: t('Tiempo, posición y distancia.'),
     },
     {
         icon: MapPin,
-        title: 'Fecha y lugar',
-        text: 'Dónde y cuándo cruzaste la meta.',
+        title: t('Fecha y lugar'),
+        text: t('Dónde y cuándo cruzaste la meta.'),
     },
     {
         icon: PenLine,
-        title: 'Dedicatoria',
-        text: 'Para quien te acompañó.',
+        title: t('Dedicatoria'),
+        text: t('Para quien te acompañó.'),
     },
-    { icon: Mic, title: 'Mensaje de voz', text: 'La voz de los tuyos.' },
-];
+    { icon: Mic, title: t('Mensaje de voz'), text: t('La voz de los tuyos.') },
+]);
 
 const bars = [
     0.4, 0.7, 1, 0.6, 0.85, 0.5, 0.95, 0.65, 0.4, 0.8, 0.55, 0.9, 0.45, 0.7,
@@ -129,7 +132,11 @@ const bars = [
                     class="mem-board relative mx-auto aspect-[10/11] w-full max-w-[34rem] sm:aspect-[6/5] sm:max-w-[40rem]"
                     :class="{ 'is-open': entered }"
                     role="img"
-                    aria-label="Ilustración de un recuerdo: fotos de la carrera, tarjeta de resultado, mensaje de voz, dedicatoria y selector de privacidad. Datos de ejemplo."
+                    :aria-label="
+                        $t(
+                            'Ilustración de un recuerdo: fotos de la carrera, tarjeta de resultado, mensaje de voz, dedicatoria y selector de privacidad. Datos de ejemplo.',
+                        )
+                    "
                 >
                     <div
                         class="absolute inset-[6%_4%] rounded-hero bg-fl-paper"
@@ -225,7 +232,7 @@ const bars = [
                                 </span>
                                 <span
                                     class="mt-1 block truncate text-[10px] font-medium text-white/60"
-                                    >Mensaje de voz · 0:24</span
+                                    >{{ $t('Mensaje de voz · 0:24') }}</span
                                 >
                             </span>
                         </span>
@@ -241,7 +248,7 @@ const bars = [
                         >
                             <span
                                 class="block text-[10px] font-bold tracking-[0.2em] text-fl-gold-ink uppercase"
-                                >Tu resultado</span
+                                >{{ $t('Tu resultado') }}</span
                             >
                             <span
                                 class="mt-1 block font-serif text-[clamp(1.6rem,6vw,2.4rem)] leading-none font-semibold tracking-[-0.03em] text-fl-black tabular-nums"
@@ -253,7 +260,7 @@ const bars = [
                                 <span>
                                     <span
                                         class="block text-[9px] font-semibold tracking-[0.14em] text-fl-stone uppercase"
-                                        >Posición</span
+                                        >{{ $t('Posición') }}</span
                                     >
                                     <span
                                         class="font-serif text-base font-semibold tabular-nums"
@@ -263,7 +270,7 @@ const bars = [
                                 <span>
                                     <span
                                         class="block text-[9px] font-semibold tracking-[0.14em] text-fl-stone uppercase"
-                                        >Distancia</span
+                                        >{{ $t('Distancia') }}</span
                                     >
                                     <span
                                         class="font-serif text-base font-semibold"
@@ -284,17 +291,19 @@ const bars = [
                         >
                             <span
                                 class="block text-[10px] font-bold tracking-[0.2em] text-fl-gold-ink uppercase"
-                                >Dedicatoria</span
+                                >{{ $t('Dedicatoria') }}</span
                             >
                             <span
                                 class="mt-1.5 block font-serif text-[0.8125rem] leading-snug font-medium text-fl-black italic sm:text-[0.9375rem]"
-                                >“Para quien me esperó en la meta.”</span
+                                >{{
+                                    $t('“Para quien me esperó en la meta.”')
+                                }}</span
                             >
                         </span>
                     </div>
                 </div>
                 <p class="mt-3 text-center text-[11px] text-fl-stone/80">
-                    Ilustración con datos de ejemplo.
+                    {{ $t('Ilustración con datos de ejemplo.') }}
                 </p>
             </div>
 
@@ -302,9 +311,15 @@ const bars = [
             <div class="lg:col-span-5">
                 <HomeSectionHead
                     id="memories-title"
-                    eyebrow="Recuerdos"
-                    title="Todo lo que viviste ese día, en un solo lugar."
-                    lead="Cada tag abre un recuerdo que tú construyes: la historia completa de tu carrera, no solo una foto."
+                    :eyebrow="$t('Recuerdos')"
+                    :title="
+                        $t('Todo lo que viviste ese día, en un solo lugar.')
+                    "
+                    :lead="
+                        $t(
+                            'Cada tag abre un recuerdo que tú construyes: la historia completa de tu carrera, no solo una foto.',
+                        )
+                    "
                 />
 
                 <ul
@@ -347,11 +362,14 @@ const bars = [
                             aria-hidden="true"
                         />
                         <span>
-                            <strong class="font-semibold"
-                                >Tú decides quién lo ve:</strong
-                            >
-                            privado, solo con enlace o público. Los enlaces que
-                            compartes se pueden revocar.
+                            <strong class="font-semibold">{{
+                                $t('Tú decides quién lo ve:')
+                            }}</strong>
+                            {{
+                                $t(
+                                    'privado, solo con enlace o público. Los enlaces que compartes se pueden revocar.',
+                                )
+                            }}
                         </span>
                     </p>
                     <p
@@ -362,14 +380,18 @@ const bars = [
                             aria-hidden="true"
                         />
                         <span>
-                            <strong class="font-semibold">Es tuyo:</strong>
-                            descarga todo tu recuerdo cuando quieras.
+                            <strong class="font-semibold">{{
+                                $t('Es tuyo:')
+                            }}</strong>
+                            {{
+                                $t('descarga todo tu recuerdo cuando quieras.')
+                            }}
                         </span>
                     </p>
                 </div>
 
                 <a v-reveal :href="ACTIVATE_URL" class="fl-btn-secondary mt-8">
-                    Ya tengo mi tag: activarlo
+                    {{ $t('Ya tengo mi tag: activarlo') }}
                 </a>
             </div>
         </div>

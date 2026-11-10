@@ -5,11 +5,14 @@
  * collections, the gear, why buying here is safe, and where to learn more.
  * Every product block comes from the catalog; a block with nothing real to
  * show is simply not rendered, and no product appears in two grids. No
- * invented reviews, stock or numbers.
+ * invented reviews, stock or numbers. Concept products (not for sale yet)
+ * stay out of the grids and share one small "Próximamente" strip near the
+ * bottom.
  */
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, ArrowUpRight, Nfc, ShieldCheck, Truck } from '@lucide/vue';
 import { computed } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import CtaBand from '@/components/marketing/CtaBand.vue';
 import PageHero from '@/components/marketing/PageHero.vue';
 import SectionIntro from '@/components/marketing/SectionIntro.vue';
@@ -26,6 +29,7 @@ import {
     HOW_IT_WORKS_URL,
     PORTRAIT_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { productCardProps } from '@/lib/store';
 import { catalog } from '@/routes/store';
 import { show as categoryShow } from '@/routes/store/categories';
@@ -64,6 +68,8 @@ const props = defineProps<{
     }[];
 }>();
 
+const { t } = useI18n();
+
 const photo = MEDIA.photo;
 
 /** The featured tag's design (collection artwork when it has one). */
@@ -73,7 +79,7 @@ const featuredArt = computed(() =>
             name:
                 props.featured?.collection?.name ??
                 props.featured?.name ??
-                'Tu colección',
+                t('Tu colección'),
             year: props.featured?.collection?.year ?? null,
             destination: props.featured?.collection?.destination ?? null,
         },
@@ -112,63 +118,81 @@ const pool = computed(() => {
     });
 });
 
+/** Concept products are not for sale yet: one low-key strip, never a grid. */
+const isConcept = (p: PublicProductCard) => p.availability === 'concept';
+const conceptRow = computed(() => pool.value.filter(isConcept).slice(0, 4));
+
 // Tags and gear never share a grid, and the featured tag is not repeated.
 const tagRow = computed(() =>
     pool.value
         .filter(
             (p) =>
-                p.type === 'legacy_tag' && p.uuid !== featuredTag.value?.uuid,
+                p.type === 'legacy_tag' &&
+                !isConcept(p) &&
+                p.uuid !== featuredTag.value?.uuid,
         )
         .slice(0, 4),
 );
 const gearRow = computed(() =>
-    pool.value.filter((p) => p.type !== 'legacy_tag').slice(0, 4),
+    pool.value
+        .filter((p) => p.type !== 'legacy_tag' && !isConcept(p))
+        .slice(0, 4),
 );
 
-const trust = [
+const trust = computed(() => [
     {
         icon: Truck,
-        title: 'Envío a domicilio',
-        text: 'Sigue tu pedido desde tu cuenta hasta que llega a tus manos.',
+        title: t('Envío a domicilio'),
+        text: t('Sigue tu pedido desde tu cuenta hasta que llega a tus manos.'),
     },
     {
         icon: ShieldCheck,
-        title: 'Pago seguro',
-        text: 'Pagas en línea, en una conexión cifrada.',
+        title: t('Pago seguro'),
+        text: t('Pagas en línea, en una conexión cifrada.'),
     },
     {
         icon: Nfc,
-        title: 'Activación en un toque',
-        text: 'Acercas tu teléfono al tag y se abre tu recuerdo. Sin apps obligatorias.',
+        title: t('Activación en un toque'),
+        text: t(
+            'Acercas tu teléfono al tag y se abre tu recuerdo. Sin apps obligatorias.',
+        ),
     },
-];
+]);
 
-const tagSteps = [
-    'Eliges el diseño de tu carrera o destino.',
-    'Lo recibes listo, con su correa y su chip NFC.',
-    'Lo tocas con tu teléfono y guardas tu historia.',
-];
+const tagSteps = computed(() => [
+    t('Eliges el diseño de tu carrera o destino.'),
+    t('Lo recibes listo, con su correa y su chip NFC.'),
+    t('Lo tocas con tu teléfono y guardas tu historia.'),
+]);
 </script>
 
 <template>
     <SeoHead
-        title="Tienda: tags de colección y equipo para tu carrera"
-        description="Colecciones del Finisher Legacy Tag por carrera y destino, además de Racepack, Trisuit y Chill Band. Envío a domicilio y pago seguro."
+        :title="$t('Tienda: tags de colección y equipo para tu carrera')"
+        :description="
+            $t(
+                'Colecciones del Finisher Legacy Tag por carrera y destino, además de Racepack, Trisuit y Chill Band. Envío a domicilio y pago seguro.',
+            )
+        "
     />
 
     <PageHero
-        eyebrow="Tienda Finisher Legacy"
-        title="Tags de colección."
-        accent="Y equipo para tu carrera."
-        lede="El Finisher Legacy Tag de tu carrera o destino —lo tocas con tu teléfono y se abre tu recuerdo— y el equipo para llegar a la meta: Racepack, Trisuit y Chill Band."
+        :eyebrow="$t('Tienda Finisher Legacy')"
+        :title="$t('Tags de colección.')"
+        :accent="$t('Y equipo para tu carrera.')"
+        :lede="
+            $t(
+                'El Finisher Legacy Tag de tu carrera o destino —lo tocas con tu teléfono y se abre tu recuerdo— y el equipo para llegar a la meta: Racepack, Trisuit y Chill Band.',
+            )
+        "
     >
         <template #actions>
             <Link :href="COLLECTIONS_URL" class="fl-btn-primary">
-                Ver colecciones de tags
+                {{ $t('Ver colecciones de tags') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
             <Link :href="catalog()" class="fl-btn-secondary">
-                Todo el catálogo
+                {{ $t('Todo el catálogo') }}
             </Link>
         </template>
 
@@ -200,13 +224,13 @@ const tagSteps = [
                 <p
                     class="absolute top-4 left-4 z-10 inline-flex items-center gap-2 rounded-full border border-fl-gold/30 bg-white/90 px-3 py-1.5 text-[11px] font-semibold tracking-[0.14em] text-fl-gold-ink uppercase shadow-fl-micro backdrop-blur"
                 >
-                    <Nfc class="size-3.5" aria-hidden="true" /> Se abre con un
-                    toque
+                    <Nfc class="size-3.5" aria-hidden="true" />
+                    {{ $t('Se abre con un toque') }}
                 </p>
                 <div class="relative mx-auto w-[58%] pt-8 sm:w-[52%]">
                     <LegacyTag3D
                         v-bind="featuredArt"
-                        label="Finisher Legacy Tag en 3D"
+                        :label="$t('Finisher Legacy Tag en 3D')"
                     />
                 </div>
                 <div class="relative px-6 pt-1 pb-6 text-center">
@@ -223,7 +247,7 @@ const tagSteps = [
         aria-labelledby="categorias"
     >
         <div class="fl-container py-6 sm:py-8">
-            <h2 id="categorias" class="sr-only">Categorías</h2>
+            <h2 id="categorias" class="sr-only">{{ $t('Categorías') }}</h2>
             <ul
                 class="-mx-4 flex snap-x [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
             >
@@ -242,14 +266,12 @@ const tagSteps = [
                                 class="block truncate font-serif text-base font-semibold text-foreground sm:text-lg"
                                 >{{ category.name }}</span
                             >
-                            <span class="text-[13px] text-muted-foreground"
-                                >{{ category.products_count }}
-                                {{
-                                    category.products_count === 1
-                                        ? 'producto'
-                                        : 'productos'
-                                }}</span
-                            >
+                            <span class="text-[13px] text-muted-foreground">{{
+                                $tc(
+                                    '{count} producto|{count} productos',
+                                    category.products_count,
+                                )
+                            }}</span>
                         </span>
                         <span
                             class="flex size-9 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink transition-colors duration-300 group-hover:bg-fl-black group-hover:text-fl-gold-soft"
@@ -302,7 +324,9 @@ const tagSteps = [
                     <p class="fl-eyebrow">
                         {{
                             featuredTag.collection?.name
-                                ? `Colección ${featuredTag.collection.name}`
+                                ? $t('Colección {name}', {
+                                      name: featuredTag.collection.name,
+                                  })
                                 : 'Finisher Legacy Tag'
                         }}
                     </p>
@@ -310,18 +334,20 @@ const tagSteps = [
                         id="tag-destacado"
                         class="fl-display mt-4 text-[1.9rem] sm:text-[2.6rem]"
                     >
-                        Tu carrera termina.
-                        <span class="block font-medium text-fl-gold-ink italic"
-                            >Tu historia no.</span
+                        {{ $t('Tu carrera termina.') }}
+                        <span
+                            class="block font-medium text-fl-gold-ink italic"
+                            >{{ $t('Tu historia no.') }}</span
                         >
                     </h2>
                     <p
                         class="mt-4 text-base leading-relaxed text-muted-foreground"
                     >
-                        Un tag de colección con chip NFC. Dentro guardas tus
-                        fotos, tu historia, tu resultado y un mensaje de voz;
-                        quien lo toque con su teléfono lo abre, sin instalar
-                        nada.
+                        {{
+                            $t(
+                                'Un tag de colección con chip NFC. Dentro guardas tus fotos, tu historia, tu resultado y un mensaje de voz; quien lo toque con su teléfono lo abre, sin instalar nada.',
+                            )
+                        }}
                     </p>
                     <ol class="mt-6 space-y-3">
                         <li
@@ -344,19 +370,22 @@ const tagSteps = [
                             :href="productShow(featuredTag.slug)"
                             class="fl-btn-primary"
                         >
-                            Ver {{ featuredTag.name }}
+                            {{ $t('Ver {name}', { name: featuredTag.name }) }}
                             <ArrowRight class="size-4" aria-hidden="true" />
                         </Link>
                         <p
                             v-if="featuredTag.from_price_minor !== null"
                             class="text-sm text-muted-foreground"
                         >
-                            Desde
-                            <Money
-                                :minor="featuredTag.from_price_minor"
-                                :currency="featuredTag.currency"
-                                class="font-semibold text-foreground"
-                            />
+                            <I18nT :text="$t('Desde {price}')">
+                                <template #price>
+                                    <Money
+                                        :minor="featuredTag.from_price_minor"
+                                        :currency="featuredTag.currency"
+                                        class="font-semibold text-foreground"
+                                    />
+                                </template>
+                            </I18nT>
                         </p>
                     </div>
                 </div>
@@ -368,24 +397,24 @@ const tagSteps = [
     <section
         v-if="tagRow.length"
         class="fl-section border-t border-border bg-card"
-        aria-label="Tags de colección"
+        :aria-label="$t('Tags de colección')"
     >
         <div class="fl-container">
             <div
                 class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
             >
                 <SectionIntro
-                    eyebrow="Tags de colección"
-                    title="Un diseño por carrera"
-                    accent="y por destino."
+                    :eyebrow="$t('Tags de colección')"
+                    :title="$t('Un diseño por carrera')"
+                    :accent="$t('y por destino.')"
                 />
                 <Link
                     :href="COLLECTIONS_URL"
                     class="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    <span class="fl-link fl-link--gold"
-                        >Ver todas las colecciones</span
-                    >
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Ver todas las colecciones')
+                    }}</span>
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -413,33 +442,43 @@ const tagSteps = [
                     </span>
                     <span
                         class="font-serif text-base leading-snug font-semibold text-foreground sm:text-lg"
-                        >Explora todas las colecciones</span
+                        >{{ $t('Explora todas las colecciones') }}</span
                     >
-                    <span class="text-[13px] text-muted-foreground"
-                        >Encuentra el diseño de tu carrera.</span
-                    >
+                    <span class="text-[13px] text-muted-foreground">{{
+                        $t('Encuentra el diseño de tu carrera.')
+                    }}</span>
                 </Link>
             </div>
         </div>
     </section>
 
     <!-- Gear -->
-    <section v-if="gearRow.length" class="fl-section" aria-label="Equipo">
+    <section
+        v-if="gearRow.length"
+        class="fl-section"
+        :aria-label="$t('Equipo')"
+    >
         <div class="fl-container">
             <div
                 class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
             >
                 <SectionIntro
-                    eyebrow="Equipo y textil"
-                    title="Listo para la"
-                    accent="línea de salida."
-                    text="Lo que llevas puesto y lo que cargas el día de la carrera."
+                    :eyebrow="$t('Equipo y textil')"
+                    :title="$t('Listo para la')"
+                    :accent="$t('línea de salida.')"
+                    :text="
+                        $t(
+                            'Lo que llevas puesto y lo que cargas el día de la carrera.',
+                        )
+                    "
                 />
                 <Link
                     :href="catalog()"
                     class="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    <span class="fl-link fl-link--gold">Ver el catálogo</span>
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Ver el catálogo')
+                    }}</span>
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -459,7 +498,7 @@ const tagSteps = [
     <!-- Trust notes -->
     <section
         class="border-y border-border bg-card"
-        aria-label="Comprar con confianza"
+        :aria-label="$t('Comprar con confianza')"
     >
         <ul
             class="fl-container grid gap-8 py-10 sm:grid-cols-3 sm:gap-6 sm:py-12"
@@ -495,28 +534,28 @@ const tagSteps = [
     </section>
 
     <!-- Learn more -->
-    <section class="fl-section" aria-label="Conoce más">
+    <section class="fl-section" :aria-label="$t('Conoce más')">
         <div class="fl-container grid gap-5 md:grid-cols-2">
             <article
                 v-for="(card, index) in [
                     {
-                        eyebrow: 'Cómo funciona',
-                        title: 'Del tag a tu recuerdo, en un toque.',
-                        cta: 'Ver el paso a paso',
+                        eyebrow: $t('Cómo funciona'),
+                        title: $t('Del tag a tu recuerdo, en un toque.'),
+                        cta: $t('Ver el paso a paso'),
                         href: HOW_IT_WORKS_URL,
                         image: photo.triumph,
                         position: 'object-center',
                     },
                     {
-                        eyebrow: 'Portarretrato inteligente',
-                        title: 'Tu foto de meta, con tu álbum dentro.',
-                        cta: 'Conocer el portarretrato',
+                        eyebrow: $t('Portarretrato inteligente'),
+                        title: $t('Tu foto de meta, con tu álbum dentro.'),
+                        cta: $t('Conocer el portarretrato'),
                         href: PORTRAIT_URL,
                         image: photo.runner,
                         position: 'object-[30%_30%]',
                     },
                 ]"
-                :key="card.eyebrow"
+                :key="card.href"
                 v-reveal="{ index }"
                 class="group fl-card fl-card-hover relative flex flex-col overflow-hidden !rounded-hero p-3"
             >
@@ -527,7 +566,7 @@ const tagSteps = [
                         :src="card.image.src"
                         :srcset="card.image.srcset"
                         sizes="(min-width: 768px) 50vw, 100vw"
-                        :alt="card.image.alt"
+                        :alt="$t(card.image.alt)"
                         loading="lazy"
                         decoding="async"
                         class="absolute inset-0 size-full object-cover"
@@ -560,18 +599,64 @@ const tagSteps = [
         </div>
     </section>
 
+    <!-- Coming soon: concept products, kept out of the grids above -->
+    <section
+        v-if="conceptRow.length"
+        class="border-t border-border bg-card"
+        aria-labelledby="proximamente"
+    >
+        <div class="fl-container py-6 sm:py-8">
+            <h2 id="proximamente" class="fl-eyebrow">
+                {{ $t('Próximamente') }}
+            </h2>
+            <p class="mt-2 text-sm text-muted-foreground">
+                {{
+                    $t('Piezas que estamos diseñando. Aún no están a la venta.')
+                }}
+            </p>
+            <ul class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <li v-for="product in conceptRow" :key="product.uuid">
+                    <Link
+                        :href="productShow(product.slug)"
+                        class="group flex h-full items-center justify-between gap-4 rounded-card border border-border bg-background px-5 py-4 transition-colors duration-200 hover:border-fl-gold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                        <span class="min-w-0">
+                            <span
+                                class="block truncate font-serif text-base font-semibold text-foreground sm:text-lg"
+                                >{{ product.name }}</span
+                            >
+                            <span class="text-[13px] text-muted-foreground">{{
+                                $t('En desarrollo')
+                            }}</span>
+                        </span>
+                        <span
+                            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink transition-colors duration-300 group-hover:bg-fl-black group-hover:text-fl-gold-soft"
+                            aria-hidden="true"
+                        >
+                            <ArrowUpRight class="size-4" />
+                        </span>
+                    </Link>
+                </li>
+            </ul>
+        </div>
+    </section>
+
     <CtaBand
-        title="Elige el tag de tu carrera."
-        accent="Guarda lo que viviste."
-        text="¿Ya tienes el tuyo? Actívalo acercando tu teléfono o escribiendo su código."
+        :title="$t('Elige el tag de tu carrera.')"
+        :accent="$t('Guarda lo que viviste.')"
+        :text="
+            $t(
+                '¿Ya tienes el tuyo? Actívalo acercando tu teléfono o escribiendo su código.',
+            )
+        "
     >
         <template #actions>
             <Link :href="COLLECTIONS_URL" class="mk-cta-primary">
-                Ver colecciones
+                {{ $t('Ver colecciones') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
             <Link :href="ACTIVATE_URL" class="mk-cta-secondary">
-                Activar mi tag
+                {{ $t('Activar mi tag') }}
             </Link>
         </template>
     </CtaBand>

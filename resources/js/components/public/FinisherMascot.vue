@@ -19,7 +19,7 @@ withDefaults(
     }>(),
     {
         variant: 'hero',
-        alt: 'Mascota de Finisher Legacy',
+        alt: undefined,
     },
 );
 
@@ -44,7 +44,7 @@ const moods: Record<Variant, MascotMood> = {
     <span class="relative inline-block shrink-0" :class="sizeClass[variant]">
         <Mascot3D
             :mood="moods[variant]"
-            :alt="alt"
+            :alt="alt ?? $t('Mascota de Finisher Legacy')"
             class="h-full"
             :fps="variant === 'hero' ? 60 : 40"
         />

@@ -30,6 +30,7 @@ import {
 } from 'vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 import type { TagStageHandle } from './tagStage';
 import type { TagArt, TagPose } from './tagStageContext';
 
@@ -44,6 +45,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ ready: [] }>();
 
+const { t } = useI18n();
 const reduced = useReducedMotion();
 const root = useTemplateRef<HTMLElement>('root');
 const host = useTemplateRef<HTMLElement>('host');
@@ -56,7 +58,9 @@ const shownFace = ref<'front' | 'back'>(props.pose.face ?? 'front');
 const ariaLabel = computed(
     () =>
         props.label ??
-        `Finisher Legacy Tag en 3D, colección ${props.art.name}${props.art.year ? ` ${props.art.year}` : ''}. Arrástralo o usa las flechas para girarlo. Render ilustrativo.`,
+        t('Finisher Legacy Tag en 3D, colección {name}. Arrástralo o usa las flechas para girarlo. Render ilustrativo.', {
+            name: `${props.art.name}${props.art.year ? ` ${props.art.year}` : ''}`,
+        }),
 );
 
 let handle: TagStageHandle | null = null;

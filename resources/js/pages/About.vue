@@ -34,11 +34,14 @@ import {
     HOW_IT_WORKS_URL,
     STORE_URL,
 } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import type {
     CompanyChannels,
     CompanyGalleryItem,
     CompanyMilestone,
 } from '@/types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     company: {
@@ -63,43 +66,55 @@ const canEdit = computed(() =>
 );
 
 // The brand promise in three verbs (identity manual, "La marca").
-const promise = [
+const promise = computed(() => [
     {
         icon: Archive,
-        verb: 'Conservar',
-        text: 'Lo que viviste queda guardado en un lugar que es tuyo: fotos, resultado, historia y voz.',
+        verb: t('Conservar'),
+        text: t(
+            'Lo que viviste queda guardado en un lugar que es tuyo: fotos, resultado, historia y voz.',
+        ),
     },
     {
         icon: RotateCcw,
-        verb: 'Revivir',
-        text: 'Acercas tu teléfono al tag y vuelves a ese día, las veces que quieras.',
+        verb: t('Revivir'),
+        text: t(
+            'Acercas tu teléfono al tag y vuelves a ese día, las veces que quieras.',
+        ),
     },
     {
         icon: Share2,
-        verb: 'Compartir',
-        text: 'Con quienes estuvieron contigo, y con la comunidad que entiende lo que costó.',
+        verb: t('Compartir'),
+        text: t(
+            'Con quienes estuvieron contigo, y con la comunidad que entiende lo que costó.',
+        ),
     },
-];
+]);
 
 // What Finisher Legacy cares about — a description of the product, not a
 // claim about the company's past.
-const values = [
+const values = computed(() => [
     {
         icon: Medal,
-        title: 'Honrar el esfuerzo',
-        text: 'Cada kilómetro y cada entrenamiento merecen quedar registrados, no solo el tiempo final.',
+        title: t('Honrar el esfuerzo'),
+        text: t(
+            'Cada kilómetro y cada entrenamiento merecen quedar registrados, no solo el tiempo final.',
+        ),
     },
     {
         icon: HeartHandshake,
-        title: 'Lo físico importa',
-        text: 'Un recuerdo que puedes tocar, colgar y regalar: el tag de tu carrera, con tu historia dentro.',
+        title: t('Lo físico importa'),
+        text: t(
+            'Un recuerdo que puedes tocar, colgar y regalar: el tag de tu carrera, con tu historia dentro.',
+        ),
     },
     {
         icon: Users,
-        title: 'Nadie llega solo',
-        text: 'Familia, equipo y comunidad son parte del logro, y tienen su lugar en él.',
+        title: t('Nadie llega solo'),
+        text: t(
+            'Familia, equipo y comunidad son parte del logro, y tienen su lugar en él.',
+        ),
     },
-];
+]);
 
 const products = [
     { key: 'racepack', label: 'Racepack' },
@@ -109,10 +124,13 @@ const products = [
 
 const story = computed(() =>
     [
-        { title: 'Qué queremos resolver', text: props.company.problem },
-        { title: 'Por qué nace Finisher Legacy', text: props.company.origin },
+        { title: t('Qué queremos resolver'), text: props.company.problem },
         {
-            title: 'Nuestra experiencia en el deporte',
+            title: t('Por qué nace Finisher Legacy'),
+            text: props.company.origin,
+        },
+        {
+            title: t('Nuestra experiencia en el deporte'),
             text: props.company.experience,
         },
     ].filter((block) => block.text),
@@ -121,26 +139,32 @@ const story = computed(() =>
 
 <template>
     <SeoHead
-        title="Nosotros"
-        description="Finisher Legacy transforma cada logro deportivo en una historia que se puede conservar, revivir y compartir. Conoce quiénes somos y por qué existimos."
+        :title="$t('Nosotros')"
+        :description="
+            $t(
+                'Finisher Legacy transforma cada logro deportivo en una historia que se puede conservar, revivir y compartir. Conoce quiénes somos y por qué existimos.',
+            )
+        "
     />
 
     <PageHero
-        eyebrow="Nosotros"
-        title="Conocemos la meta"
-        accent="porque también hemos estado ahí."
+        :eyebrow="$t('Nosotros')"
+        :title="$t('Conocemos la meta')"
+        :accent="$t('porque también hemos estado ahí.')"
         :lede="
             company.intro ??
-            'Finisher Legacy transforma cada logro deportivo en una historia que se puede conservar, revivir y compartir.'
+            $t(
+                'Finisher Legacy transforma cada logro deportivo en una historia que se puede conservar, revivir y compartir.',
+            )
         "
     >
         <template #actions>
             <Link :href="HOW_IT_WORKS_URL" class="fl-btn-primary">
-                Cómo funciona
+                {{ $t('Cómo funciona') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
             <Link :href="CONTACT_URL" class="fl-btn-secondary">
-                Escríbenos
+                {{ $t('Escríbenos') }}
             </Link>
         </template>
 
@@ -158,7 +182,7 @@ const story = computed(() =>
                         sizes="(min-width: 1024px) 24rem, 70vw"
                         width="1000"
                         height="667"
-                        alt="Atleta en plena carrera"
+                        :alt="$t('Atleta en plena carrera')"
                         fetchpriority="high"
                         class="size-full object-cover object-[35%_center]"
                     />
@@ -170,7 +194,7 @@ const story = computed(() =>
                         src="/media/home/story/medal-closeup-640.webp"
                         width="640"
                         height="960"
-                        alt="Atleta celebrando con su medalla"
+                        :alt="$t('Atleta celebrando con su medalla')"
                         loading="lazy"
                         class="size-full object-cover object-[50%_18%]"
                     />
@@ -207,26 +231,32 @@ const story = computed(() =>
                         class="h-auto w-full max-w-[22rem]"
                     />
                     <p
+                        v-if="
+                            $t('Haz que perdure.').toUpperCase() !==
+                            'MAKE IT LAST.'
+                        "
                         class="mt-4 font-serif text-2xl font-medium text-fl-gold-soft italic sm:text-3xl"
                     >
-                        Haz que perdure.
+                        {{ $t('Haz que perdure.') }}
                     </p>
                 </div>
                 <div>
                     <p
                         class="font-serif text-[1.45rem] leading-[1.3] font-medium text-white sm:text-[1.9rem]"
                     >
-                        Cruzar la meta es solo el principio.
-                        <span class="text-white/60"
-                            >Lo que permanece es el legado.</span
-                        >
+                        {{ $t('Cruzar la meta es solo el principio.') }}
+                        <span class="text-white/60">{{
+                            $t('Lo que permanece es el legado.')
+                        }}</span>
                     </p>
                     <p
                         class="mt-6 max-w-xl text-[0.95rem] leading-relaxed text-white/70 sm:text-base"
                     >
-                        Nuestra firma resume la promesa de la marca: que el
-                        esfuerzo de cada finisher dure mucho más que el día de
-                        la carrera.
+                        {{
+                            $t(
+                                'Nuestra firma resume la promesa de la marca: que el esfuerzo de cada finisher dure mucho más que el día de la carrera.',
+                            )
+                        }}
                     </p>
                 </div>
             </div>
@@ -266,17 +296,21 @@ const story = computed(() =>
         >
             <div>
                 <SectionIntro
-                    eyebrow="Nuestra misión"
-                    title="Honrar el esfuerzo"
-                    accent="de quien cruza la meta."
-                    text="Convertimos cada logro de corredores, ciclistas y atletas en una pieza de historia: productos y experiencias que se conservan, se reviven y se comparten."
+                    :eyebrow="$t('Nuestra misión')"
+                    :title="$t('Honrar el esfuerzo')"
+                    :accent="$t('de quien cruza la meta.')"
+                    :text="
+                        $t(
+                            'Convertimos cada logro de corredores, ciclistas y atletas en una pieza de historia: productos y experiencias que se conservan, se reviven y se comparten.',
+                        )
+                    "
                 />
                 <div
                     v-if="sports.length"
                     v-reveal="{ delay: 120 }"
                     class="mt-8"
                 >
-                    <p class="fl-eyebrow">Disciplinas</p>
+                    <p class="fl-eyebrow">{{ $t('Disciplinas') }}</p>
                     <ul class="mt-3 flex flex-wrap gap-2">
                         <li
                             v-for="sport in sports"
@@ -300,8 +334,8 @@ const story = computed(() =>
     <section v-if="story.length" class="fl-section bg-white">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Nuestra historia"
-                title="De dónde venimos."
+                :eyebrow="$t('Nuestra historia')"
+                :title="$t('De dónde venimos.')"
             />
             <div
                 class="mt-10 grid gap-5"
@@ -340,9 +374,13 @@ const story = computed(() =>
     <section class="fl-section bg-fl-paper">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Trayectoria"
-                title="Nuestro camino."
-                text="Los eventos, carreras y proyectos que han construido la experiencia detrás de Finisher Legacy."
+                :eyebrow="$t('Trayectoria')"
+                :title="$t('Nuestro camino.')"
+                :text="
+                    $t(
+                        'Los eventos, carreras y proyectos que han construido la experiencia detrás de Finisher Legacy.',
+                    )
+                "
             />
             <div v-reveal class="mt-12">
                 <AboutTimeline :milestones="milestones" :can-edit="canEdit" />
@@ -357,17 +395,21 @@ const story = computed(() =>
         >
             <div class="lg:col-span-5">
                 <SectionIntro
-                    eyebrow="Lo que hacemos"
-                    title="Del deporte a algo"
-                    accent="que puedes tocar."
-                    text="El Finisher Legacy Tag es un tag de colección con NFC que abre tu recuerdo con un toque. Alrededor de él: portarretrato, entrenamientos con la voz de los tuyos, comunidad, fotos de evento y equipo para el camino."
+                    :eyebrow="$t('Lo que hacemos')"
+                    :title="$t('Del deporte a algo')"
+                    :accent="$t('que puedes tocar.')"
+                    :text="
+                        $t(
+                            'El Finisher Legacy Tag es un tag de colección con NFC que abre tu recuerdo con un toque. Alrededor de él: portarretrato, entrenamientos con la voz de los tuyos, comunidad, fotos de evento y equipo para el camino.',
+                        )
+                    "
                 />
                 <Link
                     v-reveal="{ delay: 120 }"
                     :href="STORE_URL"
                     class="fl-btn-primary mt-8"
                 >
-                    Ver la tienda
+                    {{ $t('Ver la tienda') }}
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -387,7 +429,11 @@ const story = computed(() =>
                             name="Valle de Bravo"
                             front-art="/images/collections/tag-art/valle-de-bravo.webp"
                             :tilt="false"
-                            label="Finisher Legacy Tag de la colección Valle de Bravo"
+                            :label="
+                                $t(
+                                    'Finisher Legacy Tag de la colección Valle de Bravo',
+                                )
+                            "
                         />
                     </div>
                     <div class="relative w-[24%] pb-[5%]">
@@ -395,7 +441,11 @@ const story = computed(() =>
                             name="Cozumel"
                             front-art="/images/collections/tag-art/cozumel-arrecife.webp"
                             :tilt="false"
-                            label="Finisher Legacy Tag de la colección Cozumel"
+                            :label="
+                                $t(
+                                    'Finisher Legacy Tag de la colección Cozumel',
+                                )
+                            "
                         />
                     </div>
                     <div class="about-tags__c relative w-[21%] pb-[2%]">
@@ -403,7 +453,11 @@ const story = computed(() =>
                             name="Veracruz"
                             face="back"
                             :tilt="false"
-                            label="Reverso del Finisher Legacy Tag con la marca NFC"
+                            :label="
+                                $t(
+                                    'Reverso del Finisher Legacy Tag con la marca NFC',
+                                )
+                            "
                         />
                     </div>
                 </div>
@@ -436,8 +490,8 @@ const story = computed(() =>
     <section v-if="gallery.length" class="fl-section bg-white">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Galería"
-                title="Detrás de Finisher Legacy."
+                :eyebrow="$t('Galería')"
+                :title="$t('Detrás de Finisher Legacy.')"
             />
             <div v-reveal class="mt-10">
                 <AboutGallery :items="gallery" />
@@ -448,7 +502,7 @@ const story = computed(() =>
     <!-- Visión (admin) -->
     <section v-if="company.vision" class="fl-section-lg bg-white">
         <div v-reveal class="fl-container max-w-4xl text-center">
-            <p class="fl-eyebrow">Visión</p>
+            <p class="fl-eyebrow">{{ $t('Visión') }}</p>
             <p
                 class="mt-6 font-serif text-[1.6rem] leading-snug font-medium text-foreground sm:text-4xl"
             >
@@ -458,11 +512,11 @@ const story = computed(() =>
                 class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
             >
                 <Link :href="COMMUNITY_URL" class="fl-btn-primary">
-                    Conoce la comunidad
+                    {{ $t('Conoce la comunidad') }}
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
                 <Link :href="CONTACT_URL" class="fl-btn-secondary">
-                    Escríbenos
+                    {{ $t('Escríbenos') }}
                 </Link>
             </div>
         </div>

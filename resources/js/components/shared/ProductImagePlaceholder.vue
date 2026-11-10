@@ -12,7 +12,6 @@ withDefaults(
         size?: 'sm' | 'lg';
     }>(),
     {
-        label: 'Fotografía próximamente',
         size: 'sm',
     },
 );
@@ -22,7 +21,7 @@ withDefaults(
     <div
         class="relative flex size-full flex-col items-center justify-center overflow-hidden bg-fl-cream text-center"
         role="img"
-        :aria-label="`${name} — ${label}`"
+        :aria-label="`${name} — ${label ?? $t('Fotografía próximamente')}`"
     >
         <div
             class="pointer-events-none absolute inset-0"
@@ -60,7 +59,7 @@ withDefaults(
             class="relative mt-2 text-[10px] font-semibold tracking-[0.2em] text-muted-foreground uppercase"
             aria-hidden="true"
         >
-            {{ label }}
+            {{ label ?? $t('Fotografía próximamente') }}
         </p>
     </div>
 </template>

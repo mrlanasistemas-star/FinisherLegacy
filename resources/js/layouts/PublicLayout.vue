@@ -39,7 +39,7 @@ const showTabBar = computed(
         <a
             href="#contenido"
             class="sr-only z-[60] rounded-full bg-foreground px-4 py-2 text-sm text-background focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-            >Saltar al contenido</a
+            >{{ $t('Saltar al contenido') }}</a
         >
         <PublicNavbar />
         <main id="contenido" class="relative flex-1 pt-[4.25rem]">

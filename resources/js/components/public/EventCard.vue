@@ -9,6 +9,7 @@ import { Link } from '@inertiajs/vue3';
 import { ArrowRight, MapPin } from '@lucide/vue';
 import { computed } from 'vue';
 import { MEDIA } from '@/config/media';
+import { useI18n } from '@/i18n';
 import { show as eventShow } from '@/routes/events';
 import type { EventEditionCard, EventPhase } from '@/types';
 
@@ -27,20 +28,24 @@ const {
     featured?: boolean;
 }>();
 
-const phaseCopy: Record<EventPhase, { label: string; class: string }> = {
+const { t, regional } = useI18n();
+
+const phaseCopy = computed<
+    Record<EventPhase, { label: string; class: string }>
+>(() => ({
     upcoming: {
-        label: 'Próximo',
+        label: t('Próximo'),
         class: 'bg-white/95 text-foreground',
     },
     ongoing: {
-        label: 'En curso',
+        label: t('En curso'),
         class: 'bg-emerald-600 text-white',
     },
     finished: {
-        label: 'Finalizado',
+        label: t('Finalizado'),
         class: 'bg-white/85 text-muted-foreground',
     },
-};
+}));
 
 // Discipline → atmosphere photograph for events without a cover.
 const fallback = computed(() => {
@@ -64,12 +69,12 @@ const fallback = computed(() => {
 const eventDate = computed(() => new Date(`${edition.event_date}T00:00:00`));
 
 const dayNumber = computed(() =>
-    eventDate.value.toLocaleDateString('es-MX', { day: 'numeric' }),
+    eventDate.value.toLocaleDateString(regional.value, { day: 'numeric' }),
 );
 
 const monthAbbrev = computed(() =>
     eventDate.value
-        .toLocaleDateString('es-MX', { month: 'short' })
+        .toLocaleDateString(regional.value, { month: 'short' })
         .replace('.', ''),
 );
 
@@ -99,7 +104,7 @@ const location = computed(() =>
             <img
                 v-if="edition.event.cover_url"
                 :src="edition.event.cover_url"
-                :alt="`Portada de ${edition.event.name}`"
+                :alt="$t('Portada de {name}', { name: edition.event.name })"
                 loading="lazy"
                 decoding="async"
                 class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
@@ -188,7 +193,7 @@ const location = computed(() =>
                 <span
                     class="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-medium text-foreground"
                 >
-                    <span class="fl-link">Ver evento</span>
+                    <span class="fl-link">{{ $t('Ver evento') }}</span>
                     <ArrowRight
                         class="size-4 transition-transform duration-300 group-hover:translate-x-0.5"
                         aria-hidden="true"

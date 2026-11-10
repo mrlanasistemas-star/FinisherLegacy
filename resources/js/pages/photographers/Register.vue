@@ -16,6 +16,8 @@ import {
     UserRound,
 } from '@lucide/vue';
 import { computed } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
+import T from '@/components/i18n/T.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
@@ -56,8 +58,12 @@ function submit() {
 
 <template>
     <SeoHead
-        title="Registro de fotógrafos"
-        description="Crea tu perfil de fotógrafo en Finisher Legacy y vende tus fotos de eventos deportivos."
+        :title="$t('Registro de fotógrafos')"
+        :description="
+            $t(
+                'Crea tu perfil de fotógrafo en Finisher Legacy y vende tus fotos de eventos deportivos.',
+            )
+        "
     />
 
     <section class="relative overflow-hidden">
@@ -74,39 +80,44 @@ function submit() {
                     class="size-4 transition-transform duration-300 group-hover:-translate-x-0.5 motion-reduce:transform-none"
                     aria-hidden="true"
                 />
-                Fotógrafos
+                <T>Fotógrafos</T>
             </Link>
             <p class="fl-eyebrow mt-5 flex items-center gap-3">
                 <span class="h-px w-8 bg-fl-gold" aria-hidden="true" />
-                Registro de fotógrafos
+                <T>Registro de fotógrafos</T>
             </p>
             <h1
                 class="fl-display mt-4 text-[2.25rem] leading-[1.05] sm:text-5xl"
             >
-                Únete como
-                <span class="font-medium text-fl-gold-ink italic"
-                    >fotógrafo.</span
-                >
+                <I18nT :text="$t('Únete como {accent}')">
+                    <template #accent
+                        ><span class="font-medium text-fl-gold-ink italic">{{
+                            $t('fotógrafo.')
+                        }}</span></template
+                    >
+                </I18nT>
             </h1>
             <p
                 class="mt-4 max-w-2xl leading-relaxed text-muted-foreground sm:text-[1.0625rem]"
             >
-                Publicar tus fotos no tiene costo inicial. Finisher Legacy se
-                queda con el {{ fees.platform_commission_percent }}% de cada
-                venta y el costo de procesamiento del pago se descuenta del
-                cobro. Revisamos cada solicitud antes de habilitar la subida de
-                fotos.
+                {{
+                    $t(
+                        'Publicar tus fotos no tiene costo inicial. Finisher Legacy se queda con el {percent}% de cada venta y el costo de procesamiento del pago se descuenta del cobro. Revisamos cada solicitud antes de habilitar la subida de fotos.',
+                        { percent: fees.platform_commission_percent },
+                    )
+                }}
             </p>
 
             <form class="mt-9 space-y-6" @submit.prevent="submit">
                 <fieldset v-if="!user" class="fl-card space-y-5 p-6 sm:p-8">
-                    <legend class="sr-only">Tu cuenta</legend>
+                    <legend class="sr-only"><T>Tu cuenta</T></legend>
                     <p class="flex items-center gap-2 text-sm font-semibold">
-                        <UserRound class="size-4 text-fl-gold-ink" /> Tu cuenta
+                        <UserRound class="size-4 text-fl-gold-ink" />
+                        <T>Tu cuenta</T>
                     </p>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-1.5">
-                            <Label for="first_name">Nombre</Label>
+                            <Label for="first_name"><T>Nombre</T></Label>
                             <Input
                                 id="first_name"
                                 v-model="form.first_name"
@@ -116,7 +127,7 @@ function submit() {
                             <InputError :message="form.errors.first_name" />
                         </div>
                         <div class="grid gap-1.5">
-                            <Label for="last_name">Apellidos</Label>
+                            <Label for="last_name"><T>Apellidos</T></Label>
                             <Input
                                 id="last_name"
                                 v-model="form.last_name"
@@ -127,7 +138,7 @@ function submit() {
                         </div>
                     </div>
                     <div class="grid gap-1.5">
-                        <Label for="email">Correo</Label>
+                        <Label for="email"><T>Correo</T></Label>
                         <Input
                             id="email"
                             v-model="form.email"
@@ -139,7 +150,7 @@ function submit() {
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-1.5">
-                            <Label for="password">Contraseña</Label>
+                            <Label for="password"><T>Contraseña</T></Label>
                             <PasswordInput
                                 id="password"
                                 v-model="form.password"
@@ -150,7 +161,7 @@ function submit() {
                         </div>
                         <div class="grid gap-1.5">
                             <Label for="password_confirmation"
-                                >Confirma tu contraseña</Label
+                                ><T>Confirma tu contraseña</T></Label
                             >
                             <PasswordInput
                                 id="password_confirmation"
@@ -161,28 +172,38 @@ function submit() {
                         </div>
                     </div>
                     <p class="text-xs text-muted-foreground">
-                        ¿Ya tienes cuenta?
-                        <Link
-                            href="/login"
-                            class="font-semibold text-foreground underline underline-offset-4"
-                            >Inicia sesión</Link
+                        <I18nT
+                            :text="
+                                $t(
+                                    '¿Ya tienes cuenta? {link} y vuelve a esta página.',
+                                )
+                            "
                         >
-                        y vuelve a esta página.
+                            <template #link
+                                ><Link
+                                    href="/login"
+                                    class="font-semibold text-foreground underline underline-offset-4"
+                                    >{{ $t('Inicia sesión') }}</Link
+                                ></template
+                            >
+                        </I18nT>
                     </p>
                 </fieldset>
 
                 <fieldset class="fl-card space-y-5 p-6 sm:p-8">
-                    <legend class="sr-only">Perfil de fotógrafo</legend>
+                    <legend class="sr-only"><T>Perfil de fotógrafo</T></legend>
                     <p class="flex items-center gap-2 text-sm font-semibold">
-                        <Camera class="size-4 text-fl-gold-ink" /> Tu perfil de
-                        fotógrafo
+                        <Camera class="size-4 text-fl-gold-ink" />
+                        <T>Tu perfil de fotógrafo</T>
                     </p>
                     <div class="grid gap-1.5">
-                        <Label for="display_name">Nombre comercial</Label>
+                        <Label for="display_name"
+                            ><T>Nombre comercial</T></Label
+                        >
                         <Input
                             id="display_name"
                             v-model="form.display_name"
-                            placeholder="Ej. Luz de Meta Fotografía"
+                            :placeholder="$t('Ej. Luz de Meta Fotografía')"
                             required
                         />
                         <InputError :message="form.errors.display_name" />
@@ -190,13 +211,15 @@ function submit() {
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-1.5">
                             <Label for="city" class="flex items-center gap-1.5"
-                                ><MapPin class="size-3.5" /> Ciudad</Label
+                                ><MapPin class="size-3.5" />
+                                <T>Ciudad</T></Label
                             >
                             <Input id="city" v-model="form.city" />
                         </div>
                         <div class="grid gap-1.5">
                             <Label for="phone" class="flex items-center gap-1.5"
-                                ><Phone class="size-3.5" /> Teléfono</Label
+                                ><Phone class="size-3.5" />
+                                <T>Teléfono</T></Label
                             >
                             <Input id="phone" v-model="form.phone" type="tel" />
                         </div>
@@ -221,8 +244,8 @@ function submit() {
                             <Label
                                 for="portfolio_url"
                                 class="flex items-center gap-1.5"
-                                ><Globe class="size-3.5" /> Portafolio
-                                (URL)</Label
+                                ><Globe class="size-3.5" />
+                                <T>Portafolio (URL)</T></Label
                             >
                             <Input
                                 id="portfolio_url"
@@ -235,13 +258,16 @@ function submit() {
                     </div>
                     <div class="grid gap-1.5">
                         <Label for="bio" class="flex items-center gap-1.5"
-                            ><AtSign class="size-3.5" /> Sobre tu trabajo</Label
+                            ><AtSign class="size-3.5" />
+                            <T>Sobre tu trabajo</T></Label
                         >
                         <Textarea
                             id="bio"
                             v-model="form.bio"
                             rows="3"
-                            placeholder="Eventos que cubres, experiencia, estilo…"
+                            :placeholder="
+                                $t('Eventos que cubres, experiencia, estilo…')
+                            "
                         />
                     </div>
                 </fieldset>
@@ -255,11 +281,12 @@ function submit() {
                         @update:model-value="(v) => (form.accept_terms = !!v)"
                     />
                     <span>
-                        Acepto que Finisher Legacy cobre a los compradores,
-                        retenga su comisión del
-                        {{ fees.platform_commission_percent }}% y el costo de
-                        procesamiento del pago, y me transfiera el resto.
-                        Confirmo que soy autor de las fotos que subiré.
+                        {{
+                            $t(
+                                'Acepto que Finisher Legacy cobre a los compradores, retenga su comisión del {percent}% y el costo de procesamiento del pago, y me transfiera el resto. Confirmo que soy autor de las fotos que subiré.',
+                                { percent: fees.platform_commission_percent },
+                            )
+                        }}
                     </span>
                 </label>
                 <InputError :message="form.errors.accept_terms" />
@@ -270,7 +297,11 @@ function submit() {
                     class="h-12 w-full rounded-full sm:w-auto sm:px-10"
                     :disabled="form.processing"
                 >
-                    {{ form.processing ? 'Enviando…' : 'Enviar solicitud' }}
+                    {{
+                        form.processing
+                            ? $t('Enviando…')
+                            : $t('Enviar solicitud')
+                    }}
                 </Button>
             </form>
         </div>

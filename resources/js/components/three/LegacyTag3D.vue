@@ -25,6 +25,7 @@ import {
 } from 'vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 import type { TagFace, TagSceneHandle } from './tagScene';
 
 type Variant = 'graphite' | 'ivory' | 'gold';
@@ -102,6 +103,8 @@ const PRESETS: Record<
     },
 };
 
+const { t } = useI18n();
+
 const HEX = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i;
 const safe = (value: string | null | undefined, fallback: string) =>
     value && HEX.test(value) ? value : fallback;
@@ -125,7 +128,9 @@ const yearText = computed(() =>
 const ariaLabel = computed(
     () =>
         props.label ??
-        `Modelo 3D ilustrativo del Finisher Legacy Tag, colección ${props.name}${yearText.value ? ` ${yearText.value}` : ''}. Arrástralo para girarlo o usa los botones Frente y Reverso.`,
+        t('Modelo 3D ilustrativo del Finisher Legacy Tag, colección {name}. Arrástralo para girarlo o usa los botones Frente y Reverso.', {
+            name: `${props.name}${yearText.value ? ` ${yearText.value}` : ''}`,
+        }),
 );
 
 const reducedMotion = useReducedMotion();
@@ -323,12 +328,12 @@ defineExpose({ show });
             <div
                 class="inline-flex rounded-full border border-foreground/10 bg-white p-1 shadow-fl-micro"
                 role="group"
-                aria-label="Ver el tag"
+                :aria-label="$t('Ver el tag')"
             >
                 <button
                     v-for="option in [
-                        { value: 'front', label: 'Frente' },
-                        { value: 'back', label: 'Reverso' },
+                        { value: 'front', label: $t('Frente') },
+                        { value: 'back', label: $t('Reverso') },
                     ] as const"
                     :key="option.value"
                     type="button"
@@ -347,9 +352,9 @@ defineExpose({ show });
             <p class="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <RotateCcw class="size-3.5" aria-hidden="true" />
                 <template v-if="status === 'ready'">
-                    Arrástralo para girarlo · Render 3D ilustrativo
+                    {{ $t('Arrástralo para girarlo · Render 3D ilustrativo') }}
                 </template>
-                <template v-else>Render ilustrativo</template>
+                <template v-else>{{ $t('Render ilustrativo') }}</template>
             </p>
         </div>
     </div>

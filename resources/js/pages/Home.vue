@@ -31,9 +31,12 @@ import HomeSports from '@/components/home/HomeSports.vue';
 import HomeTraining from '@/components/home/HomeTraining.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import type { TagArt } from '@/components/three/tagStageContext';
+import { useI18n } from '@/i18n';
 import type { PublicProductCard } from '@/types';
 import type { CollectionCardData } from '@/types/collections';
 import { collectionTagArts } from '@/types/collections';
+
+const { t } = useI18n();
 
 const props = withDefaults(
     defineProps<{
@@ -48,25 +51,38 @@ const props = withDefaults(
 const arts = computed<TagArt[]>(() =>
     props.collections.length
         ? props.collections.map((c) => collectionTagArts(c)[0])
-        : [{ name: 'Tu colección', subtitle: null, year: null, accent: null }],
+        : [
+              {
+                  name: t('Tu colección'),
+                  subtitle: null,
+                  year: null,
+                  accent: null,
+              },
+          ],
 );
 
 const origin = typeof window === 'undefined' ? '' : window.location.origin;
 
-const jsonLd = {
+const jsonLd = computed(() => ({
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Finisher Legacy',
-    slogan: 'Haz que perdure.',
+    slogan: t('Haz que perdure.'),
     url: origin ? `${origin}/` : undefined,
     logo: origin ? `${origin}/images/brand/logo/fl-monograma.png` : undefined,
-};
+}));
 </script>
 
 <template>
     <SeoHead
-        title="Finisher Legacy — El tag que guarda la historia de tu carrera"
-        description="Finisher Legacy: un tag de colección con NFC que abre el recuerdo de tu carrera, más comunidad, mensajes de ánimo para entrenar, fotos de evento, tienda y app para atletas."
+        :title="
+            $t('Finisher Legacy — El tag que guarda la historia de tu carrera')
+        "
+        :description="
+            $t(
+                'Finisher Legacy: un tag de colección con NFC que abre el recuerdo de tu carrera, más comunidad, mensajes de ánimo para entrenar, fotos de evento, tienda y app para atletas.',
+            )
+        "
         image="/images/brand/og-finisher-legacy.png"
         :json-ld="jsonLd"
     />

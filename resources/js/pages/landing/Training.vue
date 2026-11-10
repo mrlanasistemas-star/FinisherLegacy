@@ -21,6 +21,7 @@ import {
     Smartphone,
     UserRoundX,
 } from '@lucide/vue';
+import { computed } from 'vue';
 import CtaBand from '@/components/marketing/CtaBand.vue';
 import EcosystemGrid from '@/components/marketing/EcosystemGrid.vue';
 import FaqList from '@/components/marketing/FaqList.vue';
@@ -34,122 +35,169 @@ import SeoHead from '@/components/public/SeoHead.vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
 import { vReveal } from '@/composables/useReveal';
 import { APP_URL, CONTACT_URL } from '@/config/public-links';
+import { useI18n } from '@/i18n';
 import { index as trainingIndex } from '@/routes/training';
+
+const { t } = useI18n();
 
 const reducedMotion = useReducedMotion();
 
-const steps = [
+const steps = computed(() => [
     {
-        title: 'Creas tu enlace',
-        text: 'Le pones un nombre, por ejemplo «Mi maratón», y si quieres una fecha de vencimiento.',
+        title: t('Creas tu enlace'),
+        text: t(
+            'Le pones un nombre, por ejemplo «Mi maratón», y si quieres una fecha de vencimiento.',
+        ),
     },
     {
-        title: 'Lo compartes',
-        text: 'Por mensaje, en tu grupo familiar o donde quieras. Es un enlace normal.',
+        title: t('Lo compartes'),
+        text: t(
+            'Por mensaje, en tu grupo familiar o donde quieras. Es un enlace normal.',
+        ),
     },
     {
-        title: 'Ellos te graban',
-        text: 'Lo abren en su navegador y graban hasta 3 minutos ahí mismo. Pueden escucharse antes de enviar o dejarte un texto.',
+        title: t('Ellos te graban'),
+        text: t(
+            'Lo abren en su navegador y graban hasta 3 minutos ahí mismo. Pueden escucharse antes de enviar o dejarte un texto.',
+        ),
     },
     {
-        title: 'Tú escuchas',
-        text: 'En tu siguiente entrenamiento, sus mensajes suenan uno tras otro, como una lista de reproducción.',
+        title: t('Tú escuchas'),
+        text: t(
+            'En tu siguiente entrenamiento, sus mensajes suenan uno tras otro, como una lista de reproducción.',
+        ),
     },
-];
+]);
 
-const features = [
+const features = computed(() => [
     {
         icon: Smartphone,
-        title: 'Ellos no instalan nada',
-        text: 'Quien te manda ánimo no necesita cuenta ni app. Abre el enlace, graba y envía.',
+        title: t('Ellos no instalan nada'),
+        text: t(
+            'Quien te manda ánimo no necesita cuenta ni app. Abre el enlace, graba y envía.',
+        ),
     },
     {
         icon: Lock,
-        title: 'Solo tú los escuchas',
-        text: 'Los mensajes son privados. Nadie más puede abrir tus audios.',
+        title: t('Solo tú los escuchas'),
+        text: t('Los mensajes son privados. Nadie más puede abrir tus audios.'),
     },
     {
         icon: Play,
-        title: 'Un reproductor para entrenar',
-        text: 'Play, pausa, anterior y siguiente. Filtra por sin escuchar o por tus favoritos.',
+        title: t('Un reproductor para entrenar'),
+        text: t(
+            'Play, pausa, anterior y siguiente. Filtra por sin escuchar o por tus favoritos.',
+        ),
     },
     {
         icon: Gauge,
-        title: 'A tu ritmo',
-        text: 'Cambia la velocidad de reproducción y el volumen sin salir del reproductor.',
+        title: t('A tu ritmo'),
+        text: t(
+            'Cambia la velocidad de reproducción y el volumen sin salir del reproductor.',
+        ),
     },
     {
         icon: BellRing,
-        title: 'Te avisamos cuando llega uno',
-        text: 'Recibes una notificación cada vez que alguien te deja un mensaje nuevo.',
+        title: t('Te avisamos cuando llega uno'),
+        text: t(
+            'Recibes una notificación cada vez que alguien te deja un mensaje nuevo.',
+        ),
     },
     {
         icon: ShieldCheck,
-        title: 'Tú tienes el control',
-        text: 'Desactiva un enlace cuando quieras, quita un mensaje o bloquea a un remitente.',
+        title: t('Tú tienes el control'),
+        text: t(
+            'Desactiva un enlace cuando quieras, quita un mensaje o bloquea a un remitente.',
+        ),
     },
-];
+]);
 
-const faqs = [
+const faqs = computed(() => [
     {
-        q: '¿Quién me puede mandar mensajes?',
-        a: 'Cualquier persona a la que le compartas tu enlace. Puedes crear varios enlaces, desactivarlos cuando quieras y ponerles vencimiento.',
+        q: t('¿Quién me puede mandar mensajes?'),
+        a: t(
+            'Cualquier persona a la que le compartas tu enlace. Puedes crear varios enlaces, desactivarlos cuando quieras y ponerles vencimiento.',
+        ),
     },
     {
-        q: '¿Mi familia necesita cuenta o app?',
-        a: 'No. Abren el enlace en el navegador de su teléfono o computadora, graban su mensaje y lo envían.',
+        q: t('¿Mi familia necesita cuenta o app?'),
+        a: t(
+            'No. Abren el enlace en el navegador de su teléfono o computadora, graban su mensaje y lo envían.',
+        ),
     },
     {
-        q: '¿Cuánto puede durar un mensaje?',
-        a: 'Hasta 3 minutos de voz. También pueden subir un audio que ya tengan o dejarte un texto corto.',
+        q: t('¿Cuánto puede durar un mensaje?'),
+        a: t(
+            'Hasta 3 minutos de voz. También pueden subir un audio que ya tengan o dejarte un texto corto.',
+        ),
     },
     {
-        q: '¿Alguien más puede escuchar mis mensajes?',
-        a: 'No. Los audios son privados y solo tú puedes reproducirlos desde tu cuenta.',
+        q: t('¿Alguien más puede escuchar mis mensajes?'),
+        a: t(
+            'No. Los audios son privados y solo tú puedes reproducirlos desde tu cuenta.',
+        ),
     },
     {
-        q: '¿Y si recibo un mensaje que no quiero?',
-        a: 'Puedes quitarlo de tu lista y bloquear a quien lo envió.',
+        q: t('¿Y si recibo un mensaje que no quiero?'),
+        a: t('Puedes quitarlo de tu lista y bloquear a quien lo envió.'),
     },
     {
-        q: '¿Dónde escucho mis mensajes?',
-        a: 'En la app de Finisher Legacy y también aquí en la web, en Mi entrenamiento.',
+        q: t('¿Dónde escucho mis mensajes?'),
+        a: t(
+            'En la app de Finisher Legacy y también aquí en la web, en Mi entrenamiento.',
+        ),
     },
-];
+]);
 </script>
 
 <template>
     <SeoHead
-        title="Entrenamientos · Envíame ánimo"
-        description="Comparte un enlace con tu familia y amigos: te graban un mensaje de voz sin cuenta ni app, y tú los escuchas mientras entrenas."
+        :title="$t('Entrenamientos · Envíame ánimo')"
+        :description="
+            $t(
+                'Comparte un enlace con tu familia y amigos: te graban un mensaje de voz sin cuenta ni app, y tú los escuchas mientras entrenas.',
+            )
+        "
         image="/images/brand/og-finisher-legacy.jpg"
     />
 
     <PageHero
-        eyebrow="Entrenamientos · Envíame ánimo"
-        title="Entrena con la voz"
-        accent="de quienes creen en ti."
-        lede="Comparte un enlace con tu familia y tus amigos. Ellos te graban un mensaje desde su navegador, sin cuenta y sin app. Tú los escuchas mientras entrenas."
+        :eyebrow="$t('Entrenamientos · Envíame ánimo')"
+        :title="$t('Entrena con la voz')"
+        :accent="$t('de quienes creen en ti.')"
+        :lede="
+            $t(
+                'Comparte un enlace con tu familia y tus amigos. Ellos te graban un mensaje desde su navegador, sin cuenta y sin app. Tú los escuchas mientras entrenas.',
+            )
+        "
     >
         <template #actions>
             <Link :href="trainingIndex()" class="fl-btn-primary">
-                Crear mi enlace
+                {{ $t('Crear mi enlace') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
-            <a href="#como-funciona" class="fl-btn-secondary">Cómo funciona</a>
+            <a href="#como-funciona" class="fl-btn-secondary">{{
+                $t('Cómo funciona')
+            }}</a>
         </template>
         <template #visual>
             <div class="tr-stage">
                 <PhoneFrame
                     src="/images/app/entrenamientos.webp"
-                    alt="Pantalla de Entrenamientos en la app: modo entrenamiento y lista de mensajes"
+                    :alt="
+                        $t(
+                            'Pantalla de Entrenamientos en la app: modo entrenamiento y lista de mensajes',
+                        )
+                    "
                     float
                     eager
                 />
                 <div class="tr-chip tr-chip--a" aria-hidden="true">
                     <span class="tr-chip__icon"><Heart class="size-4" /></span>
                     <span>
-                        <span class="tr-chip__label">Mensaje de voz</span>
+                        <span class="tr-chip__label">{{
+                            $t('Mensaje de voz')
+                        }}</span>
                         <VoiceWave :bars="18" tone="ink" />
                     </span>
                 </div>
@@ -158,7 +206,9 @@ const faqs = [
                         ><Mic class="size-4"
                     /></span>
                     <span>
-                        <span class="tr-chip__label">Nuevo ánimo</span>
+                        <span class="tr-chip__label">{{
+                            $t('Nuevo ánimo')
+                        }}</span>
                         <VoiceWave :bars="14" />
                     </span>
                 </div>
@@ -198,23 +248,25 @@ const faqs = [
                 <p
                     class="text-[11px] font-semibold tracking-[0.22em] text-fl-gold-soft uppercase"
                 >
-                    El kilómetro difícil
+                    {{ $t('El kilómetro difícil') }}
                 </p>
                 <h2
                     id="tr-moment"
                     class="mt-4 font-serif text-[2rem] leading-[1.08] font-semibold tracking-tight sm:text-5xl"
                 >
-                    Cuando las piernas dudan,
-                    <span class="block font-medium text-fl-gold-soft italic"
-                        >suena su voz.</span
-                    >
+                    {{ $t('Cuando las piernas dudan,') }}
+                    <span class="block font-medium text-fl-gold-soft italic">{{
+                        $t('suena su voz.')
+                    }}</span>
                 </h2>
                 <p
                     class="mt-5 text-[0.95rem] leading-relaxed text-white/75 sm:text-base"
                 >
-                    Entrenar es de madrugada, con frío y casi siempre a solas.
-                    Envíame ánimo pone en tus audífonos a las personas por las
-                    que lo haces.
+                    {{
+                        $t(
+                            'Entrenar es de madrugada, con frío y casi siempre a solas. Envíame ánimo pone en tus audífonos a las personas por las que lo haces.',
+                        )
+                    }}
                 </p>
                 <div class="mt-8 flex items-center gap-4">
                     <span
@@ -232,10 +284,10 @@ const faqs = [
     <section id="como-funciona" class="fl-section scroll-mt-20">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Cómo funciona"
-                title="Un enlace."
-                accent="Todas sus voces."
-                text="Del enlace a tus audífonos en cuatro pasos."
+                :eyebrow="$t('Cómo funciona')"
+                :title="$t('Un enlace.')"
+                :accent="$t('Todas sus voces.')"
+                :text="$t('Del enlace a tus audífonos en cuatro pasos.')"
             />
             <div class="mt-10">
                 <StepList :items="steps" layout="columns" />
@@ -249,8 +301,12 @@ const faqs = [
         >
             <div v-reveal="{ y: 28 }" class="order-2 lg:order-1">
                 <div class="tr-record" aria-hidden="true">
-                    <p class="tr-record__eyebrow">Así lo ve tu familia</p>
-                    <p class="tr-record__title">Graba tu mensaje de ánimo</p>
+                    <p class="tr-record__eyebrow">
+                        {{ $t('Así lo ve tu familia') }}
+                    </p>
+                    <p class="tr-record__title">
+                        {{ $t('Graba tu mensaje de ánimo') }}
+                    </p>
                     <div class="tr-record__mic">
                         <span class="tr-record__pulse" />
                         <span class="tr-record__pulse tr-record__pulse--b" />
@@ -260,18 +316,24 @@ const faqs = [
                     </div>
                     <VoiceWave :bars="30" tone="gold" />
                     <div class="tr-record__fields">
-                        <span>Tu nombre</span>
-                        <span>Tu relación</span>
+                        <span>{{ $t('Tu nombre') }}</span>
+                        <span>{{ $t('Tu relación') }}</span>
                     </div>
-                    <span class="tr-record__send">Enviar mensaje</span>
+                    <span class="tr-record__send">{{
+                        $t('Enviar mensaje')
+                    }}</span>
                 </div>
             </div>
             <div class="order-1 lg:order-2">
                 <SectionIntro
-                    eyebrow="Para tu familia"
-                    title="Tan fácil como"
-                    accent="mandar un audio."
-                    text="Quien recibe tu enlace ve tu nombre, toca un botón y habla. Puede escucharse antes de enviar, grabar de nuevo y agregar su nombre y su relación contigo."
+                    :eyebrow="$t('Para tu familia')"
+                    :title="$t('Tan fácil como')"
+                    :accent="$t('mandar un audio.')"
+                    :text="
+                        $t(
+                            'Quien recibe tu enlace ve tu nombre, toca un botón y habla. Puede escucharse antes de enviar, grabar de nuevo y agregar su nombre y su relación contigo.',
+                        )
+                    "
                 />
                 <ul
                     v-reveal.stagger
@@ -282,21 +344,31 @@ const faqs = [
                             class="mt-0.5 size-5 shrink-0 text-fl-gold-ink"
                             aria-hidden="true"
                         />
-                        Funciona en el navegador del teléfono o la computadora.
+                        {{
+                            $t(
+                                'Funciona en el navegador del teléfono o la computadora.',
+                            )
+                        }}
                     </li>
                     <li class="flex items-start gap-3">
                         <Mic
                             class="mt-0.5 size-5 shrink-0 text-fl-gold-ink"
                             aria-hidden="true"
                         />
-                        Graban en el momento o suben un audio que ya tengan.
+                        {{
+                            $t(
+                                'Graban en el momento o suben un audio que ya tengan.',
+                            )
+                        }}
                     </li>
                     <li class="flex items-start gap-3">
                         <UserRoundX
                             class="mt-0.5 size-5 shrink-0 text-fl-gold-ink"
                             aria-hidden="true"
                         />
-                        Sin registro: no les pedimos crear una cuenta.
+                        {{
+                            $t('Sin registro: no les pedimos crear una cuenta.')
+                        }}
                     </li>
                 </ul>
             </div>
@@ -306,9 +378,9 @@ const faqs = [
     <section class="fl-section">
         <div class="fl-container">
             <SectionIntro
-                eyebrow="Lo que incluye"
-                title="Hecho para escucharse"
-                accent="en movimiento."
+                :eyebrow="$t('Lo que incluye')"
+                :title="$t('Hecho para escucharse')"
+                :accent="$t('en movimiento.')"
             />
             <div class="mt-10">
                 <FeatureGrid :items="features" />
@@ -320,15 +392,15 @@ const faqs = [
         <div class="fl-container grid gap-10 lg:grid-cols-12">
             <div class="lg:col-span-4">
                 <SectionIntro
-                    eyebrow="Preguntas"
-                    title="Lo que nos preguntan"
-                    accent="de Entrenamientos."
+                    :eyebrow="$t('Preguntas')"
+                    :title="$t('Lo que nos preguntan')"
+                    :accent="$t('de Entrenamientos.')"
                 />
                 <Link
                     :href="CONTACT_URL"
                     class="fl-link mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    Ayuda y contacto
+                    {{ $t('Ayuda y contacto') }}
                     <ArrowRight class="size-4" aria-hidden="true" />
                 </Link>
             </div>
@@ -339,16 +411,18 @@ const faqs = [
     </section>
 
     <CtaBand
-        title="Tu siguiente entrenamiento"
-        accent="no tiene que ser a solas."
-        text="Crea tu enlace, compártelo hoy y sal a entrenar con ellos."
+        :title="$t('Tu siguiente entrenamiento')"
+        :accent="$t('no tiene que ser a solas.')"
+        :text="$t('Crea tu enlace, compártelo hoy y sal a entrenar con ellos.')"
     >
         <template #actions>
             <Link :href="trainingIndex()" class="mk-cta-primary">
-                Crear mi enlace
+                {{ $t('Crear mi enlace') }}
                 <ArrowRight class="size-4" aria-hidden="true" />
             </Link>
-            <Link :href="APP_URL" class="mk-cta-secondary">Conocer la app</Link>
+            <Link :href="APP_URL" class="mk-cta-secondary">{{
+                $t('Conocer la app')
+            }}</Link>
         </template>
     </CtaBand>
 

@@ -17,32 +17,41 @@ import {
     Package,
     Share2,
 } from '@lucide/vue';
-import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 import TagVisualizer from '@/components/tag/TagVisualizer.vue';
 import type { TagArt } from '@/components/three/tagStageContext';
 import { vReveal } from '@/composables/useReveal';
+import { useI18n } from '@/i18n';
 import { howItWorks } from '@/routes';
 import { prefersReducedMotion, useOnScreen, vStage } from './homeMotion';
 import HomeSectionHead from './HomeSectionHead.vue';
+
+const { t } = useI18n();
 
 defineProps<{ art: TagArt }>();
 
 const STEP_MS = 4800;
 
-const steps = [
+const steps = computed(() => [
     {
-        title: 'Elige tu colección',
-        text: 'Compra el tag de tu carrera en la tienda o recíbelo en tu evento. Llega listo para activarse con el código de su empaque.',
+        title: t('Elige tu colección'),
+        text: t(
+            'Compra el tag de tu carrera en la tienda o recíbelo en tu evento. Llega listo para activarse con el código de su empaque.',
+        ),
     },
     {
-        title: 'Acerca tu celular',
-        text: 'Sin códigos que escanear: el chip NFC del tag abre tu recuerdo con un toque en la parte trasera del teléfono.',
+        title: t('Acerca tu celular'),
+        text: t(
+            'Sin códigos que escanear: el chip NFC del tag abre tu recuerdo con un toque en la parte trasera del teléfono.',
+        ),
     },
     {
-        title: 'Revive y comparte',
-        text: 'Sube tus fotos, tu tiempo y tu historia. Tu familia lo ve desde cualquier teléfono, sin instalar nada.',
+        title: t('Revive y comparte'),
+        text: t(
+            'Sube tus fotos, tu tiempo y tu historia. Tu familia lo ve desde cualquier teléfono, sin instalar nada.',
+        ),
     },
-];
+]);
 
 const thumbs = [
     '/media/home/story/race-effort-640.webp',
@@ -75,7 +84,7 @@ function play() {
 
     cycle.value++;
     timer = window.setInterval(() => {
-        active.value = (active.value + 1) % steps.length;
+        active.value = (active.value + 1) % steps.value.length;
         cycle.value++;
     }, STEP_MS);
 }
@@ -102,9 +111,9 @@ onBeforeUnmount(stop);
             <div class="lg:col-span-5">
                 <HomeSectionHead
                     id="how-title"
-                    eyebrow="Cómo funciona"
-                    title="Un toque y vuelves a tu meta."
-                    lead="Tres pasos, sin instalar nada para verlo."
+                    :eyebrow="$t('Cómo funciona')"
+                    :title="$t('Un toque y vuelves a tu meta.')"
+                    :lead="$t('Tres pasos, sin instalar nada para verlo.')"
                 />
 
                 <ol v-reveal.stagger class="mt-9 space-y-3">
@@ -138,7 +147,11 @@ onBeforeUnmount(stop);
                                         class="block font-serif text-lg font-semibold tracking-[-0.01em] text-foreground sm:text-xl"
                                     >
                                         <span class="sr-only"
-                                            >Paso {{ index + 1 }}:
+                                            >{{
+                                                $t('Paso {n}:', {
+                                                    n: index + 1,
+                                                })
+                                            }}
                                         </span>
                                         {{ step.title }}
                                     </span>
@@ -169,9 +182,9 @@ onBeforeUnmount(stop);
                     :href="howItWorks()"
                     class="group mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-foreground"
                 >
-                    <span class="fl-link fl-link--gold"
-                        >Ver la guía completa</span
-                    >
+                    <span class="fl-link fl-link--gold">{{
+                        $t('Ver la guía completa')
+                    }}</span>
                     <ArrowRight
                         class="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
                         aria-hidden="true"
@@ -188,7 +201,12 @@ onBeforeUnmount(stop);
                     class="how-scene relative mx-auto aspect-[10/9] w-full max-w-[40rem] overflow-hidden rounded-hero border border-fl-line bg-white sm:aspect-[5/4]"
                     :data-step="active"
                     role="img"
-                    :aria-label="`Ilustración del paso ${active + 1}: ${steps[active].title}.`"
+                    :aria-label="
+                        $t('Ilustración del paso {n}: {title}.', {
+                            n: active + 1,
+                            title: steps[active].title,
+                        })
+                    "
                 >
                     <div
                         class="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_60%_at_50%_45%,color-mix(in_srgb,var(--fl-gold)_22%,transparent),transparent_75%)]"
@@ -224,11 +242,15 @@ onBeforeUnmount(stop);
                                 </span>
                                 <span
                                     class="mt-3 font-serif text-[1em] leading-tight font-semibold text-fl-black"
-                                    >Tu tag va en camino</span
+                                    >{{ $t('Tu tag va en camino') }}</span
                                 >
                                 <span
                                     class="mt-1 text-[0.75em] leading-snug text-fl-stone"
-                                    >Colección {{ art.name }}</span
+                                    >{{
+                                        $t('Colección {name}', {
+                                            name: art.name,
+                                        })
+                                    }}</span
                                 >
                                 <span
                                     class="mt-4 block h-1 w-[70%] overflow-hidden rounded-full bg-fl-line"
@@ -258,11 +280,11 @@ onBeforeUnmount(stop);
                                 </span>
                                 <span
                                     class="mt-4 font-serif text-[1em] leading-tight font-semibold text-fl-black"
-                                    >Acerca tu tag</span
+                                    >{{ $t('Acerca tu tag') }}</span
                                 >
                                 <span
                                     class="mt-1 text-[0.75em] leading-snug text-fl-stone"
-                                    >Abriendo tu recuerdo…</span
+                                    >{{ $t('Abriendo tu recuerdo…') }}</span
                                 >
                             </div>
                             <!-- 3 · the memory -->
@@ -284,7 +306,7 @@ onBeforeUnmount(stop);
                                     />
                                     <span
                                         class="absolute bottom-[0.5em] left-[0.8em] text-left font-serif text-[1em] leading-tight font-semibold text-white"
-                                        >Tu carrera<br /><span
+                                        >{{ $t('Tu carrera') }}<br /><span
                                             class="text-[0.7em] font-medium tracking-[0.14em] text-fl-gold-soft uppercase"
                                             >{{ art.name }}</span
                                         ></span
@@ -294,13 +316,15 @@ onBeforeUnmount(stop);
                                     class="grid w-full grid-cols-2 gap-[0.4em] px-[0.8em] pt-[0.8em] text-left"
                                 >
                                     <span class="how-chip">
-                                        <span class="how-chip__k">Tiempo</span>
+                                        <span class="how-chip__k">{{
+                                            $t('Tiempo')
+                                        }}</span>
                                         <span class="how-chip__v">1:52:07</span>
                                     </span>
                                     <span class="how-chip">
-                                        <span class="how-chip__k"
-                                            >Distancia</span
-                                        >
+                                        <span class="how-chip__k">{{
+                                            $t('Distancia')
+                                        }}</span>
                                         <span class="how-chip__v">21K</span>
                                     </span>
                                 </span>
@@ -324,7 +348,7 @@ onBeforeUnmount(stop);
                                 <span
                                     class="mx-[0.8em] mt-[0.4em] flex w-[calc(100%-1.6em)] items-center justify-between rounded-[0.5em] border border-fl-line px-[0.7em] py-[0.45em] text-[0.72em] font-semibold text-fl-black"
                                 >
-                                    Compartir con mi familia
+                                    {{ $t('Compartir con mi familia') }}
                                     <Share2
                                         class="size-[1em] text-fl-gold-ink"
                                     />
@@ -362,12 +386,17 @@ onBeforeUnmount(stop);
                     >
                         <Check v-if="active === 2" class="size-3.5" />
                         <span v-else class="size-1.5 rounded-full bg-fl-gold" />
-                        Paso {{ active + 1 }} de 3
+                        {{
+                            $t('Paso {current} de {total}', {
+                                current: active + 1,
+                                total: 3,
+                            })
+                        }}
                     </p>
                     <p
                         class="absolute right-4 bottom-3 text-[10px] text-fl-stone/80 sm:right-5 sm:bottom-4"
                     >
-                        Ilustración de ejemplo
+                        {{ $t('Ilustración de ejemplo') }}
                     </p>
                 </div>
             </div>

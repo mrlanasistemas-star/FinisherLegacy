@@ -7,7 +7,8 @@
  * Sections in the slot must carry the ids listed in `toc`.
  */
 import { ChevronDown } from '@lucide/vue';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{
     eyebrow?: string;
@@ -15,6 +16,13 @@ const props = defineProps<{
     intro?: string;
     toc: { id: string; title: string }[];
 }>();
+
+// Courtesy-translation notice: shown in every language but Spanish, with a
+// way back to the binding Spanish text of this same page.
+const { locale, locales, switchLocale } = useI18n();
+const spanishUrl = computed(
+    () => locales.value.find((option) => option.code === 'es')?.url ?? null,
+);
 
 const active = ref(props.toc[0]?.id ?? '');
 let observer: IntersectionObserver | null = null;
@@ -69,6 +77,24 @@ onBeforeUnmount(() => observer?.disconnect());
                 >
                     {{ intro }}
                 </p>
+                <p
+                    v-if="locale !== 'es'"
+                    class="mt-5 max-w-2xl rounded-card border border-border bg-card px-4 py-3 text-sm leading-relaxed text-muted-foreground"
+                >
+                    {{
+                        $t(
+                            'Esta es una traducción de cortesía. La versión en español es la que tiene validez legal.',
+                        )
+                    }}
+                    <a
+                        v-if="spanishUrl"
+                        :href="spanishUrl"
+                        hreflang="es"
+                        class="font-semibold text-foreground underline decoration-fl-gold underline-offset-[3px]"
+                        @click.prevent="switchLocale('es')"
+                        >{{ $t('Ver la versión en español') }}</a
+                    >
+                </p>
             </div>
         </header>
 
@@ -83,7 +109,7 @@ onBeforeUnmount(() => observer?.disconnect());
                     <summary
                         class="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden"
                     >
-                        Contenido
+                        {{ $t('Contenido') }}
                         <ChevronDown
                             class="size-4 text-muted-foreground transition-transform duration-300 group-open:rotate-180 motion-reduce:transition-none"
                             aria-hidden="true"
@@ -103,9 +129,9 @@ onBeforeUnmount(() => observer?.disconnect());
                 <!-- Desktop: sticky index with the section in view -->
                 <nav
                     class="sticky top-24 hidden max-h-[calc(100vh-8rem)] overflow-y-auto pr-2 lg:block"
-                    aria-label="Contenido del documento"
+                    :aria-label="$t('Contenido del documento')"
                 >
-                    <p class="fl-eyebrow">Contenido</p>
+                    <p class="fl-eyebrow">{{ $t('Contenido') }}</p>
                     <ol class="mt-4 border-l border-border">
                         <li v-for="item in toc" :key="item.id">
                             <a

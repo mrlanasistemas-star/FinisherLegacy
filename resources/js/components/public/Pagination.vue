@@ -25,13 +25,13 @@ const pages = computed(() => props.links.slice(1, -1));
     <nav
         v-if="links.length > 3"
         class="flex items-center justify-center gap-1"
-        aria-label="Paginación"
+        :aria-label="$t('Paginación')"
     >
         <Link
             v-if="prev.url"
             :href="prev.url"
             preserve-scroll
-            aria-label="Anterior"
+            :aria-label="$t('Anterior')"
             class="flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
         >
             <ChevronLeft class="size-4" />
@@ -71,7 +71,7 @@ const pages = computed(() => props.links.slice(1, -1));
             v-if="next.url"
             :href="next.url"
             preserve-scroll
-            aria-label="Siguiente"
+            :aria-label="$t('Siguiente')"
             class="flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-fl-gold/30 hover:text-fl-gold-ink"
         >
             <ChevronRight class="size-4" />
