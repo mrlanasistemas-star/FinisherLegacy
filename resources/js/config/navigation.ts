@@ -62,7 +62,20 @@ import {
     tagLinks,
 } from '@/config/admin-catalog-links';
 
+/**
+ * Marks a Spanish literal for the i18n extractor (`php artisan i18n:sync`
+ * only finds `t('…')` calls). A module-level list cannot translate — it
+ * would freeze in the first language — so the label stays Spanish here and
+ * the component that renders it translates at render: `$t(item.label)`.
+ *
+ * Only the lists people outside the staff see are marked: Mi espacio,
+ * Explorar, the photographer portal, the athlete tab bar and the ally
+ * screens. Administración stays in Spanish (docs/renovacion/idiomas.md).
+ */
+const t = (text: string): string => text;
+
 export interface NavItem {
+    /** Spanish source text. Marked lists are shown with `$t(item.label)`. */
     label: string;
     icon: LucideIcon;
     href: string;
@@ -122,34 +135,34 @@ export interface ResolvedSection extends AdminSection {
 
 export const personalNav: NavItem[] = [
     // Finisher Legacy Tag library (docs/architecture/commerce-os.md §Activación y Mi Legacy).
-    { label: 'Mi Legacy', icon: Nfc, href: '/mi-legacy', permission: null },
+    { label: t('Mi Legacy'), icon: Nfc, href: '/mi-legacy', permission: null },
     {
-        label: 'Mi legado',
+        label: t('Mi legado'),
         icon: LayoutGrid,
         href: '/dashboard',
         permission: null,
         exact: true,
     },
     {
-        label: 'Mis eventos',
+        label: t('Mis eventos'),
         icon: Calendar,
         href: '/dashboard/my-events',
         permission: null,
     },
     {
-        label: 'Mi equipo',
+        label: t('Mi equipo'),
         icon: Package,
         href: '/dashboard/my-gear',
         permission: null,
     },
     {
-        label: 'Mis pedidos',
+        label: t('Mis pedidos'),
         icon: Receipt,
         href: '/mis-pedidos',
         permission: null,
     },
     {
-        label: 'Mi perfil',
+        label: t('Mi perfil'),
         icon: UserCircle,
         href: '/dashboard/profile',
         permission: null,
@@ -159,32 +172,37 @@ export const personalNav: NavItem[] = [
 /** Public pages a signed-in athlete reaches for — not modules. */
 export const exploreNav: NavItem[] = [
     {
-        label: 'Comunidad',
+        label: t('Comunidad'),
         icon: MessagesSquare,
         href: '/comunidad',
         permission: null,
     },
-    { label: 'Eventos', icon: Compass, href: '/events', permission: null },
-    { label: 'Tienda', icon: ShoppingBag, href: '/tienda', permission: null },
-    { label: 'Fotos', icon: Camera, href: '/fotos', permission: null },
+    { label: t('Eventos'), icon: Compass, href: '/events', permission: null },
+    {
+        label: t('Tienda'),
+        icon: ShoppingBag,
+        href: '/tienda',
+        permission: null,
+    },
+    { label: t('Fotos'), icon: Camera, href: '/fotos', permission: null },
 ];
 
 export const photographerNav: NavItem[] = [
     {
-        label: 'Mi panel',
+        label: t('Mi panel'),
         icon: LayoutGrid,
         href: '/fotografo',
         permission: 'photographer.portal',
         exact: true,
     },
     {
-        label: 'Mis fotos en venta',
+        label: t('Mis fotos en venta'),
         icon: Camera,
         href: '/fotografo/fotos',
         permission: 'photographer.portal',
     },
     {
-        label: 'Ventas y pagos',
+        label: t('Ventas y pagos'),
         icon: Wallet,
         href: '/fotografo/ventas',
         permission: 'photographer.portal',
@@ -193,23 +211,28 @@ export const photographerNav: NavItem[] = [
 
 /** Athlete mobile bottom bar (spec §50): Legado, Eventos, Tienda, Pedidos, Perfil. */
 export const athleteMobileTabs: NavItem[] = [
-    { label: 'Mi Legacy', icon: Nfc, href: '/mi-legacy', permission: null },
+    { label: t('Mi Legacy'), icon: Nfc, href: '/mi-legacy', permission: null },
     {
-        label: 'Legado',
+        label: t('Legado'),
         icon: LayoutGrid,
         href: '/dashboard',
         permission: null,
         exact: true,
     },
     {
-        label: 'Eventos',
+        label: t('Eventos'),
         icon: Calendar,
         href: '/dashboard/my-events',
         permission: null,
     },
-    { label: 'Pedidos', icon: Receipt, href: '/mis-pedidos', permission: null },
     {
-        label: 'Perfil',
+        label: t('Pedidos'),
+        icon: Receipt,
+        href: '/mis-pedidos',
+        permission: null,
+    },
+    {
+        label: t('Perfil'),
         icon: UserCircle,
         href: '/dashboard/profile',
         permission: null,
@@ -648,14 +671,14 @@ export const adminMobileTabs: NavItem[] = [
  */
 export const staffNav: NavItem[] = [
     {
-        label: 'Portal aliado',
+        label: t('Portal aliado'),
         icon: Handshake,
         href: '/aliado',
         permission: 'ally.portal',
         exact: true,
     },
     {
-        label: 'Venta rápida',
+        label: t('Venta rápida'),
         icon: Zap,
         href: '/aliado/venta-rapida',
         permission: 'ally.portal',

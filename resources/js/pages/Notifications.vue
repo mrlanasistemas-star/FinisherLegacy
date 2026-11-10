@@ -249,7 +249,7 @@ onBeforeUnmount(() => stop?.());
                         >
                             {{ n.created_at ? timeAgo(n.created_at) : '' }}
                             <span v-if="!n.read_at" class="sr-only">
-                                {{ $t('· sin leer') }}</span
+                                · {{ $t('Sin leer') }}</span
                             >
                         </span>
                     </button>

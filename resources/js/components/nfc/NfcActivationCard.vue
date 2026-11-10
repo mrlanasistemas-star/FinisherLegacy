@@ -17,6 +17,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { useI18n } from '@/i18n';
 import { claim, continueMethod } from '@/routes/nfc';
 
 export type NfcTarget = {
@@ -38,6 +39,7 @@ const props = defineProps<{
     targetLabel: string | null;
 }>();
 
+const { t } = useI18n();
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user != null);
 
@@ -46,11 +48,15 @@ const isPlate = computed(() => props.target?.type === 'legacy_plate');
 const promise = computed(() => {
     switch (props.target?.type) {
         case 'legacy_plate':
-            return 'Una pieza física que conecta tu medalla con tu historia digital.';
+            return t(
+                'Una pieza física que conecta tu medalla con tu historia digital.',
+            );
         case 'profile':
-            return 'Acércalo a cualquier teléfono y abre tu perfil de atleta.';
+            return t(
+                'Acércalo a cualquier teléfono y abre tu perfil de atleta.',
+            );
         default:
-            return 'Tu equipo también forma parte de tu historia.';
+            return t('Tu equipo también forma parte de tu historia.');
     }
 });
 
@@ -102,15 +108,19 @@ function submitClaim() {
                 <h1 :id="`nfc-title-${token}`" class="fl-display mt-3 text-3xl">
                     {{
                         reason === 'not_ready'
-                            ? 'Esta pieza todavía no está lista'
-                            : 'Esta pieza ya no está activa'
+                            ? $t('Esta pieza todavía no está lista')
+                            : $t('Esta pieza ya no está activa')
                     }}
                 </h1>
                 <p class="mt-3 text-sm leading-relaxed text-muted-foreground">
                     {{
                         reason === 'not_ready'
-                            ? 'Muy pronto abrirá su historia. Vuelve a acercar tu teléfono cuando la recibas.'
-                            : 'Si crees que es un error, escríbenos y lo revisamos contigo.'
+                            ? $t(
+                                  'Muy pronto abrirá su historia. Vuelve a acercar tu teléfono cuando la recibas.',
+                              )
+                            : $t(
+                                  'Si crees que es un error, escríbenos y lo revisamos contigo.',
+                              )
                     }}
                 </p>
                 <div class="mt-6 flex flex-wrap gap-3">
@@ -119,10 +129,10 @@ function submitClaim() {
                         variant="outline"
                         class="h-11 rounded-full"
                     >
-                        <Link href="/contact">Contáctanos</Link>
+                        <Link href="/contact">{{ $t('Contáctanos') }}</Link>
                     </Button>
                     <Button as-child variant="ghost" class="h-11 rounded-full">
-                        <Link href="/">Ir al inicio</Link>
+                        <Link href="/">{{ $t('Ir al inicio') }}</Link>
                     </Button>
                 </div>
             </template>
@@ -149,7 +159,7 @@ function submitClaim() {
                     v-if="!canClaim"
                     class="mt-6 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground"
                 >
-                    Esta pieza pertenece al Legacy de otra persona.
+                    {{ $t('Esta pieza pertenece al Legacy de otra persona.') }}
                 </div>
 
                 <template v-else-if="isAuthenticated">
@@ -158,20 +168,25 @@ function submitClaim() {
                         @click="confirmOpen = true"
                     >
                         <Sparkles class="size-4" />
-                        Conectar a mi Legacy
+                        {{ $t('Conectar a mi Legacy') }}
                     </Button>
                     <p class="mt-3 text-center text-xs text-muted-foreground">
-                        Aparecerá en Mi equipo{{
-                            isPlate ? ' junto a tu historia' : ''
-                        }}.
+                        {{
+                            isPlate
+                                ? $t(
+                                      'Aparecerá en Mi equipo junto a tu historia.',
+                                  )
+                                : $t('Aparecerá en Mi equipo.')
+                        }}
                     </p>
                 </template>
 
                 <template v-else>
                     <div class="mt-6 grid gap-3 sm:grid-cols-2">
                         <Button as-child class="h-12 rounded-full text-base">
-                            <a :href="continueMethod([token, 'register']).url"
-                                >Crear cuenta</a
+                            <a
+                                :href="continueMethod([token, 'register']).url"
+                                >{{ $t('Crear cuenta') }}</a
                             >
                         </Button>
                         <Button
@@ -179,13 +194,13 @@ function submitClaim() {
                             variant="outline"
                             class="h-12 rounded-full text-base"
                         >
-                            <a :href="continueMethod([token, 'login']).url"
-                                >Iniciar sesión</a
-                            >
+                            <a :href="continueMethod([token, 'login']).url">{{
+                                $t('Iniciar sesión')
+                            }}</a>
                         </Button>
                     </div>
                     <p class="mt-3 text-center text-xs text-muted-foreground">
-                        Al entrar volverás aquí para conectarla.
+                        {{ $t('Al entrar volverás aquí para conectarla.') }}
                     </p>
                 </template>
             </template>
@@ -195,10 +210,14 @@ function submitClaim() {
     <Dialog v-model:open="confirmOpen">
         <DialogContent class="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>¿Conectar a tu Legacy?</DialogTitle>
+                <DialogTitle>{{ $t('¿Conectar a tu Legacy?') }}</DialogTitle>
                 <DialogDescription>
-                    {{ target?.title }} quedará conectada a tu cuenta y la verás
-                    en Mi equipo. Solo puede tener un dueño.
+                    {{
+                        $t(
+                            '{title} quedará conectada a tu cuenta y la verás en Mi equipo. Solo puede tener un dueño.',
+                            { title: target?.title ?? $t('Tu pieza') },
+                        )
+                    }}
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter class="gap-2">
@@ -208,7 +227,7 @@ function submitClaim() {
                     :disabled="claiming"
                     @click="confirmOpen = false"
                 >
-                    Cancelar
+                    {{ $t('Cancelar') }}
                 </Button>
                 <Button
                     class="h-11 rounded-full"
@@ -216,7 +235,7 @@ function submitClaim() {
                     @click="submitClaim"
                 >
                     <Spinner v-if="claiming" />
-                    Sí, conectar
+                    {{ $t('Sí, conectar') }}
                 </Button>
             </DialogFooter>
         </DialogContent>

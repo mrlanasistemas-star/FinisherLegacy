@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { Calendar, MapPin } from '@lucide/vue';
+import { computed } from 'vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
 import MascotSpotlight from '@/components/public/MascotSpotlight.vue';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/i18n';
 import { home } from '@/routes';
 import { show as eventShow } from '@/routes/events';
 
@@ -20,25 +22,38 @@ const { token, status, firstName, bibNumber, event, edition, race, qrUrl } =
         qrUrl: string;
     }>();
 
-const formattedDate = new Date(
-    `${edition.event_date}T00:00:00`,
-).toLocaleDateString('es-MX', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-});
+const { t, regional } = useI18n();
 
-const statusCopy: Record<string, string> = {
-    pending: 'En espera de confirmación oficial del evento.',
-    matched: 'Encontramos tu resultado — ya casi es parte de tu Legacy.',
-    confirmed: 'Tu lugar está confirmado.',
-    completed: 'Este prerregistro ya se convirtió en tu Legacy.',
-    cancelled: 'Este prerregistro fue cancelado.',
-};
+const formattedDate = computed(() =>
+    new Date(`${edition.event_date}T00:00:00`).toLocaleDateString(
+        regional.value,
+        { day: 'numeric', month: 'long', year: 'numeric' },
+    ),
+);
+
+// Built at render so it follows the active language.
+const statusText = computed(() => {
+    switch (status) {
+        case 'matched':
+            return t(
+                'Encontramos tu resultado — ya casi es parte de tu Legacy.',
+            );
+        case 'confirmed':
+            return t('Tu lugar está confirmado.');
+        case 'completed':
+            return t('Este prerregistro ya se convirtió en tu Legacy.');
+        case 'cancelled':
+            return t('Este prerregistro fue cancelado.');
+        default:
+            return t('En espera de confirmación oficial del evento.');
+    }
+});
 </script>
 
 <template>
-    <Head :title="`Prerregistro confirmado — ${event.name}`" />
+    <Head
+        :title="$t('Prerregistro confirmado — {event}', { event: event.name })"
+    />
 
     <section class="mx-auto max-w-lg px-4 py-16 sm:px-6 lg:px-8">
         <div class="mb-8 flex justify-center">
@@ -46,8 +61,8 @@ const statusCopy: Record<string, string> = {
         </div>
 
         <MascotSpotlight
-            title="Todo listo para tu evento."
-            :description="statusCopy[status] ?? statusCopy.pending"
+            :title="$t('Todo listo para tu evento.')"
+            :description="statusText"
         />
 
         <div
@@ -68,14 +83,14 @@ const statusCopy: Record<string, string> = {
                 </span>
                 <span v-if="bibNumber" class="inline-flex items-center gap-1">
                     <MapPin class="size-3.5" />
-                    Número {{ bibNumber }}
+                    {{ $t('Número {bib}', { bib: bibNumber }) }}
                 </span>
             </div>
 
             <div class="mx-auto mt-6 w-40 rounded-xl bg-white p-2">
                 <img
                     :src="qrUrl"
-                    alt="Código QR de tu prerregistro"
+                    :alt="$t('Código QR de tu prerregistro')"
                     class="size-full"
                 />
             </div>
@@ -92,14 +107,16 @@ const statusCopy: Record<string, string> = {
             variant="outline"
             class="mt-6 w-full border-foreground/15 bg-transparent text-foreground hover:bg-foreground/5 hover:text-foreground"
         >
-            <Link :href="eventShow(event.slug)">Volver al evento</Link>
+            <Link :href="eventShow(event.slug)">{{
+                $t('Volver al evento')
+            }}</Link>
         </Button>
         <Button
             as-child
             variant="ghost"
             class="mt-2 w-full text-muted-foreground"
         >
-            <Link :href="home()">Ir al inicio</Link>
+            <Link :href="home()">{{ $t('Ir al inicio') }}</Link>
         </Button>
     </section>
 </template>

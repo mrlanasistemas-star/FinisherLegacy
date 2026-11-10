@@ -9,6 +9,7 @@ import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import NfcActivationCard from '@/components/nfc/NfcActivationCard.vue';
 import type { NfcTarget } from '@/components/nfc/NfcActivationCard.vue';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{
     token: string;
@@ -20,10 +21,14 @@ const props = defineProps<{
     appLink: { scheme_url: string; ios_app_id: string | null };
 }>();
 
+const { t } = useI18n();
+
 const title = computed(() =>
     props.status === 'disabled'
         ? 'Finisher Legacy'
-        : `${props.target?.title ?? 'Tu pieza'} · Conecta tu Legacy`,
+        : t('{title} · Conecta tu Legacy', {
+              title: props.target?.title ?? t('Tu pieza'),
+          }),
 );
 </script>
 
@@ -48,7 +53,7 @@ const title = computed(() =>
                 :target-label="targetLabel"
             />
             <p class="mt-6 text-center text-xs text-muted-foreground">
-                Finisher Legacy · Tu historia. Tu legado.
+                {{ $t('Finisher Legacy · Tu historia. Tu legado.') }}
             </p>
         </div>
     </section>

@@ -17,6 +17,7 @@ import {
 import { watchDebounced } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import PersonCard from '@/components/community/PersonCard.vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import EventCard from '@/components/public/EventCard.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import ProductCard from '@/components/shared/ProductCard.vue';
@@ -130,10 +131,13 @@ const shortcuts = computed(() => [
             {{ $t('Buscar') }}
         </p>
         <h1 class="fl-display mt-3 text-3xl sm:text-5xl">
-            {{ $t('¿Qué estás') }}
-            <span class="font-medium text-fl-gold-ink italic">{{
-                $t('buscando?')
-            }}</span>
+            <I18nT :text="$t('¿Qué estás {accent}')"
+                ><template #accent
+                    ><span class="font-medium text-fl-gold-ink italic">{{
+                        $t('buscando?||final del título «¿Qué estás»')
+                    }}</span></template
+                ></I18nT
+            >
         </h1>
 
         <form class="relative mt-5" role="search" @submit.prevent="run(term)">

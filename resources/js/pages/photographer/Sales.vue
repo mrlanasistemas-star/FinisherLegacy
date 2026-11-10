@@ -27,7 +27,7 @@ type Sale = {
     created_at: string;
 };
 
-const { t, regional } = useI18n();
+const { t, money } = useI18n();
 
 function payoutLabel(sale: Sale): { label: string; class: string } {
     if (sale.refunded_at) {
@@ -44,18 +44,29 @@ function payoutLabel(sale: Sale): { label: string; class: string } {
         : { label: t('Por transferir'), class: 'bg-amber-100 text-amber-800' };
 }
 
+// One sentence per case: "(lo absorbe Finisher)" is never glued on.
+function processingLabel(sale: Sale): string {
+    const amount = money(sale.processor_fee_minor);
+
+    if (sale.gateway_fee_absorbed_by === 'finisher') {
+        return sale.processor_fee_estimated
+            ? t('Procesamiento (est.): {amount} (lo absorbe Finisher)', {
+                  amount,
+              })
+            : t('Procesamiento: {amount} (lo absorbe Finisher)', { amount });
+    }
+
+    return sale.processor_fee_estimated
+        ? t('Procesamiento (est.): {amount}', { amount })
+        : t('Procesamiento: {amount}', { amount });
+}
+
 defineProps<{
     sales: {
         data: Sale[];
         links: { url: string | null; label: string; active: boolean }[];
     };
 }>();
-
-const money = (minor: number) =>
-    new Intl.NumberFormat(regional.value, {
-        style: 'currency',
-        currency: 'MXN',
-    }).format(minor / 100);
 </script>
 
 <template>
@@ -96,9 +107,9 @@ const money = (minor: number) =>
                 <div class="min-w-0 flex-1">
                     <p class="font-medium">{{ sale.event }}</p>
                     <p class="text-xs text-muted-foreground">
-                        {{ shortDate(sale.created_at) }} ·
                         {{
-                            $t('el cliente pagó {amount}', {
+                            $t('{date} · el cliente pagó {amount}', {
+                                date: shortDate(sale.created_at),
                                 amount: money(sale.gross_minor),
                             })
                         }}
@@ -118,33 +129,18 @@ const money = (minor: number) =>
                         >
                         <span
                             class="inline-flex items-center gap-1 rounded-full bg-fl-cream px-2.5 py-1 text-fl-gold-ink"
-                            ><Building2 class="size-3.5" /> Finisher
-                            {{ sale.commission_percent }}%:
-                            {{ money(sale.platform_fee_minor) }}</span
+                            ><Building2 class="size-3.5" />
+                            {{
+                                $t('Finisher {percent}%: {amount}', {
+                                    percent: sale.commission_percent,
+                                    amount: money(sale.platform_fee_minor),
+                                })
+                            }}</span
                         >
                         <span
                             class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-sky-800"
                             ><CreditCard class="size-3.5" />
-                            {{
-                                sale.processor_fee_estimated
-                                    ? $t('Procesamiento (est.): {amount}', {
-                                          amount: money(
-                                              sale.processor_fee_minor,
-                                          ),
-                                      })
-                                    : $t('Procesamiento: {amount}', {
-                                          amount: money(
-                                              sale.processor_fee_minor,
-                                          ),
-                                      })
-                            }}
-                            <template
-                                v-if="
-                                    sale.gateway_fee_absorbed_by === 'finisher'
-                                "
-                            >
-                                {{ $t('(lo absorbe Finisher)') }}</template
-                            ></span
+                            {{ processingLabel(sale) }}</span
                         >
                     </div>
                 </div>

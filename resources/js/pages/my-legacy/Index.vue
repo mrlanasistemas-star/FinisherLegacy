@@ -75,7 +75,7 @@ defineProps<{
             >
                 {{
                     $t(
-                        'Cuando actives tu primer tag, su historia — fotos, tiempo y tu voz — aparecerá aquí, ordenada por año.',
+                        'Cuando actives tu primer Tag, su historia — fotos, tiempo y tu voz — aparecerá aquí, ordenada por año.',
                     )
                 }}
             </p>

@@ -60,6 +60,18 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
+/** One whole sentence per visibility (chosen by its code, never by gluing the server's label). */
+const visibilityNote = computed(() => {
+    switch (props.story.visibility) {
+        case 'public':
+            return t('Ahora: público.');
+        case 'unlisted':
+            return t('Ahora: solo con el Tag o el enlace.');
+        default:
+            return t('Ahora: privado.');
+    }
+});
+
 const isOwner = computed(() => props.mode === 'owner');
 const race = computed(() => props.story.race);
 // Portarretrato inteligente: the page presents itself as an album.
@@ -438,11 +450,7 @@ async function nativeShare() {
                     class="flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-fl-gold-ink uppercase"
                 >
                     <Video class="size-4" aria-hidden="true" />
-                    {{
-                        videos.length === 1
-                            ? $t('Video')
-                            : $t('{count} videos', { count: videos.length })
-                    }}
+                    {{ $tc('Video|{count} videos', videos.length) }}
                 </h2>
                 <div class="mt-5 space-y-8">
                     <StoryVideoPlayer
@@ -468,10 +476,11 @@ async function nativeShare() {
                     <Images class="size-4" aria-hidden="true" />
                     {{
                         isAlbum
-                            ? $t('Álbum · {count} fotos', {
-                                  count: gallery.length,
-                              })
-                            : $t('{count} fotos', { count: gallery.length })
+                            ? $tc(
+                                  'Álbum · {count} foto|Álbum · {count} fotos',
+                                  gallery.length,
+                              )
+                            : $tc('{count} foto|{count} fotos', gallery.length)
                     }}
                 </h2>
                 <ul class="mt-5 columns-2 gap-3 sm:columns-3">
@@ -560,7 +569,7 @@ async function nativeShare() {
             <!-- The tag -->
             <section
                 class="reveal flex items-center gap-6 border-t border-foreground/10 py-12"
-                :aria-label="$t('El tag de esta historia')"
+                :aria-label="$t('El Tag de esta historia')"
             >
                 <div class="w-20 shrink-0 sm:w-24">
                     <LegacyTagArt :tag="story.tag" :tilt="false" />
@@ -580,7 +589,7 @@ async function nativeShare() {
                     <p class="mt-1 text-sm text-muted-foreground">
                         {{
                             $t(
-                                'Acerca un teléfono a este tag y abre esta historia.',
+                                'Acerca un teléfono a este Tag y abre esta historia.',
                             )
                         }}
                     </p>
@@ -597,11 +606,7 @@ async function nativeShare() {
                     {{ $t('Comparte tu recuerdo') }}
                 </h2>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    {{
-                        $t('Ahora: {visibility}.', {
-                            visibility: story.visibility_label,
-                        })
-                    }}
+                    {{ visibilityNote }}
                     <Link
                         :href="edit(story.public_id).url"
                         class="text-fl-gold-ink underline underline-offset-4"

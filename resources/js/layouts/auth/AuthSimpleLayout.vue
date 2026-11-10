@@ -9,6 +9,7 @@
 import { Link } from '@inertiajs/vue3';
 import { ArrowLeft, Camera, IdCard, Nfc, Users } from '@lucide/vue';
 import { computed } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import { Toaster } from '@/components/ui/sonner';
 import { useI18n } from '@/i18n';
 import { home, privacy, terms } from '@/routes';
@@ -75,10 +76,15 @@ const year = new Date().getFullYear();
                     <h2
                         class="fl-auth-rise max-w-md font-heading text-[2.6rem] leading-[1.08] font-semibold tracking-tight xl:text-5xl"
                     >
-                        {{ $t('Tu esfuerzo merece') }}
-                        <span class="text-fl-gold-dim">{{
-                            $t('una historia.')
-                        }}</span>
+                        <I18nT :text="$t('Tu esfuerzo merece {accent}')"
+                            ><template #accent
+                                ><span class="text-fl-gold-dim">{{
+                                    $t(
+                                        'una historia.||final del título «Tu esfuerzo merece»',
+                                    )
+                                }}</span></template
+                            ></I18nT
+                        >
                     </h2>
                     <p
                         class="fl-auth-rise mt-4 max-w-sm text-[15px] leading-relaxed text-muted-foreground"

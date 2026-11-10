@@ -19,17 +19,11 @@ const props = withDefaults(
     { compact: false },
 );
 
-const { regional } = useI18n();
+const { money } = useI18n();
 
 const split = computed(() =>
     splitPhotoPrice(props.rules, Math.max(props.priceMinor || 0, 0)),
 );
-
-const money = (minor: number) =>
-    new Intl.NumberFormat(regional.value, {
-        style: 'currency',
-        currency: 'MXN',
-    }).format(minor / 100);
 
 const pct = (part: number) =>
     split.value.gross > 0 ? `${(part / split.value.gross) * 100}%` : '0%';

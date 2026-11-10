@@ -33,279 +33,406 @@ export interface GuideContext {
     username: string | null;
     /** /entrar?volver=<here> (login) or with modo=registro. */
     loginUrl: (mode?: 'login' | 'registro') => string;
+    /**
+     * Translator of the active language (useI18n().t). Builders destructure
+     * it (`const { t } = ctx`) and call `t('…')` with a literal, so the
+     * string extractor finds every sentence.
+     */
+    t: (source: string, params?: Record<string, string | number>) => string;
 }
 
 type TopicBuilder = (ctx: GuideContext) => GuideTopic;
 
-const hello = (ctx: GuideContext) =>
-    ctx.firstName ? `¡Hola, ${ctx.firstName}!` : '¡Hola!';
+const joinAction = (ctx: GuideContext): GuideAction[] => {
+    const { t } = ctx;
 
-const joinAction = (ctx: GuideContext): GuideAction[] =>
-    ctx.signedIn
+    return ctx.signedIn
         ? []
-        : [{ label: 'Crea tu cuenta', href: ctx.loginUrl('registro') }];
+        : [{ label: t('Crea tu cuenta'), href: ctx.loginUrl('registro') }];
+};
 
-const home: TopicBuilder = (ctx) => ({
-    key: 'home',
-    context: 'Bienvenida',
-    message: `${hello(ctx)} Soy tu guía. Te explico en 3 pasos qué es el Finisher Legacy Tag:`,
-    steps: [
-        'Elige en la tienda la colección de tu carrera.',
-        'Te llega listo, con su correa. Nada que personalizar.',
-        'Acerca tu celular al tag y activa tu historia con fotos, tiempo y dedicatorias.',
-    ],
-    actions: [
-        {
-            label: 'Ver cómo funciona',
-            scrollTo: ['#como-funciona', '[data-guide="steps"]'],
-        },
-        { label: 'Ir a la tienda', href: '/tienda', primary: true },
-        { label: 'Activar mi tag', href: '/activar' },
-        ...joinAction(ctx),
-    ],
-});
+const home: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const store: TopicBuilder = (ctx) => ({
-    key: 'store',
-    context: 'Tienda',
-    message:
-        'Cada colección es de una carrera o destino. Elige la tuya por lugar, disciplina o año; todas llevan el mismo tag premium.',
-    steps: [
-        'Abre una colección para ver sus colores y detalles.',
-        'Agrégala al carrito y paga seguro con tarjeta.',
-        'Cuando llegue, acércale tu celular y se activa en segundos con NFC.',
-    ],
-    actions: [
-        { label: 'Ver colecciones', href: '/colecciones', primary: true },
-        { label: 'Cómo se activa', href: '/activar' },
-        ...joinAction(ctx),
-    ],
-});
+    return {
+        key: 'home',
+        context: t('Bienvenida'),
+        message: ctx.firstName
+            ? t(
+                  '¡Hola, {name}! Soy tu guía. Te explico en 3 pasos qué es el Finisher Legacy Tag:',
+                  { name: ctx.firstName },
+              )
+            : t(
+                  '¡Hola! Soy tu guía. Te explico en 3 pasos qué es el Finisher Legacy Tag:',
+              ),
+        steps: [
+            t('Elige en la tienda la colección de tu carrera.'),
+            t('Te llega listo, con su correa. Nada que personalizar.'),
+            t(
+                'Acerca tu celular al tag y activa tu historia con fotos, tiempo y dedicatorias.',
+            ),
+        ],
+        actions: [
+            {
+                label: t('Ver cómo funciona'),
+                scrollTo: ['#como-funciona', '[data-guide="steps"]'],
+            },
+            { label: t('Ir a la tienda'), href: '/tienda', primary: true },
+            { label: t('Activar mi tag'), href: '/activar' },
+            ...joinAction(ctx),
+        ],
+    };
+};
 
-const product: TopicBuilder = () => ({
-    key: 'product',
-    context: 'Producto',
-    message:
-        'Aquí ves el tag de esta colección. Revisa las fotos, elige tu opción y agrégalo al carrito.',
-    steps: [
-        'Te llega terminado de fábrica, con su correa.',
-        'El costo de envío se define al confirmar tu pedido.',
-        'Se activa acercando el celular: sin apps ni códigos.',
-    ],
-    actions: [
-        { label: 'Ver mi carrito', href: '/carrito', primary: true },
-        { label: 'Seguir viendo', href: '/tienda' },
-    ],
-});
+const store: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const cart: TopicBuilder = (ctx) => ({
-    key: 'cart',
-    context: 'Tu carrito',
-    message:
-        'Revisa tus piezas y cantidades. Cuando estés listo, pasa a pagar: el pago es seguro con tarjeta vía OpenPay y tus datos van cifrados.',
-    actions: ctx.signedIn
-        ? [
-              { label: 'Ir a pagar', href: '/checkout', primary: true },
-              { label: 'Seguir comprando', href: '/tienda' },
-          ]
-        : [
-              {
-                  label: 'Entrar para pagar',
-                  href: ctx.loginUrl(),
-                  primary: true,
-              },
-              { label: 'Seguir comprando', href: '/tienda' },
-          ],
-});
+    return {
+        key: 'store',
+        context: t('Tienda'),
+        message: t(
+            'Cada colección es de una carrera o destino. Elige la tuya por lugar, disciplina o año; todas llevan el mismo tag premium.',
+        ),
+        steps: [
+            t('Abre una colección para ver sus colores y detalles.'),
+            t('Agrégala al carrito y paga seguro con tarjeta.'),
+            t(
+                'Cuando llegue, acércale tu celular y se activa en segundos con NFC.',
+            ),
+        ],
+        actions: [
+            {
+                label: t('Ver colecciones'),
+                href: '/colecciones',
+                primary: true,
+            },
+            { label: t('Cómo se activa'), href: '/activar' },
+            ...joinAction(ctx),
+        ],
+    };
+};
 
-const checkout: TopicBuilder = () => ({
-    key: 'checkout',
-    context: 'Pago seguro',
-    message:
-        'Ya casi. Llena tus datos de envío y paga con tarjeta de crédito o débito; el cobro lo procesa OpenPay de forma segura. Te llega la confirmación por correo.',
-    actions: [
-        { label: 'Volver al carrito', href: '/carrito' },
-        { label: '¿Dudas? Escríbenos', href: '/contact' },
-    ],
-});
+const product: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const orderDone: TopicBuilder = () => ({
-    key: 'order-done',
-    context: '¡Pedido listo!',
-    message:
-        '¡Gracias por tu compra! Te avisamos por correo cuando tu pedido salga. Cuando llegue, acerca tu celular al tag para activarlo.',
-    actions: [
-        { label: 'Ver mis pedidos', href: '/mis-pedidos', primary: true },
-        { label: 'Cómo activarlo', href: '/activar' },
-    ],
-});
+    return {
+        key: 'product',
+        context: t('Producto'),
+        message: t(
+            'Aquí ves el tag de esta colección. Revisa las fotos, elige tu opción y agrégalo al carrito.',
+        ),
+        steps: [
+            t('Te llega terminado de fábrica, con su correa.'),
+            t('El costo de envío se define al confirmar tu pedido.'),
+            t('Se activa acercando el celular: sin apps ni códigos.'),
+        ],
+        actions: [
+            { label: t('Ver mi carrito'), href: '/carrito', primary: true },
+            { label: t('Seguir viendo'), href: '/tienda' },
+        ],
+    };
+};
 
-const orders: TopicBuilder = () => ({
-    key: 'orders',
-    context: 'Mis pedidos',
-    message:
-        'Aquí ves el estado de cada pedido y su seguimiento. Si algo no cuadra, escríbenos y lo resolvemos.',
-    actions: [
-        { label: 'Ir a la tienda', href: '/tienda' },
-        { label: 'Contacto', href: '/contact' },
-    ],
-});
+const cart: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const activation: TopicBuilder = (ctx) => ({
-    key: 'activation',
-    context: 'Activa tu tag',
-    message: 'Activar tu Finisher Legacy Tag toma menos de un minuto:',
-    steps: [
-        'Desbloquea tu celular y activa el NFC (en iPhone ya viene encendido).',
-        'Acerca la parte de arriba del celular al centro del tag.',
-        'Toca la notificación que aparece y sigue los pasos para crear tu historia.',
-    ],
-    actions: ctx.signedIn
-        ? [{ label: 'Ver Mi Legacy', href: '/mi-legacy', primary: true }]
-        : [
-              {
-                  label: 'Entrar para activarlo',
-                  href: ctx.loginUrl(),
-                  primary: true,
-              },
-              { label: 'Crear cuenta', href: ctx.loginUrl('registro') },
-          ],
-});
+    return {
+        key: 'cart',
+        context: t('Tu carrito'),
+        message: t(
+            'Revisa tus piezas y cantidades. Cuando estés listo, pasa a pagar: el pago con tarjeta es seguro y tus datos van cifrados.',
+        ),
+        actions: ctx.signedIn
+            ? [
+                  { label: t('Ir a pagar'), href: '/checkout', primary: true },
+                  { label: t('Seguir comprando'), href: '/tienda' },
+              ]
+            : [
+                  {
+                      label: t('Entrar para pagar'),
+                      href: ctx.loginUrl(),
+                      primary: true,
+                  },
+                  { label: t('Seguir comprando'), href: '/tienda' },
+              ],
+    };
+};
 
-const myLegacy: TopicBuilder = () => ({
-    key: 'my-legacy',
-    context: 'Mi Legacy',
-    message:
-        'Aquí viven tus historias. Edita cada una con fotos, tu tiempo y dedicatorias; quien acerque su celular a tu tag la verá.',
-    actions: [
-        { label: 'Activar otro tag', href: '/activar', primary: true },
-        { label: 'Comunidad', href: '/comunidad' },
-    ],
-});
+const checkout: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const community: TopicBuilder = (ctx) => ({
-    key: 'community',
-    context: 'Comunidad',
-    message: ctx.signedIn
-        ? 'Comparte tus carreras: publica fotos de tu medalla, tu tag o tu meta, y celebra las de tus amigos.'
-        : 'Mira lo que comparten otros finishers. Para publicar, seguir y celebrar necesitas una cuenta.',
-    steps: ctx.signedIn
-        ? [
-              'Toca «Publicar» y elige tus fotos.',
-              'Agrega un texto corto y tu carrera.',
-              'Encuentra amigos en Personas y síguelos.',
-          ]
-        : undefined,
-    actions: ctx.signedIn
-        ? [
-              {
-                  label: 'Encontrar amigos',
-                  href: '/comunidad/personas',
-                  primary: true,
-              },
-          ]
-        : [
-              {
-                  label: 'Crea tu cuenta',
-                  href: ctx.loginUrl('registro'),
-                  primary: true,
-              },
-              { label: 'Ver personas', href: '/comunidad/personas' },
-          ],
-});
+    return {
+        key: 'checkout',
+        context: t('Pago seguro'),
+        message: t(
+            'Ya casi. Llena tus datos de envío y paga con tarjeta de crédito o débito; el cobro es seguro. Te llega la confirmación por correo.',
+        ),
+        actions: [
+            { label: t('Volver al carrito'), href: '/carrito' },
+            { label: t('¿Dudas? Escríbenos'), href: '/contact' },
+        ],
+    };
+};
 
-const people: TopicBuilder = (ctx) => ({
-    key: 'people',
-    context: 'Personas',
-    message:
-        'Busca por nombre o usuario y sigue a quien corre contigo. Sus publicaciones aparecerán en tu comunidad.',
-    actions: [
-        { label: 'Volver a Comunidad', href: '/comunidad' },
-        ...joinAction(ctx),
-    ],
-});
+const orderDone: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const profile: TopicBuilder = (ctx) => ({
-    key: 'profile',
-    context: 'Perfil',
-    message:
-        'Este es un perfil de finisher: sus historias, medallas y publicaciones. Síguelo para ver lo que comparte.',
-    actions: [
-        { label: 'Encontrar más personas', href: '/comunidad/personas' },
-        ...joinAction(ctx),
-    ],
-});
+    return {
+        key: 'order-done',
+        context: t('¡Pedido listo!'),
+        message: t(
+            '¡Gracias por tu compra! Te avisamos por correo cuando tu pedido salga. Cuando llegue, acerca tu celular al tag para activarlo.',
+        ),
+        actions: [
+            {
+                label: t('Ver mis pedidos'),
+                href: '/mis-pedidos',
+                primary: true,
+            },
+            { label: t('Cómo activarlo'), href: '/activar' },
+        ],
+    };
+};
 
-const myProfile: TopicBuilder = (ctx) => ({
-    key: 'my-profile',
-    context: 'Tu perfil',
-    message:
-        'Tu perfil es tu vitrina: agrega foto, una frase y tus carreras para que tus amigos te encuentren.',
-    actions: [
-        ...(ctx.username
+const orders: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'orders',
+        context: t('Mis pedidos'),
+        message: t(
+            'Aquí ves el estado de cada pedido y su seguimiento. Si algo no cuadra, escríbenos y lo resolvemos.',
+        ),
+        actions: [
+            { label: t('Ir a la tienda'), href: '/tienda' },
+            { label: t('Contacto'), href: '/contact' },
+        ],
+    };
+};
+
+const activation: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'activation',
+        context: t('Activa tu tag'),
+        message: t('Activar tu Finisher Legacy Tag toma menos de un minuto:'),
+        steps: [
+            t(
+                'Desbloquea tu celular y activa el NFC (en iPhone ya viene encendido).',
+            ),
+            t('Acerca la parte de arriba del celular al centro del tag.'),
+            t(
+                'Toca la notificación que aparece y sigue los pasos para crear tu historia.',
+            ),
+        ],
+        actions: ctx.signedIn
+            ? [{ label: t('Ver Mi Legacy'), href: '/mi-legacy', primary: true }]
+            : [
+                  {
+                      label: t('Entrar para activarlo'),
+                      href: ctx.loginUrl(),
+                      primary: true,
+                  },
+                  { label: t('Crear cuenta'), href: ctx.loginUrl('registro') },
+              ],
+    };
+};
+
+const myLegacy: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'my-legacy',
+        context: t('Mi Legacy'),
+        message: t(
+            'Aquí viven tus historias. Edita cada una con fotos, tu tiempo y dedicatorias; quien acerque su celular a tu tag la verá.',
+        ),
+        actions: [
+            { label: t('Activar otro tag'), href: '/activar', primary: true },
+            { label: t('Comunidad'), href: '/comunidad' },
+        ],
+    };
+};
+
+const community: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'community',
+        context: t('Comunidad'),
+        message: ctx.signedIn
+            ? t(
+                  'Comparte tus carreras: publica fotos de tu medalla, tu tag o tu meta, y celebra las de tus amigos.',
+              )
+            : t(
+                  'Mira lo que comparten otros finishers. Para publicar, seguir y celebrar necesitas una cuenta.',
+              ),
+        steps: ctx.signedIn
+            ? [
+                  t('Toca «Publicar» y elige tus fotos.'),
+                  t('Agrega un texto corto y tu carrera.'),
+                  t('Encuentra amigos en Personas y síguelos.'),
+              ]
+            : undefined,
+        actions: ctx.signedIn
             ? [
                   {
-                      label: 'Ver mi perfil público',
-                      href: `/@${ctx.username}`,
+                      label: t('Encontrar amigos'),
+                      href: '/comunidad/personas',
                       primary: true,
                   },
               ]
-            : []),
-        { label: 'Ajustes de cuenta', href: '/settings/profile' },
-    ],
-});
+            : [
+                  {
+                      label: t('Crea tu cuenta'),
+                      href: ctx.loginUrl('registro'),
+                      primary: true,
+                  },
+                  { label: t('Ver personas'), href: '/comunidad/personas' },
+              ],
+    };
+};
 
-const settings: TopicBuilder = () => ({
-    key: 'settings',
-    context: 'Ajustes',
-    message:
-        'Aquí cambias tus datos, tu contraseña y la seguridad de tu cuenta. Los cambios se guardan al momento.',
-    actions: [
-        { label: 'Datos personales', href: '/settings/profile' },
-        { label: 'Seguridad', href: '/settings/security' },
-    ],
-});
+const people: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const events: TopicBuilder = () => ({
-    key: 'events',
-    context: 'Eventos',
-    message:
-        'Encuentra tu próxima carrera: filtra por nombre, deporte o estado y entra para ver detalles y prerregistro.',
-    actions: [{ label: 'Ir a la tienda', href: '/tienda' }],
-});
+    return {
+        key: 'people',
+        context: t('Personas'),
+        message: t(
+            'Busca por nombre o usuario y sigue a quien corre contigo. Sus publicaciones aparecerán en tu comunidad.',
+        ),
+        actions: [
+            { label: t('Volver a Comunidad'), href: '/comunidad' },
+            ...joinAction(ctx),
+        ],
+    };
+};
 
-const dashboard: TopicBuilder = (ctx) => ({
-    key: 'dashboard',
-    context: 'Tu espacio',
-    message: `${hello(ctx)} Desde aquí llegas a tus historias, tus pedidos y tu comunidad.`,
-    actions: [
-        { label: 'Mi Legacy', href: '/mi-legacy', primary: true },
-        { label: 'Mis pedidos', href: '/mis-pedidos' },
-        { label: 'Comunidad', href: '/comunidad' },
-    ],
-});
+const profile: TopicBuilder = (ctx) => {
+    const { t } = ctx;
 
-const contact: TopicBuilder = () => ({
-    key: 'contact',
-    context: 'Contacto',
-    message:
-        'Cuéntanos qué necesitas y te respondemos por correo. Si es sobre un pedido, incluye su número para ir más rápido.',
-    actions: [{ label: 'Mis pedidos', href: '/mis-pedidos' }],
-});
+    return {
+        key: 'profile',
+        context: t('Perfil'),
+        message: t(
+            'Este es un perfil de finisher: sus historias, medallas y publicaciones. Síguelo para ver lo que comparte.',
+        ),
+        actions: [
+            { label: t('Encontrar más personas'), href: '/comunidad/personas' },
+            ...joinAction(ctx),
+        ],
+    };
+};
 
-const fallback: TopicBuilder = (ctx) => ({
-    key: 'general',
-    context: 'Tu guía',
-    message: `${hello(ctx)} ¿A dónde te llevo?`,
-    actions: [
-        { label: 'Tienda', href: '/tienda', primary: true },
-        { label: 'Activar mi tag', href: '/activar' },
-        { label: 'Comunidad', href: '/comunidad' },
-        ...(ctx.signedIn
-            ? [{ label: 'Mi Legacy', href: '/mi-legacy' }]
-            : joinAction(ctx)),
-    ],
-});
+const myProfile: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'my-profile',
+        context: t('Tu perfil'),
+        message: t(
+            'Tu perfil es tu vitrina: agrega foto, una frase y tus carreras para que tus amigos te encuentren.',
+        ),
+        actions: [
+            ...(ctx.username
+                ? [
+                      {
+                          label: t('Ver mi perfil público'),
+                          href: `/@${ctx.username}`,
+                          primary: true,
+                      },
+                  ]
+                : []),
+            { label: t('Ajustes de cuenta'), href: '/settings/profile' },
+        ],
+    };
+};
+
+const settings: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'settings',
+        context: t('Ajustes'),
+        message: t(
+            'Aquí cambias tus datos, tu contraseña y la seguridad de tu cuenta. Los cambios se guardan al momento.',
+        ),
+        actions: [
+            { label: t('Datos personales'), href: '/settings/profile' },
+            { label: t('Seguridad'), href: '/settings/security' },
+        ],
+    };
+};
+
+const events: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'events',
+        context: t('Eventos'),
+        message: t(
+            'Encuentra tu próxima carrera: filtra por nombre, deporte o estado y entra para ver detalles y prerregistro.',
+        ),
+        actions: [{ label: t('Ir a la tienda'), href: '/tienda' }],
+    };
+};
+
+const dashboard: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'dashboard',
+        context: t('Tu espacio'),
+        message: ctx.firstName
+            ? t(
+                  '¡Hola, {name}! Desde aquí llegas a tus historias, tus pedidos y tu comunidad.',
+                  { name: ctx.firstName },
+              )
+            : t(
+                  '¡Hola! Desde aquí llegas a tus historias, tus pedidos y tu comunidad.',
+              ),
+        actions: [
+            { label: t('Mi Legacy'), href: '/mi-legacy', primary: true },
+            { label: t('Mis pedidos'), href: '/mis-pedidos' },
+            { label: t('Comunidad'), href: '/comunidad' },
+        ],
+    };
+};
+
+const contact: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'contact',
+        context: t('Contacto'),
+        message: t(
+            'Cuéntanos qué necesitas y te respondemos por correo. Si es sobre un pedido, incluye su número para ir más rápido.',
+        ),
+        actions: [{ label: t('Mis pedidos'), href: '/mis-pedidos' }],
+    };
+};
+
+const fallback: TopicBuilder = (ctx) => {
+    const { t } = ctx;
+
+    return {
+        key: 'general',
+        context: t('Tu guía'),
+        message: ctx.firstName
+            ? t('¡Hola, {name}! ¿A dónde te llevo?', { name: ctx.firstName })
+            : t('¡Hola! ¿A dónde te llevo?'),
+        actions: [
+            { label: t('Tienda'), href: '/tienda', primary: true },
+            { label: t('Activar mi tag'), href: '/activar' },
+            { label: t('Comunidad'), href: '/comunidad' },
+            ...(ctx.signedIn
+                ? [{ label: t('Mi Legacy'), href: '/mi-legacy' }]
+                : joinAction(ctx)),
+        ],
+    };
+};
 
 /** Exact component names. */
 const BY_COMPONENT: Record<string, TopicBuilder> = {

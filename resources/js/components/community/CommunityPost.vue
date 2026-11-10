@@ -447,7 +447,7 @@ defineExpose({ celebration });
                     class="text-sm text-muted-foreground hover:text-foreground"
                     @click="expanded = true"
                 >
-                    {{ $t('más') }}
+                    {{ $t('más||ver el texto completo de la publicación') }}
                 </button>
             </div>
 

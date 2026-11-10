@@ -33,7 +33,7 @@ function formatDate(value: string | null): string | null {
 </script>
 
 <template>
-    <Head :title="$t('Mis Medallas')" />
+    <Head :title="$t('Mis medallas')" />
 
     <QrScannerDialog v-model:open="scannerOpen" />
 

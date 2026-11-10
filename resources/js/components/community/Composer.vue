@@ -72,7 +72,11 @@ const quickActions = computed<
     { label: t('Foto'), kind: 'photo', icon: Camera },
     { label: t('Resultado'), kind: 'race_result', icon: Timer },
     { label: t('Momento'), kind: 'moment', icon: Sparkles },
-    { label: t('Equipo'), kind: 'gear', icon: ShoppingBag },
+    {
+        label: t('Equipo||lo que usa el atleta'),
+        kind: 'gear',
+        icon: ShoppingBag,
+    },
 ]);
 
 const ready = computed(() => !!props.composer?.has_profile);

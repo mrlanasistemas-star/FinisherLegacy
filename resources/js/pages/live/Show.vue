@@ -24,6 +24,7 @@ import {
     watch,
 } from 'vue';
 import FinisherLegacyLogo from '@/components/public/FinisherLegacyLogo.vue';
+import { useI18n } from '@/i18n';
 import { timeAgo } from '@/lib/datetime';
 import { getEcho } from '@/lib/echo';
 import type { RealtimeClient } from '@/lib/echo';
@@ -42,6 +43,8 @@ const props = defineProps<{
     pollSeconds: number;
     map?: TrackingMapConfig;
 }>();
+
+const { t } = useI18n();
 
 const LiveTrackingMap = defineAsyncComponent(
     () => import('@/components/tracking/LiveTrackingMap.vue'),
@@ -86,11 +89,11 @@ const progressPct = computed(() =>
 const statusLabel = computed(() => {
     switch (live.value?.status) {
         case 'active':
-            return isStale.value ? 'Sin señal reciente' : 'En vivo';
+            return isStale.value ? t('Sin señal reciente') : t('En vivo');
         case 'stopped':
-            return 'Seguimiento terminado';
+            return t('Seguimiento terminado');
         default:
-            return 'Aún no comienza';
+            return t('Aún no comienza');
     }
 });
 
@@ -196,7 +199,9 @@ const mapConfig = computed<TrackingMapConfig>(
 <template>
     <Head
         :title="
-            live ? `Sigue a ${firstName} en vivo` : 'Seguimiento no disponible'
+            live
+                ? $t('Sigue a {name} en vivo', { name: firstName })
+                : $t('Seguimiento no disponible')
         "
     >
         <meta name="robots" content="noindex, nofollow" />
@@ -232,20 +237,22 @@ const mapConfig = computed<TrackingMapConfig>(
             class="fl-container grid min-h-[70dvh] place-items-center py-16 text-center"
         >
             <div class="max-w-md">
-                <p class="fl-eyebrow">Seguimiento en vivo</p>
+                <p class="fl-eyebrow">{{ $t('Seguimiento en vivo') }}</p>
                 <h1 class="fl-display mt-3 text-4xl">
-                    Este enlace ya no está activo
+                    {{ $t('Este enlace ya no está activo') }}
                 </h1>
                 <p class="mt-4 text-muted-foreground">
-                    Puede que haya vencido o que tu atleta lo haya desactivado.
-                    Pídele que te comparta uno nuevo desde su evento en Finisher
-                    Legacy.
+                    {{
+                        $t(
+                            'Puede que haya vencido o que tu atleta lo haya desactivado. Pídele que te comparta uno nuevo desde su evento en Finisher Legacy.',
+                        )
+                    }}
                 </p>
                 <Link
                     href="/"
                     class="mt-8 inline-flex min-h-11 items-center rounded-full bg-fl-black px-6 text-sm font-medium text-white hover:bg-fl-graphite focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                    Conocer Finisher Legacy
+                    {{ $t('Conocer Finisher Legacy') }}
                 </Link>
             </div>
         </main>
@@ -257,7 +264,11 @@ const mapConfig = computed<TrackingMapConfig>(
                     <img
                         v-if="live.athlete.avatar_url"
                         :src="live.athlete.avatar_url"
-                        :alt="`Foto de ${live.athlete.display_name}`"
+                        :alt="
+                            $t('Foto de {name}', {
+                                name: live.athlete.display_name,
+                            })
+                        "
                         class="size-14 shrink-0 rounded-full object-cover ring-2 ring-white"
                         loading="lazy"
                     />
@@ -270,7 +281,7 @@ const mapConfig = computed<TrackingMapConfig>(
                     </div>
                     <div class="min-w-0">
                         <p class="fl-eyebrow truncate">
-                            {{ live.event.name ?? 'En carrera'
+                            {{ live.event.name ?? $t('En carrera')
                             }}<template v-if="live.event.race">
                                 · {{ live.event.race }}</template
                             >
@@ -293,13 +304,13 @@ const mapConfig = computed<TrackingMapConfig>(
                         :attribution="mapConfig.attribution"
                         :path="live.path"
                         :current="live.last_point"
-                        :label="`Recorrido de ${firstName}`"
+                        :label="$t('Recorrido de {name}', { name: firstName })"
                     />
                     <button
                         v-if="live.last_point"
                         type="button"
                         class="absolute right-3 bottom-8 z-[500] grid size-11 place-items-center rounded-full border border-border bg-white shadow-sm hover:bg-fl-cream focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
-                        aria-label="Centrar en la posición actual"
+                        :aria-label="$t('Centrar en la posición actual')"
                         @click="mapRef?.recenter()"
                     >
                         <Crosshair class="size-5" />
@@ -308,8 +319,12 @@ const mapConfig = computed<TrackingMapConfig>(
                         v-if="live.status === 'waiting'"
                         class="absolute inset-x-4 top-4 z-[500] rounded-xl bg-white/95 p-4 text-sm shadow-sm"
                     >
-                        Cuando {{ firstName }} inicie el seguimiento desde su
-                        teléfono, aquí verás su avance en tiempo real.
+                        {{
+                            $t(
+                                'Cuando {name} inicie el seguimiento desde su teléfono, aquí verás su avance en tiempo real.',
+                                { name: firstName },
+                            )
+                        }}
                     </div>
                 </div>
             </section>
@@ -319,7 +334,9 @@ const mapConfig = computed<TrackingMapConfig>(
                 class="fl-container mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
             >
                 <div class="fl-card col-span-2 p-4 sm:col-span-2">
-                    <p class="text-xs text-muted-foreground">Recorrido</p>
+                    <p class="text-xs text-muted-foreground">
+                        {{ $t('Recorrido||distancia recorrida hasta ahora') }}
+                    </p>
                     <p class="mt-1 font-serif text-4xl tabular-nums">
                         {{ formatKm(live.distance_m) }}
                     </p>
@@ -332,7 +349,11 @@ const mapConfig = computed<TrackingMapConfig>(
                             :aria-valuenow="progressPct"
                             aria-valuemin="0"
                             aria-valuemax="100"
-                            :aria-label="`Avance: ${progressPct}%`"
+                            :aria-label="
+                                $t('Avance: {percent}%', {
+                                    percent: progressPct,
+                                })
+                            "
                         >
                             <div
                                 class="h-full rounded-full bg-fl-gold transition-[width] duration-700 motion-reduce:transition-none"
@@ -340,25 +361,29 @@ const mapConfig = computed<TrackingMapConfig>(
                             />
                         </div>
                         <p class="mt-2 text-xs text-muted-foreground">
-                            {{ progressPct }}% de
-                            {{ formatKm(live.race_distance_m) }}
+                            {{
+                                $t('{percent}% de {distance}', {
+                                    percent: progressPct,
+                                    distance: formatKm(live.race_distance_m),
+                                })
+                            }}
                         </p>
                     </template>
                 </div>
                 <div class="fl-card p-4">
                     <p class="text-xs text-muted-foreground">
-                        Última actualización
+                        {{ $t('Última actualización') }}
                     </p>
                     <p class="mt-1 text-lg font-medium">
-                        {{ lastUpdate ?? 'Todavía no' }}
+                        {{ lastUpdate ?? $t('Todavía no') }}
                     </p>
                     <p v-if="isStale" class="mt-1 text-xs text-amber-700">
-                        Puede estar en una zona sin señal.
+                        {{ $t('Puede estar en una zona sin señal.') }}
                     </p>
                 </div>
                 <div class="fl-card p-4">
                     <p class="text-xs text-muted-foreground">
-                        Batería del teléfono
+                        {{ $t('Batería del teléfono') }}
                     </p>
                     <p
                         v-if="live.battery !== null"
@@ -376,9 +401,9 @@ const mapConfig = computed<TrackingMapConfig>(
             <section class="fl-container mt-8">
                 <div class="flex items-end justify-between gap-4">
                     <div>
-                        <p class="fl-eyebrow">Su equipo de apoyo</p>
+                        <p class="fl-eyebrow">{{ $t('Su equipo de apoyo') }}</p>
                         <h2 class="fl-display mt-2 text-2xl">
-                            Tu gente también corre contigo
+                            {{ $t('Tu gente también corre contigo') }}
                         </h2>
                     </div>
                 </div>
@@ -408,7 +433,7 @@ const mapConfig = computed<TrackingMapConfig>(
                                 <span
                                     v-if="message.delivered"
                                     class="ml-1 text-xs font-normal text-muted-foreground"
-                                    >· ya le llegó</span
+                                    >· {{ $t('ya le llegó') }}</span
                                 >
                             </p>
                             <p
@@ -421,14 +446,17 @@ const mapConfig = computed<TrackingMapConfig>(
                                 v-else
                                 class="mt-0.5 text-sm text-muted-foreground"
                             >
-                                Le mandó un mensaje de voz.
+                                {{ $t('Le mandó un mensaje de voz.') }}
                             </p>
                         </div>
                     </li>
                 </ul>
                 <p v-else class="mt-4 text-sm text-muted-foreground">
-                    Todavía no hay mensajes. Sé la primera persona en mandarle
-                    ánimo.
+                    {{
+                        $t(
+                            'Todavía no hay mensajes. Sé la primera persona en mandarle ánimo.',
+                        )
+                    }}
                 </p>
 
                 <a
@@ -437,13 +465,16 @@ const mapConfig = computed<TrackingMapConfig>(
                     class="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-fl-black px-6 text-sm font-medium text-white hover:bg-fl-graphite focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
                 >
                     <Heart class="size-4" />
-                    Enviar apoyo a {{ firstName }}
+                    {{ $t('Enviar apoyo a {name}', { name: firstName }) }}
                 </a>
             </section>
 
             <footer class="fl-container mt-12 text-xs text-muted-foreground">
-                Solo quien tiene este enlace puede ver el seguimiento. Finisher
-                Legacy · Tu historia. Tu legado.
+                {{
+                    $t(
+                        'Solo quien tiene este enlace puede ver el seguimiento. Finisher Legacy · Tu historia. Tu legado.',
+                    )
+                }}
             </footer>
         </main>
     </div>

@@ -27,6 +27,7 @@ import {
     personalNav,
     visibleAdminSections,
 } from '@/config/navigation';
+import { useI18n } from '@/i18n';
 import { COMMAND_MENU_EVENT } from '@/lib/commandMenu';
 import { search as adminSearch } from '@/routes/admin';
 
@@ -50,6 +51,7 @@ type SearchGroup = {
     }[];
 };
 
+const { t } = useI18n();
 const page = usePage();
 const permissions = computed(() => page.props.auth?.permissions ?? []);
 const sections = computed(() => visibleAdminSections(permissions.value));
@@ -120,7 +122,7 @@ const navEntries = computed<Entry[]>(() => {
             hint: 'Administración',
             href: section.resolvedHref,
             icon: section.icon,
-            group: 'Ir a',
+            group: t('Ir a'),
         });
 
         for (const tab of section.visibleTabs) {
@@ -131,20 +133,22 @@ const navEntries = computed<Entry[]>(() => {
                     hint: section.label,
                     href: tab.href,
                     icon: section.icon,
-                    group: 'Ir a',
+                    group: t('Ir a'),
                 });
             }
         }
     }
 
+    // Mi espacio is everyone's: its labels are marked for translation in
+    // config/navigation.ts. Administración above stays in Spanish.
     for (const item of [...personalNav, ...exploreNav]) {
         entries.push({
             key: `personal:${item.href}`,
-            label: item.label,
-            hint: 'Mi espacio',
+            label: t(item.label),
+            hint: t('Mi espacio'),
             href: item.href,
             icon: item.icon,
-            group: 'Ir a',
+            group: t('Ir a'),
         });
     }
 
@@ -287,7 +291,7 @@ onBeforeUnmount(() => {
             class="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden border-border bg-card p-0 text-foreground"
             @keydown="onDialogKeydown"
         >
-            <DialogTitle class="sr-only">Buscar</DialogTitle>
+            <DialogTitle class="sr-only">{{ $t('Buscar') }}</DialogTitle>
             <div class="flex items-center gap-2 border-b border-border px-4">
                 <Search class="size-4 shrink-0 text-muted-foreground/80" />
                 <input
@@ -301,12 +305,12 @@ onBeforeUnmount(() => {
                     :aria-label="
                         isAdmin
                             ? 'Buscar evento, atleta, participante, pedido o producto'
-                            : 'Buscar sección'
+                            : $t('Buscar sección')
                     "
                     :placeholder="
                         isAdmin
                             ? 'Evento, atleta, dorsal, pedido, producto…'
-                            : 'Ir a…'
+                            : $t('Ir a…')
                     "
                     class="h-12 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
                 />
@@ -314,7 +318,7 @@ onBeforeUnmount(() => {
                     v-if="searching"
                     class="text-xs text-muted-foreground/80"
                     aria-live="polite"
-                    >Buscando…</span
+                    >{{ $t('Buscando…') }}</span
                 >
             </div>
             <div
@@ -362,7 +366,7 @@ onBeforeUnmount(() => {
                     v-if="!results.length && !searching"
                     class="px-3 py-6 text-center text-sm text-muted-foreground/80"
                 >
-                    Sin resultados.
+                    {{ $t('Sin resultados.') }}
                 </p>
             </div>
         </DialogContent>

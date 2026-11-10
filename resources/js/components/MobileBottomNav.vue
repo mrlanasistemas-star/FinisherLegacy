@@ -35,6 +35,7 @@ import {
     visibleAdminSections,
     visibleItems,
 } from '@/config/navigation';
+import { useI18n } from '@/i18n';
 import { openCommandMenu } from '@/lib/commandMenu';
 import { logout } from '@/routes';
 import { edit as editSettingsProfile } from '@/routes/profile';
@@ -48,6 +49,15 @@ const portals = computed(() => [
 ]);
 
 const { currentUrl, isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
+const { t } = useI18n();
+
+// Administración stays in Spanish; the portal screens of photographers and
+// allies are translated (their labels are marked in config/navigation.ts).
+const isAdmin = computed(() => sections.value.length > 0);
+
+function itemLabel(item: NavItem): string {
+    return isAdmin.value ? item.label : t(item.label);
+}
 
 const tabs = computed(() =>
     (sections.value.length
@@ -85,7 +95,11 @@ const rowClass =
 
 <template>
     <nav
-        aria-label="Navegación de administración"
+        :aria-label="
+            isAdmin
+                ? 'Navegación de administración'
+                : $t('Navegación de tu portal')
+        "
         class="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden"
     >
         <Link
@@ -101,7 +115,7 @@ const rowClass =
             :aria-current="isItemActive(item) ? 'page' : undefined"
         >
             <component :is="item.icon" class="size-5" />
-            <span class="max-w-full truncate">{{ item.label }}</span>
+            <span class="max-w-full truncate">{{ itemLabel(item) }}</span>
         </Link>
         <button
             type="button"
@@ -113,7 +127,7 @@ const rowClass =
             @click="sheetOpen = true"
         >
             <MoreHorizontal class="size-5" />
-            Más
+            {{ $t('Más||más opciones del menú') }}
         </button>
     </nav>
 
@@ -123,9 +137,15 @@ const rowClass =
             class="max-h-[85svh] overflow-y-auto rounded-t-2xl border-border bg-card"
         >
             <SheetHeader>
-                <SheetTitle class="text-foreground">Más</SheetTitle>
+                <SheetTitle class="text-foreground">{{
+                    $t('Más||más opciones del menú')
+                }}</SheetTitle>
                 <SheetDescription class="sr-only">
-                    Otras secciones de administración y tu cuenta.
+                    {{
+                        isAdmin
+                            ? 'Otras secciones de administración y tu cuenta.'
+                            : $t('Otras secciones de tu portal y tu cuenta.')
+                    }}
                 </SheetDescription>
             </SheetHeader>
             <div class="grid gap-1 p-4 pt-0">
@@ -166,7 +186,7 @@ const rowClass =
                     <p
                         class="mt-3 px-3 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
                     >
-                        Portales
+                        {{ $t('Portales') }}
                     </p>
                     <Link
                         v-for="item in portals"
@@ -181,7 +201,7 @@ const rowClass =
                         @click="sheetOpen = false"
                     >
                         <component :is="item.icon" class="size-4" />
-                        {{ item.label }}
+                        {{ $t(item.label) }}
                     </Link>
                 </template>
 
@@ -196,7 +216,7 @@ const rowClass =
                     @click="sheetOpen = false"
                 >
                     <ArrowLeft class="size-4" />
-                    Volver al sitio
+                    {{ $t('Volver al sitio') }}
                 </Link>
                 <Link
                     :href="editSettingsProfile()"
@@ -207,7 +227,7 @@ const rowClass =
                     @click="sheetOpen = false"
                 >
                     <Settings class="size-4" />
-                    Mi cuenta
+                    {{ $t('Mi cuenta') }}
                 </Link>
                 <Link
                     :href="logout()"
@@ -219,7 +239,7 @@ const rowClass =
                     ]"
                 >
                     <LogOut class="size-4" />
-                    Cerrar sesión
+                    {{ $t('Cerrar sesión') }}
                 </Link>
             </div>
         </SheetContent>

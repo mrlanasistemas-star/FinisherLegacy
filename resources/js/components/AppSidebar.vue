@@ -9,6 +9,10 @@
  * - Portales — the photographer portal and, for accounts without the admin
  *   panel, the ally staff screens.
  * The footer always offers "Volver al sitio" and the account menu.
+ *
+ * Languages: Administración stays in Spanish; what photographers and allies
+ * see (Portales, the footer) is translated — `$t(item.label)` works because
+ * those labels are marked in config/navigation.ts.
  */
 import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, ChevronDown } from '@lucide/vue';
@@ -87,7 +91,13 @@ const showSecondary = computed(
                     <SidebarMenuButton size="lg" as-child>
                         <Link
                             :href="home"
-                            aria-label="Finisher Legacy — Inicio de administración"
+                            :aria-label="
+                                allSections.length
+                                    ? 'Finisher Legacy — Inicio de administración'
+                                    : $t(
+                                          'Finisher Legacy — Inicio de tu portal',
+                                      )
+                            "
                         >
                             <FinisherLegacyLogo
                                 variant="wordmark"
@@ -130,17 +140,17 @@ const showSecondary = computed(
             </SidebarGroup>
 
             <SidebarGroup v-if="portals.length" class="px-2 py-0">
-                <SidebarGroupLabel>Portales</SidebarGroupLabel>
+                <SidebarGroupLabel>{{ $t('Portales') }}</SidebarGroupLabel>
                 <SidebarMenu>
                     <SidebarMenuItem v-for="item in portals" :key="item.href">
                         <SidebarMenuButton
                             as-child
                             :is-active="isItemActive(item)"
-                            :tooltip="item.label"
+                            :tooltip="$t(item.label)"
                         >
                             <Link :href="item.href">
                                 <component :is="item.icon" />
-                                <span>{{ item.label }}</span>
+                                <span>{{ $t(item.label) }}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -192,12 +202,12 @@ const showSecondary = computed(
                     <SidebarMenuButton
                         as-child
                         size="sm"
-                        tooltip="Volver al sitio"
+                        :tooltip="$t('Volver al sitio')"
                         class="text-sidebar-foreground/80"
                     >
                         <Link href="/">
                             <ArrowLeft />
-                            <span>Volver al sitio</span>
+                            <span>{{ $t('Volver al sitio') }}</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

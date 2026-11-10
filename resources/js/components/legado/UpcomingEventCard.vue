@@ -17,7 +17,7 @@ const props = withDefaults(
     { featured: false },
 );
 
-const { t } = useI18n();
+const { t, tc } = useI18n();
 
 const daysLeft = computed(() => {
     if (!props.entry.event_date) {
@@ -45,7 +45,7 @@ const countdown = computed(() => {
 
     return daysLeft.value === 1
         ? t('Mañana')
-        : t('{count} días', { count: daysLeft.value });
+        : tc('{count} día|{count} días', daysLeft.value);
 });
 
 const href = computed(() => {

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { useCanonicalUrl } from '@/composables/useCanonicalUrl';
+import { useI18n } from '@/i18n';
 import { claim, continueMethod } from '@/routes/legacy-code';
 import type { LegacyCodeAthlete, LegacyCodePlate } from '@/types';
 
@@ -31,19 +32,26 @@ const { code, available, linked, ownedByMe, plate, athlete } = defineProps<{
     qrUrl: string | null;
 }>();
 
+const { t, regional } = useI18n();
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth.user != null);
 const canonicalUrl = useCanonicalUrl();
 
 const pageTitle = computed(() =>
     plate?.athlete_name && plate.event_name
-        ? `${plate.athlete_name} en ${plate.event_name} | Finisher Legacy`
+        ? t('{athlete} en {event} | Finisher Legacy', {
+              athlete: plate.athlete_name,
+              event: plate.event_name,
+          })
         : `Legacy Code ${code} | Finisher Legacy`,
 );
 const metaDescription = computed(() =>
     plate?.athlete_name && plate.event_name
-        ? `El logro de ${plate.athlete_name} en ${plate.event_name}, conservado en su Legacy Profile.`
-        : 'Una pieza física que conecta tu medalla con tu historia digital.',
+        ? t(
+              'El logro de {athlete} en {event}, conservado en su Legacy Profile.',
+              { athlete: plate.athlete_name, event: plate.event_name },
+          )
+        : t('Una pieza física que conecta tu medalla con tu historia digital.'),
 );
 
 const confirmOpen = ref(false);
@@ -55,7 +63,7 @@ const formattedDate = computed(() => {
     }
 
     return new Date(`${plate.event_date}T00:00:00`).toLocaleDateString(
-        'es-MX',
+        regional.value,
         { day: 'numeric', month: 'long', year: 'numeric' },
     );
 });
@@ -106,7 +114,11 @@ function submitClaim() {
             <FinisherLegacyLogo variant="mark" size="md" />
             <HelpPopover
                 title="Legacy Code"
-                text="Este código es permanente. Una reimpresión de la placa conserva el mismo código — nunca cambia, sin importar cuántas veces se reimprima."
+                :text="
+                    $t(
+                        'Este código es permanente. Una reimpresión de la placa conserva el mismo código — nunca cambia, sin importar cuántas veces se reimprima.',
+                    )
+                "
             />
         </div>
 
@@ -125,11 +137,14 @@ function submitClaim() {
                     {{ code }}
                 </p>
                 <h1 class="mt-6 text-2xl font-bold text-foreground">
-                    Este Legacy Code no está disponible
+                    {{ $t('Este Legacy Code no está disponible') }}
                 </h1>
                 <p class="mt-3 text-sm text-muted-foreground">
-                    Si crees que esto es un error, contáctanos y con gusto lo
-                    revisamos.
+                    {{
+                        $t(
+                            'Si crees que esto es un error, contáctanos y con gusto lo revisamos.',
+                        )
+                    }}
                 </p>
             </div>
         </template>
@@ -149,10 +164,10 @@ function submitClaim() {
                     {{ code }}
                 </p>
                 <h1 class="mt-6 text-2xl font-bold text-foreground">
-                    Este Legacy Code aún no tiene una placa asignada
+                    {{ $t('Este Legacy Code aún no tiene una placa asignada') }}
                 </h1>
                 <p class="mt-3 text-sm text-muted-foreground">
-                    Vuelve a intentarlo más tarde.
+                    {{ $t('Vuelve a intentarlo más tarde.') }}
                 </p>
             </div>
         </template>
@@ -169,7 +184,7 @@ function submitClaim() {
                 </div>
                 <div class="min-w-0">
                     <p class="truncate text-lg font-semibold text-foreground">
-                        {{ plate.athlete_name ?? 'Placa Finisher Legacy' }}
+                        {{ plate.athlete_name ?? $t('Placa Finisher Legacy') }}
                     </p>
                     <p
                         v-if="athlete"
@@ -222,7 +237,7 @@ function submitClaim() {
                         v-if="plate.pace"
                         class="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground"
                     >
-                        Ritmo {{ plate.pace }}
+                        {{ $t('Ritmo {pace}', { pace: plate.pace }) }}
                     </span>
                 </div>
             </div>
@@ -237,33 +252,48 @@ function submitClaim() {
                         class="fl-success-pulse mx-auto mb-1"
                     />
                     <p class="text-base font-semibold text-foreground">
-                        Esta historia ya es parte de tu Legacy.
+                        {{ $t('Esta historia ya es parte de tu Legacy.') }}
                     </p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Podrás encontrarla en tu Legacy Profile en cualquier
-                        momento.
+                        {{
+                            $t(
+                                'Podrás encontrarla en tu Legacy Profile en cualquier momento.',
+                            )
+                        }}
                     </p>
                 </template>
                 <template v-else-if="linked">
                     <Award class="mx-auto size-5 text-fl-gold-ink" />
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Esta placa ya forma parte de un Legacy Profile.
+                        {{
+                            $t(
+                                'Esta placa ya forma parte de un Legacy Profile.',
+                            )
+                        }}
                     </p>
                 </template>
                 <template v-else-if="isAuthenticated">
                     <p class="text-sm text-muted-foreground">
-                        Esta placa está esperando formar parte de un Legacy.
+                        {{
+                            $t(
+                                'Esta placa está esperando formar parte de un Legacy.',
+                            )
+                        }}
                     </p>
                     <Button
                         class="fl-hover-lift mt-4 w-full bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
                         @click="confirmOpen = true"
                     >
-                        Vincular a mi Legacy
+                        {{ $t('Vincular a mi Legacy') }}
                     </Button>
                 </template>
                 <template v-else>
                     <p class="text-sm text-muted-foreground">
-                        Esta placa está esperando formar parte de un Legacy.
+                        {{
+                            $t(
+                                'Esta placa está esperando formar parte de un Legacy.',
+                            )
+                        }}
                     </p>
                     <div class="mt-4 flex flex-col gap-2 sm:flex-row">
                         <Button
@@ -276,7 +306,7 @@ function submitClaim() {
                                     continueMethod({ code, provider: 'login' })
                                         .url
                                 "
-                                >Iniciar sesión</a
+                                >{{ $t('Iniciar sesión') }}</a
                             >
                         </Button>
                         <Button
@@ -290,7 +320,7 @@ function submitClaim() {
                                         provider: 'register',
                                     }).url
                                 "
-                                >Crear mi Legacy</a
+                                >{{ $t('Crear mi Legacy') }}</a
                             >
                         </Button>
                     </div>
@@ -301,11 +331,20 @@ function submitClaim() {
         <Dialog v-model:open="confirmOpen">
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>¿Vincular esta placa a tu Legacy?</DialogTitle>
+                    <DialogTitle>{{
+                        $t('¿Vincular esta placa a tu Legacy?')
+                    }}</DialogTitle>
                     <DialogDescription>
-                        {{ plate?.event_name ?? 'Esta placa' }} pasará a formar
-                        parte de tu Legacy Profile de forma permanente. Esta
-                        acción no se puede deshacer.
+                        {{
+                            plate?.event_name
+                                ? $t(
+                                      '{event} pasará a formar parte de tu Legacy Profile de forma permanente. Esta acción no se puede deshacer.',
+                                      { event: plate.event_name },
+                                  )
+                                : $t(
+                                      'Esta placa pasará a formar parte de tu Legacy Profile de forma permanente. Esta acción no se puede deshacer.',
+                                  )
+                        }}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
@@ -314,7 +353,7 @@ function submitClaim() {
                         :disabled="claiming"
                         @click="confirmOpen = false"
                     >
-                        Cancelar
+                        {{ $t('Cancelar') }}
                     </Button>
                     <Button
                         class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
@@ -322,7 +361,7 @@ function submitClaim() {
                         @click="submitClaim"
                     >
                         <Spinner v-if="claiming" />
-                        Confirmar y vincular
+                        {{ $t('Confirmar y vincular') }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

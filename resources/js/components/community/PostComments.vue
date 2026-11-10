@@ -11,6 +11,7 @@ import { EyeOff, Flag, Trash2 } from '@lucide/vue';
 import { computed, nextTick, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import AthleteAvatar from '@/components/community/AthleteAvatar.vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import { useAuthGate } from '@/composables/useAuthGate';
 import { useCommunityReport } from '@/composables/useCommunityReport';
@@ -245,12 +246,15 @@ defineExpose({ focus });
                 </div>
             </form>
             <p v-else-if="!user" class="text-sm text-muted-foreground">
-                <Link
-                    :href="loginUrl()"
-                    class="font-semibold text-foreground underline underline-offset-4"
-                    >{{ $t('Inicia sesión') }}</Link
+                <I18nT :text="$t('{link} para comentar y celebrar.')"
+                    ><template #link
+                        ><Link
+                            :href="loginUrl()"
+                            class="font-semibold text-foreground underline underline-offset-4"
+                            >{{ $t('Inicia sesión') }}</Link
+                        ></template
+                    ></I18nT
                 >
-                {{ $t('para comentar y celebrar.') }}
             </p>
         </div>
     </div>

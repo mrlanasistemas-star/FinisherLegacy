@@ -10,7 +10,6 @@ import Pagination from '@/components/public/Pagination.vue';
 import type { PaginationLink } from '@/components/public/Pagination.vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
-import { useI18n } from '@/i18n';
 import { shortDate } from '@/lib/datetime';
 import { show as orderShow } from '@/routes/store/orders';
 import { index as storeIndex } from '@/routes/store/products';
@@ -36,8 +35,6 @@ defineProps<{
     };
 }>();
 
-const { t } = useI18n();
-
 function tone(order: OrderRow): string {
     if (order.status === 'cancelled' || order.payment_status === 'refunded') {
         return 'bg-muted text-muted-foreground';
@@ -50,8 +47,9 @@ function tone(order: OrderRow): string {
         return 'bg-amber-100 text-amber-900';
     }
 
-    // `progress` arrives from the server already in the active language.
-    if (order.progress === 'Entregado' || order.progress === t('Entregado')) {
+    // The status CODE decides the colour; `progress` is only the (already
+    // translated) text of the badge.
+    if (order.fulfillment_status === 'delivered') {
         return 'bg-emerald-100 text-emerald-900';
     }
 

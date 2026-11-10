@@ -18,7 +18,7 @@ const props = defineProps<{
     date: string | null;
 }>();
 
-const { t, regional } = useI18n();
+const { t, regional, ordinal } = useI18n();
 
 type Stat = { key: string; label: string; value: string; note?: string };
 
@@ -32,10 +32,10 @@ function text(value: string | number | null | undefined): string | null {
     return s === '' ? null : s;
 }
 
-/** "12" → "12.º"; anything already worded ("3 de 240") stays as typed. */
+/** "12" → "12.º" ("12th" in English); anything already worded ("3 de 240") stays as typed. */
 function place(value: string | null): string | null {
     return value !== null && /^\d+$/.test(value)
-        ? t('{place}.º', { place: value })
+        ? ordinal(Number(value))
         : value;
 }
 
@@ -79,7 +79,12 @@ const stats = computed<Stat[]>(() => {
                   value: category,
                   note:
                       categoryPlace !== null
-                          ? t('Lugar {place}', { place: categoryPlace })
+                          ? t(
+                                'Lugar {place}||posición en su categoría, con ordinal',
+                                {
+                                    place: categoryPlace,
+                                },
+                            )
                           : undefined,
               }
             : {
@@ -97,7 +102,11 @@ const stats = computed<Stat[]>(() => {
         { key: 'elevation_gain_m', label: t('Desnivel'), value: elevation },
         { key: 'sport', label: t('Deporte'), value: text(r.sport) },
         { key: 'race_date', label: t('Fecha'), value: props.date },
-        { key: 'location', label: t('Lugar'), value: text(r.location) },
+        {
+            key: 'location',
+            label: t('Lugar||sede de la carrera'),
+            value: text(r.location),
+        },
     ];
 
     return rows.filter((row): row is Stat => row.value !== null);

@@ -183,7 +183,10 @@ const plateLabel = computed(() =>
                 >
                     <Package class="size-3.5" />
                     {{
-                        $t('{count} de tu equipo', { count: entry.gear_count })
+                        $tc(
+                            '{count} pieza de tu equipo|{count} piezas de tu equipo',
+                            entry.gear_count,
+                        )
                     }}
                 </li>
             </ul>

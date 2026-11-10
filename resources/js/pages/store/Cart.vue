@@ -21,6 +21,7 @@ import {
     X,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import Money from '@/components/shared/Money.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -310,14 +311,16 @@ const details = (item: CartItem) =>
                                             item.quantity > 1
                                         "
                                         class="hidden text-xs text-muted-foreground sm:inline"
-                                        ><Money
-                                            :minor="
-                                                item.unit_price_minor as number
-                                            "
-                                            :currency="item.currency"
-                                        />
-                                        {{ $t('c/u') }}</span
-                                    >
+                                        ><I18nT :text="$t('{price} c/u')"
+                                            ><template #price
+                                                ><Money
+                                                    :minor="
+                                                        item.unit_price_minor as number
+                                                    "
+                                                    :currency="
+                                                        item.currency
+                                                    " /></template></I18nT
+                                    ></span>
                                     <button
                                         type="button"
                                         class="flex size-11 items-center justify-center rounded-full text-muted-foreground transition hover:bg-red-50 hover:text-red-700"

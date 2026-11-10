@@ -33,8 +33,9 @@ export function mutualsLabel(person: {
               });
     }
 
-    return t('Seguido por {names} y {count} más', {
-        names: names.join(', '),
-        count: rest,
-    });
+    return tc(
+        'Seguido por {names} y {count} más|Seguido por {names} y {count} más',
+        rest,
+        { names: names.join(', ') },
+    );
 }

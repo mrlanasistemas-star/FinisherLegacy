@@ -9,6 +9,7 @@ import { Link } from '@inertiajs/vue3';
 import { Heart, MessageCircle, Send } from '@lucide/vue';
 import { ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import I18nT from '@/components/i18n/I18nT.vue';
 import { useI18n } from '@/i18n';
 import { show } from '@/routes/community/posts';
 import type { CommunityPost } from '@/types';
@@ -140,10 +141,19 @@ async function share() {
             aria-live="polite"
         >
             <template v-if="celebration.count.value > 0">
-                <span class="legacy-numeric">{{
-                    celebration.count.value.toLocaleString(regional)
-                }}</span>
-                {{ $tc('celebración|celebraciones', celebration.count.value) }}
+                <I18nT
+                    :text="
+                        $tc(
+                            '{n} celebración|{n} celebraciones',
+                            celebration.count.value,
+                        )
+                    "
+                    ><template #n
+                        ><span class="legacy-numeric">{{
+                            celebration.count.value.toLocaleString(regional)
+                        }}</span></template
+                    ></I18nT
+                >
             </template>
             <span v-else class="font-normal text-muted-foreground">{{
                 $t('Sé el primero en celebrarlo')

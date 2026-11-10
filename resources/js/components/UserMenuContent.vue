@@ -16,7 +16,8 @@ import type { User } from '@/types';
 /**
  * The one account menu — the navbar avatar dropdown and the app sidebar
  * footer both render this, so the two never drift. Destinations come from
- * config/public-links.ts (shared with the mobile sheet).
+ * config/public-links.ts (shared with the mobile sheet); their labels are
+ * marked for translation there and translated here at render.
  */
 defineProps<{ user: User }>();
 
@@ -57,7 +58,7 @@ const handleLogout = () => {
                     class="size-4 text-muted-foreground"
                     aria-hidden="true"
                 />
-                {{ item.label }}
+                {{ $t(item.label) }}
             </Link>
         </DropdownMenuItem>
     </DropdownMenuGroup>
@@ -73,7 +74,7 @@ const handleLogout = () => {
                     class="size-4 text-muted-foreground"
                     aria-hidden="true"
                 />
-                <span class="flex-1">{{ item.label }}</span>
+                <span class="flex-1">{{ $t(item.label) }}</span>
                 <span
                     v-if="item.count"
                     class="rounded-full bg-fl-gold px-1.5 text-[10px] leading-4 font-semibold text-fl-black"
@@ -92,7 +93,7 @@ const handleLogout = () => {
             data-test="logout-button"
         >
             <LogOut class="size-4 text-muted-foreground" aria-hidden="true" />
-            Cerrar sesión
+            {{ $t('Cerrar sesión') }}
         </Link>
     </DropdownMenuItem>
 </template>

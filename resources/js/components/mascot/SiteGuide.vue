@@ -35,6 +35,7 @@ import {
 } from 'vue';
 import { useAuthGate } from '@/composables/useAuthGate';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 import type { GuideAction } from './guideContent';
 import { GUIDE_HIDDEN_COMPONENTS, resolveGuideTopic } from './guideContent';
 import { guideState, onMascotAction } from './guideStore';
@@ -48,6 +49,7 @@ const SCROLL_OFFSET = 88;
 const page = usePage();
 const { loginUrl } = useAuthGate();
 const reducedMotion = useReducedMotion();
+const { t } = useI18n();
 
 const rootEl = useTemplateRef<HTMLElement>('root');
 const titleEl = useTemplateRef<HTMLElement>('title');
@@ -77,6 +79,7 @@ const topic = computed(() => {
         firstName: user?.first_name || user?.name?.split(' ')[0] || null,
         username: page.props.auth?.profile?.username ?? null,
         loginUrl: (mode = 'login') => loginUrl(page.url, mode),
+        t,
     });
 });
 
@@ -372,7 +375,7 @@ watch(path, () => {
                         <p
                             class="text-[10px] font-semibold tracking-[0.16em] text-fl-gold-ink uppercase"
                         >
-                            Tu guía Finisher
+                            {{ $t('Tu guía Finisher') }}
                         </p>
                         <h2
                             id="fl-guide-title"
@@ -386,7 +389,7 @@ watch(path, () => {
                     <button
                         type="button"
                         class="fl-focus-glow -mr-1.5 flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white hover:text-foreground"
-                        aria-label="Cerrar guía"
+                        :aria-label="$t('Cerrar guía')"
                         @click="closeCard()"
                     >
                         <X class="size-4" />
@@ -399,7 +402,7 @@ watch(path, () => {
                             v-if="typing"
                             class="fl-guide-typing inline-flex items-center gap-1 rounded-full bg-fl-paper px-3 py-2"
                         >
-                            <em class="sr-only">Escribiendo…</em>
+                            <em class="sr-only">{{ $t('Escribiendo…') }}</em>
                             <span aria-hidden="true" /><span
                                 aria-hidden="true"
                             /><span aria-hidden="true" />
@@ -497,14 +500,14 @@ watch(path, () => {
                                 @click="goTour(tourIndex - 1)"
                             >
                                 <ChevronLeft class="size-3.5" />
-                                Antes
+                                {{ $t('Antes') }}
                             </button>
                             <span
                                 class="legacy-numeric text-[11px] font-semibold text-muted-foreground"
                             >
                                 {{
                                     tourIndex < 0
-                                        ? 'Recorrido'
+                                        ? $t('Recorrido')
                                         : `${tourIndex + 1} / ${tour.tips.length}`
                                 }}
                             </span>
@@ -514,7 +517,9 @@ watch(path, () => {
                                 :disabled="tourIndex >= tour.tips.length - 1"
                                 @click="goTour(tourIndex + 1)"
                             >
-                                {{ tourIndex < 0 ? 'Empezar' : 'Sigue' }}
+                                {{
+                                    tourIndex < 0 ? $t('Empezar') : $t('Sigue')
+                                }}
                                 <ChevronRight class="size-3.5" />
                             </button>
                         </div>
@@ -525,7 +530,7 @@ watch(path, () => {
                     class="flex items-center justify-between border-t border-fl-line/70 px-5 py-2.5"
                 >
                     <span class="text-[11px] text-muted-foreground">
-                        Esc para cerrar
+                        {{ $t('Esc para cerrar') }}
                     </span>
                     <button
                         type="button"
@@ -533,7 +538,7 @@ watch(path, () => {
                         @click="hideGuide"
                     >
                         <EyeOff class="size-3.5" />
-                        Ocultar guía
+                        {{ $t('Ocultar guía') }}
                     </button>
                 </footer>
             </section>
@@ -549,7 +554,7 @@ watch(path, () => {
                 <button
                     type="button"
                     class="fl-focus-glow absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                    aria-label="Cerrar saludo"
+                    :aria-label="$t('Cerrar saludo')"
                     @click="peek = false"
                 >
                     <X class="size-3.5" />
@@ -563,15 +568,17 @@ watch(path, () => {
                 </div>
                 <template v-else>
                     <p class="pr-5 leading-snug">
-                        <span class="font-semibold">¡Hola! Soy tu guía.</span>
-                        ¿Te muestro cómo funciona Finisher Legacy?
+                        <span class="font-semibold">{{
+                            $t('¡Hola! Soy tu guía.')
+                        }}</span>
+                        {{ $t('¿Te muestro cómo funciona Finisher Legacy?') }}
                     </p>
                     <button
                         type="button"
                         class="fl-focus-glow mt-2.5 inline-flex items-center gap-1 rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background transition-colors hover:bg-foreground/85"
                         @click="openCard"
                     >
-                        Sí, enséñame
+                        {{ $t('Sí, enséñame') }}
                         <ArrowRight class="size-3" />
                     </button>
                 </template>
@@ -586,7 +593,9 @@ watch(path, () => {
             :class="{ 'is-open': open }"
             :aria-expanded="open"
             aria-controls="fl-guide-card"
-            :aria-label="open ? 'Cerrar guía' : 'Abrir guía: ¿te ayudo?'"
+            :aria-label="
+                open ? $t('Cerrar guía') : $t('Abrir guía: ¿te ayudo?')
+            "
             @click="toggle"
         >
             <span
@@ -618,7 +627,7 @@ watch(path, () => {
         type="button"
         class="fl-guide-tab fl-focus-glow fixed right-4 bottom-[calc(1rem+var(--fl-site-tabbar,0px)+var(--fl-bottom-bar,0px)+var(--fl-guide-extra))] z-40 inline-flex h-10 items-center gap-2 rounded-full border border-fl-line bg-white py-1 pr-3.5 pl-1 text-xs font-semibold text-foreground transition-colors hover:border-fl-gold sm:right-6 sm:bottom-[calc(1.5rem+var(--fl-site-tabbar,0px)+var(--fl-bottom-bar,0px)+var(--fl-guide-extra))]"
         :style="{ '--fl-guide-extra': extraOffset }"
-        aria-label="Mostrar guía"
+        :aria-label="$t('Mostrar guía')"
         @click="showGuide"
     >
         <span
@@ -631,7 +640,7 @@ watch(path, () => {
                 class="absolute top-[6%] left-1/2 h-[205%] w-auto max-w-none -translate-x-[46%]"
             />
         </span>
-        Guía
+        {{ $t('Guía') }}
     </button>
 </template>
 

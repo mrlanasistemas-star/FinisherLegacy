@@ -38,6 +38,7 @@ import {
     watch,
 } from 'vue';
 import { toast } from 'vue-sonner';
+import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import PurchasedPhotosDialog from '@/components/legacy/editor/PurchasedPhotosDialog.vue';
 import QuotaMeter from '@/components/legacy/editor/QuotaMeter.vue';
@@ -361,13 +362,6 @@ function successMessage(role: Role, count: number): string {
     }
 }
 
-/** The sentence around the "Oficial" badge, split where the badge goes. */
-const officialHint = computed(() =>
-    t(
-        'Aparecen en tu recuerdo. Los que vienen de los resultados del evento llevan la marca {badge} y no se editan; lo demás es opcional.',
-    ).split('{badge}'),
-);
-
 async function enqueue(files: FileList | null, role: Role) {
     if (!files || files.length === 0) {
         return;
@@ -400,9 +394,10 @@ async function enqueue(files: FileList | null, role: Role) {
             item.state = 'error';
             item.error =
                 kind === 'photos'
-                    ? t('Llegaste al límite de {limit} fotos.', {
-                          limit: props.quota.photos.limit,
-                      })
+                    ? tc(
+                          'Llegaste al límite de {count} foto.|Llegaste al límite de {count} fotos.',
+                          props.quota.photos.limit,
+                      )
                     : kind === 'videos'
                       ? tc(
                             'Llegaste al límite de {count} video.|Llegaste al límite de {count} videos.',
@@ -1471,7 +1466,7 @@ const playing = ref<number | null>(null);
                             </div>
                             <div>
                                 <label for="loc" class="text-sm font-medium">{{
-                                    $t('Lugar')
+                                    $t('Lugar||sede de la carrera')
                                 }}</label>
                                 <input
                                     id="loc"
@@ -1490,11 +1485,20 @@ const playing = ref<number | null>(null);
                             {{ $t('Datos de tu carrera') }}
                         </h3>
                         <p class="mt-0.5 text-xs text-muted-foreground">
-                            {{ officialHint[0]
-                            }}<span class="font-semibold text-fl-gold-ink">{{
-                                $t('Oficial')
-                            }}</span
-                            >{{ officialHint[1] }}
+                            <I18nT
+                                :text="
+                                    $t(
+                                        'Aparecen en tu recuerdo. Los que vienen de los resultados del evento llevan la marca {badge} y no se editan; lo demás es opcional.',
+                                    )
+                                "
+                            >
+                                <template #badge
+                                    ><span
+                                        class="font-semibold text-fl-gold-ink"
+                                        >{{ $t('Oficial') }}</span
+                                    ></template
+                                >
+                            </I18nT>
                         </p>
 
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -1563,10 +1567,16 @@ const playing = ref<number | null>(null);
                                     "
                                     class="mt-1.5 text-xs text-muted-foreground"
                                 >
-                                    {{ $t('Sugerido:') }}
-                                    <span class="legacy-numeric font-medium">{{
-                                        raceData.suggested_pace
-                                    }}</span>
+                                    <I18nT :text="$t('Sugerido: {pace}')"
+                                        ><template #pace
+                                            ><span
+                                                class="legacy-numeric font-medium"
+                                                >{{
+                                                    raceData.suggested_pace
+                                                }}</span
+                                            ></template
+                                        ></I18nT
+                                    >
                                     <button
                                         type="button"
                                         class="ml-1.5 font-semibold text-fl-gold-ink underline-offset-4 hover:underline"
@@ -1773,10 +1783,14 @@ const playing = ref<number | null>(null);
                     </div>
                     <div class="mt-4">
                         <label for="link" class="text-sm font-medium"
-                            >{{ $t('Enlace') }}
-                            <span class="font-normal text-muted-foreground">{{
-                                $t('(tu video, Strava…)')
-                            }}</span></label
+                            ><I18nT :text="$t('Enlace {hint}')"
+                                ><template #hint
+                                    ><span
+                                        class="font-normal text-muted-foreground"
+                                        >{{ $t('(tu video, Strava…)') }}</span
+                                    ></template
+                                ></I18nT
+                            ></label
                         >
                         <input
                             id="link"
@@ -2076,7 +2090,7 @@ const playing = ref<number | null>(null);
                             }}</span>
                             <span class="block text-xs text-muted-foreground">{{
                                 $t(
-                                    'Escríbenos sobre tu tag o tu recuerdo ({code}).',
+                                    'Escríbenos sobre tu Tag o tu recuerdo ({code}).',
                                     {
                                         code:
                                             story.display_code ??

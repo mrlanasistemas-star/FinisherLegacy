@@ -55,7 +55,7 @@ const emit = defineEmits<{ published: []; close: [] }>();
 const page = usePage();
 const user = computed(() => page.props.auth.user!);
 const profile = computed(() => page.props.auth.profile);
-const { t } = useI18n();
+const { t, tc } = useI18n();
 
 const kinds = computed<
     {
@@ -162,9 +162,9 @@ function addFiles(files: File[]) {
             { size: Math.round(maxBytes / 1024 / 1024) },
         );
     } else if (fitting.length > accepted.length) {
-        sizeError.value = t(
-            'Puedes subir hasta {count} fotos por publicación.',
-            { count: props.limits.max_photos },
+        sizeError.value = tc(
+            'Puedes subir hasta {count} foto por publicación.|Puedes subir hasta {count} fotos por publicación.',
+            props.limits.max_photos,
         );
     } else {
         sizeError.value = null;
@@ -455,7 +455,7 @@ const activeKind = computed(() =>
                 }}</span>
                 <span class="mt-0.5 text-xs text-muted-foreground">{{
                     $t(
-                        'o toca para elegirlas · hasta {count} · JPG, PNG o WebP',
+                        'o toca para elegirlas · hasta {count} · JPG, PNG o WebP||segunda línea, continúa «Arrastra tus fotos aquí»; el número es el máximo de fotos',
                         { count: limits.max_photos },
                     )
                 }}</span>

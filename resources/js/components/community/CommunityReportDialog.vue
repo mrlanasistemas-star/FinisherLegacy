@@ -7,6 +7,7 @@
 import { useForm } from '@inertiajs/vue3';
 import { Flag } from '@lucide/vue';
 import { computed, watch } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -134,10 +135,14 @@ function submit() {
 
                 <div>
                     <label for="report-details" class="text-sm font-medium"
-                        >{{ $t('Detalles') }}
-                        <span class="font-normal text-muted-foreground">{{
-                            $t('(opcional)')
-                        }}</span></label
+                        ><I18nT :text="$t('Detalles {optional}')"
+                            ><template #optional
+                                ><span
+                                    class="font-normal text-muted-foreground"
+                                    >{{ $t('(opcional)') }}</span
+                                ></template
+                            ></I18nT
+                        ></label
                     >
                     <textarea
                         id="report-details"

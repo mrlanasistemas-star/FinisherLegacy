@@ -13,6 +13,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { useI18n } from '@/i18n';
 import { timeAgo } from '@/lib/datetime';
 import {
     latestLoaded,
@@ -27,14 +28,16 @@ import notifications from '@/routes/notifications';
 
 defineOptions({ inheritAttrs: false });
 
+const { t, tc } = useI18n();
+
 const open = ref(false);
 const badge = computed(() =>
     unreadCount.value > 9 ? '9+' : String(unreadCount.value),
 );
 const label = computed(() =>
     unreadCount.value > 0
-        ? `Notificaciones (${unreadCount.value} sin leer)`
-        : 'Notificaciones',
+        ? t('Notificaciones ({count} sin leer)', { count: unreadCount.value })
+        : t('Notificaciones'),
 );
 
 // A pulse on the badge when the count goes up (CSS only, respects
@@ -95,12 +98,17 @@ function openItem(item: NotificationItem) {
                 class="flex items-center justify-between border-b border-border px-4 py-3"
             >
                 <div>
-                    <p class="fl-eyebrow text-fl-gold-ink">Notificaciones</p>
+                    <p class="fl-eyebrow text-fl-gold-ink">
+                        {{ $t('Notificaciones') }}
+                    </p>
                     <p class="text-xs text-muted-foreground">
                         {{
                             unreadCount > 0
-                                ? `${unreadCount} sin leer`
-                                : 'Estás al día'
+                                ? tc(
+                                      '{count} sin leer|{count} sin leer',
+                                      unreadCount,
+                                  )
+                                : $t('Estás al día')
                         }}
                     </p>
                 </div>
@@ -111,7 +119,7 @@ function openItem(item: NotificationItem) {
                     @click="markAllNotificationsRead"
                 >
                     <CheckCheck class="size-4" />
-                    Marcar todas
+                    {{ $t('Marcar todas') }}
                 </button>
             </div>
 
@@ -156,9 +164,9 @@ function openItem(item: NotificationItem) {
                                 {{ timeAgo(item.created_at) }}
                             </span>
                         </span>
-                        <span v-if="!item.read_at" class="sr-only"
-                            >Sin leer</span
-                        >
+                        <span v-if="!item.read_at" class="sr-only">{{
+                            $t('Sin leer')
+                        }}</span>
                     </button>
                 </li>
             </ul>
@@ -171,8 +179,10 @@ function openItem(item: NotificationItem) {
                 <p class="text-sm text-muted-foreground">
                     {{
                         latestLoaded
-                            ? 'Aquí verás seguidores, mensajes de apoyo y avisos de tus pedidos.'
-                            : 'Cargando…'
+                            ? $t(
+                                  'Aquí verás seguidores, mensajes de apoyo y avisos de tus pedidos.',
+                              )
+                            : $t('Cargando…')
                     }}
                 </p>
             </div>
@@ -182,7 +192,7 @@ function openItem(item: NotificationItem) {
                 class="block border-t border-border px-4 py-3 text-center text-sm font-medium text-fl-gold-ink transition-colors hover:bg-foreground/[0.03] focus-visible:bg-foreground/[0.04] focus-visible:outline-none"
                 @click="open = false"
             >
-                Ver todas
+                {{ $t('Ver todas') }}
             </Link>
         </PopoverContent>
     </Popover>

@@ -16,6 +16,7 @@
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
+import { t } from '@/i18n';
 import { getEcho, onRealtimeStateChange } from '@/lib/echo';
 import notifications from '@/routes/notifications';
 
@@ -161,11 +162,11 @@ function handleCreated(payload: Partial<NotificationItem>): void {
     );
     setUnread(unreadCount.value + 1);
 
-    toast(item.title ?? 'Nueva notificación', {
+    toast(item.title ?? t('Nueva notificación'), {
         description: item.message ?? undefined,
         action: item.action_url
             ? {
-                  label: 'Ver',
+                  label: t('Ver'),
                   onClick: () => {
                       void markNotificationRead(item.id);
                       router.visit(item.action_url as string);

@@ -21,6 +21,7 @@ import {
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import FancySelect from '@/components/forms/FancySelect.vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import PhotographerCommissionSimulator from '@/components/photos/PhotographerCommissionSimulator.vue';
 import Pagination from '@/components/public/Pagination.vue';
@@ -69,13 +70,7 @@ const props = defineProps<{
     pricePoints: number[];
 }>();
 
-const { t, regional } = useI18n();
-
-const money = (minor: number) =>
-    new Intl.NumberFormat(regional.value, {
-        style: 'currency',
-        currency: 'MXN',
-    }).format(minor / 100);
+const { t, money } = useI18n();
 
 const approved = computed(() => props.profile.status === 'approved');
 
@@ -325,14 +320,21 @@ async function remove(photo: Photo) {
                 >
                     <UploadCloud class="size-8 text-fl-gold-ink" />
                     <p class="mt-3 font-medium">
-                        {{ $t('Arrastra tus fotos o') }}
-                        <button
-                            type="button"
-                            class="underline underline-offset-4"
-                            @click="fileInput?.click()"
+                        <I18nT :text="$t('Arrastra tus fotos o {action}')"
+                            ><template #action
+                                ><button
+                                    type="button"
+                                    class="underline underline-offset-4"
+                                    @click="fileInput?.click()"
+                                >
+                                    {{
+                                        $t(
+                                            'selecciónalas||botón al final de «Arrastra tus fotos o»',
+                                        )
+                                    }}
+                                </button></template
+                            ></I18nT
                         >
-                            {{ $t('selecciónalas') }}
-                        </button>
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground">
                         {{
@@ -527,9 +529,12 @@ async function remove(photo: Photo) {
                             }}</span
                         >
                         <span class="text-[11px] text-emerald-700">{{
-                            $t('recibes {amount}', {
-                                amount: money(photo.net_minor),
-                            })
+                            $t(
+                                'recibes {amount}||ganancia del fotógrafo por foto',
+                                {
+                                    amount: money(photo.net_minor),
+                                },
+                            )
                         }}</span>
                     </p>
                     <p class="flex flex-wrap gap-1">
@@ -542,7 +547,9 @@ async function remove(photo: Photo) {
                         <span
                             v-if="!photo.bib_numbers.length"
                             class="text-[11px] text-amber-700"
-                            >{{ $t('Sin números') }}</span
+                            >{{
+                                $t('Sin números||foto sin números de corredor')
+                            }}</span
                         >
                     </p>
                     <p

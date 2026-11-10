@@ -8,6 +8,7 @@
 import { ImagePlus, Upload, X } from '@lucide/vue';
 import { useDropZone } from '@vueuse/core';
 import { computed, ref, useTemplateRef, watch } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import { useI18n } from '@/i18n';
 
 const props = withDefaults(
@@ -212,10 +213,15 @@ const displayError = computed(() => props.error ?? localError.value);
                     class="size-8 text-muted-foreground/80 transition-colors group-hover:text-fl-gold-ink"
                 />
                 <p class="mt-2 px-4 text-center text-xs text-muted-foreground">
-                    {{ $t('Arrastra una imagen aquí o') }}
-                    <span class="text-fl-gold-ink">{{
-                        $t('toca para elegir')
-                    }}</span>
+                    <I18nT :text="$t('Arrastra una imagen aquí o {action}')"
+                        ><template #action
+                            ><span class="text-fl-gold-ink">{{
+                                $t(
+                                    'toca para elegir||final de «Arrastra una imagen aquí o»',
+                                )
+                            }}</span></template
+                        ></I18nT
+                    >
                 </p>
             </template>
         </div>

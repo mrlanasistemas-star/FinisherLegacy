@@ -205,8 +205,10 @@ const myProfileUrl = computed(() =>
     <template v-if="!user">
         <PageHero
             :eyebrow="$t('Comunidad')"
-            :title="$t('Tu deporte,')"
-            :accent="$t('en buena compañía.')"
+            :title="
+                $t('Tu deporte,||título; continúa con «en buena compañía.»')
+            "
+            :accent="$t('en buena compañía.||final del título «Tu deporte,»')"
             :lede="
                 $t(
                     'La red social de Finisher Legacy: comparte tus carreras y entrenamientos, guarda tus resultados y medallas, y sigue a quienes corren, nadan y ruedan como tú.',

@@ -43,12 +43,17 @@ const percent = computed(() =>
 
 /** Whole sentences per kind: nouns and gender change with the language. */
 const copy = computed(() => {
-    const counts = { used: props.quota.used, limit: props.quota.limit };
+    const used = { used: props.quota.used };
+    const limit = props.quota.limit;
 
     switch (props.kind) {
         case 'photos':
             return {
-                usage: t('{used} de {limit} fotos', counts),
+                usage: tc(
+                    '{used} de {count} foto|{used} de {count} fotos',
+                    limit,
+                    used,
+                ),
                 meter: t('Espacio de fotos usado'),
                 expired: t(
                     'Todo tu contenido sigue aquí, visible y descargable. Para agregar más fotos, renueva tu plan o quita alguna.',
@@ -65,7 +70,11 @@ const copy = computed(() => {
             };
         case 'videos':
             return {
-                usage: t('{used} de {limit} videos', counts),
+                usage: tc(
+                    '{used} de {count} video|{used} de {count} videos',
+                    limit,
+                    used,
+                ),
                 meter: t('Espacio de videos usado'),
                 expired: t(
                     'Todo tu contenido sigue aquí, visible y descargable. Para agregar más videos, renueva tu plan o quita alguno.',
@@ -82,7 +91,11 @@ const copy = computed(() => {
             };
         default:
             return {
-                usage: t('{used} de {limit} mensajes de voz', counts),
+                usage: tc(
+                    '{used} de {count} mensaje de voz|{used} de {count} mensajes de voz',
+                    limit,
+                    used,
+                ),
                 meter: t('Espacio de mensajes de voz usado'),
                 expired: t(
                     'Todo tu contenido sigue aquí, visible y descargable. Para agregar más mensajes de voz, renueva tu plan o quita alguno.',

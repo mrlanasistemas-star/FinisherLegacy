@@ -85,7 +85,9 @@ function remove(index: number) {
             >
                 <ImagePlus class="size-5" />
                 <span class="text-[10px]">{{
-                    $t('{count} más', { count: remaining })
+                    $t('{count} más||imágenes que aún se pueden agregar', {
+                        count: remaining,
+                    })
                 }}</span>
             </button>
         </div>

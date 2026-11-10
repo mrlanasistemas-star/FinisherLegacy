@@ -27,6 +27,7 @@ import {
 } from '@lucide/vue';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import PortraitCropper from '@/components/portrait/PortraitCropper.vue';
 import PortraitFrame from '@/components/portrait/PortraitFrame.vue';
@@ -562,11 +563,6 @@ onBeforeUnmount(() => {
 const inputClass =
     'mt-1.5 h-11 w-full rounded-xl border border-border bg-white px-3 text-base text-foreground outline-none transition placeholder:text-muted-foreground/50 focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/20';
 const labelClass = 'text-sm font-medium';
-
-/** The privacy sentence around its link (the link's place can move). */
-const privacyNote = computed(() =>
-    t('Tú decides quién puede verlo desde {link}.').split('{link}'),
-);
 </script>
 
 <template>
@@ -980,7 +976,7 @@ const privacyNote = computed(() =>
                         <div class="mt-5 grid gap-4 sm:grid-cols-6">
                             <div class="sm:col-span-6">
                                 <label for="pt-name" :class="labelClass">{{
-                                    $t('Nombre')
+                                    $t('Nombre||nombre completo del atleta')
                                 }}</label>
                                 <input
                                     id="pt-name"
@@ -1055,7 +1051,7 @@ const privacyNote = computed(() =>
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="pt-position" :class="labelClass">{{
-                                    $t('Lugar')
+                                    $t('Lugar||posición en la clasificación')
                                 }}</label>
                                 <input
                                     id="pt-position"
@@ -1067,7 +1063,7 @@ const privacyNote = computed(() =>
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="pt-bib" :class="labelClass">{{
-                                    $t('Número')
+                                    $t('Número||número de corredor (dorsal)')
                                 }}</label>
                                 <input
                                     id="pt-bib"
@@ -1419,12 +1415,21 @@ const privacyNote = computed(() =>
                                           'El chip NFC está en la base del marco: quien acerque su celular abre este recuerdo.',
                                       )
                             }}
-                            {{ privacyNote[0]
-                            }}<Link
-                                :href="edit(story.public_id).url"
-                                class="fl-link fl-link--gold font-medium text-fl-gold-ink"
-                                >{{ $t('su privacidad') }}</Link
-                            >{{ privacyNote[1] }}
+                            <I18nT
+                                :text="
+                                    $t(
+                                        'Tú decides quién puede verlo desde {link}.',
+                                    )
+                                "
+                            >
+                                <template #link
+                                    ><Link
+                                        :href="edit(story.public_id).url"
+                                        class="fl-link fl-link--gold font-medium text-fl-gold-ink"
+                                        >{{ $t('su privacidad') }}</Link
+                                    ></template
+                                >
+                            </I18nT>
                         </p>
                     </aside>
                 </div>

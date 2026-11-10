@@ -25,6 +25,7 @@ import {
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import FancySelect from '@/components/forms/FancySelect.vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import PhotoPickCard from '@/components/photos/PhotoPickCard.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,7 @@ const props = defineProps<{
     purchase: { available: boolean; currency: string };
 }>();
 
-const { regional } = useI18n();
+const { regional, money: formatMoney } = useI18n();
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
@@ -125,10 +126,7 @@ function search() {
 }
 
 const money = (minor: number) =>
-    new Intl.NumberFormat(regional.value, {
-        style: 'currency',
-        currency: props.purchase.currency || 'MXN',
-    }).format(minor / 100);
+    formatMoney(minor, props.purchase.currency || 'MXN');
 
 const forSale = computed(() => props.results.filter((p) => p.kind === 'pro'));
 const fmtDate = (iso: string) =>
@@ -282,10 +280,18 @@ function toggleFromLightbox() {
                 <h1
                     class="fl-display mt-5 text-[2.4rem] leading-[1.04] sm:text-6xl"
                 >
-                    {{ $t('Encuentra') }}
-                    <span class="font-medium text-fl-gold-ink italic">{{
-                        $t('tu momento.')
-                    }}</span>
+                    <I18nT :text="$t('Encuentra {accent}')"
+                        ><template #accent
+                            ><span
+                                class="font-medium text-fl-gold-ink italic"
+                                >{{
+                                    $t(
+                                        'tu momento.||final del título «Encuentra»',
+                                    )
+                                }}</span
+                            ></template
+                        ></I18nT
+                    >
                 </h1>
                 <p
                     class="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
@@ -411,10 +417,18 @@ function toggleFromLightbox() {
                                     <template v-if="ev.date"
                                         >{{ fmtDate(ev.date) }} ·
                                     </template>
-                                    {{ $t('Tu número') }}
-                                    <span
-                                        class="legacy-numeric font-semibold text-foreground"
-                                        >#{{ ev.bib }}</span
+                                    <I18nT
+                                        :text="
+                                            $t(
+                                                'Tu número {bib}||número de corredor (dorsal)',
+                                            )
+                                        "
+                                        ><template #bib
+                                            ><span
+                                                class="legacy-numeric font-semibold text-foreground"
+                                                >#{{ ev.bib }}</span
+                                            ></template
+                                        ></I18nT
                                     >
                                     ·
                                     {{
@@ -654,16 +668,21 @@ function toggleFromLightbox() {
                         </div>
                     </div>
                     <p v-else class="mt-4 text-sm text-muted-foreground">
-                        {{
-                            $t(
-                                'Sube tus fotos desde el detalle de cada evento en',
-                            )
-                        }}
-                        <Link
-                            :href="dashboard()"
-                            class="font-medium text-foreground underline underline-offset-4"
-                            >{{ $t('Mi Legado') }}</Link
-                        >.
+                        <I18nT
+                            :text="
+                                $t(
+                                    'Sube tus fotos desde el detalle de cada evento en {link}.',
+                                )
+                            "
+                        >
+                            <template #link>
+                                <Link
+                                    :href="dashboard()"
+                                    class="font-medium text-foreground underline underline-offset-4"
+                                    >{{ $t('Mi Legado') }}</Link
+                                >
+                            </template>
+                        </I18nT>
                     </p>
                 </div>
 
@@ -823,8 +842,11 @@ function toggleFromLightbox() {
                             lightbox.source
                         }}</DialogTitle>
                         <DialogDescription class="truncate">
-                            {{ lightbox.event }} ·
-                            {{ $t('vista previa con marca de agua') }}
+                            {{
+                                $t('{event} · vista previa con marca de agua', {
+                                    event: lightbox.event ?? '',
+                                })
+                            }}
                         </DialogDescription>
                     </div>
                     <div class="flex gap-2">

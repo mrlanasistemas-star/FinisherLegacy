@@ -19,6 +19,7 @@ import {
     XCircle,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import PhotographerCommissionSimulator from '@/components/photos/PhotographerCommissionSimulator.vue';
 import { Button } from '@/components/ui/button';
@@ -65,13 +66,7 @@ const props = defineProps<{
     recentSales?: Sale[];
 }>();
 
-const { t, regional } = useI18n();
-
-const money = (minor: number) =>
-    new Intl.NumberFormat(regional.value, {
-        style: 'currency',
-        currency: 'MXN',
-    }).format(minor / 100);
+const { t, regional, money } = useI18n();
 
 const cards = computed(() =>
     props.stats
@@ -509,15 +504,27 @@ function save() {
                                 {{ timeAgo(sale.created_at) }}
                             </p>
                             <p class="mt-1 text-xs">
-                                <span class="font-semibold text-emerald-700"
-                                    >+{{ money(sale.net_minor) }}</span
-                                >
-                                <span class="text-muted-foreground">
-                                    {{
-                                        $t('de {amount}', {
-                                            amount: money(sale.gross_minor),
-                                        })
-                                    }}</span
+                                <span class="text-muted-foreground"
+                                    ><I18nT
+                                        :text="
+                                            $t(
+                                                '{net} de {gross}||ganancia neta respecto a lo que pagó el cliente',
+                                                {
+                                                    gross: money(
+                                                        sale.gross_minor,
+                                                    ),
+                                                },
+                                            )
+                                        "
+                                        ><template #net
+                                            ><span
+                                                class="font-semibold text-emerald-700"
+                                                >+{{
+                                                    money(sale.net_minor)
+                                                }}</span
+                                            ></template
+                                        ></I18nT
+                                    ></span
                                 >
                             </p>
                         </div>

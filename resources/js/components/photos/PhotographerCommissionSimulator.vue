@@ -9,6 +9,7 @@
  */
 import { ArrowRight, CalendarClock, Info, TriangleAlert } from '@lucide/vue';
 import { computed } from 'vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import { useI18n } from '@/i18n';
 import { splitPhotoPrice } from '@/lib/photoFees';
 import type { PhotoFeeRules } from '@/lib/photoFees';
@@ -30,7 +31,7 @@ const props = withDefaults(
     },
 );
 
-const { regional } = useI18n();
+const { t, regional, money } = useI18n();
 
 const split = computed(() =>
     splitPhotoPrice(props.rules, Math.max(props.priceMinor || 0, 0)),
@@ -38,12 +39,6 @@ const split = computed(() =>
 const rows = computed(() =>
     props.pricePoints.map((p) => splitPhotoPrice(props.rules, p)),
 );
-
-const money = (minor: number) =>
-    new Intl.NumberFormat(regional.value, {
-        style: 'currency',
-        currency: 'MXN',
-    }).format(minor / 100);
 
 const longDate = (iso: string) =>
     new Date(iso).toLocaleDateString(regional.value, {
@@ -53,6 +48,32 @@ const longDate = (iso: string) =>
     });
 
 const rate = computed(() => props.rules.platform_commission_percent);
+
+// One sentence per case ({rate} is filled by a slot): never glued pieces.
+const currentRateText = computed(() => {
+    const custom = props.rules.commission_source === 'override';
+    const from = props.rules.commission_effective_from;
+
+    if (from) {
+        const date = longDate(from);
+
+        return custom
+            ? t(
+                  'Comisión actual de Finisher Legacy: {rate} (tarifa personalizada para ti) · vigente desde el {date}.',
+                  { date },
+              )
+            : t(
+                  'Comisión actual de Finisher Legacy: {rate} · vigente desde el {date}.',
+                  { date },
+              );
+    }
+
+    return custom
+        ? t(
+              'Comisión actual de Finisher Legacy: {rate} (tarifa personalizada para ti).',
+          )
+        : t('Comisión actual de Finisher Legacy: {rate}.');
+});
 const gatewayConfigured = computed(
     () => props.rules.gateway_fee_configured !== false,
 );
@@ -74,18 +95,13 @@ const belowMin = computed(
             <Info class="mt-0.5 size-4 shrink-0 text-fl-gold-ink" />
             <div class="space-y-1">
                 <p>
-                    {{ $t('Comisión actual de Finisher Legacy:') }}
-                    <strong class="legacy-numeric">{{ rate }}%</strong>
-                    <span v-if="rules.commission_source === 'override'">
-                        {{ $t('(tarifa personalizada para ti)') }}</span
-                    ><span v-if="rules.commission_effective_from">
-                        ·
-                        {{
-                            $t('vigente desde el {date}', {
-                                date: longDate(rules.commission_effective_from),
-                            })
-                        }}</span
-                    >.
+                    <I18nT :text="currentRateText"
+                        ><template #rate
+                            ><strong class="legacy-numeric"
+                                >{{ rate }}%</strong
+                            ></template
+                        ></I18nT
+                    >
                 </p>
                 <p
                     v-if="rules.upcoming_change"
@@ -160,7 +176,9 @@ const belowMin = computed(
                         >−{{ money(split.processor) }}</strong
                     >
                     <strong v-else class="ml-1 text-sky-800">{{
-                        $t('$0.00 (la absorbe Finisher)')
+                        $t('{amount} (la absorbe Finisher)', {
+                            amount: money(0),
+                        })
                     }}</strong>
                 </li>
                 <ArrowRight class="size-3.5 text-muted-foreground" />

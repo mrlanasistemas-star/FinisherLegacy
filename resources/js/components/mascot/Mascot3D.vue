@@ -22,6 +22,7 @@ import {
     watch,
 } from 'vue';
 import { useReducedMotion } from '@/composables/useReducedMotion';
+import { useI18n } from '@/i18n';
 import type {
     MascotAction,
     MascotFraming,
@@ -42,7 +43,10 @@ const props = withDefaults(
         active?: boolean;
         /** Idle frame cap; actions always animate at full rate. */
         fps?: number;
-        /** Accessible label; '' marks the mascot as decorative. */
+        /**
+         * Accessible label; '' marks the mascot as decorative. Omitted: the
+         * default label in the visitor's language.
+         */
         alt?: string;
     }>(),
     {
@@ -52,7 +56,7 @@ const props = withDefaults(
         interactive: true,
         active: true,
         fps: 60,
-        alt: 'Mascota de Finisher Legacy',
+        alt: undefined,
     },
 );
 
@@ -63,6 +67,9 @@ const PNG = '/images/brand/mascot/mascot-hero.png';
 const rootEl = useTemplateRef<HTMLElement>('root');
 const canvasEl = useTemplateRef<HTMLCanvasElement>('canvas');
 const reducedMotion = useReducedMotion();
+const { t } = useI18n();
+
+const label = computed(() => props.alt ?? t('Mascota de Finisher Legacy'));
 
 const handle = shallowRef<MascotSceneHandle | null>(null);
 const ready = ref(false);
@@ -298,9 +305,9 @@ onBeforeUnmount(() => {
         class="fl-mascot3d relative inline-block shrink-0 select-none"
         :class="{ 'cursor-pointer': interactive }"
         :style="rootStyle"
-        :role="alt ? 'img' : undefined"
-        :aria-label="alt || undefined"
-        :aria-hidden="alt ? undefined : 'true'"
+        :role="label ? 'img' : undefined"
+        :aria-label="label || undefined"
+        :aria-hidden="label ? undefined : 'true'"
         @click="onClick"
     >
         <!-- Poster / fallback: the official art, gently floating. -->

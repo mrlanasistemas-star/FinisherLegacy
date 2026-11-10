@@ -97,7 +97,7 @@ onMounted(() => {
                 :aria-label="
                     isAdmin
                         ? 'Buscar eventos, atletas, pedidos o productos'
-                        : 'Buscar en Finisher Legacy'
+                        : $t('Buscar en Finisher Legacy')
                 "
                 @click="openCommandMenu()"
             >
@@ -105,7 +105,7 @@ onMounted(() => {
                 <span
                     class="hidden flex-1 truncate text-left whitespace-nowrap md:inline"
                     >{{
-                        isAdmin ? 'Buscar evento, atleta, pedido…' : 'Ir a…'
+                        isAdmin ? 'Buscar evento, atleta, pedido…' : $t('Ir a…')
                     }}</span
                 >
                 <kbd

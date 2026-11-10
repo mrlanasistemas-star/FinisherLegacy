@@ -9,6 +9,7 @@ import { AtSign, Camera, LockKeyhole, UserRound } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import FloatingField from '@/components/account/FloatingField.vue';
 import SubmitButton from '@/components/account/SubmitButton.vue';
+import I18nT from '@/components/i18n/I18nT.vue';
 import PasswordStrengthMeter from '@/components/PasswordStrengthMeter.vue';
 import { t, useI18n } from '@/i18n';
 import { login, privacy, terms } from '@/routes';
@@ -49,7 +50,7 @@ defineOptions({
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FloatingField
                 id="first_name"
-                :label="$t('Nombre')"
+                :label="$t('Nombre||nombre de pila')"
                 :icon="UserRound"
                 :error="errors.first_name"
                 required
@@ -133,11 +134,14 @@ defineOptions({
             class="mt-2 flex flex-col items-center justify-between gap-2 border-t border-border pt-5 text-sm sm:flex-row"
         >
             <p class="text-muted-foreground">
-                {{ $t('¿Ya tienes cuenta?') }}
-                <Link
-                    :href="login()"
-                    class="fl-link fl-link--gold font-semibold text-foreground"
-                    >{{ $t('Inicia sesión') }}</Link
+                <I18nT :text="$t('¿Ya tienes cuenta? {link}')"
+                    ><template #link
+                        ><Link
+                            :href="login()"
+                            class="fl-link fl-link--gold font-semibold text-foreground"
+                            >{{ $t('Inicia sesión') }}</Link
+                        ></template
+                    ></I18nT
                 >
             </p>
             <Link
