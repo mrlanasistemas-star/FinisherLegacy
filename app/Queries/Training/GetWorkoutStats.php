@@ -39,8 +39,8 @@ class GetWorkoutStats
 
         $totals = (clone $inPeriod)
             ->selectRaw('COUNT(*) as workouts, COALESCE(SUM(duration_s), 0) as duration_s, COALESCE(SUM(distance_m), 0) as distance_m')
-            ->selectRaw('SUM(CASE WHEN source = ? THEN 1 ELSE 0 END) as live', [WorkoutSource::Live->value])
-            ->selectRaw('SUM(CASE WHEN source = ? THEN 1 ELSE 0 END) as manual', [WorkoutSource::Manual->value])
+            ->selectRaw('SUM(CASE WHEN source = ? THEN 1 ELSE 0 END) as live_count', [WorkoutSource::Live->value])
+            ->selectRaw('SUM(CASE WHEN source = ? THEN 1 ELSE 0 END) as manual_count', [WorkoutSource::Manual->value])
             ->toBase()
             ->first();
 
@@ -62,8 +62,8 @@ class GetWorkoutStats
                 'workouts' => (int) ($totals->workouts ?? 0),
                 'duration_s' => (int) ($totals->duration_s ?? 0),
                 'distance_m' => (int) ($totals->distance_m ?? 0),
-                'live' => (int) ($totals->live ?? 0),
-                'manual' => (int) ($totals->manual ?? 0),
+                'live' => (int) ($totals->live_count ?? 0),
+                'manual' => (int) ($totals->manual_count ?? 0),
             ],
             'by_sport' => $bySport->map(fn ($row) => [
                 'sport' => ($sport = $sports->get($row->sport_id)) ? ['id' => $sport->id, 'name' => __($sport->name), 'slug' => $sport->slug] : null,
