@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Family\FamilyFollowingController;
+use App\Http\Controllers\Api\V1\Family\FamilyLinkController;
 use App\Http\Controllers\Api\V1\Tracking\LiveTrackingController;
 use App\Http\Controllers\Api\V1\Tracking\TrackingDeviceController;
 use App\Http\Controllers\Api\V1\Tracking\TrackingSessionController;
+use App\Http\Controllers\Api\V1\Tracking\TrackingSharingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,5 +51,35 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             ->middleware('throttle:20,1')
             ->name('tracking.sessions.shares.store');
         Route::delete('tracking/shares/{share:uuid}', [TrackingSessionController::class, 'revokeShare'])->name('tracking.shares.destroy');
+
+        // Who sees my live location (docs/renovacion/familia.md).
+        Route::get('me/tracking/sharing', [TrackingSharingController::class, 'overview'])->name('me.tracking.sharing');
+        Route::get('tracking/sessions/{session:uuid}/sharing', [TrackingSharingController::class, 'show'])->name('tracking.sessions.sharing.show');
+        Route::post('tracking/sessions/{session:uuid}/sharing', [TrackingSharingController::class, 'store'])
+            ->middleware('throttle:20,1')
+            ->name('tracking.sessions.sharing.store');
+        Route::delete('tracking/sessions/{session:uuid}/sharing', [TrackingSharingController::class, 'destroy'])->name('tracking.sessions.sharing.destroy');
+
+        // Familia y contactos autorizados.
+        Route::prefix('family')->name('family.')->group(function () {
+            Route::get('/', [FamilyLinkController::class, 'index'])->name('index');
+            Route::post('links', [FamilyLinkController::class, 'store'])->middleware('throttle:10,1')->name('links.store');
+            Route::patch('links/{link:uuid}', [FamilyLinkController::class, 'update'])->middleware('throttle:30,1')->name('links.update');
+            Route::delete('links/{link:uuid}', [FamilyLinkController::class, 'destroy'])->name('links.destroy');
+            Route::post('links/{link:uuid}/accept', [FamilyLinkController::class, 'accept'])->middleware('throttle:20,1')->name('links.accept');
+            Route::post('links/{link:uuid}/decline', [FamilyLinkController::class, 'decline'])->middleware('throttle:20,1')->name('links.decline');
+
+            Route::middleware('throttle:20,1')->where(['token' => '[A-Za-z0-9]{20,128}'])->group(function () {
+                Route::get('invites/{token}', [FamilyLinkController::class, 'preview'])->name('invites.show');
+                Route::post('invites/{token}/accept', [FamilyLinkController::class, 'acceptToken'])->name('invites.accept');
+                Route::post('invites/{token}/decline', [FamilyLinkController::class, 'declineToken'])->name('invites.decline');
+            });
+
+            Route::get('following', [FamilyFollowingController::class, 'index'])->name('following.index');
+            Route::get('following/{share}', [FamilyFollowingController::class, 'show'])
+                ->whereUuid('share')
+                ->middleware('throttle:live-view')
+                ->name('following.show');
+        });
     });
 });

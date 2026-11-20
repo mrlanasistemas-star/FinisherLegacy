@@ -101,6 +101,7 @@ class TrackingSessionController extends Controller
 
         return $this->respond($shares->map(fn (TrackingShare $share) => [
             'uuid' => $share->uuid,
+            'audience' => $share->audience,
             'url' => null,
             'expires_at' => $share->expires_at->toIso8601String(),
             'revoked_at' => $share->revoked_at?->toIso8601String(),
@@ -156,6 +157,8 @@ class TrackingSessionController extends Controller
             $user,
             $session,
             isset($data['expires_in_hours']) ? (int) $data['expires_in_hours'] : null,
+            // A link shared from a running session never outlives it.
+            endsWithSession: true,
         );
 
         return $this->respond([

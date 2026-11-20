@@ -28,6 +28,9 @@ return [
     'share_max_ttl_hours' => 24 * 14,
     'live_path_max_points' => 500,
     'live_poll_seconds' => 20,
+    // An active session with no new fix for this long shows as "Pausado"
+    // to viewers (GPS paused, tunnel, phone asleep).
+    'paused_after_seconds' => 180,
 
     // Map tiles for the live page / admin overview (Leaflet). OSM's own
     // servers are fine for low traffic; point this at a paid/self-hosted

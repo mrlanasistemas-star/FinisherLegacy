@@ -87,7 +87,8 @@ test('an expired share stops working', function () {
 
     $this->getJson("/api/v1/live/{$share['token']}")->assertOk();
     $this->travel(73)->hours();
-    $this->getJson("/api/v1/live/{$share['token']}")->assertNotFound();
+    // 410 Gone: it ran its course (revoked/unknown stay 404).
+    $this->getJson("/api/v1/live/{$share['token']}")->assertStatus(410);
 });
 
 test('a paired gps band can start its session and post points with its device token', function () {

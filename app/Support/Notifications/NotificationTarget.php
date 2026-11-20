@@ -16,7 +16,7 @@ namespace App\Support\Notifications;
  */
 final class NotificationTarget
 {
-    private const array TYPES = ['athlete', 'moment', 'order', 'event', 'participant', 'legacy_plate', 'product', 'tracking', 'support', 'training'];
+    private const array TYPES = ['athlete', 'moment', 'order', 'event', 'participant', 'legacy_plate', 'product', 'tracking', 'support', 'training', 'family'];
 
     /**
      * @param  array<string, mixed>|null  $metadata

@@ -74,7 +74,7 @@ test('before the start the page shows a waiting state', function () {
         ->assertJsonPath('data.path', []);
 });
 
-test('the web live page renders for a valid token and a friendly page for a revoked one', function () {
+test('the web live page renders for a valid token and a friendly 404 page for a revoked one', function () {
     $share = TrackingFixtures::share($this->participant, $this->user);
 
     $this->get("/live/{$share['token']}")
@@ -84,10 +84,11 @@ test('the web live page renders for a valid token and a friendly page for a revo
     $share['share']->update(['revoked_at' => now()]);
 
     $this->get("/live/{$share['token']}")
-        ->assertOk()
+        ->assertNotFound()
         ->assertInertia(fn ($page) => $page->component('live/Show')->where('available', false)->where('snapshot', null));
 
     $this->get('/live/'.str_repeat('a', 48))
+        ->assertNotFound()
         ->assertInertia(fn ($page) => $page->where('available', false));
 });
 

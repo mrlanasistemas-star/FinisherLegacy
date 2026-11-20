@@ -22,7 +22,15 @@ use Illuminate\Support\Facades\Storage;
  *  - only a simplified path (≤ live_path_max_points, ~1 m precision);
  *  - no ids, emails, bib numbers, device data or accuracy figures;
  *  - support messages: approved ones only; surprises only after they
- *    were triggered; audio is announced, never served here.
+ *    were triggered; audio is announced, never served here;
+ *  - once the session is stopped, NO position at all (no last point, no
+ *    path, no battery) — only that it finished and the distance covered
+ *    (docs/renovacion/familia.md). Explicit app shares are ended outright
+ *    on stop (410); this covers the participation-wide pre-race links.
+ *
+ * `status`: waiting · active · paused (active but no fix for
+ * `tracking.paused_after_seconds` — GPS paused, no signal, phone asleep) ·
+ * stopped.
  */
 class GetLiveTrackingSnapshot
 {
@@ -39,9 +47,13 @@ class GetLiveTrackingSnapshot
 
         $status = match (true) {
             $session === null => 'waiting',
-            $session->isActive() => 'active',
-            default => 'stopped',
+            ! $session->isActive() => 'stopped',
+            $session->last_point_at !== null
+                && $session->last_point_at->lt(now()->subSeconds((int) config('tracking.paused_after_seconds', 180))) => 'paused',
+            default => 'active',
         };
+        // Location only while the session runs.
+        $live = $session !== null && $session->isActive();
 
         return [
             'athlete' => [
@@ -53,7 +65,7 @@ class GetLiveTrackingSnapshot
                 'race' => $participant->eventRace?->name,
             ],
             'status' => $status,
-            'last_point' => $session !== null && $session->last_lat !== null && $session->last_point_at !== null ? [
+            'last_point' => $live && $session->last_lat !== null && $session->last_point_at !== null ? [
                 'lat' => round($session->last_lat, 6),
                 'lng' => round($session->last_lng ?? 0.0, 6),
                 'recorded_at' => $session->last_point_at->toIso8601String(),
@@ -61,10 +73,10 @@ class GetLiveTrackingSnapshot
             'distance_m' => $distance,
             'race_distance_m' => $raceMeters,
             'progress' => $raceMeters !== null && $session !== null ? round(min(1, $distance / $raceMeters), 4) : null,
-            'battery' => $session?->last_battery,
+            'battery' => $live ? $session->last_battery : null,
             'started_at' => $session?->started_at->toIso8601String(),
             'stopped_at' => $session?->stopped_at?->toIso8601String(),
-            'path' => $session !== null ? $this->path($session) : [],
+            'path' => $live ? $this->path($session) : [],
             'channel' => $share->channelName(),
             'expires_at' => $share->expires_at->toIso8601String(),
             'support' => $this->support($participant),

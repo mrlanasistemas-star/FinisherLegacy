@@ -42,6 +42,12 @@ enum NotificationType: string
     // Admin push campaign / broadcast saved to the inbox.
     case Broadcast = 'broadcast';
 
+    // Familia y contactos autorizados (docs/renovacion/familia.md): someone
+    // invited you, accepted your invite, or started sharing their location.
+    case FamilyInvite = 'family_invite';
+    case FamilyAccepted = 'family_accepted';
+    case FamilyTrackingStarted = 'family_tracking_started';
+
     /**
      * @return list<self>
      */
@@ -65,7 +71,8 @@ enum NotificationType: string
             self::NewFollower, self::MomentReaction, self::MomentComment => NotificationCategory::Comunidad,
             self::TrainingCheer => NotificationCategory::Entrenamientos,
             self::SupportReply => NotificationCategory::Soporte,
-            self::ResultAvailable, self::EventUpdated, self::Custom, self::Broadcast => NotificationCategory::Avisos,
+            self::ResultAvailable, self::EventUpdated, self::Custom, self::Broadcast,
+            self::FamilyInvite, self::FamilyAccepted, self::FamilyTrackingStarted => NotificationCategory::Avisos,
         };
     }
 }

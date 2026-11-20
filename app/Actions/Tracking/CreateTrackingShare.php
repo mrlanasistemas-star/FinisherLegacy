@@ -15,13 +15,15 @@ use Illuminate\Support\Str;
  *
  * Without a session the share follows the participation (the family can
  * get the link before the start); with one it is pinned to that session.
+ * `$endsWithSession` (app shares) makes the stop of that session end the
+ * link too — see StopTrackingSession.
  */
 class CreateTrackingShare
 {
     /**
      * @return array{share: TrackingShare, token: string, url: string}
      */
-    public function handle(EventParticipant $participant, ?User $createdBy, ?TrackingSession $session = null, ?int $ttlHours = null): array
+    public function handle(EventParticipant $participant, ?User $createdBy, ?TrackingSession $session = null, ?int $ttlHours = null, bool $endsWithSession = false): array
     {
         $maxTtl = (int) config('tracking.share_max_ttl_hours', 336);
         $ttl = max(1, min($maxTtl, $ttlHours ?? (int) config('tracking.share_ttl_hours', 72)));
@@ -33,7 +35,9 @@ class CreateTrackingShare
             'tracking_session_id' => $session?->id,
             'token_hash' => TrackingShare::hashToken($token),
             'channel_key' => Str::random(40),
+            'audience' => TrackingShare::AUDIENCE_LINK,
             'expires_at' => now()->addHours($ttl),
+            'ends_with_session' => $endsWithSession && $session !== null,
             'created_by' => $createdBy?->id,
         ]);
 
