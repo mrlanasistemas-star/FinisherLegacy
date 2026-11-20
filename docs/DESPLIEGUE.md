@@ -133,6 +133,18 @@ npx expo export --platform android --output-dir <carpeta-temporal>   # el bundle
 eas whoami                             # sesión de la cuenta dueña del proyecto
 ```
 
+- `expo-doctor` (2026-11-20) solo marca 5 parches de SDK pendientes (`expo`,
+  `expo-constants`, `expo-linking`, `expo-router`, `expo-task-manager`).
+  Aplícalos con `npx expo install --fix` **con Metro detenido**, vuelve a
+  correr las pruebas y haz commit de `package.json`/`package-lock.json` antes
+  de la build de tienda.
+- `android/` e `ios/` no están en git (Continuous Native Generation): EAS
+  ejecuta `expo prebuild` en cada build desde `app.json` + `app.config.ts`.
+  La carpeta `android/` local puede estar desfasada (p. ej. su manifiesto solo
+  tiene `/n/` y `/t/`); para regenerarla en tu equipo usa
+  `npx expo prebuild --platform android --no-install` o `npx expo run:android`
+  con Metro detenido.
+
 Secretos de compilación (nunca en el repo):
 
 - FCM para push en Android: `eas env:create --environment production --name GOOGLE_SERVICES_JSON --type file --value ./secrets/google-services.json` (lo lee `app.config.ts`).
@@ -164,3 +176,16 @@ compilación nativa nueva; una actualización OTA no lo aplica.
   (`docs/renovacion/compras-dentro-de-app.md` §E).
 
 Publicación en tiendas: [PUBLICACION_TIENDAS.md](PUBLICACION_TIENDAS.md).
+
+## C. Desarrollo local (nota)
+
+- Usa un puerto propio para este proyecto: en este equipo `127.0.0.1:8000`
+  lo ocupa otro proyecto. Por ejemplo `php artisan serve --port=8020` y
+  `APP_URL=http://localhost:8020` en tu `.env` (no se versiona). `APP_URL`
+  arma los enlaces de correos y de las páginas, así que debe coincidir con la
+  dirección real. Los Tags NFC usan `LEGACY_TAG_PUBLIC_URL` (por defecto
+  `https://finisherlegacy.com`, no `APP_URL`).
+- Con Vite (`npm run dev`) se crea `public/hot`; bórralo (o detén Vite) antes
+  de `npm run build` y nunca lo subas al repo.
+- Las pruebas de navegador (Playwright) que se usaron en el QA web no viven en
+  el repo; ver `docs/CIERRE_FINAL.md`.

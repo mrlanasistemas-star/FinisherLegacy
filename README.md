@@ -31,6 +31,7 @@ la única fuente de verdad para ambos clientes.
 | [docs/PUBLICACION_TIENDAS.md](docs/PUBLICACION_TIENDAS.md) | Google Play y App Store (enlaza a `docs/store/` del repo móvil). |
 | [docs/PENDIENTES_EXTERNOS.md](docs/PENDIENTES_EXTERNOS.md) | Lo que no se resuelve con código: cuentas, llaves, decisiones, pruebas en hardware. |
 | [docs/CIERRE_FINAL.md](docs/CIERRE_FINAL.md) | Estado de cierre: funciones, pruebas, migraciones, commits. |
+| `docs/GUIA_DE_LA_APP.md` | Recorrido de la app para usuarios (pendiente de redactar). |
 | `docs/renovacion/*` | Detalle por módulo: pagos, compras dentro de la app, NFC, entrenamientos, familia, NIP, portarretrato, notificaciones, idiomas, Synology… |
 | `docs/api/v1.md`, `docs/api/openapi.yaml` | Contrato de la API. |
 | `docs/historico/` | Documentos de productos retirados (placas metálicas, Device API, Stripe en la app). **No son decisiones vigentes.** |
@@ -65,6 +66,10 @@ npm run build          # o `npm run dev` para trabajar con Vite
 composer run dev       # servidor + cola (queue:listen) + Vite, en paralelo
 ```
 
+En local usa un puerto propio para este proyecto (otro proyecto puede estar en
+`127.0.0.1:8000`), p. ej. `php artisan serve --port=8020`, con `APP_URL` igual a
+esa dirección en tu `.env` (enlaces de correos, NFC y webhooks dependen de él).
+
 Por separado: `php artisan serve`, `php artisan queue:listen`, `npm run dev`,
 `php artisan reverb:start` (tiempo real, opcional) y
 `php artisan schedule:work` (tareas programadas).
@@ -96,7 +101,7 @@ y [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 ```bash
 php artisan test --compact                  # pruebas (Pest)
 vendor/bin/pint --test                      # estilo PHP (`vendor/bin/pint` corrige)
-vendor/bin/phpstan analyse                  # análisis estático (phpstan.neon + baseline)
+vendor/bin/phpstan analyse                  # análisis estático (phpstan.neon, nivel 7, sin baseline)
 npx vue-tsc --noEmit                        # tipos del frontend
 npx eslint resources/js                     # lint del frontend
 php artisan route:list --except-vendor      # rutas

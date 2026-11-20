@@ -117,6 +117,14 @@ Detalle de la app: `FinisherLegacyMobile/docs/ARCHITECTURE.md`,
 `COMMERCE_ARCHITECTURE.md`, `NFC_ACTIVATION.md`, `LIVE_TRACKING.md`,
 `TRAINING_AUDIO.md`, `SOCIAL_ARCHITECTURE.md`.
 
+## 5 bis. Tarjeta de ánimo NFC — en construcción
+
+Un Finisher Legacy Tag vinculado a un enlace de ánimo (`/animo/{token}`),
+vendido en la tienda, con tarifa de ánimo configurable en el panel y pagada
+por quien lo envía con OpenPay. Se está construyendo en paralelo al cierre; su
+detalle quedará en `docs/renovacion/tarjeta-animo.md` y esta sección se
+completará cuando termine.
+
 ## 6. Reglas transversales
 
 - **Pagos:** OpenPay es la única pasarela para bienes físicos (web y app); el
