@@ -94,7 +94,7 @@ const meta = computed(() =>
         </template>
 
         <div
-            class="flex items-end justify-between gap-4 p-5 sm:p-7"
+            class="flex w-full flex-wrap items-end justify-between gap-4 p-5 sm:p-7"
             :class="featured && entry.cover_url ? 'text-white' : ''"
         >
             <div class="min-w-0">
@@ -114,7 +114,7 @@ const meta = computed(() =>
                 </p>
                 <h3
                     class="mt-2 font-serif leading-tight font-medium"
-                    :class="featured ? 'text-3xl sm:text-4xl' : 'text-xl'"
+                    :class="featured ? 'text-2xl sm:text-4xl' : 'text-xl'"
                 >
                     {{ entry.event ?? $t('Evento') }}
                 </h3>

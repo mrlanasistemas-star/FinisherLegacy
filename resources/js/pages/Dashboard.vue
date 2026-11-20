@@ -381,7 +381,7 @@ async function copyLegacyId() {
                 >
                     <Link
                         :href="action.href"
-                        class="group fl-card fl-card-hover flex h-full min-h-[4.75rem] items-center gap-3 px-3.5 py-3 focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none sm:px-4"
+                        class="group fl-card fl-card-hover flex h-full min-h-[4.75rem] flex-col items-start gap-2.5 px-3.5 py-3 focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none sm:flex-row sm:items-center sm:gap-3 sm:px-4"
                     >
                         <span
                             class="flex size-10 shrink-0 items-center justify-center rounded-full bg-fl-cream text-fl-gold-ink transition-colors duration-300 group-hover:bg-fl-gold group-hover:text-white"
@@ -392,13 +392,13 @@ async function copyLegacyId() {
                                 aria-hidden="true"
                             />
                         </span>
-                        <span class="min-w-0">
+                        <span class="w-full min-w-0">
                             <span
-                                class="block truncate text-sm font-semibold"
+                                class="block text-sm leading-snug font-semibold sm:truncate"
                                 >{{ action.label }}</span
                             >
                             <span
-                                class="block truncate text-xs text-muted-foreground"
+                                class="line-clamp-2 text-xs text-muted-foreground sm:line-clamp-1"
                                 >{{ action.hint }}</span
                             >
                         </span>

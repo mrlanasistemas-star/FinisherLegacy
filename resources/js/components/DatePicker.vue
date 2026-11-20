@@ -29,7 +29,7 @@ const props = withDefaults(
         class?: string;
     }>(),
     {
-        placeholder: 'Selecciona una fecha',
+        placeholder: undefined,
         clearable: true,
     },
 );
@@ -99,8 +99,8 @@ function pickToday() {
                     >
                         <CalendarDays class="size-4" />
                     </span>
-                    <span class="truncate capitalize">{{
-                        formatted ?? placeholder
+                    <span class="truncate" :class="{ capitalize: formatted }">{{
+                        formatted ?? placeholder ?? $t('Selecciona una fecha')
                     }}</span>
                 </button>
             </PopoverTrigger>
