@@ -216,6 +216,80 @@ permiso `community.moderate`, `App\Http\Controllers\Admin\Training\CheerModerati
   atleta, lo bloquea en el enlace y resuelve el reporte (el reporte se
   conserva como historial).
 
+
+## Entrenamientos registrados (Modo entrenamiento)
+
+Además del reproductor de ánimos, la app guarda **entrenamientos reales**.
+Código: `app/Actions/Training/Workouts`, `app/Models/TrainingWorkout.php`,
+`app/Http/Controllers/Api/V1/Training/TrainingWorkoutController.php`,
+`app/Queries/Training/GetWorkoutStats.php`,
+`app/Support/Training/WorkoutPresenter.php`. Pruebas:
+`tests/Feature/Training/TrainingWorkoutApiTest.php`.
+
+En la app hay tres caminos distintos y así se nombran:
+
+- **Entrenar** (`source = live`): cronómetro (iniciar / pausar / reanudar /
+  terminar) y, si la actividad es al aire libre, distancia por GPS con el
+  mismo módulo de ubicación del seguimiento en vivo (una sola tarea de
+  ubicación). Los ánimos siguen sonando durante el entrenamiento.
+- **Registrar actividad pasada** (`source = manual`): fecha, duración y
+  distancia opcional escritas por el atleta; siempre se muestra como
+  «Manual» y **no cuenta para récords**.
+- **Seguir una carrera en vivo**: el seguimiento de una participación
+  (`/tracking/...`), sin cambios.
+
+### Reglas
+
+- Un solo entrenamiento `in_progress` por atleta. `POST` con otro en curso
+  responde **409** `CONFLICT`, `error.details.reason = workout_in_progress` y
+  `error.details.workout_uuid`.
+- `client_uuid` hace idempotente el inicio (la cola sin conexión puede
+  reenviarlo): el segundo envío devuelve el mismo entrenamiento con 200.
+- `finish` es idempotente; si el servidor ya lo cerró solo (ver abajo), el
+  `finish` tardío del teléfono reemplaza esa estimación con los datos reales.
+  Un entrenamiento descartado no se puede revivir (409 `workout_discarded`).
+- Ritmo (`avg_pace_s_per_km`) y velocidad (`avg_speed_mps`) solo se calculan
+  con ≥ 200 m y ≥ 60 s; si no, quedan `null` (la app muestra «—»). Se usa el
+  tiempo en movimiento cuando el GPS lo midió.
+- `best_5k_s` / `best_10k_s` son el tramo continuo más rápido de 5 / 10 km
+  medido por el teléfono **dentro de la ruta GPS real**; se descartan si la
+  distancia no llega. Nunca se proyectan desde un promedio.
+- No hay calorías.
+- Visibilidad por defecto `private`. Compartir crea un Legacy Moment
+  (`type = training`) **solo** cuando el atleta lo pide, con la visibilidad
+  que elija (privada por defecto); uno por entrenamiento (409
+  `workout_already_shared` con `moment_uuid`).
+- **Cierre automático**: `training:close-stale-workouts` (cada hora) cierra
+  los `in_progress` sin latido en 12 h (`TRAINING_WORKOUT_STALE_HOURS`):
+  `completed` si llevaban ≥ 60 s, si no `discarded`; marca `auto_closed_at`.
+
+### API (`/api/v1`, `auth:sanctum` + `user.token`; uuid ajeno → 404)
+
+| Método | Ruta | Uso |
+|---|---|---|
+| GET | `training/sports` | Actividades con `gps_default` y `metric` (`pace` / `speed`) |
+| GET | `training/workouts?source=&sport_id=&page=` | Historial completado, 20 por página |
+| GET | `training/workouts/active` | El entrenamiento en curso o `data: null` |
+| GET | `training/workouts/stats?period=week\|month\|year\|all` | Totales, por actividad, récords |
+| POST | `training/workouts` | Iniciar (`live`) o registrar (`manual`) |
+| GET | `training/workouts/{uuid}` | Detalle con `route_polyline` |
+| PATCH | `training/workouts/{uuid}` | Latido en curso / editar notas, visibilidad, actividad |
+| POST | `training/workouts/{uuid}/finish` | Terminar con los datos finales |
+| POST | `training/workouts/{uuid}/discard` | Descartar uno en curso |
+| DELETE | `training/workouts/{uuid}` | Eliminar del historial |
+| POST | `training/workouts/{uuid}/share` | Crear el Legacy Moment (`visibility`, `caption`) |
+
+Escrituras con `throttle:training-workouts` (60/min por usuario).
+
+Tabla `training_workouts` (migración `2026_11_20_300000`, aditiva):
+`uuid`, `user_id`, `athlete_id`, `sport_id`, `client_uuid` (único por
+usuario), `source`, `status`, `uses_gps`, `started_at`, `ended_at`,
+`duration_s` (cronómetro sin pausas), `moving_s`, `distance_m`,
+`elevation_gain_m`, `avg_speed_mps`, `avg_pace_s_per_km`, `best_5k_s`,
+`best_10k_s`, `route_polyline` (polilínea codificada, precisión 5),
+`route_points_count`, `notes`, `visibility`, `legacy_moment_id`,
+`last_heartbeat_at`, `auto_closed_at`.
+
 ## Datos
 
 | Tabla | Columnas clave |

@@ -29,6 +29,13 @@ class TrainingServiceProvider extends ServiceProvider
             Limit::perMinute(60)->by('cheer-open:'.$request->ip()),
         ]);
 
+        // Modo entrenamiento writes (start / heartbeat / finish / discard /
+        // delete). A heartbeat every ~30 s plus an offline queue draining in
+        // one go stays far below this; a runaway client does not.
+        RateLimiter::for('training-workouts', fn (Request $request) => [
+            Limit::perMinute(60)->by('training-workouts:'.($request->user('sanctum')?->getAuthIdentifier() ?? $request->ip())),
+        ]);
+
         RateLimiter::for('cheer-submit', function (Request $request) {
             $token = (string) $request->route('token');
             $config = (array) config('training.cheers');

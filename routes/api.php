@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\V1\Store\PaymentController;
 use App\Http\Controllers\Api\V1\Store\ProductController;
 use App\Http\Controllers\Api\V1\Training\TrainingLinkController;
 use App\Http\Controllers\Api\V1\Training\TrainingMessageController;
+use App\Http\Controllers\Api\V1\Training\TrainingWorkoutController;
 use App\Http\Controllers\Api\Webhooks\OpenPayWebhookController;
 use App\Http\Controllers\Api\Webhooks\StripeWebhookController;
 use App\Http\Middleware\AlertOnFailedPaymentWebhook;
@@ -277,6 +278,21 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('links', [TrainingLinkController::class, 'index'])->name('links.index');
             Route::post('links', [TrainingLinkController::class, 'store'])->middleware('throttle:30,1')->name('links.store');
             Route::delete('links/{uuid}', [TrainingLinkController::class, 'destroy'])->whereUuid('uuid')->name('links.destroy');
+
+            // Modo entrenamiento — persisted workouts (owner-only, 404 for others).
+            Route::get('sports', [TrainingWorkoutController::class, 'sports'])->name('sports.index');
+            Route::get('workouts', [TrainingWorkoutController::class, 'index'])->name('workouts.index');
+            Route::get('workouts/active', [TrainingWorkoutController::class, 'active'])->name('workouts.active');
+            Route::get('workouts/stats', [TrainingWorkoutController::class, 'stats'])->name('workouts.stats');
+            Route::middleware('throttle:training-workouts')->group(function () {
+                Route::post('workouts', [TrainingWorkoutController::class, 'store'])->name('workouts.store');
+                Route::patch('workouts/{uuid}', [TrainingWorkoutController::class, 'update'])->whereUuid('uuid')->name('workouts.update');
+                Route::post('workouts/{uuid}/finish', [TrainingWorkoutController::class, 'finish'])->whereUuid('uuid')->name('workouts.finish');
+                Route::post('workouts/{uuid}/discard', [TrainingWorkoutController::class, 'discard'])->whereUuid('uuid')->name('workouts.discard');
+                Route::delete('workouts/{uuid}', [TrainingWorkoutController::class, 'destroy'])->whereUuid('uuid')->name('workouts.destroy');
+                Route::post('workouts/{uuid}/share', [TrainingWorkoutController::class, 'share'])->whereUuid('uuid')->middleware('throttle:social-write')->name('workouts.share');
+            });
+            Route::get('workouts/{uuid}', [TrainingWorkoutController::class, 'show'])->whereUuid('uuid')->name('workouts.show');
         });
         Route::post('me/push-devices', [MePushDeviceController::class, 'store'])->name('me.push-devices.store');
         Route::delete('me/push-devices/{uuid}', [MePushDeviceController::class, 'destroy'])->name('me.push-devices.destroy');
@@ -356,3 +372,4 @@ require __DIR__.'/api/quotas.php';
 require __DIR__.'/api/iap.php';
 require __DIR__.'/api/story-editor.php';
 require __DIR__.'/api/push-campaigns.php';
+require __DIR__.'/api/content-pin.php';

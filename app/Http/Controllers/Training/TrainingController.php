@@ -6,14 +6,18 @@ use App\Actions\Training\ManageCheerLinks;
 use App\Actions\Training\ManageCheerMessages;
 use App\Actions\Training\ReportCheerMessage;
 use App\Enums\CheerReportReason;
+use App\Enums\WorkoutStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Training\StoreCheerLinkRequest;
 use App\Models\CheerLink;
 use App\Models\CheerMessage;
+use App\Models\TrainingWorkout;
 use App\Models\User;
+use App\Queries\Training\GetWorkoutStats;
 use App\Queries\Training\ListCheerMessages;
 use App\Support\Training\CheerPresenter;
 use App\Support\Training\ResolvesOwnCheers;
+use App\Support\Training\WorkoutPresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,7 +34,7 @@ class TrainingController extends Controller
 {
     use ResolvesOwnCheers;
 
-    public function index(Request $request, ListCheerMessages $list, CheerPresenter $presenter): Response
+    public function index(Request $request, ListCheerMessages $list, CheerPresenter $presenter, GetWorkoutStats $stats): Response
     {
         /** @var User $user */
         $user = $request->user();
@@ -58,6 +62,17 @@ class TrainingController extends Controller
                 ->map(fn (CheerLink $link) => $presenter->linkForWeb($link))
                 ->values(),
             'expiryOptions' => config('training.cheers.expiry_days', [7, 30, 90]),
+            // Modo entrenamiento: the latest saved workouts (started from the app) and this month's totals.
+            'workouts' => TrainingWorkout::query()
+                ->where('user_id', $user->id)
+                ->where('status', WorkoutStatus::Completed)
+                ->with('sport:id,name,slug')
+                ->orderByDesc('started_at')
+                ->limit(10)
+                ->get()
+                ->map(fn (TrainingWorkout $w) => WorkoutPresenter::present($w))
+                ->values(),
+            'workoutMonth' => $stats->handle($user, 'month')['totals'],
         ]);
     }
 

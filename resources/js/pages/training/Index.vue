@@ -27,6 +27,8 @@ import {
 import Swal from 'sweetalert2';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { cheerIcon } from '@/components/training/cheerIcons';
+import WorkoutHistory from '@/components/training/WorkoutHistory.vue';
+import type { WorkoutRow } from '@/components/training/WorkoutHistory.vue';
 import { vReveal } from '@/composables/useReveal';
 import { formatClock } from '@/composables/useVoiceRecorder';
 import { useI18n } from '@/i18n';
@@ -84,6 +86,8 @@ const props = defineProps<{
     counts: { all: number; unheard: number; favorites: number };
     links: CheerLink[];
     expiryOptions: number[];
+    workouts: WorkoutRow[];
+    workoutMonth: { workouts: number; duration_s: number; distance_m: number };
 }>();
 
 // Inertia v3 delivers `Inertia::flash()` data on the page object itself
@@ -448,6 +452,13 @@ const hasNext = computed(() => {
                 }}
             </p>
         </header>
+
+        <!-- Saved workouts (Modo entrenamiento, started from the app) -->
+        <WorkoutHistory
+            v-reveal="{ delay: 40 }"
+            :workouts="props.workouts"
+            :month="props.workoutMonth"
+        />
 
         <!-- Links -->
         <section v-reveal="{ delay: 60 }" class="fl-card mt-8 p-5 sm:p-7">

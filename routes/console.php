@@ -65,3 +65,10 @@ Schedule::call(fn () => app(AlertIfPaymentGatewayUnconfigured::class)->handle())
     ->name('admin-alerts:payment-gateway')
     ->dailyAt('08:05')
     ->withoutOverlapping();
+
+// Modo entrenamiento (docs/renovacion/entrenamientos.md): closes live
+// workouts left in progress with no heartbeat for 12 h, so none stays open
+// by accident. A late finish from the phone still replaces the guess.
+Schedule::command('training:close-stale-workouts')
+    ->hourly()
+    ->withoutOverlapping();
