@@ -66,6 +66,8 @@ type PaymentRow = {
     amount_minor: number;
     reference: string | null;
     paid_at: string | null;
+    refundable?: boolean;
+    refund_hint?: string | null;
 };
 
 const props = defineProps<{
@@ -80,6 +82,9 @@ const props = defineProps<{
         payment_status: string;
         fulfillment_status: string;
         subtotal_minor: number;
+        discount_minor?: number;
+        coupon_code?: string | null;
+        shipping_minor?: number;
         total_minor: number;
         currency: string;
         created_at: string;
@@ -94,6 +99,8 @@ const props = defineProps<{
     units?: OrderUnit[];
     deliveryMethods?: { value: string; label: string }[];
     canManage?: boolean;
+    canRecordPayment?: boolean;
+    canRefund?: boolean;
     payments: PaymentRow[];
     inventoryLocations: { id: number; name: string }[];
     paymentMethods: string[];
@@ -112,6 +119,46 @@ function submitPayment() {
         preserveScroll: true,
         onSuccess: () => (paymentDialogOpen.value = false),
     });
+}
+
+// Human labels for the payments list (admin stays in Spanish).
+const methodLabel: Record<string, string> = {
+    online_card: 'Tarjeta en línea',
+    mercado_pago_terminal: 'Terminal Mercado Pago',
+    cash: 'Efectivo',
+    in_app_purchase: 'Compra dentro de la app',
+};
+const providerLabel: Record<string, string> = {
+    openpay: 'OpenPay',
+    stripe: 'Stripe',
+    manual: 'Manual',
+    app_store: 'App Store',
+    google_play: 'Google Play',
+};
+
+// Full OpenPay refund. The order only changes when OpenPay confirms it
+// (the server re-reads the charge); the dialog is the explicit confirmation.
+const refunding = ref<PaymentRow | null>(null);
+const refundForm = useForm({ reason: '' });
+
+function openRefund(payment: PaymentRow) {
+    refunding.value = payment;
+    refundForm.reason = '';
+    refundForm.clearErrors();
+}
+
+function submitRefund() {
+    if (!refunding.value) {
+        return;
+    }
+
+    refundForm.post(
+        `/admin/orders/${props.order.uuid}/payments/${refunding.value.id}/refund`,
+        {
+            preserveScroll: true,
+            onFinish: () => (refunding.value = null),
+        },
+    );
 }
 
 function fulfill(itemId: number, locationId: number) {
@@ -204,6 +251,35 @@ const addressLine = (delivery: Delivery) =>
                 <p class="text-foreground">
                     <Money
                         :minor="order.total_minor"
+                        :currency="order.currency"
+                    />
+                </p>
+                <p
+                    v-if="(order.shipping_minor ?? 0) > 0"
+                    class="text-xs text-muted-foreground"
+                >
+                    Envío
+                    <Money
+                        :minor="order.shipping_minor ?? 0"
+                        :currency="order.currency"
+                    />
+                    (incluido)
+                </p>
+                <p
+                    v-if="(order.discount_minor ?? 0) > 0"
+                    class="text-xs text-muted-foreground"
+                >
+                    Subtotal
+                    <Money
+                        :minor="order.subtotal_minor"
+                        :currency="order.currency"
+                    />
+                    · descuento
+                    <template v-if="order.coupon_code"
+                        >({{ order.coupon_code }})</template
+                    >
+                    −<Money
+                        :minor="order.discount_minor ?? 0"
                         :currency="order.currency"
                     />
                 </p>
@@ -363,7 +439,7 @@ const addressLine = (delivery: Delivery) =>
                     <CreditCard class="size-4" /> Pagos
                 </h2>
                 <Button
-                    v-if="order.payment_status !== 'paid'"
+                    v-if="canRecordPayment"
                     size="sm"
                     class="bg-fl-gold text-fl-black hover:bg-fl-gold-soft"
                     @click="paymentDialogOpen = true"
@@ -379,7 +455,11 @@ const addressLine = (delivery: Delivery) =>
                 >
                     <div class="flex items-center justify-between">
                         <span class="text-foreground"
-                            >{{ payment.method }} ({{ payment.provider }})</span
+                            >{{ methodLabel[payment.method] ?? payment.method }}
+                            ({{
+                                providerLabel[payment.provider] ??
+                                payment.provider
+                            }})</span
                         >
                         <Money
                             :minor="payment.amount_minor"
@@ -391,6 +471,30 @@ const addressLine = (delivery: Delivery) =>
                         {{ payment.reference ?? 'sin referencia' }} ·
                         {{ payment.paid_at ?? 'sin fecha' }}
                     </p>
+                    <div
+                        v-if="
+                            (canRefund && payment.refundable) ||
+                            payment.refund_hint
+                        "
+                        class="mt-2 flex flex-wrap items-center justify-between gap-2"
+                    >
+                        <p
+                            v-if="payment.refund_hint"
+                            class="text-xs text-muted-foreground"
+                        >
+                            {{ payment.refund_hint }}
+                        </p>
+                        <Button
+                            v-if="canRefund && payment.refundable"
+                            variant="outline"
+                            size="sm"
+                            class="ml-auto h-9 rounded-full border-red-300 text-red-700 hover:bg-red-50"
+                            @click="openRefund(payment)"
+                        >
+                            <Undo2 class="size-3.5" />
+                            Reembolsar
+                        </Button>
+                    </div>
                 </div>
                 <p
                     v-if="!payments.length"
@@ -452,6 +556,65 @@ const addressLine = (delivery: Delivery) =>
                             class="w-full rounded-full sm:w-auto"
                             :disabled="returnForm.processing"
                             >Registrar devolución</Button
+                        >
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog
+            :open="refunding !== null"
+            @update:open="(v) => !v && (refunding = null)"
+        >
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Reembolsar pago</DialogTitle>
+                </DialogHeader>
+                <form class="space-y-4" @submit.prevent="submitRefund">
+                    <p class="text-sm text-muted-foreground">
+                        Se devolverá el total de
+                        <Money
+                            v-if="refunding"
+                            :minor="refunding.amount_minor"
+                            :currency="order.currency"
+                        />
+                        a la tarjeta con OpenPay. No se puede deshacer. El
+                        pedido cambia a «reembolsado» solo cuando OpenPay lo
+                        confirma; si quedan piezas sin entregar, el pedido se
+                        cancela y vuelven al inventario.
+                    </p>
+                    <div class="grid gap-2">
+                        <Label for="refund-reason">Motivo (opcional)</Label>
+                        <Input
+                            id="refund-reason"
+                            v-model="refundForm.reason"
+                            maxlength="200"
+                            placeholder="Ej. el cliente canceló su compra"
+                        />
+                        <p
+                            v-if="refundForm.errors.reason"
+                            class="text-xs text-red-700"
+                        >
+                            {{ refundForm.errors.reason }}
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            class="w-full rounded-full sm:w-auto"
+                            @click="refunding = null"
+                            >Cancelar</Button
+                        >
+                        <Button
+                            type="submit"
+                            class="w-full rounded-full bg-red-700 text-white hover:bg-red-800 sm:w-auto"
+                            :disabled="refundForm.processing"
+                            >{{
+                                refundForm.processing
+                                    ? 'Reembolsando…'
+                                    : 'Confirmar reembolso'
+                            }}</Button
                         >
                     </DialogFooter>
                 </form>

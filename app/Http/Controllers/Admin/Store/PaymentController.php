@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin\Store;
 
+use App\Actions\Commerce\RefundOnlinePayment;
 use App\Actions\Commerce\RegisterManualPayment;
 use App\Enums\PaymentMethod;
 use App\Exceptions\Api\ApiException;
+use App\Exceptions\PaymentRefundException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
@@ -75,6 +77,29 @@ class PaymentController extends Controller
 
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Pago registrado.']);
         } catch (ApiException $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+        }
+
+        return back();
+    }
+
+    /**
+     * Full OpenPay refund (`payments.refund`). The order changes only when
+     * OpenPay confirms it — see App\Actions\Commerce\RefundOnlinePayment.
+     */
+    public function refund(Request $request, Order $order, Payment $payment, RefundOnlinePayment $refund): RedirectResponse
+    {
+        abort_unless($payment->order_id === $order->id, 404);
+
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        try {
+            $refund->handle($payment, $request->user(), $data['reason'] ?? null);
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Reembolso confirmado por OpenPay.']);
+        } catch (PaymentRefundException $e) {
             Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
         }
 

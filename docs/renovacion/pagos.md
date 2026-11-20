@@ -109,7 +109,7 @@ compra integrada (StoreKit / Play Billing) para bienes digitales. Por eso:
 | Regreso de 3DS | ✅ `redirect_url` → confirmación; el `?id=` se ignora y se re-lee el cargo. | `CheckoutController::confirmation` |
 | Idempotencia | ✅ `payment_webhook_receipts` único por `(provider, event_id)`; reserva del `Payment` bajo lock antes de llamar a OpenPay; reanuda un cargo 3DS pendiente en lugar de cobrar dos veces. | `CreateOnlinePayment`, `ProcessPaymentWebhook` |
 | Estados | ✅ `Order.status` / `payment_status` / `fulfillment_status` separados; `payment_state` derivado (pending/processing/paid/failed/cancelled/refunded); matriz de transiciones. | `OrderPaymentState`, `ProcessPaymentWebhook` |
-| Reembolsos | ⚠️ **Solo reflejo**: un reembolso hecho en el panel de OpenPay llega por webhook (`charge.refunded`), se re-lee el cargo y pasa a `refunded`; si había piezas sin entregar, el pedido se cancela y libera stock. **No hay botón de reembolso en el admin** y un reembolso **parcial** no se ha verificado contra OpenPay real. | `ProcessPaymentWebhook::applyRefund` |
+| Reembolsos | ⚠️ **Solo reflejo**: un reembolso hecho en el panel de OpenPay llega por webhook (`charge.refunded`), se re-lee el cargo y pasa a `refunded`; si había piezas sin entregar, el pedido se cancela y libera stock. ✅ **Reembolso total desde el admin** (2026-11-20): Pedidos → detalle → Pagos → «Reembolsar» (permiso `payments.refund`, diálogo de confirmación). Bloquea el pago, pide el reembolso a OpenPay, re-lee el cargo y lo aplica por el mismo camino del webhook; nunca reembolsa dos veces (si OpenPay ya lo muestra reembolsado, solo lo aplica). Stripe histórico: se reembolsa en su panel. Reembolso **parcial**: solo desde el panel de OpenPay, sin verificar contra OpenPay real. | `ProcessPaymentWebhook::applyRefund`, `RefundOnlinePayment` |
 | Correo de confirmación de pago | ❌ **No existe.** Al pagarse no se envía correo; solo hay actualización en tiempo real/polling y la pantalla de confirmación. | — |
 | Sandbox ↔ producción | ✅ Casilla "Modo producción" en el admin (o `OPENPAY_PRODUCTION_MODE`). Cambia la URL de la API del SDK y `setSandboxMode` del navegador. Las llaves de sandbox y producción son distintas. | `PaymentSettings`, `OpenPayClientFactory` |
 | Expiración de pedidos sin pagar | ✅ `finisher:expire-pending-orders` cada 5 min (libera stock y cupón). Requiere el scheduler (`schedule:run`) en el servidor. | `routes/console.php` |
@@ -375,8 +375,9 @@ quien cierra todo antes de que el banco responda y los reembolsos.
 ## Pendientes conocidos (no inventados)
 
 - Correo de confirmación de pago: no existe.
-- Reembolsos desde el admin: no existen (se hacen en el panel de OpenPay y se
-  reflejan por webhook). Reembolso parcial sin verificar contra OpenPay real.
+- Reembolsos desde el admin: solo **totales** con OpenPay (`RefundOnlinePayment`,
+  `tests/Feature/Commerce/AdminOpenPayRefundTest.php`). Parciales: panel de
+  OpenPay (se reflejan por webhook), sin verificar contra OpenPay real.
 - Prueba E2E real en sandbox: pendiente de credenciales (todo lo demás está
   probado con un doble del SDK, sin red).
 - Pagos en efectivo/SPEI de OpenPay (tiendas, transferencias): no

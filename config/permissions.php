@@ -176,6 +176,7 @@ return [
             'orders.manage' => 'Gestionar pedidos',
             'payments.view' => 'Ver pagos',
             'payments.record_manual' => 'Registrar pagos manuales (terminal/efectivo)',
+            'payments.refund' => 'Reembolsar pagos con tarjeta (OpenPay)',
             'payments.configure' => 'Configurar pasarela de pago (OpenPay / Stripe)',
             'coupons.manage' => 'Gestionar cupones de descuento',
         ],

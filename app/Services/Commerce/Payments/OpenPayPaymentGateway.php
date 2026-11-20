@@ -8,6 +8,7 @@ use App\Exceptions\InvalidPaymentWebhookSignatureException;
 use App\Exceptions\MissingPaymentTokenException;
 use App\Exceptions\PaymentDeclinedException;
 use App\Exceptions\PaymentGatewayNotConfiguredException;
+use App\Exceptions\PaymentRefundException;
 use App\Exceptions\UnhandledPaymentWebhookEventException;
 use App\Models\Order;
 use App\Models\Payment;
@@ -125,6 +126,42 @@ class OpenPayPaymentGateway implements ResumablePaymentGateway
         $charge = $this->client()->charges->get((string) $payment->provider_reference);
 
         return $this->outcomeFromCharge($charge, "sync:{$charge->id}:{$charge->status}", ['provider_status' => $charge->status]);
+    }
+
+    /**
+     * Full refund of a completed card charge, requested from the admin.
+     * Never trusted on its own word: the charge is re-read from OpenPay
+     * afterwards and that state is what the caller applies (same path as
+     * the `charge.refunded` webhook). A charge OpenPay already reports as
+     * refunded (an earlier attempt that died before saving, or a refund
+     * done in the OpenPay dashboard) is not refunded twice — its current
+     * state is simply returned.
+     *
+     * @throws PaymentRefundException when OpenPay rejects the refund
+     */
+    public function refundCharge(Payment $payment, string $description): PaymentWebhookOutcome
+    {
+        $client = $this->client();
+        $charge = $client->charges->get((string) $payment->provider_reference);
+
+        if ($this->field($charge, 'status') === 'completed') {
+            try {
+                $charge->refund([
+                    'description' => mb_substr($description, 0, 250),
+                    // Always the whole captured amount — partial refunds are
+                    // done in the OpenPay dashboard (not verified here yet).
+                    'amount' => round($payment->amount_minor / 100, 2),
+                ]);
+            } catch (OpenpayApiError $e) {
+                throw new PaymentRefundException(__('OpenPay rechazó el reembolso: :reason', ['reason' => $e->getMessage()]));
+            }
+
+            $charge = $client->charges->get((string) $payment->provider_reference);
+        }
+
+        $status = (string) $this->field($charge, 'status');
+
+        return $this->outcomeFromCharge($charge, "refund:{$this->field($charge, 'id')}:{$status}", ['provider_status' => $status]);
     }
 
     public function handleWebhook(Request $request): PaymentWebhookOutcome

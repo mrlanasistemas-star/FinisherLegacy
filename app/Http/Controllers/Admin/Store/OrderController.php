@@ -9,6 +9,8 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentProvider;
+use App\Enums\PaymentStatus;
 use App\Enums\SalesChannel;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryLocation;
@@ -115,6 +117,10 @@ class OrderController extends Controller
                 'fulfillment_status' => $order->fulfillment_status->value,
                 'subtotal_minor' => $order->subtotal_minor,
                 'total_minor' => $order->total_minor,
+                'discount_minor' => $order->discount_minor,
+                'coupon_code' => $order->coupon_code,
+                // Frozen at checkout and already included in total_minor.
+                'shipping_minor' => (int) ($order->shipping_minor ?? 0),
                 'currency' => $order->currency,
                 'created_at' => $order->created_at->toDateTimeString(),
                 // Contact + delivery the customer gave at checkout (spec §28).
@@ -152,6 +158,12 @@ class OrderController extends Controller
             'deliveryMethods' => DeliveryMethod::options(),
             'canManage' => request()->user()?->can('orders.manage') ?? false,
             'items' => $order->items->map(fn (OrderItem $item) => [
+            // Manual payment only for an open order still waiting for money
+            // (RegisterManualPayment enforces the same rule server-side).
+            'canRecordPayment' => (request()->user()?->can('payments.record_manual') ?? false)
+                && ! in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Completed], true)
+                && in_array($order->payment_status, [OrderPaymentStatus::Pending, OrderPaymentStatus::Failed, OrderPaymentStatus::Authorized], true),
+            'canRefund' => request()->user()?->can('payments.refund') ?? false,
                 'id' => $item->id,
                 'name' => $item->name,
                 'sku' => $item->sku,
@@ -173,6 +185,18 @@ class OrderController extends Controller
             ]),
             'inventoryLocations' => InventoryLocation::query()->orderBy('name')->get(['id', 'name']),
             // In-app purchases are recorded only by the store verification flow.
+                // Only a confirmed OpenPay card charge is refunded from here;
+                // historical Stripe charges are refunded in Stripe's dashboard.
+                'refundable' => $payment->provider === PaymentProvider::OpenPay
+                    && $payment->status === PaymentStatus::Paid
+                    && filled($payment->provider_reference),
+                'refund_hint' => match (true) {
+                    $payment->status !== PaymentStatus::Paid => null,
+                    $payment->provider === PaymentProvider::Stripe => 'Reembolsar desde el panel de Stripe.',
+                    $payment->provider === PaymentProvider::Manual => 'Pago manual: devuelve el dinero por el mismo medio.',
+                    in_array($payment->provider, [PaymentProvider::AppStore, PaymentProvider::GooglePlay], true) => 'Compra dentro de la app: el reembolso lo hace la tienda.',
+                    default => null,
+                },
             'paymentMethods' => collect(PaymentMethod::cases())->reject(fn (PaymentMethod $case) => $case === PaymentMethod::InAppPurchase)->map(fn (PaymentMethod $case) => $case->value)->values()->all(),
         ]);
     }

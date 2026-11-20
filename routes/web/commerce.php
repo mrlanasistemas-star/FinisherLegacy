@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
 use App\Http\Controllers\Admin\PaymentSettingsController as AdminPaymentSettingsController;
 use App\Http\Controllers\Admin\ProductMediaController as AdminProductMediaController;
 use App\Http\Controllers\Admin\Store\OrderController as AdminStoreOrderController;
+use App\Http\Controllers\Admin\Store\OrderPortraitController;
+use App\Http\Controllers\Admin\Store\PaymentController as AdminStorePaymentController;
 use App\Http\Controllers\Store\AppCheckoutController;
 use App\Http\Controllers\Store\CheckoutController as StoreCheckoutController;
 use App\Http\Middleware\AuthorizeAppCheckout;
@@ -58,6 +60,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
 
         Route::middleware('can:orders.manage')->post('orders/items/{item}/return', [AdminStoreOrderController::class, 'returnItem'])->name('orders.items.return');
+        // Production file of an ordered Portarretrato (from the OrderItem snapshot).
+        Route::middleware(['can:orders.view', 'throttle:20,1'])->get('orders/items/{item}/portarretrato', OrderPortraitController::class)->name('orders.items.portrait');
+
+        // Full OpenPay refund — only applied once OpenPay confirms it.
+        Route::middleware(['can:payments.refund', 'throttle:10,1'])
+            ->post('orders/{order:uuid}/payments/{payment}/refund', [AdminStorePaymentController::class, 'refund'])
+            ->name('orders.payments.refund');
 
         Route::middleware('can:products.manage')->post('products/media/{media}/poster', [AdminProductMediaController::class, 'poster'])->name('products.media.poster');
 
