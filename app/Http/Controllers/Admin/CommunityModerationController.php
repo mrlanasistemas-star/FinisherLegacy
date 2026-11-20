@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Social\DeleteMoment;
 use App\Actions\Social\ModerateContent;
+use App\Actions\Social\ModerateUser;
 use App\Enums\ReportStatus;
 use App\Enums\ReportTargetType;
 use App\Http\Controllers\Controller;
@@ -12,6 +13,7 @@ use App\Models\AthleteProfile;
 use App\Models\LegacyMoment;
 use App\Models\LegacyMomentComment;
 use App\Models\Report;
+use App\Models\User;
 use App\Models\UserBlock;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -196,6 +198,48 @@ class CommunityModerationController extends Controller
         return back();
     }
 
+    /**
+     * Sends the athlete a moderation warning (in-app + push). Optionally
+     * closes the report it came from.
+     */
+    public function warnUser(Request $request, User $user, ModerateUser $moderate): RedirectResponse
+    {
+        $data = $request->validate([
+            'message' => ['required', 'string', 'min:10', 'max:500'],
+            'report_id' => ['nullable', 'integer', 'exists:reports,id'],
+        ]);
+
+        $moderate->warn($request->user(), $user, $data['message'], $this->report($data));
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Advertencia enviada.']);
+
+        return back();
+    }
+
+    /**
+     * Suspends the account (sign-in blocked, sessions/tokens revoked).
+     * Reactivation lives in Administración → Usuarios.
+     */
+    public function suspendUser(Request $request, User $user, ModerateUser $moderate): RedirectResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:500'],
+            'report_id' => ['nullable', 'integer', 'exists:reports,id'],
+        ]);
+
+        $moderate->suspend($request->user(), $user, $data['reason'], $this->report($data));
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Cuenta suspendida.']);
+
+        return back();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function report(array $data): ?Report
+    {
+        return isset($data['report_id']) ? Report::query()->find($data['report_id']) : null;
+    }
+
     private function note(Request $request): ?string
     {
         return $request->validate(['note' => ['nullable', 'string', 'max:500']])['note'] ?? null;
@@ -231,6 +275,8 @@ class CommunityModerationController extends Controller
                 ->mapWithKeys(fn (AthleteProfile $p) => [$p->id => [
                     'username' => $p->username,
                     'author' => $p->user?->name,
+                    'author_id' => $p->user_id,
+                    'author_status' => $p->user?->status?->value,
                     'excerpt' => Str::limit((string) $p->bio, 140),
                 ]])
                 ->all(),
@@ -248,6 +294,8 @@ class CommunityModerationController extends Controller
             'type' => $moment->type->value,
             'visibility' => $moment->visibility->value,
             'author' => $moment->author?->name,
+            'author_id' => $moment->user_id,
+            'author_status' => $moment->author?->status?->value,
             'username' => $moment->author?->athleteProfile?->username,
             'is_hidden' => $moment->hidden_at !== null,
             'created_at' => $moment->created_at->toIso8601String(),
@@ -264,6 +312,8 @@ class CommunityModerationController extends Controller
             'excerpt' => Str::limit($comment->body, 140),
             'moment_uuid' => $comment->moment?->uuid,
             'author' => $comment->author?->name,
+            'author_id' => $comment->user_id,
+            'author_status' => $comment->author?->status?->value,
             'username' => $comment->author?->athleteProfile?->username,
             'is_hidden' => $comment->hidden_at !== null,
             'created_at' => $comment->created_at->toIso8601String(),

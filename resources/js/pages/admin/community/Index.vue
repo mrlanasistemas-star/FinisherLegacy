@@ -3,6 +3,10 @@
  * Administración → Comunidad (spec §59): Reportes · Contenido moderado ·
  * Usuarios bloqueados. Hiding is restorable and audited (activity log);
  * "Eliminar" is permanent and reuses the author's DeleteMoment action.
+ * From a report the moderator can also act on the PERSON behind it:
+ * "Advertir" (in-app + push message) or "Suspender" (sign-in blocked,
+ * sessions revoked; reactivation in Administración → Usuarios). Both are
+ * audited server-side (App\Actions\Social\ModerateUser).
  */
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
@@ -14,9 +18,12 @@ import {
     Flag,
     MessagesSquare,
     RotateCcw,
+    ShieldAlert,
     Trash2,
+    TriangleAlert,
     X,
 } from '@lucide/vue';
+import Swal from 'sweetalert2';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { shortDate } from '@/lib/datetime';
@@ -32,6 +39,10 @@ import {
     restore as restoreMoment,
 } from '@/routes/admin/community/moments';
 import { update as updateReport } from '@/routes/admin/community/reports';
+import {
+    suspend as suspendUser,
+    warn as warnUser,
+} from '@/routes/admin/community/users';
 
 type Tab = 'reportes' | 'contenido' | 'bloqueos';
 
@@ -43,6 +54,9 @@ type Target = {
     moment_uuid?: string | null;
     is_hidden?: boolean;
     deleted?: boolean;
+    /** The person behind the content (profile owner / author). */
+    author_id?: number | null;
+    author_status?: string | null;
 };
 
 type Report = {
@@ -141,6 +155,85 @@ const options = { preserveScroll: true, preserveState: true };
 
 function resolve(report: Report, status: 'resolved' | 'dismissed') {
     router.visit(updateReport(report.id), { ...options, data: { status } });
+}
+
+/**
+ * Asks the moderator for the message/reason (min. 10 characters, same rule
+ * as the server) and returns it, or null when cancelled.
+ */
+async function askText(options: {
+    title: string;
+    text: string;
+    placeholder: string;
+    confirmButtonText: string;
+}): Promise<string | null> {
+    const result = await Swal.fire({
+        title: options.title,
+        text: options.text,
+        input: 'textarea',
+        inputPlaceholder: options.placeholder,
+        inputAttributes: { maxlength: '500' },
+        showCancelButton: true,
+        confirmButtonText: options.confirmButtonText,
+        cancelButtonText: 'Cancelar',
+        background: '#ffffff',
+        color: '#171714',
+        confirmButtonColor: '#171714',
+        cancelButtonColor: '#e7e3da',
+        reverseButtons: true,
+        customClass: { cancelButton: 'fl-swal-cancel' },
+        inputValidator: (value) =>
+            !value || value.trim().length < 10
+                ? 'Escribe al menos 10 caracteres.'
+                : undefined,
+    });
+
+    return result.isConfirmed ? String(result.value).trim() : null;
+}
+
+async function warn(report: Report) {
+    const userId = report.target?.author_id;
+
+    if (!userId) {
+        return;
+    }
+
+    const message = await askText({
+        title: `Advertir a ${report.target?.author ?? 'este atleta'}`,
+        text: 'Le llegará como notificación en la app y en la web. Escribe el mensaje tal como quieres que lo lea.',
+        placeholder:
+            'Ej. Tu comentario incumple las normas de la comunidad. Si se repite, tu cuenta podría suspenderse.',
+        confirmButtonText: 'Enviar advertencia',
+    });
+
+    if (message) {
+        router.visit(warnUser(userId), {
+            ...options,
+            data: { message, report_id: report.id },
+        });
+    }
+}
+
+async function suspend(report: Report) {
+    const userId = report.target?.author_id;
+
+    if (!userId) {
+        return;
+    }
+
+    const reason = await askText({
+        title: `Suspender a ${report.target?.author ?? 'este atleta'}`,
+        text: 'No podrá iniciar sesión y se cerrarán todas sus sesiones. Se reactiva desde Administración → Usuarios. Motivo (queda en la bitácora):',
+        placeholder: 'Ej. Acoso reiterado tras una advertencia.',
+        confirmButtonText: 'Suspender cuenta',
+    });
+
+    if (reason) {
+        router.visit(suspendUser(userId), {
+            ...options,
+            data: { reason, report_id: report.id },
+        });
+    }
 }
 
 function hide(report: Report) {
@@ -280,6 +373,11 @@ function postHref(
                                 class="rounded-full bg-muted px-2 py-0.5 text-[11px]"
                                 >Eliminado</span
                             >
+                            <span
+                                v-if="report.target?.author_status === 'suspended'"
+                                class="rounded-full bg-red-100 px-2 py-0.5 text-[11px] text-red-800"
+                                >Cuenta suspendida</span
+                            >
                         </p>
                         <p v-if="report.target" class="text-sm">
                             <span class="font-medium">{{
@@ -328,6 +426,28 @@ function postHref(
                         >
                             <EyeOff class="size-3.5" /> Ocultar
                         </Button>
+                        <template
+                            v-if="
+                                report.target?.author_id &&
+                                report.target.author_status !== 'suspended'
+                            "
+                        >
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="warn(report)"
+                            >
+                                <TriangleAlert class="size-3.5" /> Advertir
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                class="text-red-800"
+                                @click="suspend(report)"
+                            >
+                                <ShieldAlert class="size-3.5" /> Suspender
+                            </Button>
+                        </template>
                         <Button
                             size="sm"
                             variant="ghost"

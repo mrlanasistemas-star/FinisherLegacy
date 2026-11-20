@@ -390,6 +390,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/', [AdminCommunityModerationController::class, 'index'])->name('index');
             Route::patch('reports/{report}', [AdminCommunityModerationController::class, 'updateReport'])->name('reports.update');
             Route::delete('moments/{moment}', [AdminCommunityModerationController::class, 'destroyMoment'])->name('moments.destroy');
+            // Actions on the person behind reported content (audited, staff excluded).
+            Route::post('users/{user}/warn', [AdminCommunityModerationController::class, 'warnUser'])->name('users.warn');
+            Route::post('users/{user}/suspend', [AdminCommunityModerationController::class, 'suspendUser'])->name('users.suspend');
         });
 
         Route::middleware('can:photos.manage')->group(function () {
