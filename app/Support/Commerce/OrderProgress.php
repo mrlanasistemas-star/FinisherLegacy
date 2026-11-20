@@ -105,8 +105,14 @@ class OrderProgress
 
     private static function handoffLabel(Order $order): string
     {
-        return match (data_get($order->customer_snapshot, 'delivery_method')) {
-            'pickup', 'event_pickup', 'kit_pickup' => __('Listo para recoger'),
+        // The column (set at checkout since 2026-11-20) first; older orders
+        // only kept it in the snapshot, under delivery.method.
+        $method = $order->delivery_method?->value
+            ?? data_get($order->customer_snapshot, 'delivery.method')
+            ?? data_get($order->customer_snapshot, 'delivery_method');
+
+        return match ($method) {
+            'pickup', 'in_person', 'event_pickup', 'kit_pickup' => __('Listo para recoger'),
             'shipping', 'delivery' => __('Enviado||pedido enviado por paquetería'),
             default => __('Enviado o listo para recoger'),
         };

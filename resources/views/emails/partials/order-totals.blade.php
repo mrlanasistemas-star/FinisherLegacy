@@ -13,6 +13,12 @@
 <td align="right" class="fl-text" style="padding: 6px 0; font-size: 14px; line-height: 20px; color: #0B0B0C;">{{ $order['discount'] }}</td>
 </tr>
 @endif
+@if ($order['shipping'] ?? null)
+<tr>
+<td class="fl-muted" style="padding: 6px 0; font-size: 14px; line-height: 20px; color: #6B675F;">{{ __('Envío') }}</td>
+<td align="right" class="fl-text" style="padding: 6px 0; font-size: 14px; line-height: 20px; color: #0B0B0C;">{{ $order['shipping'] }}</td>
+</tr>
+@endif
 @if ($order['tax'])
 <tr>
 <td class="fl-muted" style="padding: 6px 0; font-size: 14px; line-height: 20px; color: #6B675F;">{{ __('Impuestos') }}</td>

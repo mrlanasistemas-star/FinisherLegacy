@@ -17,6 +17,7 @@ use App\Models\OrderItem;
 use App\Queries\Commerce\GetCartSummary;
 use App\Support\Commerce\CartSummaryItem;
 use App\Support\Commerce\OrderPaymentState;
+use App\Support\Commerce\ShippingRates;
 use App\Support\Commerce\WebCheckoutPayment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -61,6 +62,10 @@ class CheckoutController extends Controller
             'currency' => $summary->currency,
             'coupon' => $summary->coupon !== null ? ['code' => $summary->coupon->code] : null,
             'requires_shipping' => $summary->items->contains(fn (CartSummaryItem $item) => $item->requiresShipping),
+            // Home delivery fee the order will carry (ShippingRates), shown
+            // before the order exists; CheckoutCart charges the same amount.
+            'shipping_fee_minor' => ShippingRates::feeFor('shipping', $summary->totalMinor),
+            'shipping_minor' => 0,
             'contact' => [
                 'name' => $user->name,
                 'email' => $user->email,
@@ -129,6 +134,8 @@ class CheckoutController extends Controller
             'items' => $order->items->map(fn (OrderItem $item) => $this->orderItemRow($item))->values(),
             'subtotal_minor' => $order->subtotal_minor,
             'discount_minor' => $order->discount_minor,
+            'shipping_minor' => (int) $order->shipping_minor,
+            'shipping_fee_minor' => (int) $order->shipping_minor,
             'total_minor' => $order->total_minor,
             'currency' => $order->currency,
             'coupon' => $order->coupon_code !== null ? ['code' => $order->coupon_code] : null,

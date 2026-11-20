@@ -8,6 +8,9 @@
 @if ($order['discount'])
 {!! $order['coupon'] ? __('Descuento (:coupon)', ['coupon' => $order['coupon']]) : __('Descuento') !!}: {!! $order['discount'] !!}
 @endif
+@if ($order['shipping'] ?? null)
+{!! __('Envío') !!}: {!! $order['shipping'] !!}
+@endif
 @if ($order['tax'])
 {!! __('Impuestos') !!}: {!! $order['tax'] !!}
 @endif

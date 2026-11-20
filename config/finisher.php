@@ -138,6 +138,19 @@ return [
         // Restock threshold when neither the variant nor its product sets
         // `minimum_stock` (spec §15).
         'default_minimum_stock' => env('FINISHER_DEFAULT_MINIMUM_STOCK', 5),
+
+        // Home delivery ("Envío a domicilio") charge, in minor units of the
+        // order currency, added to the Order total at checkout (web and
+        // app) — App\Support\Commerce\ShippingRates. Pickup is always free.
+        // 0 = shipping included (shown as "Sin costo"). `free_over_minor`:
+        // orders whose subtotal after discount reaches it ship free (empty =
+        // never). The business sets the real rate; nothing is assumed here.
+        'shipping' => [
+            'fee_minor' => (int) env('FINISHER_SHIPPING_FEE_MINOR', 0),
+            'free_over_minor' => env('FINISHER_SHIPPING_FREE_OVER_MINOR') !== null && env('FINISHER_SHIPPING_FREE_OVER_MINOR') !== ''
+                ? (int) env('FINISHER_SHIPPING_FREE_OVER_MINOR')
+                : null,
+        ],
     ],
 
     /*

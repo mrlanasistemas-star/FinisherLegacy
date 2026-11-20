@@ -28,6 +28,8 @@ enum ApiErrorCode: string
     case OrderNotPayable = 'ORDER_NOT_PAYABLE';
     // The Order holds digital goods — never payable from the mobile app (store policies).
     case OrderNotAppPayable = 'ORDER_NOT_APP_PAYABLE';
+    // Paid, closed, or a card attempt may still complete — the buyer can't self-cancel it.
+    case OrderNotCancellable = 'ORDER_NOT_CANCELLABLE';
     case PaymentAmountMismatch = 'PAYMENT_AMOUNT_MISMATCH';
     case PaymentAlreadyRecorded = 'PAYMENT_ALREADY_RECORDED';
     case PaymentDeclined = 'PAYMENT_DECLINED';

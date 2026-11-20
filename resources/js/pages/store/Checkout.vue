@@ -56,6 +56,10 @@ const props = defineProps<{
     currency: string;
     coupon: { code: string } | null;
     requires_shipping: boolean;
+    /** Home delivery fee (server ShippingRates); 0 = no charge. */
+    shipping_fee_minor?: number;
+    /** Shipping already frozen on the order (payment step). */
+    shipping_minor?: number;
     contact: {
         name: string | null;
         email: string | null;
@@ -112,6 +116,27 @@ const form = useForm({
     address_postal_code: '',
     notes: '',
 });
+
+// Shipping shown in the summary: before the order exists it follows the
+// delivery choice; once the order exists it is the amount frozen on it
+// (already inside total_minor).
+const shippingShown = computed(() =>
+    props.step === 'payment'
+        ? (props.shipping_minor ?? 0)
+        : form.delivery_method === 'shipping'
+          ? (props.shipping_fee_minor ?? 0)
+          : 0,
+);
+const totalShown = computed(() =>
+    props.step === 'payment'
+        ? props.total_minor
+        : props.total_minor + shippingShown.value,
+);
+const showShippingRow = computed(() =>
+    props.step === 'payment'
+        ? props.delivery?.method === 'shipping'
+        : form.delivery_method === 'shipping',
+);
 
 function placeOrder() {
     form.post('/checkout', { preserveScroll: true });
@@ -469,10 +494,22 @@ const lineDetails = (line: Line) =>
                                         <span
                                             class="text-sm text-muted-foreground"
                                             >{{
-                                                $t(
-                                                    'Te contactamos para coordinar la paquetería.',
-                                                )
+                                                (shipping_fee_minor ?? 0) > 0
+                                                    ? $t(
+                                                          'Te contactamos para coordinar la paquetería.',
+                                                      )
+                                                    : $t(
+                                                          'Sin costo de envío. Te contactamos para coordinar la paquetería.',
+                                                      )
                                             }}</span
+                                        >
+                                        <span
+                                            v-if="(shipping_fee_minor ?? 0) > 0"
+                                            class="mt-1 block text-sm font-medium"
+                                            ><Money
+                                                :minor="shipping_fee_minor ?? 0"
+                                                :currency="currency"
+                                        /></span
                                         >
                                     </span>
                                 </button>
@@ -788,12 +825,28 @@ const lineDetails = (line: Line) =>
                                 </dd>
                             </div>
                             <div
+                                v-if="showShippingRow"
+                                class="flex justify-between text-muted-foreground"
+                            >
+                                <dt>{{ $t('Envío') }}</dt>
+                                <dd class="legacy-numeric">
+                                    <Money
+                                        v-if="shippingShown > 0"
+                                        :minor="shippingShown"
+                                        :currency="currency"
+                                    />
+                                    <template v-else>{{
+                                        $t('Sin costo')
+                                    }}</template>
+                                </dd>
+                            </div>
+                            <div
                                 class="flex items-baseline justify-between border-t border-border pt-3 text-base font-semibold"
                             >
                                 <dt>{{ $t('Total') }}</dt>
                                 <dd class="legacy-numeric text-xl">
                                     <Money
-                                        :minor="total_minor"
+                                        :minor="totalShown"
                                         :currency="currency"
                                     />
                                 </dd>

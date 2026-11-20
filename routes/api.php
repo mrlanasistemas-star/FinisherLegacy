@@ -193,6 +193,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('orders/{order:uuid}', [OrderController::class, 'show'])->name('orders.show');
+        // The buyer cancels their own unpaid order (releases stock/coupon).
+        Route::post('orders/{order:uuid}/cancel', [OrderController::class, 'cancel'])
+            ->middleware('throttle:10,1')
+            ->name('orders.cancel');
         Route::post('orders/{order:uuid}/payments/online', [PaymentController::class, 'online'])
             ->middleware('api.idempotent')
             ->name('orders.payments.online');

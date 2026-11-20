@@ -2,16 +2,22 @@
 
 namespace App\Http\Controllers\Api\V1\Store;
 
+use App\Actions\Commerce\CancelOrder;
 use App\Actions\Commerce\SyncOnlinePayment;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Exceptions\OrderNotCancellableException;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Order;
+use App\Services\Commerce\InventoryService;
+use App\Support\Commerce\CustomerOrderCancellation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class OrderController extends Controller
@@ -62,5 +68,44 @@ class OrderController extends Controller
         }
 
         return $this->respond(new OrderResource($order->loadMissing(['items.productVariant', 'items.product.media', 'latestPayment'])));
+    }
+
+    /**
+     * The buyer cancels their own unpaid order (app "Cancelar pedido"):
+     * reserved stock and a reserved coupon are released through CancelOrder,
+     * the same path as automatic expiry. Under a row lock, and re-checked
+     * there, so a concurrent payment or expiry can never interleave. A paid
+     * order, or one with a card attempt that may still complete (3-D
+     * Secure), answers 409 ORDER_NOT_CANCELLABLE.
+     */
+    public function cancel(Request $request, Order $order, CancelOrder $cancelOrder, InventoryService $inventory): JsonResponse
+    {
+        abort_unless($order->user_id === $this->sanctumUser($request)->id, 403);
+
+        $cancelled = DB::transaction(function () use ($order, $cancelOrder, $inventory) {
+            $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->status === OrderStatus::Cancelled) {
+                return $locked; // Idempotent: a second tap is not an error.
+            }
+
+            if (! CustomerOrderCancellation::allowed($locked, $locked->latestPayment()->first())) {
+                return null;
+            }
+
+            $cancelled = $cancelOrder->handle($locked, $inventory->defaultLocation());
+
+            activity('commerce')->performedOn($cancelled)->causedBy(request()->user())
+                ->event('order.cancelled_by_customer')
+                ->log(__('El cliente canceló su pedido sin pagar.'));
+
+            return $cancelled;
+        });
+
+        if ($cancelled === null) {
+            throw new OrderNotCancellableException;
+        }
+
+        return $this->respond(new OrderResource($cancelled->load(['items.productVariant', 'items.product.media', 'latestPayment'])), __('Pedido cancelado.'));
     }
 }

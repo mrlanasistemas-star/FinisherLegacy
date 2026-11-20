@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Support\Commerce\AppPurchasePolicy;
+use App\Support\Commerce\CustomerOrderCancellation;
 use App\Support\Commerce\OrderPaymentState;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -47,6 +48,8 @@ class OrderResource extends JsonResource
             'subtotal_minor' => $this->subtotal_minor,
             'discount_minor' => $this->discount_minor,
             'tax_minor' => $this->tax_minor,
+            // Home delivery charge frozen at checkout (0 for pickup / free).
+            'shipping_minor' => (int) ($this->shipping_minor ?? 0),
             'total_minor' => $this->total_minor,
             'currency' => $this->currency,
             'coupon_code' => $this->coupon_code,
@@ -62,8 +65,39 @@ class OrderResource extends JsonResource
                 'paid_at' => $latest->paid_at?->toIso8601String(),
                 'failed_at' => $latest->failed_at?->toIso8601String(),
             ],
-            'delivery' => $this->customer_snapshot['delivery'] ?? null,
+            'delivery' => $this->deliveryData(),
+            // Carrier and tracking number once the team ships it (admin).
+            'shipment' => $this->tracking_number === null && $this->shipped_at === null && $this->delivered_at === null ? null : [
+                'carrier' => $this->carrier,
+                'tracking_number' => $this->tracking_number,
+                'shipped_at' => $this->shipped_at?->toIso8601String(),
+                'delivered_at' => $this->delivered_at?->toIso8601String(),
+            ],
+            // The buyer may cancel it (POST /orders/{uuid}/cancel): never
+            // paid and no card attempt that could still complete.
+            'cancellable' => CustomerOrderCancellation::allowed($this->resource, $latest),
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
+        ];
+    }
+
+    /**
+     * `{method, address}` — the Order columns (set at checkout) win over the
+     * customer snapshot older orders only had.
+     *
+     * @return array{method: string, address: array<string, mixed>|null}|null
+     */
+    private function deliveryData(): ?array
+    {
+        $snapshot = $this->customer_snapshot['delivery'] ?? null;
+        $method = $this->delivery_method?->value ?? ($snapshot['method'] ?? null);
+
+        if ($method === null) {
+            return null;
+        }
+
+        return [
+            'method' => $method,
+            'address' => $this->shipping_address ?: ($snapshot['address'] ?? null),
         ];
     }
 

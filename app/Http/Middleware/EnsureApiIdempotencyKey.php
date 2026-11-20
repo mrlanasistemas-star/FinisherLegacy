@@ -45,7 +45,11 @@ class EnsureApiIdempotencyKey
 
             $response = $next($request);
 
-            if ($response->getStatusCode() < 500) {
+            // Only a successful write is remembered. A 4xx (validation, sold
+            // out, expired coupon…) has no side effects, and replaying it
+            // would pin the client to a stale error after the buyer fixes
+            // the cart or the form and retries with the same key.
+            if ($response->isSuccessful()) {
                 $this->record($actor, $route, $key, $response);
             }
 

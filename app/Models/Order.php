@@ -25,7 +25,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable([
     'uuid', 'order_number', 'user_id', 'athlete_id', 'event_edition_id',
     'status', 'payment_status', 'fulfillment_status',
-    'subtotal_minor', 'discount_minor', 'tax_minor', 'total_minor', 'currency',
+    'subtotal_minor', 'discount_minor', 'tax_minor', 'shipping_minor', 'total_minor', 'currency',
     'coupon_id', 'coupon_code', 'coupon_name',
     'customer_snapshot', 'confirmed_at', 'cancelled_at', 'completed_at',
     'sales_channel', 'ally_id', 'inventory_location_id', 'seller_user_id', 'delivery_method', 'shipping_address',
@@ -45,6 +45,7 @@ class Order extends Model
             'subtotal_minor' => 'integer',
             'discount_minor' => 'integer',
             'tax_minor' => 'integer',
+            'shipping_minor' => 'integer',
             'total_minor' => 'integer',
             'customer_snapshot' => 'array',
             'confirmed_at' => 'datetime',

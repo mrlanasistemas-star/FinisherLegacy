@@ -4,6 +4,7 @@ namespace App\Actions\Commerce;
 
 use App\Actions\LegacyPlates\CreateLegacyPlateEntitlement;
 use App\Enums\CouponRedemptionStatus;
+use App\Enums\DeliveryMethod;
 use App\Enums\FulfillmentStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
@@ -30,6 +31,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Services\Commerce\InventoryService;
 use App\Support\CodeGenerator;
+use App\Support\Commerce\ShippingRates;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -149,7 +151,14 @@ class CheckoutCart
             }
 
             $discount = $this->resolveDiscount->handle($coupon, $subtotal, $coupon?->eligibleSubtotal($lineTotalsByProduct));
-            $total = max($subtotal - $discount, 0);
+
+            // Delivery comes from what the buyer chose (web form or app
+            // body); shipping is priced here, server-side, and frozen on
+            // the Order — the amount OpenPay charges is always total_minor.
+            $deliveryMethod = DeliveryMethod::tryFrom((string) data_get($customerSnapshot, 'delivery.method'));
+            $shippingAddress = $deliveryMethod === DeliveryMethod::Shipping ? data_get($customerSnapshot, 'delivery.address') : null;
+            $shipping = ShippingRates::feeFor($deliveryMethod, max($subtotal - $discount, 0));
+            $total = max($subtotal - $discount, 0) + $shipping;
 
             $order = Order::create([
                 'uuid' => (string) Str::uuid(),
@@ -163,7 +172,10 @@ class CheckoutCart
                 'subtotal_minor' => $subtotal,
                 'discount_minor' => $discount,
                 'tax_minor' => 0,
+                'shipping_minor' => $shipping,
                 'total_minor' => $total,
+                'delivery_method' => $deliveryMethod,
+                'shipping_address' => is_array($shippingAddress) ? $shippingAddress : null,
                 'currency' => $cart->currency,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
