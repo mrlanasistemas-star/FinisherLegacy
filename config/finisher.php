@@ -174,10 +174,11 @@ return [
         'default_gateway' => env('FINISHER_PAYMENT_GATEWAY', 'openpay'),
 
         // Gateway for `POST /api/v1/orders/{uuid}/payments/online` when the
-        // client doesn't name one. Stripe: its official React Native SDK
-        // (PaymentSheet) keeps card data off Laravel entirely, and its
-        // PaymentIntents can be resumed/synced (ResumablePaymentGateway).
-        'api_gateway' => env('FINISHER_API_PAYMENT_GATEWAY', 'stripe'),
+        // client doesn't name one. OpenPay is the only live gateway (the app
+        // pays physical goods through the one-time web checkout
+        // `/pago/app/{token}`); Stripe stays selectable only for reconciling
+        // historical charges.
+        'api_gateway' => env('FINISHER_API_PAYMENT_GATEWAY', 'openpay'),
 
         'merchant_display_name' => env('FINISHER_MERCHANT_DISPLAY_NAME', 'Finisher Legacy'),
 

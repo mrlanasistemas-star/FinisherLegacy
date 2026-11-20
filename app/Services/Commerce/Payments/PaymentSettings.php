@@ -221,7 +221,7 @@ class PaymentSettings
 
         return [
             'default_gateway' => (string) ($config['default_gateway'] ?? 'openpay'),
-            'api_gateway' => (string) ($config['api_gateway'] ?? 'stripe'),
+            'api_gateway' => (string) ($config['api_gateway'] ?? 'openpay'),
             'openpay' => [
                 'merchant_id' => $openpay['merchant_id'] ?? null,
                 'public_key' => $openpay['public_key'] ?? null,
