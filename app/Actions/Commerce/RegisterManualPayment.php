@@ -3,9 +3,11 @@
 namespace App\Actions\Commerce;
 
 use App\Enums\OrderPaymentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentProvider;
 use App\Enums\PaymentStatus;
+use App\Exceptions\OrderNotPayableException;
 use App\Exceptions\PaymentAlreadyRecordedException;
 use App\Exceptions\PaymentAmountMismatchException;
 use App\Models\Order;
@@ -34,15 +36,18 @@ class RegisterManualPayment
             throw new InvalidArgumentException('Método de pago manual no soportado: '.$method->value);
         }
 
-        if ($order->payment_status === OrderPaymentStatus::Paid) {
-            throw new PaymentAlreadyRecordedException;
-        }
+        $this->guardPayable($order);
 
         if ($amountMinor !== $order->total_minor) {
             throw new PaymentAmountMismatchException;
         }
 
         return DB::transaction(function () use ($order, $method, $amountMinor, $actor, $reference, $notes) {
+            // Re-read under a row lock: a double click (or two operators at
+            // once) must record exactly one payment, never two.
+            $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $this->guardPayable($order);
+
             $payment = Payment::create([
                 'uuid' => (string) Str::uuid(),
                 'order_id' => $order->id,
@@ -61,5 +66,23 @@ class RegisterManualPayment
 
             return $payment->fresh();
         });
+    }
+
+    /**
+     * Only an open order still waiting for its money can receive a manual
+     * payment. A cancelled order already released its stock and coupon, and
+     * a refunded one already gave the money back — marking either "paid"
+     * would desync inventory and accounting.
+     */
+    private function guardPayable(Order $order): void
+    {
+        if ($order->payment_status === OrderPaymentStatus::Paid) {
+            throw new PaymentAlreadyRecordedException;
+        }
+
+        if (in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Completed], true)
+            || in_array($order->payment_status, [OrderPaymentStatus::Refunded, OrderPaymentStatus::PartiallyRefunded, OrderPaymentStatus::Cancelled], true)) {
+            throw new OrderNotPayableException;
+        }
     }
 }
