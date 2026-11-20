@@ -13,6 +13,7 @@ use App\Models\PortraitDesign;
 use App\Services\Portrait\PortraitDesigns;
 use App\Services\Portrait\PortraitSpec;
 use App\Services\Portrait\PortraitTemplates;
+use App\Services\Privacy\ContentPin;
 use App\Support\LegacyTags\StoryPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -152,6 +153,8 @@ class PortraitDesignController extends Controller
         $story = LegacyStory::query()->where('public_id', $publicId)->firstOrFail();
 
         abort_unless($story->isOwnedBy($this->sanctumUser($request)), 404);
+        // Content PIN: a locked memory can't be read or edited (423 CONTENT_LOCKED).
+        app(ContentPin::class)->ensureRevealed($story, $request);
 
         return $story;
     }
@@ -162,6 +165,7 @@ class PortraitDesignController extends Controller
 
         // The design's story must still be the caller's (a transferred tag moves its designs with it).
         abort_unless($design->story !== null && $design->story->isOwnedBy($this->sanctumUser($request)), 404);
+        app(ContentPin::class)->ensureRevealed($design->story, $request);
 
         return $design;
     }
