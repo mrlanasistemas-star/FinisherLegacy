@@ -47,7 +47,9 @@ class ShareWorkoutAsMoment
                 'metrics' => array_filter([
                     'title' => $sportName !== null ? __($sportName) : __('Entrenamiento'),
                     'distance_km' => $locked->distance_m !== null && $locked->distance_m > 0 ? round($locked->distance_m / 1000, 2) : null,
-                    'duration_seconds' => $locked->duration_s > 0 ? $locked->duration_s : null,
+                    // Moving time (pauses excluded) when known, so the pace the
+                    // moment derives matches the workout's own pace.
+                    'duration_seconds' => ($locked->moving_s ?? 0) > 0 ? $locked->moving_s : ($locked->duration_s > 0 ? $locked->duration_s : null),
                 ], fn ($value) => $value !== null),
             ]);
 

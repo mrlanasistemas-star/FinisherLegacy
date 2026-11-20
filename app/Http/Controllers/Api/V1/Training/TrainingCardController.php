@@ -118,7 +118,10 @@ class TrainingCardController extends Controller
         }
 
         return [
-            'available' => $variant !== null && $price !== null && $price->amountMinor > 0,
+            // Sellable only when priced AND in stock, so the app never offers a
+            // "buy" button that the cart would then reject as sold out.
+            'available' => $variant !== null && $price !== null && $price->amountMinor > 0 && $variant->isAvailable(),
+            'in_stock' => $variant?->isAvailable() ?? false,
             'product_slug' => CheerCards::PRODUCT_SLUG,
             'product_variant_uuid' => $variant?->uuid,
             'name' => $product?->name,

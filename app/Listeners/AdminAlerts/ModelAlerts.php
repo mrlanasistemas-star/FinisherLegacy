@@ -8,6 +8,7 @@ use App\Enums\AdminAlertCategory;
 use App\Enums\ContactMessageType;
 use App\Enums\InventoryLotStatus;
 use App\Enums\LegacyTagEventType;
+use App\Enums\LegacyTagPurpose;
 use App\Enums\NotificationType;
 use App\Enums\PaymentStatus;
 use App\Enums\SupportCaseStatus;
@@ -66,11 +67,16 @@ class ModelAlerts
                 $owner = $tag->owner?->user;
 
                 if ($owner !== null) {
+                    // A Tarjeta de ánimo has no story: its copy talks about cheers instead.
+                    $isCheerCard = $tag->purpose === LegacyTagPurpose::Cheer;
+
                     $this->customer->handle(
                         $owner,
                         // Closures: written in the owner's language (SendAthleteNotification).
-                        fn (): string => __('Tu Tag está activo'),
-                        fn (): string => __('Activaste tu :product. Ya puedes contar tu historia desde la app.', ['product' => $product]),
+                        fn (): string => $isCheerCard ? __('Tu tarjeta de ánimo está activa') : __('Tu Tag está activo'),
+                        fn (): string => $isCheerCard
+                            ? __('Activaste tu :product. Cada vez que alguien la acerque a su teléfono podrá dejarte un mensaje de ánimo.', ['product' => $product])
+                            : __('Activaste tu :product. Ya puedes contar tu historia desde la app.', ['product' => $product]),
                         NotificationType::TagActivated,
                         '/t/'.$tag->public_code,
                         ['tag_uuid' => $tag->uuid],
