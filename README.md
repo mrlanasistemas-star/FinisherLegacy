@@ -31,7 +31,7 @@ la única fuente de verdad para ambos clientes.
 | [docs/PUBLICACION_TIENDAS.md](docs/PUBLICACION_TIENDAS.md) | Google Play y App Store (enlaza a `docs/store/` del repo móvil). |
 | [docs/PENDIENTES_EXTERNOS.md](docs/PENDIENTES_EXTERNOS.md) | Lo que no se resuelve con código: cuentas, llaves, decisiones, pruebas en hardware. |
 | [docs/CIERRE_FINAL.md](docs/CIERRE_FINAL.md) | Estado de cierre: funciones, pruebas, migraciones, commits. |
-| `docs/GUIA_DE_LA_APP.md` | Recorrido de la app para usuarios (pendiente de redactar). |
+| [docs/GUIA_DE_LA_APP.md](docs/GUIA_DE_LA_APP.md) | Recorrido de la app paso a paso con capturas, para el dueño, soporte y revisores de las tiendas. |
 | `docs/renovacion/*` | Detalle por módulo: pagos, compras dentro de la app, NFC, entrenamientos, familia, NIP, portarretrato, notificaciones, idiomas, Synology… |
 | `docs/api/v1.md`, `docs/api/openapi.yaml` | Contrato de la API. |
 | `docs/historico/` | Documentos de productos retirados (placas metálicas, Device API, Stripe en la app). **No son decisiones vigentes.** |
