@@ -3695,5 +3695,12 @@
     "Pausó su actividad o está en una zona sin señal.": "They paused their activity or are in an area with no signal.",
     "Solo puedes compartir un entrenamiento en curso.": "You can only share a workout in progress.",
     "Este entrenamiento no usa GPS, así que no hay ubicación que compartir.": "This workout doesn't use GPS, so there's no location to share.",
-    "Entrenamiento · :sport": "Workout · :sport"
+    "Entrenamiento · :sport": "Workout · :sport",
+    "Este pago ya fue reembolsado.": "This payment has already been refunded.",
+    "OpenPay no está configurado. Revisa Configuración → Pagos.": "OpenPay is not configured. Check Settings → Payments.",
+    "OpenPay rechazó el reembolso: :reason": "OpenPay rejected the refund: :reason",
+    "OpenPay reporta un monto distinto al del pago. Revisa el cargo en el panel de OpenPay.": "OpenPay reports a different amount than the payment. Check the charge in the OpenPay dashboard.",
+    "OpenPay todavía no confirma el reembolso. El pedido se actualizará en cuanto OpenPay lo notifique.": "OpenPay has not confirmed the refund yet. The order will update as soon as OpenPay notifies it.",
+    "Solo los pagos con tarjeta por OpenPay se reembolsan desde aquí.": "Only OpenPay card payments can be refunded from here.",
+    "Solo se puede reembolsar un pago confirmado.": "Only a confirmed payment can be refunded."
 }
