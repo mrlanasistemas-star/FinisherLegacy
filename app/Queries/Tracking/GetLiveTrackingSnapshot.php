@@ -114,7 +114,7 @@ class GetLiveTrackingSnapshot
 
         return [
             'athlete' => [
-                'display_name' => $name !== '' ? $name : (trim((string) ($athlete?->full_name ?? $user?->name)) ?: 'Atleta'),
+                'display_name' => $name !== '' ? $name : (trim((string) ($athlete->full_name ?? $user?->name)) ?: 'Atleta'),
                 'avatar_url' => $photo ? Storage::disk('public')->url($photo) : null,
             ],
             'event' => [

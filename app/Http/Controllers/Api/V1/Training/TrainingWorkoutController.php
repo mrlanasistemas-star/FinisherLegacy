@@ -122,11 +122,11 @@ class TrainingWorkoutController extends Controller
             );
         }
 
-        return $this->respond(
-            WorkoutPresenter::present($result['workout']),
-            $result['created'] ? __('Entrenamiento guardado.') : null,
-            status: $result['created'] ? 201 : 200,
-        );
+        $data = WorkoutPresenter::present($result['workout']);
+
+        return $result['created']
+            ? $this->respond($data, __('Entrenamiento guardado.'), status: 201)
+            : $this->respond($data);
     }
 
     /** `GET training/workouts/{uuid}` — includes the route polyline. */
@@ -162,7 +162,9 @@ class TrainingWorkoutController extends Controller
 
         $workout->save();
 
-        return $this->respond(WorkoutPresenter::present($workout), $workout->isInProgress() ? null : __('Cambios guardados.'));
+        return $workout->isInProgress()
+            ? $this->respond(WorkoutPresenter::present($workout))
+            : $this->respond(WorkoutPresenter::present($workout), __('Cambios guardados.'));
     }
 
     /** `POST training/workouts/{uuid}/finish` — idempotent. */

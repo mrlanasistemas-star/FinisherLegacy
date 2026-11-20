@@ -20,3 +20,11 @@ parameters:
             # strings, not something to change in vendor-default config.
             message: '~Parameter #2 \$string of function explode expects string, bool\|string given\.~'
             path: config/sanctum.php
+        -
+            # Sanctum's PHPDoc types currentAccessToken() as a PersonalAccessToken,
+            # but a first-party cookie (SPA/web) session gets a TransientToken at
+            # runtime. The content-PIN grant is bound to a real Bearer token id, so
+            # the instanceof check is required and must stay.
+            identifier: instanceof.alwaysTrue
+            path: app/Services/Privacy/ContentPin.php
+            count: 2

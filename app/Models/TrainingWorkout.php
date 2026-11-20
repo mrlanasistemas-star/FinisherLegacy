@@ -5,11 +5,11 @@ namespace App\Models;
 use App\Enums\WorkoutSource;
 use App\Enums\WorkoutStatus;
 use App\Enums\WorkoutVisibility;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -26,8 +26,8 @@ use Illuminate\Support\Str;
  * @property WorkoutSource $source
  * @property WorkoutStatus $status
  * @property bool $uses_gps
- * @property Carbon $started_at
- * @property Carbon|null $ended_at
+ * @property CarbonImmutable $started_at
+ * @property CarbonImmutable|null $ended_at
  * @property int $duration_s
  * @property int|null $moving_s
  * @property int|null $distance_m
@@ -41,8 +41,8 @@ use Illuminate\Support\Str;
  * @property string|null $notes
  * @property WorkoutVisibility $visibility
  * @property int|null $legacy_moment_id
- * @property Carbon|null $last_heartbeat_at
- * @property Carbon|null $auto_closed_at
+ * @property CarbonImmutable|null $last_heartbeat_at
+ * @property CarbonImmutable|null $auto_closed_at
  */
 #[Fillable([
     'uuid', 'user_id', 'athlete_id', 'sport_id', 'client_uuid', 'source', 'status', 'uses_gps',

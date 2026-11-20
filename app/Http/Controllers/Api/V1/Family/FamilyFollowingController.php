@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Family;
 use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
+use App\Models\AthleteFamilyLink;
 use App\Models\TrackingShare;
 use App\Queries\Tracking\GetLiveTrackingSnapshot;
 use App\Support\Family\FamilyPresenter;
@@ -51,13 +52,13 @@ class FamilyFollowingController extends Controller
             return [
                 'uuid' => $share->uuid,
                 'athlete' => FamilyPresenter::person($share->familyLink?->athleteUser),
-                'event_name' => $share->eventParticipant?->eventEdition?->event->name ?? $share->eventParticipant?->eventEdition?->name
+                'event_name' => $share->eventParticipant->eventEdition->event->name ?? $share->eventParticipant->eventEdition->name
                     // A followed live training workout: its activity instead of an event.
                     ?? (($sport = $session?->trainingWorkout?->sport?->name) !== null ? __('Entrenamiento · :sport', ['sport' => __($sport)]) : null),
                 'status' => $lastAt !== null && $lastAt->lt(now()->subSeconds($pausedAfter)) ? 'paused' : 'active',
                 'started_at' => $session?->started_at->toIso8601String(),
                 'last_update_at' => $lastAt?->toIso8601String(),
-                'distance_m' => $session?->distance_m ?? 0,
+                'distance_m' => $session->distance_m ?? 0,
                 'expires_at' => $share->expires_at->toIso8601String(),
                 'ends_with_session' => $share->ends_with_session,
             ];
@@ -102,7 +103,7 @@ class FamilyFollowingController extends Controller
     {
         return TrackingShare::query()
             ->where('audience', TrackingShare::AUDIENCE_FAMILY)
-            ->whereHas('familyLink', fn ($q) => $q->where('contact_user_id', $userId)->accepted());
+            ->whereIn('athlete_family_link_id', AthleteFamilyLink::query()->where('contact_user_id', $userId)->accepted()->select('id'));
     }
 
     private function error(int $status, string $code, string $message): JsonResponse

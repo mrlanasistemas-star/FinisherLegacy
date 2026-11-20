@@ -32,7 +32,7 @@ class CreateTrackingShare
         $share = TrackingShare::create([
             'uuid' => (string) Str::uuid(),
             // Null only for a live training-workout session, which always pins the share to itself.
-            'event_participant_id' => $participant?->id ?? $session?->event_participant_id,
+            'event_participant_id' => $participant->id ?? $session?->event_participant_id,
             'tracking_session_id' => $session?->id,
             'token_hash' => TrackingShare::hashToken($token),
             'channel_key' => Str::random(40),

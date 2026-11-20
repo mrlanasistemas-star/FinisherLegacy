@@ -97,7 +97,7 @@ class CartController extends Controller
         $edition = isset($data['event_edition_id']) ? EventEdition::query()->whereKey($data['event_edition_id'])->first() : null;
         $metadata = isset($data['legacy_plate_model_id']) ? ['legacy_plate_model_id' => $data['legacy_plate_model_id']] : [];
         // "Pedir este portarretrato" from the builder: the saved design travels with the line.
-        $metadata += PortraitDesigns::cartMetadata($request->user(), isset($data['portrait_design_id']) ? PortraitDesign::query()->find($data['portrait_design_id']) : null, $variant);
+        $metadata += PortraitDesigns::cartMetadata($request->user(), isset($data['portrait_design_id']) ? PortraitDesign::query()->whereKey($data['portrait_design_id'])->first() : null, $variant);
 
         $cart = $getOrCreateCart->handle($request->user(), null);
 

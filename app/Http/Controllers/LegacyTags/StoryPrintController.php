@@ -274,7 +274,7 @@ class StoryPrintController extends Controller
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      */
     private function designsOf(LegacyStory $story, PortraitDesigns $designs): array
     {

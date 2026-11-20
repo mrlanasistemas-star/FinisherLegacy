@@ -107,7 +107,7 @@ class OrderProgress
     {
         // The column (set at checkout since 2026-11-20) first; older orders
         // only kept it in the snapshot, under delivery.method.
-        $method = $order->delivery_method?->value
+        $method = $order->delivery_method->value
             ?? data_get($order->customer_snapshot, 'delivery.method')
             ?? data_get($order->customer_snapshot, 'delivery_method');
 

@@ -23,8 +23,7 @@ trait PinProtection
 {
     public static function bootPinProtection(): void
     {
-        static::saving(function (Model $model) {
-            /** @var Model&PinProtection $model */
+        static::saving(function (self $model) {
             if ($model->getAttribute('pin_protected')) {
                 $model->applyPinPrivacy();
             }

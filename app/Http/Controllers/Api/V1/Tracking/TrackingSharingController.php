@@ -134,7 +134,7 @@ class TrackingSharingController extends Controller
             'session' => [
                 'uuid' => $session->uuid,
                 'event_participant_id' => $session->event_participant_id,
-                'event_name' => $edition?->event->name ?? $edition?->name ?? $this->workoutTitle($session),
+                'event_name' => $edition->event->name ?? $edition->name ?? $this->workoutTitle($session),
                 'training_workout_uuid' => $session->trainingWorkout?->uuid,
                 'status' => $session->status->value,
                 'started_at' => $session->started_at->toIso8601String(),

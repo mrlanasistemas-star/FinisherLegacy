@@ -366,8 +366,8 @@ final class PortraitDesigns
         }
 
         return [
-            'uuid' => is_array($snapshot) ? ($snapshot['uuid'] ?? null) : $design?->uuid,
-            'title' => is_array($snapshot) ? ($snapshot['title'] ?? null) : $design?->title,
+            'uuid' => is_array($snapshot) ? ($snapshot['uuid'] ?? null) : $design->uuid,
+            'title' => is_array($snapshot) ? ($snapshot['title'] ?? null) : $design->title,
             'template_label' => $this->templateLabel($template),
             'thumb_url' => $file !== null && $file->isServable() ? ($file->url('card') ?? $file->url()) : null,
         ];

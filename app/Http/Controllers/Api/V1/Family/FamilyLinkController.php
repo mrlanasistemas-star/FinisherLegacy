@@ -53,7 +53,7 @@ class FamilyLinkController extends Controller
         $following = TrackingShare::query()
             ->usable()
             ->where('audience', TrackingShare::AUDIENCE_FAMILY)
-            ->whereHas('familyLink', fn ($q) => $q->where('contact_user_id', $user->id)->accepted())
+            ->whereIn('athlete_family_link_id', AthleteFamilyLink::query()->where('contact_user_id', $user->id)->accepted()->select('id'))
             ->count();
 
         return $this->respond([

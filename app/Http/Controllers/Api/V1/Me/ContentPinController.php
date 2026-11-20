@@ -182,6 +182,7 @@ class ContentPinController extends Controller
             'story' => $athleteId === null ? null : LegacyStory::query()->where('public_id', $id)->where('athlete_id', $athleteId)->first(),
             'moment' => LegacyMoment::query()->where('uuid', $id)->where('user_id', $user->id)->first(),
             'media' => $athleteId === null ? null : AthleteEventMedia::query()->where('uuid', $id)->where('athlete_id', $athleteId)->first(),
+            default => null,
         };
 
         abort_if($item === null, 404);

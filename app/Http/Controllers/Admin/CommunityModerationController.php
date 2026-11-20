@@ -238,7 +238,7 @@ class CommunityModerationController extends Controller
      */
     private function report(array $data): ?Report
     {
-        return isset($data['report_id']) ? Report::query()->find($data['report_id']) : null;
+        return isset($data['report_id']) ? Report::query()->whereKey($data['report_id'])->first() : null;
     }
 
     private function note(Request $request): ?string

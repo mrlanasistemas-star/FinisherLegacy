@@ -56,7 +56,7 @@ class OrderPortraitController extends Controller
 
         $asPdf = ($data['formato'] ?? 'pdf') === 'pdf';
         $order = $item->order;
-        $name = 'portarretrato-'.Str::slug((string) ($order?->order_number ?? $item->id)).'-'.$item->id.'-'.$snapshot['template'].($printShop ? '-imprenta' : '').($asPdf ? '.pdf' : '.jpg');
+        $name = 'portarretrato-'.Str::slug((string) ($order->order_number ?? $item->id)).'-'.$item->id.'-'.$snapshot['template'].($printShop ? '-imprenta' : '').($asPdf ? '.pdf' : '.jpg');
 
         return response($asPdf ? $pdf->wrap($result) : $result->jpeg, 200, [
             'Content-Type' => $asPdf ? 'application/pdf' : 'image/jpeg',

@@ -89,7 +89,7 @@ class OrderResource extends JsonResource
     private function deliveryData(): ?array
     {
         $snapshot = $this->customer_snapshot['delivery'] ?? null;
-        $method = $this->delivery_method?->value ?? ($snapshot['method'] ?? null);
+        $method = $this->delivery_method->value ?? ($snapshot['method'] ?? null);
 
         if ($method === null) {
             return null;
