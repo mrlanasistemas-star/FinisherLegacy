@@ -30,6 +30,12 @@ import { toast } from 'vue-sonner';
 import I18nT from '@/components/i18n/I18nT.vue';
 import InputError from '@/components/InputError.vue';
 import PortraitCropper from '@/components/portrait/PortraitCropper.vue';
+import PortraitDesignPanel from '@/components/portrait/PortraitDesignPanel.vue';
+import type {
+    PortraitDesign,
+    PortraitDraft,
+    PortraitProductInfo,
+} from '@/components/portrait/PortraitDesignPanel.vue';
 import PortraitFrame from '@/components/portrait/PortraitFrame.vue';
 import type {
     PortraitCrop,
@@ -80,6 +86,12 @@ const props = defineProps<{
     maxUploadMb: number;
     bleedMm: number;
     isAlbum: boolean;
+    /** Saved personalizations of this memory (PortraitDesigns::toArray). */
+    designs: PortraitDesign[];
+    /** The frame product to order a design, or null when not in the catalog. */
+    product: PortraitProductInfo;
+    /** `?diseno={uuid}`: open that saved design. */
+    editDesign: string | null;
 }>();
 
 const { t } = useI18n();
@@ -198,6 +210,7 @@ async function useFile(file: File | undefined) {
     }
 
     ownFile.value = file;
+    crop.value = null;
     ownSize.value = null;
     ownPreview.value = null;
     ownUrl.value = URL.createObjectURL(file);
@@ -219,6 +232,8 @@ function onDrop(event: DragEvent) {
 function chooseStoryPhoto(id: number) {
     errors.value = {};
     photoId.value = id;
+    // A new photo starts centred (the cropper keeps an existing crop on mount).
+    crop.value = null;
     ownFile.value = null;
     ownPreview.value = null;
 
@@ -250,6 +265,66 @@ const form = reactive<PortraitForm>({
     dedication: props.defaults.dedication ?? '',
     withDedication: !!props.defaults.dedication,
 });
+
+// ── Saved personalizations ──────────────────────────────────────────────
+const FIELD_KEYS = [
+    'name',
+    'event',
+    'details',
+    'time',
+    'distance',
+    'position',
+    'pace',
+    'bib',
+    'category',
+] as const;
+
+/** The saved design being edited (null = a new one). */
+const editing = ref<string | null>(null);
+/** Bumped to remount the cropper so it rebuilds its window from a loaded crop. */
+const cropperKey = ref(0);
+
+/** What "Guardar" persists: only a photo of the album can be saved. */
+const draft = computed<PortraitDraft>(() => ({
+    template: templateKey.value,
+    photoUuid: ownUrl.value === null ? (storyPhoto.value?.uuid ?? null) : null,
+    crop: crop.value,
+    fields: {
+        ...Object.fromEntries(FIELD_KEYS.map((k) => [k, form[k].trim()])),
+        dedication: form.withDedication ? form.dedication.trim() : '',
+    },
+}));
+
+/** Puts a saved design back into the builder (photo, crop, template, words). */
+function loadDesign(design: PortraitDesign) {
+    const photo = props.photos.find((p) => p.uuid === design.photo_uuid);
+
+    if (photo) {
+        chooseStoryPhoto(photo.id);
+    }
+
+    if (props.templates.some((tpl) => tpl.value === design.template)) {
+        templateKey.value = design.template;
+    }
+
+    crop.value = design.crop;
+    cropperKey.value++;
+
+    for (const key of FIELD_KEYS) {
+        form[key] = design.fields[key] ?? '';
+    }
+
+    form.dedication = design.fields.dedication ?? '';
+    form.withDedication = !!design.fields.dedication;
+    editing.value = design.uuid;
+    step.value = 0;
+}
+
+const initialDesign = props.designs.find((d) => d.uuid === props.editDesign);
+
+if (initialDesign) {
+    loadDesign(initialDesign);
+}
 
 /** What the crop prints at, like PortraitComposer computes it. */
 const effectiveDpi = computed(() => {
@@ -778,6 +853,7 @@ const labelClass = 'text-sm font-medium';
                         <div class="mt-5">
                             <PortraitCropper
                                 v-if="sourceUrl && imageAspect"
+                                :key="cropperKey"
                                 v-model="crop"
                                 :src="sourceUrl"
                                 :aspect="template.aspect"
@@ -1365,6 +1441,17 @@ const labelClass = 'text-sm font-medium';
                             </div>
                         </Transition>
                     </section>
+
+                    <!-- Save / edit / order the personalization -->
+                    <PortraitDesignPanel
+                        v-if="current === 'download' || designs.length"
+                        v-model:editing="editing"
+                        :story-id="story.public_id"
+                        :designs="designs"
+                        :product="product"
+                        :draft="draft"
+                        @load="loadDesign"
+                    />
 
                     <!-- Step navigation -->
                     <div class="flex items-center justify-between gap-3">

@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Me\PortraitDesignController;
 use App\Http\Controllers\Api\V1\Me\StoryEditorController;
 use App\Http\Controllers\Api\V1\Me\StoryMediaController;
+use App\Http\Controllers\Api\V1\Me\StoryShareController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +26,20 @@ Route::prefix('v1/me')->name('api.v1.me.')->middleware(['auth:sanctum', 'user.to
         Route::post('media', [StoryMediaController::class, 'store'])->middleware('throttle:uploads')->name('media.store');
         Route::post('media/reorder', [StoryMediaController::class, 'reorder'])->name('media.reorder');
         Route::post('media/import', [StoryMediaController::class, 'import'])->middleware('throttle:30,1')->name('media.import');
+        Route::patch('media/{uuid}', [StoryMediaController::class, 'update'])->whereUuid('uuid')->middleware('throttle:60,1')->name('media.update');
         Route::delete('media/{uuid}', [StoryMediaController::class, 'destroy'])->whereUuid('uuid')->name('media.destroy');
+
+        // Recipient links ("Para mamá"), same as the web editor.
+        Route::get('shares', [StoryShareController::class, 'index'])->name('shares.index');
+        Route::post('shares', [StoryShareController::class, 'store'])->middleware('throttle:30,1')->name('shares.store');
+        Route::delete('shares/{share}', [StoryShareController::class, 'destroy'])->whereNumber('share')->name('shares.destroy');
+
+        // Portarretrato personalization (docs/renovacion/portarretrato.md §Personalización).
+        Route::get('portrait', [PortraitDesignController::class, 'builder'])->name('portrait.show');
+        Route::post('portrait/preview', [PortraitDesignController::class, 'preview'])->middleware('throttle:120,1')->name('portrait.preview');
+        Route::post('portrait-designs', [PortraitDesignController::class, 'store'])->middleware('throttle:30,1')->name('portrait-designs.store');
     });
+
+    Route::patch('portrait-designs/{uuid}', [PortraitDesignController::class, 'update'])->whereUuid('uuid')->middleware('throttle:60,1')->name('portrait-designs.update');
+    Route::delete('portrait-designs/{uuid}', [PortraitDesignController::class, 'destroy'])->whereUuid('uuid')->name('portrait-designs.destroy');
 });

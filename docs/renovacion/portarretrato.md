@@ -107,6 +107,18 @@ Los datos de carrera salen en la fila `stats`, hasta cuatro, en este orden: dist
 - `PortraitOptions` (sangrado, marcas, validar resolución), `PortraitSpec` (medida y dpi; `scaledToWidth` para vistas previas), `PortraitPdf`, `SrgbProfile`, `PortraitAssets`, `PortraitProduct`.
 - Se usa GD siempre, aunque `FINISHER_IMAGE_DRIVER=imagick`, porque el texto se dibuja con `imagettftext`. Un lienzo completo más una foto de 12 MP ocupa ~250 MB: `PORTRAIT_MEMORY_LIMIT` (512M) se sube solo durante el render.
 
+## 3 bis. Personalización guardada y pedido del marco
+
+Lo **digital** (cómo se ve el recuerdo en la app, la web y la página NFC: orden del álbum, portada = primera foto, pies de foto) vive en el recuerdo mismo. Lo **físico** (la foto impresa del marco) es una **personalización guardada**: tabla `portrait_designs` (`App\Models\PortraitDesign`, servicio `App\Services\Portrait\PortraitDesigns`).
+
+- Guarda: recuerdo, foto principal (`media_file_id`, una foto del álbum — nunca una copia), recorte, plantilla, textos (`fields`: name, event, details, time, distance, position, pace, bib, category, dedication) y un nombre opcional. Una foto propia subida solo para descargar no se puede guardar.
+- Web: el diseñador muestra «Guarda y pide tu portarretrato» (`PortraitDesignPanel.vue`): guardar, reabrir para editar (`?diseno={uuid}`), eliminar y **Pedir este portarretrato**. Rutas `my-legacy.portrait.designs.{store,update,destroy,order}`.
+- App (`/api/v1/me/...`): `GET stories/{id}/portrait` (fotos, plantillas, textos sugeridos, producto, diseños), `POST stories/{id}/portrait/preview` (vista previa del servidor como data URI), `POST stories/{id}/portrait-designs`, `PATCH|DELETE portrait-designs/{uuid}`.
+- Pedir: el producto del catálogo (`config('portrait.product_slugs')`, su primera variante activa y su precio vigente de `ResolveProductPrice`) entra al carrito con `metadata.portrait_design_id` (web `portrait_design_id`, API `portrait_design_uuid`). Cada diseño es su propia línea. Solo el dueño del recuerdo puede pedirlo y solo con el producto marco.
+- Al cobrar, `CheckoutCart` congela el diseño en `OrderItem.metadata.portrait_design` y marca `last_ordered_at`. Editar o borrar el diseño después no cambia lo que se imprime.
+- Admin → Pedido: la línea muestra la personalización (foto, plantilla, textos, recuerdo) y descarga el archivo de producción **desde la copia congelada**: «Archivo para imprenta (PDF)» con sangrado y marcas, o «Tamaño exacto (JPG)» (`admin.orders.items.portrait`, permiso `orders.view`).
+- Pruebas: `tests/Feature/Portrait/PortraitDesignTest.php`.
+
 ## 4. Notas para el proveedor del marco
 
 Complementan `especificacion-nfc-proveedor.md` (mismo chip y mismas reglas que el Tag):
@@ -128,5 +140,5 @@ Complementan `especificacion-nfc-proveedor.md` (mismo chip y mismas reglas que e
 
 - **Imagen del producto**: es el render conceptual del deck (716 px ampliado a 1200). Muestra una foto y un logotipo de carrera de ejemplo; conviene cambiarla por fotografía real del marco antes de la campaña (Admin → Productos → Imágenes).
 - **Perfil de color de la foto original**: el archivo se etiqueta sRGB, pero GD no convierte fotos que vienen en otro espacio (por ejemplo Display P3 de un iPhone); en esos casos los colores muy saturados pueden variar un poco. Convertir exigiría Imagick con perfiles ICC.
-- **App móvil**: `kind` ya viaja en la página web; si la app debe rotular «Álbum», hay que exponerlo también en `apiStory` (contrato `docs/api/v1.md`).
+- **App móvil**: `kind` ya viaja también en `apiStory` y en el recuerdo editable; la app rotula «Álbum».
 - **Medida definitiva del acrílico**: confirmar con el proveedor el tamaño real de la ventana y, si cambia, ajustar `PORTRAIT_PRINT_*` (las plantillas son proporcionales).

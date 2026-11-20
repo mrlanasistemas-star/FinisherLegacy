@@ -30,6 +30,7 @@ use App\Models\LegacyPlateModel;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Commerce\InventoryService;
+use App\Services\Portrait\PortraitDesigns;
 use App\Support\CodeGenerator;
 use App\Support\Commerce\ShippingRates;
 use Illuminate\Support\Facades\DB;
@@ -133,6 +134,8 @@ class CheckoutCart
                     'price_type' => $price->priceType->value,
                     'event_edition' => $eventEdition,
                     'legacy_plate_model' => $legacyPlateModel,
+                    // Portarretrato personalization: frozen copy for production (PortraitDesigns::snapshot).
+                    'portrait_design' => PortraitDesigns::snapshotForCartItem($item),
                 ];
             }
 
@@ -218,7 +221,7 @@ class CheckoutCart
                     'unit_price_minor' => $line['unit_price_minor'],
                     'line_total_minor' => $line['line_total_minor'],
                     'currency' => $line['currency'],
-                    'metadata' => ['price_type' => $line['price_type']],
+                    'metadata' => ['price_type' => $line['price_type'], ...($line['portrait_design'] !== null ? ['portrait_design' => $line['portrait_design']] : [])],
                 ]);
 
                 // Already validated (event, model, active) in the loop

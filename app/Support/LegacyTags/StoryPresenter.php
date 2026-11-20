@@ -202,6 +202,8 @@ class StoryPresenter
         return [
             'public_id' => $view['public_id'],
             'title' => $view['title'],
+            // `album` for a Portarretrato inteligente, `tag` otherwise (PortraitProduct).
+            'kind' => $view['kind'],
             'is_owner' => $forOwner,
             'event' => [
                 'source' => $race['source'],
@@ -296,6 +298,7 @@ class StoryPresenter
         return [
             'public_id' => $story->public_id,
             'title' => $story->title,
+            'kind' => PortraitProduct::kindFor($story->tag),
             'event_name' => $values['event_name'],
             'distance' => $values['distance'],
             'result_time' => $values['result_time'],

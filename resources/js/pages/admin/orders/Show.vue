@@ -45,6 +45,32 @@ type Item = {
     fulfilled: boolean;
     owned_asset_code: string | null;
     returned_quantity: number;
+    /** Ordered Portarretrato personalization (PortraitDesigns::forAdmin). */
+    portrait_design?: {
+        title: string | null;
+        template_label: string;
+        thumb_url: string | null;
+        photo_available: boolean;
+        fields: Record<string, string>;
+        story_title: string | null;
+        story_url: string | null;
+        snapshot_at: string | null;
+        downloads: { print_shop_pdf: string; frame_jpg: string };
+    } | null;
+};
+
+/** Labels of the words printed on the frame (PortraitDesigns::FIELDS). */
+const portraitFieldLabels: Record<string, string> = {
+    name: 'Nombre',
+    event: 'Carrera',
+    details: 'Lugar y fecha',
+    time: 'Tiempo',
+    distance: 'Distancia',
+    position: 'Lugar',
+    pace: 'Ritmo',
+    bib: 'Número',
+    category: 'Categoría',
+    dedication: 'Dedicatoria',
 };
 
 type Delivery = {
@@ -355,6 +381,87 @@ const addressLine = (delivery: Delivery) =>
                                 :currency="order.currency"
                             />
                         </p>
+                        <!-- Portarretrato: the customer's design, frozen at checkout, for production. -->
+                        <div
+                            v-if="item.portrait_design"
+                            class="mt-3 flex gap-3 rounded-lg border border-fl-gold/30 bg-fl-cream/60 p-3"
+                        >
+                            <img
+                                v-if="item.portrait_design.thumb_url"
+                                :src="item.portrait_design.thumb_url"
+                                alt=""
+                                class="size-16 shrink-0 rounded-md object-cover"
+                            />
+                            <div class="min-w-0 flex-1 text-xs">
+                                <p class="font-semibold text-foreground">
+                                    Personalización ·
+                                    {{
+                                        item.portrait_design.title ||
+                                        item.portrait_design.template_label
+                                    }}
+                                </p>
+                                <p class="text-muted-foreground">
+                                    Plantilla
+                                    {{ item.portrait_design.template_label }}
+                                    <template
+                                        v-if="item.portrait_design.story_url"
+                                    >
+                                        ·
+                                        <a
+                                            :href="item.portrait_design.story_url"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="underline"
+                                            >{{
+                                                item.portrait_design
+                                                    .story_title ?? 'Recuerdo'
+                                            }}</a
+                                        >
+                                    </template>
+                                </p>
+                                <dl
+                                    class="mt-1.5 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5"
+                                >
+                                    <template
+                                        v-for="(value, key) in item
+                                            .portrait_design.fields"
+                                        :key="key"
+                                    >
+                                        <dt class="text-muted-foreground">
+                                            {{ portraitFieldLabels[key] ?? key }}
+                                        </dt>
+                                        <dd class="break-words text-foreground">
+                                            {{ value }}
+                                        </dd>
+                                    </template>
+                                </dl>
+                                <div
+                                    v-if="item.portrait_design.photo_available"
+                                    class="mt-2 flex flex-wrap gap-3"
+                                >
+                                    <a
+                                        :href="
+                                            item.portrait_design.downloads
+                                                .print_shop_pdf
+                                        "
+                                        class="font-medium text-fl-gold-ink underline"
+                                        >Archivo para imprenta (PDF)</a
+                                    >
+                                    <a
+                                        :href="
+                                            item.portrait_design.downloads
+                                                .frame_jpg
+                                        "
+                                        class="font-medium text-fl-gold-ink underline"
+                                        >Tamaño exacto (JPG)</a
+                                    >
+                                </div>
+                                <p v-else class="mt-2 text-amber-800">
+                                    La foto de este diseño ya no está en el
+                                    recuerdo del cliente.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <Badge

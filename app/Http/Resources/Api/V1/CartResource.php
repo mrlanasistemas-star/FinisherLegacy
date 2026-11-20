@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Product;
 use App\Queries\Commerce\GetCartSummary;
+use App\Services\Portrait\PortraitDesigns;
 use App\Support\Collections\TagDesign;
 use App\Support\Commerce\CartSummaryItem;
 use App\Support\Commerce\ShippingRates;
@@ -30,6 +31,9 @@ class CartResource extends JsonResource
             ->whereIn('slug', $summary->items->map(fn (CartSummaryItem $item) => $item->productSlug)->filter()->unique()->values())
             ->get()
             ->keyBy('slug');
+        // Cart line metadata (Portarretrato personalization) by line id.
+        $metadata = $this->resource->items()->pluck('metadata', 'id');
+        $designs = app(PortraitDesigns::class);
 
         return [
             'uuid' => $this->uuid,
@@ -56,6 +60,8 @@ class CartResource extends JsonResource
                 'low_stock' => $item->lowStock,
                 'product_type' => $products->get($item->productSlug)?->type->value,
                 'tag_design' => ($product = $products->get($item->productSlug)) !== null ? TagDesign::forProduct($product) : null,
+                // Additive: the saved Portarretrato design this line will print (or null).
+                'portrait_design' => $designs->summary(self::meta($metadata->get($item->cartItemId))),
             ])->values(),
             'subtotal_minor' => $summary->subtotalMinor,
             'discount_minor' => $summary->discountMinor,
@@ -68,6 +74,18 @@ class CartResource extends JsonResource
             'delivery_options' => ShippingRates::options($summary->totalMinor),
             'last_shipping_address' => $this->lastShippingAddress(),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private static function meta(mixed $value): ?array
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+
+        return is_array($value) ? $value : null;
     }
 
     /**

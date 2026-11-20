@@ -19,6 +19,7 @@ use App\Http\Resources\Api\V1\CartResource;
 use App\Models\CartItem;
 use App\Models\EventEdition;
 use App\Models\ProductVariant;
+use App\Services\Portrait\PortraitDesigns;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,6 +54,8 @@ class CartController extends Controller
         $edition = $request->filled('event_edition_id') ? EventEdition::find($request->integer('event_edition_id')) : null;
         $plateModelId = $request->resolveLegacyPlateModelId();
         $metadata = $plateModelId !== null ? ['legacy_plate_model_id' => $plateModelId] : [];
+        // "Pedir este portarretrato": the saved personalization travels with the line.
+        $metadata += PortraitDesigns::cartMetadata($this->sanctumUser($request), $request->resolvePortraitDesign(), $variant);
 
         $addItem->handle($cart, $variant, $request->integer('quantity'), $edition, $metadata);
 

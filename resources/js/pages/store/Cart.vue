@@ -47,6 +47,13 @@ type CartItem = {
     event_edition_name: string | null;
     connected: boolean;
     product_type: string | null;
+    /** Saved Portarretrato design this line prints (StoryPrintController). */
+    portrait_design?: {
+        uuid: string | null;
+        title: string | null;
+        template_label: string;
+        thumb_url: string | null;
+    } | null;
 };
 
 const props = defineProps<{
@@ -219,6 +226,23 @@ const details = (item: CartItem) =>
                                     class="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-medium"
                                     ><Nfc class="size-3" />
                                     {{ $t('Se guarda en Mi equipo') }}</span
+                                >
+                                <span
+                                    v-if="item.portrait_design"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-fl-gold/40 bg-fl-cream px-2.5 py-0.5 text-xs font-medium text-fl-gold-ink"
+                                    ><img
+                                        v-if="item.portrait_design.thumb_url"
+                                        :src="item.portrait_design.thumb_url"
+                                        alt=""
+                                        class="size-4 rounded-sm object-cover"
+                                    />{{
+                                        $t('Tu diseño: {template}', {
+                                            template:
+                                                item.portrait_design.title ||
+                                                item.portrait_design
+                                                    .template_label,
+                                        })
+                                    }}</span
                                 >
                                 <span
                                     v-if="item.low_stock && item.in_stock"

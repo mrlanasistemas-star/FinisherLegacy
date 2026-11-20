@@ -17,6 +17,7 @@ use App\Models\InventoryLocation;
 use App\Models\LegacyTag;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\Portrait\PortraitDesigns;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -173,6 +174,8 @@ class OrderController extends Controller
                 'fulfilled' => $item->isFulfilled(),
                 'owned_asset_code' => $item->ownedProduct?->asset_code,
                 'returned_quantity' => (int) ($item->metadata['returned_quantity'] ?? 0),
+                // Ordered Portarretrato personalization (frozen snapshot) for production.
+                'portrait_design' => app(PortraitDesigns::class)->forAdmin($item),
             ]),
             'payments' => $order->payments->map(fn ($payment) => [
                 'id' => $payment->id,

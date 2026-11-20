@@ -95,6 +95,11 @@ Route::middleware('auth')->group(function () use ($legacyStoryId) {
         Route::get('portarretrato', [StoryPrintController::class, 'portrait'])->name('portrait');
         Route::post('portarretrato', [StoryPrintController::class, 'downloadPortrait'])->middleware('throttle:20,1')->name('portrait.download');
         Route::post('portarretrato/vista-previa', [StoryPrintController::class, 'previewPortrait'])->middleware('throttle:120,1')->name('portrait.preview');
+        // Saved personalizations + "Pedir este portarretrato" (docs/renovacion/portarretrato.md §Personalización).
+        Route::post('portarretrato/disenos', [StoryPrintController::class, 'storeDesign'])->middleware('throttle:30,1')->name('portrait.designs.store');
+        Route::patch('portarretrato/disenos/{design}', [StoryPrintController::class, 'updateDesign'])->middleware('throttle:60,1')->name('portrait.designs.update');
+        Route::delete('portarretrato/disenos/{design}', [StoryPrintController::class, 'destroyDesign'])->name('portrait.designs.destroy');
+        Route::post('portarretrato/disenos/{design}/pedir', [StoryPrintController::class, 'orderDesign'])->middleware('throttle:20,1')->name('portrait.designs.order');
         Route::get('descargar', [StoryEditorController::class, 'archive'])->middleware('throttle:10,1')->name('archive');
     });
 });

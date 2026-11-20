@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api;
 
 use App\Enums\ProductType;
 use App\Models\LegacyPlateModel;
+use App\Models\PortraitDesign;
 use App\Models\ProductVariant;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -38,6 +39,8 @@ class AddCartItemRequest extends FormRequest
             'event_edition_id' => [$isLegacyPlate ? 'required' : 'nullable', 'integer', 'exists:event_editions,id'],
             'legacy_plate_model_uuid' => [$isLegacyPlate ? 'required_without:legacy_plate_model_id' : 'nullable', 'nullable', 'uuid', 'exists:legacy_plate_models,uuid'],
             'legacy_plate_model_id' => [$isLegacyPlate ? 'required_without:legacy_plate_model_uuid' : 'nullable', 'nullable', 'integer', 'exists:legacy_plate_models,id'],
+            // Saved Portarretrato personalization (ownership checked in PortraitDesigns::cartMetadata).
+            'portrait_design_uuid' => ['nullable', 'uuid', 'exists:portrait_designs,uuid'],
         ];
     }
 
@@ -58,6 +61,13 @@ class AddCartItemRequest extends FormRequest
         }
 
         return null;
+    }
+
+    public function resolvePortraitDesign(): ?PortraitDesign
+    {
+        $uuid = $this->input('portrait_design_uuid');
+
+        return is_string($uuid) && $uuid !== '' ? PortraitDesign::query()->where('uuid', $uuid)->first() : null;
     }
 
     public function resolveLegacyPlateModelId(): ?int

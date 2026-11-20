@@ -42,12 +42,28 @@ function emit() {
 }
 
 // New photo → recentre. New template (another photo box ratio) → keep
-// where the user was looking and only re-fit the window.
+// where the user was looking and only re-fit the window. On mount, a crop
+// that is already set (a saved design reopened) is kept: the window is
+// rebuilt from it instead of recentring.
+let mounted = false;
+
 watch(
     () => [props.src, props.imageAspect],
     () => {
-        zoom.value = 1;
-        center.value = { x: 0.5, y: 0.5 };
+        const existing = crop.value;
+
+        if (!mounted && existing && existing.w > 0) {
+            zoom.value = clamp(base.value.w / existing.w, 1, 4);
+            center.value = {
+                x: existing.x + existing.w / 2,
+                y: existing.y + existing.h / 2,
+            };
+        } else {
+            zoom.value = 1;
+            center.value = { x: 0.5, y: 0.5 };
+        }
+
+        mounted = true;
         emit();
     },
     { immediate: true },

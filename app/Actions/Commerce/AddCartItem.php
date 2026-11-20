@@ -52,6 +52,13 @@ class AddCartItem
         $item = $cart->items()
             ->where('product_variant_id', $variant->id)
             ->where('event_edition_id', $eventEdition?->id)
+            // Each Portarretrato personalization is its own line (production
+            // prints each design); lines without one still merge as before.
+            ->when(
+                isset($metadata['portrait_design_id']),
+                fn ($q) => $q->where('metadata->portrait_design_id', (int) $metadata['portrait_design_id']),
+                fn ($q) => $q->whereNull('metadata->portrait_design_id'),
+            )
             ->first();
 
         if ($item !== null) {

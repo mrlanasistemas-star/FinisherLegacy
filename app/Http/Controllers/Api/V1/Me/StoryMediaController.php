@@ -83,6 +83,29 @@ class StoryMediaController extends Controller
         return response()->noContent();
     }
 
+    /**
+     * `PATCH me/stories/{publicId}/media/{uuid}` `{caption}` — the caption of
+     * one photo/video (same ManageStoryMedia::caption as the web editor).
+     */
+    public function update(Request $request, string $publicId, string $uuid, ManageStoryMedia $media, StoryPresenter $presenter): JsonResponse
+    {
+        $story = $this->ownedStory($request, $publicId);
+        $data = $request->validate(['caption' => ['present', 'nullable', 'string', 'max:280']]);
+
+        $pivotId = DB::table('legacy_story_media')
+            ->join('media_files', 'media_files.id', '=', 'legacy_story_media.media_file_id')
+            ->where('legacy_story_media.legacy_story_id', $story->id)
+            ->where('media_files.uuid', $uuid)
+            ->value('legacy_story_media.id');
+
+        abort_if($pivotId === null, 404);
+
+        $media->caption($story, (int) $pivotId, $data['caption'] ?? null);
+        $file = MediaFile::query()->where('uuid', $uuid)->firstOrFail();
+
+        return $this->respond($this->item($story, $presenter, $file), __('Guardado.'));
+    }
+
     public function reorder(Request $request, string $publicId, ManageStoryMedia $media): Response
     {
         $story = $this->ownedStory($request, $publicId);

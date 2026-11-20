@@ -2,21 +2,27 @@
 
 namespace App\Http\Controllers\LegacyTags;
 
+use App\Actions\Commerce\AddCartItem;
+use App\Actions\Commerce\GetOrCreateCart;
 use App\Enums\MediaKind;
 use App\Enums\StoryMediaRole;
 use App\Http\Controllers\Controller;
 use App\Models\LegacyStory;
 use App\Models\MediaFile;
+use App\Models\PortraitDesign;
+use App\Models\ProductVariant;
 use App\Services\LegacyTags\StoryPrintRenderer;
 use App\Services\Media\MediaUploadRules;
 use App\Services\Portrait\PortraitComposer;
 use App\Services\Portrait\PortraitData;
+use App\Services\Portrait\PortraitDesigns;
 use App\Services\Portrait\PortraitImageTooSmallException;
 use App\Services\Portrait\PortraitOptions;
 use App\Services\Portrait\PortraitPdf;
 use App\Services\Portrait\PortraitSpec;
 use App\Services\Portrait\PortraitTemplates;
 use App\Support\LegacyTags\StoryPresenter;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -61,7 +67,7 @@ class StoryPrintController extends Controller
      * preview the page shows is rendered here by the same composer as the
      * final file (see previewPortrait), so what you see is what prints.
      */
-    public function portrait(Request $request, LegacyStory $story, StoryPresenter $presenter, PortraitTemplates $templates): Response
+    public function portrait(Request $request, LegacyStory $story, StoryPresenter $presenter, PortraitTemplates $templates, PortraitDesigns $designs): Response
     {
         $this->authorize('print', $story);
         $data = $presenter->story($story, forOwner: true);
@@ -102,6 +108,11 @@ class StoryPrintController extends Controller
             'maxUploadMb' => (int) floor((int) config('legacy.stories.max_photo_bytes') / 1048576),
             'bleedMm' => $bleedMm,
             'isAlbum' => ($data['kind'] ?? null) === 'album',
+            // Saved personalizations of this memory and the frame product to order them.
+            'designs' => $this->designsOf($story, $designs),
+            'product' => $designs->product(),
+            // `?diseno={uuid}` opens that saved design for editing.
+            'editDesign' => is_string($request->query('diseno')) ? $request->query('diseno') : null,
         ]);
     }
 
@@ -182,6 +193,99 @@ class StoryPrintController extends Controller
             'X-Portrait-Bleed-Px' => (string) $result->bleedPx,
             'X-Portrait-Effective-Dpi' => (string) $result->effectiveDpi,
         ]);
+    }
+
+    /**
+     * `POST /mi-legacy/{story}/portarretrato/disenos` — save the current
+     * builder state as a personalization (a photo of the album only: an
+     * "own photo" is never stored, so it cannot be saved or ordered).
+     */
+    public function storeDesign(Request $request, LegacyStory $story, PortraitDesigns $designs): RedirectResponse
+    {
+        $this->authorize('print', $story);
+        $data = $request->validate($designs->rules(), $designs->messages());
+
+        $design = $designs->save($story, (int) $request->user()->id, $data);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Guardamos tu portarretrato.')]);
+        Inertia::flash('portrait_design_uuid', $design->uuid);
+
+        return back();
+    }
+
+    public function updateDesign(Request $request, LegacyStory $story, PortraitDesign $design, PortraitDesigns $designs): RedirectResponse
+    {
+        $this->authorize('print', $story);
+        abort_unless($design->legacy_story_id === $story->id, 404);
+        $data = $request->validate($designs->rules(partial: true), $designs->messages());
+
+        $designs->save($story, $design->user_id, $data, $design);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Guardamos tu portarretrato.')]);
+        Inertia::flash('portrait_design_uuid', $design->uuid);
+
+        return back();
+    }
+
+    public function destroyDesign(LegacyStory $story, PortraitDesign $design): RedirectResponse
+    {
+        $this->authorize('print', $story);
+        abort_unless($design->legacy_story_id === $story->id, 404);
+
+        // Orders already placed keep their own frozen copy (OrderItem metadata).
+        $design->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Diseño eliminado.')]);
+
+        return back();
+    }
+
+    /**
+     * "Pedir este portarretrato": the frame product goes to the cart with
+     * this design attached (cart line metadata.portrait_design_id), then
+     * the buyer continues in the regular cart/checkout.
+     */
+    public function orderDesign(Request $request, LegacyStory $story, PortraitDesign $design, PortraitDesigns $designs, GetOrCreateCart $carts, AddCartItem $add): RedirectResponse
+    {
+        $this->authorize('print', $story);
+        abort_unless($design->legacy_story_id === $story->id, 404);
+
+        $product = $designs->product();
+
+        if ($product === null || ! $product['available']) {
+            return back()->withErrors(['order' => __('El portarretrato no está a la venta en este momento.')]);
+        }
+
+        $variant = ProductVariant::query()->findOrFail($product['variant_id']);
+
+        try {
+            $add->handle($carts->handle($request->user(), null), $variant, 1, null, PortraitDesigns::cartMetadata($request->user(), $design, $variant));
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['order' => __('No pudimos agregarlo al carrito. Intenta de nuevo.')]);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Tu portarretrato está en el carrito.')]);
+
+        return redirect()->route('store.cart.show');
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function designsOf(LegacyStory $story, PortraitDesigns $designs): array
+    {
+        return PortraitDesign::query()
+            ->where('legacy_story_id', $story->id)
+            ->with('mediaFile')
+            ->latest('updated_at')
+            ->get()
+            ->map(fn (PortraitDesign $d) => $designs->toArray($d))
+            ->values()
+            ->all();
     }
 
     /**
