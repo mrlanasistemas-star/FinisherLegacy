@@ -140,6 +140,11 @@ class ConfirmTagActivation
                 return;
             }
 
+            // Re-checked under the row lock: another tag may have bound this
+            // same chip between start and confirm. The unique index on
+            // legacy_tags.nfc_uid_hash is the final guard for true races.
+            StartTagActivation::assertUidFits($tag, $uidHash);
+
             $this->lifecycle->transition($tag, LegacyTagEventType::NfcBound, null, ['nfc_uid_hash' => $uidHash], $user, null, [
                 'intent' => $intent->uuid,
                 'platform' => $intent->platform->value,
