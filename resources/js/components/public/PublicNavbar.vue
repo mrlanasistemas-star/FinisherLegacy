@@ -145,7 +145,7 @@ const navItem =
                 :href="home()"
                 class="fl-header__logo shrink-0 rounded-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 :class="
-                    user ? 'max-[379px]:[&_.fl-brand-caps]:hidden' : undefined
+                    user ? 'max-[447px]:[&_.fl-brand-caps]:hidden' : undefined
                 "
                 :aria-label="$t('Finisher Legacy — Inicio')"
             >
@@ -377,7 +377,7 @@ const navItem =
 
                     <Link
                         :href="COMPOSE_URL"
-                        class="ml-1.5 hidden h-9 items-center gap-1.5 rounded-full bg-foreground pr-4 pl-3 text-[13px] font-medium text-background shadow-[0_6px_16px_-10px_rgb(23_23_20/0.6)] transition-[transform,background-color] duration-200 hover:-translate-y-px hover:bg-fl-graphite active:translate-y-0 md:inline-flex"
+                        class="ml-1.5 hidden h-9 items-center gap-1.5 rounded-full bg-foreground pr-4 pl-3 text-[13px] font-medium text-background shadow-[0_6px_16px_-10px_rgb(23_23_20/0.6)] transition-[transform,background-color] duration-200 hover:-translate-y-px hover:bg-fl-graphite active:translate-y-0 md:inline-flex lg:hidden xl:inline-flex"
                     >
                         <Plus class="size-4" aria-hidden="true" />
                         {{ $t('Publicar') }}
