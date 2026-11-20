@@ -18,8 +18,10 @@ const props = withDefaults(
         button?: boolean;
         /** Flip on hover (fine pointers only). */
         hover?: boolean;
+        /** Icon-only button on phones (small grid tiles). */
+        compactButton?: boolean;
     }>(),
-    { button: true, hover: true },
+    { button: true, hover: true, compactButton: false },
 );
 
 const flipped = ref(false);
@@ -71,11 +73,17 @@ function toggle(event: Event) {
             v-if="button"
             type="button"
             class="tag-flip__button absolute bottom-[4%] left-1/2 z-10 inline-flex h-8 -translate-x-1/2 items-center gap-1.5 rounded-full border border-foreground/10 bg-white/90 px-2.5 text-[11px] font-medium whitespace-nowrap text-foreground shadow-fl-micro backdrop-blur transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:outline-none"
+            :class="{
+                'max-sm:w-8 max-sm:justify-center max-sm:px-0':
+                    props.compactButton,
+            }"
             :aria-pressed="flipped"
             @click="toggle"
         >
-            <RefreshCw class="size-3.5" aria-hidden="true" />
-            {{ flipped ? $t('Ver frente') : $t('Ver reverso') }}
+            <RefreshCw class="size-3.5 shrink-0" aria-hidden="true" />
+            <span :class="{ 'max-sm:sr-only': props.compactButton }">{{
+                flipped ? $t('Ver frente') : $t('Ver reverso')
+            }}</span>
         </button>
     </div>
 </template>

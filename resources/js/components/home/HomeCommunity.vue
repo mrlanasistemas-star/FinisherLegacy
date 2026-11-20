@@ -239,7 +239,7 @@ const points = computed(() => [
                     <!-- Follow suggestion -->
                     <div
                         v-parallax="16"
-                        class="absolute right-0 bottom-0 w-[58%] sm:right-[-4%] sm:w-[50%]"
+                        class="absolute right-0 bottom-0 w-[70%] sm:right-[-4%] sm:w-[50%]"
                         aria-hidden="true"
                     >
                         <div
@@ -253,15 +253,15 @@ const points = computed(() => [
                             <span
                                 class="min-w-0 flex-1 text-xs leading-tight text-white"
                             >
-                                <span class="block font-semibold">{{
+                                <span class="block truncate font-semibold">{{
                                     $t('Atleta')
                                 }}</span>
-                                <span class="text-white/55">{{
+                                <span class="block truncate text-white/55">{{
                                     $t('Triatlón')
                                 }}</span>
                             </span>
                             <span
-                                class="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[11px] font-semibold transition-colors duration-500 motion-reduce:transition-none"
+                                class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-[11px] font-semibold transition-colors duration-500 motion-reduce:transition-none"
                                 :class="
                                     following
                                         ? 'bg-white/10 text-white'

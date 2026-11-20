@@ -249,7 +249,7 @@ const tagSteps = computed(() => [
         <div class="fl-container py-6 sm:py-8">
             <h2 id="categorias" class="sr-only">{{ $t('Categorías') }}</h2>
             <ul
-                class="-mx-4 flex snap-x [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
+                class="-mx-4 flex snap-x scroll-px-4 [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden"
             >
                 <li
                     v-for="(category, index) in visibleCategories"

@@ -176,7 +176,7 @@ const location = computed(() =>
                             <li v-for="item in column.links" :key="item.label">
                                 <Link
                                     :href="item.href"
-                                    class="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                                    class="inline-flex min-h-8 min-w-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                                 >
                                     <span class="fl-link">{{
                                         $t(item.label)

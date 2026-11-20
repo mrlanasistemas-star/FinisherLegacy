@@ -884,6 +884,14 @@ const featured = computed(() => props.collections.slice(0, 3));
     padding-block: 0.5rem;
     border-radius: 0.375rem;
 }
+/* Phones show only the track: give it a finger-sized hit area without
+   moving the layout. */
+@media (max-width: 639.98px) {
+    .hero-step {
+        padding-block: 1.125rem;
+        margin-block: -0.625rem;
+    }
+}
 .hero-step__track {
     position: relative;
     display: block;

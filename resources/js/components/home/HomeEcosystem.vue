@@ -106,7 +106,7 @@ const tile =
                             aria-hidden="true"
                         />
                         <span
-                            class="pointer-events-none absolute top-[7%] right-[8%] block w-[26%] max-w-[6.5rem] lg:top-[6%] lg:right-auto lg:left-1/2 lg:w-[34%] lg:max-w-[8.75rem] lg:-translate-x-1/2"
+                            class="pointer-events-none absolute top-[5%] right-[8%] block w-[24%] max-w-[4.75rem] lg:top-[6%] lg:right-auto lg:left-1/2 lg:w-[34%] lg:max-w-[8.75rem] lg:-translate-x-1/2"
                             aria-hidden="true"
                         >
                             <span
@@ -368,7 +368,7 @@ const tile =
                     <a
                         href="#fotos"
                         :class="tile"
-                        class="h-60 border-fl-line bg-fl-paper lg:h-full"
+                        class="h-72 border-fl-line bg-fl-paper sm:h-64 lg:h-full"
                     >
                         <span
                             class="pointer-events-none absolute top-5 right-5 left-5 grid grid-cols-4 gap-1.5 sm:right-6 sm:left-6 lg:top-6 lg:left-auto lg:w-[40%] lg:grid-cols-2 lg:gap-2"
@@ -414,14 +414,14 @@ const tile =
                     <a
                         href="#tienda"
                         :class="tile"
-                        class="fl-zoom h-60 border-fl-line bg-[#f4f1ea] lg:h-full"
+                        class="fl-zoom h-72 border-fl-line bg-[#f4f1ea] sm:h-64 lg:h-full"
                     >
                         <img
                             :src="storeImage"
                             alt=""
                             loading="lazy"
                             decoding="async"
-                            class="eco-render pointer-events-none absolute top-0 right-0 h-[58%] w-auto max-w-none lg:-right-6 lg:h-full"
+                            class="eco-render pointer-events-none absolute top-0 right-0 h-[34%] w-auto max-w-none sm:h-[46%] lg:-right-6 lg:h-full"
                         />
                         <span
                             class="relative flex h-full flex-col justify-end p-5 sm:p-6 lg:max-w-[58%]"
@@ -514,11 +514,14 @@ const tile =
     display: block;
     margin-top: 0.4rem;
     font-family: var(--font-serif);
-    font-size: clamp(1.0625rem, 1.9vw, 1.6rem);
+    font-size: clamp(1rem, 1.9vw, 1.6rem);
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.1;
     color: var(--fl-black);
+    /* "Entrenamientos" in a half-width tile on a 360px phone. */
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 .eco-text {
     display: block;

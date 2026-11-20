@@ -127,7 +127,7 @@ const wave = Array.from({ length: 34 }, (_, i) =>
         </div>
 
         <div
-            class="fl-container relative grid items-center gap-14 lg:grid-cols-12 lg:gap-10"
+            class="fl-container relative grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-10"
         >
             <div class="lg:col-span-6">
                 <HomeSectionHead
@@ -316,11 +316,11 @@ const wave = Array.from({ length: 34 }, (_, i) =>
                         >
                             <span
                                 id="training-speed-label"
-                                class="text-[11px] font-semibold tracking-[0.14em] text-white/55 uppercase"
+                                class="text-[11px] font-semibold tracking-[0.14em] text-white/55 uppercase max-[399px]:sr-only"
                                 >{{ $t('Velocidad') }}</span
                             >
                             <div
-                                class="flex gap-1"
+                                class="flex min-w-0 gap-1 max-[399px]:mx-auto"
                                 role="group"
                                 aria-labelledby="training-speed-label"
                             >

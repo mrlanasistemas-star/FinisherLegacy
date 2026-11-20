@@ -129,9 +129,13 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
         >
             <div
                 v-if="designArt"
-                class="absolute inset-0 flex items-start justify-center bg-[radial-gradient(70%_55%_at_50%_62%,color-mix(in_srgb,var(--fl-gold)_22%,transparent),transparent_72%)] pt-[5%]"
+                class="absolute inset-0 flex items-start justify-center bg-[radial-gradient(70%_55%_at_50%_62%,color-mix(in_srgb,var(--fl-gold)_22%,transparent),transparent_72%)] pt-[14%] sm:pt-[5%]"
             >
-                <TagFlipCard :art="designArt" class="w-[40%]" />
+                <TagFlipCard
+                    :art="designArt"
+                    compact-button
+                    class="w-[44%] sm:w-[40%]"
+                />
             </div>
             <template v-else-if="imageUrl">
                 <img
@@ -295,9 +299,9 @@ const visibleSizes = computed(() => props.sizes.slice(0, 6));
                         "
                     >
                         {{ size.label }}
-                        <span v-if="!size.in_stock" class="sr-only"
-                            >{{ $t('(agotada)') }}</span
-                        >
+                        <span v-if="!size.in_stock" class="sr-only">{{
+                            $t('(agotada)')
+                        }}</span>
                     </li>
                 </ul>
                 <p

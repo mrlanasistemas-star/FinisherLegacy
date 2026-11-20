@@ -144,6 +144,9 @@ const navItem =
             <Link
                 :href="home()"
                 class="fl-header__logo shrink-0 rounded-control focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                :class="
+                    user ? 'max-[379px]:[&_.fl-brand-caps]:hidden' : undefined
+                "
                 :aria-label="$t('Finisher Legacy — Inicio')"
             >
                 <FinisherLegacyLogo variant="wordmark" size="sm" tone="dark" />

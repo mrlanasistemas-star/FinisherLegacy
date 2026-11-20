@@ -259,7 +259,7 @@ const faqs = computed(() => [
 
             <!-- Phones: one real screen per card, swipeable. -->
             <ul
-                class="ap-rail -mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 lg:hidden"
+                class="ap-rail -mx-4 mt-8 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 lg:hidden"
                 :aria-label="$t('Funciones de la app')"
             >
                 <li
