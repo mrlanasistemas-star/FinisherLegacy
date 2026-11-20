@@ -372,6 +372,15 @@ quien cierra todo antes de que el banco responda y los reembolsos.
 
 ---
 
+## 6. Entrega, envío y cancelación (2026-11-20)
+
+- **Entrega**: web y app eligen *recoger* (`pickup`) o *envío a domicilio* (`shipping`). `CheckoutCart` guarda `orders.delivery_method` y `orders.shipping_address` (antes solo quedaban en `customer_snapshot`, y un pedido web con envío se trataba como entregado al asignar tags).
+- **Costo de envío**: `App\Support\Commerce\ShippingRates`, configurado con `FINISHER_SHIPPING_FEE_MINOR` (centavos, por defecto `0` = sin costo) y `FINISHER_SHIPPING_FREE_OVER_MINOR` (envío gratis desde ese subtotal con descuento; vacío = nunca). Recoger siempre es gratis. Se congela en `orders.shipping_minor` y se suma a `total_minor`, que es lo que cobra OpenPay (y lo que reembolsa el admin). Se muestra en el checkout web, en el navegador de pago de la app, en los correos del pedido, en el admin y en la app. **El negocio debe definir la tarifa real** (no se inventó).
+- **API**: `GET /api/v1/cart` agrega `requires_shipping`, `delivery_options` (con `fee_minor`) y `last_shipping_address`. `POST /api/v1/checkout` acepta `delivery_method`, `phone`, `address_*`, `notes`. `OrderResource` agrega `shipping_minor`, `delivery`, `shipment` (paquetería y guía) y `cancellable`.
+- **Cancelar**: `POST /api/v1/orders/{uuid}/cancel` (dueño). Solo pedidos sin pagar y sin intento de tarjeta pendiente de los últimos `FINISHER_APP_CHECKOUT_SESSION_MINUTES` (un 3-D Secure aún puede completarse). Con bloqueo de fila; libera stock y cupón por `CancelOrder`; repetirlo no falla. Si no se puede: `409 ORDER_NOT_CANCELLABLE`.
+- **Idempotencia**: `Idempotency-Key` solo recuerda respuestas **exitosas**. Antes también guardaba los 4xx, y un reintento tras corregir el formulario (o el carrito) repetía el error viejo para siempre.
+- Pruebas: `tests/Feature/Api/V1/StoreDeliveryAndCancelTest.php`; app `src/features/commerce/delivery.test.ts`.
+
 ## Pendientes conocidos (no inventados)
 
 - Correo de confirmación de pago: no existe.
