@@ -8,8 +8,8 @@
  * one, so past purchases keep theirs. Nothing here deletes content.
  * Sections live in @/components/admin/quotas.
  */
-import { Head } from '@inertiajs/vue3';
-import { Gauge, Gift, Plus } from '@lucide/vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { Gauge, Gift, MessageCircleHeart, Plus } from '@lucide/vue';
 import { ref } from 'vue';
 import CapacityGrantsSection from '@/components/admin/quotas/CapacityGrantsSection.vue';
 import QuotaLimitsSection from '@/components/admin/quotas/QuotaLimitsSection.vue';
@@ -26,6 +26,7 @@ import type {
     TypeRow,
 } from '@/components/admin/quotas/types';
 import { Button } from '@/components/ui/button';
+import { index as cheersIndex } from '@/routes/admin/quotas/cheers';
 
 defineProps<{
     defaultLimit: number;
@@ -70,6 +71,13 @@ const grantsSection = ref<InstanceType<typeof CapacityGrantsSection> | null>(
                 </div>
             </div>
             <div class="flex flex-wrap gap-2">
+                <!-- Mensajes de ánimo: precios del enlace y de la Tarjeta NFC. -->
+                <Button variant="outline" class="rounded-full" as-child
+                    ><Link :href="cheersIndex.url()"
+                        ><MessageCircleHeart class="size-4" /> Mensajes de
+                        ánimo</Link
+                    ></Button
+                >
                 <Button
                     variant="outline"
                     class="rounded-full"

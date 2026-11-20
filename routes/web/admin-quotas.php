@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\Quotas\CapacityGrantController;
+use App\Http\Controllers\Admin\Quotas\CheerPricingController;
 use App\Http\Controllers\Admin\Quotas\ExpansionPackController;
 use App\Http\Controllers\Admin\Quotas\ExpansionPriceController;
 use App\Http\Controllers\Admin\Quotas\QuotaController;
@@ -37,6 +38,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // "Liberarle más": capacity granted by hand to a story or a user.
         Route::post('liberaciones', [CapacityGrantController::class, 'store'])->name('grants.store');
+        // Mensajes de ánimo: free / paid / blocked per channel (docs/renovacion/tarjeta-animo.md).
+        Route::get('mensajes-de-animo', [CheerPricingController::class, 'index'])->name('cheers.index');
+        Route::put('mensajes-de-animo/{channel}', [CheerPricingController::class, 'update'])->whereIn('channel', ['link', 'nfc_card'])->name('cheers.update');
+
         Route::post('liberaciones/{entitlement}/revocar', [CapacityGrantController::class, 'revoke'])->whereNumber('entitlement')->name('grants.revoke');
     });
 });

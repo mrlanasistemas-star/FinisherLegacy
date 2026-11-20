@@ -4,6 +4,7 @@ namespace App\Actions\Commerce;
 
 use App\Actions\Photos\RecordPhotoSales;
 use App\Actions\Quotas\GrantPhotoExpansionEntitlements;
+use App\Actions\Training\DeliverPaidCheerMessages;
 use App\Enums\CouponRedemptionStatus;
 use App\Enums\LegacyPlateEntitlementStatus;
 use App\Enums\OrderPaymentStatus;
@@ -30,6 +31,7 @@ class MarkOrderPaid
         private readonly ConfirmOrder $confirmOrder,
         private readonly RecordPhotoSales $recordPhotoSales,
         private readonly GrantPhotoExpansionEntitlements $grantPhotoExpansions,
+        private readonly DeliverPaidCheerMessages $deliverCheers,
     ) {}
 
     public function handle(Order $order): Order
@@ -82,6 +84,10 @@ class MarkOrderPaid
         // Legacy story photo expansions: the extra capacity exists only
         // from here on (docs/renovacion/cuotas-y-precios.md).
         $this->grantPhotoExpansions->handle($order);
+
+        // Paid extra cheer messages (sender-paid, docs/renovacion/tarjeta-animo.md):
+        // delivered to the athlete only from here on.
+        $this->deliverCheers->handle($order);
 
         $order = $order->fresh();
 

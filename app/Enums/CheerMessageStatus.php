@@ -11,4 +11,10 @@ enum CheerMessageStatus: string
 {
     case Visible = 'visible';
     case Hidden = 'hidden';
+
+    /** A paid extra message waiting for the server-confirmed payment (never shown, never notified). */
+    case PendingPayment = 'pending_payment';
+
+    /** A paid message whose payment never arrived: its audio was purged (training:purge-unpaid-cheers). */
+    case Expired = 'expired';
 }

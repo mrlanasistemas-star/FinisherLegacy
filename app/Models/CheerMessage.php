@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Contracts\Media\OwnsMediaFiles;
+use App\Enums\CheerChannel;
 use App\Enums\CheerIcon;
+use App\Enums\CheerMessageBilling;
 use App\Enums\CheerMessageStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +35,16 @@ use Illuminate\Support\Str;
  * @property Carbon|null $listened_at
  * @property bool $favorite
  * @property string|null $sender_ip_hash
+ * @property string|null $sender_key_hash HMAC of the sender's browser cookie (pack credits)
+ * @property CheerChannel $source link | nfc_card (docs/renovacion/tarjeta-animo.md)
+ * @property int|null $legacy_tag_id The Tarjeta de ánimo tapped, when source = nfc_card
+ * @property bool $anonymous Sender gave no name (admin setting); shown as "Anónimo"
+ * @property CheerMessageBilling $billing
+ * @property int|null $order_id Paid message: the sender's Order (delivered only once it is paid)
+ * @property int|null $amount_minor
+ * @property string|null $currency
+ * @property Carbon|null $payment_expires_at Still unpaid past this → purged
+ * @property Carbon|null $paid_at
  * @property Carbon $created_at
  * @property-read CheerLink $link
  * @property-read MediaFile|null $audio
@@ -40,6 +52,8 @@ use Illuminate\Support\Str;
 #[Fillable([
     'uuid', 'cheer_link_id', 'recipient_user_id', 'sender_name', 'relationship', 'body', 'icon',
     'audio_media_file_id', 'duration_seconds', 'status', 'listened_at', 'favorite', 'sender_ip_hash',
+    'source', 'legacy_tag_id', 'anonymous', 'billing', 'order_id', 'amount_minor', 'currency',
+    'payment_expires_at', 'paid_at', 'sender_key_hash',
 ])]
 class CheerMessage extends Model implements OwnsMediaFiles
 {
@@ -58,6 +72,12 @@ class CheerMessage extends Model implements OwnsMediaFiles
             'listened_at' => 'datetime',
             'favorite' => 'boolean',
             'duration_seconds' => 'integer',
+            'source' => CheerChannel::class,
+            'billing' => CheerMessageBilling::class,
+            'anonymous' => 'boolean',
+            'amount_minor' => 'integer',
+            'payment_expires_at' => 'datetime',
+            'paid_at' => 'datetime',
         ];
     }
 
@@ -71,6 +91,24 @@ class CheerMessage extends Model implements OwnsMediaFiles
     public function recipient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recipient_user_id');
+    }
+
+    /** @return BelongsTo<LegacyTag, $this> */
+    public function card(): BelongsTo
+    {
+        return $this->belongsTo(LegacyTag::class, 'legacy_tag_id');
+    }
+
+    /** @return BelongsTo<Order, $this> */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    /** Name shown to the athlete: the sender's, or "Anónimo" (in the reader's language). */
+    public function displaySenderName(): string
+    {
+        return $this->anonymous || trim($this->sender_name) === '' ? __('Anónimo') : $this->sender_name;
     }
 
     /** @return BelongsTo<MediaFile, $this> */

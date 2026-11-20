@@ -72,3 +72,9 @@ Schedule::call(fn () => app(AlertIfPaymentGatewayUnconfigured::class)->handle())
 Schedule::command('training:close-stale-workouts')
     ->hourly()
     ->withoutOverlapping();
+
+// Tarjeta de ánimo / mensajes de ánimo pagados (docs/renovacion/tarjeta-animo.md):
+// a paid extra message whose payment never arrived loses its audio and text.
+Schedule::command('training:purge-unpaid-cheers')
+    ->everyTenMinutes()
+    ->withoutOverlapping();

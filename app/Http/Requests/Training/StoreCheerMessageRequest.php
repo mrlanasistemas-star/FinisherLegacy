@@ -27,7 +27,12 @@ class StoreCheerMessageRequest extends FormRequest
         $maxKb = intdiv((int) config('training.cheers.max_audio_bytes'), 1024);
 
         return [
-            'sender_name' => ['required', 'string', 'max:60'],
+            // Required unless the admin allows anonymous cheers — enforced in SubmitCheerMessage.
+            'sender_name' => ['nullable', 'string', 'max:60'],
+            'anonymous' => ['nullable', 'boolean'],
+            // Paid extra message: optional receipt e-mail (OpenPay anti-fraud) and pack size.
+            'email' => ['nullable', 'email', 'max:120'],
+            'pack' => ['nullable', 'integer', 'min:2', 'max:100'],
             'relationship' => ['nullable', 'string', 'max:40'],
             'body' => ['nullable', 'string', 'max:'.(int) config('training.cheers.max_body', 500), 'required_without:audio'],
             'icon' => ['required', Rule::enum(CheerIcon::class)],

@@ -7,12 +7,21 @@
  * athlete's training playlist. Handles denied/absent microphones,
  * unsupported browsers, offline, and revoked/expired/full links. Never
  * indexed. Server re-validates everything (CheerPublicController).
+ *
+ * Tarjeta de ánimo + pricing (docs/renovacion/tarjeta-animo.md): `via`
+ * says whether this visit came from a card tap; `pricing` says — BEFORE
+ * recording — whether the next message is free, covered by a pack, paid by
+ * the sender (price, packs) or not accepted. A paid message is sent to the
+ * guest OpenPay page and reaches the athlete only once the server confirms
+ * the payment. When the admin allows it, the name is optional (Anónimo).
  */
 import { Head, useForm } from '@inertiajs/vue3';
 import {
     Check,
     CircleAlert,
+    CreditCard,
     Link2Off,
+    Nfc,
     Mic,
     MicOff,
     RotateCcw,
@@ -47,9 +56,46 @@ const props = defineProps<{
         max_audio_bytes: number;
         max_body: number;
     };
+    via?: 'link' | 'nfc_card';
+    pricing?: {
+        mode: 'free' | 'credit' | 'paid' | 'blocked';
+        reason: string | null;
+        price_minor: number | null;
+        currency: string;
+        packs: { messages: number; amount_minor: number }[];
+        free_remaining: number | null;
+        credits_remaining: number | null;
+        anonymous_allowed: boolean;
+        payment_available: boolean;
+    };
 }>();
 
-const { t } = useI18n();
+const { t, money } = useI18n();
+
+const mode = computed(() => props.pricing?.mode ?? 'free');
+const isPaid = computed(() => mode.value === 'paid');
+const anonymousAllowed = computed(
+    () => props.pricing?.anonymous_allowed ?? false,
+);
+const paymentBlocked = computed(
+    () => isPaid.value && !(props.pricing?.payment_available ?? false),
+);
+/** 1 = a single paid message; >1 = one of the packs. */
+const packChoice = ref(1);
+const priceLabel = computed(() => {
+    const pricing = props.pricing;
+
+    if (!pricing || pricing.price_minor === null) {
+        return '';
+    }
+
+    const pack = pricing.packs.find((p) => p.messages === packChoice.value);
+
+    return money(
+        pack ? pack.amount_minor : pricing.price_minor,
+        pricing.currency,
+    );
+});
 
 const firstName = computed(() => props.athlete.name.split(' ')[0]);
 const initials = computed(() =>
@@ -88,8 +134,27 @@ const unavailable = computed(() => {
                 ),
             };
         default:
-            return null;
+            break;
     }
+
+    // Active link, but this channel takes no more messages (pricing settings).
+    if (mode.value === 'blocked') {
+        return {
+            title: t('Este enlace ya recibió todos sus mensajes'),
+            message:
+                props.pricing?.reason === 'limit'
+                    ? t(
+                          '{name} ya recibió todos los mensajes permitidos aquí. ¡Gracias por tu apoyo!',
+                          { name: firstName.value },
+                      )
+                    : t(
+                          '¡{name} tiene mucho apoyo! Pídele un enlace nuevo para dejarle el tuyo.',
+                          { name: firstName.value },
+                      ),
+        };
+    }
+
+    return null;
 });
 
 const recorder = useVoiceRecorder(props.limits.max_audio_seconds);
@@ -111,6 +176,9 @@ const relationshipSuggestions = computed(() => [
 
 const form = useForm({
     sender_name: '',
+    anonymous: false,
+    email: '',
+    pack: null as number | null,
     relationship: '',
     body: '',
     icon: 'heart',
@@ -148,7 +216,9 @@ const canSubmit = computed(
         props.state === 'active' &&
         online.value &&
         !recorder.recording.value &&
-        form.sender_name.trim().length > 0 &&
+        !paymentBlocked.value &&
+        (form.sender_name.trim().length > 0 ||
+            (anonymousAllowed.value && form.anonymous)) &&
         (hasAudio.value || form.body.trim().length > 0) &&
         !form.processing,
 );
@@ -219,6 +289,11 @@ function submit() {
 
     form.audio = recorder.file.value;
     form.duration_seconds = recorder.seconds.value;
+    form.pack = isPaid.value && packChoice.value > 1 ? packChoice.value : null;
+
+    if (form.anonymous) {
+        form.sender_name = '';
+    }
 
     form.post(storeCheer.url(props.token), {
         forceFormData: true,
@@ -301,6 +376,13 @@ function sendAnother() {
                     }}
                 </h1>
                 <p class="mt-2 text-sm text-muted-foreground">{{ title }}</p>
+                <p
+                    v-if="via === 'nfc_card'"
+                    class="mt-3 inline-flex items-center gap-1.5 rounded-full border border-fl-gold/40 bg-fl-cream px-3 py-1 text-xs font-medium text-fl-gold-ink"
+                >
+                    <Nfc class="size-3.5" aria-hidden="true" />
+                    {{ $t('Desde la Tarjeta de ánimo') }}
+                </p>
             </header>
 
             <!-- Unavailable link -->
@@ -379,6 +461,154 @@ function sendAnother() {
                         $t(
                             'Estás sin conexión. Puedes grabar tu mensaje y enviarlo en cuanto vuelva el internet.',
                         )
+                    }}
+                </p>
+
+                <!-- What this message costs (decided by the server) -->
+                <section
+                    v-if="isPaid"
+                    v-reveal="{ delay: 100 }"
+                    class="fl-card space-y-4 border-fl-gold/40 p-6 sm:p-8"
+                    aria-live="polite"
+                >
+                    <div class="flex items-start gap-3">
+                        <span
+                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-fl-black text-white"
+                            aria-hidden="true"
+                        >
+                            <CreditCard class="size-5" />
+                        </span>
+                        <div>
+                            <h2 class="font-heading text-lg font-semibold">
+                                {{
+                                    $t('Este mensaje cuesta {price}', {
+                                        price: priceLabel,
+                                    })
+                                }}
+                            </h2>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                {{
+                                    $t(
+                                        '{name} ya recibió sus mensajes gratis. Graba el tuyo, págalo con tarjeta y le llegará en cuanto se confirme tu pago.',
+                                        { name: firstName },
+                                    )
+                                }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <fieldset v-if="pricing && pricing.packs.length > 0">
+                        <legend class="text-sm font-semibold">
+                            {{ $t('¿Cuántos mensajes?') }}
+                        </legend>
+                        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                            <label
+                                class="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-fl-gold"
+                                :class="
+                                    packChoice === 1
+                                        ? 'border-fl-black bg-fl-black text-white'
+                                        : 'border-border bg-white hover:border-fl-gold'
+                                "
+                            >
+                                <input
+                                    v-model="packChoice"
+                                    type="radio"
+                                    name="pack"
+                                    :value="1"
+                                    class="sr-only"
+                                />
+                                <span>{{ $t('Solo este mensaje') }}</span>
+                                <span class="font-semibold">{{
+                                    money(
+                                        pricing.price_minor ?? 0,
+                                        pricing.currency,
+                                    )
+                                }}</span>
+                            </label>
+                            <label
+                                v-for="pack in pricing.packs"
+                                :key="pack.messages"
+                                class="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-fl-gold"
+                                :class="
+                                    packChoice === pack.messages
+                                        ? 'border-fl-black bg-fl-black text-white'
+                                        : 'border-border bg-white hover:border-fl-gold'
+                                "
+                            >
+                                <input
+                                    v-model="packChoice"
+                                    type="radio"
+                                    name="pack"
+                                    :value="pack.messages"
+                                    class="sr-only"
+                                />
+                                <span>{{
+                                    $t('{count} mensajes', {
+                                        count: pack.messages,
+                                    })
+                                }}</span>
+                                <span class="font-semibold">{{
+                                    money(pack.amount_minor, pricing.currency)
+                                }}</span>
+                            </label>
+                        </div>
+                        <p
+                            v-if="packChoice > 1"
+                            class="mt-2 text-xs text-muted-foreground"
+                        >
+                            {{
+                                $t(
+                                    'Los mensajes restantes del paquete quedan guardados en este navegador para tus siguientes mensajes. Si borras los datos del navegador se pierden.',
+                                )
+                            }}
+                        </p>
+                    </fieldset>
+
+                    <div>
+                        <label for="cheer-email" class="text-sm font-semibold"
+                            >{{ $t('Tu correo') }}
+                            <span class="font-normal text-muted-foreground">{{
+                                $t('(opcional, para tu comprobante)')
+                            }}</span></label
+                        >
+                        <input
+                            id="cheer-email"
+                            v-model="form.email"
+                            type="email"
+                            maxlength="120"
+                            autocomplete="email"
+                            class="fl-focus-glow mt-1.5 h-12 w-full rounded-xl border border-border bg-white px-4 text-base"
+                        />
+                        <p
+                            v-if="formErrors.email"
+                            class="mt-1 text-sm text-red-700"
+                        >
+                            {{ formErrors.email }}
+                        </p>
+                    </div>
+
+                    <p
+                        v-if="paymentBlocked"
+                        class="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                        role="alert"
+                    >
+                        {{
+                            $t(
+                                'Por ahora no podemos cobrar mensajes adicionales. Intenta más tarde.',
+                            )
+                        }}
+                    </p>
+                </section>
+
+                <p
+                    v-else-if="mode === 'credit' && pricing?.credits_remaining"
+                    class="rounded-2xl border border-fl-gold/40 bg-fl-cream px-4 py-3 text-sm text-fl-graphite"
+                    role="status"
+                >
+                    {{
+                        $t('Te quedan {count} mensajes de tu paquete.', {
+                            count: pricing.credits_remaining,
+                        })
                     }}
                 </p>
 
@@ -595,7 +825,31 @@ function sendAnother() {
                     v-reveal="{ delay: 160 }"
                     class="fl-card space-y-5 p-6 sm:p-8"
                 >
-                    <div>
+                    <label
+                        v-if="anonymousAllowed"
+                        class="flex min-h-11 cursor-pointer items-center gap-3 text-sm"
+                    >
+                        <input
+                            v-model="form.anonymous"
+                            type="checkbox"
+                            class="size-5 rounded border-border accent-fl-black"
+                        />
+                        <span>
+                            <span class="font-semibold">{{
+                                $t('Enviar como anónimo')
+                            }}</span>
+                            <span class="block text-muted-foreground">{{
+                                $t(
+                                    '{name} verá «Anónimo» en lugar de tu nombre.',
+                                    {
+                                        name: firstName,
+                                    },
+                                )
+                            }}</span>
+                        </span>
+                    </label>
+
+                    <div v-if="!form.anonymous">
                         <label for="cheer-name" class="text-sm font-semibold">{{
                             $t('Tu nombre')
                         }}</label>
@@ -605,7 +859,7 @@ function sendAnother() {
                             type="text"
                             maxlength="60"
                             autocomplete="name"
-                            required
+                            :required="!anonymousAllowed"
                             class="fl-focus-glow mt-1.5 h-12 w-full rounded-xl border border-border bg-white px-4 text-base"
                             :placeholder="$t('Ej. Lucía')"
                         />
@@ -775,7 +1029,11 @@ function sendAnother() {
                                               form.progress.percentage ?? 0,
                                       })
                                     : $t('Enviando…')
-                                : $t('Enviar a {name}', { name: firstName })
+                                : isPaid
+                                  ? $t('Continuar al pago · {price}', {
+                                        price: priceLabel,
+                                    })
+                                  : $t('Enviar a {name}', { name: firstName })
                         }}
                     </button>
                     <p class="text-center text-xs text-muted-foreground">
