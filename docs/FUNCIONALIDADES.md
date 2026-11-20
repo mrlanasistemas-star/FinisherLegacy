@@ -117,13 +117,31 @@ Detalle de la app: `FinisherLegacyMobile/docs/ARCHITECTURE.md`,
 `COMMERCE_ARCHITECTURE.md`, `NFC_ACTIVATION.md`, `LIVE_TRACKING.md`,
 `TRAINING_AUDIO.md`, `SOCIAL_ARCHITECTURE.md`.
 
-## 5 bis. Tarjeta de ánimo NFC — en construcción
+## 5 bis. Tarjeta de ánimo NFC y precios de los mensajes de ánimo
 
-Un Finisher Legacy Tag vinculado a un enlace de ánimo (`/animo/{token}`),
-vendido en la tienda, con tarifa de ánimo configurable en el panel y pagada
-por quien lo envía con OpenPay. Se está construyendo en paralelo al cierre; su
-detalle quedará en `docs/renovacion/tarjeta-animo.md` y esta sección se
-completará cuando termine.
+Extiende «Envíame ánimo»: una tarjeta física con chip NFC (NTAG213, tamaño
+tarjeta de crédito) que abre en el navegador la página para dejarle un mensaje
+de voz al atleta, **sin cuenta y sin app**, y precios configurables para los
+mensajes. Detalle: `docs/renovacion/tarjeta-animo.md`. Pruebas:
+`tests/Feature/Training/CheerCardsAndPricingTest.php`.
+
+| Pieza | Qué hace |
+|---|---|
+| Modelo | La tarjeta es un `LegacyTag` con `purpose = cheer` y `cheer_link_id` (+ `cheer_bound_at`). El chip guarda `/t/{code}` como cualquier Tag: reusa escritor NFC, intentos de activación, antiduplicado por UID, lotes, inventario y kardex. El `purpose` lo fija el producto al crear el lote (`CheerCards::purposeFor`); una tarjeta nunca crea un recuerdo (`ActivateTag` la rechaza) y solo se vincula con `BindCheerCard`. |
+| Compra | Producto `tarjeta-animo-nfc`. En la app, «Comprar tarjeta para este enlace» en cada enlace (`POST /cart/items` con `cheer_link_uuid`); el enlace se congela en `order_items.metadata.cheer_link`. Desde la ficha del producto sale sin enlace y el atleta la vincula después. |
+| Surtido | Al surtir (`FulfillOrderItem` → `AssignTagsToOrderItem`) cada pieza se vincula sola al enlace elegido (`via = fulfillment`) y queda `activated`. Si el enlace ya no existe, sale sin vincular y no bloquea el envío. |
+| Activación en la app | Activar → «Tarjeta de ánimo» → elegir o crear enlace → código → escribir el chip (`POST /tags/activation/start` con `purpose: "cheer"` y `cheer_link_uuid`). |
+| Uso | `/t/{code}` vinculada → redirige a `/animo/{token}` y marca la sesión «viene de la tarjeta X» (2 h, no falsificable por URL). Sin vincular o desactivada → página «Esta Tarjeta de ánimo no está activa». Cada toque permite dejar otro mensaje, según los límites. |
+| Cuotas y precios (`CheerQuota`) | `cheer_pricing_settings`, un registro por canal (`link` y `nfc_card`): `free_messages` (por enlace o por tarjeta), `after_free` (`blocked` · `free` · `paid`), `hard_limit`, `price_minor` (sin precio, `paid` se comporta como `blocked`), `price_steps`, `packs` (créditos en `cheer_sender_credits` por cookie `cheer_sender`) y `allow_anonymous` («Enviar como anónimo»). Sin registro: 200 gratis por enlace, luego bloqueado, nombre obligatorio. La decisión se repite bajo bloqueo de la fila del enlace. |
+| Pago de mensajes adicionales | Paga **quien envía**, en la web, con OpenPay: el mensaje queda `pending_payment` (invisible) con un pedido de invitado (producto interno `mensaje-de-animo`, monto congelado) → `/animo/{token}/pago/{order}` (Openpay.js, 3-D Secure) → solo el webhook o `SyncOnlinePayment` (`MarkOrderPaid` → `DeliverPaidCheerMessages`) lo vuelve visible y avisa al atleta. Idempotente. Sin llaves de OpenPay se avisa antes de grabar. |
+| Limpieza | `php artisan training:purge-unpaid-cheers` (cada 10 min): pasada la ventana de pago entrega lo pagado, expira el pedido pendiente y borra audio y texto del resto. |
+| API (`/api/v1`, Sanctum) | `GET training/cards` (mis tarjetas + `meta.offer`), `GET training/card-offer`, `PUT training/cards/{uuid}` `{link_uuid}` (vincular/cambiar), `DELETE training/cards/{uuid}/link` (desactivar); `training/links` trae `state` y `stats`; `training/messages` trae `anonymous` y `source` (`link` / `nfc_card`). |
+| Admin | **Ventas → Límites y tarifas → Mensajes de ánimo** (`/admin/limites-y-tarifas/mensajes-de-animo`, permiso `quotas.manage`): ajustes por canal, conteos y aviso si OpenPay no está configurado (el personal nunca lee los mensajes). En pedidos, cada línea de tarjeta muestra el enlace y las piezas; en Tags, insignia «Tarjeta de ánimo» y a qué enlace abre. |
+| Publicar | `php artisan catalog:publish-cheer-card` (borrador) o `--price=<MXN>` (publicado). Idempotente. Luego fotos en Admin → Productos y un lote en Inventario → Lotes. |
+| App | `training/share` (enlaces, tarjetas, «Cambiar enlace», «Desactivar», comprar), `activate` (opción «Tarjeta de ánimo»), `cart` (muestra «Abre: {enlace}»), `training/messages` (mensajes «Tarjeta NFC» y «Anónimo»). |
+
+Migración: `2026_11_20_700000_create_cheer_cards_and_pricing.php` (aditiva y
+reversible).
 
 ## 6. Reglas transversales
 

@@ -55,10 +55,25 @@ ninguna borra datos.
 | `2026_11_20_400000_add_content_pin_protection` | NIP opcional (`users.content_pin_*`, `pin_protected` en recuerdos, momentos y medios de evento). |
 | `2026_11_20_400000_make_legacy_tag_nfc_uid_hash_unique` | Índice único: un chip NFC solo puede pertenecer a una pieza. Si ya hay chips duplicados, la migración **no** crea el índice y registra `make_legacy_tag_nfc_uid_hash_unique: skipped` en el log; revisar antes con `SELECT nfc_uid_hash, COUNT(*) FROM legacy_tags WHERE nfc_uid_hash IS NOT NULL GROUP BY nfc_uid_hash HAVING COUNT(*) > 1;` |
 | `2026_11_20_600000_create_payments_refund_permission` | Permiso `payments.refund` (reembolsos desde el admin). |
+| `2026_11_20_700000_create_cheer_cards_and_pricing` | Tarjeta de ánimo NFC y precios de mensajes: columnas en `legacy_tags`, `legacy_tag_activation_intents` y `cheer_messages`; tablas `cheer_pricing_settings` y `cheer_sender_credits`; producto interno `mensaje-de-animo`. |
 
 Variables nuevas de ese día (opcionales, con valor por defecto):
 `FINISHER_SHIPPING_FEE_MINOR` (0), `FINISHER_SHIPPING_FREE_OVER_MINOR`
 (vacío = nunca gratis), `TRAINING_WORKOUT_STALE_HOURS` (12).
+
+`FINISHER_API_PAYMENT_GATEWAY` ahora vale **`openpay`** por defecto (antes
+`stripe`; Stripe solo queda para conciliación histórica). Si el `.env` del VPS
+lo fija en `stripe`, quitarlo o cambiarlo.
+
+Tarjeta de ánimo NFC, **cuando el dueño decida el precio**:
+
+```bash
+php artisan catalog:publish-cheer-card --price=<MXN>   # idempotente; sin --price queda en borrador
+```
+
+Después: fotos en Admin › Productos, un lote de tarjetas en Inventario ›
+Lotes y los precios de los mensajes en Admin › Límites y tarifas › Mensajes de
+ánimo ([tarjeta-animo.md](renovacion/tarjeta-animo.md)).
 
 ### A.4 Cachés y procesos
 

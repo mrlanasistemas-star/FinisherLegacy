@@ -84,6 +84,20 @@ Otras decisiones de negocio abiertas: precio del portarretrato
 (`php artisan catalog:publish-portrait-frame` lo deja en borrador) y precios
 de cada ampliación por tienda (Admin › Ventas › Límites y tarifas).
 
+### 2.1 Tarjeta de ánimo NFC
+
+- **Precio real de la tarjeta:** `php artisan catalog:publish-cheer-card
+  --price=<MXN>` (o en Admin › Productos si ya existe).
+- **Precios de los mensajes de ánimo:** mensajes gratis por enlace y por
+  tarjeta, qué pasa después (bloquear, seguir gratis o cobrar), precio por
+  mensaje, paquetes y anónimos, en **Admin › Límites y tarifas › Mensajes de
+  ánimo**. Cobrar exige OpenPay configurado (§1).
+- **Fotos del producto** `tarjeta-animo-nfc` (Admin › Productos).
+- **Primer lote de tarjetas NTAG213** recibido en Inventario › Lotes (cada
+  pieza con su código público y de activación) y probado en iPhone y Android
+  (§8).
+- Detalle: [tarjeta-animo.md](renovacion/tarjeta-animo.md).
+
 ## 3. Apple
 
 | # | Qué falta | URL / pantalla | Qué seleccionar | Dato que genera | Dónde va | Cómo verificar |
@@ -158,6 +172,7 @@ con pruebas automáticas y emulador.
 | **Matriz NFC** (escribir y releer NTAG213/215/216, cancelar, chip ya escrito, chip de otra pieza, sin NFC, iPhone XS+ y 2 Android de marcas distintas, tags reales del proveedor y medallas para desintonía) | `FinisherLegacyMobile/docs/NFC_ACTIVATION.md`, `docs/renovacion/matriz-pruebas-nfc.md`, `docs/renovacion/especificacion-nfc-proveedor.md` | Build nativa nueva, muestras del proveedor, lector USB (ACR122U/ACR1252U) para QA de lote |
 | **GPS y segundo plano** (entrenar al aire libre y seguimiento en vivo con pantalla bloqueada, ahorro de batería, permiso "Siempre" en iOS, servicio en primer plano en Android, sin conexión) | `FinisherLegacyMobile/docs/LIVE_TRACKING.md`, `FinisherLegacyMobile/docs/DEVICE_QA.md` | Teléfonos reales en exteriores |
 | **Audio en segundo plano** (mensajes de ánimo con la pantalla bloqueada) | `FinisherLegacyMobile/docs/TRAINING_AUDIO.md` | Teléfonos reales |
+| **Tarjeta de ánimo NFC** (escribir y activar una NTAG213, abrir `/t/{código}` desde el chip, dejar mensajes gratis y uno pagado en el sandbox de OpenPay, vínculo automático al surtir) | `docs/renovacion/tarjeta-animo.md` | Tarjetas NTAG213 reales, llaves sandbox de OpenPay |
 | **Push** (entrega, apertura con deep link, recibos) | `docs/renovacion/notificaciones.md` §8 | §3.9 y §4.8 resueltos |
 | **Enlaces universales / App Links** (`/t/*`, `/live/*`, `/familia/invitacion/*`, `/reset-password/*`) | `docs/ARQUITECTURA.md` §10 | §3.2 y §4.4 resueltos |
 | **Compras dentro de la app** (compra, pendiente, sin red, restaurar, reembolso) | `docs/renovacion/compras-dentro-de-app.md` §E | §3.5–3.8 y §4.2–4.7 |

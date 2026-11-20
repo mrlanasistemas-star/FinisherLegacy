@@ -21,7 +21,7 @@ Documentos vigentes: [README](../README.md) · [FUNCIONALIDADES](FUNCIONALIDADES
 | Moderación | Advertir y suspender a la persona detrás de un reporte | — | `FUNCIONALIDADES.md` §3 |
 | NFC | Un chip solo puede quedar ligado a un Tag (hash de UID único) | Activación por escritura | móvil `docs/NFC_ACTIVATION.md` |
 | Cuenta | Restablecer contraseña abre la app; eliminar la cuenta borra avisos, preferencias, avatar y ubicación | Pantalla de restablecer en la app | — |
-| **Tarjeta de ánimo NFC** | *En construcción en paralelo a este cierre* | — | `renovacion/tarjeta-animo.md` (pendiente) |
+| Tarjeta de ánimo NFC y precios de los mensajes | Tag con `purpose = cheer` ligado a un enlace de ánimo, vínculo automático al surtir, cuotas y precios por canal (`CheerQuota`, `cheer_pricing_settings`), pago de mensajes adicionales con OpenPay por quien envía, limpieza `training:purge-unpaid-cheers`, admin Límites y tarifas › Mensajes de ánimo, `catalog:publish-cheer-card` | Comprar la tarjeta para un enlace, activarla (Activar › Tarjeta de ánimo), cambiar enlace o desactivarla, mensajes «Tarjeta NFC» y «Anónimo» | `renovacion/tarjeta-animo.md`, `FUNCIONALIDADES.md` §5 bis |
 
 ## 2. Cambios importantes del cierre
 
@@ -114,6 +114,8 @@ nuevas está en `docs/historico/README.md`.
 | Pest dirigido (tracking, training, portrait, NIP, entrega y cancelación, comercio móvil, carrito, checkout, comunidad) | 236 pruebas, 4 784 aserciones, todas pasan |
 | Pest completo (`php artisan test --parallel`) | **1 763 pruebas: 1 760 pasan, 3 omitidas, 0 fallan** (14 230 aserciones, ~7.6 min, 6 procesos) |
 | `npm run build` | pasó tras el QA web (lo corrió el QA) |
+| Tarjeta de ánimo (`CheerCardsAndPricingTest`) | 16 pruebas nuevas; suites Training, LegacyTags, Commerce y Quotas **356/356** |
+| Pagos, tras cambiar la pasarela por defecto del API a OpenPay | **84/84** |
 
 ### App (`FinisherLegacyMobile`)
 
@@ -215,23 +217,29 @@ Todas son aditivas y ya corren en local. En el VPS se aplican con
 - `2026_11_20_400000_make_legacy_tag_nfc_uid_hash_unique`: si hay UIDs
   duplicados, no crea el índice y deja «skipped» en el log.
 - `2026_11_20_600000_create_payments_refund_permission`
+- `2026_11_20_700000_create_cheer_cards_and_pricing`: columnas nuevas en
+  `legacy_tags`, `legacy_tag_activation_intents` y `cheer_messages`; tablas
+  `cheer_pricing_settings` y `cheer_sender_credits`; producto interno
+  `mensaje-de-animo`.
 
 Variables nuevas: `FINISHER_SHIPPING_FEE_MINOR`,
 `FINISHER_SHIPPING_FREE_OVER_MINOR` y `TRAINING_WORKOUT_STALE_HOURS`.
 
 ## 9. Pendientes que sí son de código o decisión interna
 
-- `FINISHER_API_PAYMENT_GATEWAY` tiene `stripe` como valor por defecto en
-  `config/finisher.php`. Solo afecta al endpoint antiguo `payments/online`.
-  Hay que decidir si cambiarlo a `openpay` o retirar el endpoint.
+- ~~`FINISHER_API_PAYMENT_GATEWAY` con `stripe` por defecto~~: resuelto en
+  `5f13420`, ahora el valor por defecto es `openpay` (Stripe solo queda para
+  conciliación histórica).
 - `athleteMobileTabs` en `resources/js/config/navigation.ts` no se usa; se
   dejó porque el QA tenía el archivo abierto.
 - `PROMPTS-IMAGES.md` (raíz del backend) tiene prompts de fotos de placas y
   puede moverse a `docs/historico/`.
-- Tarjeta de ánimo NFC: se completará en `FUNCIONALIDADES.md` §5 bis y aquí
-  cuando termine.
-- Guía para usuarios `docs/GUIA_DE_LA_APP.md`: pendiente, ya enlazada en el
-  README.
+- Tarjeta de ánimo NFC: el vínculo automático al surtir (`FulfillOrderItem` →
+  `AssignTagsToOrderItem` → `BindCheerCard`) **no tiene prueba automática**;
+  solo se revisó el código. La tarjeta y los mensajes pagados faltan de probar
+  en el sandbox de OpenPay y con tarjetas NTAG213 reales.
+- Guía para usuarios: [GUIA_DE_LA_APP.md](GUIA_DE_LA_APP.md), con capturas
+  del emulador (entorno de demostración).
 
 ## 10. Commits
 
@@ -251,7 +259,11 @@ responsive inicio y tienda · `bf3112f` idioma en el servidor · `0417beb` área
 del atleta en celulares · `0dcf562` clave del traductor (+ movimientos de
 docs) · `c9f89d8` barra superior · `b23d09a`, `411efa8` docs ·
 `f3f3e05`, `6107885`, `ea89102` limpieza · `1b8276e` phpstan · `fadea10`
-inglés · cierre (este documento).
+inglés · cierre (este documento) · `cc8329c` precios configurables para
+mensajes de ánimo · `3061c88` tarjeta de ánimo NFC en la tienda · `792cb90`
+pruebas de la tarjeta y los precios · `b22a73f` docs de la tarjeta ·
+`5f13420` la pasarela por defecto del API de pagos es OpenPay · guía de la app
+con capturas.
 
 **App:** `42b6e75` mensajes IAP · `d63aad8` portarretrato · `eb6468b`
 enlaces y pie de foto · `760cf04` push al cerrar sesión · `d8312e6` momentos
@@ -260,7 +272,11 @@ checkout · `ecef47c` docs comercio · `6b8c9f1` familia · `d611da0` NIP ·
 `0c4cf9f` NIP fuera del caché · `60956e4` modo entrenamiento · `b47adfd`
 desbloqueo con NIP en el recuerdo · `9a2b3c7` compilaciones · `18d4994` rutas
 de Familia · `ac5c5a6`, `93e0d1a`, `b4ce24b`, `55958e1`, `38c5248` QA móvil ·
-`bf49ed2` limpieza · `8dcc5d1` docs · `35cb1f6` docs comercio.
+`bf49ed2` limpieza · `8dcc5d1` docs · `35cb1f6` docs comercio · `538fa64`,
+`11e74c5`, `6347791`, `d61812c`, `9b320a9` QA móvil (etiquetas sin recortes,
+idioma al momento, ejemplo de correo, botones sobre el teclado, barra de
+estado en entrenamiento) · `c88f32a` tarjetas de ánimo en entrenamiento ·
+`51f11dc` activar tarjeta de ánimo · `efd6d5f` mascota con imagen ligera.
 
 ## 11. Pendientes externos reales
 
