@@ -77,7 +77,9 @@ interface State {
     messages: Messages;
 }
 
-const KEY: InjectionKey<I18n> = Symbol('fl-i18n');
+// Registered symbol: the same key even if the module is loaded twice (dev
+// SSR after a hot update), so `active()` always finds the request's instance.
+const KEY: InjectionKey<I18n> = Symbol.for('fl-i18n');
 
 /** Catalogs already downloaded in this tab, by "locale@version". */
 const cache = new Map<string, Messages>();
