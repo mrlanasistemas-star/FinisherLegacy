@@ -1,6 +1,6 @@
 /**
  * Legacy Plate V3 — the single drawing of the physical product, shared by
- * the site (PlateShowcase, PlateClipSteps) and the render pipeline
+ * the plate views (historical orders) and the render pipeline
  * (tools/renders imports this file directly; Node strips the types).
  * Keep it dependency-free and use erasable TypeScript only.
  *
