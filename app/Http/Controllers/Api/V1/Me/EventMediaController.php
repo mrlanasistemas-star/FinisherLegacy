@@ -15,6 +15,7 @@ use App\Http\Resources\Api\V1\AthleteEventMediaResource;
 use App\Models\AthleteEventMedia;
 use App\Models\EventParticipant;
 use App\Services\Media\ResolveMediaEntitlement;
+use App\Services\Privacy\ContentPin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -58,6 +59,7 @@ class EventMediaController extends Controller
     public function updateVisibility(Request $request, AthleteEventMedia $media, UpdateAthleteEventMediaVisibility $update): JsonResponse
     {
         Gate::forUser($this->sanctumUser($request))->authorize('update', $media);
+        app(ContentPin::class)->ensureRevealed($media, $request);
 
         return $this->respond(new AthleteEventMediaResource($update->handle($media, $request->boolean('is_public'))));
     }
@@ -65,6 +67,7 @@ class EventMediaController extends Controller
     public function destroy(Request $request, AthleteEventMedia $media, DeleteAthleteEventMedia $delete): JsonResponse
     {
         Gate::forUser($this->sanctumUser($request))->authorize('delete', $media);
+        app(ContentPin::class)->ensureRevealed($media, $request);
         $delete->handle($media);
 
         return $this->respond(null, __('Archivo eliminado.'));

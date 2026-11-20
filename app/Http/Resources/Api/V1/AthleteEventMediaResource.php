@@ -16,6 +16,26 @@ class AthleteEventMediaResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // PIN-locked: same shape, no URL of any rendition.
+        if ($this->isPinLocked()) {
+            return [
+                'uuid' => $this->uuid,
+                'type' => $this->type->value,
+                'url' => null,
+                'status' => $this->processingStatus(),
+                'thumb_url' => null,
+                'card_url' => null,
+                'poster_url' => null,
+                'width' => $this->width,
+                'height' => $this->height,
+                'duration_seconds' => $this->duration_seconds,
+                'is_public' => false,
+                'sort_order' => $this->sort_order,
+                'pin_protected' => true,
+                'locked' => true,
+            ];
+        }
+
         return [
             'uuid' => $this->uuid,
             'type' => $this->type->value,
@@ -30,6 +50,8 @@ class AthleteEventMediaResource extends JsonResource
             'duration_seconds' => $this->duration_seconds,
             'is_public' => $this->is_public,
             'sort_order' => $this->sort_order,
+            'pin_protected' => $this->isPinProtected(),
+            'locked' => false,
         ];
     }
 }

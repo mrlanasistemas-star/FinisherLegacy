@@ -10,6 +10,7 @@ use App\Http\Resources\Api\V1\MomentCommentResource;
 use App\Models\LegacyMoment;
 use App\Models\LegacyMomentComment;
 use App\Rules\NoObjectionableContent;
+use App\Services\Privacy\ContentPin;
 use App\Services\Social\SocialVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ class CommentController extends Controller
         $user = $this->sanctumUser($request);
         $moment->loadMissing('author.athleteProfile');
         abort_unless(Gate::forUser($user)->allows('view', $moment), 404);
+        app(ContentPin::class)->ensureRevealed($moment, $request);
 
         $hidden = $visibility->hiddenUserIds($user);
 

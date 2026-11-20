@@ -195,6 +195,12 @@ class StoryPresenter
      */
     public function apiStory(LegacyStory $story, bool $forOwner = false): array
     {
+        // Content PIN: locked → placeholder (no text, no media URLs). Only
+        // the owner can reach a protected story at all (LegacyStoryPolicy).
+        if ($story->isPinLocked()) {
+            return $this->lockedApiStory($story, $forOwner);
+        }
+
         $view = $this->story($story, $forOwner);
         $race = $view['race'];
         $tag = $view['tag'];
@@ -276,6 +282,61 @@ class StoryPresenter
             'year' => $view['year'],
             'shares' => $forOwner ? $this->shares($story) : [],
             'created_at' => $view['created_at'],
+            'pin_protected' => $story->isPinProtected(),
+            'locked' => false,
+        ];
+    }
+
+    /**
+     * Same keys as apiStory() for a PIN-locked memory: identity, the tag's
+     * product design and dates only — every piece of the owner's content
+     * (title, race, texts, photos, videos, audio, certificate) is null/empty.
+     *
+     * @return array<string, mixed>
+     */
+    private function lockedApiStory(LegacyStory $story, bool $forOwner): array
+    {
+        $story->loadMissing(['tag']);
+        $tag = $this->tag($story->tag);
+        $event = array_fill_keys([
+            'source', 'name', 'edition', 'race', 'distance', 'result_time', 'result_position', 'date', 'location',
+            'bib_number', 'athlete_name', 'pace', 'category', 'category_position', 'gender_position', 'finish_status',
+            'elevation_gain_m', 'sport', 'official',
+        ], null);
+
+        return [
+            'public_id' => $story->public_id,
+            'title' => null,
+            'is_owner' => $forOwner,
+            'event' => $event,
+            'dedication' => null,
+            'recipient_label' => null,
+            'body' => null,
+            'external_url' => null,
+            'visibility' => $story->visibility->value,
+            'cover_url' => null,
+            'photos' => [],
+            'videos' => [],
+            'audio_url' => null,
+            'audios' => [],
+            'certificate_url' => null,
+            'certificate_mime' => null,
+            'tag' => $tag === null ? null : [
+                'serial' => null,
+                'display_code' => null,
+                'collection' => $tag['collection'],
+                'design' => [
+                    'product_name' => $tag['product_name'],
+                    'variant_name' => $tag['variant_name'],
+                    'image_url' => $tag['image_url'],
+                ],
+            ],
+            'web_url' => $story->publicUrl(),
+            'year' => (int) $story->created_at?->format('Y'),
+            'shares' => [],
+            'created_at' => $story->created_at?->toIso8601String(),
+            'pin_protected' => true,
+            'locked' => true,
         ];
     }
 
@@ -325,6 +386,8 @@ class StoryPresenter
             'share_url' => $story->publicUrl(),
             'cover_url' => $cover !== null && $cover['status'] !== 'processing' && $cover['status'] !== 'failed' ? $cover['thumb_url'] : null,
             'updated_at' => $story->updated_at?->toIso8601String(),
+            // Content PIN (additive). Reaching this means it is unlocked.
+            'pin_protected' => $story->isPinProtected(),
         ];
     }
 

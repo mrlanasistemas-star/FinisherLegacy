@@ -11,6 +11,7 @@ use App\Models\LegacyStory;
 use App\Models\MediaFile;
 use App\Models\PhotoSale;
 use App\Services\Media\StoryMediaQuota;
+use App\Services\Privacy\ContentPin;
 use App\Support\LegacyTags\StoryPresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -192,6 +193,8 @@ class StoryMediaController extends Controller
         $story = LegacyStory::query()->where('public_id', $publicId)->firstOrFail();
 
         abort_unless($story->isOwnedBy($this->sanctumUser($request)), 404);
+        // Content PIN: a locked memory can't be read or edited (423 CONTENT_LOCKED).
+        app(ContentPin::class)->ensureRevealed($story, $request);
 
         return $story;
     }

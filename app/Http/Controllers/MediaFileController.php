@@ -60,6 +60,12 @@ class MediaFileController extends Controller
             return false;
         }
 
+        // PIN-protected: only URLs minted after the owner's unlock (signed
+        // `pin=1`, 10 min) count — older private URLs die with the lock.
+        if ($file->pinGuard() !== null && $request->query('pin') !== '1') {
+            return false;
+        }
+
         return $request->query('scope') !== 'public' || $file->isPublic();
     }
 

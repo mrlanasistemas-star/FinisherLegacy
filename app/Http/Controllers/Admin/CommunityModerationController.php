@@ -15,6 +15,7 @@ use App\Models\LegacyMomentComment;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Services\Privacy\ContentPin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -290,7 +291,11 @@ class CommunityModerationController extends Controller
     {
         return [
             'uuid' => $moment->uuid,
-            'excerpt' => Str::limit((string) $moment->caption, 140),
+            // Content PIN: staff never read a protected moment, unless it is
+            // under an open report (ContentPin::underModeration).
+            'excerpt' => $moment->isPinProtected() && ! app(ContentPin::class)->underModeration($moment)
+                ? __('Contenido protegido con NIP')
+                : Str::limit((string) $moment->caption, 140),
             'type' => $moment->type->value,
             'visibility' => $moment->visibility->value,
             'author' => $moment->author?->name,

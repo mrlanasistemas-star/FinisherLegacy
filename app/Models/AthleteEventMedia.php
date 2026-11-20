@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Contracts\Media\OwnsMediaFiles;
+use App\Contracts\Privacy\PinProtectable;
 use App\Enums\AthleteEventMediaType;
 use App\Enums\MediaFileStatus;
+use App\Models\Concerns\PinProtection;
 use App\Services\Media\MediaUrlGenerator;
+use App\Services\Privacy\ContentPin;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -29,8 +32,10 @@ use Illuminate\Support\Facades\URL;
     'uuid', 'athlete_id', 'event_participant_id', 'type', 'disk', 'path', 'mime',
     'size_bytes', 'checksum', 'width', 'height', 'duration_seconds', 'is_public', 'sort_order',
 ])]
-class AthleteEventMedia extends Model implements OwnsMediaFiles
+class AthleteEventMedia extends Model implements OwnsMediaFiles, PinProtectable
 {
+    use PinProtection;
+
     /** One extra query per list — never one per item (url() needs it). */
     protected $with = ['mediaFile'];
 
@@ -74,6 +79,20 @@ class AthleteEventMedia extends Model implements OwnsMediaFiles
     {
         $file = $this->mediaFile;
 
+        // PIN-protected (App\Services\Privacy\ContentPin): while locked only a
+        // URL both media controllers refuse (no `pin` marker); unlocked, a
+        // short-lived one carrying it. API resources return null instead.
+        if ($this->isPinProtected()) {
+            if ($file !== null && app(ContentPin::class)->reveals($this)) {
+                return $file->url($variant) ?? $file->url() ?? app(MediaUrlGenerator::class)->url($file, 'default', false);
+            }
+
+            return URL::temporarySignedRoute('athlete-media.show', now()->addMinutes(ContentPin::MEDIA_URL_TTL_MINUTES), array_filter([
+                'media' => $this->uuid,
+                'pin' => app(ContentPin::class)->reveals($this) ? 1 : null,
+            ]));
+        }
+
         if ($file !== null) {
             return $file->url($variant) ?? $file->url() ?? app(MediaUrlGenerator::class)->url($file, 'default', $this->is_public);
         }
@@ -108,12 +127,27 @@ class AthleteEventMedia extends Model implements OwnsMediaFiles
 
     public function canViewMedia(?User $viewer, MediaFile $file): bool
     {
+        if ($this->isPinProtected()) {
+            return $viewer !== null && $this->isPinOwnedBy($viewer) && app(ContentPin::class)->reveals($this);
+        }
+
         return $this->is_public || ($viewer !== null && $viewer->athlete?->id === $this->athlete_id);
     }
 
     public function mediaIsPublic(MediaFile $file): bool
     {
-        return (bool) $this->is_public;
+        return (bool) $this->is_public && ! $this->isPinProtected();
+    }
+
+    public function isPinOwnedBy(User $user): bool
+    {
+        return $user->athlete?->id === $this->athlete_id;
+    }
+
+    /** A PIN-protected photo/video is never public (App\Models\Concerns\PinProtection). */
+    protected function applyPinPrivacy(): void
+    {
+        $this->is_public = false;
     }
 
     public function syncFromMediaFile(MediaFile $file): void

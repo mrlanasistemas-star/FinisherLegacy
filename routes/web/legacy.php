@@ -8,6 +8,7 @@ use App\Http\Controllers\LegacyTags\StoryEditorController;
 use App\Http\Controllers\LegacyTags\StoryPrintController;
 use App\Http\Controllers\LegacyTags\StoryShareController;
 use App\Http\Controllers\LegacyTags\TagOpenController;
+use App\Http\Middleware\EnsureContentPinUnlocked;
 use App\Support\LegacyTags\TagCode;
 use Illuminate\Support\Facades\Route;
 
@@ -69,13 +70,14 @@ Route::get('legacy/para/{token}', [StoryController::class, 'share'])
 
 Route::get('legacy/{story}', [StoryController::class, 'show'])
     ->where('story', $legacyStoryId)
-    ->middleware('throttle:tag-open')
+    ->middleware(['throttle:tag-open', EnsureContentPinUnlocked::class])
     ->name('legacy.story.show');
 
 Route::middleware('auth')->group(function () use ($legacyStoryId) {
     Route::get('mi-legacy', MyLegacyController::class)->name('my-legacy.index');
 
-    Route::prefix('mi-legacy/{story}')->where(['story' => $legacyStoryId])->name('my-legacy.')->group(function () {
+    // EnsureContentPinUnlocked: a PIN-protected memory needs the owner's unlock.
+    Route::prefix('mi-legacy/{story}')->where(['story' => $legacyStoryId])->middleware(EnsureContentPinUnlocked::class)->name('my-legacy.')->group(function () {
         Route::get('editar', [StoryEditorController::class, 'edit'])->name('edit');
         Route::patch('/', [StoryEditorController::class, 'update'])->name('update');
 

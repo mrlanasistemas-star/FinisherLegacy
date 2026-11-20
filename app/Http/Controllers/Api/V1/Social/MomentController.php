@@ -16,6 +16,7 @@ use App\Models\LegacyMoment;
 use App\Models\User;
 use App\Queries\Social\MomentQuery;
 use App\Rules\NoObjectionableContent;
+use App\Services\Privacy\ContentPin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -60,6 +61,8 @@ class MomentController extends Controller
     {
         $user = $this->sanctumUser($request);
         abort_unless(Gate::forUser($user)->allows('update', $moment), 404);
+        // Content PIN: a locked item can't be changed/removed (423 CONTENT_LOCKED).
+        app(ContentPin::class)->ensureRevealed($moment, $request);
 
         $data = $request->validate([
             'caption' => ['sometimes', 'nullable', 'string', 'max:'.config('finisher.social.moment_caption_max'), new NoObjectionableContent],
@@ -74,6 +77,8 @@ class MomentController extends Controller
     public function destroy(Request $request, LegacyMoment $moment, DeleteMoment $delete): JsonResponse
     {
         abort_unless(Gate::forUser($this->sanctumUser($request))->allows('delete', $moment), 404);
+        // Content PIN: a locked item can't be changed/removed (423 CONTENT_LOCKED).
+        app(ContentPin::class)->ensureRevealed($moment, $request);
 
         $delete->handle($moment);
 

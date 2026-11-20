@@ -3,9 +3,11 @@
 namespace App\Policies;
 
 use App\Contracts\Media\OwnsMediaFiles;
+use App\Contracts\Privacy\PinProtectable;
 use App\Enums\MediaVisibility;
 use App\Models\MediaFile;
 use App\Models\User;
+use App\Services\Privacy\ContentPin;
 
 /**
  * Who may fetch a media file WITHOUT a valid signed URL (spec §68/§117):
@@ -18,6 +20,13 @@ class MediaFilePolicy
 {
     public function view(?User $user, MediaFile $file): bool
     {
+        // PIN-protected content: no uploader/staff shortcut. Only its owner
+        // with a live unlock grant — or moderators while it is under an open
+        // report (ContentPin::underModeration, documented rule).
+        if (($guard = $file->pinGuard()) !== null) {
+            return $this->pinAllows($user, $guard);
+        }
+
         if ($user !== null && ($this->isUploader($user, $file) || $user->can('media.manage'))) {
             return true;
         }
@@ -37,7 +46,26 @@ class MediaFilePolicy
      */
     public function viewOriginal(?User $user, MediaFile $file): bool
     {
+        if (($guard = $file->pinGuard()) !== null && ! $this->pinAllows($user, $guard)) {
+            return false;
+        }
+
         return $user !== null && ($this->isUploader($user, $file) || $user->can('media.manage'));
+    }
+
+    private function pinAllows(?User $user, PinProtectable $guard): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+
+        $pins = app(ContentPin::class);
+
+        if ($guard->isPinOwnedBy($user)) {
+            return $pins->reveals($guard);
+        }
+
+        return $user->can('media.manage') && $pins->underModeration($guard);
     }
 
     private function isUploader(User $user, MediaFile $file): bool

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Contracts\Privacy\PinProtectable;
 use App\Enums\MomentType;
 use App\Enums\MomentVisibility;
 use App\Enums\PostKind;
+use App\Models\Concerns\PinProtection;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -42,9 +44,9 @@ use Illuminate\Support\Str;
     'uuid', 'user_id', 'type', 'caption', 'visibility', 'event_participant_id',
     'medal_id', 'athlete_owned_product_id', 'metrics', 'event_edition_id', 'hidden_at', 'hidden_by',
 ])]
-class LegacyMoment extends Model
+class LegacyMoment extends Model implements PinProtectable
 {
-    use SoftDeletes;
+    use PinProtection, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -66,6 +68,17 @@ class LegacyMoment extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    public function isPinOwnedBy(User $user): bool
+    {
+        return $user->id === $this->user_id;
+    }
+
+    /** A PIN-protected moment is always private (App\Models\Concerns\PinProtection). */
+    protected function applyPinPrivacy(): void
+    {
+        $this->visibility = MomentVisibility::Private;
     }
 
     /** @return BelongsTo<User, $this> */

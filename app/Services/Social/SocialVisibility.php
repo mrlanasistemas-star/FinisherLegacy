@@ -128,8 +128,9 @@ class SocialVisibility
             return true;
         }
 
-        // Hidden by moderation: only its author still sees it.
-        if ($moment->hidden_at !== null) {
+        // Hidden by moderation, or locked with the owner's content PIN
+        // (App\Services\Privacy\ContentPin): only its author still sees it.
+        if ($moment->hidden_at !== null || $moment->isPinProtected()) {
             return false;
         }
 
@@ -167,6 +168,7 @@ class SocialVisibility
 
                 $q->orWhere(function (Builder $shared) use ($following) {
                     $shared->whereNull('legacy_moments.hidden_at')
+                        ->where('legacy_moments.pin_protected', false)
                         ->whereHas('author.athleteProfile', function (Builder $p) use ($following) {
                             $p->where(function (Builder $pv) use ($following) {
                                 $pv->where('profile_visibility', ProfileVisibility::Public);

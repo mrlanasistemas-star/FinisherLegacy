@@ -77,4 +77,11 @@ enum ApiErrorCode: string
     case IapPurchaseNotValid = 'IAP_PURCHASE_NOT_VALID';
     case IapPurchaseOtherAccount = 'IAP_PURCHASE_OTHER_ACCOUNT';
     case IapStoreUnavailable = 'IAP_STORE_UNAVAILABLE';
+
+    // Content PIN (App\Services\Privacy\ContentPin, docs/renovacion/nip.md).
+    case ContentLocked = 'CONTENT_LOCKED';
+    case PinInvalid = 'PIN_INVALID';
+    case PinLocked = 'PIN_LOCKED';
+    case PinNotSet = 'PIN_NOT_SET';
+    case PinAlreadySet = 'PIN_ALREADY_SET';
 }

@@ -466,3 +466,4 @@ require __DIR__.'/web/training.php';
 require __DIR__.'/web/admin-training.php';
 require __DIR__.'/web/admin-notifications.php';
 require __DIR__.'/web/notifications.php';
+require __DIR__.'/web/content-pin.php';

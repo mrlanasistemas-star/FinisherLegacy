@@ -60,7 +60,8 @@ class StoryController extends Controller
     public function share(Request $request, string $token, StoryPresenter $presenter, ManageStoryShares $shares): HttpResponse
     {
         $share = LegacyStoryShare::query()->where('token', $token)->with('story')->first();
-        abort_if($share === null || $share->story === null, 404);
+        // A PIN-protected memory is never reachable through a recipient link.
+        abort_if($share === null || $share->story === null || $share->story->isPinProtected(), 404);
 
         if (! $share->isActive()) {
             return $this->noindex($request, Inertia::render('legacy/Unavailable', [

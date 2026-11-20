@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use App\Contracts\Media\OwnsMediaFiles;
+use App\Contracts\Privacy\PinProtectable;
 use App\Enums\StoryVisibility;
+use App\Models\Concerns\PinProtection;
+use App\Services\Privacy\ContentPin;
 use Database\Factories\LegacyStoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,10 +30,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'category_position', 'gender_position', 'finish_status', 'elevation_gain_m', 'sport_id', 'race_date', 'location', 'recipient_label', 'dedication', 'body',
     'external_url', 'visibility', 'completed_at',
 ])]
-class LegacyStory extends Model implements OwnsMediaFiles
+class LegacyStory extends Model implements OwnsMediaFiles, PinProtectable
 {
     /** @use HasFactory<LegacyStoryFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, PinProtection, SoftDeletes;
 
     protected function casts(): array
     {
@@ -109,7 +112,23 @@ class LegacyStory extends Model implements OwnsMediaFiles
      */
     public function canViewMedia(?User $viewer, MediaFile $file): bool
     {
+        // PIN-protected: the owner too needs a live unlock grant.
+        if ($this->isPinProtected()) {
+            return $this->isOwnedBy($viewer) && app(ContentPin::class)->reveals($this);
+        }
+
         return $this->isOwnedBy($viewer);
+    }
+
+    public function isPinOwnedBy(User $user): bool
+    {
+        return $user->athlete?->id === $this->athlete_id;
+    }
+
+    /** A PIN-protected memory is always private (App\Models\Concerns\PinProtection). */
+    protected function applyPinPrivacy(): void
+    {
+        $this->visibility = StoryVisibility::Private;
     }
 
     /** Only public stories get long-lived, cacheable media URLs. */

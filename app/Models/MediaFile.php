@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Contracts\Media\OwnsMediaFiles;
+use App\Contracts\Privacy\PinProtectable;
 use App\Enums\MediaFileStatus;
 use App\Enums\MediaKind;
 use App\Enums\MediaVisibility;
 use App\Services\Media\MediaUrlGenerator;
+use App\Services\Privacy\ContentPin;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -134,6 +136,21 @@ class MediaFile extends Model
         return ['path' => $this->path, 'mime' => $primary['mime'] ?? $this->mime];
     }
 
+    /**
+     * The PIN-protected item this file belongs to, if any: its owning row
+     * (memory, event photo) or, for a moment attachment, the moment.
+     */
+    public function pinGuard(): ?PinProtectable
+    {
+        $owner = $this->mediable_type !== null ? $this->mediable : null;
+
+        if ($owner instanceof LegacyMomentMedia) {
+            $owner = $owner->moment;
+        }
+
+        return $owner instanceof PinProtectable && $owner->isPinProtected() ? $owner : null;
+    }
+
     public function hasVariant(string $variant): bool
     {
         return isset($this->variants[$variant]);
@@ -147,6 +164,13 @@ class MediaFile extends Model
     public function url(?string $variant = null): ?string
     {
         if (! $this->isServable() || $this->resolveVariant($variant) === null) {
+            return null;
+        }
+
+        // PIN-protected owner row and no unlock grant of its owner on this
+        // request → no URL at all (App\Services\Privacy\ContentPin).
+        $guard = $this->pinGuard();
+        if ($guard !== null && ! app(ContentPin::class)->reveals($guard)) {
             return null;
         }
 

@@ -28,6 +28,12 @@ class LegacyStoryPolicy
             return true;
         }
 
+        // Locked with the owner's content PIN: nobody else, ever (the
+        // owner still needs an unlock — App\Support\LegacyTags\StoryPresenter).
+        if ($story->isPinProtected()) {
+            return false;
+        }
+
         return $story->visibility !== StoryVisibility::Private;
     }
 

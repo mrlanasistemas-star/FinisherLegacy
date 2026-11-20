@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\Media\OwnsMediaFiles;
 use App\Enums\MomentVisibility;
+use App\Services\Privacy\ContentPin;
 use App\Services\Social\SocialVisibility;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -62,12 +63,21 @@ class LegacyMomentMedia extends Model implements OwnsMediaFiles
             return $this->mediaFile->url($variant) ?? $this->mediaFile->url();
         }
 
+        // Old public-disk files: no URL while the moment is PIN-locked.
+        if ($this->moment?->isPinLocked()) {
+            return null;
+        }
+
         return $this->path !== null ? Storage::disk($this->disk ?? 'public')->url($this->path) : null;
     }
 
     public function canViewMedia(?User $viewer, MediaFile $file): bool
     {
         $moment = $this->moment;
+
+        if ($moment !== null && $moment->isPinProtected()) {
+            return $viewer !== null && $moment->isPinOwnedBy($viewer) && app(ContentPin::class)->reveals($moment);
+        }
 
         return $moment !== null && app(SocialVisibility::class)->canViewMoment($moment, $viewer);
     }

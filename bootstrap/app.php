@@ -70,6 +70,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Content PIN fields never go back into the session on a validation
+        // error (App\Services\Privacy\ContentPin).
+        $exceptions->dontFlash(['pin', 'pin_confirmation', 'current_pin']);
+
         // Payment incidents → `payments` log channel (default reporting continues).
         $exceptions->report(function (Throwable $e) {
             OperationalLog::reportPaymentIncident($e, app()->bound('request') ? request() : null);

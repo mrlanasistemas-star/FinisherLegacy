@@ -35,6 +35,36 @@ class MomentResource extends JsonResource
         $kind = $this->kind();
         $edition = $this->eventEdition ?? $participant?->eventEdition;
 
+        // PIN-locked (only ever reaches its owner — SocialVisibility hides it
+        // from everyone else): a placeholder, no text, no media URLs.
+        if ($this->isPinLocked()) {
+            return [
+                'uuid' => $this->uuid,
+                'type' => $this->type->value,
+                'kind' => $kind->value,
+                'kind_label' => $kind->label(),
+                'caption' => null,
+                'visibility' => $this->visibility->value,
+                'created_at' => $this->created_at->toIso8601String(),
+                'is_owner' => $viewer !== null && $viewer->id === $this->user_id,
+                'is_hidden' => $this->hidden_at !== null,
+                'pin_protected' => true,
+                'locked' => true,
+                'share_url' => null,
+                'event' => null,
+                'author' => new AthleteResource($this->author),
+                'activity' => null,
+                'medal' => null,
+                'gear' => null,
+                'metrics' => null,
+                'media' => [],
+                'reactions' => ['like' => 0, 'cheer' => 0, 'total' => 0],
+                'my_reactions' => [],
+                'comments_count' => 0,
+                'comments_preview' => [],
+            ];
+        }
+
         return [
             'uuid' => $this->uuid,
             'type' => $this->type->value,
@@ -46,6 +76,9 @@ class MomentResource extends JsonResource
             'created_at' => $this->created_at->toIso8601String(),
             'is_owner' => $viewer !== null && $viewer->id === $this->user_id,
             'is_hidden' => $this->hidden_at !== null,
+            // Content PIN (additive): protected + currently unlocked.
+            'pin_protected' => $this->isPinProtected(),
+            'locked' => false,
             'share_url' => route('community.posts.show', $this->uuid),
             'event' => $edition === null ? null : [
                 'name' => $edition->event?->name,

@@ -43,7 +43,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read string $name
  */
 #[Fillable(['first_name', 'last_name', 'email', 'password', 'phone'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'content_pin_hash', 'content_pin_failed_attempts', 'content_pin_locked_until'])]
 class User extends Authenticatable implements HasLocalePreference
 {
     /** @use HasFactory<UserFactory> */
@@ -72,6 +72,10 @@ class User extends Authenticatable implements HasLocalePreference
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            // Content PIN (App\Services\Privacy\ContentPin) — hash only, never fillable.
+            'content_pin_set_at' => 'datetime',
+            'content_pin_locked_until' => 'datetime',
+            'content_pin_failed_attempts' => 'integer',
         ];
     }
 

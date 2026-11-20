@@ -25,6 +25,8 @@ class AthleteEventMediaFileController extends Controller
     public function show(Request $request, AthleteEventMedia $media, MediaStreamResponder $responder): Response
     {
         abort_unless($media->is_public || $request->hasValidSignature(), 403);
+        // PIN-protected (always private): only post-unlock URLs (signed pin=1).
+        abort_if($media->isPinProtected() && $request->query('pin') !== '1', 403);
 
         if ($media->mediaFile !== null) {
             abort_unless($media->mediaFile->isServable(), 404);
