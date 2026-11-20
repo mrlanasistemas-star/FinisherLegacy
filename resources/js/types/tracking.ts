@@ -16,7 +16,7 @@ export type LiveSupportMessage = {
 export type LiveSnapshot = {
     athlete: { display_name: string; avatar_url: string | null };
     event: { name: string | null; race: string | null };
-    status: 'waiting' | 'active' | 'stopped';
+    status: 'waiting' | 'active' | 'paused' | 'stopped';
     last_point: { lat: number; lng: number; recorded_at: string } | null;
     distance_m: number;
     race_distance_m: number | null;

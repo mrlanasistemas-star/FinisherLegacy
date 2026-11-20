@@ -4,6 +4,10 @@
  * mobile-first, no technical data and no coordinates in text. Realtime via
  * getEcho() on `live.{channel}` → `.tracking.point`; when realtime is off
  * or goes quiet, a soft Inertia partial reload every `pollSeconds`.
+ *
+ * Privacy (docs/renovacion/familia.md): once the share ends (session
+ * stopped, time up, revoked) the server sends `.tracking.ended`, answers
+ * 404/410 and this page drops the map — no position is kept on screen.
  */
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
@@ -39,9 +43,13 @@ defineOptions({ layout: [] });
 
 const props = defineProps<{
     available: boolean;
+    /** Why it is unavailable: `ended` (finished / time up) or `unavailable`. */
+    reason?: 'ended' | 'unavailable' | null;
     snapshot: LiveSnapshot | null;
     pollSeconds: number;
     map?: TrackingMapConfig;
+    /** `finisherlegacy://live/{token}` — opens the same view in the app. */
+    appUrl?: string;
 }>();
 
 const { t } = useI18n();
@@ -72,15 +80,21 @@ const lastUpdate = computed(() => {
     return at ? timeAgo(at) : null;
 });
 
+// "Pausado": the server says so, or no fix for 3 min since the last load.
 const isStale = computed(() => {
     const at = live.value?.last_point?.recorded_at;
 
     return (
-        live.value?.status === 'active' &&
-        !!at &&
-        now.value - new Date(at).getTime() > 5 * 60_000
+        live.value?.status === 'paused' ||
+        (live.value?.status === 'active' &&
+            !!at &&
+            now.value - new Date(at).getTime() > 3 * 60_000)
     );
 });
+
+const isRunning = computed(
+    () => live.value?.status === 'active' || live.value?.status === 'paused',
+);
 
 const progressPct = computed(() =>
     live.value?.progress != null ? Math.round(live.value.progress * 100) : null,
@@ -89,9 +103,10 @@ const progressPct = computed(() =>
 const statusLabel = computed(() => {
     switch (live.value?.status) {
         case 'active':
-            return isStale.value ? t('Sin señal reciente') : t('En vivo');
+        case 'paused':
+            return isStale.value ? t('Pausado') : t('En curso');
         case 'stopped':
-            return t('Seguimiento terminado');
+            return t('Finalizado');
         default:
             return t('Aún no comienza');
     }
@@ -137,7 +152,18 @@ function applyPoint(p: TrackingPointPayload): void {
 }
 
 function refresh(): void {
-    router.reload({ only: ['snapshot', 'available'], async: true });
+    router.reload({ only: ['snapshot', 'available', 'reason'], async: true });
+}
+
+/** The share ended server-side: forget the position now, then reload. */
+function onEnded(): void {
+    if (live.value) {
+        live.value.last_point = null;
+        live.value.path = [];
+        live.value.status = 'stopped';
+    }
+
+    router.reload();
 }
 
 const { pause, resume } = useIntervalFn(
@@ -166,7 +192,9 @@ onMounted(() => {
     }
 
     echo = getEcho();
-    echo?.channel(live.value.channel).listen('.tracking.point', applyPoint);
+    echo?.channel(live.value.channel)
+        .listen('.tracking.point', applyPoint)
+        .listen('.tracking.ended', onEnded);
     lastRealtimeAt = Date.now();
     resume();
 });
@@ -219,9 +247,9 @@ const mapConfig = computed<TrackingMapConfig>(
                 <span
                     class="size-2 rounded-full"
                     :class="
-                        live.status === 'active' && !isStale
+                        isRunning && !isStale
                             ? 'animate-pulse bg-emerald-600 motion-reduce:animate-none'
-                            : live.status === 'active'
+                            : isRunning
                               ? 'bg-amber-500'
                               : 'bg-muted-foreground/50'
                     "
@@ -238,16 +266,30 @@ const mapConfig = computed<TrackingMapConfig>(
         >
             <div class="max-w-md">
                 <p class="fl-eyebrow">{{ $t('Seguimiento en vivo') }}</p>
-                <h1 class="fl-display mt-3 text-4xl">
-                    {{ $t('Este enlace ya no está activo') }}
-                </h1>
-                <p class="mt-4 text-muted-foreground">
-                    {{
-                        $t(
-                            'Puede que haya vencido o que tu atleta lo haya desactivado. Pídele que te comparta uno nuevo desde su evento en Finisher Legacy.',
-                        )
-                    }}
-                </p>
+                <template v-if="reason === 'ended'">
+                    <h1 class="fl-display mt-3 text-4xl">
+                        {{ $t('El seguimiento terminó') }}
+                    </h1>
+                    <p class="mt-4 text-muted-foreground">
+                        {{
+                            $t(
+                                'La actividad finalizó o se acabó el tiempo que eligió para compartir. Por privacidad ya no mostramos su ubicación.',
+                            )
+                        }}
+                    </p>
+                </template>
+                <template v-else>
+                    <h1 class="fl-display mt-3 text-4xl">
+                        {{ $t('Este enlace ya no está activo') }}
+                    </h1>
+                    <p class="mt-4 text-muted-foreground">
+                        {{
+                            $t(
+                                'Puede que haya vencido o que tu atleta lo haya desactivado. Pídele que te comparta uno nuevo desde su evento en Finisher Legacy.',
+                            )
+                        }}
+                    </p>
+                </template>
                 <Link
                     href="/"
                     class="mt-8 inline-flex min-h-11 items-center rounded-full bg-fl-black px-6 text-sm font-medium text-white hover:bg-fl-graphite focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -316,6 +358,22 @@ const mapConfig = computed<TrackingMapConfig>(
                         <Crosshair class="size-5" />
                     </button>
                     <div
+                        v-if="live.status === 'stopped'"
+                        class="absolute inset-0 z-[500] grid place-items-center bg-fl-paper/95 p-6 text-center"
+                    >
+                        <div class="max-w-sm">
+                            <p class="fl-eyebrow">{{ $t('Finalizado') }}</p>
+                            <p class="mt-2 text-sm text-muted-foreground">
+                                {{
+                                    $t(
+                                        '{name} terminó su actividad. Por privacidad ya no mostramos su ubicación.',
+                                        { name: firstName },
+                                    )
+                                }}
+                            </p>
+                        </div>
+                    </div>
+                    <div
                         v-if="live.status === 'waiting'"
                         class="absolute inset-x-4 top-4 z-[500] rounded-xl bg-white/95 p-4 text-sm shadow-sm"
                     >
@@ -377,8 +435,15 @@ const mapConfig = computed<TrackingMapConfig>(
                     <p class="mt-1 text-lg font-medium">
                         {{ lastUpdate ?? $t('Todavía no') }}
                     </p>
-                    <p v-if="isStale" class="mt-1 text-xs text-amber-700">
-                        {{ $t('Puede estar en una zona sin señal.') }}
+                    <p
+                        v-if="isStale && isRunning"
+                        class="mt-1 text-xs text-amber-700"
+                    >
+                        {{
+                            $t(
+                                'Pausó su actividad o está en una zona sin señal.',
+                            )
+                        }}
                     </p>
                 </div>
                 <div class="fl-card p-4">
@@ -466,6 +531,15 @@ const mapConfig = computed<TrackingMapConfig>(
                 >
                     <Heart class="size-4" />
                     {{ $t('Enviar apoyo a {name}', { name: firstName }) }}
+                </a>
+            </section>
+
+            <section v-if="appUrl" class="fl-container mt-8">
+                <a
+                    :href="appUrl"
+                    class="inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-white px-6 text-sm font-medium hover:bg-fl-cream focus-visible:ring-2 focus-visible:ring-fl-gold focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                    {{ $t('Abrir en la app') }}
                 </a>
             </section>
 
