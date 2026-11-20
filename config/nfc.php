@@ -35,6 +35,7 @@ return [
         // the password-reset email link, which the app maps to its own
         // reset screen (FinisherLegacyMobile src/features/links/map-incoming-path.ts).
         // Must match the Android intent filters in the app's app.config.ts.
-        'paths' => ['/n/*', '/t/*', '/reset-password/*'],
+        // Also the public live-tracking and family invite links (docs/renovacion/familia.md).
+        'paths' => ['/n/*', '/t/*', '/reset-password/*', '/live/*', '/familia/invitacion/*'],
     ],
 ];
