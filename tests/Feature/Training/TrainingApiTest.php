@@ -79,6 +79,8 @@ test('messages list follows the contract with a signed audio url', function () {
 
     expect(array_keys($response->json('data.0')))->toEqualCanonicalizing([
         'uuid', 'sender_name', 'relationship', 'body', 'icon', 'audio_url', 'duration_seconds', 'listened_at', 'favorite', 'created_at', 'link',
+        // Additive (Tarjeta de ánimo): anonymity + where it came from.
+        'anonymous', 'source',
     ]);
 
     $url = (string) $response->json('data.0.audio_url');
@@ -179,7 +181,7 @@ test('links: create, list and revoke through the API', function () {
         ->assertUnprocessable()->assertJsonValidationErrors('title');
 
     $list = $this->getJson('/api/v1/training/links', $headers)->assertOk()->assertJsonCount(2, 'data');
-    expect(array_keys($list->json('data.0')))->toEqualCanonicalizing(['uuid', 'title', 'url', 'expires_at', 'revoked_at', 'messages_count']);
+    expect(array_keys($list->json('data.0')))->toEqualCanonicalizing(['uuid', 'title', 'url', 'expires_at', 'revoked_at', 'messages_count', 'state', 'stats']);
 
     $this->deleteJson("/api/v1/training/links/{$link->uuid}", [], $headers)->assertNoContent();
     expect($link->fresh()->revoked_at)->not->toBeNull();
