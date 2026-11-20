@@ -32,7 +32,6 @@ import {
     about,
     contact,
     dashboard,
-    home,
     howItWorks,
     privacy,
     search,
@@ -62,7 +61,6 @@ import { index as trainingIndex } from '@/routes/training';
 /** Marks a Spanish literal for the i18n extractor; consumers translate at render with $t(). */
 const t = (text: string): string => text;
 
-export const HOME_URL = home.url();
 export const ACTIVATE_URL = activateIndex.url();
 export const MI_LEGACY_URL = myLegacyIndex.url();
 export const STORE_URL = storeIndex.url();

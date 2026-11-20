@@ -160,20 +160,6 @@ export type ProductMediaItem = {
 
 export type ProductAvailability = 'available' | 'coming_soon' | 'concept';
 
-export type PublicSport = {
-    name: string;
-    slug: string;
-};
-
-export type HeroAthlete = {
-    username: string;
-    name: string;
-    sport: string | null;
-    city: string | null;
-    bio: string | null;
-    photo_url: string;
-};
-
 export type CompanyMilestone = {
     id: number;
     period: string;

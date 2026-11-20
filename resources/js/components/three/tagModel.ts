@@ -40,8 +40,6 @@ const BEVEL = 0.028;
 export const SLOT_Y = H / 2 - 0.22;
 const SLOT_HALF_W = 0.3;
 const SLOT_HALF_H = 0.085;
-/** Kept for callers that still read the old eyelet position. */
-export const HOLE_Y = SLOT_Y;
 export const CAP_Z = DEPTH / 2 + BEVEL;
 const STRAP_R = 0.055;
 /** Top of the strap loop (object spans −H/2 … STRAP_TOP). */

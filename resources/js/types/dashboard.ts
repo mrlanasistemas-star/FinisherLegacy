@@ -1,18 +1,3 @@
-export type DashboardStats = {
-    medals: number;
-    events: number;
-    plates: number;
-    legacyCodes: number;
-    ownedProducts: number;
-    media: number;
-};
-
-export type DashboardProfileSummary = {
-    username: string;
-    profile_visibility: 'public' | 'followers' | 'private';
-    completion: number;
-};
-
 export type SportOption = {
     id: number;
     name: string;
@@ -82,10 +67,6 @@ export type EventSearchResult = {
     country: string;
     races: EventSearchRace[];
 };
-
-export type ParticipantMatch =
-    | { matched: true; official_time: string | null; pace: string | null }
-    | { matched: false };
 
 export type PublicAthleteProfile = {
     name: string;

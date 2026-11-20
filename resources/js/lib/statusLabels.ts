@@ -28,18 +28,6 @@ export const legacyCodeStatus: StatusMap = {
     cancelled: { label: 'Cancelado', class: NEUTRAL },
 };
 
-export const incidentStatus: StatusMap = {
-    open: { label: 'Abierta', class: 'border-red-500/30 text-red-700' },
-    in_progress: {
-        label: 'En proceso',
-        class: 'border-amber-500/30 text-amber-700',
-    },
-    resolved: {
-        label: 'Resuelta',
-        class: 'border-emerald-500/30 text-emerald-700',
-    },
-};
-
 export const plateStatus: StatusMap = {
     draft: { label: 'Borrador', class: NEUTRAL },
     pending_confirmation: {
@@ -72,60 +60,6 @@ export const plateStatus: StatusMap = {
         label: 'En reimpresión',
         class: 'border-amber-500/30 text-amber-700',
     },
-};
-
-export const reprintStatus: StatusMap = {
-    pending: {
-        label: 'Pendiente',
-        class: 'border-amber-500/30 text-amber-700',
-    },
-    approved: {
-        label: 'Aprobada',
-        class: 'border-emerald-500/30 text-emerald-700',
-    },
-    rejected: { label: 'Rechazada', class: 'border-red-500/30 text-red-700' },
-    completed: {
-        label: 'Completada',
-        class: 'border-emerald-500/30 text-emerald-700',
-    },
-};
-
-export const productionJobStatus: StatusMap = {
-    queued: { label: 'En cola', class: 'border-sky-500/30 text-sky-700' },
-    assigned: {
-        label: 'Asignada',
-        class: 'border-fl-gold/30 text-fl-gold-ink',
-    },
-    preparing: {
-        label: 'Preparando',
-        class: 'border-fl-gold/30 text-fl-gold-ink',
-    },
-    engraving_front: {
-        label: 'Imprimiendo frente',
-        class: 'border-fl-gold/30 text-fl-gold-ink',
-    },
-    awaiting_flip: {
-        label: 'Voltea la placa',
-        class: 'border-amber-500/30 text-amber-700',
-    },
-    engraving_back: {
-        label: 'Imprimiendo reverso',
-        class: 'border-fl-gold/30 text-fl-gold-ink',
-    },
-    verifying_qr: {
-        label: 'Verificando NFC',
-        class: 'border-amber-500/30 text-amber-700',
-    },
-    ready: {
-        label: 'Lista',
-        class: 'border-emerald-500/30 text-emerald-700',
-    },
-    delivered: {
-        label: 'Entregada',
-        class: 'border-emerald-500/30 text-emerald-700',
-    },
-    failed: { label: 'Falló', class: 'border-red-500/30 text-red-700' },
-    cancelled: { label: 'Cancelado', class: NEUTRAL },
 };
 
 export const preregistrationStatus: StatusMap = {

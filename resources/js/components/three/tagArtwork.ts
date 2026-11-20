@@ -512,23 +512,3 @@ export function drawShadow(): HTMLCanvasElement {
     return canvas;
 }
 
-/** Soft ring sprite for the NFC pulse (white; tinted by the material). */
-export function drawPulseRing(): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-        return canvas;
-    }
-
-    const g = ctx.createRadialGradient(128, 128, 96, 128, 128, 126);
-    g.addColorStop(0, 'rgba(255,255,255,0)');
-    g.addColorStop(0.55, 'rgba(255,255,255,1)');
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 256);
-
-    return canvas;
-}
