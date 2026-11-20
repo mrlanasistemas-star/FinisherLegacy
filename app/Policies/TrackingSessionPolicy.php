@@ -47,6 +47,11 @@ class TrackingSessionPolicy
 
     private static function ownsSession(User $user, TrackingSession $session): bool
     {
+        // A training-workout session belongs to its user directly.
+        if ($session->event_participant_id === null) {
+            return $session->user_id !== null && $session->user_id === $user->id;
+        }
+
         $participant = $session->eventParticipant()->first(['id', 'athlete_id']);
 
         return $participant !== null && self::ownsParticipant($user, $participant);

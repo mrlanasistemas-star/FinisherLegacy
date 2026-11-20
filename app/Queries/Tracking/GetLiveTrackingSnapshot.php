@@ -37,11 +37,19 @@ class GetLiveTrackingSnapshot
     /** @return array<string, mixed> */
     public function handle(TrackingShare $share): array
     {
+        $session = $this->resolveSession($share);
+
+        // A live training workout (Modo entrenamiento) has no race participation.
+        if ($share->event_participant_id === null) {
+            abort_if($session === null || $session->user_id === null, 404);
+
+            return $this->workoutSnapshot($share, $session);
+        }
+
         $participant = EventParticipant::query()
             ->with(['athlete:id,user_id,first_name,last_name,full_name', 'athlete.user.athleteProfile', 'eventEdition.event', 'eventRace'])
             ->findOrFail($share->event_participant_id);
 
-        $session = $this->resolveSession($share);
         $raceMeters = Geo::raceDistanceMeters($participant->eventRace);
         $distance = $session !== null ? $session->distance_m : 0;
 
@@ -80,6 +88,55 @@ class GetLiveTrackingSnapshot
             'channel' => $share->channelName(),
             'expires_at' => $share->expires_at->toIso8601String(),
             'support' => $this->support($participant),
+        ];
+    }
+
+    /**
+     * Same minimised shape for a followed training workout: no event, no
+     * race distance, no support messages; the activity is the "event" name.
+     *
+     * @return array<string, mixed>
+     */
+    private function workoutSnapshot(TrackingShare $share, TrackingSession $session): array
+    {
+        $user = $session->user()->with(['athlete:id,user_id,first_name,last_name,full_name', 'athleteProfile'])->first();
+        $sport = $session->trainingWorkout()->with('sport:id,name')->first()?->sport?->name;
+        $live = $session->isActive();
+        $status = match (true) {
+            ! $live => 'stopped',
+            $session->last_point_at !== null
+                && $session->last_point_at->lt(now()->subSeconds((int) config('tracking.paused_after_seconds', 180))) => 'paused',
+            default => 'active',
+        };
+        $athlete = $user?->athlete;
+        $name = trim(trim((string) $athlete?->first_name).' '.trim((string) $athlete?->last_name));
+        $photo = $user?->athleteProfile?->profile_photo_path;
+
+        return [
+            'athlete' => [
+                'display_name' => $name !== '' ? $name : (trim((string) ($athlete?->full_name ?? $user?->name)) ?: 'Atleta'),
+                'avatar_url' => $photo ? Storage::disk('public')->url($photo) : null,
+            ],
+            'event' => [
+                'name' => $sport !== null ? __('Entrenamiento · :sport', ['sport' => __($sport)]) : __('Entrenamiento'),
+                'race' => null,
+            ],
+            'status' => $status,
+            'last_point' => $live && $session->last_lat !== null && $session->last_point_at !== null ? [
+                'lat' => round($session->last_lat, 6),
+                'lng' => round($session->last_lng ?? 0.0, 6),
+                'recorded_at' => $session->last_point_at->toIso8601String(),
+            ] : null,
+            'distance_m' => $session->distance_m,
+            'race_distance_m' => null,
+            'progress' => null,
+            'battery' => $live ? $session->last_battery : null,
+            'started_at' => $session->started_at->toIso8601String(),
+            'stopped_at' => $session->stopped_at?->toIso8601String(),
+            'path' => $live ? $this->path($session) : [],
+            'channel' => $share->channelName(),
+            'expires_at' => $share->expires_at->toIso8601String(),
+            'support' => ['url' => null, 'accepting' => false, 'messages' => []],
         ];
     }
 

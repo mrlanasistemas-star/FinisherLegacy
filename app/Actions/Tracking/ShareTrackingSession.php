@@ -66,7 +66,8 @@ class ShareTrackingSession
         // "Hasta que termine" is still capped by the global maximum lifetime.
         $expiresAt = now()->addHours($hours ?? (int) config('tracking.share_max_ttl_hours', 336));
 
-        $participant = $session->eventParticipant()->firstOrFail();
+        // Null for a live training workout session (no race participation).
+        $participant = $session->eventParticipant()->first();
         $newlyShared = collect();
 
         $family = DB::transaction(function () use ($links, $session, $owner, $expiresAt, $newlyShared) {

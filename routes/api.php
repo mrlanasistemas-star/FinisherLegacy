@@ -290,6 +290,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                 Route::post('workouts/{uuid}/finish', [TrainingWorkoutController::class, 'finish'])->whereUuid('uuid')->name('workouts.finish');
                 Route::post('workouts/{uuid}/discard', [TrainingWorkoutController::class, 'discard'])->whereUuid('uuid')->name('workouts.discard');
                 Route::delete('workouts/{uuid}', [TrainingWorkoutController::class, 'destroy'])->whereUuid('uuid')->name('workouts.destroy');
+                Route::post('workouts/{uuid}/live', [TrainingWorkoutController::class, 'live'])->whereUuid('uuid')->name('workouts.live');
                 Route::post('workouts/{uuid}/share', [TrainingWorkoutController::class, 'share'])->whereUuid('uuid')->middleware('throttle:social-write')->name('workouts.share');
             });
             Route::get('workouts/{uuid}', [TrainingWorkoutController::class, 'show'])->whereUuid('uuid')->name('workouts.show');

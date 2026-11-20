@@ -16,11 +16,14 @@ use Illuminate\Support\Carbon;
  *   CloseStaleWorkouts) accepts the late finish: the phone's data is the
  *   real one, so it replaces the server's guess.
  * - A workout the athlete discarded cannot be revived.
+ * - A live family share (OpenWorkoutTrackingSession) ends with the workout.
  * - Distance-derived values are only kept when the workout used GPS, and a
  *   5 km / 10 km best effort only when the route really reached it.
  */
 class FinishWorkout
 {
+    public function __construct(private readonly OpenWorkoutTrackingSession $tracking) {}
+
     /**
      * @param  array<string, mixed>  $data  Validated FinishWorkoutRequest input.
      */
@@ -58,6 +61,9 @@ class FinishWorkout
         $this->applyGps($workout, $data);
         $workout->deriveAverages();
         $workout->save();
+
+        // Family stops seeing the athlete the moment the workout ends.
+        $this->tracking->close($workout);
 
         return $workout;
     }

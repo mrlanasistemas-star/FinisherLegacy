@@ -34,7 +34,8 @@ class FamilyFollowingController extends Controller
             ->whereHas('trackingSession', fn ($q) => $q->where('status', 'active'))
             ->with([
                 'familyLink.athleteUser.athleteProfile',
-                'trackingSession:id,event_participant_id,status,started_at,last_point_at,distance_m',
+                'trackingSession:id,event_participant_id,training_workout_id,status,started_at,last_point_at,distance_m',
+                'trackingSession.trainingWorkout.sport:id,name',
                 'eventParticipant.eventEdition.event:id,name',
             ])
             ->latest('id')
@@ -50,7 +51,9 @@ class FamilyFollowingController extends Controller
             return [
                 'uuid' => $share->uuid,
                 'athlete' => FamilyPresenter::person($share->familyLink?->athleteUser),
-                'event_name' => $share->eventParticipant?->eventEdition?->event->name ?? $share->eventParticipant?->eventEdition?->name,
+                'event_name' => $share->eventParticipant?->eventEdition?->event->name ?? $share->eventParticipant?->eventEdition?->name
+                    // A followed live training workout: its activity instead of an event.
+                    ?? (($sport = $session?->trainingWorkout?->sport?->name) !== null ? __('Entrenamiento · :sport', ['sport' => __($sport)]) : null),
                 'status' => $lastAt !== null && $lastAt->lt(now()->subSeconds($pausedAfter)) ? 'paused' : 'active',
                 'started_at' => $session?->started_at->toIso8601String(),
                 'last_update_at' => $lastAt?->toIso8601String(),

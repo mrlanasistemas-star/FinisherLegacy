@@ -23,7 +23,7 @@ class CreateTrackingShare
     /**
      * @return array{share: TrackingShare, token: string, url: string}
      */
-    public function handle(EventParticipant $participant, ?User $createdBy, ?TrackingSession $session = null, ?int $ttlHours = null, bool $endsWithSession = false): array
+    public function handle(?EventParticipant $participant, ?User $createdBy, ?TrackingSession $session = null, ?int $ttlHours = null, bool $endsWithSession = false): array
     {
         $maxTtl = (int) config('tracking.share_max_ttl_hours', 336);
         $ttl = max(1, min($maxTtl, $ttlHours ?? (int) config('tracking.share_ttl_hours', 72)));
@@ -31,7 +31,8 @@ class CreateTrackingShare
 
         $share = TrackingShare::create([
             'uuid' => (string) Str::uuid(),
-            'event_participant_id' => $participant->id,
+            // Null only for a live training-workout session, which always pins the share to itself.
+            'event_participant_id' => $participant?->id ?? $session?->event_participant_id,
             'tracking_session_id' => $session?->id,
             'token_hash' => TrackingShare::hashToken($token),
             'channel_key' => Str::random(40),

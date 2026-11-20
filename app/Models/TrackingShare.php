@@ -111,6 +111,25 @@ class TrackingShare extends Model
         return $query->whereNull('revoked_at')->whereNull('ended_at')->where('expires_at', '>', now());
     }
 
+    /**
+     * Shares that show `$session`: those pinned to it and, for a race
+     * participation, its participation-wide (pre-race) links. A training
+     * workout session has no participation, so only its own shares count.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeShowingSession(Builder $query, TrackingSession $session): Builder
+    {
+        if ($session->event_participant_id === null) {
+            return $query->where('tracking_session_id', $session->id);
+        }
+
+        return $query
+            ->where('event_participant_id', $session->event_participant_id)
+            ->where(fn ($q) => $q->whereNull('tracking_session_id')->orWhere('tracking_session_id', $session->id));
+    }
+
     public function channelName(): string
     {
         return 'live.'.$this->channel_key;

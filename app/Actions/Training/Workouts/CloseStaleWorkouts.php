@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Log;
  */
 class CloseStaleWorkouts
 {
+    public function __construct(private readonly OpenWorkoutTrackingSession $tracking) {}
+
     public function handle(): int
     {
         $hours = (int) config('training.workouts.stale_after_hours', 12);
@@ -43,6 +45,7 @@ class CloseStaleWorkouts
                     ]);
                     $workout->deriveAverages();
                     $workout->save();
+                    $this->tracking->close($workout);
                     $closed++;
                 }
             });

@@ -8,13 +8,19 @@
  * Legacy Moment (private by default).
  */
 
+use App\Actions\Tracking\IngestTrackingPoints;
+use App\Enums\FamilyLinkStatus;
 use App\Enums\MomentType;
 use App\Enums\WorkoutStatus;
+use App\Models\AthleteFamilyLink;
 use App\Models\LegacyMoment;
 use App\Models\Sport;
+use App\Models\TrackingSession;
+use App\Models\TrackingShare;
 use App\Models\TrainingWorkout;
 use App\Models\User;
 use Illuminate\Support\Str;
+use Tests\Feature\Tracking\TrackingFixtures;
 
 beforeEach(function () {
     $this->running = Sport::factory()->create(['name' => 'Running', 'slug' => 'running']);
@@ -196,4 +202,49 @@ test('sharing creates one private training moment only when asked', function () 
 
     $this->postJson("/api/v1/training/workouts/{$uuid}/share", [], apiAuthHeader($user))
         ->assertStatus(409)->assertJsonPath('error.details.reason', 'workout_already_shared');
+});
+
+test('family can follow a live outdoor workout only after the athlete shares it, until it finishes', function () {
+    $user = User::factory()->create();
+    $mom = User::factory()->create();
+    $link = AthleteFamilyLink::create([
+        'uuid' => (string) Str::uuid(), 'athlete_user_id' => $user->id, 'contact_user_id' => $mom->id,
+        'label' => 'Mamá', 'status' => FamilyLinkStatus::Accepted, 'accepted_at' => now(),
+    ]);
+    $uuid = startLive($user, ['started_at' => now()->subMinutes(30)->toIso8601String()])->json('data.uuid');
+
+    // Nothing is followable (or uploaded) until the athlete asks.
+    expect(TrackingSession::query()->count())->toBe(0);
+
+    $sessionUuid = $this->postJson("/api/v1/training/workouts/{$uuid}/live", [], apiAuthHeader($user))->assertCreated()->json('data.tracking_session_uuid');
+    $this->postJson("/api/v1/training/workouts/{$uuid}/live", [], apiAuthHeader($user))->assertOk()->assertJsonPath('data.tracking_session_uuid', $sessionUuid);
+    $this->postJson("/api/v1/training/workouts/{$uuid}/live", [], apiAuthHeader(User::factory()->create()))->assertNotFound();
+
+    $session = TrackingSession::query()->where('uuid', $sessionUuid)->sole();
+    app(IngestTrackingPoints::class)->handle($session, TrackingFixtures::track(5));
+
+    $token = Str::afterLast($this->postJson("/api/v1/tracking/sessions/{$sessionUuid}/sharing", [
+        'family' => 'all', 'public_link' => true, 'duration' => 'until_stop',
+    ], apiAuthHeader($user))->assertCreated()->json('data.link.url'), '/');
+
+    $this->getJson('/api/v1/me/tracking/sharing', apiAuthHeader($user))
+        ->assertOk()
+        ->assertJsonPath('data.sessions.0.session.uuid', $sessionUuid)
+        ->assertJsonPath('data.sessions.0.session.event_name', 'Entrenamiento · Running');
+    $this->getJson('/api/v1/family/following', apiAuthHeader($mom))->assertJsonPath('data.0.event_name', 'Entrenamiento · Running');
+    $this->getJson("/api/v1/live/{$token}")->assertOk()->assertJsonPath('data.status', 'active')->assertJsonPath('data.event.race', null);
+
+    $this->postJson("/api/v1/training/workouts/{$uuid}/finish", ['duration_s' => 1700, 'distance_m' => 4000], apiAuthHeader($user))->assertOk();
+
+    expect($session->fresh()->isActive())->toBeFalse()
+        ->and(TrackingShare::query()->where('athlete_family_link_id', $link->id)->value('ended_at'))->not->toBeNull();
+    $this->getJson("/api/v1/live/{$token}")->assertStatus(410);
+});
+
+test('an indoor workout has no location to share', function () {
+    $user = User::factory()->create();
+    $uuid = startLive($user, ['sport_id' => $this->swim->id, 'uses_gps' => false])->json('data.uuid');
+
+    $this->postJson("/api/v1/training/workouts/{$uuid}/live", [], apiAuthHeader($user))
+        ->assertStatus(409)->assertJsonPath('error.details.reason', 'workout_without_gps');
 });

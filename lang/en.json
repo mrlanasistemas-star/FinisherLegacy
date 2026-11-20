@@ -3692,5 +3692,8 @@
     "El seguimiento terminó": "Tracking has ended",
     "La actividad finalizó o se acabó el tiempo que eligió para compartir. Por privacidad ya no mostramos su ubicación.": "The activity finished or the sharing time ran out. For privacy, we no longer show their location.",
     "{name} terminó su actividad. Por privacidad ya no mostramos su ubicación.": "{name} finished their activity. For privacy, we no longer show their location.",
-    "Pausó su actividad o está en una zona sin señal.": "They paused their activity or are in an area with no signal."
+    "Pausó su actividad o está en una zona sin señal.": "They paused their activity or are in an area with no signal.",
+    "Solo puedes compartir un entrenamiento en curso.": "You can only share a workout in progress.",
+    "Este entrenamiento no usa GPS, así que no hay ubicación que compartir.": "This workout doesn't use GPS, so there's no location to share.",
+    "Entrenamiento · :sport": "Workout · :sport"
 }

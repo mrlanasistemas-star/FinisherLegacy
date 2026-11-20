@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Training;
 
 use App\Actions\Training\Workouts\FinishWorkout;
+use App\Actions\Training\Workouts\OpenWorkoutTrackingSession;
 use App\Actions\Training\Workouts\ShareWorkoutAsMoment;
 use App\Actions\Training\Workouts\StartWorkout;
 use App\Enums\WorkoutSource;
@@ -173,7 +174,7 @@ class TrainingWorkoutController extends Controller
     }
 
     /** `POST training/workouts/{uuid}/discard` — only a running workout; idempotent once discarded. */
-    public function discard(Request $request, string $uuid): JsonResponse
+    public function discard(Request $request, string $uuid, OpenWorkoutTrackingSession $tracking): JsonResponse
     {
         $workout = $this->own($request, $uuid, 'update');
 
@@ -188,16 +189,36 @@ class TrainingWorkoutController extends Controller
                 'auto_closed_at' => null,
             ])->save();
         }
+        $tracking->close($workout);
 
         return $this->respond(WorkoutPresenter::present($workout), __('Entrenamiento descartado.'));
     }
 
     /** `DELETE training/workouts/{uuid}` — removes it from the history (a shared Moment stays the athlete's to delete). */
-    public function destroy(Request $request, string $uuid): Response
+    public function destroy(Request $request, string $uuid, OpenWorkoutTrackingSession $tracking): Response
     {
-        $this->own($request, $uuid, 'delete')->delete();
+        $workout = $this->own($request, $uuid, 'delete');
+        $tracking->close($workout);
+        $workout->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * `POST training/workouts/{uuid}/live` — "Compartir con mi familia":
+     * opens (or reuses) the workout's TrackingSession. The app then streams
+     * points to `tracking/sessions/{uuid}/points` and shares it with
+     * `tracking/sessions/{uuid}/sharing`. Nothing is shared by this call.
+     */
+    public function live(Request $request, string $uuid, OpenWorkoutTrackingSession $open): JsonResponse
+    {
+        $session = $open->handle($this->own($request, $uuid, 'share'));
+
+        return $this->respond([
+            'tracking_session_uuid' => $session->uuid,
+            'started_at' => $session->started_at->toIso8601String(),
+            'batch_max' => (int) config('tracking.batch_max', 100),
+        ], status: $session->wasRecentlyCreated ? 201 : 200);
     }
 
     /** `POST training/workouts/{uuid}/share` — explicit Legacy Moment, private by default. */

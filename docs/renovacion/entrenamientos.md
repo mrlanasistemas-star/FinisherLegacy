@@ -279,7 +279,32 @@ En la app hay tres caminos distintos y así se nombran:
 | DELETE | `training/workouts/{uuid}` | Eliminar del historial |
 | POST | `training/workouts/{uuid}/share` | Crear el Legacy Moment (`visibility`, `caption`) |
 
+| POST | `training/workouts/{uuid}/live` | «Compartir con mi familia»: abre (o reutiliza) su `TrackingSession` |
+
 Escrituras con `throttle:training-workouts` (60/min por usuario).
+
+### Familia: seguir un entrenamiento en vivo
+
+Un entrenamiento al aire libre con GPS puede seguirse con las mismas reglas
+de `docs/renovacion/familia.md`, sin un segundo sistema de ubicación:
+
+1. El atleta toca **Compartir con mi familia** en la pantalla del
+   entrenamiento → `POST training/workouts/{uuid}/live` abre una
+   `TrackingSession` ligada al entrenamiento (`training_workout_id`,
+   `user_id`, sin `event_participant_id`). Antes de eso el entrenamiento
+   **no sube su ubicación**.
+2. La app sube los puntos con el uploader del seguimiento en vivo
+   (`tracking/sessions/{uuid}/points`) y abre «Quién ve mi ubicación»
+   (`/family/sharing?session=…`), que usa `tracking/sessions/{uuid}/sharing`.
+   Nunca se comparte solo.
+3. Al terminar, descartar, eliminar o cerrarse solo el entrenamiento, la
+   sesión se detiene y todos sus compartidos terminan (410).
+
+Quien mira ve «Entrenamiento · {actividad}» en lugar del evento, sin
+distancia de carrera ni mensajes de apoyo. Migración
+`2026_11_20_300100` (aditiva): `event_participant_id` pasa a nulo en
+`tracking_sessions` y `tracking_shares`; se agregan `user_id` y
+`training_workout_id` a `tracking_sessions`.
 
 Tabla `training_workouts` (migración `2026_11_20_300000`, aditiva):
 `uuid`, `user_id`, `athlete_id`, `sport_id`, `client_uuid` (único por

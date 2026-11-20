@@ -245,8 +245,7 @@ class IngestTrackingPoints
 
         $channelKeys = TrackingShare::query()
             ->usable()
-            ->where('event_participant_id', $session->event_participant_id)
-            ->where(fn ($q) => $q->whereNull('tracking_session_id')->orWhere('tracking_session_id', $session->id))
+            ->showingSession($session)
             ->pluck('channel_key')
             ->all();
 

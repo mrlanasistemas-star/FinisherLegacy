@@ -11,12 +11,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * One live-tracking run of an EventParticipant (SPEC §75-§80). Lives inside
- * the participation — there is no standalone "tracking module". Only one
- * `active` session per participant at a time (StartTrackingSession).
+ * One live-tracking run of an EventParticipant (SPEC §75-§80), or of a live
+ * training workout (`training_workout_id` + `user_id`, no participation) so
+ * family can follow a workout with the same sharing rules
+ * (docs/renovacion/familia.md). Only one `active` session per participant /
+ * workout at a time (StartTrackingSession, OpenWorkoutTrackingSession).
  */
 #[Fillable([
-    'uuid', 'event_participant_id', 'source', 'tracking_device_id', 'status', 'started_at', 'stopped_at',
+    'uuid', 'event_participant_id', 'user_id', 'training_workout_id', 'source', 'tracking_device_id', 'status', 'started_at', 'stopped_at',
     'distance_m', 'last_point_at', 'last_lat', 'last_lng', 'last_battery',
     'anchor_lat', 'anchor_lng', 'anchor_at', 'points_count',
 ])]
@@ -46,6 +48,18 @@ class TrackingSession extends Model
     public function eventParticipant(): BelongsTo
     {
         return $this->belongsTo(EventParticipant::class);
+    }
+
+    /** @return BelongsTo<User, $this> Owner of a training-workout session (null for race sessions). */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /** @return BelongsTo<TrainingWorkout, $this> */
+    public function trainingWorkout(): BelongsTo
+    {
+        return $this->belongsTo(TrainingWorkout::class);
     }
 
     /** @return BelongsTo<TrackingDevice, $this> */

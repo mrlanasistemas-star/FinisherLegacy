@@ -38,10 +38,12 @@ class TrackingSharingController extends Controller
         $user = $this->sanctumUser($request);
         $athleteId = $user->athlete()->value('id');
 
-        $sessions = $athleteId === null ? collect() : TrackingSession::query()
+        $sessions = TrackingSession::query()
             ->where('status', TrackingSessionStatus::Active)
-            ->whereHas('eventParticipant', fn ($q) => $q->where('athlete_id', $athleteId))
-            ->with('eventParticipant.eventEdition.event:id,name')
+            ->where(fn ($q) => $q->whereHas('eventParticipant', fn ($q) => $q->where('athlete_id', $athleteId))
+                // Live training workouts (Modo entrenamiento) the athlete chose to make followable.
+                ->orWhere(fn ($q) => $q->whereNull('event_participant_id')->where('user_id', $user->id)))
+            ->with(['eventParticipant.eventEdition.event:id,name', 'trainingWorkout.sport:id,name'])
             ->latest('started_at')
             ->limit(5)
             ->get();
@@ -110,9 +112,7 @@ class TrackingSharingController extends Controller
     {
         Gate::forUser($this->sanctumUser($request))->authorize('share', $session);
 
-        $count = $end->revoke(TrackingShare::query()
-            ->where('event_participant_id', $session->event_participant_id)
-            ->where(fn ($q) => $q->whereNull('tracking_session_id')->orWhere('tracking_session_id', $session->id)));
+        $count = $end->revoke(TrackingShare::query()->showingSession($session));
 
         return $this->respond(['revoked' => $count], __('Dejaste de compartir tu ubicación.'));
     }
@@ -122,8 +122,7 @@ class TrackingSharingController extends Controller
     {
         $shares = TrackingShare::query()
             ->usable()
-            ->where('event_participant_id', $session->event_participant_id)
-            ->where(fn ($q) => $q->whereNull('tracking_session_id')->orWhere('tracking_session_id', $session->id))
+            ->showingSession($session)
             ->with('familyLink.contactUser.athleteProfile')
             ->latest('id')
             ->limit(60)
@@ -135,7 +134,8 @@ class TrackingSharingController extends Controller
             'session' => [
                 'uuid' => $session->uuid,
                 'event_participant_id' => $session->event_participant_id,
-                'event_name' => $edition?->event->name ?? $edition?->name,
+                'event_name' => $edition?->event->name ?? $edition?->name ?? $this->workoutTitle($session),
+                'training_workout_uuid' => $session->trainingWorkout?->uuid,
                 'status' => $session->status->value,
                 'started_at' => $session->started_at->toIso8601String(),
             ],
@@ -164,5 +164,17 @@ class TrackingSharingController extends Controller
             ->get()
             ->map(fn (AthleteFamilyLink $l) => FamilyPresenter::forAthlete($l))
             ->all());
+    }
+
+    /** "Entrenamiento · Running" for a live workout session (no event behind it). */
+    private function workoutTitle(TrackingSession $session): ?string
+    {
+        if ($session->training_workout_id === null) {
+            return null;
+        }
+
+        $sport = $session->trainingWorkout?->sport?->name;
+
+        return $sport !== null ? __('Entrenamiento · :sport', ['sport' => __($sport)]) : __('Entrenamiento');
     }
 }
