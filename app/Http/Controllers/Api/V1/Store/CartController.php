@@ -20,6 +20,7 @@ use App\Models\CartItem;
 use App\Models\EventEdition;
 use App\Models\ProductVariant;
 use App\Services\Portrait\PortraitDesigns;
+use App\Support\Training\CheerCards;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,6 +57,8 @@ class CartController extends Controller
         $metadata = $plateModelId !== null ? ['legacy_plate_model_id' => $plateModelId] : [];
         // "Pedir este portarretrato": the saved personalization travels with the line.
         $metadata += PortraitDesigns::cartMetadata($this->sanctumUser($request), $request->resolvePortraitDesign(), $variant);
+        // Tarjeta de ánimo NFC bought from a cheer link: it arrives bound to it.
+        $metadata += CheerCards::cartMetadata($this->sanctumUser($request), $request->resolveCheerLink(), $variant);
 
         $addItem->handle($cart, $variant, $request->integer('quantity'), $edition, $metadata);
 

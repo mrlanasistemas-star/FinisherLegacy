@@ -59,6 +59,12 @@ class AddCartItem
                 fn ($q) => $q->where('metadata->portrait_design_id', (int) $metadata['portrait_design_id']),
                 fn ($q) => $q->whereNull('metadata->portrait_design_id'),
             )
+            // Each Tarjeta de ánimo line opens its own cheer link (bound at fulfillment).
+            ->when(
+                isset($metadata['cheer_link_id']),
+                fn ($q) => $q->where('metadata->cheer_link_id', (int) $metadata['cheer_link_id']),
+                fn ($q) => $q->whereNull('metadata->cheer_link_id'),
+            )
             ->first();
 
         if ($item !== null) {

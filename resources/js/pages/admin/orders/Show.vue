@@ -57,6 +57,13 @@ type Item = {
         snapshot_at: string | null;
         downloads: { print_shop_pdf: string; frame_jpg: string };
     } | null;
+    /** Tarjeta de ánimo NFC (CheerCards::forAdmin): the link it opens + assigned cards. */
+    cheer_card?: {
+        link: { uuid: string; title: string; state: string | null } | null;
+        cards: { code: string; status: string; bound_to: string | null }[];
+    } | null;
+    /** Paid extra cheer message (guest order). */
+    cheer_message?: { channel: string; messages: number } | null;
 };
 
 /** Labels of the words printed on the frame (PortraitDesigns::FIELDS). */
@@ -381,6 +388,67 @@ const addressLine = (delivery: Delivery) =>
                                 :currency="order.currency"
                             />
                         </p>
+                        <!-- Tarjeta de ánimo NFC: assigning a card at fulfillment binds it to this link. -->
+                        <div
+                            v-if="item.cheer_card"
+                            class="mt-3 rounded-lg border border-fl-gold/30 bg-fl-cream/60 p-3 text-xs"
+                        >
+                            <p class="font-semibold text-foreground">
+                                Tarjeta de ánimo ·
+                                {{
+                                    item.cheer_card.link
+                                        ? `abre «${item.cheer_card.link.title}»`
+                                        : 'sin enlace elegido (el cliente la vincula en la app)'
+                                }}
+                            </p>
+                            <p
+                                v-if="item.cheer_card.link?.state === 'revoked'"
+                                class="mt-0.5 text-amber-800"
+                            >
+                                El cliente desactivó ese enlace: la tarjeta
+                                llegará sin vincular.
+                            </p>
+                            <ul
+                                v-if="item.cheer_card.cards.length"
+                                class="mt-1.5 space-y-0.5 text-muted-foreground"
+                            >
+                                <li
+                                    v-for="card in item.cheer_card.cards"
+                                    :key="card.code"
+                                >
+                                    <span class="font-mono text-foreground">{{
+                                        card.code
+                                    }}</span>
+                                    · {{ card.status }} ·
+                                    {{
+                                        card.bound_to
+                                            ? `vinculada a «${card.bound_to}»`
+                                            : 'sin vincular'
+                                    }}
+                                </li>
+                            </ul>
+                            <p v-else class="mt-0.5 text-muted-foreground">
+                                Al surtir, la pieza asignada queda vinculada a
+                                este enlace y llega lista.
+                            </p>
+                        </div>
+                        <p
+                            v-if="item.cheer_message"
+                            class="mt-2 text-xs text-muted-foreground"
+                        >
+                            Mensaje de ánimo pagado por quien lo envía ·
+                            {{
+                                item.cheer_message.channel === 'nfc_card'
+                                    ? 'desde Tarjeta NFC'
+                                    : 'desde el enlace'
+                            }}
+                            · {{ item.cheer_message.messages }}
+                            {{
+                                item.cheer_message.messages === 1
+                                    ? 'mensaje'
+                                    : 'mensajes'
+                            }}. Se entrega solo al confirmarse el pago.
+                        </p>
                         <!-- Portarretrato: the customer's design, frozen at checkout, for production. -->
                         <div
                             v-if="item.portrait_design"
@@ -408,7 +476,9 @@ const addressLine = (delivery: Delivery) =>
                                     >
                                         ·
                                         <a
-                                            :href="item.portrait_design.story_url"
+                                            :href="
+                                                item.portrait_design.story_url
+                                            "
                                             target="_blank"
                                             rel="noopener"
                                             class="underline"
@@ -428,7 +498,9 @@ const addressLine = (delivery: Delivery) =>
                                         :key="key"
                                     >
                                         <dt class="text-muted-foreground">
-                                            {{ portraitFieldLabels[key] ?? key }}
+                                            {{
+                                                portraitFieldLabels[key] ?? key
+                                            }}
                                         </dt>
                                         <dd class="break-words text-foreground">
                                             {{ value }}
@@ -562,7 +634,9 @@ const addressLine = (delivery: Delivery) =>
                 >
                     <div class="flex items-center justify-between">
                         <span class="text-foreground"
-                            >{{ methodLabel[payment.method] ?? payment.method }}
+                            >{{
+                                methodLabel[payment.method] ?? payment.method
+                            }}
                             ({{
                                 providerLabel[payment.provider] ??
                                 payment.provider

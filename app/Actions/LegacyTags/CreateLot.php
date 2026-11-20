@@ -11,6 +11,7 @@ use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\LegacyTags\TagLifecycle;
 use App\Support\LegacyTags\TagCode;
+use App\Support\Training\CheerCards;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -67,6 +68,9 @@ class CreateLot
                 'created_by_user_id' => $actor->id,
             ]);
 
+            $variant->loadMissing('product');
+            $purpose = CheerCards::purposeFor($variant);
+
             // Serial sequence is global and monotonic (internal only).
             $sequence = (int) LegacyTag::query()->lockForUpdate()->max('id');
 
@@ -79,6 +83,8 @@ class CreateLot
                     'public_code' => TagCode::generate(),
                     'product_variant_id' => $variant->id,
                     'inventory_lot_id' => $lot->id,
+                    // Tarjeta de ánimo NFC units open a cheer link, never a story.
+                    'purpose' => $purpose,
                 ]);
                 $tag->status = LegacyTagStatus::Manufactured;
 

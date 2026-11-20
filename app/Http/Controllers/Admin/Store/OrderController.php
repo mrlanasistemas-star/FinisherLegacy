@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Store;
 
 use App\Actions\Commerce\FulfillOrderItem;
 use App\Actions\Commerce\ReturnOrderItem;
+use App\Actions\Training\CreateCheerMessageOrder;
 use App\Enums\DeliveryMethod;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
@@ -18,6 +19,7 @@ use App\Models\LegacyTag;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\Portrait\PortraitDesigns;
+use App\Support\Training\CheerCards;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -176,6 +178,13 @@ class OrderController extends Controller
                 'returned_quantity' => (int) ($item->metadata['returned_quantity'] ?? 0),
                 // Ordered Portarretrato personalization (frozen snapshot) for production.
                 'portrait_design' => app(PortraitDesigns::class)->forAdmin($item),
+                // Tarjeta de ánimo NFC: the cheer link it opens + the cards assigned at fulfillment.
+                'cheer_card' => CheerCards::forAdmin($item),
+                // Paid extra cheer message (guest Order): channel + pack size, never its content.
+                'cheer_message' => ($item->metadata['kind'] ?? null) === CreateCheerMessageOrder::ITEM_KIND ? [
+                    'channel' => $item->metadata['channel'] ?? 'link',
+                    'messages' => (int) ($item->metadata['messages'] ?? 1),
+                ] : null,
             ]),
             'payments' => $order->payments->map(fn ($payment) => [
                 'id' => $payment->id,

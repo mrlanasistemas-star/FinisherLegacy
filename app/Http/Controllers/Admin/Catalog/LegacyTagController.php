@@ -51,6 +51,7 @@ class LegacyTagController extends Controller
             ->with([
                 'productVariant:id,sku,name,product_id', 'productVariant.product:id,name',
                 'location:id,name', 'ally:id,name', 'order:id,uuid,order_number', 'owner:id,full_name,email',
+                'cheerLink:id,title',
             ])
             ->orderBy($filters['sort'], $filters['dir'])
             ->orderBy('id', $filters['dir'])
@@ -68,6 +69,10 @@ class LegacyTagController extends Controller
                 'order' => $t->order ? ['uuid' => $t->order->uuid, 'number' => $t->order->order_number] : null,
                 'owner' => $t->owner ? ['id' => $t->owner->id, 'name' => $t->owner->full_name, 'email' => $t->owner->email] : null,
                 'activated_at' => $t->activated_at?->toIso8601String(),
+                // story | cheer (Tarjeta de ánimo NFC) + the cheer link it opens.
+                'purpose' => $t->purpose->value,
+                'purpose_label' => $t->purpose->label(),
+                'cheer_link' => $t->cheerLink?->title,
             ]);
 
         $counts = LegacyTag::query()->selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
@@ -98,6 +103,7 @@ class LegacyTagController extends Controller
             'order.seller:id,first_name,last_name', 'owner:id,full_name,email',
             'story:id,public_id,legacy_tag_id,title,visibility,completed_at',
             'replaces:id,uuid,serial', 'replacement:id,uuid,serial,replaces_tag_id',
+            'cheerLink:id,uuid,title,revoked_at,expires_at,moderation_disabled_at,max_messages,messages_count',
         ]);
 
         $events = LegacyTagEvent::query()->where('legacy_tag_id', $tag->id)
@@ -120,6 +126,14 @@ class LegacyTagController extends Controller
                 'display_code' => $tag->displayCode(),
                 'status' => $tag->status->value,
                 'nfc_url' => TagUrls::nfc($tag),
+                // Tarjeta de ánimo NFC: opens a cheer link instead of a story.
+                'purpose' => $tag->purpose->value,
+                'purpose_label' => $tag->purpose->label(),
+                'cheer_link' => $tag->cheerLink === null ? null : [
+                    'title' => $tag->cheerLink->title,
+                    'state' => $tag->cheerLink->state(),
+                    'bound_at' => $tag->cheer_bound_at?->toIso8601String(),
+                ],
 
                 'disabled_reason' => $tag->disabled_reason,
                 'notes' => $tag->notes,

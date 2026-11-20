@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use App\Enums\ProductType;
+use App\Models\CheerLink;
 use App\Models\LegacyPlateModel;
 use App\Models\PortraitDesign;
 use App\Models\ProductVariant;
@@ -41,6 +42,8 @@ class AddCartItemRequest extends FormRequest
             'legacy_plate_model_id' => [$isLegacyPlate ? 'required_without:legacy_plate_model_uuid' : 'nullable', 'nullable', 'integer', 'exists:legacy_plate_models,id'],
             // Saved Portarretrato personalization (ownership checked in PortraitDesigns::cartMetadata).
             'portrait_design_uuid' => ['nullable', 'uuid', 'exists:portrait_designs,uuid'],
+            // Tarjeta de ánimo NFC: the athlete's cheer link it opens (ownership checked in CheerCards::cartMetadata).
+            'cheer_link_uuid' => ['nullable', 'uuid'],
         ];
     }
 
@@ -68,6 +71,14 @@ class AddCartItemRequest extends FormRequest
         $uuid = $this->input('portrait_design_uuid');
 
         return is_string($uuid) && $uuid !== '' ? PortraitDesign::query()->where('uuid', $uuid)->first() : null;
+    }
+
+    /** The cheer link sent for a Tarjeta de ánimo line; an unknown uuid is rejected as "not yours". */
+    public function resolveCheerLink(): ?CheerLink
+    {
+        $uuid = $this->input('cheer_link_uuid');
+
+        return is_string($uuid) && $uuid !== '' ? (CheerLink::query()->where('uuid', $uuid)->first() ?? new CheerLink) : null;
     }
 
     public function resolveLegacyPlateModelId(): ?int

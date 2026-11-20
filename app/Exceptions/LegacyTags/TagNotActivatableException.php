@@ -7,7 +7,8 @@ use App\Exceptions\Api\ApiException;
 
 /**
  * `reason` is stable and machine-readable (disabled, replaced, not_sold,
- * returned, lost, stolen) so web and app can show the right honest message.
+ * returned, lost, stolen, cheer_card, not_cheer_card) so web and app can show
+ * the right honest message.
  */
 class TagNotActivatableException extends ApiException
 {
@@ -24,6 +25,9 @@ class TagNotActivatableException extends ApiException
             'returned' => __('Esta pieza fue devuelta y ya no puede activarse.'),
             'lost' => __('Esta pieza está reportada como extraviada. Si la recuperaste, escríbenos y la reactivamos.'),
             'stolen' => __('Esta pieza está reportada como robada y no puede activarse. Escríbenos si crees que es un error.'),
+            // Tarjeta de ánimo NFC (docs/renovacion/tarjeta-animo.md): activated from the app, never as a story.
+            'cheer_card' => __('Esta es una Tarjeta de ánimo. Actívala desde la app Finisher Legacy: Activar → Tarjeta de ánimo.'),
+            'not_cheer_card' => __('Esta pieza no es una Tarjeta de ánimo. Actívala como recuerdo Finisher Legacy.'),
             default => __('Esta pieza todavía no está registrada como vendida. Pide al punto de venta que la registre o escríbenos.'),
         };
     }

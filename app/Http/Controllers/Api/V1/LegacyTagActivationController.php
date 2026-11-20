@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Concerns\ApiResponses;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesAuthenticatedUser;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LegacyTags\ActivationNfcRules;
+use App\Models\LegacyTag;
 use App\Models\LegacyTagActivationIntent;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -51,7 +52,9 @@ class LegacyTagActivationController extends Controller
 
         $story = $confirm->handle($user, $model, $data['written_url'], $data['nfc_uid'] ?? null);
 
-        return $this->respond($confirm->present($model, $story), __('¡Listo! Tu Finisher Legacy ya es tuyo.'));
+        return $this->respond($confirm->present($model, $story), $story instanceof LegacyTag
+            ? __('¡Listo! Tu Tarjeta de ánimo ya abre tu enlace.')
+            : __('¡Listo! Tu Finisher Legacy ya es tuyo.'));
     }
 
     public function fail(Request $request, string $intent, FailTagActivation $fail): Response

@@ -54,6 +54,8 @@ type CartItem = {
         template_label: string;
         thumb_url: string | null;
     } | null;
+    /** Tarjeta de ánimo NFC: the cheer link this card will open (CheerCards). */
+    cheer_link?: { uuid: string; title: string } | null;
 };
 
 const props = defineProps<{
@@ -226,6 +228,16 @@ const details = (item: CartItem) =>
                                     class="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-medium"
                                     ><Nfc class="size-3" />
                                     {{ $t('Se guarda en Mi equipo') }}</span
+                                >
+                                <span
+                                    v-if="item.cheer_link"
+                                    class="inline-flex items-center gap-1 rounded-full border border-fl-gold/40 bg-fl-cream px-2.5 py-0.5 text-xs font-medium text-fl-gold-ink"
+                                    ><Nfc class="size-3" />
+                                    {{
+                                        $t('Abre «{title}»', {
+                                            title: item.cheer_link.title,
+                                        })
+                                    }}</span
                                 >
                                 <span
                                     v-if="item.portrait_design"

@@ -3,12 +3,16 @@
 namespace App\Actions\Commerce;
 
 use App\Actions\LegacyTags\AssignTagsToOrderItem;
+use App\Actions\Training\BindCheerCard;
 use App\Enums\FulfillmentStatus;
 use App\Models\InventoryLocation;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\Commerce\InventoryService;
+use App\Support\Training\CheerCards;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * This project's deliberately simple stand-in for a dedicated Fulfillment
@@ -24,6 +28,7 @@ class FulfillOrderItem
         private readonly InventoryService $inventory,
         private readonly CreateAthleteOwnedProduct $createOwnedProduct,
         private readonly AssignTagsToOrderItem $assignTags,
+        private readonly BindCheerCard $bindCheerCard,
     ) {}
 
     public function handle(OrderItem $item, InventoryLocation $location): OrderItem
@@ -42,7 +47,20 @@ class FulfillOrderItem
             // Serialized products (Finisher Legacy Tag): bind the exact pieces
             // leaving the shelf to this item — they are activated later by the buyer.
             if ($item->product->tracks_units) {
-                $this->assignTags->handle($item, $location);
+                $tags = $this->assignTags->handle($item, $location);
+
+                // Tarjeta de ánimo NFC bought for a cheer link: bind each card
+                // now, so it arrives ready (docs/renovacion/tarjeta-animo.md).
+                $cheerLink = CheerCards::linkForOrderItem($item);
+
+                foreach ($cheerLink !== null ? $tags : [] as $tag) {
+                    try {
+                        $this->bindCheerCard->bind($tag, $cheerLink, null, 'fulfillment');
+                    } catch (Throwable $e) {
+                        // Never block shipping: the athlete can still bind it in the app.
+                        Log::warning('training.cheer_card_bind_at_fulfillment_failed', ['tag' => $tag->uuid, 'error' => $e->getMessage()]);
+                    }
+                }
             }
 
             $item->update(['fulfilled_at' => now()]);

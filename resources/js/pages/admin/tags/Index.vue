@@ -46,6 +46,10 @@ type Row = {
     order: { uuid: string; number: string } | null;
     owner: { id: number; name: string | null; email: string | null } | null;
     activated_at: string | null;
+    /** story | cheer (Tarjeta de ánimo NFC). */
+    purpose?: string;
+    purpose_label?: string;
+    cheer_link?: string | null;
 };
 
 type Filters = {
@@ -388,6 +392,16 @@ const sortable = [
                                 <span
                                     class="block font-mono text-[11px] text-muted-foreground"
                                     >{{ t.display_code }}</span
+                                >
+                                <span
+                                    v-if="t.purpose === 'cheer'"
+                                    class="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
+                                    :title="
+                                        t.cheer_link
+                                            ? `Abre «${t.cheer_link}»`
+                                            : 'Sin enlace'
+                                    "
+                                    >{{ t.purpose_label }}</span
                                 >
                             </td>
                             <td class="px-3 py-2.5">

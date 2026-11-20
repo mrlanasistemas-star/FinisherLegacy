@@ -28,6 +28,8 @@ const title = computed(() => {
             return t('Esta pieza fue reemplazada');
         case 'not_sold':
             return t('Este tag todavía no está listo');
+        case 'cheer_inactive':
+            return t('Esta Tarjeta de ánimo no está activa');
         default:
             return t('Este tag ya no está activo');
     }

@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\V1\Store\CollectionController as StoreCollectionCon
 use App\Http\Controllers\Api\V1\Store\OrderController;
 use App\Http\Controllers\Api\V1\Store\PaymentController;
 use App\Http\Controllers\Api\V1\Store\ProductController;
+use App\Http\Controllers\Api\V1\Training\TrainingCardController;
 use App\Http\Controllers\Api\V1\Training\TrainingLinkController;
 use App\Http\Controllers\Api\V1\Training\TrainingMessageController;
 use App\Http\Controllers\Api\V1\Training\TrainingWorkoutController;
@@ -278,6 +279,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('links', [TrainingLinkController::class, 'index'])->name('links.index');
             Route::post('links', [TrainingLinkController::class, 'store'])->middleware('throttle:30,1')->name('links.store');
             Route::delete('links/{uuid}', [TrainingLinkController::class, 'destroy'])->whereUuid('uuid')->name('links.destroy');
+            // Tarjeta de ánimo NFC (docs/renovacion/tarjeta-animo.md): my cards, re-bind, deactivate, product offer.
+            Route::get('cards', [TrainingCardController::class, 'index'])->name('cards.index');
+            Route::get('card-offer', [TrainingCardController::class, 'offer'])->name('cards.offer');
+            Route::put('cards/{uuid}', [TrainingCardController::class, 'update'])->whereUuid('uuid')->middleware('throttle:30,1')->name('cards.update');
+            Route::delete('cards/{uuid}/link', [TrainingCardController::class, 'unbind'])->whereUuid('uuid')->middleware('throttle:30,1')->name('cards.unbind');
 
             // Modo entrenamiento — persisted workouts (owner-only, 404 for others).
             Route::get('sports', [TrainingWorkoutController::class, 'sports'])->name('sports.index');

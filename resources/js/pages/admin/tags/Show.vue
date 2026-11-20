@@ -66,6 +66,14 @@ type TagDetail = {
     display_code: string;
     status: string;
     nfc_url: string;
+    /** story | cheer (Tarjeta de ánimo NFC) + the cheer link it opens. */
+    purpose?: string;
+    purpose_label?: string;
+    cheer_link?: {
+        title: string;
+        state: string;
+        bound_at: string | null;
+    } | null;
     disabled_reason: string | null;
     notes: string | null;
     is_sold: boolean;
@@ -519,6 +527,26 @@ const fullDate = (iso: string | null) =>
                 <TagStatusBadge :status="tag.status" class="self-center" />
             </template>
         </CatalogHeader>
+
+        <div
+            v-if="tag.purpose === 'cheer'"
+            class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            role="status"
+        >
+            <p class="font-medium">{{ tag.purpose_label }}</p>
+            <p>
+                {{
+                    tag.cheer_link
+                        ? `/t/${tag.public_code} abre el enlace «${tag.cheer_link.title}»` +
+                          (tag.cheer_link.state !== 'active'
+                              ? ` (enlace ${tag.cheer_link.state === 'revoked' ? 'desactivado' : tag.cheer_link.state === 'expired' ? 'vencido' : 'lleno'})`
+                              : '')
+                        : 'Sin enlace: /t/' +
+                          tag.public_code +
+                          ' muestra «Tarjeta no activa». El dueño la vincula desde la app.'
+                }}
+            </p>
+        </div>
 
         <div
             v-if="tag.is_missing"

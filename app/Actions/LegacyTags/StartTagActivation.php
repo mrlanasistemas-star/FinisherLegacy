@@ -8,6 +8,7 @@ use App\Enums\LegacyTagStatus;
 use App\Enums\TagAccessSource;
 use App\Enums\TagScanEvent;
 use App\Exceptions\LegacyTags\TagActivationException;
+use App\Models\CheerLink;
 use App\Models\LegacyTag;
 use App\Models\LegacyTagActivationIntent;
 use App\Models\User;
@@ -16,6 +17,7 @@ use App\Support\LegacyTags\TagActivationState;
 use App\Support\LegacyTags\TagCode;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Step 1 of the NFC self-activation (docs/renovacion/manual-activacion-nfc.md):
@@ -37,7 +39,7 @@ class StartTagActivation
     ) {}
 
     /**
-     * @param  array{activation_code?: ?string, tag_code?: ?string, nfc_uid?: ?string, platform: string}  $input
+     * @param  array{activation_code?: ?string, tag_code?: ?string, nfc_uid?: ?string, platform: string, purpose?: ?string, cheer_link_uuid?: ?string}  $input
      */
     public function handle(User $user, array $input, ?string $ip): LegacyTagActivationIntent
     {
@@ -45,6 +47,7 @@ class StartTagActivation
         $uidHash = self::uidHashFor($input['nfc_uid'] ?? null);
         $tag = $this->resolveTag($user, $input, (string) $ip);
         $alreadyMine = $this->assertActivatable($tag, $user);
+        $cheerLink = $this->cheerLinkFor($tag, $user, $input);
 
         if ($uidHash !== null) {
             self::assertUidFits($tag, $uidHash);
@@ -65,6 +68,7 @@ class StartTagActivation
             'nfc_uid_hash' => $uidHash,
             'status' => LegacyTagActivationIntentStatus::Pending,
             'write_url' => $tag->activationWriteUrl(),
+            'cheer_link_id' => $cheerLink?->id,
             'expires_at' => now()->addMinutes(max(1, (int) config('legacy_tags.activation.intent_ttl_minutes', 15))),
         ]);
         $intent->setRelation('tag', $tag);
@@ -88,8 +92,16 @@ class StartTagActivation
         $alreadyMine = TagActivationState::for($tag, $user)->state === TagActivationState::MINE;
         $story = $alreadyMine ? $tag->story : null;
 
+        $intent->loadMissing('cheerLink');
+
         return [
             'intent_id' => $intent->uuid,
+            // story | cheer — a cheer card shows the chosen link, never a story.
+            'purpose' => $tag->purpose->value,
+            'cheer_link' => $intent->cheerLink === null ? null : [
+                'uuid' => $intent->cheerLink->uuid,
+                'title' => $intent->cheerLink->title,
+            ],
             'tag_code' => $tag->public_code,
             'write_url' => $intent->write_url,
             'expires_at' => $intent->expires_at->toIso8601String(),
@@ -143,6 +155,40 @@ class StartTagActivation
         }
 
         return $tag;
+    }
+
+    /**
+     * A Tarjeta de ánimo must be activated as one, with one of this person's
+     * active links; a story tag must not be activated as a card.
+     *
+     * @param  array{purpose?: ?string, cheer_link_uuid?: ?string}  $input
+     */
+    private function cheerLinkFor(LegacyTag $tag, User $user, array $input): ?CheerLink
+    {
+        $wantsCheer = ($input['purpose'] ?? null) === 'cheer';
+
+        if (! $tag->isCheerCard()) {
+            if ($wantsCheer) {
+                throw TagActivationException::notActivatable('not_cheer_card');
+            }
+
+            return null;
+        }
+
+        if (! $wantsCheer) {
+            throw TagActivationException::notActivatable('cheer_card');
+        }
+
+        $link = CheerLink::query()
+            ->where('uuid', (string) ($input['cheer_link_uuid'] ?? ''))
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($link === null || $link->state() === CheerLink::STATE_REVOKED) {
+            throw ValidationException::withMessages(['cheer_link_uuid' => __('Ese enlace ya no está activo. Elige otro o crea uno nuevo.')]);
+        }
+
+        return $link;
     }
 
     /** Owner of an activated tag, or the account that bought it online. */

@@ -35,7 +35,7 @@ class TrainingLinkController extends Controller
                 ->latest('id')
                 ->limit(100)
                 ->get()
-                ->map(fn (CheerLink $link) => $presenter->link($link))
+                ->map(fn (CheerLink $link) => $presenter->linkWithStats($link))
                 ->values(),
         );
     }

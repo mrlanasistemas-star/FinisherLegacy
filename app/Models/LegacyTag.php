@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LegacyTagPurpose;
 use App\Enums\LegacyTagStatus;
 use App\Enums\SalesChannel;
 use App\Support\LegacyTags\TagCode;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -24,12 +26,22 @@ use Spatie\Activitylog\Support\LogOptions;
  * (/t/{code}) and what a person can type at /activar; one tag, one story.
  * Status changes only through App\Actions\LegacyTags\* (each writes a
  * legacy_tag_events row) — never by assigning `status` in a controller.
+ *
+ * `purpose = cheer` makes the unit a Tarjeta de ánimo NFC: no story, and
+ * `/t/{code}` opens the bound cheer link (`cheer_link_id`) instead
+ * (App\Actions\Training\BindCheerCard, docs/renovacion/tarjeta-animo.md).
+ *
+ * @property LegacyTagPurpose $purpose
+ * @property int|null $cheer_link_id
+ * @property Carbon|null $cheer_bound_at
+ * @property-read CheerLink|null $cheerLink
  */
 #[Fillable([
     'uuid', 'serial', 'public_code', 'product_variant_id', 'inventory_lot_id', 'inventory_location_id', 'nfc_tag_id',
     'nfc_uid_hash', 'status', 'sales_channel', 'ally_id', 'order_id', 'order_item_id', 'owner_athlete_id',
     'athlete_owned_product_id', 'replaces_tag_id', 'received_at', 'sold_at', 'delivered_at', 'activated_at',
     'first_opened_at', 'last_opened_at', 'open_count', 'disabled_reason', 'notes', 'metadata',
+    'purpose', 'cheer_link_id', 'cheer_bound_at',
 ])]
 #[Hidden(['nfc_uid_hash', 'activation_code_hash'])]
 class LegacyTag extends Model
@@ -41,6 +53,8 @@ class LegacyTag extends Model
     {
         return [
             'status' => LegacyTagStatus::class,
+            'purpose' => LegacyTagPurpose::class,
+            'cheer_bound_at' => 'datetime',
             'sales_channel' => SalesChannel::class,
             'received_at' => 'datetime',
             'sold_at' => 'datetime',
@@ -147,6 +161,18 @@ class LegacyTag extends Model
     public function activationIntents(): HasMany
     {
         return $this->hasMany(LegacyTagActivationIntent::class);
+    }
+
+    /** @return BelongsTo<CheerLink, $this> */
+    public function cheerLink(): BelongsTo
+    {
+        return $this->belongsTo(CheerLink::class);
+    }
+
+    /** A Tarjeta de ánimo NFC (opens a cheer link, never a story). */
+    public function isCheerCard(): bool
+    {
+        return $this->purpose === LegacyTagPurpose::Cheer;
     }
 
     /** Short, permanent URL written to the NFC chip. */

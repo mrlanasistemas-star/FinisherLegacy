@@ -11,6 +11,7 @@ use App\Services\Portrait\PortraitDesigns;
 use App\Support\Collections\TagDesign;
 use App\Support\Commerce\CartSummaryItem;
 use App\Support\Commerce\ShippingRates;
+use App\Support\Training\CheerCards;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -62,6 +63,8 @@ class CartResource extends JsonResource
                 'tag_design' => ($product = $products->get($item->productSlug)) !== null ? TagDesign::forProduct($product) : null,
                 // Additive: the saved Portarretrato design this line will print (or null).
                 'portrait_design' => $designs->summary(self::meta($metadata->get($item->cartItemId))),
+                // Additive: the cheer link a Tarjeta de ánimo line will open, {uuid, title} or null.
+                'cheer_link' => CheerCards::summary(self::meta($metadata->get($item->cartItemId))),
             ])->values(),
             'subtotal_minor' => $summary->subtotalMinor,
             'discount_minor' => $summary->discountMinor,

@@ -27,6 +27,10 @@ enum LegacyTagEventType: string
     case ActivationFailed = 'activation_failed';
     case ReportedMissing = 'reported_missing';
     case Recovered = 'recovered';
+    /** Tarjeta de ánimo bound (or re-bound) to a cheer link. */
+    case CheerBound = 'cheer_bound';
+    /** Tarjeta de ánimo deactivated by its owner (no link). */
+    case CheerUnbound = 'cheer_unbound';
 
     public function label(): string
     {
@@ -50,6 +54,8 @@ enum LegacyTagEventType: string
             self::ActivationFailed => 'Intento de activación fallido',
             self::ReportedMissing => 'Reportado extraviado o robado',
             self::Recovered => 'Recuperado',
+            self::CheerBound => 'Tarjeta de ánimo vinculada a un enlace',
+            self::CheerUnbound => 'Tarjeta de ánimo desactivada',
         };
     }
 }

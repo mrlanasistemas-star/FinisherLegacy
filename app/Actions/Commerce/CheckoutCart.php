@@ -33,6 +33,7 @@ use App\Services\Commerce\InventoryService;
 use App\Services\Portrait\PortraitDesigns;
 use App\Support\CodeGenerator;
 use App\Support\Commerce\ShippingRates;
+use App\Support\Training\CheerCards;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -136,6 +137,8 @@ class CheckoutCart
                     'legacy_plate_model' => $legacyPlateModel,
                     // Portarretrato personalization: frozen copy for production (PortraitDesigns::snapshot).
                     'portrait_design' => PortraitDesigns::snapshotForCartItem($item),
+                    // Tarjeta de ánimo NFC: the cheer link it opens (CheerCards).
+                    'cheer_link' => CheerCards::snapshotForCartItem($item),
                 ];
             }
 
@@ -221,7 +224,11 @@ class CheckoutCart
                     'unit_price_minor' => $line['unit_price_minor'],
                     'line_total_minor' => $line['line_total_minor'],
                     'currency' => $line['currency'],
-                    'metadata' => ['price_type' => $line['price_type'], ...($line['portrait_design'] !== null ? ['portrait_design' => $line['portrait_design']] : [])],
+                    'metadata' => [
+                        'price_type' => $line['price_type'],
+                        ...($line['portrait_design'] !== null ? ['portrait_design' => $line['portrait_design']] : []),
+                        ...($line['cheer_link'] !== null ? ['cheer_link' => $line['cheer_link']] : []),
+                    ],
                 ]);
 
                 // Already validated (event, model, active) in the loop

@@ -11,12 +11,14 @@ use App\Actions\Commerce\UpdateCartItem;
 use App\Exceptions\Api\ApiException;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
+use App\Models\CheerLink;
 use App\Models\EventEdition;
 use App\Models\PortraitDesign;
 use App\Models\ProductVariant;
 use App\Queries\Commerce\GetCartSummary;
 use App\Services\Portrait\PortraitDesigns;
 use App\Support\Commerce\CartSummaryItem;
+use App\Support\Training\CheerCards;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,6 +44,8 @@ class CartController extends Controller
             'items' => $summary->items->map(fn (CartSummaryItem $item) => [
                 ...$item->toPageArray(),
                 'portrait_design' => $designs->summary(is_array($m = $metadata->get($item->cartItemId)) ? $m : null),
+                // Tarjeta de ánimo NFC: the cheer link this card will open.
+                'cheer_link' => CheerCards::summary(is_array($m) ? $m : null),
             ])->values(),
             'currency' => $summary->currency,
             'subtotal_minor' => $summary->subtotalMinor,
@@ -91,6 +95,7 @@ class CartController extends Controller
             'event_edition_id' => ['nullable', 'integer', 'exists:event_editions,id'],
             'legacy_plate_model_id' => ['nullable', 'integer', 'exists:legacy_plate_models,id'],
             'portrait_design_id' => ['nullable', 'integer', 'exists:portrait_designs,id'],
+            'cheer_link_uuid' => ['nullable', 'uuid'],
         ]);
 
         $variant = ProductVariant::query()->whereKey($data['product_variant_id'])->firstOrFail();
@@ -98,6 +103,8 @@ class CartController extends Controller
         $metadata = isset($data['legacy_plate_model_id']) ? ['legacy_plate_model_id' => $data['legacy_plate_model_id']] : [];
         // "Pedir este portarretrato" from the builder: the saved design travels with the line.
         $metadata += PortraitDesigns::cartMetadata($request->user(), isset($data['portrait_design_id']) ? PortraitDesign::query()->whereKey($data['portrait_design_id'])->first() : null, $variant);
+        // "Pedir tarjeta para este enlace": the card arrives bound to it.
+        $metadata += CheerCards::cartMetadata($request->user(), isset($data['cheer_link_uuid']) ? CheerLink::query()->where('uuid', $data['cheer_link_uuid'])->first() ?? new CheerLink : null, $variant);
 
         $cart = $getOrCreateCart->handle($request->user(), null);
 

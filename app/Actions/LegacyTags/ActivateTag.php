@@ -46,6 +46,12 @@ class ActivateTag
             $story = DB::transaction(function () use ($tag, $user, $source) {
                 /** @var LegacyTag $tag */
                 $tag = LegacyTag::query()->lockForUpdate()->findOrFail($tag->id);
+                // A Tarjeta de ánimo never becomes a story: it is bound to a
+                // cheer link instead (App\Actions\Training\BindCheerCard).
+                if ($tag->isCheerCard()) {
+                    throw new TagNotActivatableException('cheer_card');
+                }
+
                 $athlete = $this->ensureAthlete->handle($user, 'legacy_tag_activation');
 
                 if ($tag->status === LegacyTagStatus::Activated) {

@@ -15,10 +15,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * App\Actions\LegacyTags\StartTagActivation, closed by
  * ConfirmTagActivation / FailTagActivation. `write_url` is always built
  * server-side from config('legacy_tags.public_base_url') — never input.
+ * For a Tarjeta de ánimo, `cheer_link_id` is the athlete's link chosen in
+ * the app; ConfirmTagActivation binds the card to it.
+ *
+ * @property int|null $cheer_link_id
  */
 #[Fillable([
     'uuid', 'legacy_tag_id', 'user_id', 'platform', 'nfc_uid_hash', 'status', 'write_url', 'expires_at',
-    'confirmed_at', 'failure_reason',
+    'confirmed_at', 'failure_reason', 'cheer_link_id',
 ])]
 #[Hidden(['nfc_uid_hash'])]
 class LegacyTagActivationIntent extends Model
@@ -44,6 +48,12 @@ class LegacyTagActivationIntent extends Model
     public function tag(): BelongsTo
     {
         return $this->belongsTo(LegacyTag::class, 'legacy_tag_id');
+    }
+
+    /** @return BelongsTo<CheerLink, $this> */
+    public function cheerLink(): BelongsTo
+    {
+        return $this->belongsTo(CheerLink::class);
     }
 
     /** @return BelongsTo<User, $this> */

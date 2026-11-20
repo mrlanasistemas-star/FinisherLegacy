@@ -82,6 +82,16 @@ class CheerLink extends Model
         return $this->hasMany(CheerMessageReport::class);
     }
 
+    /**
+     * Tarjetas de ánimo NFC currently bound to this link.
+     *
+     * @return HasMany<LegacyTag, $this>
+     */
+    public function cards(): HasMany
+    {
+        return $this->hasMany(LegacyTag::class, 'cheer_link_id');
+    }
+
     /** @return HasMany<CheerRateLimitHit, $this> */
     public function rateLimitHits(): HasMany
     {

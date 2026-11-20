@@ -2,12 +2,14 @@
 
 namespace App\Actions\LegacyTags;
 
+use App\Actions\Training\BindCheerCard;
 use App\Enums\LegacyTagActivationIntentStatus;
 use App\Enums\LegacyTagEventType;
 use App\Enums\TagAccessSource;
 use App\Exceptions\LegacyTags\TagActivationException;
 use App\Exceptions\LegacyTags\TagAlreadyActivatedException;
 use App\Exceptions\LegacyTags\TagNotActivatableException;
+use App\Models\CheerLink;
 use App\Models\LegacyStory;
 use App\Models\LegacyTag;
 use App\Models\LegacyTagActivationIntent;
@@ -28,15 +30,20 @@ use Illuminate\Support\Facades\DB;
  * An expired intent can still be confirmed (the "written but not confirmed"
  * recovery case) within config('legacy_tags.activation.intent_recovery_days'),
  * because the written URL — our own, for this unit — is the proof.
+ *
+ * A Tarjeta de ánimo (docs/renovacion/tarjeta-animo.md) goes to
+ * BindCheerCard instead of ActivateTag: same ownership rules, no story, and
+ * the result is the bound tag.
  */
 class ConfirmTagActivation
 {
     public function __construct(
         private readonly ActivateTag $activate,
         private readonly TagLifecycle $lifecycle,
+        private readonly BindCheerCard $bindCard,
     ) {}
 
-    public function handle(User $user, LegacyTagActivationIntent $intent, string $writtenUrl, ?string $nfcUid = null): LegacyStory
+    public function handle(User $user, LegacyTagActivationIntent $intent, string $writtenUrl, ?string $nfcUid = null): LegacyStory|LegacyTag
     {
         if ($intent->user_id !== $user->id) {
             throw (new ModelNotFoundException)->setModel(LegacyTagActivationIntent::class, [$intent->uuid]);
@@ -52,6 +59,16 @@ class ConfirmTagActivation
             // Repeat of an already confirmed intent: answer, never re-activate
             // (ownership may have been revoked / transferred since).
             if ($intent->status === LegacyTagActivationIntentStatus::Confirmed) {
+                $confirmedTag = LegacyTag::query()->find($intent->legacy_tag_id);
+
+                if ($confirmedTag !== null && $confirmedTag->isCheerCard()) {
+                    if ($confirmedTag->owner_athlete_id === null || $confirmedTag->owner_athlete_id !== $user->athlete()->value('id')) {
+                        throw TagActivationException::alreadyActivated();
+                    }
+
+                    return $confirmedTag;
+                }
+
                 $story = LegacyStory::query()->where('legacy_tag_id', $intent->legacy_tag_id)->first();
 
                 if ($story === null || ! $story->isOwnedBy($user)) {
@@ -84,7 +101,9 @@ class ConfirmTagActivation
             }
 
             try {
-                $story = $this->activate->handle($tag, $user, TagAccessSource::Nfc);
+                $story = $tag->isCheerCard()
+                    ? $this->bindCard->bind($tag, $this->cheerLink($intent, $user), $user, 'app')
+                    : $this->activate->handle($tag, $user, TagAccessSource::Nfc);
             } catch (TagAlreadyActivatedException) {
                 throw TagActivationException::alreadyActivated();
             } catch (TagNotActivatableException $e) {
@@ -111,12 +130,29 @@ class ConfirmTagActivation
      *
      * @return array<string, mixed>
      */
-    public function present(LegacyTagActivationIntent $intent, LegacyStory $story): array
+    public function present(LegacyTagActivationIntent $intent, LegacyStory|LegacyTag $story): array
     {
         $intent->loadMissing('tag');
 
+        if ($story instanceof LegacyTag) {
+            $story->loadMissing('cheerLink');
+
+            return [
+                'status' => 'activated',
+                'purpose' => 'cheer',
+                'tag_code' => $intent->tag->public_code,
+                'story' => null,
+                'cheer_link' => $story->cheerLink === null ? null : [
+                    'uuid' => $story->cheerLink->uuid,
+                    'title' => $story->cheerLink->title,
+                    'url' => $story->cheerLink->url(),
+                ],
+            ];
+        }
+
         return [
             'status' => 'activated',
+            'purpose' => 'story',
             'tag_code' => $intent->tag->public_code,
             'story' => [
                 'public_id' => $story->public_id,
@@ -124,6 +160,16 @@ class ConfirmTagActivation
                 'edit_url' => route('my-legacy.edit', $story->public_id),
             ],
         ];
+    }
+
+    /** The link chosen at start, still this person's. */
+    private function cheerLink(LegacyTagActivationIntent $intent, User $user): CheerLink
+    {
+        $link = $intent->cheer_link_id !== null
+            ? CheerLink::query()->whereKey($intent->cheer_link_id)->where('user_id', $user->id)->first()
+            : null;
+
+        return $link ?? throw TagActivationException::notActivatable('cheer_card');
     }
 
     private function bindUid(LegacyTag $tag, string $uidHash, User $user, LegacyTagActivationIntent $intent): void
