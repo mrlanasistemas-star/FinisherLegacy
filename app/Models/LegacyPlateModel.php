@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
  * printable area of the front; the clip/depth columns describe the
  * physical piece and are editable in case the supplier adjusts them.
  * The back_* columns survive only for historical plates.
- * See docs/architecture/legacy-plate-v3.md.
+ * See docs/historico/legacy-plate-v3.md.
  */
 #[Fillable([
     'uuid', 'name', 'slug', 'layout_slot', 'layout_style', 'sku', 'description', 'width_mm', 'height_mm',

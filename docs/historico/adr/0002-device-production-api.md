@@ -27,7 +27,7 @@ manteniendo la descarga manual de SVG/PNG/PDF (ya implementada, ver ADR 0001)
 como **fallback explícito** si el dispositivo/driver falla, nunca la
 eliminamos.
 
-Esto reversa una decisión previa y documentada (`docs/plate-production.md`
+Esto reversa una decisión previa y documentada (`docs/historico/plate-production.md`
 §10, §16) de no controlar el láser directamente. La razón para reversarla es
 un cambio de producto (llevar el piloto a operación con hardware real), no
 un defecto de la decisión anterior — la decisión anterior fue correcta para
@@ -45,7 +45,7 @@ Lo que este repo construye:
 - El **Device API**: autenticación de dispositivo, entrega de production
   jobs con instrucciones de render, y callbacks de checklist
   (front/back/qr).
-- El **contrato** (`docs/device-api/v1.md`, análogo a `docs/api/v1.md`) que
+- El **contrato** (`docs/historico/device-api-v1.md`, análogo a `docs/api/v1.md`) que
   cualquier cliente desktop debe implementar.
 
 Lo que este repo NO construye:
@@ -58,7 +58,7 @@ Lo que este repo NO construye:
 
 Del ADR 0001: potencia/velocidad/frecuencia del láser **nunca** se calculan
 ni envían desde el backend — dependen del material y se calibran
-físicamente por máquina (`docs/plate-production.md` §10). El Device API
+físicamente por máquina (`docs/historico/plate-production.md` §10). El Device API
 sigue esa misma regla:
 
 - El backend entrega **qué grabar** (vectores/SVG resueltos por el mismo
@@ -136,8 +136,8 @@ continuar con el siguiente. Ninguno incluye commit/push.
 3. **Slice 3 — Checklist por dispositivo**: `POST jobs/{job}/checklist` +
    `POST jobs/{job}/fail`, reutilizando `ProductionService`. Tests de que el
    kanban humano y el Device API nunca diverjan en el mismo dato.
-4. **Slice 4 — Contrato documentado**: `docs/device-api/v1.md` (igual
-   formato que `docs/api/v1.md`) + actualizar `docs/plate-production.md`
+4. **Slice 4 — Contrato documentado**: `docs/historico/device-api-v1.md` (igual
+   formato que `docs/api/v1.md`) + actualizar `docs/historico/plate-production.md`
    para reflejar que el grabado automatizado es ahora la operación normal y
    la descarga manual el fallback (§16 deja de listar el driver como "fuera
    de alcance").

@@ -9,8 +9,8 @@ same `/api/v1` used by the mobile app and other Finisher Legacy sites
 
 Consumed by a Finisher Event Desktop station (or `php artisan
 finisher:simulate-station`, the mock-driver CLI client used to test this
-contract without hardware — see `docs/adr/0002-device-production-api.md`
-§Mock Driver and `docs/adr/0003-production-state-machine.md` §Simulator).
+contract without hardware — see `docs/historico/adr/0002-device-production-api.md`
+§Mock Driver and `docs/historico/adr/0003-production-state-machine.md` §Simulator).
 The actual LaserDriver (Cloudray/BSL, EZCAD/JCZ, LightBurn bridge) lives in
 that separate desktop app, not in this repo — this document is the
 contract it must implement.
@@ -164,7 +164,7 @@ queued → assigned → preparing → engraving_front → awaiting_flip
        → engraving_back → verifying_qr → ready → delivered
 ```
 
-See `docs/adr/0003-production-state-machine.md` for the full state
+See `docs/historico/adr/0003-production-state-machine.md` for the full state
 machine, the Plate↔Job sync rules, and why `failed`/`cancelled` behave the
 way they do. Every transition endpoint below returns the updated job in
 the same shape as `GET .../jobs/{job}` — always check `data.status` and

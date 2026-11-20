@@ -4,26 +4,35 @@ Mapa rápido de los documentos de arquitectura. Para decisiones y su
 razonamiento, ver `docs/adr/`; estos documentos son el "cómo se organiza
 el código", no el "por qué se decidió así".
 
+Visión general vigente: [`docs/ARQUITECTURA.md`](../ARQUITECTURA.md) e inventario de funciones: [`docs/FUNCIONALIDADES.md`](../FUNCIONALIDADES.md). Comercio vigente: `docs/architecture/commerce-os.md` + `docs/renovacion/pagos.md`.
+
 | Documento | Cubre |
 |---|---|
 | `docs/architecture/athlete-identity.md` | Athlete canónico, deduplicación, `AthleteIdentityMatcher` (Slice 3) |
 | `docs/architecture/external-event-providers.md` | Provider adapters, DTOs canónicos, Mock provider (Slice 4) |
 | `docs/architecture/ingestion-pipeline.md` | CSV/API → `EventIngestionService` → Actions de Slice 3/4 |
-| `docs/plate-production.md` | Plate Studio, generación de placas, Event Ops (Slice 5) |
-| `docs/legacy-code-lifecycle.md` | Legacy Code, claim, permanencia |
-| `docs/device-api/v1.md` | Contrato HTTP que un Desktop/simulador consume |
-| `docs/event-ops/README.md` | Dashboard operativo, búsqueda, elegibilidad (Slice 5) |
 | `docs/api/v1.md` | Contrato general `/api/v1` — auth, medallas, Event Ops API, integraciones, errores (Slice 6) |
 | `docs/api/use-case-matrix.md` | Qué caso de uso vive en qué transporte (Web/API/Device) |
 | `docs/api/client-integration-guide.md` | Cómo un cliente externo futuro (Desktop, Mobile) se conecta |
 | `docs/api/openapi.yaml` | Especificación OpenAPI de Fase 1, generada a mano a partir de las rutas reales |
-| `docs/desktop/technology-decision.md` | Comparación .NET/Tauri/Electron para un futuro Desktop — documentación únicamente, sin código |
-| `docs/architecture/legacy-plate-v3.md` | **Vigente**: Legacy Plate V3 — 70 × 45 mm, diseño solo al frente, NFC con ferrita, clip money clip de acero inoxidable atrás, snapshots históricos |
-| `docs/architecture/legacy-plate-v2.md` | Legacy Plate pre-manufacturada + grabado dinámico, name fitting, entitlement de producción |
-| `docs/architecture/commerce.md` | Catálogo, inventario, precio por ventana, carrito/checkout/orders, pagos online/manuales |
 | `docs/architecture/social.md` | Legacy Moments: follows, momentos, reacciones, mensajes de apoyo, bloqueos, reportes, feed/explorar/búsqueda, privacidad |
 | `docs/architecture/athlete-assets.md` | AthleteOwnedProduct/AssetCode (Digital Closet), Athlete history, media de evento |
 | `docs/architecture/event-data-source.md` | Organizer ↔ ProviderConnection ↔ Event, `GenericRestEventProvider` |
+
+### Históricos (producto retirado: placas grabadas, Device API, Event Ops)
+
+No describen decisiones vigentes — ver `docs/historico/README.md`.
+
+| Documento | Cubría |
+|---|---|
+| `docs/historico/plate-production.md` | Plate Studio, generación de placas, Event Ops (Slice 5) |
+| `docs/historico/legacy-code-lifecycle.md` | Legacy Code, claim, permanencia |
+| `docs/historico/device-api-v1.md` | Contrato HTTP que un Desktop/simulador consume |
+| `docs/historico/event-ops.md` | Dashboard operativo, búsqueda, elegibilidad (Slice 5) |
+| `docs/historico/desktop-technology-decision.md` | Comparación .NET/Tauri/Electron para un futuro Desktop — documentación únicamente, sin código |
+| `docs/historico/legacy-plate-v3.md` | (era la especificación vigente hasta 2026-11-11) Legacy Plate V3 — 70 × 45 mm, diseño solo al frente, NFC con ferrita, clip money clip de acero inoxidable atrás, snapshots históricos |
+| `docs/historico/legacy-plate-v2.md` | Legacy Plate pre-manufacturada + grabado dinámico, name fitting, entitlement de producción |
+| `docs/historico/commerce.md` | Catálogo, inventario, precio por ventana, carrito/checkout/orders, pagos online/manuales |
 
 ## Tres clientes, un backend (Slice 6)
 
@@ -52,7 +61,7 @@ el código", no el "por qué se decidió así".
 futuro Desktop (`FinisherLegacy-Desktop`) o Mobile consumen `/api/v1`
 desde repositorios separados — ver `docs/api/client-integration-guide.md`.
 Este repo solo expone el contrato; nunca construye el cliente que lo
-consume (docs/adr/0007-desktop-event-station.md documenta esa decisión
+consume (docs/historico/adr/0007-desktop-event-station.md documenta esa decisión
 para el caso Desktop específicamente).
 
 ## Capas, de arriba hacia abajo

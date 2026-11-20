@@ -8,7 +8,7 @@ use Database\Seeders\LegacyPlateModelSeeder;
 use Database\Seeders\RolePermissionSeeder;
 
 /**
- * Legacy Plate V3 (docs/architecture/legacy-plate-v3.md): 70 × 45 mm,
+ * Legacy Plate V3 (docs/historico/legacy-plate-v3.md): 70 × 45 mm,
  * design on the FRONT only, stainless money clip on the unprinted back,
  * physical spec editable, and every produced plate keeps a frozen copy of
  * the layout it was made with.

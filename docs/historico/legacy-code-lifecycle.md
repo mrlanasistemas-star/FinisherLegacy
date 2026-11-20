@@ -31,7 +31,7 @@ o SVG exportado, **no se ha perdido la placa** — el backend regenera el QR des
 `LegacyCode.code` sin ninguna otra dependencia.
 
 Esto se extiende igual a los archivos de producción (SVG/PNG/PDF de la placa completa,
-ver `docs/plate-production.md`): no se persisten como archivos autoritativos en disco,
+ver `docs/historico/plate-production.md`): no se persisten como archivos autoritativos en disco,
 se generan on-demand desde `Plate` + `PlateTemplateVersion`, así que "perder" un archivo
 exportado nunca es una pérdida de datos real.
 

@@ -5,7 +5,7 @@ namespace App\Enums;
 /**
  * How the reverse face must be physically re-oriented in the jig after
  * flipping the plate — depends on the jig/process, never guessed
- * automatically. See docs/plate-production.md.
+ * automatically. See docs/historico/plate-production.md.
  */
 enum PlateBackTransform: string
 {

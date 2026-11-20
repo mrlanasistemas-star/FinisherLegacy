@@ -1,6 +1,6 @@
 /**
- * Single source of truth for the app's navigation (docs/MODULES.md,
- * docs/product/module-audit.md). Read by the desktop sidebar, the workspace
+ * Single source of truth for the app's navigation (docs/FUNCIONALIDADES.md,
+ * docs/historico/module-audit.md). Read by the desktop sidebar, the workspace
  * tab bar under the topbar, the mobile bottom nav + "Más" sheet and the ⌘K
  * command menu — no component keeps its own copy of these lists.
  *

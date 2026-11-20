@@ -5,7 +5,7 @@
 Este documento describe el flujo completo de Plate Studio: cómo se diseña un
 molde de **dos caras**, cómo se asigna a un evento, cómo se genera una placa
 real, y cómo se exportan los archivos que van a la máquina de grabado láser.
-Ver también `docs/legacy-code-lifecycle.md` para la regla de permanencia del
+Ver también `docs/historico/legacy-code-lifecycle.md` para la regla de permanencia del
 Legacy Code.
 
 **Regla central: Finisher Legacy produce DOS archivos de grabado por
@@ -33,7 +33,7 @@ Finisher Legacy → SVG (frente + reverso, por separado)
 | **Event Plate Template** | Qué versión de molde usa una edición de evento (o una carrera específica dentro de ella) por defecto. | `event_plate_templates` / `App\Models\EventPlateTemplate` |
 | **Plate** | Una placa concreta para una persona: snapshot de sus datos en el momento de generarla, más la versión de molde usada. | `plates` / `App\Models\Plate` |
 | **Event Result / Split** | El resultado de un corredor y, opcionalmente, cualquier número de parciales (5K, Swim, T1...). | `event_results` / `event_result_splits` |
-| **Legacy Code** | Identidad permanente de la placa. Ver `docs/legacy-code-lifecycle.md`. | `legacy_codes` / `App\Models\LegacyCode` |
+| **Legacy Code** | Identidad permanente de la placa. Ver `docs/historico/legacy-code-lifecycle.md`. | `legacy_codes` / `App\Models\LegacyCode` |
 | **Production Job** | Un trabajo en el kanban de `/production`, con su propio checklist de grabado. Una placa puede tener varios a lo largo de su vida (reimpresiones). | `production_jobs` / `App\Models\ProductionJob` |
 | **Machine Profile** | Una etiqueta de flujo de trabajo ("Fiber 30W — LightBurn"), **no un driver** — Finisher Legacy nunca controla el láser directamente. | `machine_profiles` / `App\Models\MachineProfile` |
 
@@ -475,7 +475,7 @@ trazos) ya está implementada y probada:
 
 `App\Http\Controllers\OperatorController` (`/operator`) es la consola
 donde un operador busca un corredor y produce su placa — ver
-`docs/adr/0006-event-operations.md`. Antes de producir, siempre puede
+`docs/historico/adr/0006-event-operations.md`. Antes de producir, siempre puede
 consultar:
 
 - **Elegibilidad** (`App\Services\PlateEligibilityService`, Slice 4):
@@ -489,6 +489,6 @@ consultar:
 
 El driver de láser (`App\Contracts\Production\LaserDriver`,
 `App\Services\Production\Drivers\MockLaserDriver`) es una abstracción
-para el Desktop Event Station — ver `docs/adr/0007-desktop-event-station.md`.
+para el Desktop Event Station — ver `docs/historico/adr/0007-desktop-event-station.md`.
 Sigue sin existir integración real con LightBurn/el láser; esta fase
 sigue terminando en el archivo de exportación, como arriba.

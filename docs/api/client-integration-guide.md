@@ -7,10 +7,10 @@ esta guía es el contrato, no una implementación.
 
 ## 1. Autenticar
 
-Dos guardas separadas — nunca mezcladas (`docs/adr/0002-device-production-api.md`):
+Dos guardas separadas — nunca mezcladas (`docs/historico/adr/0002-device-production-api.md`):
 
 - **Personal/operador** (Event Ops, medallas, perfil): `POST /api/v1/auth/login` con email/password → token Sanctum de `User`.
-- **Estación de producción**: pairing (`POST /api/v1/devices/pair` → código humano → `POST /api/v1/devices/pair/confirm` en poll hasta que un Super Admin lo apruebe en `/admin/production-devices`) → token Sanctum de `ProductionDevice`. Ver `docs/device-api/v1.md`.
+- **Estación de producción**: pairing (`POST /api/v1/devices/pair` → código humano → `POST /api/v1/devices/pair/confirm` en poll hasta que un Super Admin lo apruebe en `/admin/production-devices`) → token Sanctum de `ProductionDevice`. Ver `docs/historico/device-api-v1.md`.
 
 ```bash
 curl -X POST https://tu-dominio/api/v1/auth/login \
@@ -20,7 +20,7 @@ curl -X POST https://tu-dominio/api/v1/auth/login \
 ```
 
 Guarda el token de forma segura (para un Desktop: almacén de credenciales
-del SO, nunca un archivo plano — ver `docs/adr/0007-desktop-event-station.md`
+del SO, nunca un archivo plano — ver `docs/historico/adr/0007-desktop-event-station.md`
 §Secure token storage). Envíalo en cada request siguiente:
 
 ```bash
@@ -111,7 +111,7 @@ la lista completa sin revisar `meta.last_page`.
 
 - Decidir si una placa puede producirse, si un QR es correcto, o si un
   `ProductionJob` puede avanzar — todo eso lo decide el backend
-  (`docs/adr/0007-desktop-event-station.md` §Responsabilidades).
+  (`docs/historico/adr/0007-desktop-event-station.md` §Responsabilidades).
 - Cachear/persistir más que lo necesario para operar offline — nunca una
   copia completa de Athletes/Events/Participants/Results
   (`docs/api/v1.md`, principio de "backend sigue siendo source of truth").
@@ -122,7 +122,7 @@ la lista completa sin revisar `meta.last_page`.
   y `POST .../payments/manual` siempre recalculan el monto server-side
   (`App\Actions\Commerce\ResolveProductPrice`) — un cliente que envía
   `amount`/`price` lo ve ignorado, nunca confiado (brief §68/§93,
-  ver `docs/architecture/commerce.md`).
+  ver `docs/historico/commerce.md`).
 
 ## 9. Tienda / Legacy Plate / Digital Closet (ecosistema comercial)
 
@@ -131,5 +131,5 @@ Mismo patrón que el resto: navega el catálogo público
 y consulta `GET /orders`. Un producto QR-capable (Trisuit, FAST T1 Socks,
 Chill Band, Racepack, y Legacy Plate vía su propio Legacy Code) aparece
 después en `GET /me/gear` una vez que la Order se marca `fulfilled`. Ver
-`docs/architecture/commerce.md` y `docs/architecture/athlete-assets.md`
+`docs/historico/commerce.md` y `docs/architecture/athlete-assets.md`
 para el detalle de dominio completo — esta guía no lo repite.

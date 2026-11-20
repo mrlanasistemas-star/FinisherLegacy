@@ -123,7 +123,7 @@ nunca mutada después de `generated_at`. Campos: `production_job_id`,
   servicio que ya usa "Descargar para láser". Nunca hay un segundo cálculo
   de posiciones (§63 — un solo modo de producción, no dos diseños).
 - **Texto como trazos**: el artifact automático se genera con
-  `textAsPaths: true` (el fix de acentos/ñ de `docs/plate-production.md`
+  `textAsPaths: true` (el fix de acentos/ñ de `docs/historico/plate-production.md`
   §9 ya está resuelto y probado) — un device nunca debe depender de una
   fuente instalada. La vista previa web sigue mostrando `<text>` normal,
   sin cambios.

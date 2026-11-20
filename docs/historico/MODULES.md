@@ -2,7 +2,7 @@
 
 Fuente única de navegación: `resources/js/config/navigation.ts` (sidebar,
 pestañas de espacio de trabajo, barra inferior móvil y ⌘K). Detalle y
-razones de cada decisión: `docs/product/module-audit.md`.
+razones de cada decisión: `docs/historico/module-audit.md`.
 
 ## Mi espacio (atleta)
 

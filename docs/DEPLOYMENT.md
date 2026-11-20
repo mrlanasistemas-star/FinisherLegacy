@@ -1,5 +1,9 @@
 # Finisher Legacy — Deployment checklist
 
+> Configuración inicial de infraestructura. El procedimiento vigente para
+> actualizar y para compilar la app está en [`docs/DESPLIEGUE.md`](DESPLIEGUE.md);
+> cuentas y llaves externas en [`docs/PENDIENTES_EXTERNOS.md`](PENDIENTES_EXTERNOS.md).
+
 Target: one Linux host (or a few) with Nginx + PHP-FPM 8.4, MySQL 8, Redis,
 Laravel Reverb, Horizon workers, and the Synology NAS reachable **only** over
 Tailscale. No Kubernetes. Never commit secrets — every value below goes in the
@@ -70,15 +74,16 @@ Run `php artisan reverb:start` under Supervisor; Nginx proxies
 For more than one app server set `REVERB_SCALING_ENABLED=true` (Redis pub/sub).
 If Reverb is down the site keeps working (polling fallback).
 
-### 6. Stripe / OpenPay
+### 6. OpenPay (Stripe only for historical reconciliation)
 ```
-FINISHER_PAYMENT_GATEWAY / FINISHER_API_PAYMENT_GATEWAY
-STRIPE_KEY (pk_live)  STRIPE_SECRET (sk_live)  STRIPE_WEBHOOK_SECRET (whsec_)
+FINISHER_PAYMENT_GATEWAY=openpay
 OPENPAY_MERCHANT_ID OPENPAY_PRIVATE_KEY OPENPAY_PUBLIC_KEY OPENPAY_PRODUCTION_MODE=true
+OPENPAY_WEBHOOK_USER OPENPAY_WEBHOOK_PASSWORD
 ```
-Stripe dashboard webhook → `https://<domain>/api/webhooks/stripe` with the
-PaymentIntent events commerce handles (docs/architecture/commerce.md).
-Openpay webhook → `/api/webhooks/openpay`. Watch `storage/logs/payments-*.log`.
+Openpay webhook → `/api/webhooks/openpay` (docs/renovacion/pagos.md). The app
+no longer uses Stripe; `STRIPE_*` and `/api/webhooks/stripe` are only needed to
+reconcile old Stripe payments (docs/historico/commerce.md). Watch
+`storage/logs/payments-*.log`.
 
 ### 7. Media — Synology over Tailscale
 Tailscale on the app host; NAS share mounted (NFS/SMB) at a fixed path, e.g.
@@ -94,23 +99,21 @@ EXPO_ACCESS_TOKEN=   # only if "Enhanced push security" is enabled in EAS
 ```
 APNs key / FCM credentials are uploaded to **EAS** (expo.dev → project →
 credentials), not to this server. Outbound HTTPS to `exp.host` must be allowed.
-(Receipt polling — `getReceipts` after ~15 min — is not implemented yet;
-ticket-level `DeviceNotRegistered` already deactivates tokens.)
+Receipts are polled by `push:check-receipts` (scheduled every 15 min) and
+`DeviceNotRegistered` deactivates tokens (docs/renovacion/notificaciones.md).
 
 ### 9. Domain, TLS and app links
 - TLS for `<domain>` and `ws.<domain>`; HSTS.
-- Universal / App Links for NFC (`https://<domain>/n/{token}`) need, served
-  with `Content-Type: application/json` and no redirect:
-  - `https://<domain>/.well-known/apple-app-site-association` (team id +
-    bundle id, paths `/n/*`, `/live/*`)
-  - `https://<domain>/.well-known/assetlinks.json` (Android package + release
-    signing SHA-256)
-  These files are **not** in the repo yet — they depend on the final team id /
-  package / signing key.
+- Universal / App Links are served by `AppLinksController` (paths in
+  `config/nfc.php` › `app.paths`: `/n/*`, `/t/*`, `/reset-password/*`,
+  `/live/*`, `/familia/invitacion/*`). They answer 404 until `APPLE_TEAM_ID`
+  (apple-app-site-association) and `ANDROID_SHA256_CERT_FINGERPRINTS`
+  (assetlinks.json) are set.
 - Mail: `MAIL_MAILER` + credentials, `MAIL_FROM_ADDRESS`.
 
-### 10. Social sign-in (optional)
-`GOOGLE_OAUTH_CLIENT_IDS`, `APPLE_SIGNIN_CLIENT_IDS` (empty = disabled).
+### 10. Social sign-in (backend only)
+`GOOGLE_OAUTH_CLIENT_IDS`, `APPLE_SIGNIN_CLIENT_IDS` (empty = disabled). The
+mobile app no longer has a social sign-in UI.
 
 ### 11. Before go-live
 - [ ] `php artisan about` shows production, caches on, debug off
@@ -118,6 +121,6 @@ ticket-level `DeviceNotRegistered` already deactivates tokens.)
 - [ ] `/horizon` reachable by super_admin only
 - [ ] Browser devtools: WS connected to `wss://ws.<domain>`; a test
       notification shows the toast + badge
-- [ ] Stripe test-mode E2E (success, decline, 3DS, duplicate webhook)
+- [ ] OpenPay sandbox E2E (success, decline, 3DS, duplicate webhook, refund)
 - [ ] k6 smoke + ramp on staging, numbers recorded in `tools/loadtest/README.md`
 - [ ] Backups (DB + NAS) restored once

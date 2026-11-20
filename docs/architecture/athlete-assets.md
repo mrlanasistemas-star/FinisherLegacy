@@ -36,7 +36,7 @@ resuelven a un solo dueño (brief §150/§180).
 
 ## Legacy Plate Entitlement
 
-Ver `docs/architecture/legacy-plate-v2.md` y `docs/architecture/commerce.md`
+Ver `docs/historico/legacy-plate-v2.md` y `docs/historico/commerce.md`
 — el equivalente de "AthleteOwnedProduct" para Legacy Plate, pero con su
 propio ciclo de vida comercial (`LegacyPlateEntitlementStatus`) separado
 del estado físico de producción (`ProductionJobStatus`).

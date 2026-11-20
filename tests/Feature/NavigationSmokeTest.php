@@ -18,7 +18,7 @@ use Database\Seeders\RolePermissionSeeder;
  * Every destination linked from the public navbar, the account menu, the
  * "Mi espacio" sidebar and the admin sections/workspace tabs
  * (resources/js/config/navigation.ts) must answer — no dead links — and
- * every retired admin URL must redirect, never 404 (docs/product/module-audit.md).
+ * every retired admin URL must redirect, never 404 (docs/historico/module-audit.md).
  *
  * Cross-agent destinations (/admin/comercio, /admin/legacy-nfc,
  * /admin/events/{id}/tracking, /horizon) are built on other branches and

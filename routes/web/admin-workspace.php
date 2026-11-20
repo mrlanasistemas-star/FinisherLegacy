@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\PreregistrationController as AdminPreregistration
 use Illuminate\Support\Facades\Route;
 
 /*
-| Admin shell + events workspace (spec §8-§9, §111; docs/MODULES.md).
+| Admin shell + events workspace (spec §8-§9, §111; docs/FUNCIONALIDADES.md).
 | /admin/events/{eventEdition} is the event workspace: Resumen,
 | Participantes, Resultados, Prerregistros, Datos, Tracking (A8) and Media.
 | The retired /admin/editions URLs 301 here (routes/web.php).

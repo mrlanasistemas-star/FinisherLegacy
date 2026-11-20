@@ -4,7 +4,7 @@
 > (70 × 45 mm, diseño solo al frente, clip money clip atrás). Este documento
 > describe el modelo de datos v2, que sigue vigente salvo donde V3 lo corrige.
 
-Ver `docs/plate-production.md` para el pipeline histórico (PlateTemplate,
+Ver `docs/historico/plate-production.md` para el pipeline histórico (PlateTemplate,
 molde completo diseñado en Plate Studio). Este documento cubre **solo lo
 nuevo**: el rediseño de producto donde la placa física llega ya fabricada
 desde China y Finisher Legacy únicamente graba información variable.
@@ -112,7 +112,7 @@ decoración/fondo, eso ya existe físicamente.
 
 `App\Services\PlateEligibilityService::checkForEntitlement()` — método
 nuevo junto al `check()` histórico, para el flujo comercial nuevo
-(`LegacyPlateEntitlement`, ver `docs/architecture/commerce.md`). Un
+(`LegacyPlateEntitlement`, ver `docs/historico/commerce.md`). Un
 entitlement no pagado nunca es elegible; el pago nunca dispara producción
 por sí solo — un operador siempre presiona "producir" explícitamente vía
 `App\Actions\LegacyPlates\GenerateLegacyPlate`.

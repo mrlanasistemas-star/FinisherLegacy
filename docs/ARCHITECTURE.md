@@ -1,9 +1,15 @@
 # Finisher Legacy — Architecture
 
+> Visión general vigente en español: [`docs/ARQUITECTURA.md`](ARQUITECTURA.md).
+> Este documento conserva el detalle técnico (flujo de petición, canales,
+> límites de tasa, observabilidad). Las filas de placas y Stripe describen
+> datos históricos: el producto vigente es el Finisher Legacy Tag NFC y la
+> pasarela es OpenPay (Stripe solo para conciliar pagos antiguos).
+
 Concise map of how the system is put together. Domain details live next to
 it: `docs/architecture/*` (commerce, social, legacy plates, ingestion…),
 `docs/api/v1.md` + `docs/api/openapi.yaml`, `docs/NFC.md`, `docs/SYNOLOGY.md`,
-`docs/MODULES.md`. Deployment: `docs/DEPLOYMENT.md`.
+`docs/FUNCIONALIDADES.md`. Deployment: `docs/DEPLOYMENT.md`.
 
 ## 1. Shape
 

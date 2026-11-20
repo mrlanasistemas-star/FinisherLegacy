@@ -2,7 +2,7 @@
 
 Especificación vigente del producto. Reemplaza el concepto "impresión frente
 y reverso" de `legacy-plate-v2.md` y el pipeline de moldes grabados de
-`docs/plate-production.md` (ambos se conservan como **históricos**).
+`docs/historico/plate-production.md` (ambos se conservan como **históricos**).
 
 ## Especificación
 

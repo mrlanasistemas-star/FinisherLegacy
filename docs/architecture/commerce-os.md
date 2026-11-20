@@ -210,8 +210,8 @@ Navegación por dominio (`adminSections` en `resources/js/config/navigation.ts`;
 Catálogo/Inventario/Tags importados de `admin-catalog-links.ts`): Inicio ·
 Comercial · Catálogo · Inventario · Legacy · Soporte · Eventos · Comunidad ·
 Personas · Configuración · **Operación (histórico)** colapsada al final.
-Móvil: Inicio · Venta rápida · Pedidos · Tags · Más. Ver `docs/MODULES.md` y
-`docs/architecture/deprecation.md`.
+Móvil: Inicio · Venta rápida · Pedidos · Tags · Más. Ver `docs/historico/MODULES.md` y
+`docs/historico/deprecation.md`.
 
 | URL | Permiso | Qué es |
 |---|---|---|

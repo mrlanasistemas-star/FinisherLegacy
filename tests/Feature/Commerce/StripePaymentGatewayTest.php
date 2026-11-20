@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
  * happy path (an actual PaymentIntent create call) genuinely requires
  * live Stripe test keys + network access, neither available in this
  * environment — documented as the one part of this gateway that can't be
- * exercised here, see docs/architecture/commerce.md.
+ * exercised here, see docs/historico/commerce.md.
  */
 function stripeSignedPayload(string $secret, array $eventPayload): array
 {
