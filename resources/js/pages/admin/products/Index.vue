@@ -168,8 +168,8 @@ const typeOptions = [
                     </p>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <div class="relative">
+            <div class="flex flex-wrap gap-2">
+                <div class="relative min-w-0 flex-1 sm:flex-none">
                     <Search
                         class="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
                     />
@@ -178,7 +178,7 @@ const typeOptions = [
                         type="search"
                         placeholder="Buscar producto…"
                         aria-label="Buscar producto"
-                        class="h-10 w-56 rounded-full border border-input bg-card pr-4 pl-10 text-sm outline-none hover:border-foreground/25 focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15"
+                        class="h-10 w-full rounded-full border border-input bg-card pr-4 pl-10 text-sm outline-none hover:border-foreground/25 focus:border-fl-gold focus:ring-4 focus:ring-fl-gold/15 sm:w-56"
                         @input="search"
                     />
                 </div>

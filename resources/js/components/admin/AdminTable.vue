@@ -105,7 +105,15 @@ const titleColumn = computed(
     () => props.columns.find((c) => c.primary) ?? props.columns[0],
 );
 const detailColumns = computed(() =>
-    props.columns.filter((c) => c.key !== titleColumn.value?.key),
+    props.columns.filter(
+        (c) => c.key !== titleColumn.value?.key && c.label !== '',
+    ),
+);
+/** Unlabeled columns (row actions) get the card's full width, below. */
+const actionColumns = computed(() =>
+    props.columns.filter(
+        (c) => c.key !== titleColumn.value?.key && c.label === '',
+    ),
 );
 </script>
 
@@ -177,6 +185,16 @@ const detailColumns = computed(() =>
                         </dd>
                     </div>
                 </dl>
+
+                <div
+                    v-for="column in actionColumns"
+                    :key="column.key"
+                    class="mt-auto pt-4 [&>*]:flex-wrap"
+                >
+                    <slot :name="`cell-${column.key}`" :row="row">
+                        {{ row[column.key] ?? '' }}
+                    </slot>
+                </div>
             </article>
         </div>
 

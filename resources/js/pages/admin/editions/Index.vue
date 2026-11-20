@@ -146,7 +146,7 @@ function dateParts(date: string) {
             </div>
         </div>
 
-        <ul class="grid gap-2">
+        <ul class="grid grid-cols-1 gap-2">
             <li v-for="row in editions.data" :key="row.id">
                 <Link
                     :href="`/admin/events/${row.id}`"

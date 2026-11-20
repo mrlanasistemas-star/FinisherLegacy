@@ -536,7 +536,7 @@ const todayLabel = computed(() =>
         </section>
 
         <!-- TAGS (inventario NFC) + PAGOS -->
-        <section class="grid gap-3 sm:gap-4 lg:grid-cols-3">
+        <section class="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
             <div class="fl-card p-5 lg:col-span-2" aria-labelledby="h-tags">
                 <div class="flex items-center justify-between gap-2">
                     <h2
@@ -691,7 +691,7 @@ const todayLabel = computed(() =>
 
         <!-- HOY: pedidos recientes + por atender + eventos -->
         <section
-            class="grid gap-3 sm:gap-4 xl:grid-cols-3"
+            class="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-3"
             aria-label="Operación de hoy"
         >
             <div class="fl-card overflow-hidden xl:col-span-2">
@@ -875,7 +875,7 @@ const todayLabel = computed(() =>
         </section>
 
         <!-- POR CANAL + POS -->
-        <section class="grid gap-3 sm:gap-4 lg:grid-cols-3">
+        <section class="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
             <div class="fl-card p-5 lg:col-span-2" aria-labelledby="h-canal">
                 <h2 id="h-canal" class="text-sm font-semibold text-foreground">
                     Por canal
@@ -1045,7 +1045,7 @@ const todayLabel = computed(() =>
         <!-- ACTIVACIONES RECIENTES + SOPORTE -->
         <section
             v-if="recentActivations !== null || support !== null"
-            class="grid gap-3 sm:gap-4 lg:grid-cols-2"
+            class="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2"
         >
             <div v-if="recentActivations !== null" class="fl-card p-5">
                 <div class="flex items-center justify-between gap-2">
@@ -1177,7 +1177,7 @@ const todayLabel = computed(() =>
         </section>
 
         <!-- INVENTARIO + PRODUCTO -->
-        <section class="grid gap-3 sm:gap-4 lg:grid-cols-2">
+        <section class="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
             <div class="fl-card p-5" aria-labelledby="h-inv">
                 <div class="flex items-center justify-between gap-2">
                     <h2
@@ -1377,7 +1377,7 @@ const todayLabel = computed(() =>
             </div>
             <div
                 v-if="c.collections.top"
-                class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
+                class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
             >
                 <div class="rounded-xl bg-fl-cream/60 p-4">
                     <p class="text-xs text-muted-foreground">

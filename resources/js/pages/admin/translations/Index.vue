@@ -302,7 +302,7 @@ const runStatusLabels: Record<string, string> = {
         </header>
 
         <!-- Languages -->
-        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             <article
                 v-for="locale in locales"
                 :key="locale.code"
@@ -630,7 +630,7 @@ const runStatusLabels: Record<string, string> = {
                 <div
                     v-for="row in strings.data"
                     :key="row.id"
-                    class="grid gap-3 p-4 md:grid-cols-2"
+                    class="grid grid-cols-1 gap-3 p-4 md:grid-cols-2"
                 >
                     <div>
                         <p
@@ -715,7 +715,7 @@ const runStatusLabels: Record<string, string> = {
                 <div
                     v-for="row in content.data"
                     :key="row.id"
-                    class="grid gap-3 p-4 md:grid-cols-2"
+                    class="grid grid-cols-1 gap-3 p-4 md:grid-cols-2"
                 >
                     <div>
                         <p

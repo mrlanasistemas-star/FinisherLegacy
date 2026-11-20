@@ -217,7 +217,7 @@ const gateways = [
         </header>
 
         <form
-            class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]"
+            class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]"
             @submit.prevent="save"
         >
             <div class="space-y-6">
@@ -231,7 +231,7 @@ const gateways = [
                         físicos).
                     </p>
                     <div
-                        class="mt-5 grid gap-3 md:grid-cols-2"
+                        class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2"
                         role="radiogroup"
                         aria-label="Pasarela activa"
                     >
@@ -306,7 +306,7 @@ const gateways = [
                         </a>
                     </div>
 
-                    <div class="mt-6 grid gap-5 md:grid-cols-2">
+                    <div class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
                         <div class="grid gap-1.5">
                             <Label for="op-merchant">Merchant ID</Label>
                             <Input

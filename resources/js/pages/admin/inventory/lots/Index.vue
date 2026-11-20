@@ -137,7 +137,7 @@ const { filters, loading, apply, applyDebounced } = useAdminFilters(
 
         <template v-else-if="lots.data.length">
             <div
-                class="hidden overflow-hidden rounded-xl border border-border bg-card md:block"
+                class="hidden overflow-x-auto rounded-xl border border-border bg-card md:block"
             >
                 <table class="w-full text-sm">
                     <thead>

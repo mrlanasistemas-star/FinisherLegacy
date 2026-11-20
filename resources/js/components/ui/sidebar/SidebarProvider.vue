@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes, Ref } from "vue"
-import { defaultDocument, useEventListener, useMediaQuery, useVModel } from "@vueuse/core"
+import { defaultDocument, useEventListener, useMediaQuery, useMounted, useVModel } from "@vueuse/core"
 import { TooltipProvider } from "reka-ui"
 import { computed, ref } from "vue"
 import { cn } from "@/lib/utils"
@@ -19,7 +19,11 @@ const emits = defineEmits<{
   "update:open": [open: boolean]
 }>()
 
-const isMobile = useMediaQuery("(max-width: 768px)")
+// SSR renders the desktop markup; matching the media query only after mount
+// keeps hydration identical on phones (no node/icon mismatch).
+const mounted = useMounted()
+const belowMd = useMediaQuery("(max-width: 768px)")
+const isMobile = computed(() => mounted.value && belowMd.value)
 const openMobile = ref(false)
 
 const open = useVModel(props, "open", emits, {

@@ -144,7 +144,7 @@ function ago(iso: string | null): string {
         <template v-else>
             <!-- Desktop table -->
             <div
-                class="hidden overflow-hidden rounded-xl border border-border md:block"
+                class="hidden overflow-x-auto rounded-xl border border-border md:block"
             >
                 <table class="w-full text-sm">
                     <thead
