@@ -1,18 +1,26 @@
 <?php
 
+use App\Enums\NotificationType;
 use App\Models\AthleteFollow;
 use App\Models\AthleteProfile;
+use App\Models\EventParticipant;
 use App\Models\LegacyMoment;
 use App\Models\Medal;
+use App\Models\NotificationPreference;
+use App\Models\TrackingSession;
 use App\Models\User;
 use App\Models\UserSocialAccount;
+use App\Notifications\AthleteAlert;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 beforeEach(fn () => $this->seed(RolePermissionSeeder::class));
 
@@ -248,4 +256,32 @@ test('a provider without configured client ids is unavailable, never a fake logi
 
     $this->postJson('/api/v1/auth/social/apple', ['id_token' => 'x.y.z'])
         ->assertStatus(422)->assertJsonPath('error.code', 'SOCIAL_AUTH_UNAVAILABLE');
+});
+
+test('account deletion also removes the inbox, notification switches, avatar file and live-tracking GPS', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('avatars/ana.jpg', 'x');
+
+    $user = User::factory()->create(['password' => bcrypt('correct-password'), 'avatar_path' => 'avatars/ana.jpg']);
+    $user->notify(new AthleteAlert('Hola', 'Mensaje', NotificationType::Custom));
+    NotificationPreference::create(['user_id' => $user->id, 'scope' => 'customer', 'category' => 'social', 'in_app' => true, 'push' => false, 'email' => false]);
+    $participant = EventParticipant::factory()->create(['user_id' => $user->id]);
+    $session = TrackingSession::create([
+        'uuid' => (string) Str::uuid(),
+        'event_participant_id' => $participant->id,
+        'source' => 'mobile_gps',
+        'status' => 'stopped',
+        'started_at' => now()->subHour(),
+        'last_lat' => 19.4,
+        'last_lng' => -99.1,
+    ]);
+
+    $this->withHeaders(apiAuthHeader($user))->deleteJson('/api/v1/me/account', ['password' => 'correct-password'])->assertOk();
+
+    expect(DB::table('notifications')->where('notifiable_id', $user->id)->count())->toBe(0)
+        ->and(NotificationPreference::query()->where('user_id', $user->id)->exists())->toBeFalse()
+        ->and(TrackingSession::query()->whereKey($session->id)->exists())->toBeFalse()
+        ->and(Storage::disk('public')->exists('avatars/ana.jpg'))->toBeFalse()
+        // The official race entry itself stays (it belongs to the event's records).
+        ->and($participant->fresh())->not->toBeNull();
 });
