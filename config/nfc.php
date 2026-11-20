@@ -31,7 +31,10 @@ return [
         'android_package' => env('ANDROID_APP_PACKAGE', 'com.finisherlegacy.app'),
         // Comma-separated SHA-256 signing cert fingerprints; assetlinks.json is 404 while empty.
         'android_sha256' => array_values(array_filter(array_map('trim', explode(',', (string) env('ANDROID_SHA256_CERT_FINGERPRINTS', ''))))),
-        // Paths the app claims as universal/app links.
-        'paths' => ['/n/*', '/t/*'],
+        // Paths the app claims as universal/app links: NFC taps (/n, /t) and
+        // the password-reset email link, which the app maps to its own
+        // reset screen (FinisherLegacyMobile src/features/links/map-incoming-path.ts).
+        // Must match the Android intent filters in the app's app.config.ts.
+        'paths' => ['/n/*', '/t/*', '/reset-password/*'],
     ],
 ];
