@@ -27,7 +27,7 @@
  */
 import { router, usePage } from '@inertiajs/vue3';
 import type { App, InjectionKey } from 'vue';
-import { computed, inject, reactive } from 'vue';
+import { computed, getCurrentInstance, inject, reactive } from 'vue';
 import { update as updateLocale } from '@/routes/locale';
 import { formatMoney, ordinal, stripNote } from './text';
 
@@ -183,20 +183,36 @@ function newState(): State {
 const browserState = newState();
 const browser = createI18n(browserState);
 
+/**
+ * The instance for the code running now. In the browser that is always the
+ * one app; on the server, the request's own instance when called while a
+ * component renders (helpers like `shortDate()` or `cheerLabel()` used in
+ * templates/computeds), so SSR output matches the hydrated page.
+ */
+function active(): I18n {
+    if (import.meta.env.SSR) {
+        const provided = getCurrentInstance()?.appContext.provides as
+            Record<symbol, I18n | undefined> | undefined;
+
+        return provided?.[KEY as symbol] ?? browser;
+    }
+
+    return browser;
+}
+
 /** Translates a Spanish source string into the active language. */
-export const t: I18n['t'] = (source, params) => browser.t(source, params);
+export const t: I18n['t'] = (source, params) => active().t(source, params);
 
 /** Same, choosing between `singular|plural` by `count` (also `{count}`). */
 export const tc: I18n['tc'] = (source, count, params) =>
-    browser.tc(source, count, params);
+    active().tc(source, count, params);
 
 /**
  * BCP 47 tag of the active language ("es-MX", "en-US") for `Intl` in plain
- * TS that only runs in the browser (`lib/`); components use
- * `useI18n().regional`.
+ * TS (`lib/`); components use `useI18n().regional`.
  */
 export function activeRegional(): string {
-    return browser.regional;
+    return active().regional;
 }
 
 async function fetchCatalog(url: string, timeoutMs = 4000): Promise<Messages> {
